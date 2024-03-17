@@ -23,20 +23,20 @@ Before proceeding further, please make sure that you have made an account on Pre
 
 3. Create a project and this will generate a project-id (written as ID). This ID will help you to interact with your deployed application. 
 
-4. Head over to LaunchPad (the one with 🚀 icon). And there deploy your model of choice. Your default model will be `gpt-4`. You can also set and fix different generation paramters (like: max-tokens, temperature etc) and also pre-set your system prompt. 
+4. Head over to LaunchPad (the one with 🚀 icon). And there deploy your model of choice. Your default model will be `gpt-4`. You can also set and fix different generation parameters (like: max-tokens, temperature etc) and also pre-set your system prompt. 
 
 Congratulations on creating your first deployed application on Prem 🎉 Now we can use langchain to interact with our application. 
 
 ```python
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_community.chat_models import ChatPrem
+from langchain_community.chat_models import ChatPremAI
 ```
 
 ### Setup ChatPrem instance in LangChain 
 
 Once we imported our required modules, let's setup our client. For now let's assume that our `project_id` is 8. But make sure you use your project-id, otherwise it will throw error.
 
-In order to use langchain with prem, you do not need to pass any model name or set any parameters with our chat-client. All of those will use the default model name and paramters of the LaunchPad model. 
+In order to use langchain with prem, you do not need to pass any model name or set any parameters with our chat-client. All of those will use the default model name and parameters of the LaunchPad model. 
 
 `NOTE:` If you change the `model_name` or any other parameter like `temperature` while setting the client, it will override existing default configurations. 
 
@@ -116,7 +116,7 @@ for chunk in chat.stream(
 
 ## Embedding
 
-In this section we are going to dicuss how we can get access to different embedding model using `PremEmbeddings`. Let's start by doing some imports and define our embedding object
+In this section we are going to discuss how we can get access to different embedding model using `PremEmbeddings`. Let's start by doing some imports and define our embedding object
 
 ```python
 from langchain_community.embeddings import PremEmbeddings
@@ -133,7 +133,7 @@ import getpass
 if os.environ.get("PREMAI_API_KEY") is None:
     os.environ["PREMAI_API_KEY"] = getpass.getpass("PremAI API Key:")
 
-# Define a model is a required paramter here, since there is no default embedding model
+# Define a model is a required parameter here, since there is no default embedding model
 
 model = "text-embedding-3-large"
 embedder = PremEmbeddings(project_id=8, model=model)
