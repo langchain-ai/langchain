@@ -46,9 +46,9 @@ class LTORQueryExpansion:
 
     def __init__(
         self,
-        model_name_fwd="Helsinki-NLP/opus-mt-en-es",
-        model_name_reverse="Helsinki-NLP/opus-mt-es-en",
-    ):
+        model_name_fwd: str = "Helsinki-NLP/opus-mt-en-es",
+        model_name_reverse: str = "Helsinki-NLP/opus-mt-es-en",
+    ) -> None:
         """
         Initializes the LTORQueryExpansion object.
 
@@ -78,7 +78,7 @@ class LTORQueryExpansion:
         self.model_reverse = MarianMTModel.from_pretrained(model_name_reverse)
         self.tokenizer_reverse = MarianTokenizer.from_pretrained(model_name_reverse)
 
-    def translate_pass(self, texts, pass_fwd_or_rev):
+    def translate_pass(self, texts: List[str], pass_fwd_or_rev: str) -> List[str]:
         """
         Performs translation using the specified
         translation direction ('fwd' or 'rev').
@@ -113,7 +113,7 @@ class LTORQueryExpansion:
         input_ids.to("cpu")
         return translated_texts
 
-    def rephrase_using_translation(self, query, iteration):
+    def rephrase_using_translation(self, query: str, iteration: int) -> List[str]:
         """
         Rephrases the query using translation iteratively.
 
@@ -133,7 +133,9 @@ class LTORQueryExpansion:
             queries.append(rev_pass_text)
         return queries
 
-    def get_expanded_queries_ltor(self, query, iteration=1) -> List[Document]:
+    def get_expanded_queries_ltor(
+        self, query: str, iteration: int = 1
+    ) -> List[List[str]]:
         """
         Returns expanded queries using LTOR approach.
 
@@ -156,7 +158,9 @@ class LTORQueryExpansion:
         list_of_queries = list(list_of_queries.values())
         return list_of_queries
 
-    def get_relevant_documents(self, retriever, queries):
+    def get_relevant_documents(
+        self, retriever: Document, queries: List[List[str]]
+    ) -> List[List[Document]]:
         """
         Retrieves relevant documents for each query.
 
@@ -184,7 +188,7 @@ class LTORQueryExpansion:
 
         return relevant_documents
 
-    def _remove_duplicates(self, relevant_documents):
+    def _remove_duplicates(self, relevant_documents: List[Document]) -> List[Document]:
         """
         Removes duplicate documents.
 
