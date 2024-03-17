@@ -1,4 +1,5 @@
 """Test embedding model integration."""
+
 from langchain_core.embeddings import Embeddings
 
 from langchain_voyageai.embeddings import VoyageAIEmbeddings

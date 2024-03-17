@@ -1,6 +1,6 @@
-import pytest
+import pytest  # type: ignore
 
-from langchain.retrievers.document_compressors import VoyageAIRerank
+from langchain_voyageai.rerank import VoyageAIRerank
 
 
 @pytest.mark.requires("voyageai")

@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore
 
 
 @pytest.mark.compile

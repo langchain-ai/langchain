@@ -1,9 +1,10 @@
 """Test the voyageai reranker."""
+
 import os
 
 from langchain_core.documents import Document
 
-from langchain.retrievers.document_compressors.voyageai_rerank import VoyageAIRerank
+from langchain_voyageai.rerank import VoyageAIRerank
 
 
 def test_voyageai_reranker_init() -> None:
