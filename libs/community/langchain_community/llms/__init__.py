@@ -162,6 +162,7 @@ def _import_databricks() -> Type[BaseLLM]:
     return Databricks
 
 
+# deprecated / only for back compat - do not add to __all__
 def _import_databricks_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
@@ -325,6 +326,7 @@ def _import_mlflow() -> Type[BaseLLM]:
     return Mlflow
 
 
+# deprecated / only for back compat - do not add to __all__
 def _import_mlflow_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
@@ -929,7 +931,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "ctransformers": _import_ctransformers,
         "ctranslate2": _import_ctranslate2,
         "databricks": _import_databricks,
-        "databricks-chat": _import_databricks_chat,
+        "databricks-chat": _import_databricks_chat,  # deprecated / only for back compat
         "deepinfra": _import_deepinfra,
         "deepsparse": _import_deepsparse,
         "edenai": _import_edenai,
@@ -953,7 +955,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "textgen": _import_textgen,
         "minimax": _import_minimax,
         "mlflow": _import_mlflow,
-        "mlflow-chat": _import_mlflow_chat,
+        "mlflow-chat": _import_mlflow_chat,  # deprecated / only for back compat
         "mlflow-ai-gateway": _import_mlflow_ai_gateway,
         "modal": _import_modal,
         "mosaic": _import_mosaicml,
