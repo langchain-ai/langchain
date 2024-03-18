@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 
 
@@ -159,13 +160,13 @@ class LTORQueryExpansion:
         return list(list_of_queries.values())
 
     def get_relevant_documents(
-        self, retriever: Document, queries: List[List[str]]
+        self, retriever: BM25Retriever, queries: List[List[str]]
     ) -> List[List[Document]]:
         """
         Retrieves relevant documents for each query.
 
         Args:
-        - retriever: Document retriever object.
+        - retriever: BM25Retriever retriever object.
         - queries (List[List[str]]): List of queries.
 
         Returns:
