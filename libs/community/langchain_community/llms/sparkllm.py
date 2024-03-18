@@ -203,15 +203,12 @@ class _SparkLLMClient:
             "wss://spark-api.xf-yun.com/v3.1/chat" if not api_url else api_url
         )
         self.app_id = app_id
-        self.ws_url = _SparkLLMClient._create_url(
-            self.api_url,
-            api_key,
-            api_secret,
-        )
         self.model_kwargs = model_kwargs
         self.spark_domain = spark_domain or "generalv3"
         self.queue: Queue[Dict] = Queue()
         self.blocking_message = {"content": "", "role": "assistant"}
+        self.api_key = api_key
+        self.api_secret = api_secret
 
     @staticmethod
     def _create_url(api_url: str, api_key: str, api_secret: str) -> str:
@@ -267,7 +264,11 @@ class _SparkLLMClient:
     ) -> None:
         self.websocket_client.enableTrace(False)
         ws = self.websocket_client.WebSocketApp(
-            self.ws_url,
+            _SparkLLMClient._create_url(
+                self.api_url,
+                self.api_key,
+                self.api_secret,
+            ),
             on_message=self.on_message,
             on_error=self.on_error,
             on_close=self.on_close,
