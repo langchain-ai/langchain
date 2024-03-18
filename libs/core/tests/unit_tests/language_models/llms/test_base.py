@@ -1,5 +1,6 @@
 import pytest
 
+from langchain_core.language_models import FakeListLLM, FakeStreamingListLLM
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
@@ -7,7 +8,6 @@ from tests.unit_tests.fake.callbacks import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
-from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
 
 def test_batch() -> None:
