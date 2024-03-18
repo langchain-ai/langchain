@@ -1,5 +1,5 @@
 # RAG Example on Intel Gaudi
-This template performs RAG using Chroma and Text Generation Inference on Intel Gaudi2. The Intel Gaudi2 accelerator supports both training and inference for deep learning models in particular for LLMs. Please visit [Habana AI products](https://habana.ai/products) for more details.
+This template performs RAG using Redis (vector database) and Text Generation Inference on Intel Gaudi2. The Intel Gaudi2 accelerator supports both training and inference for deep learning models in particular for LLMs. Please visit [Habana AI products](https://habana.ai/products) for more details.
 
 ## Environment Setup
 To use [🤗 text-generation-inference](https://github.com/huggingface/text-generation-inference) on Habana Gaudi/Gaudi2, please follow these steps:
@@ -46,17 +46,26 @@ The first call will be slower as the model is compiled.
 More details please refer to [tgi-gaudi](https://github.com/huggingface/tgi-gaudi/blob/v1.2-release/README.md).
 
 
+### Launch Redis
+```bash
+docker pull redis/redis-stack:latest
+docker compose -f docker-compose-redis.yml up -d
+```
+
+please refer to [rag-redis](../rag-redis/README.md) for the [Redis](https://redis.com/try-free) settings.
+
+
 ## Populating with data
 
-If you want to populate the DB with some example data, you can run the below commands:
+This template relies on the sentence transformer `all-MiniLM-L6-v2` for embedding chunks of the pdf and user questions.
+The `ingest.py` script process and stores sections from Edgar 10k filings data for Nike `nke-10k-2023.pdf` into a Redis database.
+
 ```shell
 poetry install
 poetry run python ingest.py
 ```
 
-The script process and stores sections from Edgar 10k filings data for Nike `nke-10k-2023.pdf` into a Chroma database by default.
-
-If you wish to use a Redis database instead, please refer to [rag-redis](../rag-redis/README.md) for instructions on how to make the switch.
+If you wish to use a Chroms database instead, please use the `ingest_chroma.py` to make the switch.
 
 ## Usage
 

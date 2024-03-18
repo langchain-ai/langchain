@@ -1,12 +1,12 @@
+import io
 import os
+import numpy as np
 
+from PIL import Image
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Redis
-from rag_redis.config import EMBED_MODEL, INDEX_NAME, INDEX_SCHEMA, REDIS_URL
-from PIL import Image
-import numpy as np
-import io
+from langchain_community.vectorstores import Chroma
+from langchain_core.documents import Document
 
 
 def pdf_loader(file_path):
@@ -18,7 +18,7 @@ def pdf_loader(file_path):
             "`PyMuPDF` or 'easyocr' package is not found, please install it with "
             "`pip install pymupdf or pip install easyocr.`"
         )
-
+    
     doc = fitz.open(file_path)
     reader = easyocr.Reader(['en'])
     result =''
@@ -51,30 +51,36 @@ def ingest_documents():
     contains Edgar 10k filings data for Nike.
     """
     # Load list of pdfs
-    company_name = "Nike"
     data_path = "data/"
     doc_path = [os.path.join(data_path, file) for file in os.listdir(data_path)][0]
 
-    print("Parsing 10k filing doc for NIKE", doc_path)  # noqa: T201
+    print("Parsing 10k filing doc for NIKE", doc_path)
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1500, chunk_overlap=100, add_start_index=True
     )
     content = pdf_loader(doc_path)
     chunks = text_splitter.split_text(content)
+    # loader = UnstructuredFileLoader(doc, mode="single", strategy="fast")
+    # chunks = loader.load_and_split(text_splitter)
 
-    print("Done preprocessing. Created ", len(chunks), " chunks of the original pdf")  # noqa: T201
+    print("Done preprocessing. Created ", len(chunks), " chunks of the original pdf")
+
     # Create vectorstore
-    embedder = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+    embedder = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    _ = Redis.from_texts(
-        # appending this little bit can sometimes help with semantic retrieval
-        # especially with multiple companies
-        texts=[f"Company: {company_name}. " + chunk for chunk in chunks],
+    documents = []
+    for chunk in chunks:
+        doc = Document(page_content=chunk)
+        documents.append(doc)
+
+    # Add to vectorDB
+    _ = Chroma.from_documents(
+        documents=documents,
+        collection_name="gaudio-rag",
         embedding=embedder,
-        index_name=INDEX_NAME,
-        index_schema=INDEX_SCHEMA,
-        redis_url=REDIS_URL,
+        persist_directory='/tmp/gaudi_rag_db'
     )
 
 

@@ -1,13 +1,18 @@
-from langchain.callbacks import streaming_stdout
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.llms import HuggingFaceEndpoint
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import Redis
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-from langchain_core.vectorstores import VectorStoreRetriever
 
+from intel_rag_gaudi.config import (
+    EMBED_MODEL,
+    INDEX_NAME,
+    INDEX_SCHEMA,
+    REDIS_URL,
+    TGI_ENDPOINT,
+)
 
 # Make this look better in the docs.
 class Question(BaseModel):
@@ -15,17 +20,12 @@ class Question(BaseModel):
 
 
 # Init Embeddings
-embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+embedder = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 
-knowledge_base = Chroma(persist_directory='/tmp/gaudi_rag_db',
-                        embedding_function=embedder,
-                        collection_name="gaudio-rag")
-query = "What was Nike's revenue in 2023?"
-docs = knowledge_base.similarity_search(query)
-print(docs[0].page_content)
-retriever = VectorStoreRetriever(vectorstore=knowledge_base,
-                                 search_type='mmr',
-                                 search_kwargs={'k':1, 'fetch_k':5})
+vectorstore = Redis.from_existing_index(
+    embedding=embedder, index_name=INDEX_NAME, schema=INDEX_SCHEMA, redis_url=REDIS_URL
+)
+retriever = vectorstore.as_retriever(search_type="mmr")
 
 # Define our prompt
 template = """
@@ -46,12 +46,8 @@ Answer:
 
 
 prompt = ChatPromptTemplate.from_template(template)
-
-
-ENDPOINT_URL = "http://localhost:8080"
-callbacks = [streaming_stdout.StreamingStdOutCallbackHandler()]
 model = HuggingFaceEndpoint(
-    endpoint_url=ENDPOINT_URL,
+    endpoint_url=TGI_ENDPOINT,
     max_new_tokens=512,
     top_k=10,
     top_p=0.95,

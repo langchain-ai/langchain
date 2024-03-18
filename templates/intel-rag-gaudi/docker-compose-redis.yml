@@ -1,0 +1,8 @@
+version: '1'
+services:
+  redis-vector-db:
+    image: redis/redis-stack:latest
+    container_name: redis-vector-db
+    ports:
+      - "6379:6379"
+      - "8001:8001"
