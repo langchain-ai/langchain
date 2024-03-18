@@ -30,6 +30,13 @@ from langchain_core.language_models.base import (
     get_tokenizer,
 )
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
+from langchain_core.language_models.fake import FakeListLLM, FakeStreamingListLLM
+from langchain_core.language_models.fake_chat_models import (
+    FakeListChatModel,
+    FakeMessagesListChatModel,
+    GenericFakeChatModel,
+    ParrotFakeChatModel,
+)
 from langchain_core.language_models.llms import LLM, BaseLLM
 
 __all__ = [
@@ -42,4 +49,10 @@ __all__ = [
     "get_tokenizer",
     "LanguageModelOutput",
     "LanguageModelLike",
+    "FakeListLLM",
+    "FakeStreamingListLLM",
+    "FakeListChatModel",
+    "FakeMessagesListChatModel",
+    "GenericFakeChatModel",
+    "ParrotFakeChatModel",
 ]
