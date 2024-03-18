@@ -130,7 +130,6 @@ class MongoDBCache(BaseCache):
     PROMPT = "prompt"
     LLM = "llm"
     RETURN_VAL = "return_val"
-    _local_cache: Dict[str, Any]
 
     def __init__(
         self,
@@ -153,7 +152,6 @@ class MongoDBCache(BaseCache):
         self.client = _generate_mongo_client(connection_string)
         self.__database_name = database_name
         self.__collection_name = collection_name
-        self._local_cache = {}
 
         if self.__collection_name not in self.database.list_collection_names():
             self.database.create_collection(self.__collection_name)
@@ -172,10 +170,6 @@ class MongoDBCache(BaseCache):
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
-        cache_key = self._generate_local_key(prompt, llm_string)
-        if cache_key in self._local_cache:
-            return self._local_cache[cache_key]
-
         return_doc = (
             self.collection.find_one(self._generate_keys(prompt, llm_string)) or {}
         )
@@ -184,9 +178,6 @@ class MongoDBCache(BaseCache):
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
-        cache_key = self._generate_local_key(prompt, llm_string)
-        self._local_cache[cache_key] = return_val
-
         self.collection.update_one(
             {**self._generate_keys(prompt, llm_string)},
             {"$set": {self.RETURN_VAL: _dumps_generations(return_val)}},
@@ -196,10 +187,6 @@ class MongoDBCache(BaseCache):
     def _generate_keys(self, prompt: str, llm_string: str) -> Dict[str, str]:
         """Create keyed fields for caching layer"""
         return {self.PROMPT: prompt, self.LLM: llm_string}
-
-    def _generate_local_key(self, prompt: str, llm_string: str) -> str:
-        """Create keyed fields for local caching layer"""
-        return f"{prompt}#{llm_string}"
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache that can take additional keyword arguments.
@@ -221,7 +208,6 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
 
     LLM = "llm_string"
     RETURN_VAL = "return_val"
-    _local_cache: Dict[str, Any]
 
     def __init__(
         self,
@@ -250,20 +236,15 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         self.collection = client[database_name][collection_name]
         self._wait_until_ready = wait_until_ready
         super().__init__(self.collection, embedding, **kwargs)  # type: ignore
-        self._local_cache = dict()
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
-        cache_key = self._generate_local_key(prompt, llm_string)
-        if cache_key in self._local_cache:
-            return self._local_cache[cache_key]
         search_response = self.similarity_search_with_score(
             prompt, 1, pre_filter={self.LLM: {"$eq": llm_string}}
         )
         if search_response:
             return_val = search_response[0][0].metadata.get(self.RETURN_VAL)
             response = _loads_generations(return_val) or return_val  # type: ignore
-            self._local_cache[cache_key] = response
             return response
         return None
 
@@ -275,9 +256,6 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         wait_until_ready: Optional[bool] = None,
     ) -> None:
         """Update cache based on prompt and llm_string."""
-        cache_key = self._generate_local_key(prompt, llm_string)
-        self._local_cache[cache_key] = return_val
-
         self.add_texts(
             [prompt],
             [
@@ -295,10 +273,6 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         if wait:
             _wait_until(is_indexed, return_val)
 
-    def _generate_local_key(self, prompt: str, llm_string: str) -> str:
-        """Create keyed fields for local caching layer"""
-        return f"{prompt}#{llm_string}"
-
     def clear(self, **kwargs: Any) -> None:
         """Clear cache that can take additional keyword arguments.
         Any additional arguments will propagate as filtration criteria for
@@ -309,4 +283,3 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
             self.clear(llm_string="fake-model")
         """
         self.collection.delete_many({**kwargs})
-        self._local_cache.clear()
