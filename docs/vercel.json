@@ -1,6 +1,86 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/providers/facebook_chat",
+      "destination": "/docs/integrations/providers/facebook"
+    },
+    {
+      "source": "/docs/integrations/providers/facebook_faiss",
+      "destination": "/docs/integrations/providers/facebook"
+    },
+    {
+      "source": "/docs/use_cases/graph/diffbot_graphtransformer",
+      "destination": "/docs/use_cases/graph/integrations/diffbot_graphtransformer"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_arangodb_qa",
+      "destination": "/docs/use_cases/graph/integrations/graph_arangodb_qa"
+    },
+    {
+      "source":  "/docs/use_cases/graph/graph_cypher_qa",
+      "destination":  "/docs/use_cases/graph/integrations/graph_cypher_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_falkordb_qa",
+      "destination": "/docs/use_cases/graph/integrations/graph_falkordb_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_gremlin_cosmosdb_qa",
+      "destination": "/docs/use_cases/graph/integrations/graph_gremlin_cosmosdb_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_hugegraph_qa",
+      "destination": "/docs/use_cases/graph/integrations/graph_hugegraph_qa"
+    },
+    {
+      "source":  "/docs/use_cases/graph/graph_kuzu_qa",
+      "destination":  "/docs/use_cases/graph/integrations/graph_kuzu_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_memgraph_qa",
+      "destination": "/docs/use_cases/graph/integrations/graph_memgraph_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_nebula_qa",
+      "destination": "/docs/use_cases/graph/integrations/graph_nebula_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_networkx_qa",
+      "destination": "/docs/use_cases/graph/integrations/graph_networkx_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_ontotext_graphdb_qa",
+      "destination": "/docs/use_cases/graph/integrations/graph_ontotext_graphdb_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/graph_sparql_qa",
+      "destination": "/docs/use_cases/graph/integrations/graph_sparql_qa"
+    },
+    {
+      "source": "/docs/use_cases/graph/neptune_cypher_qa.ipynb",
+      "destination": "/docs/use_cases/graph/integrations/neptune_cypher_qa.ipynb"
+    },
+    {
+      "source": "/docs/use_cases/graph/neptune_sparql_qa",
+      "destination": "/docs/use_cases/graph/integrations/neptune_sparql_qa"
+    },
+    {
+      "source": "/docs/integrations/memory/google_cloud_sql_mssql",
+      "destination": "/docs/integrations/memory/google_sql_mssql"
+    },
+    {
+      "source": "/docs/integrations/memory/google_cloud_sql_mysql",
+      "destination": "/docs/integrations/memory/google_sql_mysql"
+    },
+    {
+      "source": "/docs/integrations/memory/google_cloud_sql_pg",
+      "destination": "/docs/integrations/memory/google_sql_pg"
+    },
+    {
+      "source": "/docs/integrations/memory/google_datastore",
+      "destination": "/docs/integrations/memory/google_firestore_datastore"
+    },
+    {
       "source": "/docs/integrations/llms/huggingface_textgen_inference",
       "destination": "/docs/integrations/llms/huggingface_endpoint"
     },
