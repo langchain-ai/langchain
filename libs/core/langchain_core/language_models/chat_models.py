@@ -615,6 +615,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
+        if len(result.generations) == 1 and result.llm_output is not None:
+            result.generations[0].message.response_metadata = {
+                **result.llm_output,
+                **result.generations[0].message.response_metadata,
+            }
         if check_cache and llm_cache:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
@@ -651,6 +656,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
+        if len(result.generations) == 1 and result.llm_output is not None:
+            result.generations[0].message.response_metadata = {
+                **result.llm_output,
+                **result.generations[0].message.response_metadata,
+            }
         if check_cache and llm_cache:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
