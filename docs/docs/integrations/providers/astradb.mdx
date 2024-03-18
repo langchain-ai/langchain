@@ -10,12 +10,7 @@ See a [tutorial provided by DataStax](https://docs.datastax.com/en/astra/astra-d
 
 Install the following Python package:
 ```bash
-pip install "langchain-astradb>=0.0.1"
-```
-
-Some old integrations require the `astrapy` package:
-```bash
-pip install "astrapy>=0.7.1"
+pip install "langchain-astradb>=0.1.0"
 ```
 
 Get the [connection secrets](https://docs.datastax.com/en/astra/astra-db-vector/get-started/quickstart.html).
@@ -92,7 +87,7 @@ Learn more in the [example notebook](/docs/integrations/memory/astradb_chat_mess
 ## Document loader
 
 ```python
-from langchain_community.document_loaders import AstraDBLoader
+from langchain_astradb import AstraDBLoader
 
 loader = AstraDBLoader(
     collection_name="my_collection",
@@ -129,7 +124,7 @@ Learn more in the [example notebook](/docs/integrations/retrievers/self_query/as
 ## Store
 
 ```python
-from langchain_community.storage import AstraDBStore
+from langchain_astradb import AstraDBStore
 
 store = AstraDBStore(
     collection_name="my_kv_store",
@@ -143,7 +138,7 @@ Learn more in the [example notebook](/docs/integrations/stores/astradb#astradbst
 ## Byte Store
 
 ```python
-from langchain_community.storage import AstraDBByteStore
+from langchain_astradb import AstraDBByteStore
 
 store = AstraDBByteStore(
     collection_name="my_kv_store",
