@@ -28,6 +28,11 @@ from langchain_core.callbacks.manager import (
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
+from langchain_core.language_models import (
+    FakeListChatModel,
+    FakeListLLM,
+    FakeStreamingListLLM,
+)
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -80,8 +85,6 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.fake.chat_model import FakeListChatModel
-from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
 
 class FakeTracer(BaseTracer):
