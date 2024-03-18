@@ -13,6 +13,10 @@ chromadb = "^0.4.18"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
 export_module = "cohere_librarian"
 export_attr = "chain"
 
@@ -23,7 +27,5 @@ integrations = ["Cohere"]
 tags = ["getting-started"]
 
 [build-system]
-requires = [
-    "poetry-core",
-]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

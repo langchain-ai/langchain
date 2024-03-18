@@ -12,10 +12,10 @@ python = ">=3.8.1,<4.0"
 gigachain = ">=0.0.325"
 anthropic = ">=0.5.0"
 langchainhub = ">=0.1.13"
-gigachain-experimental = ">=0.0.37"
+gigachain-experimental = ">=0.0.54"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "extraction"

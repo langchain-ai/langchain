@@ -1,4 +1,5 @@
 """Base interface for large language models to expose."""
+
 from __future__ import annotations
 
 import asyncio
@@ -16,7 +17,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -56,17 +56,11 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator, validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
 from langchain_core.runnables.config import run_in_executor
 
 logger = logging.getLogger(__name__)
-
-
-def _get_verbosity() -> bool:
-    from langchain_core.globals import get_verbose
-
-    return get_verbose()
 
 
 @functools.lru_cache
@@ -200,16 +194,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     It should take in a prompt and return a string."""
 
-    cache: Optional[bool] = None
-    """Whether to cache the response."""
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
-    callbacks: Callbacks = Field(default=None, exclude=True)
-    """Callbacks to add to the run trace."""
-    tags: Optional[List[str]] = Field(default=None, exclude=True)
-    """Tags to add to the run trace."""
-    metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
-    """Metadata to add to the run trace."""
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED]"""
 
@@ -228,17 +212,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
-
-    @validator("verbose", pre=True, always=True)
-    def set_verbose(cls, verbose: Optional[bool]) -> bool:
-        """If verbose is None, set it.
-
-        This allows users to pass in None as verbose to access the global setting.
-        """
-        if verbose is None:
-            return _get_verbosity()
-        else:
-            return verbose
 
     # --- Runnable methods ---
 
@@ -932,9 +905,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     )
                 ]
             )
-            run_managers = [r[0] for r in run_managers]
+            run_managers = [r[0] for r in run_managers]  # type: ignore[misc]
             output = await self._agenerate_helper(
-                prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+                prompts,
+                stop,
+                run_managers,  # type: ignore[arg-type]
+                bool(new_arg_supported),
+                **kwargs,  # type: ignore[arg-type]
             )
             return output
         if len(missing_prompts) > 0:
@@ -951,15 +928,19 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     for idx in missing_prompt_idxs
                 ]
             )
-            run_managers = [r[0] for r in run_managers]
+            run_managers = [r[0] for r in run_managers]  # type: ignore[misc]
             new_results = await self._agenerate_helper(
-                missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+                missing_prompts,
+                stop,
+                run_managers,  # type: ignore[arg-type]
+                bool(new_arg_supported),
+                **kwargs,  # type: ignore[arg-type]
             )
             llm_output = await aupdate_cache(
                 existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
             )
             run_info = (
-                [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]
+                [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]  # type: ignore[attr-defined]
                 if run_managers
                 else None
             )
@@ -1072,11 +1053,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             _stop = list(stop)
         content = await self._call_async(text, stop=_stop, **kwargs)
         return AIMessage(content=content)
-
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        """Get the identifying parameters."""
-        return {}
 
     def __str__(self) -> str:
         """Get a string representation of the object for printing."""

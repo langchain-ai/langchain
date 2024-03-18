@@ -185,3 +185,4 @@ _dist
 docs/docs/templates
 developer_utils/
 prof
+*.epub
