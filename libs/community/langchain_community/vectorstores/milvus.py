@@ -590,6 +590,7 @@ class Milvus(VectorStore):
             # Insert into the collection.
             try:
                 res: Collection
+                timeout = timeout or self.timeout
                 res = self.col.insert(insert_list, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
             except MilvusException as e:
