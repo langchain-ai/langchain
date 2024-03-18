@@ -1,8 +1,6 @@
 import hashlib
 from typing import List
 
-import numpy as np
-
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -14,6 +12,8 @@ class FakeEmbeddings(Embeddings, BaseModel):
     """The size of the embedding vector."""
 
     def _get_embedding(self) -> List[float]:
+        import numpy as np  # type: ignore[import-not-found, import-untyped]
+
         return list(np.random.normal(size=self.size))
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -33,6 +33,8 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
     """The size of the embedding vector."""
 
     def _get_embedding(self, seed: int) -> List[float]:
+        import numpy as np  # type: ignore[import-not-found, import-untyped]
+
         # set the seed for the random generator
         np.random.seed(seed)
         return list(np.random.normal(size=self.size))

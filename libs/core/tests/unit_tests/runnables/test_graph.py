@@ -54,7 +54,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                 "id": 2,
                 "type": "runnable",
                 "data": {
-                    "id": ["tests", "unit_tests", "fake", "llm", "FakeListLLM"],
+                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
             },
@@ -136,7 +136,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                 "id": 2,
                 "type": "runnable",
                 "data": {
-                    "id": ["tests", "unit_tests", "fake", "llm", "FakeListLLM"],
+                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
             },

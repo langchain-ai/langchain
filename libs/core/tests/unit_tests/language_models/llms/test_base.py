@@ -6,11 +6,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.llms import (
-  BaseLLM,
-  FakeListLLM,
-  FakeStreamingListLLM,
-)
+from langchain_core.language_models import BaseLLM, FakeListLLM, FakeStreamingListLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
