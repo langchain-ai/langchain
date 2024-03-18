@@ -545,4 +545,4 @@ def test_messages_prompt_accepts_list() -> None:
         [("system", "You are a {foo}"), MessagesPlaceholder("history")]
     )
     with pytest.raises(TypeError):
-        prompt.invoke([("user", "Hi there")])
+        prompt.invoke([("user", "Hi there")])  # type: ignore
