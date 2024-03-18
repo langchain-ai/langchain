@@ -9,6 +9,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
+from langchain_community.retrievers.milvus import MilvusRetriever
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
@@ -1053,3 +1054,6 @@ class Milvus(VectorStore):
                 "Failed to upsert entities: %s error: %s", self.collection_name, exc
             )
             raise exc
+
+    def as_retriever(self, **kwargs: Any) -> MilvusRetriever:
+        return MilvusRetriever(store=self, **kwargs)
