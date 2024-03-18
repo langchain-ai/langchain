@@ -26,6 +26,7 @@ DEFAULT_API_ENDPOINT = "https://api.docugami.com/v1preview1"
 
 logger = logging.getLogger(__name__)
 
+
 @deprecated(
     since="0.0.24",
     removal="0.2.0",
