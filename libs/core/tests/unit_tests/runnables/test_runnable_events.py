@@ -7,6 +7,7 @@ import pytest
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
+from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -26,8 +27,6 @@ from langchain_core.runnables import (
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import tool
-from tests.unit_tests.fake.chat_model import GenericFakeChatModel
-from tests.unit_tests.fake.llm import FakeStreamingListLLM
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:

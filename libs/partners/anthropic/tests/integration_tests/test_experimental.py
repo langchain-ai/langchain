@@ -1,11 +1,16 @@
 """Test ChatAnthropic chat model."""
 
+import json
+from enum import Enum
+from typing import List, Optional
+
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_anthropic.experimental import ChatAnthropicTools
 
 MODEL_NAME = "claude-3-sonnet-20240229"
+BIG_MODEL_NAME = "claude-3-opus-20240229"
 
 #####################################
 ### Test Basic features, no tools ###
@@ -104,7 +109,9 @@ def test_tools() -> None:
         name: str
         age: int
 
-    llm = ChatAnthropicTools(model_name=MODEL_NAME).bind_tools([Person])
+    llm = ChatAnthropicTools(model_name=BIG_MODEL_NAME, temperature=0).bind_tools(
+        [Person]
+    )
     result = llm.invoke("Erick is 27 years old")
     assert result.content == "", f"content should be empty, not {result.content}"
     assert "tool_calls" in result.additional_kwargs
@@ -114,7 +121,7 @@ def test_tools() -> None:
     assert tool_call["type"] == "function"
     function = tool_call["function"]
     assert function["name"] == "Person"
-    assert function["arguments"] == {"name": "Erick", "age": "27"}
+    assert json.loads(function["arguments"]) == {"name": "Erick", "age": "27"}
 
 
 def test_with_structured_output() -> None:
@@ -122,8 +129,56 @@ def test_with_structured_output() -> None:
         name: str
         age: int
 
-    chain = ChatAnthropicTools(model_name=MODEL_NAME).with_structured_output(Person)
+    chain = ChatAnthropicTools(
+        model_name=BIG_MODEL_NAME, temperature=0
+    ).with_structured_output(Person)
     result = chain.invoke("Erick is 27 years old")
     assert isinstance(result, Person)
     assert result.name == "Erick"
     assert result.age == 27
+
+
+def test_anthropic_complex_structured_output() -> None:
+    class ToneEnum(str, Enum):
+        positive = "positive"
+        negative = "negative"
+
+    class Email(BaseModel):
+        """Relevant information about an email."""
+
+        sender: Optional[str] = Field(
+            None, description="The sender's name, if available"
+        )
+        sender_phone_number: Optional[str] = Field(
+            None, description="The sender's phone number, if available"
+        )
+        sender_address: Optional[str] = Field(
+            None, description="The sender's address, if available"
+        )
+        action_items: List[str] = Field(
+            ..., description="A list of action items requested by the email"
+        )
+        topic: str = Field(
+            ..., description="High level description of what the email is about"
+        )
+        tone: ToneEnum = Field(..., description="The tone of the email.")
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "human",
+                "What can you tell me about the following email? Make sure to answer in the correct format: {email}",  # noqa: E501
+            ),
+        ]
+    )
+
+    llm = ChatAnthropicTools(temperature=0, model_name=BIG_MODEL_NAME)
+
+    extraction_chain = prompt | llm.with_structured_output(Email)
+
+    response = extraction_chain.invoke(
+        {
+            "email": "From: Erick. The email is about the new project. The tone is positive. The action items are to send the report and to schedule a meeting."  # noqa: E501
+        }
+    )  # noqa: E501
+    assert isinstance(response, Email)
