@@ -1,7 +1,7 @@
 """Wrapper around Redis vector database."""
 
 from __future__ import annotations
-
+import json
 import logging
 import os
 import uuid
@@ -717,6 +717,8 @@ class Redis(VectorStore):
                 key = self.key_prefix + ":" + key
             metadata = metadatas[i] if metadatas else {}
             metadata = _prepare_metadata(metadata) if clean_metadata else metadata
+            serialized_metadata = json.dumps(metadata)
+
             pipeline.hset(
                 key,
                 mapping={
@@ -724,8 +726,8 @@ class Redis(VectorStore):
                     self._schema.content_vector_key: _array_to_buffer(
                         embeddings[i], self._schema.vector_dtype
                     ),
-                    **metadata,
-                },
+                    'metadata': serialized_metadata,  # Store metadata under 'metadata' key                
+                    },
             )
             ids.append(key)
 
