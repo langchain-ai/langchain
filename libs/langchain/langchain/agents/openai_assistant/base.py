@@ -87,6 +87,18 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
         ) from e
 
 
+def _is_assistants_builtin_tool(
+    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+) -> Dict[str, Any]:
+    """Determine if tool corresponds to OpenAI Assistants built-in."""
+    assistants_builtin_tools = ("code_interpreter", "retrieval")
+    return (
+        isinstance(tool, dict)
+        and ("type" in tool)
+        and (tool["type"] in assistants_builtin_tools)
+    )
+
+
 def _get_assistants_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> Dict[str, Any]:
@@ -95,7 +107,7 @@ def _get_assistants_tool(
     Note that OpenAI assistants supports several built-in tools,
     such as "code_interpreter" and "retrieval."
     """
-    if isinstance(tool, dict) and "type" in tool:
+    if _is_assistants_builtin_tool(tool):
         return tool
     else:
         return convert_to_openai_tool(tool)
@@ -352,7 +364,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             AsyncOpenAIAssistantRunnable configured to run using the created assistant.
         """
         async_client = async_client or _get_openai_async_client()
-        openai_tools = [convert_to_openai_tool(tool) for tool in tools]
+        openai_tools = [_get_assistants_tool(tool) for tool in tools]
         assistant = await async_client.beta.assistants.create(
             name=name,
             instructions=instructions,
