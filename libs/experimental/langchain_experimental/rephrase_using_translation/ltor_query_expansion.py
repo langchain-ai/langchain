@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Dict, List
 
 from langchain_core.documents import Document
 
@@ -19,29 +19,30 @@ class LTORQueryExpansion:
                                 Default is 'Helsinki-NLP/opus-mt-es-en'.
 
     Methods:
-    - translate_pass(texts: Union[str, List[str]],
-                     pass_fwd_or_rev: str) -> List[str]:
+    - translate_pass(texts: List[str], pass_fwd_or_rev: str) -> List[str]:
                                                         Performs translation
                                                         using the
                                                         specified translation
                                                         direction
                                                         ('fwd' or 'rev').
-    - rephrase_using_translation(query: Union[str, List[str]],
-                                 iteration: int) -> Union[List[str], List[List[str]]]:
+    - rephrase_using_translation(query: List[str],
+                                            iteration: int) -> List[List[str]]:
                                                     Rephrases the query
                                                     using translation iteratively.
-    - get_expanded_queries_ltor(query: Union[str, List[str]],
+    - get_expanded_queries_ltor(query: List[str],
                                 iteration: int = 1) -> List[List[str]]: Returns
                                                                         expanded
                                                                         queries
                                                                         using LTOR
                                                                         approach.
-    - get_relevant_documents(retriever: Document,
-                            queries: List[List[str]]) ->
-                            List[List[Document]]: Retrieves relevant
+    - get_relevant_documents(
+        retriever: Document,
+        queries: List[List[str]]) -> List[List[Document]]: Retrieves relevant
                                                 documents for each query.
-    - _remove_duplicates(relevant_documents: List[Document]) ->
-                            List[Document]: Removes duplicate documents.
+
+    - _remove_duplicates(
+        relevant_documents: List[Document]) -> List[Document]: Removes
+                                                               duplicate documents.
 
     """
 
@@ -79,15 +80,13 @@ class LTORQueryExpansion:
         self.model_reverse = MarianMTModel.from_pretrained(model_name_reverse)
         self.tokenizer_reverse = MarianTokenizer.from_pretrained(model_name_reverse)
 
-    def translate_pass(
-        self, texts: Union[str, List[str]], pass_fwd_or_rev: str
-    ) -> List[str]:
+    def translate_pass(self, texts: List[str], pass_fwd_or_rev: str) -> List[str]:
         """
         Performs translation using the specified
         translation direction ('fwd' or 'rev').
 
         Args:
-        - texts (Union[str, List[str]]): List of texts to be translated.
+        - texts (List[str]): List of texts to be translated.
         - pass_fwd_or_rev (str): Translation direction. Either
                                 'fwd' for forward translation or
                                 'rev' for reverse translation.
@@ -117,20 +116,20 @@ class LTORQueryExpansion:
         return translated_texts
 
     def rephrase_using_translation(
-        self, query: Union[str, List[str]], iteration: int
-    ) -> Union[List[str], List[List[str]]]:
+        self, query: List[str], iteration: int
+    ) -> List[List[str]]:
         """
         Rephrases the query using translation iteratively.
 
         Args:
-        - query (Union[str, List[str]]): Input query to be rephrased.
+        - query (List[str]): Input query to be rephrased.
         - iteration (int): Number of iterations for query rephrasing.
 
         Returns:
-        - queries (Union[List[str], List[List[str]]]): List of rephrased queries.
+        - queries (List[List[str]]): List of rephrased queries.
         """
         queries = [query]
-        current_query = query
+        current_query = queries[-1]
         for _ in range(iteration):
             fwd_pass_text = self.translate_pass(current_query, pass_fwd_or_rev="fwd")
             rev_pass_text = self.translate_pass(fwd_pass_text, pass_fwd_or_rev="rev")
@@ -139,29 +138,25 @@ class LTORQueryExpansion:
         return queries
 
     def get_expanded_queries_ltor(
-        self, query: Union[str, List[str]], iteration: int = 1
+        self, query: List[str], iteration: int = 1
     ) -> List[List[str]]:
         """
         Returns expanded queries using LTOR approach.
 
         Args:
-        - query (Union[str, List[str]]): Input query.
+        - query (List[str]): Input query.
         - iteration (int): Number of iterations for query expansion. Default is 1.
 
         Returns:
         - list_of_queries (List[List[str]]): List of expanded queries.
         """
         expanded_queries = self.rephrase_using_translation(query, iteration)
-        list_of_queries = {}
+        list_of_queries: Dict[int, List[str]] = {}
         for i in expanded_queries:
             for count, j in enumerate(i):
-                if count not in list_of_queries:
-                    list_of_queries[count] = []
-                if j.lower() not in list_of_queries[count]:
-                    list_of_queries[count].append(j.lower())
+                list_of_queries[count] = list_of_queries.get(count, []) + [j.lower()]
 
-        list_of_queries = list(list_of_queries.values())
-        return list_of_queries
+        return list(list_of_queries.values())
 
     def get_relevant_documents(
         self, retriever: Document, queries: List[List[str]]
@@ -193,7 +188,8 @@ class LTORQueryExpansion:
 
         return relevant_documents
 
-    def _remove_duplicates(self, relevant_documents: List[Document]) -> List[Document]:
+    @staticmethod
+    def _remove_duplicates(relevant_documents: List[Document]) -> List[Document]:
         """
         Removes duplicate documents.
 
