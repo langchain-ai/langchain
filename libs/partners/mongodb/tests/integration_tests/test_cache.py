@@ -29,6 +29,7 @@ def llm_cache(cls: Any) -> BaseCache:
             connection_string=CONN_STRING,
             collection_name=COLLECTION,
             database_name=DATABASE,
+            index_name=INDEX_NAME,
             wait_until_ready=True,
         )
     )
