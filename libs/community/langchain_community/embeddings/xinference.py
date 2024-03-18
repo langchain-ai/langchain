@@ -70,13 +70,23 @@ class XinferenceEmbeddings(Embeddings):
     def __init__(
         self, server_url: Optional[str] = None, model_uid: Optional[str] = None
     ):
+        restful_client_imported = False
+    
         try:
             from xinference.client import RESTfulClient
-        except ImportError as e:
-            raise ImportError(
-                "Could not import RESTfulClient from xinference. Please install it"
-                " with `pip install xinference`."
-            ) from e
+            restful_client_imported = True
+        except ImportError:
+            pass  # 如果第一次尝试失败，则忽略异常，尝试第二种导入方式
+        
+        if not restful_client_imported:
+            try:
+                from xinference_client import RESTfulClient
+            except ImportError as e:
+                raise ImportError(
+                    "Could not import RESTfulClient from xinference or xinference-client. "
+                    "Please ensure one of them is installed with `pip install xinference` "
+                    "or `pip install xinference-client`."
+                ) from e
 
         super().__init__()
 
