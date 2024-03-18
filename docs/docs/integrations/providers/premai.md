@@ -3,9 +3,9 @@
 >[PremAI](https://app.premai.io) is an unified platform that let's you build powerful production-ready GenAI powered applications with least effort, so that you can focus more on user experience and overall growth. 
 
 
-## ChatPrem
+## ChatPremAI
 
-This example goes over how to use LangChain to interact with different chat models with `ChatPrem`
+This example goes over how to use LangChain to interact with different chat models with `ChatPremAI`
 
 ### Installation and setup
 
@@ -15,7 +15,7 @@ We start by installing langchain and premai-sdk. You can type the following comm
 pip install premai langchain
 ```
 
-Before proceeding further, please make sure that you have made an account on Prem and already started a project. If not, then here's how you can start for free:
+Before proceeding further, please make sure that you have made an account on PremAI and already started a project. If not, then here's how you can start for free:
 
 1. Sign in to [PremAI](https://app.premai.io/accounts/login/), if you are coming for the first time and create your API key [here](https://app.premai.io/api_keys/).
 
@@ -25,7 +25,7 @@ Before proceeding further, please make sure that you have made an account on Pre
 
 4. Head over to LaunchPad (the one with 🚀 icon). And there deploy your model of choice. Your default model will be `gpt-4`. You can also set and fix different generation parameters (like: max-tokens, temperature etc) and also pre-set your system prompt. 
 
-Congratulations on creating your first deployed application on Prem 🎉 Now we can use langchain to interact with our application. 
+Congratulations on creating your first deployed application on PremAI 🎉 Now we can use langchain to interact with our application. 
 
 ```python
 from langchain_core.messages import HumanMessage, SystemMessage
