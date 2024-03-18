@@ -28,7 +28,7 @@ import logging
 import uuid
 import warnings
 from abc import ABC
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from functools import lru_cache, wraps
 from typing import (
@@ -47,8 +47,7 @@ from typing import (
     cast,
 )
 
-from sqlalchemy import (Column, DateTime, Integer,
-                        String, create_engine, delete, select)
+from sqlalchemy import Column, DateTime, Integer, String, create_engine, delete, select
 from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
@@ -238,11 +237,12 @@ class FullLLMCache(Base):  # type: ignore
 class SQLAlchemyCache(BaseCache):
     """Cache that uses SQAlchemy as a backend."""
 
-    def __init__(self,
-                 engine: Engine,
-                 cache_schema: Type[FullLLMCache] = FullLLMCache,
-                 lifetime_hours: int = -1,
-                 ):
+    def __init__(
+        self,
+        engine: Engine,
+        cache_schema: Type[FullLLMCache] = FullLLMCache,
+        lifetime_hours: int = -1,
+    ):
         self.lifetime_hours = lifetime_hours
         """Initialize by creating all tables."""
         self.engine = engine
