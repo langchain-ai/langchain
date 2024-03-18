@@ -47,7 +47,7 @@ import getpass
 if "PREMAI_API_KEY" not in os.environ:
     os.environ["PREMAI_API_KEY"] = getpass.getpass("PremAI API Key:")
 
-chat = ChatPrem(project_id=8)
+chat = ChatPremAI(project_id=8)
 ```
 
 ### Calling the Model
