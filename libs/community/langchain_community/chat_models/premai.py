@@ -103,17 +103,20 @@ def _response_to_result(
 
 def _convert_delta_response_to_message_chunk(
     response: ChatCompletionResponseStream, default_class: Type[BaseMessageChunk]
-) -> BaseMessageChunk:
+) -> Tuple[
+    Union[BaseMessageChunk, HumanMessageChunk, AIMessageChunk, SystemMessageChunk],
+    Optional[str],
+]:
     """Converts delta response to message chunk"""
     _delta = response.choices[0].delta  # type: ignore
-    role = _delta.get("role", "")
-    content = _delta.get("content", "")
+    role = _delta.get("role", "")  # type: ignore
+    content = _delta.get("content", "")  # type: ignore
     additional_kwargs: Dict = {}
 
     if role is None or role == "":
         raise ChatPremAPIError("Role can not be None. Please check the response")
 
-    finish_reasons = response.choices[0].finish_reason
+    finish_reasons: Optional[str] = response.choices[0].finish_reason
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content), finish_reasons
@@ -132,21 +135,23 @@ def _convert_delta_response_to_message_chunk(
 
 def _messages_to_prompt_dict(
     input_messages: List[BaseMessage],
-) -> Tuple[str, List[dict]]:
+) -> Tuple[Optional[str], List[Dict[str, str]]]:
     """Converts a list of LangChain Messages into a simple dict
     which is the message structure in Prem"""
 
-    system_prompt: str = None
+    system_prompt: Optional[str] = None
     examples_and_messages: List[Dict[str, str]] = []
 
     for input_msg in input_messages:
         if isinstance(input_msg, SystemMessage):
-            system_prompt = input_msg.content
+            system_prompt = str(input_msg.content)
         elif isinstance(input_msg, HumanMessage):
-            examples_and_messages.append({"role": "user", "content": input_msg.content})
+            examples_and_messages.append(
+                {"role": "user", "content": str(input_msg.content)}
+            )
         elif isinstance(input_msg, AIMessage):
             examples_and_messages.append(
-                {"role": "assistant", "content": input_msg.content}
+                {"role": "assistant", "content": str(input_msg.content)}
             )
         else:
             raise ChatPremAPIError("No such role explicitly exists")
@@ -188,7 +193,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
     max_tokens: Optional[int] = None
     """The maximum number of tokens to generate"""
 
-    max_retries: Optional[int] = 1
+    max_retries: int = 1
     """Max number of retries to call the API"""
 
     system_prompt: Optional[str] = ""
@@ -269,7 +274,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
             "stop": None,
         }
 
-    def _get_all_kwargs(self, **kwargs) -> Dict[str, Any]:
+    def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         all_kwargs = {**self._default_params, **kwargs}
         for key in list(self._default_params.keys()):
             if all_kwargs.get(key) is None or all_kwargs.get(key) == "":
@@ -278,12 +283,12 @@ class ChatPremAI(BaseChatModel, BaseModel):
 
     def _generate(
         self,
-        messages: List[List[BaseMessage]],
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ChatResult:
-        system_prompt, messages = _messages_to_prompt_dict(messages)
+        system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)  # type: ignore
 
         kwargs["stop"] = stop
         if system_prompt is not None and system_prompt != "":
@@ -293,7 +298,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
         response = chat_with_retry(
             self,
             project_id=self.project_id,
-            messages=messages,
+            messages=messages_to_pass,
             stream=False,
             run_manager=run_manager,
             **all_kwargs,
@@ -306,13 +311,14 @@ class ChatPremAI(BaseChatModel, BaseModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        system_prompt, messages = _messages_to_prompt_dict(messages)
-
+        system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)
         kwargs["stop"] = stop
-        if system_prompt is not None and system_prompt != "":
-            kwargs["system_prompt"] = system_prompt
+
+        if "system_prompt" not in kwargs:
+            if system_prompt is not None and system_prompt != "":
+                kwargs["system_prompt"] = system_prompt
 
         all_kwargs = self._get_all_kwargs(**kwargs)
 
@@ -321,7 +327,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
         for streamed_response in chat_with_retry(
             self,
             project_id=self.project_id,
-            messages=messages,
+            messages=messages_to_pass,
             stream=True,
             run_manager=run_manager,
             **all_kwargs,
