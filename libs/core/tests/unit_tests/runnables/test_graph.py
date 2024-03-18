@@ -1,11 +1,11 @@
 from syrupy import SnapshotAssertion
 
+from langchain_core.language_models import FakeListLLM
 from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables.base import Runnable
-from tests.unit_tests.fake.llm import FakeListLLM
 
 
 def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
@@ -54,7 +54,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                 "id": 2,
                 "type": "runnable",
                 "data": {
-                    "id": ["tests", "unit_tests", "fake", "llm", "FakeListLLM"],
+                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
             },
@@ -136,7 +136,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                 "id": 2,
                 "type": "runnable",
                 "data": {
-                    "id": ["tests", "unit_tests", "fake", "llm", "FakeListLLM"],
+                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
             },

@@ -1,19 +1,15 @@
-"""Fake Chat Model wrapper for testing purposes."""
+"""Fake ChatModel for testing purposes."""
 import asyncio
 import re
 import time
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union, cast
 
-from langchain_core.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-)
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import run_in_executor
 
