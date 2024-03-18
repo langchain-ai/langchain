@@ -22,7 +22,6 @@ EXPECT_ALL = [
     "CTranslate2",
     "CerebriumAI",
     "ChatGLM",
-    "ChatMlflow",
     "Clarifai",
     "Cohere",
     "Databricks",
@@ -97,17 +96,11 @@ EXPECT_ALL = [
     "VolcEngineMaasLLM",
     "WatsonxLLM",
     "SparkLLM",
-    "ChatDatabricks",
 ]
 
 
 def test_all_imports() -> None:
     """Simple test to make sure all things can be imported."""
-    from langchain_core.language_models import BaseChatModel
-
     for cls in llms.__all__:
-        if cls in ["ChatDatabricks", "ChatMlflow"]:
-            assert issubclass(getattr(llms, cls), BaseChatModel)
-        else:
-            assert issubclass(getattr(llms, cls), BaseLLM)
+        assert issubclass(getattr(llms, cls), BaseLLM)
     assert set(llms.__all__) == set(EXPECT_ALL)

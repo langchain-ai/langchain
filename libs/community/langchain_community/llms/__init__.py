@@ -659,8 +659,6 @@ def __getattr__(name: str) -> Any:
         return _import_ctranslate2()
     elif name == "Databricks":
         return _import_databricks()
-    elif name == "ChatDatabricks":
-        return _import_databricks_chat()
     elif name == "DeepInfra":
         return _import_deepinfra()
     elif name == "DeepSparse":
@@ -709,8 +707,6 @@ def __getattr__(name: str) -> Any:
         return _import_manifest()
     elif name == "Minimax":
         return _import_minimax()
-    elif name == "ChatMlflow":
-        return _import_mlflow_chat()
     elif name == "Mlflow":
         return _import_mlflow()
     elif name == "MlflowAIGateway":
@@ -832,9 +828,7 @@ __all__ = [
     "CTransformers",
     "CTranslate2",
     "CerebriumAI",
-    "ChatDatabricks",
     "ChatGLM",
-    "ChatMlflow",
     "Clarifai",
     "Cohere",
     "Databricks",
