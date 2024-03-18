@@ -28,7 +28,7 @@ import logging
 import uuid
 import warnings
 from abc import ABC
-from datetime import timedelta
+from datetime import timedelta, datetime
 from enum import Enum
 from functools import lru_cache, wraps
 from typing import (
@@ -47,7 +47,8 @@ from typing import (
     cast,
 )
 
-from sqlalchemy import Column, Integer, String, create_engine, delete, select
+from sqlalchemy import (Column, DateTime, Integer,
+                        String, create_engine, delete, select)
 from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
@@ -230,13 +231,19 @@ class FullLLMCache(Base):  # type: ignore
     prompt = Column(String, primary_key=True)
     llm = Column(String, primary_key=True)
     idx = Column(Integer, primary_key=True)
+    datetime = Column(DateTime)
     response = Column(String)
 
 
 class SQLAlchemyCache(BaseCache):
     """Cache that uses SQAlchemy as a backend."""
 
-    def __init__(self, engine: Engine, cache_schema: Type[FullLLMCache] = FullLLMCache):
+    def __init__(self,
+                 engine: Engine,
+                 cache_schema: Type[FullLLMCache] = FullLLMCache,
+                 lifetime_hours: int = -1,
+                 ):
+        self.lifetime_hours = lifetime_hours
         """Initialize by creating all tables."""
         self.engine = engine
         self.cache_schema = cache_schema
@@ -248,8 +255,14 @@ class SQLAlchemyCache(BaseCache):
             select(self.cache_schema.response)
             .where(self.cache_schema.prompt == prompt)  # type: ignore
             .where(self.cache_schema.llm == llm_string)
-            .order_by(self.cache_schema.idx)
         )
+        if self.lifetime_hours > 0:
+            # if a lifetime is set, we must consider it
+            stmt = stmt.where(
+                self.cache_schema.datetime
+                > datetime.utcnow() - timedelta(hours=self.lifetime_hours)
+            )
+        stmt = stmt.order_by(self.cache_schema.idx)
         with Session(self.engine) as session:
             rows = session.execute(stmt).fetchall()
             if rows:
@@ -270,7 +283,13 @@ class SQLAlchemyCache(BaseCache):
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update based on prompt and llm_string."""
         items = [
-            self.cache_schema(prompt=prompt, llm=llm_string, response=dumps(gen), idx=i)
+            self.cache_schema(
+                prompt=prompt,
+                llm=llm_string,
+                response=dumps(gen),
+                idx=i,
+                datetime=datetime.utcnow(),
+            )
             for i, gen in enumerate(return_val)
         ]
         with Session(self.engine) as session, session.begin():
