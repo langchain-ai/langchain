@@ -52,7 +52,7 @@ chat = ChatPremAI(project_id=8)
 
 ### Calling the Model
 
-Now you are all set. We can now start by interacting with our application. `ChatPrem` supports two methods `invoke` (which is the same as `generate`) and `stream`. 
+Now you are all set. We can now start by interacting with our application. `ChatPremAI` supports two methods `invoke` (which is the same as `generate`) and `stream`. 
 
 The first one will give us a static result. Whereas the second one will stream tokens one by one. Here's how you can generate chat-like completions. 
 
