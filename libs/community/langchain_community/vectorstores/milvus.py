@@ -641,7 +641,7 @@ class Milvus(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search against the query string.
