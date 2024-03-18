@@ -103,7 +103,7 @@ class StructuredChatAgent(Agent):
             *_memory_prompts,
             HumanMessagePromptTemplate.from_template(human_message_template),
         ]
-        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)  # type: ignore[arg-type]
 
     @classmethod
     def from_llm_and_tools(
