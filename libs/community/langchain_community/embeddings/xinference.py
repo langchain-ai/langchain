@@ -76,7 +76,7 @@ class XinferenceEmbeddings(Embeddings):
             from xinference.client import RESTfulClient
             restful_client_imported = True
         except ImportError:
-            pass  # 如果第一次尝试失败，则忽略异常，尝试第二种导入方式
+            pass
         
         if not restful_client_imported:
             try:
