@@ -12,6 +12,7 @@ _EXPECTED = [
     "AwaDB",
     "AzureSearch",
     "Bagel",
+    "BaiduVectorDB",
     "BESVectorStore",
     "BigQueryVectorSearch",
     "Cassandra",
