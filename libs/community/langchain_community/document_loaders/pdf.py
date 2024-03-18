@@ -116,9 +116,9 @@ class BasePDFLoader(BaseLoader, ABC):
                         % r.status_code
                     )
 
-                    with open(temp_pdf, mode="wb") as f:
-                        f.write(r.content)
-                    self.file_path = str(temp_pdf)
+                with open(temp_pdf, mode="wb") as f:
+                    f.write(r.content)
+                self.file_path = str(temp_pdf)
             elif not os.path.isfile(self.file_path):
                 raise ValueError(
                     "File path %s is not a valid file or url" % self.file_path
