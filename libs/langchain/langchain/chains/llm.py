@@ -41,13 +41,13 @@ class LLMChain(Chain):
         .. code-block:: python
 
             from langchain.chains import LLMChain
-            from langchain_community.llms import OpenAI
             from langchain_core.prompts import PromptTemplate
+            from langchain_openai.chat_models import ChatOpenAI
+
             prompt_template = "Tell me a {adjective} joke"
-            prompt = PromptTemplate(
-                input_variables=["adjective"], template=prompt_template
-            )
-            llm = LLMChain(llm=OpenAI(), prompt=prompt)
+            prompt = PromptTemplate.from_template("Tell me a {adjective} joke")
+            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+            llm_chain = LLMChain(llm=llm, prompt=prompt)
     """
 
     @classmethod

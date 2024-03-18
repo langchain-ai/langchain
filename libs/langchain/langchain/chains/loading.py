@@ -1,10 +1,10 @@
 """Functionality for loading chains."""
 import json
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Callable, Union
 
 import yaml
-from langchain_community.llms.loading import load_llm, load_llm_from_config
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.loading import (
     _load_output_parser,
     load_prompt,
@@ -33,15 +33,24 @@ from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
 
 
-def _load_llm_chain(config: dict, **kwargs: Any) -> LLMChain:
-    """Load LLM chain from config dict."""
+def _load_llm(
+    config: dict,
+    load_llm_from_config: Callable,
+) -> BaseLanguageModel:
     if "llm" in config:
         llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
     elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+        llm_config = _load_config(config.pop("llm_path"))
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
+    return load_llm_from_config(llm_config)
+
+
+def _load_llm_chain(
+    config: dict, load_llm_from_config: Callable, **kwargs: Any
+) -> LLMChain:
+    """Load LLM chain from config dict."""
+    llm = _load_llm(config, load_llm_from_config)
 
     if "prompt" in config:
         prompt_config = config.pop("prompt")
@@ -184,7 +193,9 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
     )
 
 
-def _load_llm_bash_chain(config: dict, **kwargs: Any) -> Any:
+def _load_llm_bash_chain(
+    config: dict, load_llm_from_config: Callable, **kwargs: Any
+) -> Any:
     from langchain_experimental.llm_bash.base import LLMBashChain
 
     llm_chain = None
@@ -194,13 +205,8 @@ def _load_llm_bash_chain(config: dict, **kwargs: Any) -> Any:
     elif "llm_chain_path" in config:
         llm_chain = load_chain(config.pop("llm_chain_path"))
     # llm attribute is deprecated in favor of llm_chain, here to support old configs
-    elif "llm" in config:
-        llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
-    # llm_path attribute is deprecated in favor of llm_chain_path,
-    # its to support old configs
-    elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+    elif "llm" or "llm_path" in config:
+        llm = _load_llm(config, load_llm_from_config)
     else:
         raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
@@ -214,12 +220,11 @@ def _load_llm_bash_chain(config: dict, **kwargs: Any) -> Any:
         return LLMBashChain(llm=llm, prompt=prompt, **config)
 
 
-def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:
-    if "llm" in config:
-        llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
-    elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+def _load_llm_checker_chain(
+    config: dict, load_llm_from_config: Callable, **kwargs: Any
+) -> LLMCheckerChain:
+    if "llm" in config or "llm_path" in config:
+        llm = _load_llm(config, load_llm_from_config)
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
     if "create_draft_answer_prompt" in config:
@@ -260,7 +265,9 @@ def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:
     )
 
 
-def _load_llm_math_chain(config: dict, **kwargs: Any) -> LLMMathChain:
+def _load_llm_math_chain(
+    config: dict, load_llm_from_config: Callable, **kwargs: Any
+) -> LLMMathChain:
     llm_chain = None
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
@@ -268,13 +275,8 @@ def _load_llm_math_chain(config: dict, **kwargs: Any) -> LLMMathChain:
     elif "llm_chain_path" in config:
         llm_chain = load_chain(config.pop("llm_chain_path"))
     # llm attribute is deprecated in favor of llm_chain, here to support old configs
-    elif "llm" in config:
-        llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
-    # llm_path attribute is deprecated in favor of llm_chain_path,
-    # its to support old configs
-    elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+    elif "llm" in config or "llm_path" in config:
+        llm = _load_llm(config, load_llm_from_config)
     else:
         raise ValueError("One of `llm_chain` or `llm_chain_path` must be present.")
     if "prompt" in config:
@@ -360,7 +362,9 @@ def _load_qa_with_sources_chain(config: dict, **kwargs: Any) -> QAWithSourcesCha
     return QAWithSourcesChain(combine_documents_chain=combine_documents_chain, **config)  # type: ignore[arg-type]
 
 
-def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
+def _load_sql_database_chain(
+    config: dict, load_llm_from_config: Callable, **kwargs: Any
+) -> Any:
     from langchain_experimental.sql import SQLDatabaseChain
 
     if "database" in kwargs:
@@ -371,11 +375,8 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
         llm_chain_config = config.pop("llm_chain")
         chain = load_chain_from_config(llm_chain_config)
         return SQLDatabaseChain(llm_chain=chain, database=database, **config)  # type: ignore[arg-type]
-    if "llm" in config:
-        llm_config = config.pop("llm")
-        llm = load_llm_from_config(llm_config)
-    elif "llm_path" in config:
-        llm = load_llm(config.pop("llm_path"))
+    if "llm" in config or "llm_path" in config:
+        llm = _load_llm(config, load_llm_from_config)
     else:
         raise ValueError("One of `llm` or `llm_path` must be present.")
     if "prompt" in config:
@@ -598,8 +599,7 @@ def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
         return _load_chain_from_file(path, **kwargs)
 
 
-def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
-    """Load chain from file."""
+def _load_config(file: Union[str, Path]) -> dict:
     # Convert file to Path object.
     if isinstance(file, str):
         file_path = Path(file)
@@ -614,6 +614,12 @@ def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
             config = yaml.safe_load(f)
     else:
         raise ValueError("File type must be json or yaml")
+    return config
+
+
+def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
+    """Load chain from file."""
+    config = _load_config(file)
 
     # Override default 'verbose' and 'memory' for the chain
     if "verbose" in kwargs:

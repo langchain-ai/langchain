@@ -1,11 +1,7 @@
-from typing import Any, Dict, List, Type, Union
+from __future__ import annotations
 
-from langchain_community.graphs import NetworkxEntityGraph
-from langchain_community.graphs.networkx_graph import (
-    KnowledgeTriple,
-    get_entities,
-    parse_triples,
-)
+from typing import Any, Dict, List, NamedTuple, Type, Union
+
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
@@ -19,18 +15,49 @@ from langchain.memory.prompt import (
 )
 from langchain.memory.utils import get_prompt_input_key
 
+_KG_TRIPLE_DELIMITER = "<|>"
+
+
+class KnowledgeTriple(NamedTuple):
+    """A triple in the graph."""
+
+    subject: str
+    predicate: str
+    object_: str
+
+    @classmethod
+    def from_string(cls, triple_string: str) -> "KnowledgeTriple":
+        """Create a KnowledgeTriple from a string."""
+        subject, predicate, object_ = triple_string.strip().split(", ")
+        subject = subject[1:]
+        object_ = object_[:-1]
+        return cls(subject, predicate, object_)
+
+
+def _kg_default_factory() -> Any:
+    raise ValueError(
+        "Must specify param `kg`. You can do so by installing langchain-community:\n\n"
+        "`pip install -U langchain-community` and running:\n\n```\n"
+        "from langchain_community.graphs import NetworkxEntityGraph\n\n"
+        "kg = NetworkxEntityGraph()\n"
+        "memory = ConversationKGMemory(kg=kg, ...)\n```"
+    )
+
 
 class ConversationKGMemory(BaseChatMemory):
     """Knowledge graph conversation memory.
 
-    Integrates with external knowledge graph to store and retrieve
-    information about knowledge triples in the conversation.
+    Requires `langchain` and `langchain-community` packages.
+
+    Integrates with external knowledge graph to store and retrieve information about
+        knowledge triples in the conversation.
     """
 
     k: int = 2
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
-    kg: NetworkxEntityGraph = Field(default_factory=NetworkxEntityGraph)
+    kg: Any = Field(default_factory=_kg_default_factory())
+    """Expect a langchain_community.graphs.NetworkxEntityGraph."""
     knowledge_extraction_prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT
     llm: BaseLanguageModel
@@ -93,7 +120,7 @@ class ConversationKGMemory(BaseChatMemory):
             history=buffer_string,
             input=input_string,
         )
-        return get_entities(output)
+        return _get_entities(output)
 
     def _get_current_entities(self, inputs: Dict[str, Any]) -> List[str]:
         """Get the current entities in the conversation."""
@@ -112,7 +139,7 @@ class ConversationKGMemory(BaseChatMemory):
             input=input_string,
             verbose=True,
         )
-        knowledge = parse_triples(output)
+        knowledge = _parse_triples(output)
         return knowledge
 
     def _get_and_update_kg(self, inputs: Dict[str, Any]) -> None:
@@ -131,3 +158,27 @@ class ConversationKGMemory(BaseChatMemory):
         """Clear memory contents."""
         super().clear()
         self.kg.clear()
+
+
+def _parse_triples(knowledge_str: str) -> List[KnowledgeTriple]:
+    """Parse knowledge triples from the knowledge string."""
+    knowledge_str = knowledge_str.strip()
+    if not knowledge_str or knowledge_str == "NONE":
+        return []
+    triple_strs = knowledge_str.split(_KG_TRIPLE_DELIMITER)
+    results = []
+    for triple_str in triple_strs:
+        try:
+            kg_triple = KnowledgeTriple.from_string(triple_str)
+        except ValueError:
+            continue
+        results.append(kg_triple)
+    return results
+
+
+def _get_entities(entity_str: str) -> List[str]:
+    """Extract entities from entity string."""
+    if entity_str.strip() == "NONE":
+        return []
+    else:
+        return [w.strip() for w in entity_str.split(",")]

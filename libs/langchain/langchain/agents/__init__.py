@@ -31,14 +31,6 @@ Agents select and use **Tools** and **Toolkits** for actions.
 from pathlib import Path
 from typing import Any
 
-from langchain_community.agent_toolkits import (
-    create_json_agent,
-    create_openapi_agent,
-    create_pbi_agent,
-    create_pbi_chat_agent,
-    create_spark_sql_agent,
-    create_sql_agent,
-)
 from langchain_core._api.path import as_import_path
 
 from langchain.agents.agent import (
@@ -91,6 +83,14 @@ DEPRECATED_CODE = [
     "create_spark_dataframe_agent",
     "create_xorbits_agent",
 ]
+DEPRECATED_COMMUNITY_CODE = [
+    "create_json_agent",
+    "create_openapi_agent",
+    "create_pbi_agent",
+    "create_pbi_chat_agent",
+    "create_spark_sql_agent",
+    "create_sql_agent",
+]
 
 
 def __getattr__(name: str) -> Any:
@@ -109,6 +109,16 @@ def __getattr__(name: str) -> Any:
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."
         )
+    if name in DEPRECATED_COMMUNITY_CODE:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.agent_toolkits import {name}`"
+        )
+
     raise AttributeError(f"{name} does not exist")
 
 
@@ -132,12 +142,6 @@ __all__ = [
     "StructuredChatAgent",
     "Tool",
     "ZeroShotAgent",
-    "create_json_agent",
-    "create_openapi_agent",
-    "create_pbi_agent",
-    "create_pbi_chat_agent",
-    "create_spark_sql_agent",
-    "create_sql_agent",
     "create_vectorstore_agent",
     "create_vectorstore_router_agent",
     "get_all_tool_names",

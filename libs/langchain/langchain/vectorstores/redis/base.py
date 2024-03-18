@@ -1,11 +1,17 @@
-from langchain_community.vectorstores.redis.base import (
-    Redis,
-    RedisVectorStoreRetriever,
-    check_index_exists,
-)
+from typing import Any
 
-__all__ = [
-    "check_index_exists",
-    "Redis",
-    "RedisVectorStoreRetriever",
-]
+DEPRECATED_IMPORTS = ["check_index_exists", "Redis", "RedisVectorStoreRetriever"]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.vectorstores.redis.base import {name}`"
+        )
+
+    raise AttributeError()

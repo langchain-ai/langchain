@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import logging
 from abc import ABC, abstractmethod
 from itertools import islice
-from typing import Any, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
+from urllib.parse import urlparse
 
-from langchain_community.utilities.redis import get_client
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
@@ -16,6 +18,9 @@ from langchain.memory.prompt import (
     ENTITY_SUMMARIZATION_PROMPT,
 )
 from langchain.memory.utils import get_prompt_input_key
+
+if TYPE_CHECKING:
+    from redis.client import Redis as RedisType
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +158,8 @@ class RedisEntityStore(BaseEntityStore):
 
     Entities get a TTL of 1 day by default, and
     that TTL is extended by 3 days every time the entity is read back.
+
+    Must have `redis` and `langchain-community` installed.
     """
 
     redis_client: Any
@@ -180,9 +187,8 @@ class RedisEntityStore(BaseEntityStore):
             )
 
         super().__init__(*args, **kwargs)
-
         try:
-            self.redis_client = get_client(redis_url=url, decode_responses=True)
+            self.redis_client = self._get_client(redis_url=url, decode_responses=True)
         except redis.exceptions.ConnectionError as error:
             logger.error(error)
 
@@ -190,6 +196,42 @@ class RedisEntityStore(BaseEntityStore):
         self.key_prefix = key_prefix
         self.ttl = ttl
         self.recall_ttl = recall_ttl or ttl
+
+    @staticmethod
+    def _get_client(redis_url: str, **kwargs: Any) -> RedisType:
+        try:
+            import redis
+        except ImportError:
+            raise ImportError(
+                "Could not import redis python package. "
+                "Please install it with `pip install redis>=4.1.0`."
+            )
+
+        # check if normal redis:// or redis+sentinel:// url
+        if redis_url.startswith("redis+sentinel"):
+            redis_client = _redis_sentinel_client(redis_url, **kwargs)
+        elif redis_url.startswith(
+            "rediss+sentinel"
+        ):  # sentinel with TLS support enables
+            kwargs["ssl"] = True
+            if "ssl_cert_reqs" not in kwargs:
+                kwargs["ssl_cert_reqs"] = "none"
+            redis_client = _redis_sentinel_client(redis_url, **kwargs)
+        else:
+            # connect to redis server from url, reconnect with cluster client if needed
+            redis_client = redis.from_url(redis_url, **kwargs)
+
+            try:
+                cluster_info = redis_client.info("cluster")
+                cluster_enabled = cluster_info["cluster_enabled"] == 1
+            except redis.exceptions.RedisError:
+                cluster_enabled = False
+            if cluster_enabled:
+                from redis.cluster import RedisCluster
+
+                redis_client.close()
+                return RedisCluster.from_url(redis_url, **kwargs)
+        return redis_client
 
     @property
     def full_key_prefix(self) -> str:
@@ -481,3 +523,55 @@ class ConversationEntityMemory(BaseChatMemory):
         self.chat_memory.clear()
         self.entity_cache.clear()
         self.entity_store.clear()
+
+
+def _redis_sentinel_client(redis_url: str, **kwargs: Any) -> RedisType:
+    import redis
+
+    parsed_url = urlparse(redis_url)
+    # sentinel needs list with (host, port) tuple, use default port if none available
+    sentinel_list = [(parsed_url.hostname or "localhost", parsed_url.port or 26379)]
+    if parsed_url.path:
+        # "/mymaster/0" first part is service name, optional second part is db number
+        path_parts = parsed_url.path.split("/")
+        service_name = path_parts[1] or "mymaster"
+        if len(path_parts) > 2:
+            kwargs["db"] = path_parts[2]
+    else:
+        service_name = "mymaster"
+
+    sentinel_args = {}
+    if parsed_url.password:
+        sentinel_args["password"] = parsed_url.password
+        kwargs["password"] = parsed_url.password
+    if parsed_url.username:
+        sentinel_args["username"] = parsed_url.username
+        kwargs["username"] = parsed_url.username
+
+    # check for all SSL related properties and copy them into sentinel_kwargs too,
+    # add client_name also
+    for arg in kwargs:
+        if arg.startswith("ssl") or arg == "client_name":
+            sentinel_args[arg] = kwargs[arg]
+
+    # sentinel user/pass is part of sentinel_kwargs, user/pass for redis server
+    # connection as direct parameter in kwargs
+    sentinel_client = redis.sentinel.Sentinel(
+        sentinel_list, sentinel_kwargs=sentinel_args, **kwargs
+    )
+
+    # redis server might have password but not sentinel - fetch this error and try
+    # again without pass, everything else cannot be handled here -> user needed
+    try:
+        sentinel_client.execute_command("ping")
+    except redis.exceptions.AuthenticationError as ae:
+        if "no password is set" in ae.args[0]:
+            logger.warning(
+                "Redis sentinel connection configured with password but Sentinel \
+answered NO PASSWORD NEEDED - Please check Sentinel configuration"
+            )
+            sentinel_client = redis.sentinel.Sentinel(sentinel_list, **kwargs)
+        else:
+            raise ae
+
+    return sentinel_client.master_for(service_name)

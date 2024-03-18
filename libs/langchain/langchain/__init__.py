@@ -40,6 +40,17 @@ def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
 surface_langchain_deprecation_warnings()
 
 
+def _raise_community_deprecation_error(name: str, new_module: str) -> None:
+    raise ImportError(
+        f"{name} has been moved to the langchain-community package. "
+        f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+        f"information.\n\nTo use it install langchain-community:\n\n"
+        f"`pip install -U langchain-community`\n\n"
+        f"then import with:\n\n"
+        f"`from {new_module} import {name}`"
+    )
+
+
 def __getattr__(name: str) -> Any:
     if name == "MRKLChain":
         from langchain.agents import MRKLChain
@@ -124,112 +135,39 @@ def __getattr__(name: str) -> Any:
 
         return Wikipedia
     elif name == "Anthropic":
-        from langchain_community.llms import Anthropic
-
-        _warn_on_import(name, replacement="langchain_community.llms.Anthropic")
-
-        return Anthropic
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "Banana":
-        from langchain_community.llms import Banana
-
-        _warn_on_import(name, replacement="langchain_community.llms.Banana")
-
-        return Banana
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "CerebriumAI":
-        from langchain_community.llms import CerebriumAI
-
-        _warn_on_import(name, replacement="langchain_community.llms.CerebriumAI")
-
-        return CerebriumAI
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "Cohere":
-        from langchain_community.llms import Cohere
-
-        _warn_on_import(name, replacement="langchain_community.llms.Cohere")
-
-        return Cohere
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "ForefrontAI":
-        from langchain_community.llms import ForefrontAI
-
-        _warn_on_import(name, replacement="langchain_community.llms.ForefrontAI")
-
-        return ForefrontAI
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "GooseAI":
-        from langchain_community.llms import GooseAI
-
-        _warn_on_import(name, replacement="langchain_community.llms.GooseAI")
-
-        return GooseAI
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "HuggingFaceHub":
-        from langchain_community.llms import HuggingFaceHub
-
-        _warn_on_import(name, replacement="langchain_community.llms.HuggingFaceHub")
-
-        return HuggingFaceHub
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "HuggingFaceTextGenInference":
-        from langchain_community.llms import HuggingFaceTextGenInference
-
-        _warn_on_import(
-            name, replacement="langchain_community.llms.HuggingFaceTextGenInference"
-        )
-
-        return HuggingFaceTextGenInference
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "LlamaCpp":
-        from langchain_community.llms import LlamaCpp
-
-        _warn_on_import(name, replacement="langchain_community.llms.LlamaCpp")
-
-        return LlamaCpp
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "Modal":
-        from langchain_community.llms import Modal
-
-        _warn_on_import(name, replacement="langchain_community.llms.Modal")
-
-        return Modal
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "OpenAI":
-        from langchain_community.llms import OpenAI
-
-        _warn_on_import(name, replacement="langchain_community.llms.OpenAI")
-
-        return OpenAI
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "Petals":
-        from langchain_community.llms import Petals
-
-        _warn_on_import(name, replacement="langchain_community.llms.Petals")
-
-        return Petals
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "PipelineAI":
-        from langchain_community.llms import PipelineAI
-
-        _warn_on_import(name, replacement="langchain_community.llms.PipelineAI")
-
-        return PipelineAI
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "SagemakerEndpoint":
-        from langchain_community.llms import SagemakerEndpoint
-
-        _warn_on_import(name, replacement="langchain_community.llms.SagemakerEndpoint")
-
-        return SagemakerEndpoint
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "StochasticAI":
-        from langchain_community.llms import StochasticAI
-
-        _warn_on_import(name, replacement="langchain_community.llms.StochasticAI")
-
-        return StochasticAI
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "Writer":
-        from langchain_community.llms import Writer
-
-        _warn_on_import(name, replacement="langchain_community.llms.Writer")
-
-        return Writer
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "HuggingFacePipeline":
-        from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
-
-        _warn_on_import(
-            name,
-            replacement="langchain_community.llms.huggingface_pipeline.HuggingFacePipeline",
-        )
-
-        return HuggingFacePipeline
+        _raise_community_deprecation_error(name, "langchain_community.llms")
     elif name == "FewShotPromptTemplate":
         from langchain_core.prompts import FewShotPromptTemplate
 
@@ -265,90 +203,28 @@ def __getattr__(name: str) -> Any:
 
         return ArxivAPIWrapper
     elif name == "GoldenQueryAPIWrapper":
-        from langchain_community.utilities import GoldenQueryAPIWrapper
-
-        _warn_on_import(
-            name, replacement="langchain_community.utilities.GoldenQueryAPIWrapper"
-        )
-
-        return GoldenQueryAPIWrapper
+        _raise_community_deprecation_error(name, "langchain_community.utilities")
     elif name == "GoogleSearchAPIWrapper":
-        from langchain_community.utilities import GoogleSearchAPIWrapper
-
-        _warn_on_import(
-            name, replacement="langchain_community.utilities.GoogleSearchAPIWrapper"
-        )
-
-        return GoogleSearchAPIWrapper
+        _raise_community_deprecation_error(name, "langchain_community.utilities")
     elif name == "GoogleSerperAPIWrapper":
-        from langchain_community.utilities import GoogleSerperAPIWrapper
-
-        _warn_on_import(
-            name, replacement="langchain_community.utilities.GoogleSerperAPIWrapper"
-        )
-
-        return GoogleSerperAPIWrapper
+        _raise_community_deprecation_error(name, "langchain_community.utilities")
     elif name == "PowerBIDataset":
-        from langchain_community.utilities import PowerBIDataset
-
-        _warn_on_import(
-            name, replacement="langchain_community.utilities.PowerBIDataset"
-        )
-
-        return PowerBIDataset
+        _raise_community_deprecation_error(name, "langchain_community.utilities")
     elif name == "SearxSearchWrapper":
-        from langchain_community.utilities import SearxSearchWrapper
-
-        _warn_on_import(
-            name, replacement="langchain_community.utilities.SearxSearchWrapper"
-        )
-
-        return SearxSearchWrapper
+        _raise_community_deprecation_error(name, "langchain_community.utilities")
     elif name == "WikipediaAPIWrapper":
-        from langchain_community.utilities import WikipediaAPIWrapper
-
-        _warn_on_import(
-            name, replacement="langchain_community.utilities.WikipediaAPIWrapper"
-        )
-
-        return WikipediaAPIWrapper
+        _raise_community_deprecation_error(name, "langchain_community.utilities")
     elif name == "WolframAlphaAPIWrapper":
-        from langchain_community.utilities import WolframAlphaAPIWrapper
-
-        _warn_on_import(
-            name, replacement="langchain_community.utilities.WolframAlphaAPIWrapper"
-        )
-
-        return WolframAlphaAPIWrapper
+        _raise_community_deprecation_error(name, "langchain_community.utilities")
     elif name == "SQLDatabase":
-        from langchain_community.utilities import SQLDatabase
-
-        _warn_on_import(name, replacement="langchain_community.utilities.SQLDatabase")
-
-        return SQLDatabase
+        _raise_community_deprecation_error(name, "langchain_community.utilities")
     elif name == "FAISS":
-        from langchain_community.vectorstores import FAISS
-
-        _warn_on_import(name, replacement="langchain_community.vectorstores.FAISS")
-
-        return FAISS
+        _raise_community_deprecation_error(name, "langchain_community.vectorstores")
     elif name == "ElasticVectorSearch":
-        from langchain_community.vectorstores import ElasticVectorSearch
-
-        _warn_on_import(
-            name, replacement="langchain_community.vectorstores.ElasticVectorSearch"
-        )
-
-        return ElasticVectorSearch
+        _raise_community_deprecation_error(name, "langchain_community.vectorstores")
     # For backwards compatibility
     elif name == "SerpAPIChain" or name == "SerpAPIWrapper":
-        from langchain_community.utilities import SerpAPIWrapper
-
-        _warn_on_import(
-            name, replacement="langchain_community.utilities.SerpAPIWrapper"
-        )
-
-        return SerpAPIWrapper
+        _raise_community_deprecation_error(name, "langchain_community.utilities")
     elif name == "verbose":
         from langchain.globals import _verbose
 
@@ -390,47 +266,15 @@ __all__ = [
     "LLMChain",
     "LLMCheckerChain",
     "LLMMathChain",
-    "ArxivAPIWrapper",
-    "GoldenQueryAPIWrapper",
     "SelfAskWithSearchChain",
-    "SerpAPIWrapper",
-    "SerpAPIChain",
-    "SearxSearchWrapper",
-    "GoogleSearchAPIWrapper",
-    "GoogleSerperAPIWrapper",
-    "WolframAlphaAPIWrapper",
-    "WikipediaAPIWrapper",
-    "Anthropic",
-    "Banana",
-    "CerebriumAI",
-    "Cohere",
-    "ForefrontAI",
-    "GooseAI",
-    "Modal",
-    "OpenAI",
-    "Petals",
-    "PipelineAI",
-    "StochasticAI",
-    "Writer",
     "BasePromptTemplate",
     "Prompt",
     "FewShotPromptTemplate",
     "PromptTemplate",
     "ReActChain",
-    "Wikipedia",
-    "HuggingFaceHub",
-    "SagemakerEndpoint",
-    "HuggingFacePipeline",
-    "SQLDatabase",
-    "PowerBIDataset",
-    "FAISS",
     "MRKLChain",
     "VectorDBQA",
-    "ElasticVectorSearch",
-    "InMemoryDocstore",
     "ConversationChain",
     "VectorDBQAWithSourcesChain",
     "QAWithSourcesChain",
-    "LlamaCpp",
-    "HuggingFaceTextGenInference",
 ]

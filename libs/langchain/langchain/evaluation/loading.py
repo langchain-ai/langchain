@@ -1,7 +1,6 @@
 """Loading datasets and evaluators."""
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
-from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain.chains.base import Chain
@@ -130,18 +129,21 @@ def load_evaluator(
         )
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
-        try:
-            llm = llm or ChatOpenAI(  # type: ignore[call-arg]
-                model="gpt-4", model_kwargs={"seed": 42}, temperature=0
-            )
-        except Exception as e:
-            raise ValueError(
-                f"Evaluation with the {evaluator_cls} requires a "
-                "language model to function."
-                " Failed to create the default 'gpt-4' model."
-                " Please manually provide an evaluation LLM"
-                " or check your openai credentials."
-            ) from e
+        if not llm:
+            try:
+                from langchain_openai import ChatOpenAI
+
+                llm = ChatOpenAI(  # type: ignore[call-arg]
+                    model="gpt-4", model_kwargs={"seed": 42}, temperature=0
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Evaluation with the {evaluator_cls} requires a "
+                    "language model to function."
+                    " Failed to create the default 'gpt-4' model."
+                    " Please manually provide an evaluation LLM"
+                    " or check your openai credentials."
+                ) from e
         return evaluator_cls.from_llm(llm=llm, **kwargs)
     else:
         return evaluator_cls(**kwargs)

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from langchain_community.chat_message_histories import ZepChatMessageHistory
-
 from langchain.memory import ConversationBufferMemory
 
 
@@ -13,22 +11,32 @@ class ZepMemory(ConversationBufferMemory):
     The number of messages returned by Zep and when the Zep server summarizes chat
     histories is configurable. See the Zep documentation for more details.
 
+    Requires `langchain` and `langchain-community` packages.
+
     Documentation: https://docs.getzep.com
 
     Example:
         .. code-block:: python
 
-        memory = ZepMemory(
-                    session_id=session_id,  # Identifies your user or a user's session
-                    url=ZEP_API_URL,        # Your Zep server's URL
-                    api_key=<your_api_key>, # Optional
-                    memory_key="history",   # Ensure this matches the key used in
-                                            # chain's prompt template
-                    return_messages=True,   # Does your prompt template expect a string
-                                            # or a list of Messages?
-                )
-        chain = LLMChain(memory=memory,...) # Configure your chain to use the ZepMemory
-                                              instance
+            !pip install -U langchain langchain-community
+
+            from langchain_community.chat_message_histories import ZepChatMessageHistory
+            from langchain.memory.zep_memory import ZepMemory
+
+            msg_history = ZepChatMessageHistory(
+                session_id=session_id,  # Identifies your user or a user's session
+                url=ZEP_API_URL,        # Your Zep server's URL
+                api_key=<your_api_key>, # Optional
+            )
+            memory = ZepMemory(
+                chat_memory=msg_history,
+                memory_key="history",   # Ensure this matches the key used in
+                                        # chain's prompt template
+                return_messages=True,   # Does your prompt template expect a string
+                                        # or a list of Messages?
+            )
+            chain = LLMChain(memory=memory,...) # Configure your chain to use the ZepMemory
+                                                  instance
 
 
     Note:
@@ -49,13 +57,14 @@ class ZepMemory(ConversationBufferMemory):
     For more information on the zep-python package, see:
     https://github.com/getzep/zep-python
 
-    """
+    """  # noqa: E501
 
-    chat_memory: ZepChatMessageHistory
+    chat_memory: Any
+    """Expect ZepChatMessageHistory."""
 
     def __init__(
         self,
-        session_id: str,
+        session_id: str = "",
         url: str = "http://localhost:8000",
         api_key: Optional[str] = None,
         output_key: Optional[str] = None,
@@ -64,14 +73,15 @@ class ZepMemory(ConversationBufferMemory):
         human_prefix: str = "Human",
         ai_prefix: str = "AI",
         memory_key: str = "history",
+        *,
+        chat_memory: Any = None,
     ):
         """Initialize ZepMemory.
 
         Args:
-            session_id (str): Identifies your user or a user's session
-            url (str, optional): Your Zep server's URL. Defaults to
-                                 "http://localhost:8000".
-            api_key (Optional[str], optional): Your Zep API key. Defaults to None.
+            chat_memory:
+                langchain_community.chat_message_histories.ZepChatMessageHistory to use
+                for storing messages. Required.
             output_key (Optional[str], optional): The key to use for the output message.
                                               Defaults to None.
             input_key (Optional[str], optional): The key to use for the input message.
@@ -88,19 +98,26 @@ class ZepMemory(ConversationBufferMemory):
                                         Ensure that this matches the key used in
                                         chain's prompt template.
         """
-        chat_message_history = ZepChatMessageHistory(
-            session_id=session_id,
-            url=url,
-            api_key=api_key,
-        )
+        if chat_memory is None:
+            raise ValueError(
+                "chat_memory must be specified. You can do this by installing"
+                " langchain-community:\n\n`pip install -U langchain-community` and"
+                " running:\n\n```\n"
+                "from langchain.memory.zep_memory import ZepMemory\n"
+                "from langchain_community.chat_message_histories import"
+                " ZepChatMessageHistory\n\n"
+                "chat_memory = ZepChatMessageHistory(session_id=..., url=..., api_key=...)\n"
+                "memory = ZepMemory(chat_memory=chat_memory, ...)\n```"
+            )  # noqa: E501
+
         super().__init__(
-            chat_memory=chat_message_history,
             output_key=output_key,
             input_key=input_key,
             return_messages=return_messages,
             human_prefix=human_prefix,
             ai_prefix=ai_prefix,
             memory_key=memory_key,
+            chat_memory=chat_memory,
         )
 
     def save_context(

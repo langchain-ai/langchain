@@ -1,24 +1,6 @@
-from langchain_community.agent_toolkits.openapi.planner_prompt import (
-    API_CONTROLLER_PROMPT,
-    API_CONTROLLER_TOOL_DESCRIPTION,
-    API_CONTROLLER_TOOL_NAME,
-    API_ORCHESTRATOR_PROMPT,
-    API_PLANNER_PROMPT,
-    API_PLANNER_TOOL_DESCRIPTION,
-    API_PLANNER_TOOL_NAME,
-    PARSING_DELETE_PROMPT,
-    PARSING_GET_PROMPT,
-    PARSING_PATCH_PROMPT,
-    PARSING_POST_PROMPT,
-    PARSING_PUT_PROMPT,
-    REQUESTS_DELETE_TOOL_DESCRIPTION,
-    REQUESTS_GET_TOOL_DESCRIPTION,
-    REQUESTS_PATCH_TOOL_DESCRIPTION,
-    REQUESTS_POST_TOOL_DESCRIPTION,
-    REQUESTS_PUT_TOOL_DESCRIPTION,
-)
+from typing import Any
 
-__all__ = [
+DEPRECATED_IMPORTS = [
     "API_PLANNER_PROMPT",
     "API_PLANNER_TOOL_NAME",
     "API_PLANNER_TOOL_DESCRIPTION",
@@ -37,3 +19,17 @@ __all__ = [
     "REQUESTS_DELETE_TOOL_DESCRIPTION",
     "PARSING_DELETE_PROMPT",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.agent_toolkits.openapi.planner_prompt import {name}`"
+        )
+
+    raise AttributeError()

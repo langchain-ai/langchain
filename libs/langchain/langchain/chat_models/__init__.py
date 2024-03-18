@@ -1,46 +1,10 @@
-"""**Chat Models** are a variation on language models.
+"""DEPRECATED: This module has been moved to the langchain-community package.
 
-While Chat Models use language models under the hood, the interface they expose
-is a bit different. Rather than expose a "text in, text out" API, they expose
-an interface where "chat messages" are the inputs and outputs.
+**Chat Models** are a variation on language models.
+"""
+from typing import Any
 
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseLanguageModel --> BaseChatModel --> <name>  # Examples: ChatOpenAI, ChatGooglePalm
-
-**Main helpers:**
-
-.. code-block::
-
-    AIMessage, BaseMessage, HumanMessage
-"""  # noqa: E501
-import warnings
-
-from langchain_core._api import LangChainDeprecationWarning
-
-from langchain.utils.interactive_env import is_interactive_env
-
-
-def __getattr__(name: str) -> None:
-    from langchain_community import chat_models
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing chat models from langchain is deprecated. Importing from "
-            "langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.chat_models import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(chat_models, name)
-
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "ChatOpenAI",
     "BedrockChat",
     "AzureChatOpenAI",
@@ -72,3 +36,17 @@ __all__ = [
     "GigaChat",
     "VolcEngineMaasChat",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.chat_models import {name}`"
+        )
+
+    raise AttributeError()

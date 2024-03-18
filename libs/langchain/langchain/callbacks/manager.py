@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from langchain_community.callbacks.manager import (
-    get_openai_callback,
-    wandb_tracing_enabled,
-)
+from typing import Any
+
 from langchain_core.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainGroup,
@@ -35,6 +33,26 @@ from langchain_core.tracers.context import (
 )
 from langchain_core.utils.env import env_var_is_set
 
+DEPRECATED_IMPORTS = [
+    "get_openai_callback",
+    "wandb_tracing_enabled",
+]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.callbacks.manager import {name}`"
+        )
+
+    raise AttributeError()
+
+
 __all__ = [
     "BaseRunManager",
     "RunManager",
@@ -62,6 +80,4 @@ __all__ = [
     "ahandle_event",
     "Callbacks",
     "env_var_is_set",
-    "get_openai_callback",
-    "wandb_tracing_enabled",
 ]

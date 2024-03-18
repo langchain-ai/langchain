@@ -1,49 +1,16 @@
-"""**Embedding models**  are wrappers around embedding models
-from different APIs and services.
+"""DEPRECATED: This module has been moved to the langchain-community package.
 
-**Embedding models** can be LLMs or not.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
-"""
+**Embedding models**  are wrappers around embedding models"""
 
 
 import logging
-import warnings
 from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
-
 from langchain.embeddings.cache import CacheBackedEmbeddings
-from langchain.utils.interactive_env import is_interactive_env
 
-
-def __getattr__(name: str) -> Any:
-    from langchain_community import embeddings
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing embeddings from langchain is deprecated. Importing from "
-            "langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.embeddings import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(embeddings, name)
-
-
-logger = logging.getLogger(__name__)
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "OpenAIEmbeddings",
     "AzureOpenAIEmbeddings",
-    "CacheBackedEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "DatabricksEmbeddings",
@@ -97,6 +64,22 @@ __all__ = [
 ]
 
 
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.embeddings import {name}`"
+        )
+    raise AttributeError()
+
+
+logger = logging.getLogger(__name__)
+
+
 # TODO: this is in here to maintain backwards compatibility
 class HypotheticalDocumentEmbedder:
     def __init__(self, *args: Any, **kwargs: Any):
@@ -117,3 +100,8 @@ class HypotheticalDocumentEmbedder:
         from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
         return H.from_llm(*args, **kwargs)
+
+
+__all__ = [
+    "CacheBackedEmbeddings",
+]

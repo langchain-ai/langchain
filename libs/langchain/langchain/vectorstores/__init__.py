@@ -1,50 +1,12 @@
-"""**Vector store** stores embedded data and performs vector search.
+"""DEPRECATED: This module has been moved to the langchain-community package.
 
-One of the most common ways to store and search over unstructured data is to
-embed it and store the resulting embedding vectors, and then query the store
-and retrieve the data that are 'most similar' to the embedded query.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    VectorStore --> <name>  # Examples: Annoy, FAISS, Milvus
-
-    BaseRetriever --> VectorStoreRetriever --> <name>Retriever  # Example: VespaRetriever
-
-**Main helpers:**
-
-.. code-block::
-
-    Embeddings, Document
-"""  # noqa: E501
-import warnings
+**Vector store** stores embedded data and performs vector search.
+"""
 from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.vectorstores import VectorStore
 
-from langchain.utils.interactive_env import is_interactive_env
-
-
-def __getattr__(name: str) -> Any:
-    from langchain_community import vectorstores
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing vector stores from langchain is deprecated. Importing from "
-            "langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.vectorstores import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(vectorstores, name)
-
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
@@ -112,5 +74,22 @@ __all__ = [
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
+]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.vectorstores import {name}`"
+        )
+    raise AttributeError()
+
+
+__all__ = [
     "VectorStore",
 ]

@@ -37,9 +37,9 @@ def create_retrieval_chain(
     Example:
         .. code-block:: python
 
-            # pip install -U langchain langchain-community
+            # pip install -U langchain langchain-openai langchainhub
 
-            from langchain_community.chat_models import ChatOpenAI
+            from langchain_openai import ChatOpenAI
             from langchain.chains.combine_documents import create_stuff_documents_chain
             from langchain.chains import create_retrieval_chain
             from langchain import hub

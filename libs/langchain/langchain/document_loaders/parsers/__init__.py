@@ -1,17 +1,6 @@
-from langchain_community.document_loaders.parsers.audio import OpenAIWhisperParser
-from langchain_community.document_loaders.parsers.docai import DocAIParser
-from langchain_community.document_loaders.parsers.grobid import GrobidParser
-from langchain_community.document_loaders.parsers.html import BS4HTMLParser
-from langchain_community.document_loaders.parsers.language import LanguageParser
-from langchain_community.document_loaders.parsers.pdf import (
-    PDFMinerParser,
-    PDFPlumberParser,
-    PyMuPDFParser,
-    PyPDFium2Parser,
-    PyPDFParser,
-)
+from typing import Any
 
-__all__ = [
+DEPRECATED_IMPORTS = [
     "BS4HTMLParser",
     "DocAIParser",
     "GrobidParser",
@@ -23,3 +12,17 @@ __all__ = [
     "PyPDFium2Parser",
     "PyPDFParser",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.document_loaders.parsers import {name}`"
+        )
+
+    raise AttributeError()

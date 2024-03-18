@@ -1,11 +1,9 @@
+from __future__ import annotations
+
 import logging
 import re
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from langchain_community.document_loaders import AsyncHtmlLoader
-from langchain_community.document_transformers import Html2TextTransformer
-from langchain_community.llms import LlamaCpp
-from langchain_community.utilities import GoogleSearchAPIWrapper
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -20,7 +18,6 @@ from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 
 from langchain.chains import LLMChain
-from langchain.chains.prompt_selector import ConditionalPromptSelector
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +63,7 @@ class WebResearchRetriever(BaseRetriever):
         ..., description="Vector store for storing web pages"
     )
     llm_chain: LLMChain
-    search: GoogleSearchAPIWrapper = Field(..., description="Google Search API Wrapper")
+    search: Any = Field(..., description="Google Search API Wrapper")
     num_search_results: int = Field(1, description="Number of pages per Google search")
     text_splitter: TextSplitter = Field(
         RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=50),
@@ -75,18 +72,27 @@ class WebResearchRetriever(BaseRetriever):
     url_database: List[str] = Field(
         default_factory=list, description="List of processed URLs"
     )
+    loader: Any = None
+    """
+    AsyncHtmlLoader(new_urls, ignore_load_errors=True)
+    """
+    transformer: Any = None
+    """
+    Html2TextTransformer()
+    """
 
     @classmethod
     def from_llm(
         cls,
         vectorstore: VectorStore,
         llm: BaseLLM,
-        search: GoogleSearchAPIWrapper,
+        search: Any,
         prompt: Optional[BasePromptTemplate] = None,
         num_search_results: int = 1,
         text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
             chunk_size=1500, chunk_overlap=150
         ),
+        **kwargs: Any,
     ) -> "WebResearchRetriever":
         """Initialize from llm using default template.
 
@@ -102,15 +108,7 @@ class WebResearchRetriever(BaseRetriever):
             WebResearchRetriever
         """
 
-        if not prompt:
-            QUESTION_PROMPT_SELECTOR = ConditionalPromptSelector(
-                default_prompt=DEFAULT_SEARCH_PROMPT,
-                conditionals=[
-                    (lambda llm: isinstance(llm, LlamaCpp), DEFAULT_LLAMA_SEARCH_PROMPT)
-                ],
-            )
-            prompt = QUESTION_PROMPT_SELECTOR.get_prompt(llm)
-
+        prompt = prompt or DEFAULT_SEARCH_PROMPT
         # Use chat model prompt
         llm_chain = LLMChain(
             llm=llm,
@@ -124,6 +122,7 @@ class WebResearchRetriever(BaseRetriever):
             search=search,
             num_search_results=num_search_results,
             text_splitter=text_splitter,
+            **kwargs,
         )
 
     def clean_search_query(self, query: str) -> str:
@@ -190,12 +189,11 @@ class WebResearchRetriever(BaseRetriever):
 
         logger.info(f"New URLs to load: {new_urls}")
         # Load, split, and add new urls to vectorstore
-        if new_urls:
-            loader = AsyncHtmlLoader(new_urls, ignore_load_errors=True)
-            html2text = Html2TextTransformer()
+        if new_urls and self.loader:
             logger.info("Indexing new urls...")
-            docs = loader.load()
-            docs = list(html2text.transform_documents(docs))
+            docs = self.loader.load()
+            if self.transformer:
+                docs = list(self.transformer.transform_documents(docs))
             docs = self.text_splitter.split_documents(docs)
             self.vectorstore.add_documents(docs)
             self.url_database.extend(new_urls)

@@ -1,6 +1,17 @@
-from langchain_community.vectorstores.clickhouse import (
-    Clickhouse,
-    ClickhouseSettings,
-)
+from typing import Any
 
-__all__ = ["ClickhouseSettings", "Clickhouse"]
+DEPRECATED_IMPORTS = ["ClickhouseSettings", "Clickhouse"]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.vectorstores.clickhouse import {name}`"
+        )
+
+    raise AttributeError()

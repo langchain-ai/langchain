@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_community.utilities.requests import TextRequestsWrapper
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 
@@ -13,6 +12,23 @@ from langchain.chains.base import Chain
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"  # noqa: E501
 }
+
+
+def _requests_wrapper_default_factory() -> Any:
+    replacement = """
+from langchain_community.utilities.requests import TextRequestsWrapper
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
+}
+requests_wrapper = TextRequestsWrapper(headers=headers)
+chain = LLMRequestsChain(requests_wrapper=requests_wrapper, ...)
+"""  # noqa: E501
+    raise ValueError(
+        "Must specify requests_wrapper. You can do this by installing "
+        "langchain-community:\n\n`pip install -U langchain-community`\n\nand running\n"
+        f"\n```\n{replacement}```"
+    )
 
 
 class LLMRequestsChain(Chain):
@@ -28,8 +44,8 @@ class LLMRequestsChain(Chain):
     """
 
     llm_chain: LLMChain
-    requests_wrapper: TextRequestsWrapper = Field(
-        default_factory=lambda: TextRequestsWrapper(headers=DEFAULT_HEADERS),
+    requests_wrapper: Any = Field(
+        default_factory=_requests_wrapper_default_factory,
         exclude=True,
     )
     text_length: int = 8000

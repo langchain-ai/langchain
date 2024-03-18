@@ -1,45 +1,11 @@
-"""**Document Transformers** are classes to transform Documents.
+"""DEPRECATED: This module has been moved to the langchain-community package.
 
-**Document Transformers** usually used to transform a lot of Documents in a single run.
+**Document Transformers** are classes to transform Documents.
 
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseDocumentTransformer --> <name>  # Examples: DoctranQATransformer, DoctranTextTranslator
-
-**Main helpers:**
-
-.. code-block::
-
-    Document
-"""  # noqa: E501
-import warnings
+"""
 from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
-
-from langchain.utils.interactive_env import is_interactive_env
-
-
-def __getattr__(name: str) -> Any:
-    from langchain_community import document_transformers
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing document transformers from langchain is deprecated. Importing "
-            "from langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.document_transformers import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(document_transformers, name)
-
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "BeautifulSoupTransformer",
     "DoctranQATransformer",
     "DoctranTextTranslator",
@@ -53,3 +19,16 @@ __all__ = [
     "OpenAIMetadataTagger",
     "Html2TextTransformer",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.document_transformers import {name}`"
+        )
+    raise AttributeError()

@@ -1,25 +1,7 @@
-"""**Document Loaders**  are classes to load Documents.
+"""DEPRECATED: This module has been moved to the langchain-community package.
 
-**Document Loaders** are usually used to load a lot of Documents in a single run.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseLoader --> <name>Loader  # Examples: TextLoader, UnstructuredFileLoader
-
-**Main helpers:**
-
-.. code-block::
-
-    Document, <name>TextSplitter
-"""
-import warnings
+**Document Loaders**  are classes to load Documents."""
 from typing import Any
-
-from langchain_core._api import LangChainDeprecationWarning
-
-from langchain.utils.interactive_env import is_interactive_env
 
 # For backwards compatibility
 _old_to_new_name = {
@@ -27,31 +9,7 @@ _old_to_new_name = {
     "TelegramChatLoader": "TelegramChatFileLoader",
 }
 
-
-def __getattr__(name: str) -> Any:
-    from langchain_community import document_loaders
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing document loaders from langchain is deprecated. Importing from "
-            "langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.document_loaders import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    if name in _old_to_new_name:
-        warnings.warn(
-            f"Using legacy class name {name}, use {_old_to_new_name[name]} instead."
-        )
-        name = _old_to_new_name[name]
-
-    return getattr(document_loaders, name)
-
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "AcreomLoader",
     "AsyncHtmlLoader",
     "AsyncChromiumLoader",
@@ -222,3 +180,17 @@ __all__ = [
     "YoutubeLoader",
     "YuqueLoader",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.document_loaders import {name}`"
+        )
+
+    raise AttributeError()

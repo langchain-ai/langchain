@@ -25,157 +25,147 @@ from langchain_core.callbacks import Callbacks
 from langchain.chains.api import news_docs, open_meteo_docs, podcast_docs, tmdb_docs
 from langchain.chains.api.base import APIChain
 from langchain.chains.llm_math.base import LLMMathChain
-from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
-from langchain_community.utilities.requests import TextRequestsWrapper
-from langchain_community.tools.arxiv.tool import ArxivQueryRun
-from langchain_community.tools.golden_query.tool import GoldenQueryRun
-from langchain_community.tools.pubmed.tool import PubmedQueryRun
 from langchain_core.tools import BaseTool
-from langchain_community.tools.bing_search.tool import BingSearchRun
-from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchRun
-from langchain_community.tools.google_cloud.texttospeech import (
-    GoogleCloudTextToSpeechTool,
-)
-from langchain_community.tools.google_lens.tool import GoogleLensQueryRun
-from langchain_community.tools.google_search.tool import (
-    GoogleSearchResults,
-    GoogleSearchRun,
-)
-from langchain_community.tools.google_scholar.tool import GoogleScholarQueryRun
-from langchain_community.tools.google_finance.tool import GoogleFinanceQueryRun
-from langchain_community.tools.google_trends.tool import GoogleTrendsQueryRun
-from langchain_community.tools.metaphor_search.tool import MetaphorSearchResults
-from langchain_community.tools.google_jobs.tool import GoogleJobsQueryRun
-from langchain_community.tools.google_serper.tool import (
-    GoogleSerperResults,
-    GoogleSerperRun,
-)
-from langchain_community.tools.searchapi.tool import SearchAPIResults, SearchAPIRun
-from langchain_community.tools.graphql.tool import BaseGraphQLTool
-from langchain_community.tools.human.tool import HumanInputRun
-from langchain_community.tools.requests.tool import (
-    RequestsDeleteTool,
-    RequestsGetTool,
-    RequestsPatchTool,
-    RequestsPostTool,
-    RequestsPutTool,
-)
-from langchain_community.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
-from langchain_community.tools.scenexplain.tool import SceneXplainTool
-from langchain_community.tools.searx_search.tool import (
-    SearxSearchResults,
-    SearxSearchRun,
-)
-from langchain_community.tools.shell.tool import ShellTool
-from langchain_community.tools.sleep.tool import SleepTool
-from langchain_community.tools.stackexchange.tool import StackExchangeTool
-from langchain_community.tools.merriam_webster.tool import MerriamWebsterQueryRun
-from langchain_community.tools.wikipedia.tool import WikipediaQueryRun
-from langchain_community.tools.wolfram_alpha.tool import WolframAlphaQueryRun
-from langchain_community.tools.openweathermap.tool import OpenWeatherMapQueryRun
-from langchain_community.tools.dataforseo_api_search import DataForSeoAPISearchRun
-from langchain_community.tools.dataforseo_api_search import DataForSeoAPISearchResults
-from langchain_community.tools.memorize.tool import Memorize
-from langchain_community.tools.reddit_search.tool import RedditSearchRun
-from langchain_community.utilities.arxiv import ArxivAPIWrapper
-from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
-from langchain_community.utilities.pubmed import PubMedAPIWrapper
-from langchain_community.utilities.bing_search import BingSearchAPIWrapper
-from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
-from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
-from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper
-from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
-from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
-from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
-from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
-from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
-from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
-from langchain_community.utilities.awslambda import LambdaWrapper
-from langchain_community.utilities.graphql import GraphQLAPIWrapper
-from langchain_community.utilities.searchapi import SearchApiAPIWrapper
-from langchain_community.utilities.searx_search import SearxSearchWrapper
-from langchain_community.utilities.serpapi import SerpAPIWrapper
-from langchain_community.utilities.stackexchange import StackExchangeAPIWrapper
-from langchain_community.utilities.twilio import TwilioAPIWrapper
-from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapper
-from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
-from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
-from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
-from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
-from langchain_community.utilities.reddit_search import RedditSearchAPIWrapper
+
+
+_COMMUNITY_DEPRECATION_ERROR = """\
+This tool has been moved to the langchain-community package. \
+See https://github.com/langchain-ai/langchain/discussions/19083 for more 
+information.
+
+To use it install langchain-community:
+
+    `pip install -U langchain-community`
+
+then import with:
+
+    ```
+    {replacement}
+    ```
+"""
+
+
+def _get_dalle_image_generator(**kwargs: Any) -> Tool:
+    replacement = """\
+from langchain_core.tools import Tool
+from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
+
+tool = Tool(
+    "Dall-E-Image-Generator",
+    DallEAPIWrapper(**kwargs).run,
+    "A wrapper around OpenAI DALL-E API. Useful for when you need to generate images from a text description. Input should be an image description.",
+)\
+"""
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_tools_requests_get() -> BaseTool:
-    # Dangerous requests are allowed here, because there's another flag that the user
-    # has to provide in order to actually opt in.
-    # This is a private function and should not be used directly.
-    return RequestsGetTool(
-        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
-    )
+    replacement = """\
+from langchain_community.utilities.requests import TextRequestsWrapper
+from langchain_community.tools.requests.tool import RequestsGetTool
+
+# Dangerous requests are allowed here, because there's another flag that the user
+# has to provide in order to actually opt in.
+# This is a private function and should not be used directly.
+tool = RequestsGetTool(
+    requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_tools_requests_post() -> BaseTool:
-    # Dangerous requests are allowed here, because there's another flag that the user
-    # has to provide in order to actually opt in.
-    # This is a private function and should not be used directly.
-    return RequestsPostTool(
-        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
-    )
+    replacement = """\
+from langchain_community.utilities.requests import TextRequestsWrapper
+from langchain_community.tools.requests.tool import RequestsPostTool
+
+# Dangerous requests are allowed here, because there's another flag that the user
+# has to provide in order to actually opt in.
+# This is a private function and should not be used directly.
+tool = RequestsPostTool(
+    requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_tools_requests_patch() -> BaseTool:
-    # Dangerous requests are allowed here, because there's another flag that the user
-    # has to provide in order to actually opt in.
-    # This is a private function and should not be used directly.
-    return RequestsPatchTool(
-        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
-    )
+    replacement = """\
+from langchain_community.utilities.requests import TextRequestsWrapper
+from langchain_community.tools.requests.tool import RequestsPatchTool
+
+# Dangerous requests are allowed here, because there's another flag that the user
+# has to provide in order to actually opt in.
+# This is a private function and should not be used directly.
+tool = RequestsPatchTool(
+    requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_tools_requests_put() -> BaseTool:
-    # Dangerous requests are allowed here, because there's another flag that the user
-    # has to provide in order to actually opt in.
-    # This is a private function and should not be used directly.
-    return RequestsPutTool(
-        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
-    )
+    replacement = """\
+from langchain_community.utilities.requests import TextRequestsWrapper
+from langchain_community.tools.requests.tool import RequestsPutTool
+
+# Dangerous requests are allowed here, because there's another flag that the user
+# has to provide in order to actually opt in.
+# This is a private function and should not be used directly.
+tool = RequestsPutTool(
+    requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_tools_requests_delete() -> BaseTool:
-    # Dangerous requests are allowed here, because there's another flag that the user
-    # has to provide in order to actually opt in.
-    # This is a private function and should not be used directly.
-    return RequestsDeleteTool(
-        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
-    )
+    replacement = """\
+from langchain_community.utilities.requests import TextRequestsWrapper
+from langchain_community.tools.requests.tool import RequestsDeleteTool
+
+# Dangerous requests are allowed here, because there's another flag that the user
+# has to provide in order to actually opt in.
+# This is a private function and should not be used directly.
+tool = RequestsDeleteTool(
+    requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_terminal() -> BaseTool:
-    return ShellTool()
+    replacement = """\
+from langchain_community.tools.shell.tool import ShellTool
+
+tool = ShellTool()\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_sleep() -> BaseTool:
-    return SleepTool()
+    replacement = """\
+from langchain_community.tools.sleep.tool import SleepTool
 
+tool = SleepTool()\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
 
-_BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
-    "sleep": _get_sleep,
-}
-
-DANGEROUS_TOOLS = {
-    # Tools that contain some level of risk.
-    # Please use with caution and read the documentation of these tools
-    # to understand the risks and how to mitigate them.
-    # Refer to https://python.langchain.com/docs/security
-    # for more information.
-    "requests": _get_tools_requests_get,  # preserved for backwards compatibility
-    "requests_get": _get_tools_requests_get,
-    "requests_post": _get_tools_requests_post,
-    "requests_patch": _get_tools_requests_patch,
-    "requests_put": _get_tools_requests_put,
-    "requests_delete": _get_tools_requests_delete,
-    "terminal": _get_terminal,
-}
+    raise ImportError(error_msg)
 
 
 def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
@@ -198,12 +188,6 @@ def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
         description="Useful for when you want to get weather information from the OpenMeteo API. The input should be a question in natural language that this API can answer.",
         func=chain.run,
     )
-
-
-_LLM_TOOLS: Dict[str, Callable[[BaseLanguageModel], BaseTool]] = {
-    "llm-math": _get_llm_math,
-    "open-meteo-api": _get_open_meteo_api,
-}
 
 
 def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
@@ -252,170 +236,467 @@ def _get_podcast_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
 
 
 def _get_lambda_api(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name=kwargs["awslambda_tool_name"],
-        description=kwargs["awslambda_tool_description"],
-        func=LambdaWrapper(**kwargs).run,
-    )
+    replacement = """\
+from langchain_community.utilities.awslambda import LambdaWrapper
+
+tool = Tool(
+    name=kwargs["awslambda_tool_name"],
+    description=kwargs["awslambda_tool_description"],
+    func=LambdaWrapper(**kwargs).run,
+)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_wolfram_alpha(**kwargs: Any) -> BaseTool:
-    return WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.wolfram_alpha.tool import WolframAlphaQueryRun
+from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+
+tool = WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_search(**kwargs: Any) -> BaseTool:
-    return GoogleSearchRun(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.google_search.tool import GoogleSearchRun
+from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
+
+tool = GoogleSearchRun(api_wrapper=GoogleSearchAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_merriam_webster(**kwargs: Any) -> BaseTool:
-    return MerriamWebsterQueryRun(api_wrapper=MerriamWebsterAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.merriam_webster.tool import MerriamWebsterQueryRun
+from langchain_community.utilities.merriam_webster import MerriamWebsterAPIWrapper
+
+tool = MerriamWebsterQueryRun(api_wrapper=MerriamWebsterAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_wikipedia(**kwargs: Any) -> BaseTool:
-    return WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.wikipedia.tool import WikipediaQueryRun
+from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
+
+tool = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_arxiv(**kwargs: Any) -> BaseTool:
-    return ArxivQueryRun(api_wrapper=ArxivAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.arxiv.tool import ArxivQueryRun
+from langchain_community.utilities.arxiv import ArxivAPIWrapper
+
+tool = ArxivQueryRun(api_wrapper=ArxivAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_golden_query(**kwargs: Any) -> BaseTool:
-    return GoldenQueryRun(api_wrapper=GoldenQueryAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.golden_query.tool import GoldenQueryRun
+from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
+
+tool = GoldenQueryRun(api_wrapper=GoldenQueryAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_pubmed(**kwargs: Any) -> BaseTool:
-    return PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.pubmed.tool import PubmedQueryRun
+from langchain_community.utilities.pubmed import PubMedAPIWrapper
+
+tool = PubmedQueryRun(api_wrapper=PubMedAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_jobs(**kwargs: Any) -> BaseTool:
-    return GoogleJobsQueryRun(api_wrapper=GoogleJobsAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.google_jobs.tool import GoogleJobsQueryRun
+from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper
+
+tool = GoogleJobsQueryRun(api_wrapper=GoogleJobsAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_lens(**kwargs: Any) -> BaseTool:
-    return GoogleLensQueryRun(api_wrapper=GoogleLensAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.google_lens.tool import GoogleLensQueryRun
+from langchain_community.utilities.google_lens import GoogleLensAPIWrapper
+
+tool = GoogleLensQueryRun(api_wrapper=GoogleLensAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_serper(**kwargs: Any) -> BaseTool:
-    return GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.google_serper.tool import GoogleSerperRun
+from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
+
+tool = GoogleSerperRun(api_wrapper=GoogleSerperAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_scholar(**kwargs: Any) -> BaseTool:
-    return GoogleScholarQueryRun(api_wrapper=GoogleScholarAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.google_scholar.tool import GoogleScholarQueryRun
+from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
+
+tool = GoogleScholarQueryRun(api_wrapper=GoogleScholarAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_finance(**kwargs: Any) -> BaseTool:
-    return GoogleFinanceQueryRun(api_wrapper=GoogleFinanceAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.google_finance.tool import GoogleFinanceQueryRun
+from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
+
+tool = GoogleFinanceQueryRun(api_wrapper=GoogleFinanceAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_trends(**kwargs: Any) -> BaseTool:
-    return GoogleTrendsQueryRun(api_wrapper=GoogleTrendsAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.google_trends.tool import GoogleTrendsQueryRun
+from langchain_community.utilities.google_trends import GoogleTrendsAPIWrapper
+
+tool = GoogleTrendsQueryRun(api_wrapper=GoogleTrendsAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_serper_results_json(**kwargs: Any) -> BaseTool:
-    return GoogleSerperResults(api_wrapper=GoogleSerperAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.google_serper.tool import GoogleSerperResults
+from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
+
+tool = GoogleSerperResults(api_wrapper=GoogleSerperAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_search_results_json(**kwargs: Any) -> BaseTool:
-    return GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.google_search.tool import GoogleSearchResults
+from langchain_community.utilities.google_search import GoogleSearchAPIWrapper
+
+tool = GoogleSearchResults(api_wrapper=GoogleSearchAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_searchapi(**kwargs: Any) -> BaseTool:
-    return SearchAPIRun(api_wrapper=SearchApiAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.searchapi.tool import SearchAPIRun
+from langchain_community.utilities.searchapi import SearchApiAPIWrapper
+
+tool = SearchAPIRun(api_wrapper=SearchApiAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_searchapi_results_json(**kwargs: Any) -> BaseTool:
-    return SearchAPIResults(api_wrapper=SearchApiAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.searchapi.tool import SearchAPIResults
+from langchain_community.utilities.searchapi import SearchApiAPIWrapper
+
+tool = SearchAPIResults(api_wrapper=SearchApiAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_serpapi(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="Search",
-        description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
-        func=SerpAPIWrapper(**kwargs).run,
-        coroutine=SerpAPIWrapper(**kwargs).arun,
-    )
+    replacement = """\
+from langchain_community.utilities.serpapi import SerpAPIWrapper
+
+tool = Tool(
+    name="Search",
+    description="A search engine. Useful for when you need to answer questions about current events. Input should be a search query.",
+    func=SerpAPIWrapper(**kwargs).run,
+    coroutine=SerpAPIWrapper(**kwargs).arun,
+)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_stackexchange(**kwargs: Any) -> BaseTool:
-    return StackExchangeTool(api_wrapper=StackExchangeAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.stackexchange.tool import StackExchangeTool
+from langchain_community.utilities.stackexchange import StackExchangeAPIWrapper
 
+tool = StackExchangeTool(api_wrapper=StackExchangeAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
 
-def _get_dalle_image_generator(**kwargs: Any) -> Tool:
-    return Tool(
-        "Dall-E-Image-Generator",
-        DallEAPIWrapper(**kwargs).run,
-        "A wrapper around OpenAI DALL-E API. Useful for when you need to generate images from a text description. Input should be an image description.",
-    )
+    raise ImportError(error_msg)
 
 
 def _get_twilio(**kwargs: Any) -> BaseTool:
-    return Tool(
-        name="Text-Message",
-        description="Useful for when you need to send a text message to a provided phone number.",
-        func=TwilioAPIWrapper(**kwargs).run,
-    )
+    replacement = """\
+from langchain_community.utilities.twilio import TwilioAPIWrapper
+
+tool = Tool(
+    name="Text-Message",
+    description="Useful for when you need to send a text message to a provided phone number.",
+    func=TwilioAPIWrapper(**kwargs).run,
+)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_searx_search(**kwargs: Any) -> BaseTool:
-    return SearxSearchRun(wrapper=SearxSearchWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.searx_search.tool import SearxSearchRun
+from langchain_community.utilities.searx_search import SearxSearchWrapper
+
+tool = SearxSearchRun(wrapper=SearxSearchWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_searx_search_results_json(**kwargs: Any) -> BaseTool:
-    wrapper_kwargs = {k: v for k, v in kwargs.items() if k != "num_results"}
-    return SearxSearchResults(wrapper=SearxSearchWrapper(**wrapper_kwargs), **kwargs)
+    replacement = """\
+from langchain_community.tools.searx_search.tool import SearxSearchResults
+from langchain_community.utilities.searx_search import SearxSearchWrapper
+
+wrapper_kwargs = {k: v for k, v in kwargs.items() if k != "num_results"}
+tool = SearxSearchResults(wrapper=SearxSearchWrapper(**wrapper_kwargs), **kwargs)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_bing_search(**kwargs: Any) -> BaseTool:
-    return BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.bing_search.tool import BingSearchRun
+from langchain_community.utilities.bing_search import BingSearchAPIWrapper
+
+tool = BingSearchRun(api_wrapper=BingSearchAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_metaphor_search(**kwargs: Any) -> BaseTool:
-    return MetaphorSearchResults(api_wrapper=MetaphorSearchAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.metaphor_search.tool import MetaphorSearchResults
+from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
+
+tool = MetaphorSearchResults(api_wrapper=MetaphorSearchAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_ddg_search(**kwargs: Any) -> BaseTool:
-    return DuckDuckGoSearchRun(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.ddg_search.tool import DuckDuckGoSearchRun
+from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
+
+tool = DuckDuckGoSearchRun(api_wrapper=DuckDuckGoSearchAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_human_tool(**kwargs: Any) -> BaseTool:
-    return HumanInputRun(**kwargs)
+    replacement = """\
+from langchain_community.tools.human.tool import HumanInputRun
+
+tool = HumanInputRun(**kwargs)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_scenexplain(**kwargs: Any) -> BaseTool:
-    return SceneXplainTool(**kwargs)
+    replacement = """\
+from langchain_community.tools.scenexplain.tool import SceneXplainTool
+
+tool = SceneXplainTool(**kwargs)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_graphql_tool(**kwargs: Any) -> BaseTool:
-    return BaseGraphQLTool(graphql_wrapper=GraphQLAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.graphql.tool import BaseGraphQLTool
+from langchain_community.utilities.graphql import GraphQLAPIWrapper
+
+tool = BaseGraphQLTool(graphql_wrapper=GraphQLAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_openweathermap(**kwargs: Any) -> BaseTool:
-    return OpenWeatherMapQueryRun(api_wrapper=OpenWeatherMapAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.openweathermap.tool import OpenWeatherMapQueryRun
+from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrapper
+
+tool = OpenWeatherMapQueryRun(api_wrapper=OpenWeatherMapAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_dataforseo_api_search(**kwargs: Any) -> BaseTool:
-    return DataForSeoAPISearchRun(api_wrapper=DataForSeoAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.dataforseo_api_search import DataForSeoAPISearchRun
+from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
+
+tool = DataForSeoAPISearchRun(api_wrapper=DataForSeoAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_dataforseo_api_search_json(**kwargs: Any) -> BaseTool:
-    return DataForSeoAPISearchResults(api_wrapper=DataForSeoAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.dataforseo_api_search import DataForSeoAPISearchResults
+from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
+
+tool = DataForSeoAPISearchResults(api_wrapper=DataForSeoAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
-    return ElevenLabsText2SpeechTool(**kwargs)
+    replacement = """\
+from langchain_community.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
+
+tool = ElevenLabsText2SpeechTool(**kwargs)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
-    return Memorize(llm=llm)  # type: ignore[arg-type]
+    replacement = """\
+from langchain_community.tools.memorize.tool import Memorize
+
+tool = Memorize(llm=llm)  # type: ignore[arg-type]\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
-    return GoogleCloudTextToSpeechTool(**kwargs)
+    replacement = """\
+from langchain_community.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
+
+tool = GoogleCloudTextToSpeechTool(**kwargs)\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
 
 
 def _get_reddit_search(**kwargs: Any) -> BaseTool:
-    return RedditSearchRun(api_wrapper=RedditSearchAPIWrapper(**kwargs))
+    replacement = """\
+from langchain_community.tools.reddit_search.tool import RedditSearchRun
+from langchain_community.utilities.reddit_search import RedditSearchAPIWrapper
 
+tool = RedditSearchRun(api_wrapper=RedditSearchAPIWrapper(**kwargs))\
+"""  # noqa: E501
+    error_msg = _COMMUNITY_DEPRECATION_ERROR.format(replacement=replacement)
+
+    raise ImportError(error_msg)
+
+
+_BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
+    "sleep": _get_sleep,
+}
+
+DANGEROUS_TOOLS = {
+    # Tools that contain some level of risk.
+    # Please use with caution and read the documentation of these tools
+    # to understand the risks and how to mitigate them.
+    # Refer to https://python.langchain.com/docs/security
+    # for more information.
+    "requests": _get_tools_requests_get,  # preserved for backwards compatibility
+    "requests_get": _get_tools_requests_get,
+    "requests_post": _get_tools_requests_post,
+    "requests_patch": _get_tools_requests_patch,
+    "requests_put": _get_tools_requests_put,
+    "requests_delete": _get_tools_requests_delete,
+    "terminal": _get_terminal,
+}
+
+
+_LLM_TOOLS: Dict[str, Callable[[BaseLanguageModel], BaseTool]] = {
+    "llm-math": _get_llm_math,
+    "open-meteo-api": _get_open_meteo_api,
+}
 
 _EXTRA_LLM_TOOLS: Dict[
     str,
