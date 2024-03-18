@@ -175,7 +175,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         """Raise warning that this class is deprecated."""
         warnings.warn(
             "This Anthropic LLM is deprecated. "
-            "Please use `from langchain_community.chat_models import ChatAnthropic` "
+            "Please use `from langchain_anthropic import ChatAnthropic` "
             "instead"
         )
         return values
@@ -196,7 +196,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
-        return ["langchain", "chat_models", "anthropic"]
+        return ["langchain", "llms", "anthropic"]
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

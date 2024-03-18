@@ -91,6 +91,11 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat",
         "MessagesPlaceholder",
     ),
+    ("langchain", "llms", "anthropic", "Anthropic"): (
+        "langchain_anthropic",
+        "llms",
+        "AnthropicLLM",
+    ),
     ("langchain", "llms", "openai", "OpenAI"): (
         "langchain_openai",
         "llms",
@@ -241,9 +246,8 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "BedrockChat",
     ),
     ("langchain", "chat_models", "anthropic", "ChatAnthropic"): (
-        "langchain",
+        "langchain_anthropic",
         "chat_models",
-        "anthropic",
         "ChatAnthropic",
     ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
@@ -305,7 +309,7 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "generation",
         "GenerationChunk",
     ),
-    ("langchain", "llms", "openai", "BaseOpenAI"): (
+    ()("langchain", "llms", "openai", "BaseOpenAI"): (
         "langchain",
         "llms",
         "openai",
