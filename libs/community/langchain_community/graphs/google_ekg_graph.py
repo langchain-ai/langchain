@@ -22,7 +22,7 @@ class GoogleEnterpriseKnowledgeGraph(GraphStore):
         except ImportError:
             raise ValueError(
                 "Could not import enterpriseknowledgegraph python package. "
-                "Please install it with `pip install google-cloud-enterpriseknowledgegraph`."
+                "Please install it with `pip install google-cloud-enterpriseknowledgegraph`."  # noqa: E501
             )
 
         project_id = get_from_dict_or_env(
