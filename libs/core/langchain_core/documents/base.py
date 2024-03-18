@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Literal
+from typing import Any, Dict, List, Literal, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Field
@@ -9,7 +9,7 @@ from langchain_core.pydantic_v1 import Field
 class Document(Serializable):
     """Class for storing a piece of text and associated metadata."""
 
-    page_content: str
+    page_content: Union[str, List[Union[str, Dict]]]
     """String text."""
     metadata: dict = Field(default_factory=dict)
     """Arbitrary metadata about the page content (e.g., source, relationships to other
