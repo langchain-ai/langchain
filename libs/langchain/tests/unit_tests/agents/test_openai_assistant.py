@@ -1,7 +1,7 @@
+from functools import partial
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from functools import partial
 import pytest
 
 from langchain.agents.openai_assistant import OpenAIAssistantRunnable
@@ -11,7 +11,7 @@ def _create_mock_client(*args: Any, use_async: bool = False, **kwargs: Any) -> A
     client = AsyncMock() if use_async else MagicMock()
     mock_assistant = MagicMock()
     mock_assistant.id = "abc123"
-    client.beta.assistants.create.return_value = mock_assistant
+    client.beta.assistants.create.return_value = mock_assistant  # type: ignore
     return client
 
 

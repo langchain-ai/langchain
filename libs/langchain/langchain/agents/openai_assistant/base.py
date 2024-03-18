@@ -89,7 +89,7 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
 
 def _is_assistants_builtin_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
-) -> Dict[str, Any]:
+) -> bool:
     """Determine if tool corresponds to OpenAI Assistants built-in."""
     assistants_builtin_tools = ("code_interpreter", "retrieval")
     return (
@@ -108,7 +108,7 @@ def _get_assistants_tool(
     such as "code_interpreter" and "retrieval."
     """
     if _is_assistants_builtin_tool(tool):
-        return tool
+        return tool  # type: ignore
     else:
         return convert_to_openai_tool(tool)
 
