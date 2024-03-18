@@ -69,6 +69,7 @@ class BaseRetrievalStrategy(ABC):
         self,
         dims_length: Union[int, None],
         vector_query_field: str,
+        text_field: str,
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         """
@@ -79,6 +80,7 @@ class BaseRetrievalStrategy(ABC):
                         or None if not using vector-based query.
             vector_query_field: The field containing the vector
                                 representations in the index.
+            text_field: The field containing the text data in the index.
             similarity: The similarity strategy to use,
                         or None if not using one.
 
@@ -203,6 +205,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         self,
         dims_length: Union[int, None],
         vector_query_field: str,
+        text_field: str,
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         """Create the mapping for the Elasticsearch index."""
@@ -282,6 +285,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
         self,
         dims_length: Union[int, None],
         vector_query_field: str,
+        text_field: str,
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         """Create the mapping for the Elasticsearch index."""
@@ -363,6 +367,7 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
         self,
         dims_length: Union[int, None],
         vector_query_field: str,
+        text_field: str,
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
         return {
@@ -374,6 +379,72 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
                 }
             },
             "settings": {"default_pipeline": self._get_pipeline_name()},
+        }
+
+    def require_inference(self) -> bool:
+        return False
+
+
+class BM25RetrievalStrategy(BaseRetrievalStrategy):
+    """Retrieval strategy using the native BM25 algorithm of Elasticsearch."""
+
+    def __init__(self, k1: float, b: float):
+        self.k1 = k1
+        self.b = b
+
+    def query(
+        self,
+        query_vector: Union[List[float], None],
+        query: Union[str, None],
+        k: int,
+        fetch_k: int,
+        vector_query_field: str,
+        text_field: str,
+        filter: List[dict],
+        similarity: Union[DistanceStrategy, None],
+    ) -> Dict:
+        return {
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                text_field: {
+                                    "query": query,
+                                }
+                            },
+                        },
+                    ],
+                    "filter": filter,
+                },
+            },
+        }
+
+    def index(
+        self,
+        dims_length: Union[int, None],
+        vector_query_field: str,
+        text_field: str,
+        similarity: Union[DistanceStrategy, None],
+    ) -> Dict:
+        return {
+            "mappings": {
+                "properties": {
+                    text_field: {
+                        "type": "text",
+                        "similarity": "custom_bm25",
+                    },
+                },
+            },
+            "settings": {
+                "similarity": {
+                    "custom_bm25": {
+                        "type": "BM25",
+                        "k1": self.k1,
+                        "b": self.b,
+                    }
+                },
+            },
         }
 
     def require_inference(self) -> bool:
@@ -896,6 +967,7 @@ class ElasticsearchStore(VectorStore):
 
             indexSettings = self.strategy.index(
                 vector_query_field=self.vector_query_field,
+                text_field=self.query_field,
                 dims_length=dims_length,
                 similarity=self.distance_strategy,
             )
@@ -1275,3 +1347,15 @@ class ElasticsearchStore(VectorStore):
                     deployed to Elasticsearch.
         """
         return SparseRetrievalStrategy(model_id=model_id)
+
+    @staticmethod
+    def BM25RetrievalStrategy(
+        k1: float = 2.0, b: float = 0.75
+    ) -> "BM25RetrievalStrategy":
+        """Used to apply BM25 without vector search.
+
+        Args:
+            k1: Optional. Default is 2.0. This corresponds to the BM25 parameter, k1.
+            b: Optional. Default is 0.75. This corresponds to the BM25 parameter, b.
+        """
+        return BM25RetrievalStrategy(k1=k1, b=b)
