@@ -308,7 +308,7 @@ class SQLRecordManager(RecordManager):
                 pg_insert_stmt: PgInsertType = pg_insert(UpsertionRecord).values(
                     records_to_upsert
                 )
-                stmt = pg_insert_stmt.on_conflict_do_update(
+                stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
                         updated_at=pg_insert_stmt.excluded.updated_at,
@@ -387,7 +387,7 @@ class SQLRecordManager(RecordManager):
                 pg_insert_stmt: PgInsertType = pg_insert(UpsertionRecord).values(
                     records_to_upsert
                 )
-                stmt = pg_insert_stmt.on_conflict_do_update(
+                stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
                         updated_at=pg_insert_stmt.excluded.updated_at,
@@ -472,7 +472,7 @@ class SQLRecordManager(RecordManager):
         """List records in the SQLite database based on the provided date range."""
         session: AsyncSession
         async with self._amake_session() as session:
-            query: Query = select(UpsertionRecord.key).filter(
+            query: Query = select(UpsertionRecord.key).filter(  # type: ignore[assignment]
                 UpsertionRecord.namespace == self.namespace
             )
 

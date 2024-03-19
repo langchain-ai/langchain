@@ -10,6 +10,7 @@ from ai21.models import (
 from langchain_ai21 import AI21LLM
 from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_LLM_PARAMETERS,
+    BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
     DUMMY_API_KEY,
     temporarily_unset_api_key,
 )
@@ -42,7 +43,7 @@ def test_initialization__when_custom_parameters_to_init() -> None:
         min_tokens=10,
         temperature=0.5,
         top_p=0.5,
-        top_k_returns=0,
+        top_k_return=0,
         stop_sequences=["\n"],
         frequency_penalty=Penalty(scale=0.2, apply_to_numbers=True),
         presence_penalty=Penalty(scale=0.2, apply_to_stopwords=True),
@@ -93,7 +94,7 @@ def test_generate(mock_client_with_completion: Mock) -> None:
                 custom_model=custom_model,
                 stop_sequences=stop,
                 epoch=epoch,
-                **BASIC_EXAMPLE_LLM_PARAMETERS,
+                **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
             ),
             call(
                 prompt=prompt1,
@@ -101,7 +102,7 @@ def test_generate(mock_client_with_completion: Mock) -> None:
                 custom_model=custom_model,
                 stop_sequences=stop,
                 epoch=epoch,
-                **BASIC_EXAMPLE_LLM_PARAMETERS,
+                **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
             ),
         ]
     )
