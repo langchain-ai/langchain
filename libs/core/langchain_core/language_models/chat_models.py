@@ -273,6 +273,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if type(self)._astream is not BaseChatModel._astream:
             # Then astream is implemented
             _stream_implementation = self._astream
+            using_sync_stream = False
         elif type(self)._stream is not BaseChatModel._stream:
             # Then stream is implemented, so we can create an async iterator from it
             # The typing is hard to type correctly with mypy here, so we cast
@@ -289,6 +290,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 ],
                 _as_async_iterator(self._stream),
             )
+            using_sync_stream = True
         else:  # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
@@ -318,10 +320,15 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_id=config.pop("run_id", None),
             batch_size=1,
         )
+
+        run_manager_ = run_manager.get_sync() if using_sync_stream else run_manager
         generation: Optional[ChatGenerationChunk] = None
         try:
             async for chunk in _stream_implementation(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager_,  # type: ignore[arg-type]
+                **kwargs,
             ):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 yield chunk.message

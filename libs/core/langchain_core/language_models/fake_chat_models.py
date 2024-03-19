@@ -11,7 +11,6 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import run_in_executor
 
 
 class FakeMessagesListChatModel(BaseChatModel):
@@ -278,25 +277,6 @@ class GenericFakeChatModel(BaseChatModel):
                             chunk=chunk,  # No token for function call
                         )
                     yield chunk
-
-    async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        """Stream the output of the model."""
-        result = await run_in_executor(
-            None,
-            self._stream,
-            messages,
-            stop=stop,
-            run_manager=run_manager.get_sync() if run_manager else None,
-            **kwargs,
-        )
-        for chunk in result:
-            yield chunk
 
     @property
     def _llm_type(self) -> str:

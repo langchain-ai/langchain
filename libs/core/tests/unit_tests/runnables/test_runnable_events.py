@@ -312,6 +312,68 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
     ]
 
 
+async def test_astream_events_from_model() -> None:
+    """Test the output of a model."""
+    infinite_cycle = cycle(
+        [AIMessage(content="hello world!"), AIMessage(content="goodbye world!")]
+    )
+    # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
+    model = (
+        GenericFakeChatModel(messages=infinite_cycle)
+        .with_config(
+            {
+                "metadata": {"a": "b"},
+                "tags": ["my_model"],
+                "run_name": "my_model",
+            }
+        )
+        .bind(stop="<stop_token>")
+    )
+    events = await _collect_events(model.astream_events("hello", version="v1"))
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chat_model_start",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="hello")},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content=" ")},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!")},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"output": AIMessageChunk(content="hello world!")},
+            "event": "on_chat_model_end",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+    ]
+
+
 async def test_event_stream_with_simple_chain() -> None:
     """Test as event stream."""
     template = ChatPromptTemplate.from_messages(
