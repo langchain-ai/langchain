@@ -7,7 +7,7 @@ import uuid
 from typing import Any, Dict, Generator, List, Union
 
 import pytest
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, NotFoundError
 from elasticsearch.helpers import BulkIndexError
 from langchain_core.documents import Document
 
@@ -40,7 +40,7 @@ Enable them by adding the model name to the modelsDeployed list below.
 """
 
 modelsDeployed: List[str] = [
-    # "elser",
+    # ".elser_model_1",
     # "sentence-transformers__all-minilm-l6-v2",
 ]
 
@@ -709,7 +709,7 @@ class TestElasticsearch:
         assert output == [Document(page_content="bar")]
 
     @pytest.mark.skipif(
-        "elser" not in modelsDeployed,
+        ".elser_model_1" not in modelsDeployed,
         reason="ELSER not deployed in ML Node, skipping test",
     )
     def test_similarity_search_with_sparse_infer_instack(
@@ -725,6 +725,35 @@ class TestElasticsearch:
         )
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
+
+    def test_deployed_model_check_fails_approx(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """test that exceptions are raised if a specified model is not deployed"""
+        with pytest.raises(NotFoundError):
+            ElasticsearchStore.from_texts(
+                texts=["foo", "bar", "baz"],
+                embedding=ConsistentFakeEmbeddings(10),
+                **elasticsearch_connection,
+                index_name=index_name,
+                strategy=ElasticsearchStore.ApproxRetrievalStrategy(
+                    query_model_id="non-existing model ID",
+                ),
+            )
+
+    def test_deployed_model_check_fails_sparse(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """test that exceptions are raised if a specified model is not deployed"""
+        with pytest.raises(NotFoundError):
+            ElasticsearchStore.from_texts(
+                texts=["foo", "bar", "baz"],
+                **elasticsearch_connection,
+                index_name=index_name,
+                strategy=ElasticsearchStore.SparseVectorRetrievalStrategy(
+                    model_id="non-existing model ID"
+                ),
+            )
 
     def test_elasticsearch_with_relevance_score(
         self, elasticsearch_connection: dict, index_name: str
