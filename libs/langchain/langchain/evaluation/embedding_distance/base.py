@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -35,7 +35,7 @@ class EmbeddingDistance(str, Enum):
     HAMMING = "hamming"
 
 
-def _embeddings_default_factory() -> Any:
+def _embeddings_default_factory() -> Embeddings:
     try:
         from langchain_openai import OpenAIEmbeddings
     except ImportError as e:
@@ -44,6 +44,7 @@ def _embeddings_default_factory() -> Any:
             "embeddings or install langchain-openai with "
             "`pip install -U langchain-openai`."
         ) from e
+    return OpenAIEmbeddings()
 
 
 class _EmbeddingDistanceChainMixin(Chain):

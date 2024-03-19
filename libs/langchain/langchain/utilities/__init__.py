@@ -4,13 +4,10 @@
 """
 from typing import Any
 
-from langchain_community.utilities.requests import (
-    Requests,
-    RequestsWrapper,
-    TextRequestsWrapper,
-)
-
 DEPRECATED_IMPORTS = [
+    "Requests",
+    "RequestsWrapper",
+    "TextRequestsWrapper",
     "AlphaVantageAPIWrapper",
     "ApifyWrapper",
     "ArceeWrapper",
@@ -69,10 +66,3 @@ def __getattr__(name: str) -> Any:
         )
 
     raise AttributeError()
-
-
-__all__ = [
-    "Requests",
-    "RequestsWrapper",
-    "TextRequestsWrapper",
-]

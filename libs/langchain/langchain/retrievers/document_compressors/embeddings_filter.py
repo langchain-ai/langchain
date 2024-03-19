@@ -1,10 +1,6 @@
-from typing import Callable, Dict, Optional, Sequence
+from typing import Callable, Dict, List, Optional, Sequence
 
 import numpy as np
-from langchain_community.document_transformers.embeddings_redundant_filter import (
-    _get_embeddings_from_stateful_docs,
-    get_stateful_documents,
-)
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import root_validator
@@ -53,9 +49,8 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Filter documents based on similarity of their embeddings to the query."""
-        stateful_documents = get_stateful_documents(documents)
         embedded_documents = _get_embeddings_from_stateful_docs(
-            self.embeddings, stateful_documents
+            self.embeddings, documents
         )
         embedded_query = self.embeddings.embed_query(query)
         similarity = self.similarity_fn([embedded_query], embedded_documents)[0]
@@ -68,5 +63,25 @@ class EmbeddingsFilter(BaseDocumentCompressor):
             )
             included_idxs = included_idxs[similar_enough]
         for i in included_idxs:
-            stateful_documents[i].state["query_similarity_score"] = similarity[i]
-        return [stateful_documents[i] for i in included_idxs]
+            if hasattr(documents[i], "state"):
+                documents[i].state["query_similarity_score"] = similarity[i]
+        return [documents[i] for i in included_idxs]
+
+
+def _get_embeddings_from_stateful_docs(
+    embeddings: Embeddings, documents: Sequence[Document]
+) -> List[List[float]]:
+    if (
+        documents
+        and hasattr(documents[0], "state")
+        and "embedded_doc" in getattr(documents[0], "state")
+    ):
+        embedded_documents = [doc.state["embedded_doc"] for doc in documents]
+    else:
+        embedded_documents = embeddings.embed_documents(
+            [d.page_content for d in documents]
+        )
+        if hasattr(documents[0], "state"):
+            for doc, embedding in zip(documents, embedded_documents):
+                doc.state["embedded_doc"] = embedding
+    return embedded_documents

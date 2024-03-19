@@ -2,26 +2,6 @@
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-from langchain_community.vectorstores import (
-    AstraDB,
-    Chroma,
-    DashVector,
-    DeepLake,
-    Dingo,
-    ElasticsearchStore,
-    Milvus,
-    MongoDBAtlasVectorSearch,
-    MyScale,
-    OpenSearchVectorSearch,
-    PGVector,
-    Pinecone,
-    Qdrant,
-    Redis,
-    SupabaseVectorStore,
-    TimescaleVector,
-    Vectara,
-    Weaviate,
-)
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field, root_validator
@@ -62,33 +42,35 @@ QUERY_CONSTRUCTOR_RUN_NAME = "query_constructor"
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
-        AstraDB: AstraDBTranslator,
-        PGVector: PGVectorTranslator,
-        Pinecone: PineconeTranslator,
-        Chroma: ChromaTranslator,
-        DashVector: DashvectorTranslator,
-        Dingo: DingoDBTranslator,
-        Weaviate: WeaviateTranslator,
-        Vectara: VectaraTranslator,
-        Qdrant: QdrantTranslator,
-        MyScale: MyScaleTranslator,
-        DeepLake: DeepLakeTranslator,
-        ElasticsearchStore: ElasticsearchTranslator,
-        Milvus: MilvusTranslator,
-        SupabaseVectorStore: SupabaseVectorTranslator,
-        TimescaleVector: TimescaleVectorTranslator,
-        OpenSearchVectorSearch: OpenSearchTranslator,
-        MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
+        "AstraDB": AstraDBTranslator,
+        "PGVector": PGVectorTranslator,
+        "Pinecone": PineconeTranslator,
+        "Chroma": ChromaTranslator,
+        "DashVector": DashvectorTranslator,
+        "Dingo": DingoDBTranslator,
+        "Weaviate": WeaviateTranslator,
+        "Vectara": VectaraTranslator,
+        "Qdrant": QdrantTranslator,
+        "MyScale": MyScaleTranslator,
+        "DeepLake": DeepLakeTranslator,
+        "ElasticsearchStore": ElasticsearchTranslator,
+        "Milvus": MilvusTranslator,
+        "SupabaseVectorStore": SupabaseVectorTranslator,
+        "TimescaleVector": TimescaleVectorTranslator,
+        "OpenSearchVectorSearch": OpenSearchTranslator,
+        "MongoDBAtlasVectorSearch": MongoDBAtlasTranslator,
     }
 
-    if isinstance(vectorstore, Qdrant):
-        return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
-    elif isinstance(vectorstore, MyScale):
-        return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
-    elif isinstance(vectorstore, Redis):
-        return RedisTranslator.from_vectorstore(vectorstore)
-    elif vectorstore.__class__ in BUILTIN_TRANSLATORS:
-        return BUILTIN_TRANSLATORS[vectorstore.__class__]()
+    # TODO: This is a hack so we don't have to import langchain-community, fix.
+    if vectorstore.__class__.__name__.startswith("langchain_community.vectorstores"):
+        if vectorstore.__class__.__name__ == "Qdrant":
+            return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
+        elif vectorstore.__class__.__name__ == "MyScale":
+            return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
+        elif vectorstore.__class__.__name__ == "Redis":
+            return RedisTranslator.from_vectorstore(vectorstore)
+        elif vectorstore.__class__.__name__ in BUILTIN_TRANSLATORS:
+            return BUILTIN_TRANSLATORS[vectorstore.__class__]()
     else:
         try:
             from langchain_astradb.vectorstores import AstraDBVectorStore
@@ -98,10 +80,10 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         except ImportError:
             pass
 
-        raise ValueError(
-            f"Self query retriever with Vector Store type {vectorstore.__class__}"
-            f" not supported."
-        )
+    raise ValueError(
+        f"Self query retriever with Vector Store type {vectorstore.__class__}"
+        f" not supported."
+    )
 
 
 class SelfQueryRetriever(BaseRetriever):

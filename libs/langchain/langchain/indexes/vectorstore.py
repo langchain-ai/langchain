@@ -60,11 +60,22 @@ class VectorStoreIndexWrapper(BaseModel):
         return chain({chain.question_key: question})
 
 
+def _embedding_default_factory() -> Embeddings:
+    try:
+        from langchain_openai import OpenAIEmbeddings
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import OpenAIEmbeddings from langchain-openai. Please install "
+            "with `pip install -U langchain-openai`."
+        ) from e
+    return OpenAIEmbeddings()
+
+
 class VectorstoreIndexCreator(BaseModel):
     """Logic for creating indexes."""
 
     vectorstore_cls: Type[VectorStore]
-    embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
+    embedding: Embeddings = Field(default_factory=_embedding_default_factory)
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
     vectorstore_kwargs: dict = Field(default_factory=dict)
 

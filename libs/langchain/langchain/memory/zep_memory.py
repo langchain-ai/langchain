@@ -106,7 +106,7 @@ class ZepMemory(ConversationBufferMemory):
                 "from langchain.memory.zep_memory import ZepMemory\n"
                 "from langchain_community.chat_message_histories import"
                 " ZepChatMessageHistory\n\n"
-                "chat_memory = ZepChatMessageHistory(session_id=..., url=..., api_key=...)\n"
+                "chat_memory = ZepChatMessageHistory(session_id=..., url=..., api_key=...)\n"  # noqa: E501
                 "memory = ZepMemory(chat_memory=chat_memory, ...)\n```"
             )  # noqa: E501
 

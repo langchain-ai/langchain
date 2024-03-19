@@ -11,7 +11,7 @@ def __getattr__(name: str) -> Any:
             f"information.\n\nTo use it install langchain-community:\n\n"
             f"`pip install -U langchain-community`\n\n"
             f"then import with:\n\n"
-            f"`from langchain_community.memory.chat_message_histories.dynamodb import {name}`"  # noqa: #E501
-        )
+            f"`from langchain_community.memory.chat_message_histories.dynamodb import {name}`"  # noqa: E501
+        )  # noqa: E501
 
     raise AttributeError()

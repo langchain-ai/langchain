@@ -1,5 +1,5 @@
 """Chain that does self-ask with search."""
-from typing import Any, Sequence, Union
+from typing import Any, Sequence
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel

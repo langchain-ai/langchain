@@ -2,17 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Tuple
 
-from langchain_community.vectorstores.redis import Redis
-from langchain_community.vectorstores.redis.filters import (
-    RedisFilterExpression,
-    RedisFilterField,
-    RedisFilterOperator,
-    RedisNum,
-    RedisTag,
-    RedisText,
-)
-from langchain_community.vectorstores.redis.schema import RedisModel
-
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
@@ -51,7 +40,7 @@ class RedisTranslator(Visitor):
     allowed_operators = (Operator.AND, Operator.OR)
     """Subset of allowed logical operators."""
 
-    def __init__(self, schema: RedisModel) -> None:
+    def __init__(self, schema: Any) -> None:
         self._schema = schema
 
     def _attribute_to_filter_field(self, attribute: str) -> RedisFilterField:

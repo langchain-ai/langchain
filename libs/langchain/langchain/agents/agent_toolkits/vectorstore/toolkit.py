@@ -1,17 +1,27 @@
 """Toolkit for interacting with a vector store."""
 from typing import List
 
-# TODO: 0.2 figure out inheritance
-from langchain_community.agent_toolkits.base import BaseToolkit
-from langchain_community.tools.vectorstore.tool import (
-    VectorStoreQATool,
-    VectorStoreQAWithSourcesTool,
-)
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools import BaseToolkit
 from langchain_core.vectorstores import VectorStore
 
 from langchain.tools import BaseTool
+from langchain.tools.vectorstore.tool import (
+    VectorStoreQATool,
+    VectorStoreQAWithSourcesTool,
+)
+
+
+def _llm_default_factory() -> BaseLanguageModel:
+    try:
+        from langchain_openai import ChatOpenAI
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import ChatOpenAI from langchain-openai. Please specify llm "
+            "or install langchain-openai with `pip install -U langchain-openai`."
+        ) from e
+    return ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 
 
 class VectorStoreInfo(BaseModel):
@@ -31,7 +41,7 @@ class VectorStoreToolkit(BaseToolkit):
     """Toolkit for interacting with a Vector Store."""
 
     vectorstore_info: VectorStoreInfo = Field(exclude=True)
-    llm: BaseLanguageModel = Field(default_factory=_raise_default_error)
+    llm: BaseLanguageModel = Field(default_factory=_llm_default_factory)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -65,7 +75,7 @@ class VectorStoreRouterToolkit(BaseToolkit):
     """Toolkit for routing between Vector Stores."""
 
     vectorstores: List[VectorStoreInfo] = Field(exclude=True)
-    llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
+    llm: BaseLanguageModel = Field(default_factory=_llm_default_factory)
 
     class Config:
         """Configuration for this pydantic object."""

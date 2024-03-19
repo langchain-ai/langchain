@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import inspect
 import warnings
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -912,3 +912,11 @@ def tool(
         return _partial
     else:
         raise ValueError("Too many arguments for tool decorator")
+
+
+class BaseToolkit(BaseModel, ABC):
+    """Base Toolkit representing a collection of related tools."""
+
+    @abstractmethod
+    def get_tools(self) -> List[BaseTool]:
+        """Get the tools in the toolkit."""
