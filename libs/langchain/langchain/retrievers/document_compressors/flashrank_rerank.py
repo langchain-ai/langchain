@@ -59,16 +59,20 @@ class FlashrankRerank(BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         passages = [
-            {"id": i, "text": doc.page_content} for i, doc in enumerate(documents)
+            {"id": i, "text": doc.page_content, "meta": doc.metadata}
+            for i, doc in enumerate(documents)
         ]
 
         rerank_request = RerankRequest(query=query, passages=passages)
         rerank_response = self.client.rerank(rerank_request)[: self.top_n]
         final_results = []
+
         for r in rerank_response:
+            metadata = r["meta"]
+            metadata["relevance_score"] = r["score"]
             doc = Document(
                 page_content=r["text"],
-                metadata={"id": r["id"], "relevance_score": r["score"]},
+                metadata=metadata,
             )
             final_results.append(doc)
         return final_results
