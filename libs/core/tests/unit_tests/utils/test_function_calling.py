@@ -6,7 +6,6 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool, tool
 from langchain_core.utils.function_calling import (
-    Example,
     convert_to_openai_function,
     tool_example_to_messages,
 )
@@ -121,16 +120,18 @@ class FakeCall(BaseModel):
 
 
 def test_valid_example_conversion() -> None:
-    example = Example(input="This is a valid example", tool_calls=[])
     expected_messages = [
         HumanMessage(content="This is a valid example"),
         AIMessage(content="", additional_kwargs={"tool_calls": []}),
     ]
-    assert tool_example_to_messages(example) == expected_messages
+    assert (
+        tool_example_to_messages(input="This is a valid example", tool_calls=[])
+        == expected_messages
+    )
 
 
 def test_multiple_tool_calls() -> None:
-    example = Example(
+    messages = tool_example_to_messages(
         input="This is an example",
         tool_calls=[
             FakeCall(data="ToolCall1"),
@@ -138,7 +139,6 @@ def test_multiple_tool_calls() -> None:
             FakeCall(data="ToolCall3"),
         ],
     )
-    messages = tool_example_to_messages(example)
     assert len(messages) == 5
     assert isinstance(messages[0], HumanMessage)
     assert isinstance(messages[1], AIMessage)
@@ -165,14 +165,13 @@ def test_multiple_tool_calls() -> None:
 
 
 def test_tool_outputs() -> None:
-    example = Example(
+    messages = tool_example_to_messages(
         input="This is an example",
         tool_calls=[
             FakeCall(data="ToolCall1"),
         ],
         tool_outputs=["Output1"],
     )
-    messages = tool_example_to_messages(example)
     assert len(messages) == 3
     assert isinstance(messages[0], HumanMessage)
     assert isinstance(messages[1], AIMessage)

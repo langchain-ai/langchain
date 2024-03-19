@@ -337,21 +337,12 @@ def convert_to_openai_tool(
     return {"type": "function", "function": function}
 
 
-class Example(TypedDict, total=False):
-    """A representation of an example consisting of text input and expected tool calls.
-
-    For extraction, the tool calls are represented as instances of pydantic model.
-    """
-
-    input: str  # This is the example text
-    tool_calls: List[BaseModel]  # Instances of pydantic model that should be extracted
-    tool_outputs: Optional[List[str]]  # The expected outputs of the tool calls
-
-
-def tool_example_to_messages(example: Example) -> List[BaseMessage]:
+def tool_example_to_messages(
+    input: str, tool_calls: List[BaseModel], tool_outputs: Optional[List[str]] = None
+) -> List[BaseMessage]:
     """Convert an example into a list of messages that can be fed into an LLM.
 
-    This code is an adapter that converts our example to a list of messages
+    This code is an adapter that converts a single example to a list of messages
     that can be fed into a chat model.
 
     The list of messages per example corresponds to:
@@ -365,13 +356,12 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
     rather than for an extraction use case.
 
     Arguments:
-        example: An example containing:
-            input: string, the user input
-            tool_calls: List[BaseModel], a list of tool calls represented as Pydantic
-                BaseModels
-            tool_outputs: Optional[List[str]], a list of tool call outputs.
-                Does not need to be provided. If not provided, a placeholder value
-                will be inserted.
+        input: string, the user input
+        tool_calls: List[BaseModel], a list of tool calls represented as Pydantic
+            BaseModels
+        tool_outputs: Optional[List[str]], a list of tool call outputs.
+            Does not need to be provided. If not provided, a placeholder value
+            will be inserted.
 
     Returns:
         A list of messages
@@ -381,6 +371,7 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
         .. code-block:: python
 
             from typing import List, Optional
+            from langchain_core.pydantic_v1 import BaseModel, Field
             from langchain_openai import ChatOpenAI
 
             class Person(BaseModel):
@@ -409,12 +400,12 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
 
             for txt, tool_call in examples:
                 messages.extend(
-                    tool_example_to_messages({"input": txt, "tool_calls": [tool_call]})
+                    tool_example_to_messages(txt, [tool_call])
                 )
     """
-    messages: List[BaseMessage] = [HumanMessage(content=example["input"])]
+    messages: List[BaseMessage] = [HumanMessage(content=input)]
     openai_tool_calls = []
-    for tool_call in example["tool_calls"]:
+    for tool_call in tool_calls:
         openai_tool_calls.append(
             {
                 "id": str(uuid.uuid4()),
@@ -431,9 +422,9 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
     messages.append(
         AIMessage(content="", additional_kwargs={"tool_calls": openai_tool_calls})
     )
-    tool_outputs = example.get("tool_outputs") or [
-        "You have correctly called this tool."
-    ] * len(openai_tool_calls)
+    tool_outputs = tool_outputs or ["You have correctly called this tool."] * len(
+        openai_tool_calls
+    )
     for output, tool_call_dict in zip(tool_outputs, openai_tool_calls):
         messages.append(ToolMessage(content=output, tool_call_id=tool_call_dict["id"]))  # type: ignore
     return messages
