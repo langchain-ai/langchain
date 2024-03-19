@@ -105,7 +105,7 @@ class LanceDB(VectorStore):
                     self._vector_key: embedding,
                     self._id_key: ids[idx],
                     self._text_key: text,
-                    'metadata': metadata,
+                    "metadata": metadata,
                 }
             )
         if self._connection is None:
@@ -114,14 +114,15 @@ class LanceDB(VectorStore):
         else:
             self._connection.add(docs)
         return ids
-    
-    def create_index(self,
-                     col_name: Optional[str]= None,
-                     vector_col: Optional[str]= None,
-                     num_partitions: Optional[int]= 256,
-                     num_sub_vectors: Optional[int]= 96,
-                     index_cache_size: Optional[int]= None
-                     ) -> None:
+
+    def create_index(
+        self,
+        col_name: Optional[str] = None,
+        vector_col: Optional[str] = None,
+        num_partitions: Optional[int] = 256,
+        num_sub_vectors: Optional[int] = 96,
+        index_cache_size: Optional[int] = None,
+    ) -> None:
         """
         Create a scalar(for non-vector cols) or a vector index on a table.
         Make sure your vector column has enough data before creating an index on it.
@@ -131,20 +132,22 @@ class LanceDB(VectorStore):
             col_name: Provide if you want to create index on a non-vector column.
             metric: Provide the metric to use for vector index. Defaults to 'L2'
                     choice of metrics: 'L2', 'dot', 'cosine'
-        
+
         Returns:
             None
         """
         if vector_col:
-            self._connection.create_index(vector_column_name=vector_col,
-                                          num_partitions=num_partitions,
-                                          num_sub_vectors=num_sub_vectors,
-                                          index_cache_size=index_cache_size)
+            self._connection.create_index(
+                vector_column_name=vector_col,
+                num_partitions=num_partitions,
+                num_sub_vectors=num_sub_vectors,
+                index_cache_size=index_cache_size,
+            )
         elif col_name:
             self._connection.create_scalar_index(col_name)
         else:
             raise ValueError("Provide either vector_col or col_name")
-        
+
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
@@ -199,17 +202,18 @@ class LanceDB(VectorStore):
 
         return instance
 
-    def _init_table(self,data) -> Any:
+    def _init_table(self, data) -> Any:
         db = self.lancedb.connect("/tmp/lancedb")
         tbl = db.create_table(self._table_name, data=data, mode="overwrite")
         return tbl
 
-    def delete(self,
-               filter: Optional[str] = None,
-               ids: Optional[List[str]] = None,
-               drop_columns: Optional[List[str]] = None,
-               delete_all: Optional[bool] = False,
-               ) -> Any:
+    def delete(
+        self,
+        filter: Optional[str] = None,
+        ids: Optional[List[str]] = None,
+        drop_columns: Optional[List[str]] = None,
+        delete_all: Optional[bool] = False,
+    ) -> Any:
         """
         Allows deleting rows by filtering, by ids or drop columns from the table.
 
@@ -227,6 +231,5 @@ class LanceDB(VectorStore):
             self._connection.drop_columns(drop_columns)
         elif delete_all:
             self._connection.delete("true")
-        else: 
+        else:
             raise ValueError("Provide either filter, ids, drop_columns or delete_all")
-        
