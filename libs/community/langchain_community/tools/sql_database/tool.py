@@ -89,7 +89,6 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     description: str = "Input is an empty string, output is a comma-separated list of tables in the database."
     args_schema: Type[BaseModel] = _ListSQLDataBaseToolInput
 
-
     def _run(
         self,
         tool_input: str = "",
