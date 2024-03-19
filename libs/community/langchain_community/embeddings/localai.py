@@ -15,7 +15,6 @@ from typing import (
     Union,
 )
 
-from langchain_community.utils.openai import is_openai_v1
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
@@ -28,7 +27,17 @@ from tenacity import (
     wait_exponential,
 )
 
+from langchain_community.utils.openai import is_openai_v1
+
 logger = logging.getLogger(__name__)
+
+
+class DataItem(BaseModel):
+    embedding: List[float]
+
+
+class Response(BaseModel):
+    data: List[DataItem]
 
 
 def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], Any]:
@@ -86,8 +95,8 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
 
 
 # https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
-def _check_response(response: dict) -> dict:
-    if any([len(d.embedding) == 1 for d in response.data]):
+def _check_response(response: Response) -> Response:
+    if any(len(d.embedding) == 1 for d in response.data):
         import openai
 
         raise openai.APIError("LocalAI API returned an empty embedding")
@@ -282,11 +291,15 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
             # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
-        return embed_with_retry(
-            self,
-            input=[text],
-            **self._invocation_params,
-        ).data[0].embedding
+        return (
+            embed_with_retry(
+                self,
+                input=[text],
+                **self._invocation_params,
+            )
+            .data[0]
+            .embedding
+        )
 
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint."""
@@ -296,12 +309,16 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
         return (
-            await async_embed_with_retry(
-                self,
-                input=[text],
-                **self._invocation_params,
+            (
+                await async_embed_with_retry(
+                    self,
+                    input=[text],
+                    **self._invocation_params,
+                )
             )
-        ).data[0].embedding
+            .data[0]
+            .embedding
+        )
 
     def embed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
