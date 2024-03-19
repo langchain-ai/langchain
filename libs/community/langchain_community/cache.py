@@ -1335,15 +1335,22 @@ class FullMd5LLMCache(Base):  # type: ignore
     llm = Column(String, index=True)
     idx = Column(Integer, index=True)
     prompt = Column(String)
+    datetime = Column(DateTime)
     response = Column(String)
+
 
 
 class SQLAlchemyMd5Cache(BaseCache):
     """Cache that uses SQAlchemy as a backend."""
 
     def __init__(
-        self, engine: Engine, cache_schema: Type[FullMd5LLMCache] = FullMd5LLMCache
+            self,
+            engine: Engine,
+            cache_schema: Type[FullMd5LLMCache] = FullMd5LLMCache,
+            lifetime_hours: int = -1,
+
     ):
+        self.lifetime_hours = lifetime_hours
         """Initialize by creating all tables."""
         self.engine = engine
         self.cache_schema = cache_schema
@@ -1369,6 +1376,7 @@ class SQLAlchemyMd5Cache(BaseCache):
                     llm=llm_string,
                     response=dumps(gen),
                     idx=i,
+                    datetime=datetime.utcnow(),
                 )
                 for i, gen in enumerate(return_val)
             ]
@@ -1391,8 +1399,15 @@ class SQLAlchemyMd5Cache(BaseCache):
             .where(self.cache_schema.prompt_md5 == prompt_pd5)  # type: ignore
             .where(self.cache_schema.llm == llm_string)
             .where(self.cache_schema.prompt == prompt)
-            .order_by(self.cache_schema.idx)
         )
+        if self.lifetime_hours > 0:
+            # if a lifetime is set, we must consider it
+            stmt = stmt.where(
+                self.cache_schema.datetime
+                > datetime.utcnow() - timedelta(hours=self.lifetime_hours)
+            )
+        stmt = stmt.order_by(self.cache_schema.idx)
+
         with Session(self.engine) as session:
             return session.execute(stmt).fetchall()
 
