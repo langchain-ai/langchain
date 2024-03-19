@@ -16,6 +16,7 @@ class LTORQueryExpansion:
     Attributes:
     - model_name_fwd (str): Name of the forward translation model.
                             Default is 'Helsinki-NLP/opus-mt-en-es'.
+
     - model_name_reverse (str): Name of the reverse translation model.
                                 Default is 'Helsinki-NLP/opus-mt-es-en'.
 
