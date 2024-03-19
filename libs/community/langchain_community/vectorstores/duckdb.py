@@ -12,32 +12,38 @@ from langchain_core.vectorstores import VST, VectorStore
 class DuckDB(VectorStore):
     """`DuckDB` vector store.
 
+    This class provides a vector store interface for adding texts and performing
+    similarity searches using DuckDB.
+
+    For more information about DuckDB, see: https://duckdb.org/
+
     This integration requires the `duckdb` Python package.
     You can install it with `pip install duckdb`.
 
-    *Security Notice*:  This class enables direct interactions with the file system
-    through DuckDB's functionalities, such as reading from and writing to local
-    files. This capability poses security considerations when integrating this class
-    into applications, particularly those accessible by third-party users or systems.
+    *Security Notice*: The default DuckDB configuration is not secure.
 
-    By **default**, DuckDB can interact with files across the entire file system,
-    which includes abilities to read, write, and list files and directories.
+        By **default**, DuckDB can interact with files across the entire file system,
+        which includes abilities to read, write, and list files and directories.
+        It can also access some python variables present in the global namespace.
 
-    To mitigate potential security risks, consider implementing the
-    following measures:
-    - Limit access to particular directories using `home_directory`.
-    - Consider setting `enable_external_access` to `false` in the connection
-    - Use filesystem permissions to restrict access and permissions to only
-        the files and directories required by the agent.
-    - Limit the tools available to the agent to only the file operations
-        necessary for the agent's intended use.
-    - Sandbox the agent by running it in a container.
+        When using this DuckDB vectorstore, we suggest that you initialize the
+        DuckDB connection with a secure configuration.
 
-    See https://python.langchain.com/docs/security for more information.
+        For example, you can set `enable_external_access` to `false` in the connection
+        configuration to disable external access to the DuckDB connection.
+
+        You can view the DuckDB configuration options here:
+
+        https://duckdb.org/docs/configuration/overview.html
+
+        Please review other relevant security considerations in the DuckDB
+        documentation. (e.g., "autoinstall_known_extensions": "false",
+        "autoload_known_extensions": "false")
+
+        See https://python.langchain.com/docs/security for more information.
 
     Args:
-        connection: Optional DuckDB connection. If not provided, a new connection will
-          be created.
+        connection: Optional DuckDB connection
         embedding: The embedding function or model to use for generating embeddings.
         vector_key: The column name for storing vectors. Defaults to `embedding`.
         id_key: The column name for storing unique identifiers. Defaults to `id`.
@@ -49,7 +55,15 @@ class DuckDB(VectorStore):
         .. code-block:: python
 
             import duckdb
-            conn = duckdb.connect(database=':memory:')
+            conn = duckdb.connect(database=':memory:',
+                config={
+                    # Sample configuration to restrict some DuckDB capabilities
+                    # List is not exhaustive. Please review DuckDB documentation.
+                        "enable_external_access": "false",
+                        "autoinstall_known_extensions": "false",
+                        "autoload_known_extensions": "false"
+                    }
+            )
             embedding_function = ... # Define or import your embedding function here
             vector_store = DuckDB(conn, embedding_function)
             vector_store.add_texts(['text1', 'text2'])
@@ -83,6 +97,17 @@ class DuckDB(VectorStore):
 
         if self._embedding is None:
             raise ValueError("An embedding function or model must be provided.")
+
+        if connection is None:
+            import warnings
+
+            warnings.warn(
+                "No DuckDB connection provided. A new connection will be created."
+                "This connection is running in memory and no data will be persisted."
+                "To persist data, specify `connection=duckdb.connect(...)` when using "
+                "the API. Please review the documentation of the vectorstore for "
+                "security recommendations on configuring the connection."
+            )
 
         self._connection = connection or self.duckdb.connect(
             database=":memory:", config={"enable_external_access": "false"}
