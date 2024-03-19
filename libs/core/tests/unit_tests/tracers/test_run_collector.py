@@ -2,8 +2,8 @@
 
 import uuid
 
+from langchain_core.language_models import FakeListLLM
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.fake.llm import FakeListLLM
 
 
 def test_collect_runs() -> None:
