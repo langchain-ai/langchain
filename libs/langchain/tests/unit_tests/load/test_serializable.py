@@ -40,15 +40,22 @@ def import_all_modules(package_name: str) -> dict:
 
 
 def test_serializable_mapping() -> None:
-    # This should have had a different namespace, as it was never
-    # exported from the langchain module, but we keep for whoever has
-    # already serialized it.
     to_skip = {
+        # This should have had a different namespace, as it was never
+        # exported from the langchain module, but we keep for whoever has
+        # already serialized it.
         ("langchain", "prompts", "image", "ImagePromptTemplate"): (
             "langchain_core",
             "prompts",
             "image",
             "ImagePromptTemplate",
+        ),
+        # This is not exported from langchain, only langchain_core
+        ("langchain_core", "prompts", "structured", "StructuredPrompt"): (
+            "langchain_core",
+            "prompts",
+            "structured",
+            "StructuredPrompt",
         ),
     }
     serializable_modules = import_all_modules("langchain")

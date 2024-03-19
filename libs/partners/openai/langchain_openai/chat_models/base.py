@@ -225,8 +225,8 @@ class _AllReturnType(TypedDict):
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
-    To use, you should have the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
+    To use, you should have the environment variable ``OPENAI_API_KEY``
+    set with your API key, or pass it as a named parameter to the constructor.
 
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
@@ -234,8 +234,9 @@ class ChatOpenAI(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatOpenAI
-            openai = ChatOpenAI(model_name="gpt-3.5-turbo")
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(model_name="gpt-3.5-turbo")
     """
 
     @property
@@ -312,7 +313,12 @@ class ChatOpenAI(BaseChatModel):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
-    """Optional httpx.Client."""
+    """Optional httpx.Client. Only used for sync invocations. Must specify 
+        http_async_client as well if you'd like a custom client for async invocations.
+    """
+    http_async_client: Union[Any, None] = None
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+        http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -368,14 +374,17 @@ class ChatOpenAI(BaseChatModel):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
 
         if not values.get("client"):
-            values["client"] = openai.OpenAI(**client_params).chat.completions
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.OpenAI(
+                **client_params, **sync_specific
+            ).chat.completions
         if not values.get("async_client"):
+            async_specific = {"http_client": values["http_async_client"]}
             values["async_client"] = openai.AsyncOpenAI(
-                **client_params
+                **client_params, **async_specific
             ).chat.completions
         return values
 
@@ -798,7 +807,8 @@ class ChatOpenAI(BaseChatModel):
                 the model output will be a dict. With a Pydantic class the returned
                 attributes will be validated, whereas with a dict they will not be. If
                 `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec.
+                must match the OpenAI function-calling spec or be a valid JSON schema
+                with top level 'title' and 'description' keys specified.
             method: The method for steering model generation, either "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
