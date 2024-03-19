@@ -122,14 +122,6 @@ def _as_async_iterator(sync_iterator: Callable) -> Callable:
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for Chat models."""
 
-==== BASE ====
-    cache: Optional[bool] = None
-    """Whether to cache the response."""
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether to print out response text."""
-    callbacks: Callbacks = Field(default=None, exclude=True)
-    """Callbacks to add to the run trace."""
-==== BASE ====
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
 
