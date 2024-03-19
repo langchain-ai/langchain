@@ -36,6 +36,7 @@ class Text2vecEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        
         m = SentenceModel()
         return m.encode(texts)
 
@@ -46,5 +47,6 @@ class Text2vecEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
+        
         m = SentenceModel()        
         return m.encode(text)
