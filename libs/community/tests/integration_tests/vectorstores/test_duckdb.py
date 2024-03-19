@@ -9,7 +9,6 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 @pytest.fixture
 def duckdb_connection():
-
     # Setup a temporary DuckDB database
     conn = duckdb.connect(":memory:")
     yield conn
