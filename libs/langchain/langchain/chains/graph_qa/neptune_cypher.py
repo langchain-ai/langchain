@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs import NeptuneGraph
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
@@ -100,14 +99,14 @@ class NeptuneOpenCypherQAChain(Chain):
     Example:
         .. code-block:: python
 
-        chain = NeptuneOpenCypherQAChain.from_llm(
-            llm=llm,
-            graph=graph
-        )
-        response = chain.run(query)
+            chain = NeptuneOpenCypherQAChain.from_llm(
+                llm=llm,
+                graph=graph
+            )
+            response = chain.run(query)
     """
 
-    graph: NeptuneGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     cypher_generation_chain: LLMChain
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:

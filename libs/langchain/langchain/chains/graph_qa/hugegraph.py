@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs.hugegraph import HugeGraph
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -32,7 +31,7 @@ class HugeGraphQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: HugeGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     gremlin_generation_chain: LLMChain
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:

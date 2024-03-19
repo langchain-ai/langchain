@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional, TypedDict, Union
 
-from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
@@ -28,7 +27,7 @@ class SQLInputWithTables(TypedDict):
 
 def create_sql_query_chain(
     llm: BaseLanguageModel,
-    db: SQLDatabase,
+    db: Any,
     prompt: Optional[BasePromptTemplate] = None,
     k: int = 5,
 ) -> Runnable[Union[SQLInput, SQLInputWithTables, Dict[str, Any]], str]:

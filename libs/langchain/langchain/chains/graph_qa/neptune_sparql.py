@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs import NeptuneRdfGraph
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
@@ -84,14 +83,14 @@ class NeptuneSparqlQAChain(Chain):
     Example:
         .. code-block:: python
 
-        chain = NeptuneSparqlQAChain.from_llm(
-            llm=llm,
-            graph=graph
-        )
-        response = chain.invoke(query)
+            chain = NeptuneSparqlQAChain.from_llm(
+                llm=llm,
+                graph=graph
+            )
+            response = chain.invoke(query)
     """
 
-    graph: NeptuneRdfGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     sparql_generation_chain: LLMChain
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:

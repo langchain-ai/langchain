@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs import GremlinGraph
 from langchain_core.callbacks.manager import CallbackManager, CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -51,7 +50,7 @@ class GremlinQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: GremlinGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     gremlin_generation_chain: LLMChain
     qa_chain: LLMChain
     gremlin_fix_chain: LLMChain

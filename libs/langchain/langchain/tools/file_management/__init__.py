@@ -1,14 +1,6 @@
-"""File Management Tools."""
+from typing import Any
 
-from langchain_community.tools.file_management.copy import CopyFileTool
-from langchain_community.tools.file_management.delete import DeleteFileTool
-from langchain_community.tools.file_management.file_search import FileSearchTool
-from langchain_community.tools.file_management.list_dir import ListDirectoryTool
-from langchain_community.tools.file_management.move import MoveFileTool
-from langchain_community.tools.file_management.read import ReadFileTool
-from langchain_community.tools.file_management.write import WriteFileTool
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "CopyFileTool",
     "DeleteFileTool",
     "FileSearchTool",
@@ -17,3 +9,17 @@ __all__ = [
     "WriteFileTool",
     "ListDirectoryTool",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.tools.file_management import {name}`"  # noqa: #E501
+        )
+
+    raise AttributeError()

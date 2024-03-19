@@ -4,7 +4,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs.arangodb_graph import ArangoGraph
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -34,7 +33,7 @@ class ArangoGraphQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: ArangoGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     aql_generation_chain: LLMChain
     aql_fix_chain: LLMChain
     qa_chain: LLMChain

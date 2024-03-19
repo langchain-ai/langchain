@@ -24,6 +24,9 @@ git grep '^from langchain\.' langchain/embeddings | grep -vE 'from langchain.(py
 git grep '^from langchain\.' langchain/docstore | grep -vE 'from langchain.(pydantic_v1|utils|schema|docstore)' && errors=$((errors+1))
 git grep '^from langchain\.' langchain/vectorstores | grep -vE 'from langchain.(pydantic_v1|utils|schema|load|callbacks|env|_api|storage|llms|docstore|vectorstores|utilities)' && errors=$((errors+1))
 
+# make sure not importing from langchain_community
+git --no-pager grep '^from langchain_community\.' `git ls-files langchain | grep -vE 'langchain/(agents/load_tools|chains/llm_requests).py'` && errors=$((errors+1))
+
 # make sure not importing from langchain_experimental
 git --no-pager grep '^from langchain_experimental\.' . && errors=$((errors+1))
 

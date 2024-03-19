@@ -4,7 +4,6 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional
 
-from langchain_community.llms.openai import OpenAI
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Extra, root_validator
@@ -68,6 +67,13 @@ class NatBotChain(Chain):
     @classmethod
     def from_default(cls, objective: str, **kwargs: Any) -> NatBotChain:
         """Load with default LLMChain."""
+        try:
+            from langchain_openai import OpenAI
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import OpenAI from langchain-openai. Please install with"
+                " `pip install -U langchain-openai`."
+            ) from e
         llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)
         return cls.from_llm(llm, objective, **kwargs)
 

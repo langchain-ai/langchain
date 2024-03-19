@@ -1,17 +1,23 @@
-"""O365 tools."""
+from typing import Any
 
-from langchain_community.tools.office365.create_draft_message import (
-    O365CreateDraftMessage,
-)
-from langchain_community.tools.office365.events_search import O365SearchEvents
-from langchain_community.tools.office365.messages_search import O365SearchEmails
-from langchain_community.tools.office365.send_event import O365SendEvent
-from langchain_community.tools.office365.send_message import O365SendMessage
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "O365SearchEmails",
     "O365SearchEvents",
     "O365CreateDraftMessage",
     "O365SendMessage",
     "O365SendEvent",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.tools.office365 import {name}`"  # noqa: #E501
+        )
+
+    raise AttributeError()

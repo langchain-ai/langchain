@@ -4,8 +4,6 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, NamedTuple, Optional, cast
 
-from langchain_community.tools.openapi.utils.api_models import APIOperation
-from langchain_community.utilities.requests import Requests
 from langchain_core.callbacks import CallbackManagerForChainRun, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -30,8 +28,8 @@ class OpenAPIEndpointChain(Chain, BaseModel):
 
     api_request_chain: LLMChain
     api_response_chain: Optional[LLMChain]
-    api_operation: APIOperation
-    requests: Requests = Field(exclude=True, default_factory=Requests)
+    api_operation: Any
+    requests: Any = Field(exclude=True, default_factory=Requests)
     param_mapping: _ParamMapping = Field(alias="param_mapping")
     return_intermediate_steps: bool = False
     instructions_key: str = "instructions"  #: :meta private:
@@ -169,7 +167,7 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         path: str,
         method: str,
         llm: BaseLanguageModel,
-        requests: Optional[Requests] = None,
+        requests: Optional[Any] = None,
         return_intermediate_steps: bool = False,
         **kwargs: Any,
         # TODO: Handle async
@@ -187,9 +185,9 @@ class OpenAPIEndpointChain(Chain, BaseModel):
     @classmethod
     def from_api_operation(
         cls,
-        operation: APIOperation,
+        operation: Any,
         llm: BaseLanguageModel,
-        requests: Optional[Requests] = None,
+        requests: Optional[Any] = None,
         verbose: bool = False,
         return_intermediate_steps: bool = False,
         raw_response: bool = False,

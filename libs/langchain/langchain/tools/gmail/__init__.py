@@ -1,15 +1,23 @@
-"""Gmail tools."""
+from typing import Any
 
-from langchain_community.tools.gmail.create_draft import GmailCreateDraft
-from langchain_community.tools.gmail.get_message import GmailGetMessage
-from langchain_community.tools.gmail.get_thread import GmailGetThread
-from langchain_community.tools.gmail.search import GmailSearch
-from langchain_community.tools.gmail.send_message import GmailSendMessage
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "GmailCreateDraft",
     "GmailSendMessage",
     "GmailSearch",
     "GmailGetMessage",
     "GmailGetThread",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.tools.gmail import {name}`"  # noqa: #E501
+        )
+
+    raise AttributeError()

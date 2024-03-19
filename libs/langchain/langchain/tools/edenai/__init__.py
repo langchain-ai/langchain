@@ -1,28 +1,6 @@
-"""Edenai Tools."""
-from langchain_community.tools.edenai.audio_speech_to_text import (
-    EdenAiSpeechToTextTool,
-)
-from langchain_community.tools.edenai.audio_text_to_speech import (
-    EdenAiTextToSpeechTool,
-)
-from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
-from langchain_community.tools.edenai.image_explicitcontent import (
-    EdenAiExplicitImageTool,
-)
-from langchain_community.tools.edenai.image_objectdetection import (
-    EdenAiObjectDetectionTool,
-)
-from langchain_community.tools.edenai.ocr_identityparser import (
-    EdenAiParsingIDTool,
-)
-from langchain_community.tools.edenai.ocr_invoiceparser import (
-    EdenAiParsingInvoiceTool,
-)
-from langchain_community.tools.edenai.text_moderation import (
-    EdenAiTextModerationTool,
-)
+from typing import Any
 
-__all__ = [
+DEPRECATED_IMPORTS = [
     "EdenAiExplicitImageTool",
     "EdenAiObjectDetectionTool",
     "EdenAiParsingIDTool",
@@ -32,3 +10,17 @@ __all__ = [
     "EdenAiTextModerationTool",
     "EdenaiTool",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.tools.edenai import {name}`"  # noqa: #E501
+        )
+
+    raise AttributeError()

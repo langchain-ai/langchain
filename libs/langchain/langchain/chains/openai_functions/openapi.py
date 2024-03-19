@@ -3,11 +3,9 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import requests
-from langchain_community.chat_models import ChatOpenAI
-from langchain_community.utilities.openapi import OpenAPISpec
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
@@ -71,7 +69,7 @@ def _format_url(url: str, path_params: dict) -> str:
     return url.format(**new_params)
 
 
-def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -> dict:
+def _openapi_params_to_json_schema(params: List[Parameter], spec: Any) -> dict:
     properties = {}
     required = []
     for p in params:
@@ -89,7 +87,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
 
 
 def openapi_spec_to_openai_fn(
-    spec: OpenAPISpec,
+    spec: Any,
 ) -> Tuple[List[Dict[str, Any]], Callable]:
     """Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
         functions.
@@ -237,7 +235,7 @@ class SimpleRequestChain(Chain):
 
 
 def get_openapi_chain(
-    spec: Union[OpenAPISpec, str],
+    spec: Any,
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
@@ -257,24 +255,31 @@ def get_openapi_chain(
         request_chain: Chain for taking the functions output and executing the request.
     """
     if isinstance(spec, str):
-        for conversion in (
-            OpenAPISpec.from_url,
-            OpenAPISpec.from_file,
-            OpenAPISpec.from_text,
-        ):
-            try:
-                spec = conversion(spec)  # type: ignore[arg-type]
-                break
-            except ImportError as e:
-                raise e
-            except Exception:  # noqa: E722
-                pass
-        if isinstance(spec, str):
-            raise ValueError(f"Unable to parse spec from source {spec}")
+        raise ValueError(
+            "Passing in a string spec is deprecated, please specify spec as an "
+            "OpenAPISpec. To parse a string to an "
+            "OpenAPISpec install langchain-community with: "
+            "`pip install -U langchain-community` and use one of:\n\n"
+            "```\n"
+            "from langchain_community.utilities.openapi import OpenAPISpec\n\n"
+            "spec = OpenAPISpec.from_text(src)\n"
+            "spec = OpenAPISpec.from_url(src)\n"
+            "spec = OpenAPISpec.from_file(src)\n"
+            "```"
+        )
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
-    llm = llm or ChatOpenAI(
-        model="gpt-3.5-turbo-0613",
-    )
+    if llm is None:
+        try:
+            from langchain_openai import ChatOpenAI
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import ChatOpenAI from langchain-openai. Please install "
+                "with `pip install -U langchain-openai`."
+            ) from e
+        else:
+            llm = ChatOpenAI(
+                model="gpt-3.5-turbo-0613",
+            )
     prompt = prompt or ChatPromptTemplate.from_template(
         "Use the provided API's to respond to this user query:\n\n{query}"
     )

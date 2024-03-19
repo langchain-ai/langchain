@@ -1,9 +1,6 @@
 """Chain that does self-ask with search."""
 from typing import Any, Sequence, Union
 
-from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
-from langchain_community.utilities.searchapi import SearchApiAPIWrapper
-from langchain_community.utilities.serpapi import SerpAPIWrapper
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -69,9 +66,7 @@ class SelfAskWithSearchChain(AgentExecutor):
     def __init__(
         self,
         llm: BaseLanguageModel,
-        search_chain: Union[
-            GoogleSerperAPIWrapper, SearchApiAPIWrapper, SerpAPIWrapper
-        ],
+        search_chain: Any,
         **kwargs: Any,
     ):
         """Initialize only with an LLM and a search chain."""

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs.kuzu_graph import KuzuGraph
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -29,7 +28,7 @@ class KuzuQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: KuzuGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     cypher_generation_chain: LLMChain
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:

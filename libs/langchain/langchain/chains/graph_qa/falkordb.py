@@ -4,7 +4,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs import FalkorDBGraph
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -50,7 +49,7 @@ class FalkorDBQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: FalkorDBGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     cypher_generation_chain: LLMChain
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:

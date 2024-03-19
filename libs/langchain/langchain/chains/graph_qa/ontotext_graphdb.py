@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 if TYPE_CHECKING:
     import rdflib
 
-from langchain_community.graphs import OntotextGraphDBGraph
 from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
@@ -38,7 +37,7 @@ class OntotextGraphDBQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: OntotextGraphDBGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     sparql_generation_chain: LLMChain
     sparql_fix_chain: LLMChain
     max_fix_retries: int

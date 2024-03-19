@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 
@@ -36,6 +35,17 @@ class EmbeddingDistance(str, Enum):
     HAMMING = "hamming"
 
 
+def _embeddings_default_factory() -> Any:
+    try:
+        from langchain_openai import OpenAIEmbeddings
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import OpenAIEmbeddings from langchain-openai. Please specify "
+            "embeddings or install langchain-openai with "
+            "`pip install -U langchain-openai`."
+        ) from e
+
+
 class _EmbeddingDistanceChainMixin(Chain):
     """Shared functionality for embedding distance evaluators.
 
@@ -45,31 +55,8 @@ class _EmbeddingDistanceChainMixin(Chain):
                                             for comparing the embeddings.
     """
 
-    embeddings: Embeddings = Field(default_factory=OpenAIEmbeddings)
+    embeddings: Embeddings = Field(default_factory=_embeddings_default_factory)
     distance_metric: EmbeddingDistance = Field(default=EmbeddingDistance.COSINE)
-
-    @root_validator(pre=False)
-    def _validate_tiktoken_installed(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate that the TikTok library is installed.
-
-        Args:
-            values (Dict[str, Any]): The values to validate.
-
-        Returns:
-            Dict[str, Any]: The validated values.
-        """
-        embeddings = values.get("embeddings")
-        if isinstance(embeddings, OpenAIEmbeddings):
-            try:
-                import tiktoken  # noqa: F401
-            except ImportError:
-                raise ImportError(
-                    "The tiktoken library is required to use the default "
-                    "OpenAI embeddings with embedding distance evaluators."
-                    " Please either manually select a different Embeddings object"
-                    " or install tiktoken using `pip install tiktoken`."
-                )
-        return values
 
     class Config:
         """Permit embeddings to go unvalidated."""

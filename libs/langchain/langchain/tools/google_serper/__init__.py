@@ -1,9 +1,17 @@
-from langchain_community.tools.google_serper.tool import (
-    GoogleSerperResults,
-    GoogleSerperRun,
-)
+from typing import Any
 
-"""Google Serper API Toolkit."""
-"""Tool for the Serer.dev Google Search API."""
+DEPRECATED_IMPORTS = ["GoogleSerperRun", "GoogleSerperResults"]
 
-__all__ = ["GoogleSerperRun", "GoogleSerperResults"]
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.tools.google_serper import {name}`"  # noqa: #E501
+        )
+
+    raise AttributeError()

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs.rdf_graph import RdfGraph
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
@@ -36,7 +35,7 @@ class GraphSparqlQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: RdfGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     sparql_generation_select_chain: LLMChain
     sparql_generation_update_chain: LLMChain
     sparql_intent_chain: LLMChain

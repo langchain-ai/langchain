@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs.networkx_graph import NetworkxEntityGraph, get_entities
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
@@ -29,7 +28,7 @@ class GraphQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: NetworkxEntityGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     entity_extraction_chain: LLMChain
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:
@@ -85,8 +84,11 @@ class GraphQAChain(Chain):
         _run_manager.on_text(
             entity_string, color="green", end="\n", verbose=self.verbose
         )
-        entities = get_entities(entity_string)
-        context = ""
+
+        if entity_string.strip() == "NONE":
+            entities = []
+        else:
+            entities = [w.strip() for w in entity_string.split(",")]
         all_triplets = []
         for entity in entities:
             all_triplets.extend(self.graph.get_entity_knowledge(entity))

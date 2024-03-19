@@ -5,8 +5,6 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, Union
 
-from langchain_community.chat_models.azure_openai import AzureChatOpenAI
-from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
@@ -152,8 +150,10 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         output_parser (BaseOutputParser): The output parser for the chain.
 
     Example:
-        >>> from langchain_community.chat_models import ChatOpenAI
+        >>> !pip install -U langchain langchain-openai
+        >>> from langchain_openai import ChatOpenAI
         >>> from langchain.evaluation.scoring import ScoreStringEvalChain
+        >>>
         >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
         >>> chain = ScoreStringEvalChain.from_llm(llm=llm)
         >>> result = chain.evaluate_strings(
@@ -258,15 +258,6 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             ValueError: If the input variables are not as expected.
 
         """
-        if not (
-            isinstance(llm, (ChatOpenAI, AzureChatOpenAI))
-            and llm.model_name.startswith("gpt-4")
-        ):
-            logger.warning(
-                "This chain was only tested with GPT-4. \
-Performance may be significantly worse with other models."
-            )
-
         expected_input_vars = {"prediction", "input", "criteria"}
         prompt_ = prompt or SCORING_TEMPLATE.partial(reference="")
         if expected_input_vars != set(prompt_.input_variables):

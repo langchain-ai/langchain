@@ -5,7 +5,6 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
-from langchain_community.llms.openai import OpenAI
 from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
@@ -53,14 +52,21 @@ class _ResponseChain(LLMChain):
         """Extract tokens and log probs from response."""
 
 
+def _llm_default_factory() -> Any:
+    try:
+        from langchain_openai import OpenAI
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import OpenAI from langchain_openai. Please install with"
+            " `pip install -U langchain-openai`."
+        ) from e
+    return OpenAI(max_tokens=32, model_kwargs={"logprobs": 1}, temperature=0)
+
+
 class _OpenAIResponseChain(_ResponseChain):
     """Chain that generates responses from user input and context."""
 
-    llm: OpenAI = Field(
-        default_factory=lambda: OpenAI(
-            max_tokens=32, model_kwargs={"logprobs": 1}, temperature=0
-        )
-    )
+    llm: Any = Field(default_factory=_llm_default_factory)
 
     def _extract_tokens_and_log_probs(
         self, generations: List[Generation]
@@ -256,9 +262,16 @@ class FlareChain(Chain):
             FlareChain class with the given language model.
         """
         question_gen_chain = QuestionGeneratorChain(llm=llm)
-        response_llm = OpenAI(
-            max_tokens=max_generation_len, model_kwargs={"logprobs": 1}, temperature=0
-        )
+        try:
+            from langchain_openai import OpenAI
+        except ImportError:
+            response_llm = llm
+        else:
+            response_llm = OpenAI(
+                max_tokens=max_generation_len,
+                model_kwargs={"logprobs": 1},
+                temperature=0,
+            )
         response_chain = _OpenAIResponseChain(llm=response_llm)
         return cls(
             question_generator_chain=question_gen_chain,

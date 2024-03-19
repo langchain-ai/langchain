@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
@@ -74,12 +73,21 @@ class MultiRetrievalQAChain(MultiRouteChain):
                 llm, prompt=default_prompt, retriever=default_retriever
             )
         else:
+            try:
+                from langchain_openai import ChatOpenAI
+            except ImportError as e:
+                raise ImportError(
+                    "Unable to import ChatOpenAI from langchain-openai. Please install "
+                    "with `pip install -U langchain-openai`."
+                ) from e
+            else:
+                llm = ChatOpenAI()
             prompt_template = DEFAULT_TEMPLATE.replace("input", "query")
             prompt = PromptTemplate(
                 template=prompt_template, input_variables=["history", "query"]
             )
             _default_chain = ConversationChain(
-                llm=ChatOpenAI(), prompt=prompt, input_key="query", output_key="result"
+                llm=llm, prompt=prompt, input_key="query", output_key="result"
             )
         return cls(
             router_chain=router_chain,

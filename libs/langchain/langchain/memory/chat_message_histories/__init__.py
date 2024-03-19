@@ -1,29 +1,6 @@
-import warnings
 from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
-
-from langchain.utils.interactive_env import is_interactive_env
-
-
-def __getattr__(name: str) -> Any:
-    from langchain_community import chat_message_histories
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing chat message histories from langchain is deprecated. Importing "
-            "from langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.chat_message_histories import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(chat_message_histories, name)
-
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "AstraDBChatMessageHistory",
     "ChatMessageHistory",
     "CassandraChatMessageHistory",
@@ -45,3 +22,17 @@ __all__ = [
     "UpstashRedisChatMessageHistory",
     "Neo4jChatMessageHistory",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.memory.chat_message_histories import {name}`"
+        )
+
+    raise AttributeError()

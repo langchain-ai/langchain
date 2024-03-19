@@ -459,10 +459,10 @@ class APIOperation(BaseModel):
     """The HTTP method of the operation."""
 
     properties: Sequence[APIProperty] = Field(alias="properties")
+    """The properties of the operation."""
 
     # TODO: Add parse in used components to be able to specify what type of
     # referenced object it is.
-    # """The properties of the operation."""
     # components: Dict[str, BaseModel] = Field(alias="components")
 
     request_body: Optional[APIRequestBody] = Field(alias="request_body")

@@ -4,7 +4,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs.graph_store import GraphStore
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -113,7 +112,7 @@ class GraphCypherQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: GraphStore = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     cypher_generation_chain: LLMChain
     qa_chain: LLMChain
     graph_schema: str

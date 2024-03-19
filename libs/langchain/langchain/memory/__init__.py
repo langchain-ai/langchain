@@ -26,25 +26,7 @@
 
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
-from langchain_community.chat_message_histories import (
-    AstraDBChatMessageHistory,
-    CassandraChatMessageHistory,
-    ChatMessageHistory,
-    CosmosDBChatMessageHistory,
-    DynamoDBChatMessageHistory,
-    ElasticsearchChatMessageHistory,
-    FileChatMessageHistory,
-    MomentoChatMessageHistory,
-    MongoDBChatMessageHistory,
-    PostgresChatMessageHistory,
-    RedisChatMessageHistory,
-    SingleStoreDBChatMessageHistory,
-    SQLChatMessageHistory,
-    StreamlitChatMessageHistory,
-    UpstashRedisChatMessageHistory,
-    XataChatMessageHistory,
-    ZepChatMessageHistory,
-)
+from typing import Any
 
 from langchain.memory.buffer import (
     ConversationBufferMemory,
@@ -69,10 +51,41 @@ from langchain.memory.token_buffer import ConversationTokenBufferMemory
 from langchain.memory.vectorstore import VectorStoreRetrieverMemory
 from langchain.memory.zep_memory import ZepMemory
 
-__all__ = [
+DEPRECATED_IMPORTS = [
     "AstraDBChatMessageHistory",
     "CassandraChatMessageHistory",
     "ChatMessageHistory",
+    "CosmosDBChatMessageHistory",
+    "MomentoChatMessageHistory",
+    "MongoDBChatMessageHistory",
+    "DynamoDBChatMessageHistory",
+    "RedisChatMessageHistory",
+    "PostgresChatMessageHistory",
+    "ElasticsearchChatMessageHistory",
+    "FileChatMessageHistory",
+    "SingleStoreDBChatMessageHistory",
+    "SQLChatMessageHistory",
+    "XataChatMessageHistory",
+    "ZepChatMessageHistory",
+    "StreamlitChatMessageHistory",
+    "UpstashRedisChatMessageHistory",
+]
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.chat_message_histories import {name}`"
+        )
+    raise AttributeError()
+
+
+__all__ = [
     "CombinedMemory",
     "ConversationBufferMemory",
     "ConversationBufferWindowMemory",
@@ -82,27 +95,13 @@ __all__ = [
     "ConversationSummaryBufferMemory",
     "ConversationSummaryMemory",
     "ConversationTokenBufferMemory",
-    "CosmosDBChatMessageHistory",
-    "DynamoDBChatMessageHistory",
-    "ElasticsearchChatMessageHistory",
-    "FileChatMessageHistory",
     "InMemoryEntityStore",
-    "MomentoChatMessageHistory",
-    "MongoDBChatMessageHistory",
     "MotorheadMemory",
-    "PostgresChatMessageHistory",
     "ReadOnlySharedMemory",
-    "RedisChatMessageHistory",
     "RedisEntityStore",
-    "SingleStoreDBChatMessageHistory",
-    "SQLChatMessageHistory",
     "SQLiteEntityStore",
     "SimpleMemory",
-    "StreamlitChatMessageHistory",
     "VectorStoreRetrieverMemory",
-    "XataChatMessageHistory",
-    "ZepChatMessageHistory",
     "ZepMemory",
     "UpstashRedisEntityStore",
-    "UpstashRedisChatMessageHistory",
 ]

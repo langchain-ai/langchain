@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain_community.graphs.nebula_graph import NebulaGraph
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -29,7 +28,7 @@ class NebulaGraphQAChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    graph: NebulaGraph = Field(exclude=True)
+    graph: Any = Field(exclude=True)
     ngql_generation_chain: LLMChain
     qa_chain: LLMChain
     input_key: str = "query"  #: :meta private:

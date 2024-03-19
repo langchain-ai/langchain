@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse
 
-from langchain_community.utilities.requests import TextRequestsWrapper
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -70,7 +69,7 @@ class APIChain(Chain):
 
     api_request_chain: LLMChain
     api_answer_chain: LLMChain
-    requests_wrapper: TextRequestsWrapper = Field(exclude=True)
+    requests_wrapper: Any = Field(exclude=True)
     api_docs: str
     question_key: str = "question"  #: :meta private:
     output_key: str = "output"  #: :meta private:
