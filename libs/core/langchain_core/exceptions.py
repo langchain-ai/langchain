@@ -47,3 +47,7 @@ class OutputParserException(ValueError, LangChainException):
         self.observation = observation
         self.llm_output = llm_output
         self.send_to_llm = send_to_llm
+
+
+class InvalidKeyException(LangChainException):
+    """Raised when a key for a BaseStore is invalid; e.g., uses incorrect characters."""

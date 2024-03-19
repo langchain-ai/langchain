@@ -56,7 +56,7 @@ class ConversationKGMemory(BaseChatMemory):
     k: int = 2
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
-    kg: Any = Field(default_factory=_kg_default_factory())
+    kg: Any = Field(default_factory=_kg_default_factory)
     """Expect a langchain_community.graphs.NetworkxEntityGraph."""
     knowledge_extraction_prompt: BasePromptTemplate = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT
     entity_extraction_prompt: BasePromptTemplate = ENTITY_EXTRACTION_PROMPT

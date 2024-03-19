@@ -2,6 +2,7 @@
 
 from typing import Union
 
+import pytest
 from langchain_community.llms.fake import FakeListLLM
 from langchain_core.agents import AgentAction
 from langchain_core.documents import Document
@@ -9,7 +10,6 @@ from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tools import Tool
 
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
-from langchain.docstore.base import Docstore
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
@@ -20,15 +20,6 @@ What isn't there to love about langchain?
 Made in 2022."""
 
 _FAKE_PROMPT = PromptTemplate(input_variables=["input"], template="{input}")
-
-
-class FakeDocstore(Docstore):
-    """Fake docstore for testing purposes."""
-
-    def search(self, search: str) -> Union[str, Document]:
-        """Return the fake document."""
-        document = Document(page_content=_PAGE_CONTENT)
-        return document
 
 
 def test_predict_until_observation_normal() -> None:
@@ -45,8 +36,19 @@ def test_predict_until_observation_normal() -> None:
     assert output == expected_output
 
 
+@pytest.mark.requires("langchain_community")
 def test_react_chain() -> None:
     """Test react chain."""
+    from langchain_community.docstore.base import Docstore
+
+    class FakeDocstore(Docstore):
+        """Fake docstore for testing purposes."""
+
+        def search(self, search: str) -> Union[str, Document]:
+            """Return the fake document."""
+            document = Document(page_content=_PAGE_CONTENT)
+            return document
+
     responses = [
         "I should probably search\nAction: Search[langchain]",
         "I should probably lookup\nAction: Lookup[made]",
@@ -58,8 +60,19 @@ def test_react_chain() -> None:
     assert output == "2022"
 
 
+@pytest.mark.requires("langchain_community")
 def test_react_chain_bad_action() -> None:
     """Test react chain when bad action given."""
+    from langchain_community.docstore.base import Docstore
+
+    class FakeDocstore(Docstore):
+        """Fake docstore for testing purposes."""
+
+        def search(self, search: str) -> Union[str, Document]:
+            """Return the fake document."""
+            document = Document(page_content=_PAGE_CONTENT)
+            return document
+
     bad_action_name = "BadAction"
     responses = [
         f"I'm turning evil\nAction: {bad_action_name}[langchain]",

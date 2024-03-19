@@ -14,7 +14,6 @@ from langchain.agents.react.output_parser import ReActOutputParser
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.utils import validate_tools_single_input
-from langchain.docstore.base import Docstore
 
 
 @deprecated("0.1.0", removal="0.2.0")
@@ -68,7 +67,7 @@ class ReActDocstoreAgent(Agent):
 class DocstoreExplorer:
     """Class to assist with exploration of a document store."""
 
-    def __init__(self, docstore: Docstore):
+    def __init__(self, docstore: Any):
         """Initialize with a docstore, and set initial document to None."""
         self.docstore = docstore
         self.document: Optional[Document] = None
@@ -138,7 +137,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
 class ReActChain(AgentExecutor):
     """[Deprecated] Chain that implements the ReAct paper."""
 
-    def __init__(self, llm: BaseLanguageModel, docstore: Docstore, **kwargs: Any):
+    def __init__(self, llm: BaseLanguageModel, docstore: Any, **kwargs: Any):
         """Initialize with the LLM and a docstore."""
         docstore_explorer = DocstoreExplorer(docstore)
         tools = [

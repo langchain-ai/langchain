@@ -6,6 +6,7 @@ import pytest
 from _pytest.fixtures import FixtureRequest
 from langchain_community.chat_models import FakeListChatModel
 from langchain_community.llms import FakeListLLM
+from langchain_core.caches import BaseCache
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load import dumps
@@ -14,11 +15,13 @@ from langchain_core.outputs import ChatGeneration, Generation
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from langchain.cache import InMemoryCache, SQLAlchemyCache
+from langchain.cache import InMemoryCache
 from langchain.globals import get_llm_cache, set_llm_cache
 
 
-def get_sqlite_cache() -> SQLAlchemyCache:
+def get_sqlite_cache() -> BaseCache:
+    from langchain_community.cache import SQLAlchemyCache
+
     return SQLAlchemyCache(
         engine=create_engine(
             "sqlite://", creator=lambda: sqlite3.connect("file::memory:?cache=shared")
@@ -32,6 +35,7 @@ CACHE_OPTIONS = [
 ]
 
 
+@pytest.mark.requires("langchain_community")
 @pytest.fixture(autouse=True, params=CACHE_OPTIONS)
 def set_cache_and_teardown(request: FixtureRequest) -> Generator[None, None, None]:
     # Will be run before each test
@@ -79,7 +83,10 @@ async def test_llm_caching() -> None:
         )
 
 
+@pytest.mark.requires("langchain_community")
 def test_old_sqlite_llm_caching() -> None:
+    from langchain_community.cache import SQLAlchemyCache
+
     llm_cache = get_llm_cache()
     if isinstance(llm_cache, SQLAlchemyCache):
         prompt = "How are you?"

@@ -1,14 +1,14 @@
 import pytest
 from langchain_core.documents import Document
 
-from langchain.embeddings import FakeEmbeddings
-from langchain.retrievers import KNNRetriever, TFIDFRetriever
-from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.ensemble import EnsembleRetriever
+from tests.unit_tests.fake_embeddings import FakeEmbeddings
 
 
-@pytest.mark.requires("rank_bm25")
+@pytest.mark.requires("rank_bm25", "langchain_community")
 def test_ensemble_retriever_get_relevant_docs() -> None:
+    from langchain_community.retrievers import BM25Retriever
+
     doc_list = [
         "I like apples",
         "I like oranges",
@@ -25,8 +25,10 @@ def test_ensemble_retriever_get_relevant_docs() -> None:
     assert len(docs) == 1
 
 
-@pytest.mark.requires("rank_bm25")
+@pytest.mark.requires("rank_bm25", "langchain_community")
 def test_weighted_reciprocal_rank() -> None:
+    from langchain_community.retrievers import BM25Retriever
+
     doc1 = Document(page_content="1")
     doc2 = Document(page_content="2")
 
@@ -44,8 +46,14 @@ def test_weighted_reciprocal_rank() -> None:
     assert result[1].page_content == "2"
 
 
-@pytest.mark.requires("rank_bm25", "sklearn")
+@pytest.mark.requires("rank_bm25", "sklearn", "langchain_community")
 def test_ensemble_retriever_get_relevant_docs_with_multiple_retrievers() -> None:
+    from langchain_community.retrievers import (
+        BM25Retriever,
+        KNNRetriever,
+        TFIDFRetriever,
+    )
+
     doc_list_a = [
         "I like apples",
         "I like oranges",
