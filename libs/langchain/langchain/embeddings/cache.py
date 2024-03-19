@@ -12,7 +12,7 @@ import hashlib
 import json
 import uuid
 from functools import partial
-from typing import Callable, List, Sequence, Union, cast, Optional
+from typing import Callable, List, Optional, Sequence, Union, cast
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.stores import BaseStore, ByteStore
