@@ -217,6 +217,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         database_name: str = "default",
         index_name: str = "default",
         wait_until_ready: bool = False,
+        score_threshold: Optional[float] = None,
         **kwargs: Dict[str, Any],
     ):
         """
@@ -237,6 +238,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         """
         client = _generate_mongo_client(connection_string)
         self.collection = client[database_name][collection_name]
+        self.score_threshold = score_threshold
         self._wait_until_ready = wait_until_ready
         super().__init__(
             collection=self.collection,
@@ -247,8 +249,17 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
+        post_filter_pipeline = (
+            [{"$match": {"score": {"$gte": self.score_threshold}}}]
+            if self.score_threshold
+            else None
+        )
+
         search_response = self.similarity_search_with_score(
-            prompt, 1, pre_filter={self.LLM: {"$eq": llm_string}}
+            prompt,
+            1,
+            pre_filter={self.LLM: {"$eq": llm_string}},
+            post_filter_pipeline=post_filter_pipeline,
         )
         if search_response:
             return_val = search_response[0][0].metadata.get(self.RETURN_VAL)

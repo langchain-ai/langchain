@@ -30,6 +30,7 @@ def llm_cache(cls: Any) -> BaseCache:
             collection_name=COLLECTION,
             database_name=DATABASE,
             index_name=INDEX_NAME,
+            score_threshold=0.5,
             wait_until_ready=True,
         )
     )
@@ -92,13 +93,17 @@ def _execute_test(
     ],
 )
 @pytest.mark.parametrize("cacher", [MongoDBCache, MongoDBAtlasSemanticCache])
+@pytest.mark.parametrize("remove_score", [True, False])
 def test_mongodb_cache(
+    remove_score: bool,
     cacher: Union[MongoDBCache, MongoDBAtlasSemanticCache],
     prompt: Union[str, List[BaseMessage]],
     llm: Union[str, FakeLLM, FakeChatModel],
     response: List[Generation],
 ) -> None:
     llm_cache(cacher)
+    if remove_score:
+        get_llm_cache().score_threshold = None  # type: ignore
     try:
         _execute_test(prompt, llm, response)
     finally:
