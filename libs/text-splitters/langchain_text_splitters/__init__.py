@@ -42,10 +42,6 @@ from langchain_text_splitters.markdown import (
 )
 from langchain_text_splitters.nltk import NLTKTextSplitter
 from langchain_text_splitters.python import PythonCodeTextSplitter
-from langchain_text_splitters.semantic_text_splitter import (
-    SemanticCharacterTextSplitter,
-    SemanticTiktokenTextSplitter,
-)
 from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
@@ -72,6 +68,4 @@ __all__ = [
     "MarkdownHeaderTextSplitter",
     "MarkdownTextSplitter",
     "CharacterTextSplitter",
-    "SemanticCharacterTextSplitter",
-    "SemanticTiktokenTextSplitter",
 ]
