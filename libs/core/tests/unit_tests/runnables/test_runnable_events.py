@@ -312,8 +312,8 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
     ]
 
 
-async def test_event_stream() -> None:
-    """"""
+async def test_astream_events_from_model() -> None:
+    """Test the output of a model."""
     infinite_cycle = cycle(
         [AIMessage(content="hello world!"), AIMessage(content="goodbye world!")]
     )
