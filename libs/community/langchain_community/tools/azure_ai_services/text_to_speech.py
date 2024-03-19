@@ -12,40 +12,40 @@ from langchain_core.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class AzureCogsText2SpeechTool(BaseTool):
-    """Tool that queries the Azure Cognitive Services Text2Speech API.
+class AzureAiServicesTextToSpeechTool(BaseTool):
+    """Tool that queries the Azure AI Services Text to Speech API.
 
     In order to set this up, follow instructions at:
-    https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/get-started-text-to-speech?pivots=programming-language-python
+    https://learn.microsoft.com/en-us/azure/ai-services/speech-service/get-started-text-to-speech?pivots=programming-language-python
     """
 
-    azure_cogs_key: str = ""  #: :meta private:
-    azure_cogs_region: str = ""  #: :meta private:
+    azure_ai_services_key: str = ""  #: :meta private:
+    azure_ai_services_region: str = ""  #: :meta private:
     speech_language: str = "en-US"  #: :meta private:
     speech_config: Any  #: :meta private:
 
-    name: str = "azure_cognitive_services_text2speech"
+    name: str = "azure_ai_services_text_to_speech"
     description: str = (
-        "A wrapper around Azure Cognitive Services Text2Speech. "
+        "A wrapper around Azure AI Services Text to Speech API. "
         "Useful for when you need to convert text to speech. "
     )
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
-        azure_cogs_key = get_from_dict_or_env(
-            values, "azure_cogs_key", "AZURE_COGS_KEY"
+        azure_ai_services_key = get_from_dict_or_env(
+            values, "azure_ai_services_key", "AZURE_AI_SERVICES_KEY"
         )
 
-        azure_cogs_region = get_from_dict_or_env(
-            values, "azure_cogs_region", "AZURE_COGS_REGION"
+        azure_ai_services_region = get_from_dict_or_env(
+            values, "azure_ai_services_region", "AZURE_AI_SERVICES_REGION"
         )
 
         try:
             import azure.cognitiveservices.speech as speechsdk
 
             values["speech_config"] = speechsdk.SpeechConfig(
-                subscription=azure_cogs_key, region=azure_cogs_region
+                subscription=azure_ai_services_key, region=azure_ai_services_region
             )
         except ImportError:
             raise ImportError(
@@ -55,7 +55,7 @@ class AzureCogsText2SpeechTool(BaseTool):
 
         return values
 
-    def _text2speech(self, text: str, speech_language: str) -> str:
+    def _text_to_speech(self, text: str, speech_language: str) -> str:
         try:
             import azure.cognitiveservices.speech as speechsdk
         except ImportError:
@@ -96,7 +96,7 @@ class AzureCogsText2SpeechTool(BaseTool):
     ) -> str:
         """Use the tool."""
         try:
-            speech_file = self._text2speech(query, self.speech_language)
+            speech_file = self._text_to_speech(query, self.speech_language)
             return speech_file
         except Exception as e:
-            raise RuntimeError(f"Error while running AzureCogsText2SpeechTool: {e}")
+            raise RuntimeError(f"Error while running AzureAiServicesTextToSpeechTool: {e}")
