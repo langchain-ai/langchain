@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Tuple
 
 from langchain_community.document_loaders.parsers.language.code_segmenter import (
     CodeSegmenter,
@@ -55,15 +55,18 @@ class JavaScriptSegmenter(CodeSegmenter):
         tree = esprima.parseScript(self.code, loc=True)
         simplified_lines = self.source_lines[:]
 
+        indices_to_del: List[Tuple[int, int]] = []
         for node in tree.body:
             if isinstance(
                 node,
                 (esprima.nodes.FunctionDeclaration, esprima.nodes.ClassDeclaration),
             ):
-                start = node.loc.start.line - 1
+                start, end = node.loc.start.line - 1, node.loc.end.line
                 simplified_lines[start] = f"// Code for: {simplified_lines[start]}"
 
-                for line_num in range(start + 1, node.loc.end.line):
-                    simplified_lines[line_num] = None  # type: ignore
+                indices_to_del.append((start + 1, end))
 
-        return "\n".join(line for line in simplified_lines if line is not None)
+        for start, end in reversed(indices_to_del):
+            del simplified_lines[start + 0 : end]
+
+        return "\n".join(line for line in simplified_lines)

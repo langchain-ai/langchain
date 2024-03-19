@@ -308,7 +308,7 @@ class Vectara(VectorStore):
             self._delete_doc(doc_id)
             self._index_doc(doc)
         elif success_str == "E_NO_PERMISSIONS":
-            print(
+            print(  # noqa: T201
                 """No permissions to add document to Vectara. 
                 Check your corpus ID, customer ID and API key"""
             )
@@ -339,9 +339,11 @@ class Vectara(VectorStore):
                 {
                     "query": query,
                     "start": 0,
-                    "numResults": config.mmr_config.mmr_k
-                    if config.mmr_config.is_enabled
-                    else config.k,
+                    "numResults": (
+                        config.mmr_config.mmr_k
+                        if config.mmr_config.is_enabled
+                        else config.k
+                    ),
                     "contextConfig": {
                         "sentencesBefore": config.n_sentence_context,
                         "sentencesAfter": config.n_sentence_context,

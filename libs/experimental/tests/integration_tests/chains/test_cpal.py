@@ -516,7 +516,7 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         llm = OpenAI(temperature=0, max_tokens=512)
         cpal_chain = CPALChain.from_univariate_prompt(llm=llm, verbose=True)
         with pytest.raises(Exception) as e_info:
-            print(e_info)
+            print(e_info)  # noqa: T201
             cpal_chain.run(narrative_input)
 
     def test_causal_mediator(self) -> None:

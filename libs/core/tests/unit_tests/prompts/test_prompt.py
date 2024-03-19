@@ -126,7 +126,9 @@ def test_prompt_invalid_template_format() -> None:
     input_variables = ["foo"]
     with pytest.raises(ValueError):
         PromptTemplate(
-            input_variables=input_variables, template=template, template_format="bar"
+            input_variables=input_variables,
+            template=template,
+            template_format="bar",  # type: ignore[arg-type]
         )
 
 

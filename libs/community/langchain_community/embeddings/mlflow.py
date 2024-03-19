@@ -13,10 +13,10 @@ def _chunk(texts: List[str], size: int) -> Iterator[List[str]]:
 
 
 class MlflowEmbeddings(Embeddings, BaseModel):
-    """Wrapper around embeddings LLMs in MLflow.
+    """Embedding LLMs in MLflow.
 
     To use, you should have the `mlflow[genai]` python package installed.
-    For more information, see https://mlflow.org/docs/latest/llms/deployments/server.html.
+    For more information, see https://mlflow.org/docs/latest/llms/deployments.
 
     Example:
         .. code-block:: python
@@ -85,5 +85,7 @@ class MlflowEmbeddings(Embeddings, BaseModel):
 
 
 class MlflowCohereEmbeddings(MlflowEmbeddings):
+    """Cohere embedding LLMs in MLflow."""
+
     query_params: Dict[str, str] = {"input_type": "search_query"}
     documents_params: Dict[str, str] = {"input_type": "search_document"}

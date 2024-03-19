@@ -15,6 +15,7 @@ class ConvoOutputParser(AgentOutputParser):
     """Output parser for the conversational agent."""
 
     format_instructions: str = FORMAT_INSTRUCTIONS
+    """Default formatting instructions"""
 
     def get_format_instructions(self) -> str:
         """Returns formatting instructions for the given output parser."""

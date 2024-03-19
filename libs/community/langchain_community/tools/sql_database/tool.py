@@ -1,6 +1,8 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Sequence, Type, Union
+
+from sqlalchemy.engine import Result
 
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
@@ -37,12 +39,13 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
     """
+    args_schema: Type[BaseModel] = _QuerySQLDataBaseToolInput
 
     def _run(
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> Union[str, Sequence[Dict[str, Any]], Result]:
         """Execute the query, return the results or an error message."""
         return self.db.run_no_throw(query)
 
@@ -75,11 +78,16 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
         )
 
 
+class _ListSQLDataBaseToolInput(BaseModel):
+    tool_input: str = Field(..., description="An empty string")
+
+
 class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting tables names."""
 
     name: str = "sql_db_list_tables"
     description: str = "Input is an empty string, output is a comma separated list of tables in the database."
+    args_schema: Type[BaseModel] = _ListSQLDataBaseToolInput
 
     def _run(
         self,
@@ -88,6 +96,10 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     ) -> str:
         """Get the schema for a specific table."""
         return ", ".join(self.db.get_usable_table_names())
+
+
+class _QuerySQLCheckerToolInput(BaseModel):
+    query: str = Field(..., description="A detailed and SQL query to be checked.")
 
 
 class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
@@ -102,6 +114,7 @@ class QuerySQLCheckerTool(BaseSQLDatabaseTool, BaseTool):
     Use this tool to double check if your query is correct before executing it.
     Always use this tool before executing a query with sql_db_query!
     """
+    args_schema: Type[BaseModel] = _QuerySQLCheckerToolInput
 
     @root_validator(pre=True)
     def initialize_llm_chain(cls, values: Dict[str, Any]) -> Dict[str, Any]:

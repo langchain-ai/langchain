@@ -50,16 +50,22 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
     content = _dict.get("result", "") or ""
+    additional_kwargs: Mapping[str, Any] = {}
     if _dict.get("function_call"):
         additional_kwargs = {"function_call": dict(_dict["function_call"])}
         if "thoughts" in additional_kwargs["function_call"]:
             # align to api sample, which affects the llm function_call output
             additional_kwargs["function_call"].pop("thoughts")
-    else:
-        additional_kwargs = {}
+
+    additional_kwargs = {**_dict.get("body", {}), **additional_kwargs}
     return AIMessage(
         content=content,
-        additional_kwargs={**_dict.get("body", {}), **additional_kwargs},
+        additional_kwargs=dict(
+            finish_reason=additional_kwargs.get("finish_reason", ""),
+            request_id=additional_kwargs["id"],
+            object=additional_kwargs.get("object", ""),
+            search_info=additional_kwargs.get("search_info", []),
+        ),
     )
 
 
@@ -346,9 +352,9 @@ class QianfanChatEndpoint(BaseChatModel):
                     ),
                     generation_info=msg.additional_kwargs,
                 )
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                yield chunk
 
     async def _astream(
         self,
@@ -372,6 +378,6 @@ class QianfanChatEndpoint(BaseChatModel):
                     ),
                     generation_info=msg.additional_kwargs,
                 )
-                yield chunk
                 if run_manager:
                     await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                yield chunk

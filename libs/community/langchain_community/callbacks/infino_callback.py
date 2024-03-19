@@ -86,7 +86,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
             },
         }
         if self.verbose:
-            print(f"Tracking {key} with Infino: {payload}")
+            print(f"Tracking {key} with Infino: {payload}")  # noqa: T201
 
         # Append to Infino time series only if is_ts is True, otherwise
         # append to Infino log.
@@ -245,7 +245,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
                     self._send_to_infino("prompt_tokens", prompt_tokens)
 
         if self.verbose:
-            print(
+            print(  # noqa: T201
                 f"on_chat_model_start: is_chat_openai_model= \
                   {self.is_chat_openai_model}, \
                   chat_openai_model_name={self.chat_openai_model_name}"

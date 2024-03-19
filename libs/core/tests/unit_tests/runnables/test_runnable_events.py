@@ -7,6 +7,7 @@ import pytest
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
+from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -26,8 +27,6 @@ from langchain_core.runnables import (
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import tool
-from tests.unit_tests.fake.chat_model import GenericFakeChatModel
-from tests.unit_tests.fake.llm import FakeStreamingListLLM
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
@@ -398,22 +397,14 @@ async def test_event_stream_with_simple_chain() -> None:
         },
         {
             "data": {"chunk": AIMessageChunk(content="hello")},
-            "event": "on_chain_stream",
-            "metadata": {"foo": "bar"},
-            "name": "my_chain",
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b", "foo": "bar"},
+            "name": "my_model",
             "run_id": "",
-            "tags": ["my_chain"],
+            "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
             "data": {"chunk": AIMessageChunk(content="hello")},
-            "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "foo": "bar"},
-            "name": "my_model",
-            "run_id": "",
-            "tags": ["my_chain", "my_model", "seq:step:2"],
-        },
-        {
-            "data": {"chunk": AIMessageChunk(content=" ")},
             "event": "on_chain_stream",
             "metadata": {"foo": "bar"},
             "name": "my_chain",
@@ -429,7 +420,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
-            "data": {"chunk": AIMessageChunk(content="world!")},
+            "data": {"chunk": AIMessageChunk(content=" ")},
             "event": "on_chain_stream",
             "metadata": {"foo": "bar"},
             "name": "my_chain",
@@ -443,6 +434,14 @@ async def test_event_stream_with_simple_chain() -> None:
             "name": "my_model",
             "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!")},
+            "event": "on_chain_stream",
+            "metadata": {"foo": "bar"},
+            "name": "my_chain",
+            "run_id": "",
+            "tags": ["my_chain"],
         },
         {
             "data": {
