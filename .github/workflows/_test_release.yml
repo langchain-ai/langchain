@@ -1,5 +1,13 @@
 name: test-release
 
+# Do not use this workflow to publish packages to real PyPI.
+# It is only designed for use with Test PyPI, since it is configured
+# to overwrite previous releases of the same package version.
+#
+# We must *never* do that on the real PyPI with the packages our users depend on,
+# or else we'll trigger scary "hash mismatch" warnings when they attempt to install
+# our packages from their lockfiles.
+
 on:
   workflow_call:
     inputs:
