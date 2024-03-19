@@ -1,4 +1,5 @@
 """Test text splitting functionality."""
+
 import random
 import re
 import string
