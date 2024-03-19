@@ -8,27 +8,27 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_community.tools.azure_cognitive_services.utils import (
+from langchain_community.tools.azure_ai_services.utils import (
     detect_file_src_type,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class AzureCogsFormRecognizerTool(BaseTool):
-    """Tool that queries the Azure Cognitive Services Form Recognizer API.
+class AzureAiServicesDocumentIntelligenceTool(BaseTool):
+    """Tool that queries the Azure AI Services Document Intelligence API.
 
     In order to set this up, follow instructions at:
-    https://learn.microsoft.com/en-us/azure/applied-ai-services/form-recognizer/quickstarts/get-started-sdks-rest-api?view=form-recog-3.0.0&pivots=programming-language-python
+    https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/quickstarts/get-started-sdks-rest-api?view=doc-intel-4.0.0&pivots=programming-language-python
     """
 
-    azure_cogs_key: str = ""  #: :meta private:
-    azure_cogs_endpoint: str = ""  #: :meta private:
+    azure_ai_services_key: str = ""  #: :meta private:
+    azure_ai_services_endpoint: str = ""  #: :meta private:
     doc_analysis_client: Any  #: :meta private:
 
-    name: str = "azure_cognitive_services_form_recognizer"
+    name: str = "azure_ai_services_document_intelligence"
     description: str = (
-        "A wrapper around Azure Cognitive Services Form Recognizer. "
+        "A wrapper around Azure AI Services Document Intelligence. "
         "Useful for when you need to "
         "extract text, tables, and key-value pairs from documents. "
         "Input should be a url to a document."
@@ -37,12 +37,12 @@ class AzureCogsFormRecognizerTool(BaseTool):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
-        azure_cogs_key = get_from_dict_or_env(
-            values, "azure_cogs_key", "AZURE_COGS_KEY"
+        azure_ai_services_key = get_from_dict_or_env(
+            values, "azure_ai_services_key", "AZURE_AI_SERVICES_KEY"
         )
 
-        azure_cogs_endpoint = get_from_dict_or_env(
-            values, "azure_cogs_endpoint", "AZURE_COGS_ENDPOINT"
+        azure_ai_services_endpoint = get_from_dict_or_env(
+            values, "azure_ai_services_endpoint", "AZURE_AI_SERVICES_ENDPOINT"
         )
 
         try:
@@ -50,8 +50,8 @@ class AzureCogsFormRecognizerTool(BaseTool):
             from azure.core.credentials import AzureKeyCredential
 
             values["doc_analysis_client"] = DocumentAnalysisClient(
-                endpoint=azure_cogs_endpoint,
-                credential=AzureKeyCredential(azure_cogs_key),
+                endpoint=azure_ai_services_endpoint,
+                credential=AzureKeyCredential(azure_ai_services_key),
             )
 
         except ImportError:
@@ -140,4 +140,4 @@ class AzureCogsFormRecognizerTool(BaseTool):
 
             return self._format_document_analysis_result(document_analysis_result)
         except Exception as e:
-            raise RuntimeError(f"Error while running AzureCogsFormRecognizerTool: {e}")
+            raise RuntimeError(f"Error while running AzureAiServicesDocumentIntelligenceTool: {e}")
