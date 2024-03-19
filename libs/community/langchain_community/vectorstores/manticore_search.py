@@ -226,14 +226,14 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
                     self.client["index"].bulk(body)
                     transac = []
                 except Exception as e:
-                    print(f"Error indexing documents: {e}")
+                    logger.info(f"Error indexing documents: {e}")
 
         if len(transac) > 0:
             body = "\n".join(map(json.dumps, transac))
             try:
                 self.client["index"].bulk(body)
             except Exception as e:
-                print(f"Error indexing documents: {e}")
+                logger.info(f"Error indexing documents: {e}")
 
         return ids
 
@@ -293,7 +293,10 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         _repr += f"\033[1musername: {self.config.username}\033[0m\n\nTable Schema:\n"
         _repr += "-" * 51 + "\n"
         for r in self.client["utils"].sql(f"DESCRIBE {self.config.table}")[0]["data"]:
-            _repr += f"|\033[94m{r['Field']:24s}\033[0m|\033[96m{r['Type'] + ' ' + r['Properties']:24s}\033[0m|\n"
+            _repr += (
+                f"|\033[94m{r['Field']:24s}\033[0m|\033["
+                f"96m{r['Type'] + ' ' + r['Properties']:24s}\033[0m|\n"
+            )
         _repr += "-" * 51 + "\n"
         return _repr
 
