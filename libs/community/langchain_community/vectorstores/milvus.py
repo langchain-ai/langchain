@@ -1094,6 +1094,7 @@ class Milvus(VectorStore):
         if texts is None or len(texts) == 0:
             logger.debug("No documents to upsert.")
             return None
+
         values = [metadata[field_name] for metadata in metadatas]
         # Convert to set for optimize expression
         values = list(set(values))
@@ -1111,6 +1112,6 @@ class Milvus(VectorStore):
                                   metadatas=metadatas, **kwargs)
         except MilvusException as exc:
             logger.error(
-                "Failed to upsert entities: %s error: %s", self.collection_name, exc
+                "Failed to upsert texts: %s error: %s", self.collection_name, exc
             )
             raise exc
