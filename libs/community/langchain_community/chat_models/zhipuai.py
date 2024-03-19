@@ -328,9 +328,9 @@ class ChatZhipuAI(BaseChatModel):
             if r.event == "add":
                 delta = r.data
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(delta, chunk=chunk)
+                yield chunk
 
             elif r.event == "error":
                 raise ValueError(f"Error from ZhipuAI API response: {r.data}")

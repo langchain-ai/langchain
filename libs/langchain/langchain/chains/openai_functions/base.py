@@ -14,6 +14,9 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import (
     BaseLLMOutputParser,
 )
+from langchain_core.output_parsers.openai_functions import (
+    PydanticAttrOutputFunctionsParser,
+)
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import (
@@ -26,9 +29,6 @@ from langchain.chains.structured_output.base import (
     create_openai_fn_runnable,
     create_structured_output_runnable,
     get_openai_output_parser,
-)
-from langchain.output_parsers.openai_functions import (
-    PydanticAttrOutputFunctionsParser,
 )
 
 __all__ = [

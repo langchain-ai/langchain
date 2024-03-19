@@ -86,7 +86,7 @@ class RecursiveUrlLoader(BaseLoader):
         max_depth: Optional[int] = 2,
         use_async: Optional[bool] = None,
         extractor: Optional[Callable[[str], str]] = None,
-        metadata_extractor: Optional[Callable[[str, str], str]] = None,
+        metadata_extractor: Optional[Callable[[str, str], dict]] = None,
         exclude_dirs: Optional[Sequence[str]] = (),
         timeout: Optional[int] = 10,
         prevent_outside: bool = True,
@@ -314,7 +314,3 @@ class RecursiveUrlLoader(BaseLoader):
             return iter(results or [])
         else:
             return self._get_child_links_recursive(self.url, visited)
-
-    def load(self) -> List[Document]:
-        """Load web pages."""
-        return list(self.lazy_load())

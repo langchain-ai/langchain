@@ -2,7 +2,7 @@
 
 import json
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.messages import (
@@ -101,7 +101,7 @@ def mock_completion() -> dict:
     }
 
 
-def test_openai_predict(mock_completion: dict) -> None:
+def test_openai_invoke(mock_completion: dict) -> None:
     llm = ChatOpenAI()
     mock_client = MagicMock()
     completed = False
@@ -117,17 +117,17 @@ def test_openai_predict(mock_completion: dict) -> None:
         "client",
         mock_client,
     ):
-        res = llm.predict("bar")
-        assert res == "Bar Baz"
+        res = llm.invoke("bar")
+        assert res.content == "Bar Baz"
     assert completed
 
 
-async def test_openai_apredict(mock_completion: dict) -> None:
+async def test_openai_ainvoke(mock_completion: dict) -> None:
     llm = ChatOpenAI()
-    mock_client = MagicMock()
+    mock_client = AsyncMock()
     completed = False
 
-    def mock_create(*args: Any, **kwargs: Any) -> Any:
+    async def mock_create(*args: Any, **kwargs: Any) -> Any:
         nonlocal completed
         completed = True
         return mock_completion
@@ -135,11 +135,11 @@ async def test_openai_apredict(mock_completion: dict) -> None:
     mock_client.create = mock_create
     with patch.object(
         llm,
-        "client",
+        "async_client",
         mock_client,
     ):
-        res = llm.predict("bar")
-        assert res == "Bar Baz"
+        res = await llm.ainvoke("bar")
+        assert res.content == "Bar Baz"
     assert completed
 
 

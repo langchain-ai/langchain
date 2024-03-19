@@ -149,7 +149,12 @@ class BaseOpenAI(BaseLLM):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
-    """Optional httpx.Client."""
+    """Optional httpx.Client. Only used for sync invocations. Must specify 
+        http_async_client as well if you'd like a custom client for async invocations.
+    """
+    http_async_client: Union[Any, None] = None
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+        http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -209,12 +214,17 @@ class BaseOpenAI(BaseLLM):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
         if not values.get("client"):
-            values["client"] = openai.OpenAI(**client_params).completions
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.OpenAI(
+                **client_params, **sync_specific
+            ).completions
         if not values.get("async_client"):
-            values["async_client"] = openai.AsyncOpenAI(**client_params).completions
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncOpenAI(
+                **client_params, **async_specific
+            ).completions
 
         return values
 
@@ -253,7 +263,7 @@ class BaseOpenAI(BaseLLM):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
+
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
@@ -265,6 +275,7 @@ class BaseOpenAI(BaseLLM):
                         else None
                     ),
                 )
+            yield chunk
 
     async def _astream(
         self,
@@ -281,7 +292,7 @@ class BaseOpenAI(BaseLLM):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.model_dump()
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
+
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
@@ -293,6 +304,7 @@ class BaseOpenAI(BaseLLM):
                         else None
                     ),
                 )
+            yield chunk
 
     def _generate(
         self,
@@ -601,8 +613,8 @@ class BaseOpenAI(BaseLLM):
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
 
-    To use, you should have the ``openai`` python package installed, and the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
+    To use, you should have the environment variable ``OPENAI_API_KEY``
+    set with your API key, or pass it as a named parameter to the constructor.
 
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
@@ -610,8 +622,9 @@ class OpenAI(BaseOpenAI):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import OpenAI
-            openai = OpenAI(model_name="gpt-3.5-turbo-instruct")
+            from langchain_openai import OpenAI
+
+            model = OpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 
     @classmethod

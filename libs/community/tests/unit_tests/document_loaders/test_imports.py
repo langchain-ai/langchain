@@ -20,6 +20,7 @@ EXPECTED_ALL = [
     "ApifyDatasetLoader",
     "ArcGISLoader",
     "ArxivLoader",
+    "AssemblyAIAudioLoaderById",
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
@@ -78,6 +79,7 @@ EXPECTED_ALL = [
     "GutenbergLoader",
     "HNLoader",
     "HuggingFaceDatasetLoader",
+    "HuggingFaceModelLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
@@ -128,6 +130,7 @@ EXPECTED_ALL = [
     "RocksetLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
+    "SQLDatabaseLoader",
     "SRTLoader",
     "SeleniumURLLoader",
     "SharePointLoader",
@@ -144,6 +147,7 @@ EXPECTED_ALL = [
     "TencentCOSDirectoryLoader",
     "TencentCOSFileLoader",
     "TextLoader",
+    "TiDBLoader",
     "ToMarkdownLoader",
     "TomlLoader",
     "TrelloLoader",
@@ -177,6 +181,7 @@ EXPECTED_ALL = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "YuqueLoader",
 ]
 
 
