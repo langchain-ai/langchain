@@ -96,26 +96,32 @@ class RecursiveJsonSplitter:
         return chunks
 
     def split_text(
-        self, json_data: Dict[str, Any], convert_lists: bool = False
+        self,
+        json_data: Dict[str, Any],
+        convert_lists: bool = False,
+        ensure_ascii: bool = True,
     ) -> List[str]:
         """Splits JSON into a list of JSON formatted strings"""
 
         chunks = self.split_json(json_data=json_data, convert_lists=convert_lists)
 
         # Convert to string
-        return [json.dumps(chunk) for chunk in chunks]
+        return [json.dumps(chunk, ensure_ascii=ensure_ascii) for chunk in chunks]
 
     def create_documents(
         self,
         texts: List[Dict],
         convert_lists: bool = False,
+        ensure_ascii: bool = True,
         metadatas: Optional[List[dict]] = None,
     ) -> List[Document]:
         """Create documents from a list of json objects (Dict)."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            for chunk in self.split_text(json_data=text, convert_lists=convert_lists):
+            for chunk in self.split_text(
+                json_data=text, convert_lists=convert_lists, ensure_ascii=ensure_ascii
+            ):
                 metadata = copy.deepcopy(_metadatas[i])
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
