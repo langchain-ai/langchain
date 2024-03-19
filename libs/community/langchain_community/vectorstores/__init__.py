@@ -110,12 +110,6 @@ _module_lookup = {
 }
 
 
-def _import_couchbase() -> Any:
-    from langchain_community.vectorstores.couchbase import CouchbaseVectorStore
-
-    return CouchbaseVectorStore
-
-
 def __getattr__(name: str) -> Any:
     if name in _module_lookup:
         module = importlib.import_module(_module_lookup[name])
