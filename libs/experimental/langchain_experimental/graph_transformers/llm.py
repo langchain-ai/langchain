@@ -252,7 +252,8 @@ class LLMGraphTransformer:
 
     async def aprocess_response(self, document: Document) -> GraphDocument:
         """
-        Asynchronously processes a single document, transforming it into a graph document.
+        Asynchronously processes a single document, transforming it into a
+        graph document.
         """
         text = document.page_content
         raw_schema = await self.chain.ainvoke({"input": text})
