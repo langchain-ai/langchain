@@ -169,7 +169,7 @@ def batch_iterate(size: Optional[int], iterable: Iterable[T]) -> Iterator[List[T
     """Utility batching function.
 
     Args:
-        size: The size of the batch. If None, returne as a single batch.
+        size: The size of the batch. If None, returns a single batch.
         iterable: The iterable to batch.
 
     Returns:
