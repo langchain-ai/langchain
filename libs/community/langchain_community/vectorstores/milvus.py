@@ -1057,3 +1057,60 @@ class Milvus(VectorStore):
                 "Failed to upsert entities: %s error: %s", self.collection_name, exc
             )
             raise exc
+
+    def upsert_texts(
+            self,
+            texts: List[str] | None = None,
+            metadatas: Optional[List[dict]] = None,
+            field_name: str = "ids",
+            # values: Optional[List[str]] = None,
+            **kwargs: Any,
+    ) -> List[str] | None:
+        """Update/Insert documents to the Milvus vectorstore.
+
+        Inserting data when the collection is already exists
+        and need to insert data based on collection schema,
+        Metadata keys will need to be present for all inserted values. At
+        the moment there is no None equivalent in Milvus.
+        This is based on upsert data based on add_text functionality
+
+        Args:
+            texts (Iterable[str]): The texts to embed, it is assumed
+                that they all fit in memory.
+            metadatas (Optional[List[dict]]): Metadata dicts attached to each of
+                the texts. Defaults to None.
+            field_name (str): Field_name which you want to use for update embedding
+                it should exists in metadata object , Default values will be ids
+
+        Raises:
+            MilvusException: Failure to add texts
+
+        Returns:
+            List[str]: The resulting keys for each inserted element.
+        """
+
+        from pymilvus import MilvusException
+
+        if texts is None or len(texts) == 0:
+            logger.debug("No documents to upsert.")
+            return None
+        values = [metadata[field_name] for metadata in metadatas]
+        # Convert to set for optimize expression
+        values = list(set(values))
+        if values is not None and len(values):
+            try:
+                if field_name == "ids":
+                    self.delete(ids=values)
+                else:
+                    expr = f"{field_name} in {values}"
+                    self.delete(expr=expr)
+            except MilvusException:
+                pass
+        try:
+            return self.add_texts(texts=texts,
+                                  metadatas=metadatas, **kwargs)
+        except MilvusException as exc:
+            logger.error(
+                "Failed to upsert entities: %s error: %s", self.collection_name, exc
+            )
+            raise exc
