@@ -131,6 +131,41 @@ For information on running and implementing tests, see the [Testing guide](./tes
 
 Documentation is generated from Jupyter notebooks in the `docs/` directory. You should move the generated notebooks to the relevant `docs/docs/integrations` directory in the monorepo root.
 
+### (If Necessary) Deprecate community integration
+
+Note: this is only necessary if you're migrating an existing community integration into 
+a partner package. If the component you're integrating is net-new to LangChain (i.e. 
+not already in the community package), you can skip this step.
+
+Let's pretend we migrated our `ChatParrotLink` chat model from the community package to 
+the partner package. We would need to deprecate the old model in the community package.
+
+We would do that by adding a `@deprecated` decorator to the old model as follows, in
+`libs/community/langchain_community/chat_models/parrot_link.py`.
+
+Before our change, our chat model might look like this:
+
+```python
+class ParrotLink(BaseChatModel):
+  ...
+```
+
+After our change, it would look like this:
+
+```python
+from langchain_core._api.deprecation import deprecated
+
+@deprecated(
+    since="0.0.<next community version>", 
+    removal="0.2.0", 
+    alternative_import="langchain_parrot_link.ChatParrotLink"
+)
+class ParrotLink(BaseChatModel):
+  ...
+```
+
+You should do this for *each* component that you're migrating to the partner package.
+
 ### Additional steps
 
 Contributor steps:
