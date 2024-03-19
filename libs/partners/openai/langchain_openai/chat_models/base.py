@@ -112,7 +112,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
     elif role == "function":
         return FunctionMessage(
-            content=_dict.get("content", ""), name=cast(str, _dict.get("name"), id=id_)
+            content=_dict.get("content", ""), name=cast(str, _dict.get("name")), id=id_
         )
     elif role == "tool":
         additional_kwargs = {}
@@ -165,6 +165,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, ToolMessage):
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
+
+        warnings
 
         # tool message doesn't have name: https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages
         del message_dict["name"]
