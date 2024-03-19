@@ -735,8 +735,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompts,
         ) = get_prompts(params, prompts)
         if isinstance(self.cache, BaseCache):
-            raise NotImplementedError("Local cache is not yet supported for "
-                                      "LLMs (only chat models)")
+            raise NotImplementedError(
+                "Local cache is not yet supported for " "LLMs (only chat models)"
+            )
         disregard_cache = self.cache is not None and not self.cache
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
@@ -947,8 +948,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompts,
         ) = await aget_prompts(params, prompts)
         if isinstance(self.cache, BaseCache):
-            raise NotImplementedError("Local cache is not yet supported for "
-                                      "LLMs (only chat models)")
+            raise NotImplementedError(
+                "Local cache is not yet supported for " "LLMs (only chat models)"
+            )
 
         disregard_cache = self.cache is not None and not self.cache
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
