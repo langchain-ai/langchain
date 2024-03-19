@@ -117,7 +117,7 @@ class HanaDB(VectorStore):
             self.vector_column_length,
         )
 
-    def _table_exists(self, table_name) -> bool:
+    def _table_exists(self, table_name) -> bool:  # type: ignore[no-untyped-def]
         sql_str = (
             "SELECT COUNT(*) FROM SYS.TABLES WHERE SCHEMA_NAME = CURRENT_SCHEMA"
             " AND TABLE_NAME = ?"
@@ -133,7 +133,7 @@ class HanaDB(VectorStore):
             cur.close()
         return False
 
-    def _check_column(self, table_name, column_name, column_type, column_length=None):
+    def _check_column(self, table_name, column_name, column_type, column_length=None):  # type: ignore[no-untyped-def]
         sql_str = (
             "SELECT DATA_TYPE_NAME, LENGTH FROM SYS.TABLE_COLUMNS WHERE "
             "SCHEMA_NAME = CURRENT_SCHEMA "
@@ -166,17 +166,17 @@ class HanaDB(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding
 
-    def _sanitize_name(input_str: str) -> str:
+    def _sanitize_name(input_str: str) -> str:  # type: ignore[misc]
         # Remove characters that are not alphanumeric or underscores
         return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
-    def _sanitize_int(input_int: any) -> int:
+    def _sanitize_int(input_int: any) -> int:  # type: ignore[valid-type]
         value = int(str(input_int))
         if value < -1:
             raise ValueError(f"Value ({value}) must not be smaller than -1")
         return int(str(input_int))
 
-    def _sanitize_list_float(embedding: List[float]) -> List[float]:
+    def _sanitize_list_float(embedding: List[float]) -> List[float]:  # type: ignore[misc]
         for value in embedding:
             if not isinstance(value, float):
                 raise ValueError(f"Value ({value}) does not have type float")
@@ -185,14 +185,14 @@ class HanaDB(VectorStore):
     # Compile pattern only once, for better performance
     _compiled_pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
 
-    def _sanitize_metadata_keys(metadata: dict) -> dict:
+    def _sanitize_metadata_keys(metadata: dict) -> dict:  # type: ignore[misc]
         for key in metadata.keys():
             if not HanaDB._compiled_pattern.match(key):
                 raise ValueError(f"Invalid metadata key {key}")
 
         return metadata
 
-    def add_texts(
+    def add_texts(  # type: ignore[override]
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
@@ -243,7 +243,7 @@ class HanaDB(VectorStore):
         return []
 
     @classmethod
-    def from_texts(
+    def from_texts(  # type: ignore[no-untyped-def, override]
         cls: Type[HanaDB],
         texts: List[str],
         embedding: Embeddings,
@@ -277,7 +277,7 @@ class HanaDB(VectorStore):
         instance.add_texts(texts, metadatas)
         return instance
 
-    def similarity_search(
+    def similarity_search(  # type: ignore[override]
         self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Document]:
         """Return docs most similar to query.
@@ -382,7 +382,7 @@ class HanaDB(VectorStore):
         )
         return [(result_item[0], result_item[1]) for result_item in whole_result]
 
-    def similarity_search_by_vector(
+    def similarity_search_by_vector(  # type: ignore[override]
         self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -401,7 +401,7 @@ class HanaDB(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def _create_where_by_filter(self, filter):
+    def _create_where_by_filter(self, filter):  # type: ignore[no-untyped-def]
         query_tuple = []
         where_str = ""
         if filter:
@@ -427,7 +427,7 @@ class HanaDB(VectorStore):
 
         return where_str, query_tuple
 
-    def delete(
+    def delete(  # type: ignore[override]
         self, ids: Optional[List[str]] = None, filter: Optional[dict] = None
     ) -> Optional[bool]:
         """Delete entries by filter with metadata values
@@ -459,7 +459,7 @@ class HanaDB(VectorStore):
 
         return True
 
-    async def adelete(
+    async def adelete(  # type: ignore[override]
         self, ids: Optional[List[str]] = None, filter: Optional[dict] = None
     ) -> Optional[bool]:
         """Delete by vector ID or other criteria.
@@ -473,7 +473,7 @@ class HanaDB(VectorStore):
         """
         return await run_in_executor(None, self.delete, ids=ids, filter=filter)
 
-    def max_marginal_relevance_search(
+    def max_marginal_relevance_search(  # type: ignore[override]
         self,
         query: str,
         k: int = 4,
@@ -511,11 +511,11 @@ class HanaDB(VectorStore):
             filter=filter,
         )
 
-    def _parse_float_array_from_string(array_as_string: str) -> List[float]:
+    def _parse_float_array_from_string(array_as_string: str) -> List[float]:  # type: ignore[misc]
         array_wo_brackets = array_as_string[1:-1]
         return [float(x) for x in array_wo_brackets.split(",")]
 
-    def max_marginal_relevance_search_by_vector(
+    def max_marginal_relevance_search_by_vector(  # type: ignore[override]
         self,
         embedding: List[float],
         k: int = 4,
@@ -533,7 +533,7 @@ class HanaDB(VectorStore):
 
         return [whole_result[i][0] for i in mmr_doc_indexes]
 
-    async def amax_marginal_relevance_search_by_vector(
+    async def amax_marginal_relevance_search_by_vector(  # type: ignore[override]
         self,
         embedding: List[float],
         k: int = 4,

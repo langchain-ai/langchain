@@ -13,6 +13,7 @@ EXPECTED_ALL = [
     "ChatDeepInfra",
     "ChatGooglePalm",
     "ChatHuggingFace",
+    "ChatMaritalk",
     "ChatMlflow",
     "ChatMLflowAIGateway",
     "ChatOllama",
@@ -38,7 +39,11 @@ EXPECTED_ALL = [
     "VolcEngineMaasChat",
     "LlamaEdgeChatService",
     "GPTRouter",
+    "ChatYuan2",
     "ChatZhipuAI",
+    "ChatPerplexity",
+    "ChatKinetica",
+    "ChatFriendli",
 ]
 
 

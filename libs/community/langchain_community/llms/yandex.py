@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -25,10 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 class _BaseYandexGPT(Serializable):
-    iam_token: SecretStr = ""
+    iam_token: SecretStr = ""  # type: ignore[assignment]
     """Yandex Cloud IAM token for service or user account
     with the `ai.languageModels.user` role"""
-    api_key: SecretStr = ""
+    api_key: SecretStr = ""  # type: ignore[assignment]
     """Yandex Cloud Api Key for service account
     with the `ai.languageModels.user` role"""
     folder_id: str = ""
@@ -54,13 +54,14 @@ class _BaseYandexGPT(Serializable):
     """Maximum number of retries to make when generating."""
     sleep_interval: float = 1.0
     """Delay between API requests"""
+    _grpc_metadata: Sequence
 
     @property
     def _llm_type(self) -> str:
         return "yandex_gpt"
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model_uri": self.model_uri,
@@ -211,7 +212,7 @@ def _make_request(
         messages=[Message(role="user", text=prompt)],
     )
     stub = TextGenerationServiceStub(channel)
-    res = stub.Completion(request, metadata=self._grpc_metadata)
+    res = stub.Completion(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
     return list(res)[0].alternatives[0].message.text
 
 
@@ -253,7 +254,7 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
             messages=[Message(role="user", text=prompt)],
         )
         stub = TextGenerationAsyncServiceStub(channel)
-        operation = await stub.Completion(request, metadata=self._grpc_metadata)
+        operation = await stub.Completion(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
         async with grpc.aio.secure_channel(
             operation_api_url, channel_credentials
         ) as operation_channel:
@@ -262,7 +263,8 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
                 await asyncio.sleep(1)
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
-                    operation_request, metadata=self._grpc_metadata
+                    operation_request,
+                    metadata=self._grpc_metadata,  # type: ignore[attr-defined]
                 )
 
         completion_response = CompletionResponse()

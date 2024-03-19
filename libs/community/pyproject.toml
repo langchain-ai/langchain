@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.0.16"
+version = "0.0.28"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.16,<0.2"
+langchain-core = "^0.1.31"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -17,7 +17,7 @@ numpy = "^1"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langsmith = ">=0.0.83,<0.1"
+langsmith = "^0.1.0"
 tqdm = {version = ">=4.48.0", optional = true}
 openapi-pydantic = {version = "^0.3.2", optional = true}
 faiss-cpu = {version = "^1", optional = true}
@@ -66,7 +66,6 @@ xata = {version = "^1.0.0a7", optional = true}
 xmltodict = {version = "^0.13.0", optional = true}
 markdownify = {version = "^0.11.6", optional = true}
 assemblyai = {version = "^0.17.0", optional = true}
-dashvector = {version = "^1.0.1", optional = true}
 sqlite-vss = {version = "^0.1.2", optional = true}
 motor = {version = "^3.3.1", optional = true}
 timescale-vector = {version = "^0.0.1", optional = true}
@@ -82,8 +81,11 @@ hologres-vector = {version = "^0.0.6", optional = true}
 praw = {version = "^7.7.1", optional = true}
 msal = {version = "^1.25.0", optional = true}
 databricks-vectorsearch = {version = "^0.21", optional = true}
+cloudpickle = {version = ">=2.0.0", optional = true}
 dgml-utils = {version = "^0.3.0", optional = true}
 datasets = {version = "^2.15.0", optional = true}
+tree-sitter = {version = "^0.20.2", optional = true}
+tree-sitter-languages = {version = "^1.8.0", optional = true}
 azure-ai-documentintelligence = {version = "^1.0.0b1", optional = true}
 oracle-ads = {version = "^2.9.1", optional = true}
 zhipuai = {version = "^1.0.7", optional = true}
@@ -92,6 +94,9 @@ elasticsearch = {version = "^8.12.0", optional = true}
 hdbcli = {version = "^2.19.21", optional = true}
 oci = {version = "^2.119.1", optional = true}
 rdflib = {version = "7.0.0", optional = true}
+nvidia-riva-client = {version = "^2.14.0", optional = true}
+tidb-vector = {version = ">=0.0.3,<1.0.0", optional = true}
+friendli-client = {version = "^1.2.4", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -101,7 +106,7 @@ optional = true
 # dependencies used for running tests (e.g., pytest, freezegun, response).
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
-pytest-cov = "^4.0.0"
+pytest-cov = "^4.1.0"
 pytest-dotenv = "^0.5.2"
 duckdb-engine = "^0.9.2"
 pytest-watcher = "^0.2.6"
@@ -150,8 +155,6 @@ tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
-boto3 = ">=1.28.57,<2"
-google-cloud-aiplatform = ">=1.37.0,<2"
 
 [tool.poetry.group.lint]
 optional = true
@@ -169,6 +172,7 @@ types-chardet = "^5.0.4.6"
 types-redis = "^4.3.21.6"
 mypy-protobuf = "^3.0.0"
 langchain-core = {path = "../core", develop = true}
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
@@ -179,7 +183,6 @@ setuptools = "^67.6.1"
 langchain-core = {path = "../core", develop = true}
 
 [tool.poetry.extras]
-
 cli = ["typer"]
 
 # An extra used to be able to add extended testing.
@@ -229,6 +232,7 @@ extended_testing = [
  "jinja2",
  "gitpython",
  "newspaper3k",
+ "nvidia-riva-client",
  "feedparser",
  "xata",
  "xmltodict",
@@ -236,7 +240,6 @@ extended_testing = [
  "openapi-pydantic",
  "markdownify",
  "arxiv",
- "dashvector",
  "sqlite-vss",
  "rapidocr-onnxruntime",
  "motor",
@@ -249,8 +252,11 @@ extended_testing = [
  "hologres-vector",
  "praw",
  "databricks-vectorsearch",
+ "cloudpickle",
  "dgml-utils",
  "cohere",
+ "tree-sitter",
+ "tree-sitter-languages",
  "azure-ai-documentintelligence",
  "oracle-ads",
  "zhipuai",
@@ -259,17 +265,23 @@ extended_testing = [
  "hdbcli",
  "oci",
  "rdflib",
+ "tidb-vector",
+ "cloudpickle",
+ "friendli-client"
 ]
 
 [tool.ruff]
+exclude = [
+  "tests/examples/non-utf8-encoding.py",
+  "tests/integration_tests/examples/non-utf8-encoding.py",
+]
+
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # pyflakes
   "I",  # isort
-]
-exclude = [
-  "tests/examples/non-utf8-encoding.py",
-  "tests/integration_tests/examples/non-utf8-encoding.py",
+  "T201", # print
 ]
 
 [tool.mypy]

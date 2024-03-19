@@ -34,7 +34,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
             history.add_user_message("hi!")
             history.add_ai_message("whats up?")
 
-            print(history.messages)
+            print(history.messages)  # noqa: T201
     """
 
     # You should set these values based on your VI.

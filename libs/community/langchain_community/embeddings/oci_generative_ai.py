@@ -8,6 +8,8 @@ CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
 
 class OCIAuthType(Enum):
+    """OCI authentication types as enumerator."""
+
     API_KEY = 1
     SECURITY_TOKEN = 2
     INSTANCE_PRINCIPAL = 3
@@ -63,16 +65,16 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     If not specified , DEFAULT will be used 
     """
 
-    model_id: str = None
+    model_id: str = None  # type: ignore[assignment]
     """Id of the model to call, e.g., cohere.embed-english-light-v2.0"""
 
     model_kwargs: Optional[Dict] = None
     """Keyword arguments to pass to the model"""
 
-    service_endpoint: str = None
+    service_endpoint: str = None  # type: ignore[assignment]
     """service endpoint url"""
 
-    compartment_id: str = None
+    compartment_id: str = None  # type: ignore[assignment]
     """OCID of compartment"""
 
     truncate: Optional[str] = "END"
@@ -109,7 +111,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
                 client_kwargs.pop("signer", None)
             elif values["auth_type"] == OCIAuthType(2).name:
 
-                def make_security_token_signer(oci_config):
+                def make_security_token_signer(oci_config):  # type: ignore[no-untyped-def]
                     pk = oci.signer.load_private_key_from_file(
                         oci_config.get("key_file"), None
                     )

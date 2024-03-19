@@ -33,4 +33,4 @@ from langchain.retrievers.web_research import QuestionListOutputParser
 def test_list_output_parser(text: str, expected: List[str]) -> None:
     parser = QuestionListOutputParser()
     result = parser.parse(text)
-    assert result.lines == expected
+    assert result == expected
