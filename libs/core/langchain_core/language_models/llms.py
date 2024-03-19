@@ -7,6 +7,7 @@ import functools
 import inspect
 import json
 import logging
+import uuid
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -271,6 +272,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 tags=config.get("tags"),
                 metadata=config.get("metadata"),
                 run_name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 **kwargs,
             )
             .generations[0][0]
@@ -293,6 +295,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             **kwargs,
         )
         return llm_result.generations[0][0].text
@@ -423,6 +426,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 batch_size=1,
             )
             generation: Optional[GenerationChunk] = None
@@ -499,6 +503,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             batch_size=1,
         )
         generation: Optional[GenerationChunk] = None
@@ -632,6 +637,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         tags: Optional[Union[List[str], List[List[str]]]] = None,
         metadata: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
         run_name: Optional[Union[str, List[str]]] = None,
+        run_id: Optional[Union[uuid.UUID, List[Optional[uuid.UUID]]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Pass a sequence of prompts to a model and return generations.
@@ -717,7 +723,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ] * len(prompts)
             run_name_list = [cast(Optional[str], run_name)] * len(prompts)
-
+        run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
         options = {"stop": stop}
@@ -744,9 +750,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     options=options,
                     name=run_name,
                     batch_size=len(prompts),
+                    run_id=run_id_,
                 )[0]
-                for callback_manager, prompt, run_name in zip(
-                    callback_managers, prompts, run_name_list
+                for callback_manager, prompt, run_name, run_id_ in zip(
+                    callback_managers, prompts, run_name_list, run_ids_list
                 )
             ]
             output = self._generate_helper(
@@ -781,6 +788,21 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_info = None
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
+
+    @staticmethod
+    def _get_run_ids_list(
+        run_id: Optional[Union[uuid.UUID, List[Optional[uuid.UUID]]]], prompts: list
+    ) -> list:
+        if run_id is None:
+            return [None] * len(prompts)
+        if isinstance(run_id, list):
+            if len(run_id) != len(prompts):
+                raise ValueError(
+                    "Number of manually provided run_id's does not match batch length."
+                    f" {len(run_id)} != {len(prompts)}"
+                )
+            return run_id
+        return [run_id] + [None] * (len(prompts) - 1)
 
     async def _agenerate_helper(
         self,
@@ -833,6 +855,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         tags: Optional[Union[List[str], List[List[str]]]] = None,
         metadata: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
         run_name: Optional[Union[str, List[str]]] = None,
+        run_id: Optional[Union[uuid.UUID, List[Optional[uuid.UUID]]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Asynchronously pass a sequence of prompts to a model and return generations.
@@ -909,7 +932,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ] * len(prompts)
             run_name_list = [cast(Optional[str], run_name)] * len(prompts)
-
+        run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
         options = {"stop": stop}
@@ -937,9 +960,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         options=options,
                         name=run_name,
                         batch_size=len(prompts),
+                        run_id=run_id_,
                     )
-                    for callback_manager, prompt, run_name in zip(
-                        callback_managers, prompts, run_name_list
+                    for callback_manager, prompt, run_name, run_id_ in zip(
+                        callback_managers, prompts, run_name_list, run_ids_list
                     )
                 ]
             )

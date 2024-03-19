@@ -91,6 +91,52 @@ class TestMongoDBAtlasVectorSearch:
         # Check for the presence of the metadata key
         assert any([key.page_content == output[0].page_content for key in documents])
 
+    def test_from_documents_no_embedding_return(
+        self, embedding_openai: Embeddings, collection: Any
+    ) -> None:
+        """Test end to end construction and search."""
+        documents = [
+            Document(page_content="Dogs are tough.", metadata={"a": 1}),
+            Document(page_content="Cats have fluff.", metadata={"b": 1}),
+            Document(page_content="What is a sandwich?", metadata={"c": 1}),
+            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
+        ]
+        vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
+            documents,
+            embedding_openai,
+            collection=collection,
+            index_name=INDEX_NAME,
+        )
+        output = vectorstore.similarity_search("Sandwich", k=1)
+        assert len(output) == 1
+        # Check for presence of embedding in each document
+        assert all(["embedding" not in key.metadata for key in output])
+        # Check for the presence of the metadata key
+        assert any([key.page_content == output[0].page_content for key in documents])
+
+    def test_from_documents_embedding_return(
+        self, embedding_openai: Embeddings, collection: Any
+    ) -> None:
+        """Test end to end construction and search."""
+        documents = [
+            Document(page_content="Dogs are tough.", metadata={"a": 1}),
+            Document(page_content="Cats have fluff.", metadata={"b": 1}),
+            Document(page_content="What is a sandwich?", metadata={"c": 1}),
+            Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
+        ]
+        vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
+            documents,
+            embedding_openai,
+            collection=collection,
+            index_name=INDEX_NAME,
+        )
+        output = vectorstore.similarity_search("Sandwich", k=1, include_embedding=True)
+        assert len(output) == 1
+        # Check for presence of embedding in each document
+        assert all([key.metadata.get("embedding") for key in output])
+        # Check for the presence of the metadata key
+        assert any([key.page_content == output[0].page_content for key in documents])
+
     def test_from_texts(self, embedding_openai: Embeddings, collection: Any) -> None:
         texts = [
             "Dogs are tough.",
