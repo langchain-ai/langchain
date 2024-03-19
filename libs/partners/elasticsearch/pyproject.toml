@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-elasticsearch"
-version = "0.1.0"
+version = "0.1.1"
 description = "An integration package connecting Elasticsearch and LangChain"
 authors = []
 readme = "README.md"
@@ -27,8 +27,8 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain = { path = "../../langchain", develop = true }
-langchain-community = { path = "../../community", develop = true }
 langchain-core = { path = "../../core", develop = true }
+langchain-text-splitters = {path = "../../text-splitters", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
