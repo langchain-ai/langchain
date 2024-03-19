@@ -239,11 +239,13 @@ def __getattr__(name: str) -> Any:
 
         return FewShotPromptTemplate
     elif name == "Prompt":
-        from langchain_core.prompts import Prompt
+        from langchain_core.prompts import PromptTemplate
 
-        _warn_on_import(name, replacement="langchain_core.prompts.Prompt")
+        _warn_on_import(name, replacement="langchain_core.prompts.PromptTemplate")
 
-        return Prompt
+        # it's renamed as prompt template anyways
+        # this is just for backwards compat
+        return PromptTemplate
     elif name == "PromptTemplate":
         from langchain_core.prompts import PromptTemplate
 
