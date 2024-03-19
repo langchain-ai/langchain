@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     import chromadb
     import chromadb.config
     from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
+    from chromadb.utils import embedding_functions
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -122,10 +123,10 @@ class Chroma(VectorStore):
                 _client_settings.persist_directory or persist_directory
             )
 
-        self._embedding_function = embedding_function
+        self._embedding_function = embedding_function or embedding_functions.DefaultEmbeddingFunction()
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=None,
+            embedding_function=self._embedding_function,
             metadata=collection_metadata,
         )
         self.override_relevance_score_fn = relevance_score_fn
