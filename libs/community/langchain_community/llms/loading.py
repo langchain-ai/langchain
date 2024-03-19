@@ -10,6 +10,7 @@ from langchain_community.llms import get_type_to_cls_dict
 
 _ALLOW_DANGEROUS_DESERIALIZATION_ARG = "allow_dangerous_deserialization"
 
+
 def load_llm_from_config(config: dict, **kwargs: Any) -> BaseLLM:
     """Load LLM from Config Dict."""
     if "_type" not in config:
@@ -25,7 +26,9 @@ def load_llm_from_config(config: dict, **kwargs: Any) -> BaseLLM:
 
     load_kwargs = {}
     if _ALLOW_DANGEROUS_DESERIALIZATION_ARG in llm_cls.__fields__:
-        load_kwargs[_ALLOW_DANGEROUS_DESERIALIZATION_ARG] = kwargs.get(_ALLOW_DANGEROUS_DESERIALIZATION_ARG, False)
+        load_kwargs[_ALLOW_DANGEROUS_DESERIALIZATION_ARG] = kwargs.get(
+            _ALLOW_DANGEROUS_DESERIALIZATION_ARG, False
+        )
 
     return llm_cls(**config, **load_kwargs)
 
