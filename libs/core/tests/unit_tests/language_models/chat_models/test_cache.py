@@ -5,9 +5,12 @@ import pytest
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
+from langchain_core.language_models.fake_chat_models import (
+    FakeListChatModel,
+    GenericFakeChatModel,
+)
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
-from tests.unit_tests.fake.chat_model import FakeListChatModel, GenericFakeChatModel
 
 
 class InMemoryCache(BaseCache):
