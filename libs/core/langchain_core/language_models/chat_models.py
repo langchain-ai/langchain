@@ -325,7 +325,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         generation: Optional[ChatGenerationChunk] = None
         try:
             async for chunk in _stream_implementation(
-                messages, stop=stop, run_manager=run_manager_, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager_,  # type: ignore[arg-type]
+                **kwargs,
             ):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 yield chunk.message

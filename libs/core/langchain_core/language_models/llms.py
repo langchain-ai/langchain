@@ -513,7 +513,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         generation: Optional[GenerationChunk] = None
         try:
             async for chunk in _stream_implementation(
-                prompt, stop=stop, run_manager=run_manager_, **kwargs
+                prompt,
+                stop=stop,
+                run_manager=run_manager_,  # type: ignore[arg-type]
+                **kwargs,
             ):
                 yield chunk.text
                 if generation is None:
