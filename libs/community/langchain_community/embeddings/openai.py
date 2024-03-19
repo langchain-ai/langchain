@@ -249,6 +249,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Max number of seconds to wait between retries"""
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
+    disable_safe_len_embeddings: bool = False
+    """For servers compatible with OpenAI API may not support `safe_len_embedding`,
+    use this option to disable it.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -662,6 +666,19 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        if self.disable_safe_len_embeddings:
+            embeddings: List[List[float]] = []
+            for text in texts:
+                response = embed_with_retry(
+                    self,
+                    input=text,
+                    **self._invocation_params,
+                )
+                if not isinstance(response, dict):
+                    response = response.dict()
+                embeddings.extend(r["embedding"] for r in response["data"])
+            return embeddings
+
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
@@ -680,6 +697,19 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        if self.disable_safe_len_embeddings:
+            embeddings: List[List[float]] = []
+            for text in texts:
+                response = await async_embed_with_retry(
+                    self,
+                    input=text,
+                    **self._invocation_params,
+                )
+                if not isinstance(response, dict):
+                    response = response.dict()
+                embeddings.extend(r["embedding"] for r in response["data"])
+            return embeddings
+
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
