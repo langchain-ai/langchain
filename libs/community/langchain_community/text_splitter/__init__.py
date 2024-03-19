@@ -12,7 +12,8 @@ but still splitting at semantically sensible boundaries whenever possible
 **Class hierarchy:**
 
 .. code-block::
-     <name>TextSplitter  # Examples: SemanticCharacterTextSplitter, SemanticTiktokenTextSplitter
+     <name>TextSplitter  # Examples: SemanticCharacterTextSplitter,
+      SemanticTiktokenTextSplitter
 
 """
 
