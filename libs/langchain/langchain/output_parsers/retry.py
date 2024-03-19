@@ -72,16 +72,17 @@ class RetryOutputParser(BaseOutputParser[T]):
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
-    def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
+    def parse_with_prompt(self, text: str, prompt_value: PromptValue) -> T:
         """Parse the output of an LLM call using a wrapped parser.
 
         Args:
-            completion: The chain completion to parse.
+            text: The chain completion to parse.
             prompt_value: The prompt to use to parse the completion.
 
         Returns:
             The parsed completion.
         """
+        completion = text
         retries = 0
 
         while retries <= self.max_retries:
@@ -96,18 +97,19 @@ class RetryOutputParser(BaseOutputParser[T]):
                         prompt=prompt_value.to_string(), completion=completion
                     )
 
-        raise OutputParserException("Failed to parse")
+        raise OutputParserException(f"Failed to parse {text}", llm_output=text)
 
-    async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
+    async def aparse_with_prompt(self, text: str, prompt_value: PromptValue) -> T:
         """Parse the output of an LLM call using a wrapped parser.
 
         Args:
-            completion: The chain completion to parse.
+            text: The chain completion to parse.
             prompt_value: The prompt to use to parse the completion.
 
         Returns:
             The parsed completion.
         """
+        completion = text
         retries = 0
 
         while retries <= self.max_retries:
@@ -122,9 +124,9 @@ class RetryOutputParser(BaseOutputParser[T]):
                         prompt=prompt_value.to_string(), completion=completion
                     )
 
-        raise OutputParserException("Failed to parse")
+        raise OutputParserException(f"Failed to parse {text}", llm_output=text)
 
-    def parse(self, completion: str) -> T:
+    def parse(self, text: str) -> T:
         raise NotImplementedError(
             "This OutputParser can only be called by the `parse_with_prompt` method."
         )
@@ -179,7 +181,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
-    def parse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
+    def parse_with_prompt(self, text: str, prompt_value: PromptValue) -> T:
+        completion = text
         retries = 0
 
         while retries <= self.max_retries:
@@ -196,9 +199,10 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                         error=repr(e),
                     )
 
-        raise OutputParserException("Failed to parse")
+        raise OutputParserException(f"Failed to parse {text}", llm_output=text)
 
-    async def aparse_with_prompt(self, completion: str, prompt_value: PromptValue) -> T:
+    async def aparse_with_prompt(self, text: str, prompt_value: PromptValue) -> T:
+        completion = text
         retries = 0
 
         while retries <= self.max_retries:
@@ -215,9 +219,9 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                         error=repr(e),
                     )
 
-        raise OutputParserException("Failed to parse")
+        raise OutputParserException(f"Failed to parse {text}", llm_output=text)
 
-    def parse(self, completion: str) -> T:
+    def parse(self, text: str) -> T:
         raise NotImplementedError(
             "This OutputParser can only be called by the `parse_with_prompt` method."
         )

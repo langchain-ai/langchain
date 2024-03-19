@@ -51,7 +51,8 @@ class OutputFixingParser(BaseOutputParser[T]):
         chain = LLMChain(llm=llm, prompt=prompt)
         return cls(parser=parser, retry_chain=chain, max_retries=max_retries)
 
-    def parse(self, completion: str) -> T:
+    def parse(self, text: str) -> T:
+        completion = text
         retries = 0
 
         while retries <= self.max_retries:
@@ -68,9 +69,10 @@ class OutputFixingParser(BaseOutputParser[T]):
                         error=repr(e),
                     )
 
-        raise OutputParserException("Failed to parse")
+        raise OutputParserException(f"Failed to parse {text}", llm_output=text)
 
-    async def aparse(self, completion: str) -> T:
+    async def aparse(self, text: str) -> T:
+        completion = text
         retries = 0
 
         while retries <= self.max_retries:
@@ -87,7 +89,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                         error=repr(e),
                     )
 
-        raise OutputParserException("Failed to parse")
+        raise OutputParserException(f"Failed to parse {text}", llm_output=text)
 
     def get_format_instructions(self) -> str:
         return self.parser.get_format_instructions()
