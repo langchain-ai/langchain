@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import openai
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_openai.chat_models.base import ChatOpenAI
@@ -163,8 +163,8 @@ class AzureChatOpenAI(ChatOpenAI):
                     "If specifying `azure_deployment`/`deployment_name` then use "
                     "`azure_endpoint` instead of `base_url`.\n\n"
                     "For example, you could specify:\n\n"
-                    'azure_deployment="https://xxx.openai.azure.com/", '
-                    'deployment_name="my-deployment"\n\n'
+                    'azure_endpoint="https://xxx.openai.azure.com/", '
+                    'azure_deployment="my-deployment"\n\n'
                     "Or you can equivalently specify:\n\n"
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'  # noqa: E501
                 )
@@ -185,12 +185,17 @@ class AzureChatOpenAI(ChatOpenAI):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
-        values["client"] = openai.AzureOpenAI(**client_params).chat.completions
-        values["async_client"] = openai.AsyncAzureOpenAI(
-            **client_params
-        ).chat.completions
+        if not values.get("client"):
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.AzureOpenAI(
+                **client_params, **sync_specific
+            ).chat.completions
+        if not values.get("async_client"):
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncAzureOpenAI(
+                **client_params, **async_specific
+            ).chat.completions
         return values
 
     @property
@@ -209,9 +214,11 @@ class AzureChatOpenAI(ChatOpenAI):
             "openai_api_version": self.openai_api_version,
         }
 
-    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
+    def _create_chat_result(
+        self, response: Union[dict, openai.BaseModel]
+    ) -> ChatResult:
         if not isinstance(response, dict):
-            response = response.dict()
+            response = response.model_dump()
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 raise ValueError(

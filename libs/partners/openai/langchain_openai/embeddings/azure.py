@@ -23,18 +23,18 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
             from langchain_openai import AzureOpenAIEmbeddings
 
-            openai = AzureOpenAIEmbeddings(model=""text-embedding-3-large")
+            openai = AzureOpenAIEmbeddings(model="text-embedding-3-large")
     """
 
     azure_endpoint: Union[str, None] = None
     """Your Azure endpoint, including the resource.
 
         Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
-        
+
         Example: `https://example-resource.azure.openai.com/`
     """
     deployment: Optional[str] = Field(default=None, alias="azure_deployment")
-    """A model deployment. 
+    """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
@@ -46,7 +46,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
 
-        For more: 
+        For more:
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """  # noqa: E501
     azure_ad_token_provider: Union[Callable[[], str], None] = None
@@ -139,10 +139,17 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
-        values["client"] = openai.AzureOpenAI(**client_params).embeddings
-        values["async_client"] = openai.AsyncAzureOpenAI(**client_params).embeddings
+        if not values.get("client"):
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.AzureOpenAI(
+                **client_params, **sync_specific
+            ).embeddings
+        if not values.get("async_client"):
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncAzureOpenAI(
+                **client_params, **async_specific
+            ).embeddings
         return values
 
     @property

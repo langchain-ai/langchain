@@ -91,6 +91,7 @@ def _get_search_client(
         SemanticField,
         SemanticPrioritizedFields,
         SemanticSearch,
+        VectorSearch,
         VectorSearchAlgorithmKind,
         VectorSearchAlgorithmMetric,
         VectorSearchProfile,
@@ -255,7 +256,7 @@ class AzureSearch(VectorStore):
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
                 vector_search_dimensions=len(self.embed_query("Text")),
-                vector_search_configuration="default",
+                vector_search_profile_name="myHnswProfile",
             ),
             SearchableField(
                 name=FIELDS_METADATA,
@@ -625,6 +626,7 @@ class AzureSearch(VectorStore):
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
         index_name: str = "langchain-index",
+        fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
     ) -> AzureSearch:
         # Creating a new Azure Search instance
@@ -633,6 +635,7 @@ class AzureSearch(VectorStore):
             azure_search_key,
             index_name,
             embedding,
+            fields=fields,
         )
         azure_search.add_texts(texts, metadatas, **kwargs)
         return azure_search
