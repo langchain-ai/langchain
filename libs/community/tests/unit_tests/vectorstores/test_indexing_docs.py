@@ -55,6 +55,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "BigQueryVectorSearch",
         "Cassandra",
         "Chroma",
+        "CouchbaseVectorStore",
         "DashVector",
         "DatabricksVectorSearch",
         "TiDBVectorStore",
