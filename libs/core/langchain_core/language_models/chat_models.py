@@ -21,6 +21,7 @@ from typing import (
 )
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -596,7 +597,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        llm_cache = get_llm_cache()
+        if isinstance(self.cache, BaseCache):
+            llm_cache = self.cache
+        else:
+            llm_cache = get_llm_cache()
+        # We should check the cache unless it's explicitly set to False
+        # A None cache means we should use the default global cache
+        # if it's configured.
         check_cache = self.cache or self.cache is None
         if check_cache:
             if llm_cache:
@@ -618,6 +625,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             result = self._generate(messages, stop=stop, **kwargs)
 
+        # Add response metadata to each generation
         for generation in result.generations:
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
@@ -638,7 +646,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        llm_cache = get_llm_cache()
+        if isinstance(self.cache, BaseCache):
+            llm_cache = self.cache
+        else:
+            llm_cache = get_llm_cache()
+        # We should check the cache unless it's explicitly set to False
+        # A None cache means we should use the default global cache
+        # if it's configured.
         check_cache = self.cache or self.cache is None
         if check_cache:
             if llm_cache:
@@ -659,6 +673,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
         else:
             result = await self._agenerate(messages, stop=stop, **kwargs)
+
+        # Add response metadata to each generation
         for generation in result.generations:
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
