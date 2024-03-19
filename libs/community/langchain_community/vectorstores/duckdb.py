@@ -1,3 +1,4 @@
+# mypy: disable-error-code=func-returns-value
 from __future__ import annotations
 
 import json
@@ -179,7 +180,7 @@ class DuckDB(VectorStore):
         docs = (
             self._table.select(
                 *[
-                    self.duckdb.StarExpression(),
+                    self.duckdb.StarExpression(exclude=[]),
                     list_cosine_similarity.alias("similarity"),
                 ]
             )
@@ -207,7 +208,7 @@ class DuckDB(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> VST:
+    ) -> DuckDB:
         """Creates an instance of DuckDB and populates it with texts and
           their embeddings.
 
@@ -249,7 +250,7 @@ class DuckDB(VectorStore):
 
         return instance
 
-    def _ensure_table(self):
+    def _ensure_table(self) -> None:
         """Ensures the table for storing embeddings exists."""
         create_table_sql = f"""
         CREATE TABLE IF NOT EXISTS {self._table_name} (
