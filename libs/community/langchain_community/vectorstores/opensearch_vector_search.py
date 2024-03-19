@@ -11,6 +11,9 @@ from langchain_core.structured_query.ir import Visitor
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
+from langchain_community.structured_query_translators.opensearch import (
+    OpenSearchTranslator,
+)
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 IMPORT_OPENSEARCH_PY_ERROR = (

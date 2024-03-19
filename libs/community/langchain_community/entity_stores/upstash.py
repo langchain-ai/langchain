@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import Optional, Any
+import logging
+from typing import Any, Optional
 
-from langchain.memory.entity import logger
 from langchain_core.entity_stores import BaseEntityStore
+
+logger = logging.getLogger(__name__)
 
 
 class UpstashRedisEntityStore(BaseEntityStore):

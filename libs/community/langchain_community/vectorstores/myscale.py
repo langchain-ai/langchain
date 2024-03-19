@@ -6,12 +6,13 @@ from hashlib import sha1
 from threading import Thread
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from langchain_community.structured_query_translators.myscale import MyScaleTranslator
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseSettings
 from langchain_core.structured_query.ir import Visitor
 from langchain_core.vectorstores import VectorStore
+
+from langchain_community.structured_query_translators.myscale import MyScaleTranslator
 
 logger = logging.getLogger()
 

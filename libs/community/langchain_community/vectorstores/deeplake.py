@@ -4,9 +4,9 @@ import logging
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+from langchain_core.structured_query.ir import Visitor
 
 from langchain_community.structured_query_translators.deeplake import DeepLakeTranslator
-from langchain_core.structured_query.ir import Visitor
 
 try:
     import deeplake

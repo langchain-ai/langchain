@@ -7,8 +7,6 @@ import warnings
 from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
-
-from langchain_community.structured_query_translators.pinecone import PineconeTranslator
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -17,6 +15,7 @@ from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
 from packaging import version
 
+from langchain_community.structured_query_translators.pinecone import PineconeTranslator
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
     maximal_marginal_relevance,

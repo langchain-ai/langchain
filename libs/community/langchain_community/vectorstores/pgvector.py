@@ -19,14 +19,13 @@ from typing import (
 
 import numpy as np
 import sqlalchemy
-
-from langchain_community.structured_query_translators.pgvector import PGVectorTranslator
 from langchain_core._api import warn_deprecated
+from langchain_core.structured_query.ir import Visitor
 from sqlalchemy import SQLColumnExpression, delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
 
-from langchain_core.structured_query.ir import Visitor
+from langchain_community.structured_query_translators.pgvector import PGVectorTranslator
 
 try:
     from sqlalchemy.orm import declarative_base

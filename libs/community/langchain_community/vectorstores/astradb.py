@@ -20,8 +20,6 @@ from typing import (
 )
 
 import numpy as np
-
-from langchain_community.structured_query_translators.astradb import AstraDBTranslator
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -30,6 +28,7 @@ from langchain_core.structured_query.ir import Visitor
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
 
+from langchain_community.structured_query_translators.astradb import AstraDBTranslator
 from langchain_community.utilities.astradb import (
     SetupMode,
     _AstraDBCollectionEnvironment,

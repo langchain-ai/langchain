@@ -3,18 +3,22 @@ import logging
 from pathlib import Path
 from typing import List
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
     messages_from_dict,
     messages_to_dict,
 )
-from langchain_core._api.deprecation import deprecated
 
 logger = logging.getLogger(__name__)
 
 
-@deprecated("0.0.29", alternative_import="langchain.memory.chat_message_histories.FileChatMessageHistory", removal="0.2.0")
+@deprecated(
+    "0.0.29",
+    alternative_import="langchain.memory.chat_message_histories.FileChatMessageHistory",
+    removal="0.2.0",
+)
 class FileChatMessageHistory(BaseChatMessageHistory):
     """
     Chat message history that stores history in a local file.

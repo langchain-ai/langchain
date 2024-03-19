@@ -6,7 +6,11 @@ from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 
-@deprecated("0.0.29", alternative_import="langchain.memory.chat_message_histories.ChatMessageHistory", removal="0.2.0")
+@deprecated(
+    "0.0.29",
+    alternative_import="langchain.memory.chat_message_histories.ChatMessageHistory",
+    removal="0.2.0",
+)
 class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
     """In memory implementation of chat message history.
 
