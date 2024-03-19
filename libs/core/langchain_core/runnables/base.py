@@ -1352,7 +1352,7 @@ class Runnable(Generic[Input, Output], ABC):
             count = 0
 
 
-             def _lambda(x: int) -> None:
+            def _lambda(x: int) -> None:
                 global count
                 count = count + 1
                 if x == 1:
