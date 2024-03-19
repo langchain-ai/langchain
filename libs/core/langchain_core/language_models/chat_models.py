@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import uuid
 import warnings
 from abc import ABC, abstractmethod
 from typing import (
@@ -234,6 +235,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 batch_size=1,
             )
             generation: Optional[ChatGenerationChunk] = None
@@ -312,6 +314,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             batch_size=1,
         )
         generation: Optional[ChatGenerationChunk] = None
@@ -371,6 +374,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Pass a sequence of prompts to the model and return model generations.
@@ -415,6 +419,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=run_name,
+            run_id=run_id,
             batch_size=len(messages),
         )
         results = []
@@ -456,6 +461,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Asynchronously pass a sequence of prompts to a model and return generations.
@@ -502,6 +508,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             options=options,
             name=run_name,
             batch_size=len(messages),
+            run_id=run_id,
         )
 
         results = await asyncio.gather(
@@ -615,6 +622,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
+        if len(result.generations) == 1 and result.llm_output is not None:
+            result.generations[0].message.response_metadata = {
+                **result.llm_output,
+                **result.generations[0].message.response_metadata,
+            }
         if check_cache and llm_cache:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
@@ -651,6 +663,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
+        if len(result.generations) == 1 and result.llm_output is not None:
+            result.generations[0].message.response_metadata = {
+                **result.llm_output,
+                **result.generations[0].message.response_metadata,
+            }
         if check_cache and llm_cache:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
