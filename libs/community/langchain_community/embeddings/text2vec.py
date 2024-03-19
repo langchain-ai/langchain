@@ -31,26 +31,20 @@ class Text2vecEmbeddings(BaseModel, Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed documents using the text2vec embeddings model.
-
         Args:
             texts: The list of texts to embed.
-
         Returns:
             List of embeddings, one for each text.
         """
         m = SentenceModel()
-
         return m.encode(texts)
 
     def embed_query(self, text: str) -> List[float]:
         """Embed a query using the text2vec embeddings model.
-
         Args:
             text: The text to embed.
-
         Returns:
             Embeddings for the text.
         """
-        m = SentenceModel()
-        
+        m = SentenceModel()        
         return m.encode(text)
