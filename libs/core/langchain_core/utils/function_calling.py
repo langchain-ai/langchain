@@ -337,7 +337,7 @@ def convert_to_openai_tool(
     return {"type": "function", "function": function}
 
 
-class Example(TypedDict):
+class Example(TypedDict, total=False):
     """A representation of an example consisting of text input and expected tool calls.
 
     For extraction, the tool calls are represented as instances of pydantic model.
@@ -345,6 +345,7 @@ class Example(TypedDict):
 
     input: str  # This is the example text
     tool_calls: List[BaseModel]  # Instances of pydantic model that should be extracted
+    tool_outputs: Optional[List[str]]  # The expected outputs of the tool calls
 
 
 def tool_example_to_messages(example: Example) -> List[BaseMessage]:
@@ -433,6 +434,6 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
     tool_outputs = example.get("tool_outputs") or [
         "You have correctly called this tool."
     ] * len(openai_tool_calls)
-    for output, tool_call in zip(tool_outputs, openai_tool_calls):
-        messages.append(ToolMessage(content=output, tool_call_id=tool_call["id"]))
+    for output, tool_call_dict in zip(tool_outputs, openai_tool_calls):
+        messages.append(ToolMessage(content=output, tool_call_id=tool_call_dict["id"]))  # type: ignore
     return messages
