@@ -13,8 +13,8 @@ class MockEmbeddings(Embeddings):
         # Simulate embedding documents
         embeddings: List[List[float]] = []
         for text in texts:
-            if text == 'STOP':
-                raise ValueError('Simulated embedding failure')
+            if text == "STOP":
+                raise ValueError("Simulated embedding failure")
             embeddings.append([len(text), len(text) + 1])
         return embeddings
 
@@ -55,8 +55,8 @@ def test_embed_documents(cache_embeddings: CacheBackedEmbeddings) -> None:
 
 
 def test_embed_documents_batch(cache_embeddings_batch: CacheBackedEmbeddings) -> None:
-    # "STOP" forces a failure in batch 2
-    texts = ["1", "22", "a", "333", "STOP"]
+    # "RAISE_EXCEPTION" forces a failure in batch 2
+    texts = ["1", "22", "a", "333", "RAISE_EXCEPTION"]
     try:
         cache_embeddings_batch.embed_documents(texts)
     except ValueError:
@@ -88,15 +88,18 @@ async def test_aembed_documents(cache_embeddings: CacheBackedEmbeddings) -> None
     assert keys[0] == "test_namespace812b86c1-8ebf-5483-95c6-c95cf2b52d12"
 
 
-async def test_aembed_documents_batch(cache_embeddings_batch: CacheBackedEmbeddings) -> None:
-    # "STOP" forces a failure in batch 2
-    texts = ["1", "22", "a", "333", "STOP"]
+async def test_aembed_documents_batch(
+    cache_embeddings_batch: CacheBackedEmbeddings,
+) -> None:
+    # "RAISE_EXCEPTION" forces a failure in batch 2
+    texts = ["1", "22", "a", "333", "RAISE_EXCEPTION"]
     try:
         await cache_embeddings_batch.embed_documents(texts)
     except ValueError:
         pass
     keys = [
-        key async for key in cache_embeddings_batch.document_embedding_store.ayield_keys()
+        key
+        async for key in cache_embeddings_batch.document_embedding_store.ayield_keys()
     ]
     # only the first batch of three embeddings should exist
     assert len(keys) == 3

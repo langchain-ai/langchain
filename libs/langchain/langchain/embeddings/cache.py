@@ -12,7 +12,7 @@ import hashlib
 import json
 import uuid
 from functools import partial
-from typing import Callable, List, Sequence, Union, cast
+from typing import Callable, List, Sequence, Union, cast, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.stores import BaseStore, ByteStore
@@ -153,6 +153,8 @@ class CacheBackedEmbeddings(Embeddings):
             i for i, vector in enumerate(vectors) if vector is None
         ]
 
+        # batch_iterate supports None batch_size which returns all elements at once
+        # as a single batch.
         for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = await self.underlying_embeddings.aembed_documents(
