@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import logging
-from abc import ABC, abstractmethod
-from itertools import islice
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain_core.entity_stores import BaseEntityStore
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import Field
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -20,38 +18,9 @@ from langchain.memory.prompt import (
 from langchain.memory.utils import get_prompt_input_key
 
 if TYPE_CHECKING:
-    from redis.client import Redis as RedisType
+    pass
 
 logger = logging.getLogger(__name__)
-
-
-class BaseEntityStore(BaseModel, ABC):
-    """Abstract base class for Entity store."""
-
-    @abstractmethod
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        """Get entity value from store."""
-        pass
-
-    @abstractmethod
-    def set(self, key: str, value: Optional[str]) -> None:
-        """Set entity value in store."""
-        pass
-
-    @abstractmethod
-    def delete(self, key: str) -> None:
-        """Delete entity value from store."""
-        pass
-
-    @abstractmethod
-    def exists(self, key: str) -> bool:
-        """Check if entity exists in store."""
-        pass
-
-    @abstractmethod
-    def clear(self) -> None:
-        """Delete all entities from store."""
-        pass
 
 
 class InMemoryEntityStore(BaseEntityStore):
@@ -73,204 +42,6 @@ class InMemoryEntityStore(BaseEntityStore):
 
     def clear(self) -> None:
         return self.store.clear()
-
-
-class UpstashRedisEntityStore(BaseEntityStore):
-    """Upstash Redis backed Entity store.
-
-    Entities get a TTL of 1 day by default, and
-    that TTL is extended by 3 days every time the entity is read back.
-    """
-
-    def __init__(
-        self,
-        session_id: str = "default",
-        url: str = "",
-        token: str = "",
-        key_prefix: str = "memory_store",
-        ttl: Optional[int] = 60 * 60 * 24,
-        recall_ttl: Optional[int] = 60 * 60 * 24 * 3,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        try:
-            from upstash_redis import Redis
-        except ImportError:
-            raise ImportError(
-                "Could not import upstash_redis python package. "
-                "Please install it with `pip install upstash_redis`."
-            )
-
-        super().__init__(*args, **kwargs)
-
-        try:
-            self.redis_client = Redis(url=url, token=token)
-        except Exception:
-            logger.error("Upstash Redis instance could not be initiated.")
-
-        self.session_id = session_id
-        self.key_prefix = key_prefix
-        self.ttl = ttl
-        self.recall_ttl = recall_ttl or ttl
-
-    @property
-    def full_key_prefix(self) -> str:
-        return f"{self.key_prefix}:{self.session_id}"
-
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        res = (
-            self.redis_client.getex(f"{self.full_key_prefix}:{key}", ex=self.recall_ttl)
-            or default
-            or ""
-        )
-        logger.debug(f"Upstash Redis MEM get '{self.full_key_prefix}:{key}': '{res}'")
-        return res
-
-    def set(self, key: str, value: Optional[str]) -> None:
-        if not value:
-            return self.delete(key)
-        self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
-        logger.debug(
-            f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
-        )
-
-    def delete(self, key: str) -> None:
-        self.redis_client.delete(f"{self.full_key_prefix}:{key}")
-
-    def exists(self, key: str) -> bool:
-        return self.redis_client.exists(f"{self.full_key_prefix}:{key}") == 1
-
-    def clear(self) -> None:
-        def scan_and_delete(cursor: int) -> int:
-            cursor, keys_to_delete = self.redis_client.scan(
-                cursor, f"{self.full_key_prefix}:*"
-            )
-            self.redis_client.delete(*keys_to_delete)
-            return cursor
-
-        cursor = scan_and_delete(0)
-        while cursor != 0:
-            scan_and_delete(cursor)
-
-
-class RedisEntityStore(BaseEntityStore):
-    """Redis-backed Entity store.
-
-    Entities get a TTL of 1 day by default, and
-    that TTL is extended by 3 days every time the entity is read back.
-
-    Must have `redis` and `langchain-community` installed.
-    """
-
-    redis_client: Any
-    session_id: str = "default"
-    key_prefix: str = "memory_store"
-    ttl: Optional[int] = 60 * 60 * 24
-    recall_ttl: Optional[int] = 60 * 60 * 24 * 3
-
-    def __init__(
-        self,
-        session_id: str = "default",
-        url: str = "redis://localhost:6379/0",
-        key_prefix: str = "memory_store",
-        ttl: Optional[int] = 60 * 60 * 24,
-        recall_ttl: Optional[int] = 60 * 60 * 24 * 3,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        try:
-            import redis
-        except ImportError:
-            raise ImportError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
-
-        super().__init__(*args, **kwargs)
-        try:
-            self.redis_client = self._get_client(redis_url=url, decode_responses=True)
-        except redis.exceptions.ConnectionError as error:
-            logger.error(error)
-
-        self.session_id = session_id
-        self.key_prefix = key_prefix
-        self.ttl = ttl
-        self.recall_ttl = recall_ttl or ttl
-
-    @staticmethod
-    def _get_client(redis_url: str, **kwargs: Any) -> RedisType:
-        try:
-            import redis
-        except ImportError:
-            raise ImportError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis>=4.1.0`."
-            )
-
-        # check if normal redis:// or redis+sentinel:// url
-        if redis_url.startswith("redis+sentinel"):
-            redis_client = _redis_sentinel_client(redis_url, **kwargs)
-        elif redis_url.startswith(
-            "rediss+sentinel"
-        ):  # sentinel with TLS support enables
-            kwargs["ssl"] = True
-            if "ssl_cert_reqs" not in kwargs:
-                kwargs["ssl_cert_reqs"] = "none"
-            redis_client = _redis_sentinel_client(redis_url, **kwargs)
-        else:
-            # connect to redis server from url, reconnect with cluster client if needed
-            redis_client = redis.from_url(redis_url, **kwargs)
-
-            try:
-                cluster_info = redis_client.info("cluster")
-                cluster_enabled = cluster_info["cluster_enabled"] == 1
-            except redis.exceptions.RedisError:
-                cluster_enabled = False
-            if cluster_enabled:
-                from redis.cluster import RedisCluster
-
-                redis_client.close()
-                return RedisCluster.from_url(redis_url, **kwargs)
-        return redis_client
-
-    @property
-    def full_key_prefix(self) -> str:
-        return f"{self.key_prefix}:{self.session_id}"
-
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        res = (
-            self.redis_client.getex(f"{self.full_key_prefix}:{key}", ex=self.recall_ttl)
-            or default
-            or ""
-        )
-        logger.debug(f"REDIS MEM get '{self.full_key_prefix}:{key}': '{res}'")
-        return res
-
-    def set(self, key: str, value: Optional[str]) -> None:
-        if not value:
-            return self.delete(key)
-        self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
-        logger.debug(
-            f"REDIS MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
-        )
-
-    def delete(self, key: str) -> None:
-        self.redis_client.delete(f"{self.full_key_prefix}:{key}")
-
-    def exists(self, key: str) -> bool:
-        return self.redis_client.exists(f"{self.full_key_prefix}:{key}") == 1
-
-    def clear(self) -> None:
-        # iterate a list in batches of size batch_size
-        def batched(iterable: Iterable[Any], batch_size: int) -> Iterable[Any]:
-            iterator = iter(iterable)
-            while batch := list(islice(iterator, batch_size)):
-                yield batch
-
-        for keybatch in batched(
-            self.redis_client.scan_iter(f"{self.full_key_prefix}:*"), 500
-        ):
-            self.redis_client.delete(*keybatch)
 
 
 class SQLiteEntityStore(BaseEntityStore):
@@ -523,55 +294,3 @@ class ConversationEntityMemory(BaseChatMemory):
         self.chat_memory.clear()
         self.entity_cache.clear()
         self.entity_store.clear()
-
-
-def _redis_sentinel_client(redis_url: str, **kwargs: Any) -> RedisType:
-    import redis
-
-    parsed_url = urlparse(redis_url)
-    # sentinel needs list with (host, port) tuple, use default port if none available
-    sentinel_list = [(parsed_url.hostname or "localhost", parsed_url.port or 26379)]
-    if parsed_url.path:
-        # "/mymaster/0" first part is service name, optional second part is db number
-        path_parts = parsed_url.path.split("/")
-        service_name = path_parts[1] or "mymaster"
-        if len(path_parts) > 2:
-            kwargs["db"] = path_parts[2]
-    else:
-        service_name = "mymaster"
-
-    sentinel_args = {}
-    if parsed_url.password:
-        sentinel_args["password"] = parsed_url.password
-        kwargs["password"] = parsed_url.password
-    if parsed_url.username:
-        sentinel_args["username"] = parsed_url.username
-        kwargs["username"] = parsed_url.username
-
-    # check for all SSL related properties and copy them into sentinel_kwargs too,
-    # add client_name also
-    for arg in kwargs:
-        if arg.startswith("ssl") or arg == "client_name":
-            sentinel_args[arg] = kwargs[arg]
-
-    # sentinel user/pass is part of sentinel_kwargs, user/pass for redis server
-    # connection as direct parameter in kwargs
-    sentinel_client = redis.sentinel.Sentinel(
-        sentinel_list, sentinel_kwargs=sentinel_args, **kwargs
-    )
-
-    # redis server might have password but not sentinel - fetch this error and try
-    # again without pass, everything else cannot be handled here -> user needed
-    try:
-        sentinel_client.execute_command("ping")
-    except redis.exceptions.AuthenticationError as ae:
-        if "no password is set" in ae.args[0]:
-            logger.warning(
-                "Redis sentinel connection configured with password but Sentinel \
-answered NO PASSWORD NEEDED - Please check Sentinel configuration"
-            )
-            sentinel_client = redis.sentinel.Sentinel(sentinel_list, **kwargs)
-        else:
-            raise ae
-
-    return sentinel_client.master_for(service_name)

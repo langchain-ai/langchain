@@ -1,7 +1,7 @@
-"""Logic for converting internal query language to a valid AstraDB query."""
+"""Logic for converting internal query language to a valid MongoDB Atlas query."""
 from typing import Dict, Tuple, Union
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
@@ -13,8 +13,8 @@ from langchain.chains.query_constructor.ir import (
 MULTIPLE_ARITY_COMPARATORS = [Comparator.IN, Comparator.NIN]
 
 
-class AstraDBTranslator(Visitor):
-    """Translate AstraDB internal query language elements to valid filters."""
+class MongoDBAtlasTranslator(Visitor):
+    """Translate Mongo internal query language elements to valid filters."""
 
     """Subset of allowed logical comparators."""
     allowed_comparators = [
@@ -31,6 +31,7 @@ class AstraDBTranslator(Visitor):
     """Subset of allowed logical operators."""
     allowed_operators = [Operator.AND, Operator.OR]
 
+    ## Convert a operator or a comparator to Mongo Query Format
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         self._validate_func(func)
         map_dict = {
@@ -58,7 +59,10 @@ class AstraDBTranslator(Visitor):
             comparison.value = [comparison.value]
 
         comparator = self._format_func(comparison.comparator)
-        return {comparison.attribute: {comparator: comparison.value}}
+
+        attribute = comparison.attribute
+
+        return {attribute: {comparator: comparison.value}}
 
     def visit_structured_query(
         self, structured_query: StructuredQuery
@@ -66,5 +70,5 @@ class AstraDBTranslator(Visitor):
         if structured_query.filter is None:
             kwargs = {}
         else:
-            kwargs = {"filter": structured_query.filter.accept(self)}
+            kwargs = {"pre_filter": structured_query.filter.accept(self)}
         return structured_query.query, kwargs

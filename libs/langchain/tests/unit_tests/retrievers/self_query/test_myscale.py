@@ -1,15 +1,14 @@
 from typing import Any, Dict, Tuple
 
 import pytest
-
-from langchain.chains.query_constructor.ir import (
+from langchain_community.structured_query_translators import MyScaleTranslator
+from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
     StructuredQuery,
 )
-from langchain.retrievers.self_query.myscale import MyScaleTranslator
 
 DEFAULT_TRANSLATOR = MyScaleTranslator()
 

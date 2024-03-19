@@ -15,8 +15,11 @@ from typing import (
 from uuid import uuid4
 
 import numpy as np
+
+from langchain_community.structured_query_translators.weaviate import WeaviateTranslator
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.structured_query.ir import Visitor
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
@@ -526,3 +529,7 @@ class Weaviate(VectorStore):
         # TODO: Check if this can be done in bulk
         for id in ids:
             self._client.data_object.delete(uuid=id)
+
+
+    def get_structured_query_translator(self) -> Visitor:
+        return WeaviateTranslator()

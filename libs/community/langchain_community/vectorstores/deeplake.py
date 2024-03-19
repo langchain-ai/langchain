@@ -5,6 +5,9 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
+from langchain_community.structured_query_translators.deeplake import DeepLakeTranslator
+from langchain_core.structured_query.ir import Visitor
+
 try:
     import deeplake
     from deeplake import VectorStore as DeepLakeVectorStore
@@ -956,3 +959,6 @@ class DeepLake(VectorStore):
         if kwargs:
             unsupported_items = "`, `".join(set(kwargs.keys()))
         return unsupported_items
+
+    def get_structured_query_translator(self) -> Visitor:
+        return DeepLakeTranslator()

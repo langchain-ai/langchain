@@ -1,15 +1,14 @@
 from typing import Dict, Tuple
 
 import pytest as pytest
-
-from langchain.chains.query_constructor.ir import (
+from langchain_community.structured_query_translators import PGVectorTranslator
+from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
     StructuredQuery,
 )
-from langchain.retrievers.self_query.pgvector import PGVectorTranslator
 
 DEFAULT_TRANSLATOR = PGVectorTranslator()
 

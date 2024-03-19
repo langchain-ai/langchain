@@ -1,14 +1,13 @@
 from typing import Any, Tuple
 
 import pytest
-
-from langchain.chains.query_constructor.ir import (
+from langchain_community.structured_query_translators import DashvectorTranslator
+from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
 )
-from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 
 DEFAULT_TRANSLATOR = DashvectorTranslator()
 

@@ -1,17 +1,31 @@
-from typing import Any
+from typing import List, Sequence
 
-DEPRECATED_IMPORTS = ["ChatMessageHistory"]
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import BaseMessage
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
-def __getattr__(name: str) -> Any:
-    if name in DEPRECATED_IMPORTS:
-        raise ImportError(
-            f"{name} has been moved to the langchain-community package. "
-            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
-            f"information.\n\nTo use it install langchain-community:\n\n"
-            f"`pip install -U langchain-community`\n\n"
-            f"then import with:\n\n"
-            f"`from langchain_community.memory.chat_message_histories.in_memory import {name}`"  # noqa: E501
-        )  # noqa: E501
+class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
+    """In memory implementation of chat message history.
 
-    raise AttributeError()
+    Stores messages in an in memory list.
+    """
+
+    messages: List[BaseMessage] = Field(default_factory=list)
+
+    async def aget_messages(self) -> List[BaseMessage]:
+        return self.messages
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        self.messages.append(message)
+
+    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
+        """Add messages to the store"""
+        self.add_messages(messages)
+
+    def clear(self) -> None:
+        self.messages = []
+
+    async def aclear(self) -> None:
+        self.clear()

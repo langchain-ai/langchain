@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.structured_query.ir import Visitor
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
@@ -979,3 +980,6 @@ class OpenSearchVectorSearch(VectorStore):
         )
         kwargs["engine"] = engine
         return cls(opensearch_url, index_name, embedding, **kwargs)
+
+    def get_structured_query_translator(self) -> Visitor:
+        return OpenSearchTranslator()

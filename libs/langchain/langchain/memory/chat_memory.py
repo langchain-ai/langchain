@@ -6,30 +6,14 @@ from langchain_core.memory import BaseMemory
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import Field
 
+from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from langchain.memory.utils import get_prompt_input_key
-
-
-def _chat_memory_default_factory() -> BaseChatMessageHistory:
-    replacement = """
-!pip install -U langchain-community
-
-from langchain_community.chat_message_histories import ChatMessageHistory
-
-chat_history = ChatMessageHistory()
-memory = BaseChatMemory(chat_memory=chat_history, ...)
-"""
-    raise ValueError(
-        "Must specify chat_memory: BaseChatMessageHistory. Example:"
-        f"```{replacement}```"
-    )
 
 
 class BaseChatMemory(BaseMemory, ABC):
     """Abstract base class for chat memory."""
 
-    chat_memory: BaseChatMessageHistory = Field(
-        default_factory=_chat_memory_default_factory
-    )
+    chat_memory: BaseChatMessageHistory = Field(default_factory=ChatMessageHistory)
     output_key: Optional[str] = None
     input_key: Optional[str] = None
     return_messages: bool = False

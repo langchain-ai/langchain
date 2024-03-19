@@ -2,18 +2,18 @@ from typing import Any, Dict, List, Tuple, Union
 
 import pytest
 from langchain_core.documents import Document
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
     StructuredQuery,
     Visitor,
+)
+
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
 )
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers import SelfQueryRetriever

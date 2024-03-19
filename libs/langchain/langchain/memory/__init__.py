@@ -37,9 +37,7 @@ from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import (
     ConversationEntityMemory,
     InMemoryEntityStore,
-    RedisEntityStore,
     SQLiteEntityStore,
-    UpstashRedisEntityStore,
 )
 from langchain.memory.kg import ConversationKGMemory
 from langchain.memory.motorhead_memory import MotorheadMemory
@@ -69,18 +67,24 @@ DEPRECATED_IMPORTS = [
     "ZepChatMessageHistory",
     "StreamlitChatMessageHistory",
     "UpstashRedisChatMessageHistory",
+    "RedisEntityStore",
+    "UpstashRedisEntityStore",
 ]
 
 
 def __getattr__(name: str) -> Any:
     if name in DEPRECATED_IMPORTS:
+        if "RedisEntityStore" in name:
+            new_import = "langchain_community.entity_stores"
+        else:
+            new_import = "langchain_community.chat_message_histories"
         raise ImportError(
             f"{name} has been moved to the langchain-community package. "
             f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
             f"information.\n\nTo use it install langchain-community:\n\n"
             f"`pip install -U langchain-community`\n\n"
             f"then import with:\n\n"
-            f"`from langchain_community.chat_message_histories import {name}`"
+            f"`from {new_import} import {name}`"
         )
     raise AttributeError()
 
@@ -98,10 +102,8 @@ __all__ = [
     "InMemoryEntityStore",
     "MotorheadMemory",
     "ReadOnlySharedMemory",
-    "RedisEntityStore",
     "SQLiteEntityStore",
     "SimpleMemory",
     "VectorStoreRetrieverMemory",
     "ZepMemory",
-    "UpstashRedisEntityStore",
 ]

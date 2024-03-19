@@ -1,11 +1,13 @@
-from langchain.chains.query_constructor.ir import (
+from langchain_community.structured_query_translators.opensearch import (
+    OpenSearchTranslator,
+)
+from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
     StructuredQuery,
 )
-from langchain.retrievers.self_query.opensearch import OpenSearchTranslator
 
 DEFAULT_TRANSLATOR = OpenSearchTranslator()
 

@@ -1,9 +1,9 @@
 import os
 
 from langchain.chains.query_constructor.base import AttributeInfo
-from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.llms.openai import OpenAI
+from langchain_community.structured_query_translators.base import SelfQueryRetriever
 from langchain_community.vectorstores.supabase import SupabaseVectorStore
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from supabase.client import create_client

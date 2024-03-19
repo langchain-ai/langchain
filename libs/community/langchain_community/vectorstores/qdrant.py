@@ -22,8 +22,11 @@ from typing import (
 )
 
 import numpy as np
+
+from langchain_community.structured_query_translators.qdrant import QdrantTranslator
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.structured_query.ir import Visitor
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.docstore.document import Document
@@ -2234,3 +2237,6 @@ class Qdrant(VectorStore):
             )
 
         return sync_client, async_client
+
+    def get_structured_query_translator(self) -> Visitor:
+        return QdrantTranslator(metadata_key=self.metadata_payload_key)

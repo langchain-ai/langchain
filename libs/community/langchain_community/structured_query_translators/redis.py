@@ -2,13 +2,23 @@ from __future__ import annotations
 
 from typing import Any, Tuple
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
     StructuredQuery,
     Visitor,
+)
+
+from langchain_community.vectorstores.redis import Redis
+from langchain_community.vectorstores.redis.filters import (
+    RedisFilterExpression,
+    RedisFilterField,
+    RedisFilterOperator,
+    RedisNum,
+    RedisTag,
+    RedisText,
 )
 
 _COMPARATOR_TO_BUILTIN_METHOD = {

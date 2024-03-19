@@ -1,15 +1,14 @@
 from typing import Any, Dict, Tuple
 
 import pytest
-
-from langchain.chains.query_constructor.ir import (
+from langchain_community.structured_query_translators import MilvusTranslator
+from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
     StructuredQuery,
 )
-from langchain.retrievers.self_query.milvus import MilvusTranslator
 
 DEFAULT_TRANSLATOR = MilvusTranslator()
 

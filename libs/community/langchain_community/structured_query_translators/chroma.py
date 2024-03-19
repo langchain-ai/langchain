@@ -1,6 +1,6 @@
 from typing import Dict, Tuple, Union
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
@@ -10,8 +10,8 @@ from langchain.chains.query_constructor.ir import (
 )
 
 
-class PGVectorTranslator(Visitor):
-    """Translate `PGVector` internal query language elements to valid filters."""
+class ChromaTranslator(Visitor):
+    """Translate `Chroma` internal query language elements to valid filters."""
 
     allowed_operators = [Operator.AND, Operator.OR]
     """Subset of allowed logical operators."""
@@ -19,17 +19,15 @@ class PGVectorTranslator(Visitor):
         Comparator.EQ,
         Comparator.NE,
         Comparator.GT,
+        Comparator.GTE,
         Comparator.LT,
-        Comparator.IN,
-        Comparator.NIN,
-        Comparator.CONTAIN,
-        Comparator.LIKE,
+        Comparator.LTE,
     ]
     """Subset of allowed logical comparators."""
 
     def _format_func(self, func: Union[Operator, Comparator]) -> str:
         self._validate_func(func)
-        return f"{func.value}"
+        return f"${func.value}"
 
     def visit_operation(self, operation: Operation) -> Dict:
         args = [arg.accept(self) for arg in operation.arguments]

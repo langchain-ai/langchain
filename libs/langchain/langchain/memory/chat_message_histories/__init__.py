@@ -1,13 +1,14 @@
 from typing import Any
 
+from langchain.memory.chat_message_histories.file import FileChatMessageHistory
+from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
+
 DEPRECATED_IMPORTS = [
     "AstraDBChatMessageHistory",
-    "ChatMessageHistory",
     "CassandraChatMessageHistory",
     "CosmosDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
     "ElasticsearchChatMessageHistory",
-    "FileChatMessageHistory",
     "FirestoreChatMessageHistory",
     "MomentoChatMessageHistory",
     "MongoDBChatMessageHistory",
@@ -36,3 +37,9 @@ def __getattr__(name: str) -> Any:
         )
 
     raise AttributeError()
+
+
+__all__ = [
+    "ChatMessageHistory",
+    "FileChatMessageHistory",
+]

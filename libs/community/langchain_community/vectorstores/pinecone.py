@@ -7,9 +7,12 @@ import warnings
 from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+
+from langchain_community.structured_query_translators.pinecone import PineconeTranslator
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.structured_query.ir import Visitor
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
 from packaging import version
@@ -486,3 +489,6 @@ class Pinecone(VectorStore):
             raise ValueError("Either ids, delete_all, or filter must be provided.")
 
         return None
+
+    def get_structured_query_translator(self) -> Visitor:
+        return PineconeTranslator()

@@ -4,10 +4,10 @@ import os
 from datetime import timedelta
 
 from langchain.chains.query_constructor.base import AttributeInfo
-from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.llms import OpenAI
+from langchain_community.structured_query_translators.base import SelfQueryRetriever
 from langchain_community.vectorstores.timescalevector import TimescaleVector
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate

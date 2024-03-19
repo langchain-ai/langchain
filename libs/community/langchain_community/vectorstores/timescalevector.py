@@ -18,8 +18,11 @@ from typing import (
     Union,
 )
 
+from langchain_community.structured_query_translators.timescalevector import \
+    TimescaleVectorTranslator
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.structured_query.ir import Visitor
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
@@ -880,3 +883,6 @@ class TimescaleVector(VectorStore):
 
     def drop_index(self) -> None:
         self.sync_client.drop_embedding_index()
+
+    def get_structured_query_translator(self) -> Visitor:
+        return TimescaleVectorTranslator()

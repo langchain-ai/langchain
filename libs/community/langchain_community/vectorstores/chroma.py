@@ -16,8 +16,11 @@ from typing import (
 )
 
 import numpy as np
+
+from langchain_community.structured_query_translators.chroma import ChromaTranslator
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.structured_query.ir import Visitor
 from langchain_core.utils import xor_args
 from langchain_core.vectorstores import VectorStore
 
@@ -795,3 +798,7 @@ class Chroma(VectorStore):
             ids: List of ids to delete.
         """
         self._collection.delete(ids=ids)
+
+
+    def get_structured_query_translator(self) -> Visitor:
+        return ChromaTranslator()
