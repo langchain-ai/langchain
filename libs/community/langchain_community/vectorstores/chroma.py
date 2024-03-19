@@ -123,7 +123,9 @@ class Chroma(VectorStore):
                 _client_settings.persist_directory or persist_directory
             )
 
-        self._embedding_function = embedding_function or embedding_functions.DefaultEmbeddingFunction()
+        self._embedding_function = (
+            embedding_function or embedding_functions.DefaultEmbeddingFunction()
+        )
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
             embedding_function=self._embedding_function,
