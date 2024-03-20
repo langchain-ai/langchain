@@ -35,7 +35,7 @@ _module_lookup = {
     "ErnieEmbeddings": "langchain_community.embeddings.ernie",
     "FakeEmbeddings": "langchain_community.embeddings.fake",
     "FastEmbedEmbeddings": "langchain_community.embeddings.fastembed",
-    "GigaChatEmbeddings": "langchain_community.embeddings.gigachatf",
+    "GigaChatEmbeddings": "langchain_community.embeddings.gigachat",
     "GPT4AllEmbeddings": "langchain_community.embeddings.gpt4all",
     "GooglePalmEmbeddings": "langchain_community.embeddings.google_palm",
     "GradientEmbeddings": "langchain_community.embeddings.gradient_ai",

@@ -75,7 +75,7 @@ _type: prompt
 
 ```python
 from langchain.prompts import load_prompt
-from langchain.chat_models import GigaChat
+from langchain_community.chat_models import GigaChat
 from langchain.chains import LLMChain
 
 giga = GigaChat(oauth_token="...")

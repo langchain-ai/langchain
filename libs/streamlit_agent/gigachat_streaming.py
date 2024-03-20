@@ -3,7 +3,7 @@ import streamlit as st
 
 # Try demo - https://gigachat-streaming.streamlit.app/
 
-from langchain.chat_models import GigaChat
+from langchain_community.chat_models import GigaChat
 from langchain.schema import ChatMessage
 
 st.title("GigaChain Bot")

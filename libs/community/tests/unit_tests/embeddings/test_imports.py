@@ -13,6 +13,7 @@ EXPECTED_ALL = [
     "HuggingFaceInferenceAPIEmbeddings",
     "InfinityEmbeddings",
     "InfinityEmbeddingsLocal",
+    "GigaChatEmbeddings",
     "GradientEmbeddings",
     "JinaEmbeddings",
     "LaserEmbeddings",

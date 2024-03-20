@@ -170,7 +170,6 @@ EXPECTED_ALL = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
-    "YuqueLoader",
 ]
 
 
