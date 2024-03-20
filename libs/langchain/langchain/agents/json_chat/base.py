@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence, Union
+from typing import List, Sequence, Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
