@@ -577,11 +577,59 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 ("human", "{user_input}"),
             ])
 
-            messages = template.format_messages(
-                name="Bob",
-                user_input="What is your name?"
+            prompt_value = template.invoke(
+                {
+                    "name": "Bob",
+                    "user_input": "What is your name?"
+                }
             )
-    """
+            # Output:
+            # ChatPromptValue(
+            #    messages=[
+            #        SystemMessage(content='You are a helpful AI bot. Your name is Bob.'),
+            #        HumanMessage(content='Hello, how are you doing?'),
+            #        AIMessage(content="I'm doing well, thanks!"),
+            #        HumanMessage(content='What is your name?')
+            #    ]
+            #)
+
+        .. code-block:: python
+
+            # In addition to Human/AI/Tool/Function messages,
+            # you can initialize the template with a MessagesPlaceholder
+            # either using the class directly or with the shorthand tuple syntax:
+
+            template = ChatPromptTemplate.from_messages([
+                ("system", "You are a helpful AI bot."),
+                # Means the template will receive an optional list of messages under
+                # the "conversation" key
+                ("placeholder", "conversation")
+                # Equivalently:
+                # MessagesPlaceholder(variable_name="conversation", optional=True)
+            ])
+
+            prompt_value = template.invoke(
+                {
+                    "conversation": [
+                        ("human", "Hi!"),
+                        ("ai", "How can I assist you today?"),
+                        ("human", "Can you make me an ice cream sundae?"),
+                        ("ai", "No.")
+                    ]
+                }
+            )
+
+            # Output:
+            # ChatPromptValue(
+            #    messages=[
+            #        SystemMessage(content='You are a helpful AI bot.'),
+            #        HumanMessage(content='Hi!'),
+            #        AIMessage(content='How can I assist you today?'),
+            #        HumanMessage(content='Can you make me an ice cream sundae?'),
+            #        AIMessage(content='No.'),
+            #    ]
+            #)
+    """  # noqa: E501
 
     input_variables: List[str]
     """List of input variables in template messages. Used for validation."""
