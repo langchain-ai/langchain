@@ -84,8 +84,10 @@ class S3FileLoader(UnstructuredBaseLoader):
             object is set on the session, the config object used when creating
             the client will be the result of calling ``merge()`` on the
             default config with the config provided to this call.
-        :param mode: Mode in which to read the file. Valid options are: single, paged and elements
-        :param post_processors: Post processing functions to be applied to extracted elements
+        :param mode: Mode in which to read the file. Valid options are: single, 
+        paged and elements
+        :param post_processors: Post processing functions to be applied to 
+        extracted elements
         """
         super().__init__(mode, post_processors)
         self.bucket = bucket
