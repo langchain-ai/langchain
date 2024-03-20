@@ -1,4 +1,10 @@
-"""Script for auto-generating api_reference.rst."""
+"""Script for auto-generating <package>_api_reference.rst files.
+
+Install all packages with `pip install <package> -U> before running this script.
+Script parses modules from the local source. If they are not presented locally,
+then from the `lib/python3.10/site-packages/<package>` directories.
+Some packages are incompatible with other packages with dependencies.
+"""
 
 import importlib
 import inspect
@@ -6,6 +12,7 @@ import os
 import sys
 import typing
 from enum import Enum
+from importlib.metadata import metadata
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
@@ -186,8 +193,10 @@ def _load_package_modules(
 
             modules_by_namespace[top_namespace] = _module_members
 
-        except ImportError as e:
-            print(f"Error: Unable to import module '{namespace}' with error: {e}")  # noqa: T201
+        except (ImportError, AttributeError, TypeError) as e:
+            print(
+                f"Error: Unable to import module '{namespace}' with error: {e}"
+            )  # noqa: T201
 
     return modules_by_namespace
 
@@ -285,19 +294,29 @@ def _build_rst_file(package_name: str = "langchain") -> None:
     Args:
         package_name: Can be either "langchain" or "core" or "experimental".
     """
-    package_dir = _package_dir(package_name)
+    package_dir = _get_package_dir(package_name)
+    package_namespace = _get_package_namespace(package_name)
+    package_dir = _manage_external_packages(package_dir, package_namespace)
+    print("  Package path:", package_dir)
+    package_version = _get_package_version(package_dir, package_namespace)
+    print("  version:", package_version)
     package_members = _load_package_modules(package_dir)
-    package_version = _get_package_version(package_dir)
-    with open(_out_file_path(package_name), "w") as f:
-        f.write(
-            _doc_first_line(package_name)
-            + _construct_doc(
-                _package_namespace(package_name), package_members, package_version
+    print("  modules:", len(package_members))
+    if package_members:
+        # do not recreate the file if there are no members
+        with open(_out_file_path(package_name), "w") as f:
+            f.write(
+                _doc_first_line(package_name)
+                + _construct_doc(package_namespace, package_members, package_version)
             )
+            print(f"  Created: {_out_file_path(package_name)}")
+    else:
+        print(
+            f"  NOT created: {_out_file_path(package_name)}, since no members found for package '{package_name}'."
         )
 
 
-def _package_namespace(package_name: str) -> str:
+def _get_package_namespace(package_name: str) -> str:
     return (
         package_name
         if package_name == "langchain"
@@ -305,7 +324,7 @@ def _package_namespace(package_name: str) -> str:
     )
 
 
-def _package_dir(package_name: str = "langchain") -> Path:
+def _get_package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
     if package_name in (
         "langchain",
@@ -315,31 +334,70 @@ def _package_dir(package_name: str = "langchain") -> Path:
         "cli",
         "text-splitters",
     ):
-        return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
+        return ROOT_DIR / "libs" / package_name / _get_package_namespace(package_name)
     else:
         return (
             ROOT_DIR
             / "libs"
             / "partners"
             / package_name
-            / _package_namespace(package_name)
+            / _get_package_namespace(package_name)
         )
 
 
-def _get_package_version(package_dir: Path) -> str:
+def _get_package_version(package_dir: Path, package_name: str) -> str:
     """Return the version of the package."""
-    try:
-        with open(package_dir.parent / "pyproject.toml", "r") as f:
-            pyproject = toml.load(f)
-    except FileNotFoundError as e:
-        print(
-            f"pyproject.toml not found in {package_dir.parent}.\n"
-            "You are either attempting to build a directory which is not a package or "
-            "the package is missing a pyproject.toml file which should be added."
-            "Aborting the build."
-        )
-        exit(1)
-    return pyproject["tool"]["poetry"]["version"]
+    if _is_external_package(package_dir):
+        md = metadata(package_name)
+        if "Version" in md:
+            return md["Version"]
+        elif "version" in md:
+            return md["version"]
+        else:
+            raise ValueError(
+                f"Error: Unable to find the version of the package '{package_name}'."
+            )
+    else:
+        try:
+            with open(package_dir.parent / "pyproject.toml", "r") as f:
+                pyproject = toml.load(f)
+        except FileNotFoundError as e:
+            raise ValueError(
+                f"pyproject.toml not found in {package_dir.parent}.\n"
+                "You are either attempting to build a directory which is not a package or "
+                "the package is missing a pyproject.toml file which should be added."
+                "Aborting the build."
+            )
+        return pyproject["tool"]["poetry"]["version"]
+
+
+def _is_external_package(package_dir: Path) -> bool:
+    """Return True if the package is in the external repo."""
+    return not (package_dir.parent / "pyproject.toml").exists()
+
+
+def _manage_external_packages(package_dir: Path, package_name: str) -> Path:
+    """Manage the packages in external repo.
+
+    If the package is in the external repo, then we assume that the package_dir
+    does not keep the 'pyproject.toml' file. We assume that the package was
+    pip-installed and placed in the 'site-packages' directory.
+    """
+    if _is_external_package(package_dir):
+        try:
+            module = importlib.import_module(package_name)
+        except (ModuleNotFoundError, ImportError, TypeError) as e:
+            raise ImportError(
+                f"Error: Unable to import package '{package_name}' with error: {e} "
+                f"Use 'pip install {package_name} -U' to install the package."
+            )
+        if isinstance(module.__path__, list) and module.__path__:
+            package_dir = Path(module.__path__[0])
+        else:
+            raise ImportError(
+                f"Error: Unable to find the path to the package '{package_name}'."
+            )
+    return package_dir
 
 
 def _out_file_path(package_name: str) -> Path:
@@ -362,7 +420,7 @@ def main(dirs: Optional[list] = None) -> None:
             if dir_ not in ("cli", "partners")
         ]
         dirs += os.listdir(ROOT_DIR / "libs" / "partners")
-    for dir_ in dirs:
+    for dir_ in sorted(dirs):
         # Skip any hidden directories
         # Some of these could be present by mistake in the code base
         # e.g., .pytest_cache from running tests from the wrong location.
@@ -370,9 +428,14 @@ def main(dirs: Optional[list] = None) -> None:
             print("Skipping dir:", dir_)
             continue
         else:
-            print("Building package:", dir_)
-            _build_rst_file(package_name=dir_)
-    print("API reference files built.")
+            print("\nBuilding package:", dir_)
+            try:
+                _build_rst_file(package_name=dir_)
+            except ImportError as e:
+                print(f"  {e}")
+                continue
+
+    print("\nAPI reference files built.\n")
 
 
 if __name__ == "__main__":
