@@ -20,7 +20,7 @@ from langchain.chains.openai_functions.utils import (
 def _get_extraction_function(entity_schema: dict) -> dict:
     return {
         "name": "information_extraction",
-        "description": "Extracts the relevant information from the passage.",
+        "description": "Извлекает релевантную информацию из текста",
         "parameters": {
             "type": "object",
             "properties": {
@@ -31,7 +31,7 @@ def _get_extraction_function(entity_schema: dict) -> dict:
     }
 
 
-_EXTRACTION_TEMPLATE = """Извлеките и сохраните соответствующие упомянутые сущности \
+_EXTRACTION_TEMPLATE = """Извлеки из текста и сохрани соответствующие упомянутые сущности \
 вместе с их свойствами из текста.
 
 Извлекайте только свойства, указанные в функции 'information_extraction'.

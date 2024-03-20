@@ -25,8 +25,8 @@ _FUNCTIONS: Any = [
     {
         "name": "format_person_info",
         "description": (
-            "Output formatter. Should always be used to format your response to the"
-            " user."
+            "Output formatter. Всегда используй его чтобы отформатировать свой"
+            " ответ пользователю."
         ),
         "parameters": {
             "title": "Person",

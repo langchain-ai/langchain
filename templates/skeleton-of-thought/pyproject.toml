@@ -12,6 +12,10 @@ openai = "^0.28.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
 export_module = "skeleton_of_thought"
 export_attr = "chain"
 

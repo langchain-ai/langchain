@@ -11,7 +11,7 @@
 ### Пример вызова суммаризатора:
 
 ```python
-from langchain.chat_models import GigaChat
+from langchain_community.chat_models import GigaChat
 from langchain.prompts import load_prompt
 from langchain.chains.summarize import load_summarize_chain
 

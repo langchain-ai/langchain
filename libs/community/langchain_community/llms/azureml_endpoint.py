@@ -397,8 +397,9 @@ class AzureMLBaseEndpoint(BaseModel):
     ) -> AzureMLEndpointApiType:
         """Validate that endpoint api type is compatible with the URL format."""
         endpoint_url = values.get("endpoint_url")
-        if field_value == AzureMLEndpointApiType.realtime and not endpoint_url.endswith(  # type: ignore[union-attr]
-            "/score"
+        if (
+            field_value == AzureMLEndpointApiType.realtime
+            and not endpoint_url.endswith("/score")  # type: ignore[union-attr]
         ):
             raise ValueError(
                 "Endpoints of type `realtime` should follow the format "

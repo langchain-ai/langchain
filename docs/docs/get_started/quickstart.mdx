@@ -134,7 +134,7 @@ We can then initialize the model:
 ```python
 from langchain_anthropic import ChatAnthropic
 
-llm = ChatAnthropic(model="claude-2.1", temperature=0.2, max_tokens=1024)
+llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2, max_tokens=1024)
 ```
 
 If you'd prefer not to set an environment variable you can pass the key in directly via the `anthropic_api_key` named parameter when initiating the Anthropic Chat Model class:

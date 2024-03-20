@@ -15,16 +15,16 @@ from langchain.chains.openai_functions.utils import _convert_schema, get_llm_kwa
 def _get_tagging_function(schema: dict) -> dict:
     return {
         "name": "information_extraction",
-        "description": "Extracts the relevant information from the passage.",
+        "description": "Извлекает релевантную информацию из текста",
         "parameters": _convert_schema(schema),
     }
 
 
-_TAGGING_TEMPLATE = """Extract the desired information from the following passage.
+_TAGGING_TEMPLATE = """Извлеки релевантную информацию из следующего текста.
 
-Only extract the properties mentioned in the 'information_extraction' function.
+Извлекай только свойства, приведенные в функции 'information_extraction'.
 
-Passage:
+Текст:
 {input}
 """
 

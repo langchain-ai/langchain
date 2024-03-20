@@ -8,8 +8,8 @@ authors = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
-gigachain = ">=0.0.325"
+python = ">=3.9,<4"
+gigachain = "^0.1"
 tiktoken = ">=0.5.1"
 chromadb = ">=0.4.14"
 openai = "<2"

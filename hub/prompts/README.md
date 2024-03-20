@@ -20,6 +20,11 @@
 
   Пример содержит шаблоны промптов для создания заданного количества синонимов к указанному слову.
 
+- [Экзаменационное тестирование](qna/examination.ipynb)
+
+  Промпт, с помощью которого GigaChat может отвечать на экзаменационные вопросы.
+  Пример работы промпта — в блокноте, который демонстрирует [экзамен по правилам дорожного движения](/docs/extras/integrations/chat/examination.ipynb).
+
 ## Авторизация запросов
 
 Авторизация запросов к GigaChat выполняется с помощью токена авторизации. Токен авторизации можно получить после [подключения проекта GigaChat API в личном кабинете](https://developers.sber.ru/docs/ru/gigachat/api/integration).
@@ -70,7 +75,7 @@ _type: prompt
 
 ```python
 from langchain.prompts import load_prompt
-from langchain.chat_models import GigaChat
+from langchain_community.chat_models import GigaChat
 from langchain.chains import LLMChain
 
 giga = GigaChat(oauth_token="...")

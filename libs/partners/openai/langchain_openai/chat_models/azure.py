@@ -164,7 +164,7 @@ class AzureChatOpenAI(ChatOpenAI):
                     "`azure_endpoint` instead of `base_url`.\n\n"
                     "For example, you could specify:\n\n"
                     'azure_endpoint="https://xxx.openai.azure.com/", '
-                    'deployment_name="my-deployment"\n\n'
+                    'azure_deployment="my-deployment"\n\n'
                     "Or you can equivalently specify:\n\n"
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'  # noqa: E501
                 )

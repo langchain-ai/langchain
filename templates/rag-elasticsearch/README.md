@@ -1,7 +1,7 @@
 
 # rag-elasticsearch
 
-This template performs RAG using [ElasticSearch](https://python.langchain.com/docs/integrations/vectorstores/elasticsearch).
+This template performs RAG using [Elasticsearch](https://python.langchain.com/docs/integrations/vectorstores/elasticsearch).
 
 It relies on sentence transformer `MiniLM-L6-v2` for embedding passages and questions.
 

@@ -8,7 +8,7 @@
 ```python
 from langchain.prompts import load_prompt
 from langchain.chains import LLMChain
-from langchain.chat_models import GigaChat
+from langchain_community.chat_models import GigaChat
 
 llm = GigaChat(credentials="...")
 prompt = load_prompt('lc://prompts/content/spell_correction.yaml')

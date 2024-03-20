@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from functools import cached_property
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
@@ -196,7 +197,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
             payload["model"] = self.model
 
         if self.verbose:
-            logger.info("Giga request: %s", payload)
+            logger.warning("Giga request: %s", json.dumps(payload, ensure_ascii=False))
 
         return payload
 
