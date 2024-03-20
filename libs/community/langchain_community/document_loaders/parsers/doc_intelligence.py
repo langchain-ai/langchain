@@ -18,7 +18,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         api_endpoint: str,
         api_key: str,
         api_version: Optional[str] = None,
-        model_id: str = "prebuilt-layout",
+        api_model: str = "prebuilt-layout",
         mode: str = "markdown",
         analysis_features: Optional[List[str]] = None,
     ):
@@ -49,7 +49,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             features=analysis_features,
             **kwargs,
         )
-        self.model_id = model_id
+        self.api_model = api_model
         self.mode = mode
         assert self.mode in ["single", "page", "markdown"]
 
@@ -73,7 +73,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
 
         with blob.as_bytes_io() as file_obj:
             poller = self.client.begin_analyze_document(
-                self.model_id,
+                self.api_model,
                 file_obj,
                 content_type="application/octet-stream",
                 output_content_format="markdown" if self.mode == "markdown" else "text",
@@ -91,7 +91,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 
         poller = self.client.begin_analyze_document(
-            self.model_id,
+            self.api_model,
             AnalyzeDocumentRequest(url_source=url),
             # content_type="application/octet-stream",
             output_content_format="markdown" if self.mode == "markdown" else "text",

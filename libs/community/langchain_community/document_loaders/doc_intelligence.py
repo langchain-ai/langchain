@@ -81,7 +81,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             api_endpoint=api_endpoint,
             api_key=api_key,
             api_version=api_version,
-            model_id=api_model,
+            api_model=api_model,
             mode=mode,
             analysis_features=analysis_features,
         )
