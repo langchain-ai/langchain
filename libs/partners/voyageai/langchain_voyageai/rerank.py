@@ -44,7 +44,6 @@ class VoyageAIRerank(BaseDocumentCompressor):
         self,
         documents: Sequence[Union[str, Document]],
         query: str,
-        **kwargs,
     ) -> List[Dict[str, Any]]:
         """Returns an ordered list of documents ordered by their relevance to the provided query.
 
@@ -60,27 +59,18 @@ class VoyageAIRerank(BaseDocumentCompressor):
         docs = [
             doc.page_content if isinstance(doc, Document) else doc for doc in documents
         ]
-        top_k = kwargs.get("top_k", self.top_k)
-        model = kwargs.get("top_k", self.model)
-        results = self.client.rerank(
+        return self.client.rerank(
             query=query,
             documents=docs,
-            model=model,
-            top_k=top_k,
+            model=self.model,
+            top_k=self.top_k,
             truncation=self.truncation,
         )
-        result_dicts = []
-        for res in results.results:
-            result_dicts.append(
-                {"index": res.index, "relevance_score": res.relevance_score}
-            )
-        return result_dicts
 
     async def arerank(
         self,
         documents: Sequence[Union[str, Document]],
         query: str,
-        **kwargs,
     ) -> List[Dict[str, Any]]:
         """Returns an ordered list of documents ordered by their relevance to the provided query.
 
@@ -96,21 +86,13 @@ class VoyageAIRerank(BaseDocumentCompressor):
         docs = [
             doc.page_content if isinstance(doc, Document) else doc for doc in documents
         ]
-        top_k = kwargs.get("top_k", self.top_k)
-        model = kwargs.get("top_k", self.model)
-        results = await self.aclient.rerank(
+        return self.aclient.rerank(
             query=query,
             documents=docs,
-            model=model,
-            top_k=top_k,
+            model=self.model,
+            top_k=self.top_k,
             truncation=self.truncation,
         )
-        result_dicts = []
-        for res in results.results:
-            result_dicts.append(
-                {"index": res.index, "relevance_score": res.relevance_score}
-            )
-        return result_dicts
 
     def compress_documents(
         self,
