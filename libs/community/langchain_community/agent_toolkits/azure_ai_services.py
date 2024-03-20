@@ -6,29 +6,25 @@ from typing import List
 from langchain_core.tools import BaseTool
 
 from langchain_community.agent_toolkits.base import BaseToolkit
-from langchain_community.tools.azure_cognitive_services import (
-    AzureCogsFormRecognizerTool,
-    AzureCogsImageAnalysisTool,
-    AzureCogsSpeech2TextTool,
-    AzureCogsText2SpeechTool,
-    AzureCogsTextAnalyticsHealthTool,
+from langchain_community.tools.azure_ai_services import (
+    AzureAiServicesDocumentIntelligenceTool,
+    AzureAiServicesImageAnalysisTool,
+    AzureAiServicesSpeechToTextTool,
+    AzureAiServicesTextToSpeechTool,
+    AzureAiServicesTextAnalyticsForHealthTool,
 )
 
 
-class AzureCognitiveServicesToolkit(BaseToolkit):
-    """Toolkit for Azure Cognitive Services."""
+class AzureAiServicesToolkit(BaseToolkit):
+    """Toolkit for Azure AI Services."""
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
 
         tools: List[BaseTool] = [
-            AzureCogsFormRecognizerTool(),
-            AzureCogsSpeech2TextTool(),
-            AzureCogsText2SpeechTool(),
-            AzureCogsTextAnalyticsHealthTool(),
+            AzureAiServicesDocumentIntelligenceTool(),
+            AzureAiServicesImageAnalysisTool(),
+            AzureAiServicesSpeechToTextTool(),
+            AzureAiServicesTextToSpeechTool(),
+            AzureAiServicesTextAnalyticsForHealthTool(),
         ]
-
-        # TODO: Remove check once azure-ai-vision supports MacOS.
-        if sys.platform.startswith("linux") or sys.platform.startswith("win"):
-            tools.append(AzureCogsImageAnalysisTool())
-        return tools
