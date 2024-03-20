@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     import chromadb
     import chromadb.config
     from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
-    from chromadb.utils import embedding_functions
+
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -81,6 +81,7 @@ class Chroma(VectorStore):
         try:
             import chromadb
             import chromadb.config
+            from chromadb.utils import embedding_functions
         except ImportError:
             raise ImportError(
                 "Could not import chromadb python package. "
