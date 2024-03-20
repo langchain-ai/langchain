@@ -1,9 +1,14 @@
+import pytest
+
 from langchain import docstore
-from tests.unit_tests import assert_all_importable
 
-EXPECTED_ALL = ["DocstoreFn", "InMemoryDocstore", "Wikipedia"]
+EXPECTED_DEPRECATED_IMPORTS = ["DocstoreFn", "InMemoryDocstore", "Wikipedia"]
 
 
-def test_all_imports() -> None:
-    assert set(docstore.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(docstore)
+def test_deprecated_imports() -> None:
+    for import_ in EXPECTED_DEPRECATED_IMPORTS:
+        with pytest.raises(ImportError) as e:
+            getattr(docstore, import_)
+            assert "langchain_community" in e
+    with pytest.raises(AttributeError):
+        getattr(docstore, "foo")

@@ -1,7 +1,15 @@
+import pytest
+
 from langchain import tools
 from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
+    "StructuredTool",
+    "Tool",
+    "BaseTool",
+    "tool",
+]
+EXPECTED_DEPRECATED_IMPORTS = [
     "AINAppOps",
     "AINOwnerOps",
     "AINRuleOps",
@@ -19,7 +27,6 @@ EXPECTED_ALL = [
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
-    "BaseTool",
     "BearlyInterpreterTool",
     "BingSearchResults",
     "BingSearchRun",
@@ -107,8 +114,6 @@ EXPECTED_ALL = [
     "StdInInquireTool",
     "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
-    "StructuredTool",
-    "Tool",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
     "WikipediaQueryRun",
@@ -119,7 +124,6 @@ EXPECTED_ALL = [
     "ZapierNLAListActions",
     "ZapierNLARunAction",
     "format_tool_to_openai_function",
-    "tool",
     "MerriamWebsterQueryRun",
 ]
 
@@ -127,3 +131,13 @@ EXPECTED_ALL = [
 def test_all_imports() -> None:
     assert set(tools.__all__) == set(EXPECTED_ALL)
     assert_all_importable(tools)
+
+
+def test_deprecated_imports() -> None:
+    for import_ in EXPECTED_DEPRECATED_IMPORTS:
+        with pytest.raises(ImportError) as e:
+            getattr(tools, import_)
+            assert isinstance(e, ImportError), f"{import_=} didn't error"
+            assert "langchain_community" in e
+    with pytest.raises(AttributeError):
+        getattr(tools, "foo")

@@ -1,7 +1,8 @@
-from langchain import llms
-from langchain.llms.base import BaseLLM
+import pytest
 
-EXPECT_ALL = [
+from langchain import llms
+
+EXPECTED_DEPRECATED_IMPORTS = [
     "AI21",
     "AlephAlpha",
     "AmazonAPIGateway",
@@ -86,8 +87,10 @@ EXPECT_ALL = [
 ]
 
 
-def test_all_imports() -> None:
-    """Simple test to make sure all things can be imported."""
-    for cls in llms.__all__:
-        assert issubclass(getattr(llms, cls), BaseLLM)
-    assert set(llms.__all__) == set(EXPECT_ALL)
+def test_deprecated_imports() -> None:
+    for import_ in EXPECTED_DEPRECATED_IMPORTS:
+        with pytest.raises(ImportError) as e:
+            getattr(llms, import_)
+            assert "langchain_community" in e
+    with pytest.raises(AttributeError):
+        getattr(llms, "foo")

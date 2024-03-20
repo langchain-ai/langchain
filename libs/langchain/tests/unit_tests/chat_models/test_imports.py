@@ -41,3 +41,5 @@ def test_deprecated_imports() -> None:
         with pytest.raises(ImportError) as e:
             getattr(chat_models, import_)
             assert "langchain_community" in e
+    with pytest.raises(AttributeError):
+        getattr(chat_models, "foo")

@@ -33,6 +33,10 @@ from langchain.memory.buffer import (
     ConversationStringBufferMemory,
 )
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
+from langchain.memory.chat_message_histories import (
+    ChatMessageHistory,
+    FileChatMessageHistory,
+)
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import (
     ConversationEntityMemory,
@@ -52,7 +56,6 @@ from langchain.memory.zep_memory import ZepMemory
 DEPRECATED_IMPORTS = [
     "AstraDBChatMessageHistory",
     "CassandraChatMessageHistory",
-    "ChatMessageHistory",
     "CosmosDBChatMessageHistory",
     "MomentoChatMessageHistory",
     "MongoDBChatMessageHistory",
@@ -106,4 +109,6 @@ __all__ = [
     "SimpleMemory",
     "VectorStoreRetrieverMemory",
     "ZepMemory",
+    "ChatMessageHistory",
+    "FileChatMessageHistory",
 ]

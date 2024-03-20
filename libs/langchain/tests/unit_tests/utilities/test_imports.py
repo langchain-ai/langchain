@@ -1,7 +1,8 @@
-from langchain import utilities
-from tests.unit_tests import assert_all_importable
+import pytest
 
-EXPECTED_ALL = [
+from langchain import utilities
+
+EXPECTED_DEPRECATED_IMPORT = [
     "AlphaVantageAPIWrapper",
     "ApifyWrapper",
     "ArceeWrapper",
@@ -51,6 +52,10 @@ EXPECTED_ALL = [
 ]
 
 
-def test_all_imports() -> None:
-    assert set(utilities.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(utilities)
+def test_deprecated_imports() -> None:
+    for import_ in EXPECTED_DEPRECATED_IMPORTS:
+        with pytest.raises(ImportError) as e:
+            getattr(utilities, import_)
+            assert "langchain_community" in e, f"{import_=} didn't error"
+    with pytest.raises(AttributeError):
+        getattr(utilities, "foo")

@@ -16,13 +16,9 @@ tool for the job.
 
     CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
 """
-import warnings
 from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
-
-from langchain.utils.interactive_env import is_interactive_env
 
 # Used for internal purposes
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
@@ -50,30 +46,7 @@ def _import_python_tool_PythonREPLTool() -> Any:
     )
 
 
-def __getattr__(name: str) -> Any:
-    if name == "PythonAstREPLTool":
-        return _import_python_tool_PythonAstREPLTool()
-    elif name == "PythonREPLTool":
-        return _import_python_tool_PythonREPLTool()
-    else:
-        from langchain_community import tools
-
-        # If not in interactive env, raise warning.
-        if not is_interactive_env():
-            warnings.warn(
-                "Importing tools from langchain is deprecated. Importing from "
-                "langchain will no longer be supported as of langchain==0.2.0. "
-                "Please import from langchain-community instead:\n\n"
-                f"`from langchain_community.tools import {name}`.\n\n"
-                "To install langchain-community run "
-                "`pip install -U langchain-community`.",
-                category=LangChainDeprecationWarning,
-            )
-
-        return getattr(tools, name)
-
-
-__all__ = [
+DEPRECATED_IMPORTS = [
     "AINAppOps",
     "AINOwnerOps",
     "AINRuleOps",
@@ -91,7 +64,6 @@ __all__ = [
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
-    "BaseTool",
     "BearlyInterpreterTool",
     "BingSearchResults",
     "BingSearchRun",
@@ -180,8 +152,6 @@ __all__ = [
     "StdInInquireTool",
     "StackExchangeTool",
     "SteamshipImageGenerationTool",
-    "StructuredTool",
-    "Tool",
     "VectorStoreQATool",
     "VectorStoreQAWithSourcesTool",
     "WikipediaQueryRun",
@@ -192,5 +162,31 @@ __all__ = [
     "ZapierNLAListActions",
     "ZapierNLARunAction",
     "format_tool_to_openai_function",
+]
+
+
+def __getattr__(name: str) -> Any:
+    if name == "PythonAstREPLTool":
+        return _import_python_tool_PythonAstREPLTool()
+    elif name == "PythonREPLTool":
+        return _import_python_tool_PythonREPLTool()
+    else:
+        if name in DEPRECATED_IMPORTS:
+            raise ImportError(
+                f"{name} has been moved to the langchain-community package. "
+                f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+                f"information.\n\nTo use it install langchain-community:\n\n"
+                f"`pip install -U langchain-community`\n\n"
+                f"then import with:\n\n"
+                f"`from langchain_community.tools import {name}`"
+            )
+
+    raise AttributeError()
+
+
+__all__ = [
+    "StructuredTool",
+    "Tool",
+    "BaseTool",
     "tool",
 ]

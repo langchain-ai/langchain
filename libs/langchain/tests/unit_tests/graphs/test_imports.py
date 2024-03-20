@@ -1,7 +1,8 @@
-from langchain import graphs
-from tests.unit_tests import assert_all_importable
+import pytest
 
-EXPECTED_ALL = [
+from langchain import graphs
+
+EXPECTED_DEPRECATED_IMPORTS = [
     "MemgraphGraph",
     "NetworkxEntityGraph",
     "Neo4jGraph",
@@ -15,6 +16,10 @@ EXPECTED_ALL = [
 ]
 
 
-def test_all_imports() -> None:
-    assert set(graphs.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(graphs)
+def test_deprecated_imports() -> None:
+    for import_ in EXPECTED_DEPRECATED_IMPORTS:
+        with pytest.raises(ImportError) as e:
+            getattr(graphs, import_)
+            assert "langchain_community" in e
+    with pytest.raises(AttributeError):
+        getattr(graphs, "foo")

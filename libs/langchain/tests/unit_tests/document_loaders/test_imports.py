@@ -1,7 +1,8 @@
-from langchain import document_loaders
-from tests.unit_tests import assert_all_importable
+import pytest
 
-EXPECTED_ALL = [
+from langchain import document_loaders
+
+EXPECTED_DEPRECATED_IMPORTS = [
     "AcreomLoader",
     "AsyncHtmlLoader",
     "AsyncChromiumLoader",
@@ -174,6 +175,10 @@ EXPECTED_ALL = [
 ]
 
 
-def test_all_imports() -> None:
-    assert set(document_loaders.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(document_loaders)
+def test_deprecated_imports() -> None:
+    for import_ in EXPECTED_DEPRECATED_IMPORTS:
+        with pytest.raises(ImportError) as e:
+            getattr(document_loaders, import_)
+            assert "langchain_community" in e
+    with pytest.raises(AttributeError):
+        getattr(document_loaders, "foo")
