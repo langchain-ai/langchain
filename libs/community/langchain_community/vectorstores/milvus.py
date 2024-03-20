@@ -1060,7 +1060,7 @@ class Milvus(VectorStore):
 
     def upsert_texts(
         self,
-        texts: Iterable[str],
+        texts: Optional[List[str]],
         metadatas: Optional[List[dict]] = None,
         field_name: str = "ids",
         **kwargs: Any,
