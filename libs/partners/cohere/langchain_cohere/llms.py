@@ -97,7 +97,7 @@ class Cohere(LLM, BaseCohere):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import Cohere
+            from langchain_cohere import Cohere
 
             cohere = Cohere(model="gptd-instruct-tft", cohere_api_key="my-api-key")
     """

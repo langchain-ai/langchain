@@ -2,7 +2,7 @@ import typing
 from typing import Any, Dict, List, Optional
 
 import cohere
-from langchain_community.llms.cohere import _create_retry_decorator
+from .utils import _create_retry_decorator
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -18,7 +18,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings import CohereEmbeddings
+            from langchain_cohere import CohereEmbeddings
             cohere = CohereEmbeddings(
                 model="embed-english-light-v3.0",
                 cohere_api_key="my-api-key"

@@ -1,5 +1,5 @@
 """Test ChatCohere chat model."""
-from langchain_cohere.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 
 
 def test_stream() -> None:

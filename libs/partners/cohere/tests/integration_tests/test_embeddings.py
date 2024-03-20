@@ -1,5 +1,5 @@
 """Test Cohere embeddings."""
-from langchain_cohere.embeddings import CohereEmbeddings
+from langchain_cohere import CohereEmbeddings
 
 
 def test_langchain_cohere_embedding_documents() -> None:
