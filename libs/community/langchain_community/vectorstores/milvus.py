@@ -1059,12 +1059,11 @@ class Milvus(VectorStore):
             raise exc
 
     def upsert_texts(
-            self,
-            texts: List[str] | None = None,
-            metadatas: Optional[List[dict]] = None,
-            field_name: str = "ids",
-            # values: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        texts: List[str] | None = None,
+        metadatas: Optional[List[dict]] = None,
+        field_name: str = "ids",
+        **kwargs: Any,
     ) -> List[str] | None:
         """Update/Insert documents to the Milvus vectorstore.
 
