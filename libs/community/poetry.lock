@@ -4757,4 +4757,4 @@ cli = ["typer"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e682fac6ff5a60d0f749592f6c81c3417a0c0ac01451f24437101fc8d732b6a2"
+content-hash = "977976fe381b5d5b7191b8a2727ee1b0b97ce6d1684c6428125fe691f9abeffa"
