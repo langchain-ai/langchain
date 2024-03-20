@@ -1,4 +1,4 @@
-from typing import Iterator, Dict, List
+from typing import Dict, Iterator, List
 from uuid import uuid4
 
 import duckdb
@@ -36,7 +36,10 @@ def metadatas() -> List[Dict[str, str]]:
 
 
 @pytest.mark.requires("duckdb")
-def test_duckdb_with_connection(duckdb_connection: duckdb.DuckDBPyConnection, embeddings: FakeEmbeddings, texts: List[str] ) -> None:
+def test_duckdb_with_connection(
+    duckdb_connection: duckdb.DuckDBPyConnection,
+    embeddings: FakeEmbeddings, texts: List[str]
+) -> None:
     store = DuckDB(
         connection=duckdb_connection, embedding=embeddings, table_name="test_table"
     )
@@ -47,7 +50,10 @@ def test_duckdb_with_connection(duckdb_connection: duckdb.DuckDBPyConnection, em
 
 
 @pytest.mark.requires("duckdb")
-def test_duckdb_without_connection(embeddings: FakeEmbeddings, texts: List[str]) -> None:
+def test_duckdb_without_connection(
+    embeddings: FakeEmbeddings,
+    texts: List[str]
+) -> None:
     store = DuckDB(embedding=embeddings, table_name="test_table")
     store.add_texts(texts)
     result = store.similarity_search("text 1")
@@ -65,7 +71,10 @@ def test_duckdb_add_texts(embeddings: FakeEmbeddings) -> None:
 
 
 @pytest.mark.requires("duckdb")
-def test_duckdb_add_texts_with_metadata(duckdb_connection: duckdb.DuckDBPyConnection, embeddings: FakeEmbeddings) -> None:
+def test_duckdb_add_texts_with_metadata(
+    duckdb_connection: duckdb.DuckDBPyConnection,
+    embeddings: FakeEmbeddings
+) -> None:
     store = DuckDB(
         connection=duckdb_connection,
         embedding=embeddings,
@@ -100,7 +109,10 @@ def test_duckdb_add_texts_with_metadata(duckdb_connection: duckdb.DuckDBPyConnec
 
 
 @pytest.mark.requires("duckdb")
-def test_duckdb_add_texts_with_predefined_ids(duckdb_connection: duckdb.DuckDBPyConnection, embeddings: FakeEmbeddings) -> None:
+def test_duckdb_add_texts_with_predefined_ids(
+    duckdb_connection: duckdb.DuckDBPyConnection,
+    embeddings: FakeEmbeddings
+) -> None:
     store = DuckDB(
         connection=duckdb_connection,
         embedding=embeddings,
@@ -123,7 +135,12 @@ def test_duckdb_add_texts_with_predefined_ids(duckdb_connection: duckdb.DuckDBPy
 
 
 @pytest.mark.requires("duckdb")
-def test_duckdb_from_texts(duckdb_connection: duckdb.DuckDBPyConnection, embeddings: FakeEmbeddings, texts: List[str], metadatas:  List[Dict[str, str]]) -> None:
+def test_duckdb_from_texts(
+    duckdb_connection: duckdb.DuckDBPyConnection,
+    embeddings: FakeEmbeddings,
+    texts: List[str],
+    metadatas:  List[Dict[str, str]]
+) -> None:
     # Initialize DuckDB from texts using the from_texts class method
     store = DuckDB.from_texts(
         texts=texts,
