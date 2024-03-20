@@ -301,7 +301,3 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
             if run_manager:
                 await run_manager.on_llm_new_token(content)
-
-    def get_num_tokens(self, text: str) -> int:
-        """Count approximate number of tokens"""
-        return round(len(text) / 4.6)
