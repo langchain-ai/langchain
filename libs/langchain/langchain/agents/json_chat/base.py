@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import List, Optional, Sequence
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -16,6 +16,7 @@ def create_json_chat_agent(
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
     stop_sequence: bool = True,
+    stop: Optional[List[str]] = None,
     tools_renderer: ToolsRenderer = render_text_description,
 ) -> Runnable:
     """Create an agent that uses JSON to format its logic, build for Chat Models.
@@ -27,6 +28,7 @@ def create_json_chat_agent(
         stop_sequence: Adds a stop token of "Observation:" to avoid hallucinates. 
             Default is True. You may to set this to False if the LLM you are using
             does not support stop sequences.
+        stop: Optional list of stop words to use when generating.
         tools_renderer: This controls how the tools are converted into a string and
             then passed into the LLM. Default is `render_text_description`.
 
@@ -158,7 +160,7 @@ def create_json_chat_agent(
         tool_names=", ".join([t.name for t in tools]),
     )
     if stop_sequence:
-        llm_to_use = llm.bind(stop=["\nObservation"])
+        llm_to_use = llm.bind(stop=stop or ["\nObservation"])
     else:
         llm_to_use = llm
 

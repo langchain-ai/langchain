@@ -155,6 +155,7 @@ def create_structured_chat_agent(
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
     tools_renderer: ToolsRenderer = render_text_description_and_args,
+    stop: Optional[List[str]] = None,
 ) -> Runnable:
     """Create an agent aimed at supporting tools with multiple inputs.
 
@@ -164,6 +165,7 @@ def create_structured_chat_agent(
         prompt: The prompt to use. See Prompt section below for more.
         tools_renderer: This controls how the tools are converted into a string and
             then passed into the LLM. Default is `render_text_description`.
+        stop: Optional list of stop words to use when generating.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -273,7 +275,7 @@ def create_structured_chat_agent(
         tools=tools_renderer(list(tools)),
         tool_names=", ".join([t.name for t in tools]),
     )
-    llm_with_stop = llm.bind(stop=["Observation"])
+    llm_with_stop = llm.bind(stop=stop or ["Observation"])
 
     agent = (
         RunnablePassthrough.assign(

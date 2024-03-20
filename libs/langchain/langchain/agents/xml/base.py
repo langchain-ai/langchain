@@ -1,4 +1,4 @@
-from typing import Any, List, Sequence, Tuple, Union
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
@@ -112,6 +112,7 @@ def create_xml_agent(
     tools: Sequence[BaseTool],
     prompt: BasePromptTemplate,
     tools_renderer: ToolsRenderer = render_text_description,
+    stop: Optional[List[str]] = None,
 ) -> Runnable:
     """Create an agent that uses XML to format its logic.
 
@@ -123,6 +124,7 @@ def create_xml_agent(
             `agent_scratchpad`: contains previous agent actions and tool outputs.
         tools_renderer: This controls how the tools are converted into a string and
             then passed into the LLM. Default is `render_text_description`.
+        stop: Optional list of stop words to use when generating.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -201,7 +203,7 @@ def create_xml_agent(
     prompt = prompt.partial(
         tools=tools_renderer(list(tools)),
     )
-    llm_with_stop = llm.bind(stop=["</tool_input>"])
+    llm_with_stop = llm.bind(stop=stop or ["</tool_input>"])
 
     agent = (
         RunnablePassthrough.assign(
