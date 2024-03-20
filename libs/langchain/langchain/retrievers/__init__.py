@@ -26,6 +26,7 @@ from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
 from langchain.retrievers.re_phraser import RePhraseQueryRetriever
+from langchain.retrievers.self_query import SelfQueryRetriever
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
@@ -57,7 +58,6 @@ DEPRECATED_IMPORTS = [
     "PubMedRetriever",
     "RemoteLangChainRetriever",
     "SVMRetriever",
-    "SelfQueryRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
     "BM25Retriever",
@@ -93,4 +93,5 @@ __all__ = [
     "EnsembleRetriever",
     "ParentDocumentRetriever",
     "MultiVectorRetriever",
+    "SelfQueryRetriever",
 ]

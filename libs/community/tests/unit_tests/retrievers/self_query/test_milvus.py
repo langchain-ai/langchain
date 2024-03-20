@@ -1,7 +1,6 @@
 from typing import Any, Dict, Tuple
 
 import pytest
-from langchain_community.structured_query_translators import MilvusTranslator
 from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
@@ -9,6 +8,8 @@ from langchain_core.structured_query.ir import (
     Operator,
     StructuredQuery,
 )
+
+from langchain_community.structured_query_translators import MilvusTranslator
 
 DEFAULT_TRANSLATOR = MilvusTranslator()
 

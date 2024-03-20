@@ -1,6 +1,14 @@
 from typing import Dict, Tuple
 
 import pytest
+from langchain_core.structured_query.ir import (
+    Comparator,
+    Comparison,
+    Operation,
+    Operator,
+    StructuredQuery,
+)
+
 from langchain_community.structured_query_translators.redis import RedisTranslator
 from langchain_community.vectorstores.redis.filters import (
     RedisFilterExpression,
@@ -13,13 +21,6 @@ from langchain_community.vectorstores.redis.schema import (
     RedisModel,
     TagFieldSchema,
     TextFieldSchema,
-)
-from langchain_core.structured_query.ir import (
-    Comparator,
-    Comparison,
-    Operation,
-    Operator,
-    StructuredQuery,
 )
 
 

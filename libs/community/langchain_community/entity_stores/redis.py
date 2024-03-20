@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import logging
 from itertools import islice
-from typing import Any, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Iterable, Optional
 
 from langchain_core.entity_stores import BaseEntityStore
-from redis import Redis as RedisType
 
 from langchain_community.utilities.redis import _redis_sentinel_client
+
+if TYPE_CHECKING:
+    from redis import Redis as RedisType
 
 logger = logging.getLogger(__name__)
 

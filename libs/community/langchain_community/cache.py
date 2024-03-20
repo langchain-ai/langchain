@@ -47,6 +47,7 @@ from typing import (
     cast,
 )
 
+from langchain_core._api import deprecated
 from sqlalchemy import Column, Integer, String, create_engine, delete, select
 from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
@@ -56,7 +57,6 @@ from langchain_community.vectorstores.azure_cosmos_db import (
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
 )
-from langchain_core._api import deprecated
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -187,7 +187,9 @@ def _loads_generations(generations_str: str) -> Union[RETURN_VAL_TYPE, None]:
         return None
 
 
-@deprecated("0.0.29", alternative_import="langchain.cache.InMemoryCache", removal="0.2.0")
+@deprecated(
+    "0.0.29", alternative_import="langchain.cache.InMemoryCache", removal="0.2.0"
+)
 class InMemoryCache(BaseCache):
     """Cache that stores things in memory."""
 

@@ -1,14 +1,15 @@
 from typing import Dict, Tuple
 
-from langchain_community.structured_query_translators.mongodb_atlas import (
-    MongoDBAtlasTranslator,
-)
 from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
     Operation,
     Operator,
     StructuredQuery,
+)
+
+from langchain_community.structured_query_translators.mongodb_atlas import (
+    MongoDBAtlasTranslator,
 )
 
 DEFAULT_TRANSLATOR = MongoDBAtlasTranslator()

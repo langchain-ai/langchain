@@ -1,6 +1,5 @@
 from typing import Dict, Tuple
 
-from langchain_community.structured_query_translators.pinecone import PineconeTranslator
 from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
@@ -8,6 +7,8 @@ from langchain_core.structured_query.ir import (
     Operator,
     StructuredQuery,
 )
+
+from langchain_community.structured_query_translators.pinecone import PineconeTranslator
 
 DEFAULT_TRANSLATOR = PineconeTranslator()
 

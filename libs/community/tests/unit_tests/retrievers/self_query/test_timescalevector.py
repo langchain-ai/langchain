@@ -1,7 +1,6 @@
 from typing import Dict, Tuple
 
 import pytest as pytest
-from langchain_community.structured_query_translators import TimescaleVectorTranslator
 from langchain_core.structured_query.ir import (
     Comparator,
     Comparison,
@@ -9,6 +8,8 @@ from langchain_core.structured_query.ir import (
     Operator,
     StructuredQuery,
 )
+
+from langchain_community.structured_query_translators import TimescaleVectorTranslator
 
 DEFAULT_TRANSLATOR = TimescaleVectorTranslator()
 
