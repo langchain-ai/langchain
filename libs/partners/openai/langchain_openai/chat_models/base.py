@@ -787,7 +787,8 @@ class ChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]:
+        ...
 
     @overload
     def with_structured_output(
@@ -797,7 +798,8 @@ class ChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        ...
 
     @beta()
     def with_structured_output(
