@@ -1,3 +1,4 @@
+import os
 from contextlib import contextmanager
 from typing import Generator
 from unittest.mock import Mock
@@ -31,8 +32,27 @@ BASIC_EXAMPLE_LLM_PARAMETERS = {
     "frequency_penalty": Penalty(scale=0.2, apply_to_numbers=True),
     "presence_penalty": Penalty(scale=0.2, apply_to_stopwords=True),
     "count_penalty": Penalty(
-        scale=0.2, apply_to_punctuation=True, apply_to_emojis=True
+        scale=0.2,
+        apply_to_punctuation=True,
+        apply_to_emojis=True,
     ),
+}
+
+
+BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT = {
+    "num_results": 3,
+    "max_tokens": 20,
+    "min_tokens": 10,
+    "temperature": 0.5,
+    "top_p": 0.5,
+    "top_k_return": 0,
+    "frequency_penalty": Penalty(scale=0.2, apply_to_numbers=True).to_dict(),
+    "presence_penalty": Penalty(scale=0.2, apply_to_stopwords=True).to_dict(),
+    "count_penalty": Penalty(
+        scale=0.2,
+        apply_to_punctuation=True,
+        apply_to_emojis=True,
+    ).to_dict(),
 }
 
 
@@ -86,10 +106,12 @@ def temporarily_unset_api_key() -> Generator:
     """
     api_key = AI21EnvConfig.api_key
     AI21EnvConfig.api_key = None
+    os.environ.pop("AI21_API_KEY", None)
     yield
 
     if api_key is not None:
         AI21EnvConfig.api_key = api_key
+        os.environ["AI21_API_KEY"] = api_key
 
 
 @pytest.fixture

@@ -4,7 +4,7 @@
 // Note: type annotations allow type checking and IDEs autocompletion
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { ProvidePlugin } = require("webpack");
-const path = require("path");
+require("dotenv").config();
 
 const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
 const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
@@ -20,7 +20,7 @@ const config = {
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
 
-  onBrokenLinks: "warn",
+  onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
 
   themes: ["@docusaurus/theme-mermaid"],
@@ -254,7 +254,7 @@ const config = {
           },
           {
             href: "https://chat.langchain.com",
-            label: "Chat",
+            label: "💬",
             position: "right",
           },
           // Please keep GitHub link to the right for consistency.
@@ -336,7 +336,11 @@ const config = {
       async: true,
     },
   ],
-  
+
+  customFields: {
+    supabasePublicKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  },
 };
 
 module.exports = config;
