@@ -176,7 +176,10 @@ def _get_search_client(
 
         # Create the semantic settings with the configuration
         if semantic_configurations:
-            semantic_search = SemanticSearch(configurations=semantic_configurations, default_configuration_name=semantic_configuration_name)
+            semantic_search = SemanticSearch(
+                configurations=semantic_configurations,
+                default_configuration_name=semantic_configuration_name,
+            )
         elif semantic_configuration_name:
             # use default semantic configuration
             semantic_configuration = SemanticConfiguration(
