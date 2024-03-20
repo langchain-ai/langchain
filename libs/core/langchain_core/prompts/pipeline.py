@@ -37,11 +37,23 @@ class PipelinePromptTemplate(BasePromptTemplate):
     def get_input_variables(cls, values: Dict) -> Dict:
         """Get input variables."""
         created_variables = set()
-        all_variables = set()
+        pipeline_prompt_variables = set()
         for k, prompt in values["pipeline_prompts"]:
             created_variables.add(k)
-            all_variables.update(prompt.input_variables)
-        values["input_variables"] = list(all_variables.difference(created_variables))
+            pipeline_prompt_variables.update(prompt.input_variables)
+
+        all_variables = pipeline_prompt_variables.union(
+            values["final_prompt"].input_variables
+        )
+        overlapping_variables = pipeline_prompt_variables.intersection(
+            created_variables
+        )
+        final_prompt_only_variables = created_variables.difference(
+            overlapping_variables
+        )
+        values["input_variables"] = list(
+            all_variables.difference(final_prompt_only_variables)
+        )
         return values
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
