@@ -1093,8 +1093,8 @@ class Milvus(VectorStore):
         if texts is None or len(texts) == 0:
             logger.debug("No documents to upsert.")
             return None
-
-        values = [metadata[field_name] for metadata in metadatas]
+        if metadatas is None or len(metadatas) == 0:
+            values = [metadata[field_name] for metadata in metadatas]
         # Convert to set for optimize expression
         values = list(set(values))
         if values is not None and len(values):
