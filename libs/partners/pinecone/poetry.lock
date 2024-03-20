@@ -354,7 +354,7 @@ files = [
 ]
 
 [package.dependencies]
-langchain-core = ">=0.1.16,<0.2"
+gigachain-core = ">=0.1.16,<0.2"
 numpy = ">=1,<2"
 openai = ">=1.10.0,<2.0.0"
 tiktoken = ">=0.5.2,<1"

@@ -678,7 +678,7 @@ async-timeout = {version = ">=4.0.0,<5.0.0", markers = "python_version < \"3.11\
 dataclasses-json = ">=0.5.7,<0.7"
 jsonpatch = ">=1.33,<2.0"
 langchain-community = ">=0.0.20,<0.1"
-langchain-core = ">=0.1.22,<0.2"
+gigachain-core = ">=0.1.22,<0.2"
 langsmith = ">=0.0.83,<0.1"
 numpy = ">=1,<2"
 pydantic = ">=1,<3"
@@ -733,7 +733,7 @@ files = [
 [package.dependencies]
 aiohttp = ">=3.8.3,<4.0.0"
 dataclasses-json = ">=0.5.7,<0.7"
-langchain-core = ">=0.1.21,<0.2"
+gigachain-core = ">=0.1.21,<0.2"
 langsmith = ">=0.0.83,<0.1"
 numpy = ">=1,<2"
 PyYAML = ">=5.3"
@@ -781,7 +781,7 @@ files = [
 ]
 
 [package.dependencies]
-langchain-core = ">=0.1.16,<0.2"
+gigachain-core = ">=0.1.16,<0.2"
 numpy = ">=1,<2"
 openai = ">=1.10.0,<2.0.0"
 tiktoken = ">=0.5.2,<1"
@@ -798,7 +798,7 @@ files = [
 ]
 
 [package.dependencies]
-langchain-core = ">=0.0.12"
+gigachain-core = ">=0.0.12"
 langsmith = ">=0.0.83,<0.1"
 requests = ">=2.31.0,<3.0.0"
 types-requests = ">=2.31.0.6,<3.0.0.0"

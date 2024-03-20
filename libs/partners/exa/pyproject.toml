@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1"
+gigachain-core = "^0.1"
 exa-py = "^1.0.8"
 
 [tool.poetry.group.test]
@@ -25,7 +25,7 @@ pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true
@@ -41,13 +41,13 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1"
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.test_integration]
 optional = true

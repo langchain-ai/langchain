@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.5"
+gigachain-core = ">=0.1.5"
 langchain-openai = ">=0.0.1"
 lancedb = ">=0.5.5,<1"
 openai = "<2"
