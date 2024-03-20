@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
+from langchain_community.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chains.openai_functions import create_structured_output_chain
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.graphs import Neo4jGraph

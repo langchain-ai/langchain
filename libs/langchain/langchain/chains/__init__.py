@@ -35,17 +35,6 @@ _module_lookup = {
     "ConversationalRetrievalChain": "langchain.chains.conversational_retrieval.base",
     "generate_example": "langchain.chains.example_generator",
     "FlareChain": "langchain.chains.flare.base",
-    "ArangoGraphQAChain": "langchain.chains.graph_qa.arangodb",
-    "GraphQAChain": "langchain.chains.graph_qa.base",
-    "GraphCypherQAChain": "langchain.chains.graph_qa.cypher",
-    "FalkorDBQAChain": "langchain.chains.graph_qa.falkordb",
-    "HugeGraphQAChain": "langchain.chains.graph_qa.hugegraph",
-    "KuzuQAChain": "langchain.chains.graph_qa.kuzu",
-    "NebulaGraphQAChain": "langchain.chains.graph_qa.nebulagraph",
-    "NeptuneOpenCypherQAChain": "langchain.chains.graph_qa.neptune_cypher",
-    "NeptuneSparqlQAChain": "langchain.chains.graph_qa.neptune_sparql",
-    "OntotextGraphDBQAChain": "langchain.chains.graph_qa.ontotext_graphdb",
-    "GraphSparqlQAChain": "langchain.chains.graph_qa.sparql",
     "create_history_aware_retriever": "langchain.chains.history_aware_retriever",
     "HypotheticalDocumentEmbedder": "langchain.chains.hyde.base",
     "LLMChain": "langchain.chains.llm",
@@ -84,11 +73,35 @@ _module_lookup = {
     "TransformChain": "langchain.chains.transform",
 }
 
+DEPRECATED_GRAPH_IMPORTS = [
+    "ArangoGraphQAChain",
+    "GraphQAChain",
+    "GraphCypherQAChain",
+    "FalkorDBQAChain",
+    "HugeGraphQAChain",
+    "KuzuQAChain",
+    "NebulaGraphQAChain",
+    "NeptuneOpenCypherQAChain",
+    "NeptuneSparqlQAChain",
+    "OntotextGraphDBQAChain",
+    "GraphSparqlQAChain",
+]
+
 
 def __getattr__(name: str) -> Any:
     if name in _module_lookup:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
+    if name in DEPRECATED_GRAPH_IMPORTS:
+        raise ImportError(
+            f"{name} has been moved to the langchain-community package. "
+            f"See https://github.com/langchain-ai/langchain/discussions/19083 for more "
+            f"information.\n\nTo use it install langchain-community:\n\n"
+            f"`pip install -U langchain-community`\n\n"
+            f"then import with:\n\n"
+            f"`from langchain_community.chains.graph_qa import {name}`"
+            # noqa: #E501
+        )
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 

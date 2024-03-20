@@ -19,7 +19,6 @@ from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChai
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
@@ -480,30 +479,6 @@ def _load_vector_db_qa(config: dict, **kwargs: Any) -> VectorDBQA:
     )
 
 
-def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
-    if "graph" in kwargs:
-        graph = kwargs.pop("graph")
-    else:
-        raise ValueError("`graph` must be present.")
-    if "cypher_generation_chain" in config:
-        cypher_generation_chain_config = config.pop("cypher_generation_chain")
-        cypher_generation_chain = load_chain_from_config(cypher_generation_chain_config)
-    else:
-        raise ValueError("`cypher_generation_chain` must be present.")
-    if "qa_chain" in config:
-        qa_chain_config = config.pop("qa_chain")
-        qa_chain = load_chain_from_config(qa_chain_config)
-    else:
-        raise ValueError("`qa_chain` must be present.")
-
-    return GraphCypherQAChain(
-        graph=graph,
-        cypher_generation_chain=cypher_generation_chain,  # type: ignore[arg-type]
-        qa_chain=qa_chain,  # type: ignore[arg-type]
-        **config,
-    )
-
-
 def _load_api_chain(config: dict, **kwargs: Any) -> APIChain:
     if "api_request_chain" in config:
         api_request_chain_config = config.pop("api_request_chain")
@@ -550,6 +525,18 @@ def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
         )
     else:
         return LLMRequestsChain(llm_chain=llm_chain, **config)
+
+
+def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> Any:
+    raise ImportError(
+        "Loading GraphCypherQAChain's using `langchain.chains.loading.load_chain` is "
+        "no longer supported since the GraphCypherQAChain implementation has been "
+        "moved to langchain-community. To load a GraphCypherQAChain please install"
+        "langchain and langchain-community with:\n\n"
+        "`pip install -U langchain langchain-community` and use:\n\n"
+        "`from langchain_community.chains.graph_qa.cypher import "
+        "load_graph_cypher_chain`"
+    )
 
 
 type_to_loader_dict = {
