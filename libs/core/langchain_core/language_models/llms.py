@@ -137,14 +137,13 @@ def _as_async_iterator(sync_iterator: Callable) -> Callable:
 
 
 def get_prompts(
-    params: Dict[str, Any], prompts: List[str]
+    params: Dict[str, Any], prompts: List[str], cache: Union[BaseCache, bool, None],
 ) -> Tuple[Dict[int, List], str, List[int], List[str]]:
     """Get prompts that are already cached."""
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    cache = params["cache"]
     if isinstance(cache, BaseCache):
         llm_cache = cache
     else:
@@ -161,14 +160,13 @@ def get_prompts(
 
 
 async def aget_prompts(
-    params: Dict[str, Any], prompts: List[str]
+    params: Dict[str, Any], prompts: List[str], cache: Union[BaseCache, bool, None],
 ) -> Tuple[Dict[int, List], str, List[int], List[str]]:
     """Get prompts that are already cached. Async version."""
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    cache = params["cache"]
     if isinstance(cache, BaseCache):
         llm_cache = cache
     else:
@@ -756,11 +754,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = get_prompts(params, prompts)
-        disregard_cache = (
-            not isinstance(self.cache, BaseCache)
-            and self.cache is not None
-            and not self.cache
-        )
+        disregard_cache = self.cache is not False
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
@@ -975,11 +969,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompts,
         ) = await aget_prompts(params, prompts)
 
-        disregard_cache = (
-            not isinstance(self.cache, BaseCache)
-            and self.cache is not None
-            and not self.cache
-        )
+        disregard_cache = self.cache is not False
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
