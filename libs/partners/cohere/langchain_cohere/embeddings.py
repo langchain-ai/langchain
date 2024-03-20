@@ -25,9 +25,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: cohere.Client  #: :meta private:
+    client: Any  #: :meta private:
     """Cohere client."""
-    async_client: cohere.AsyncClient  #: :meta private:
+    async_client: Any  #: :meta private:
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
@@ -47,6 +47,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
+        arbitrary_types_allowed = True
         extra = Extra.forbid
 
     @root_validator()

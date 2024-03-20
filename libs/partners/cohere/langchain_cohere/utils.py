@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable
 
 import cohere
-import logger
+import logging
 from tenacity import (
     before_sleep_log,
     retry,
@@ -12,6 +12,8 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:

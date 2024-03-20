@@ -127,6 +127,7 @@ class Cohere(LLM, BaseCohere):
     class Config:
         """Configuration for this pydantic object."""
 
+        arbitrary_types_allowed = True
         extra = Extra.forbid
 
     @property
@@ -159,7 +160,8 @@ class Cohere(LLM, BaseCohere):
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
         params = self._default_params
         if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
+            raise ValueError(
+                "`stop` found in both the input and default params.")
         elif self.stop is not None:
             params["stop_sequences"] = self.stop
         else:
