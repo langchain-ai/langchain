@@ -24,7 +24,7 @@ SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
 numpy = "^1"
-gigachat = "^0.1.20" # TODO: temporary needed for gigachat functions agent
+gigachat = "^0.1.20"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"

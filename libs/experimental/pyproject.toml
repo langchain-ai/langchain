@@ -54,6 +54,7 @@ pytest-asyncio = "^0.20.3"
 gigachain = {path = "../langchain", develop = true}
 gigachain-core = {path = "../core", develop = true}
 gigachain-community = {path = "../community", develop = true}
+gigachat = "^0.1.20"
 
 
 [tool.poetry.group.test_integration]
