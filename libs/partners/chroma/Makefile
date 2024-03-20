@@ -19,13 +19,8 @@ test tests integration_test integration_tests:
 PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
-<<<<<<< HEAD
-lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/pinecone --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
-lint_package: PYTHON_FILES=langchain_pinecone
-=======
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/chroma --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 lint_package: PYTHON_FILES=langchain_chroma
->>>>>>> 4f1a75d9a (chroma partner package)
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
@@ -45,11 +40,7 @@ spell_check:
 spell_fix:
 	poetry run codespell --toml pyproject.toml -w
 
-<<<<<<< HEAD
-check_imports: $(shell find langchain_pinecone -name '*.py')
-=======
 check_imports: $(shell find langchain_chroma -name '*.py')
->>>>>>> 4f1a75d9a (chroma partner package)
 	poetry run python ./scripts/check_imports.py $^
 
 ######################
