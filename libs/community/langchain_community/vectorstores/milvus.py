@@ -599,7 +599,6 @@ class Milvus(VectorStore):
                     "Failed to insert batch starting at entity: %s/%s", i, total_count
                 )
                 raise e
-        self.col.flush()
         return pks
 
     def similarity_search(
