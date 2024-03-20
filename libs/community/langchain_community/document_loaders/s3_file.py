@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import tempfile
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union, Callable
 
 from langchain_community.document_loaders.unstructured import UnstructuredBaseLoader
 
