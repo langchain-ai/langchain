@@ -36,80 +36,68 @@ export default function ChatModelTabs(props) {
     hideGoogle,
   } = props;
 
-  // OpenAI
-  const openAIText = `from langchain_openai import ChatOpenAI
-  
-model = ChatOpenAI(${openaiParams ?? ""})`;
-  const openAIProps = { value: "OpenAI", label: "OpenAI", default: true };
+  const openAIParamsOrDefault = openaiParams ?? `model="gpt-3.5-turbo-0125"`
+  const anthropicParamsOrDefault = anthropicParams ?? `model="claude-3-sonnet-20240229"`
+  const fireworksParamsOrDefault = fireworksParams ?? `model="accounts/fireworks/models/mixtral-8x7b-instruct"`
+  const mistralParamsOrDefault = mistralParams ?? `model="mistral-large-latest"`
+  const googleParamsOrDefault = googleParams ?? `model="gemini-pro"`
 
-  // Anthropic
-  const anthropicText = `from langchain_anthropic import ChatAnthropic
-  
-model = ChatAnthropic(${anthropicParams ?? ""})`;
-  const anthropicProps = { value: "Anthropic", label: "Anthropic" };
-
-  // FireworksAI
-  const fireworksText = `from langchain_fireworks import ChatFireworks
-  
-model = ChatFireworks(${fireworksParams ?? ""})`;
-  const fireworksProps = { value: "FireworksAI", label: "FireworksAI" };
-
-  // MistralAI
-  const mistralText = `from langchain_mistralai import ChatMistralAI
-  
-model = ChatMistralAI(${mistralParams ?? ""})`;
-  const mistralProps = { value: "MistralAI", label: "MistralAI" };
-
-  // Google
-  const googleText = `from langchain_google_genai import ChatGoogleGenerativeAI
-  
-model = ChatGoogleGenerativeAI(${googleParams ?? ""})`;
-  const googleProps = { value: "Google", label: "Google" };
+  const tabItems = [
+    {
+      value: "OpenAI",
+      label: "OpenAI",
+      text: `from langchain_openai import ChatOpenAI\n\nmodel = ChatOpenAI(${openAIParamsOrDefault})`,
+      apiKeyName: "OPENAI_API_KEY",
+      packageName: "langchain-openai",
+      default: true,
+      shouldHide: hideOpenai,
+    },
+    {
+      value: "Anthropic",
+      label: "Anthropic",
+      text: `from langchain_anthropic import ChatAnthropic\n\nmodel = ChatAnthropic(${anthropicParamsOrDefault})`,
+      apiKeyName: "ANTHROPIC_API_KEY",
+      packageName: "langchain-anthropic",
+      default: false,
+      shouldHide: hideAnthropic,
+    },
+    {
+      value: "FireworksAI",
+      label: "FireworksAI",
+      text: `from langchain_fireworks import ChatFireworks\n\nmodel = ChatFireworks(${fireworksParamsOrDefault})`,
+      apiKeyName: "FIREWORKS_API_KEY",
+      packageName: "langchain-fireworks",
+      default: false,
+      shouldHide: hideFireworks,
+    },
+    {
+      value: "MistralAI",
+      label: "MistralAI",
+      text: `from langchain_mistralai import ChatMistralAI\n\nmodel = ChatMistralAI(${mistralParamsOrDefault})`,
+      apiKeyName: "MISTRAL_API_KEY",
+      packageName: "langchain-mistralai",
+      default: false,
+      shouldHide: hideMistral,
+    },
+    {
+      value: "Google",
+      label: "Google",
+      text: `from langchain_google_genai import ChatGoogleGenerativeAI\n\nmodel = ChatGoogleGenerativeAI(${googleParamsOrDefault})`,
+      apiKeyName: "GOOGLE_API_KEY",
+      packageName: "langchain-google-genai",
+      default: false,
+      shouldHide: hideGoogle,
+    }
+  ]
 
   return (
     <Tabs groupId="modelTabs">
-      {hideOpenai ? null : (
-        <TabItem {...openAIProps}>
-          <Setup apiKeyName="OPENAI_API_KEY" packageName="langchain-openai" />
-          <CodeBlock language="python">{openAIText}</CodeBlock>
+      {tabItems.filter((tabItem) => !tabItem.shouldHide).map((tabItem) => (
+        <TabItem value={tabItem.value} label={tabItem.label} default={tabItem.default}>
+          <Setup apiKeyName={tabItem.apiKeyName} packageName={tabItem.packageName} />
+          <CodeBlock language="python">{tabItem.text}</CodeBlock>
         </TabItem>
-      )}
-      {hideAnthropic ? null : (
-        <TabItem {...anthropicProps}>
-          <Setup
-            apiKeyName="ANTHROPIC_API_KEY"
-            packageName="langchain-anthropic"
-          />
-          <CodeBlock language="python">{anthropicText}</CodeBlock>
-        </TabItem>
-      )}
-      {hideFireworks ? null : (
-        <TabItem {...fireworksProps}>
-          <Setup
-            apiKeyName="FIREWORKS_API_KEY"
-            packageName="langchain-fireworks"
-          />
-          <CodeBlock language="python">{fireworksText}</CodeBlock>
-        </TabItem>
-      )}
-      {hideMistral ? null : (
-        <TabItem {...mistralProps}>
-          <Setup
-            apiKeyName="MISTRAL_API_KEY"
-            packageName="langchain-mistralai"
-          />
-          <CodeBlock language="python">{mistralText}</CodeBlock>
-        </TabItem>
-      )}
-      {hideGoogle ? null : (
-        <TabItem {...googleProps}>
-          <Setup
-            apiKeyName="GOOGLE_API_KEY"
-            packageName="langchain-google-genai"
-          />
-          <CodeBlock language="python">{googleText}</CodeBlock>
-        </TabItem>
-      )}
+      ))}
     </Tabs>
   );
 }
