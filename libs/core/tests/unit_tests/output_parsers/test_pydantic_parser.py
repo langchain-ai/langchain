@@ -4,10 +4,10 @@ import pydantic  # pydantic: ignore
 import pytest
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import ParrotFakeChatModel
 from langchain_core.output_parsers.pydantic import PydanticOutputParser, TBaseModel
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
-from tests.unit_tests.fake.chat_model import ParrotFakeChatModel
 
 V1BaseModel = pydantic.BaseModel
 if PYDANTIC_MAJOR_VERSION == 2:
