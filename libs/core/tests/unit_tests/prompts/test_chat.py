@@ -540,14 +540,15 @@ def test_chat_prompt_message_placeholder_tuple() -> None:
     assert prompt.format_messages(convo=[("user", "foo")]) == [
         HumanMessage(content="foo")
     ]
-    with pytest.raises(KeyError):
-        prompt.format_messages()
+
+    assert prompt.format_messages() == []
 
     # Is optional = True
     optional_prompt = ChatPromptTemplate.from_messages(
-        [("placeholder", ["convo", True])]
+        [("placeholder", ["convo", False])]
     )
     assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
         HumanMessage(content="foo")
     ]
-    assert optional_prompt.format_messages() == []
+    with pytest.raises(KeyError):
+        assert optional_prompt.format_messages() == []

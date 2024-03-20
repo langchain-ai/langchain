@@ -914,7 +914,7 @@ def _create_template_from_message_type(
         message = SystemMessagePromptTemplate.from_template(cast(str, template))
     elif message_type == "placeholder":
         if isinstance(template, str):
-            message = MessagesPlaceholder(variable_name=template)
+            message = MessagesPlaceholder(variable_name=template, optional=True)
         elif len(template) == 2 and isinstance(template[1], bool):
             var_name, is_optional = template
             message = MessagesPlaceholder(variable_name=var_name, optional=is_optional)
