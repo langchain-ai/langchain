@@ -594,6 +594,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         and you invoke the template with a non-dict object, the prompt template will
         inject the provided argument into that variable location.
 
+        Single-variable template:
 
         .. code-block:: python
 
