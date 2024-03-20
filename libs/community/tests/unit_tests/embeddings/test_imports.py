@@ -64,6 +64,7 @@ EXPECTED_ALL = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
+    "YandexGPTEmbeddings",
 ]
 
 
