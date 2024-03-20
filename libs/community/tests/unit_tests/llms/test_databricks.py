@@ -68,9 +68,7 @@ def test_saving_loading_llm(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("DATABRICKS_TOKEN", "my-default-token")
 
     llm = Databricks(
-        endpoint_name="chat",
-        temperature=0.1,
-        allow_dangerous_deserialization=True
+        endpoint_name="chat", temperature=0.1, allow_dangerous_deserialization=True
     )
     llm.save(file_path=tmp_path / "databricks.yaml")
 
@@ -78,7 +76,8 @@ def test_saving_loading_llm(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="This code relies on the pickle module."):
         load_llm(tmp_path / "databricks.yaml")
 
-    loaded_llm = load_llm(tmp_path / "databricks.yaml",
-                          allow_dangerous_deserialization=True)
+    loaded_llm = load_llm(
+        tmp_path / "databricks.yaml", allow_dangerous_deserialization=True
+    )
     assert loaded_llm.endpoint_name == "chat"
     assert loaded_llm.temperature == 0.1
