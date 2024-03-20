@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union
 
 import voyageai  # type: ignore
 from langchain_core.callbacks.manager import Callbacks
@@ -9,6 +9,7 @@ from langchain_core.documents import Document
 from langchain_core.documents.compressor import BaseDocumentCompressor
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
+from voyageai.object import RerankingObject  # type: ignore
 
 
 class VoyageAIRerank(BaseDocumentCompressor):
@@ -44,7 +45,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
         self,
         documents: Sequence[Union[str, Document]],
         query: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> RerankingObject:
         """Returns an ordered list of documents ordered by their relevance to the provided query.
 
         Args:
@@ -71,7 +72,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
         self,
         documents: Sequence[Union[str, Document]],
         query: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> RerankingObject:
         """Returns an ordered list of documents ordered by their relevance to the provided query.
 
         Args:
@@ -86,7 +87,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
         docs = [
             doc.page_content if isinstance(doc, Document) else doc for doc in documents
         ]
-        return self.aclient.rerank(
+        return await self.aclient.rerank(
             query=query,
             documents=docs,
             model=self.model,
@@ -112,10 +113,10 @@ class VoyageAIRerank(BaseDocumentCompressor):
             A sequence of compressed documents in relevance_score order.
         """
         compressed = []
-        for res in self.rerank(documents, query):
-            doc = documents[res["index"]]
+        for res in self.rerank(documents, query).results:
+            doc = documents[res.index]
             doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
-            doc_copy.metadata["relevance_score"] = res["relevance_score"]
+            doc_copy.metadata["relevance_score"] = res.relevance_score
             compressed.append(doc_copy)
         return compressed
 
@@ -137,9 +138,10 @@ class VoyageAIRerank(BaseDocumentCompressor):
             A sequence of compressed documents in relevance_score order.
         """
         compressed = []
-        for res in await self.arerank(documents, query):
-            doc = documents[res["index"]]
+        result = await self.arerank(documents, query)
+        for res in result.results:
+            doc = documents[res.index]
             doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
-            doc_copy.metadata["relevance_score"] = res["relevance_score"]
+            doc_copy.metadata["relevance_score"] = res.relevance_score
             compressed.append(doc_copy)
         return compressed
