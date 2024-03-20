@@ -1,8 +1,8 @@
 """Test rag retriever integration."""
 
 
-from langchain_cohere.rag_retrievers import CohereRagRetriever
 from langchain_cohere.chat_models import ChatCohere
+from langchain_cohere.rag_retrievers import CohereRagRetriever
 
 
 def test_initialization() -> None:

@@ -4,7 +4,6 @@ import logging
 from typing import Any, Callable
 
 import cohere
-import logging
 from tenacity import (
     before_sleep_log,
     retry,

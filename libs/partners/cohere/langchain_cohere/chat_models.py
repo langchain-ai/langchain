@@ -1,6 +1,5 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain_cohere.llms import BaseCohere
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -19,6 +18,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+
+from langchain_cohere.llms import BaseCohere
 
 
 def get_role(message: BaseMessage) -> str:
@@ -142,8 +143,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(
-            messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
 
         if hasattr(self.client, "chat_stream"):  # detect and support sdk v5
             stream = self.client.chat_stream(**request)
@@ -153,8 +153,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
                     run_manager.on_llm_new_token(delta, chunk=chunk)
                 yield chunk
@@ -166,8 +165,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(
-            messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
 
         if hasattr(self.async_client, "chat_stream"):  # detect and support sdk v5
             stream = self.async_client.chat_stream(**request)
@@ -177,8 +175,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         async for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
                     await run_manager.on_llm_new_token(delta, chunk=chunk)
                 yield chunk
@@ -206,8 +203,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return generate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(
-            messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request)
 
         message = AIMessage(content=response.text)
@@ -216,8 +212,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             generation_info = self._get_generation_info(response)
         return ChatResult(
             generations=[
-                ChatGeneration(message=message,
-                               generation_info=generation_info)
+                ChatGeneration(message=message, generation_info=generation_info)
             ]
         )
 
@@ -234,8 +229,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return await agenerate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(
-            messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request)
 
         message = AIMessage(content=response.text)
@@ -244,8 +238,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             generation_info = self._get_generation_info(response)
         return ChatResult(
             generations=[
-                ChatGeneration(message=message,
-                               generation_info=generation_info)
+                ChatGeneration(message=message, generation_info=generation_info)
             ]
         )
 
