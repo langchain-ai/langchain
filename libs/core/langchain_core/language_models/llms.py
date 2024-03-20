@@ -39,6 +39,7 @@ from tenacity import (
 )
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -462,6 +463,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if type(self)._astream is not BaseLLM._astream:
             # model doesn't implement streaming, so use default implementation
             _stream_implementation = self._astream
+            using_sync_stream = False
         elif type(self)._stream is not BaseLLM._stream:
             # Then stream is implemented, so we can create an async iterator from it
             # The typing is hard to type correctly with mypy here, so we cast
@@ -478,6 +480,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 ],
                 _as_async_iterator(self._stream),
             )
+            using_sync_stream = True
         else:
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
             return
@@ -506,10 +509,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_id=config.pop("run_id", None),
             batch_size=1,
         )
+        run_manager_ = run_manager.get_sync() if using_sync_stream else run_manager
         generation: Optional[GenerationChunk] = None
         try:
             async for chunk in _stream_implementation(
-                prompt, stop=stop, run_manager=run_manager, **kwargs
+                prompt,
+                stop=stop,
+                run_manager=run_manager_,  # type: ignore[arg-type]
+                **kwargs,
             ):
                 yield chunk.text
                 if generation is None:
@@ -733,6 +740,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = get_prompts(params, prompts)
+        if isinstance(self.cache, BaseCache):
+            raise NotImplementedError(
+                "Local cache is not yet supported for " "LLMs (only chat models)"
+            )
         disregard_cache = self.cache is not None and not self.cache
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
@@ -942,6 +953,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = await aget_prompts(params, prompts)
+        if isinstance(self.cache, BaseCache):
+            raise NotImplementedError(
+                "Local cache is not yet supported for " "LLMs (only chat models)"
+            )
+
         disregard_cache = self.cache is not None and not self.cache
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
