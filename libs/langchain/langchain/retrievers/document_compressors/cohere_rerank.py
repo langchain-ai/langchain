@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+import deprecated
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Extra, root_validator
 
@@ -11,6 +12,9 @@ from langchain.retrievers.document_compressors.base import BaseDocumentCompresso
 from langchain.utils import get_from_dict_or_env
 
 
+@deprecated(
+    since="0.0.14", removal="0.2.0", alternative_import="langchain_cohere.CohereRerank"
+)
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
 

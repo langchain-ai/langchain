@@ -1,5 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
+import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -94,6 +95,9 @@ def get_cohere_chat_request(
     return {k: v for k, v in req.items() if v is not None}
 
 
+@deprecated(
+    since="0.1.14", removal="0.2.0", alternative_import="langchain_cohere.ChatCohere"
+)
 class ChatCohere(BaseChatModel, BaseCohere):
     """`Cohere` chat large language models.
 
