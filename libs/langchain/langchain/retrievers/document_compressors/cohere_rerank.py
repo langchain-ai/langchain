@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-import deprecated
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Extra, root_validator
 
