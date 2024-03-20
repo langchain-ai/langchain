@@ -116,7 +116,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         )
     elif role == "tool":
         additional_kwargs = {}
-        if "name" in _dict:
+        if _dict.get("name") is not None:
             additional_kwargs["name"] = _dict["name"]
         return ToolMessage(
             content=_dict.get("content", ""),
@@ -171,7 +171,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             del message_dict["name"]
     else:
         raise TypeError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
+    if message.additional_kwargs.get("name") is not None:
         message_dict["name"] = message.additional_kwargs["name"]
     return message_dict
 
