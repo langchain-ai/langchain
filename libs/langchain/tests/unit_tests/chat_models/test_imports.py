@@ -1,7 +1,8 @@
-from langchain import chat_models
-from tests.unit_tests import assert_all_importable
+import pytest
 
-EXPECTED_ALL = [
+from langchain import chat_models
+
+EXPECTED_DEPRECATED_IMPORTS = [
     "ChatOpenAI",
     "BedrockChat",
     "AzureChatOpenAI",
@@ -35,6 +36,8 @@ EXPECTED_ALL = [
 ]
 
 
-def test_all_imports() -> None:
-    assert set(chat_models.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(chat_models)
+def test_deprecated_imports() -> None:
+    for import_ in EXPECTED_DEPRECATED_IMPORTS:
+        with pytest.raises(ImportError) as e:
+            getattr(chat_models, import_)
+            assert "langchain_community" in e
