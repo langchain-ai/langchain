@@ -140,8 +140,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     """
     message_dict: Dict[str, Any] = {
         "content": message.content,
-        "name": message.name,
     }
+    if message.name:
+        message_dict["name"] = message.name
     if isinstance(message, ChatMessage):
         message_dict["role"] = message.role
     elif isinstance(message, HumanMessage):
