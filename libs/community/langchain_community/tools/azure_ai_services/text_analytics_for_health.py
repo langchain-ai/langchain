@@ -11,20 +11,20 @@ from langchain_core.utils import get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
-class AzureCogsTextAnalyticsHealthTool(BaseTool):
-    """Tool that queries the Azure Cognitive Services Text Analytics for Health API.
+class AzureAiServicesTextAnalyticsForHealthTool(BaseTool):
+    """Tool that queries the Azure AI Services Text Analytics for Health API.
 
     In order to set this up, follow instructions at:
-    https://learn.microsoft.com/en-us/azure/ai-services/language-service/text-analytics-for-health/quickstart?tabs=windows&pivots=programming-language-python
+    https://learn.microsoft.com/en-us/azure/ai-services/language-service/text-analytics-for-health/quickstart?pivots=programming-language-python
     """
 
-    azure_cogs_key: str = ""  #: :meta private:
-    azure_cogs_endpoint: str = ""  #: :meta private:
+    azure_ai_services_key: str = ""  #: :meta private:
+    azure_ai_services_endpoint: str = ""  #: :meta private:
     text_analytics_client: Any  #: :meta private:
 
-    name: str = "azure_cognitive_services_text_analyics_health"
+    name: str = "azure_ai_services_text_analytics_for_health"
     description: str = (
-        "A wrapper around Azure Cognitive Services Text Analytics for Health. "
+        "A wrapper around Azure AI Services Text Analytics for Health. "
         "Useful for when you need to identify entities in healthcare data. "
         "Input should be text."
     )
@@ -32,12 +32,12 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
-        azure_cogs_key = get_from_dict_or_env(
-            values, "azure_cogs_key", "AZURE_COGS_KEY"
+        azure_ai_services_key = get_from_dict_or_env(
+            values, "azure_ai_services_key", "AZURE_AI_SERVICES_KEY"
         )
 
-        azure_cogs_endpoint = get_from_dict_or_env(
-            values, "azure_cogs_endpoint", "AZURE_COGS_ENDPOINT"
+        azure_ai_services_endpoint = get_from_dict_or_env(
+            values, "azure_ai_services_endpoint", "AZURE_AI_SERVICES_ENDPOINT"
         )
 
         try:
@@ -45,8 +45,8 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
             from azure.core.credentials import AzureKeyCredential
 
             values["text_analytics_client"] = sdk.TextAnalyticsClient(
-                endpoint=azure_cogs_endpoint,
-                credential=AzureKeyCredential(azure_cogs_key),
+                endpoint=azure_ai_services_endpoint,
+                credential=AzureKeyCredential(azure_ai_services_key),
             )
 
         except ImportError:
@@ -100,5 +100,5 @@ class AzureCogsTextAnalyticsHealthTool(BaseTool):
             return self._format_text_analysis_result(text_analysis_result)
         except Exception as e:
             raise RuntimeError(
-                f"Error while running AzureCogsTextAnalyticsHealthTool: {e}"
+                f"Error while running AzureAiServicesTextAnalyticsForHealthTool: {e}"
             )
