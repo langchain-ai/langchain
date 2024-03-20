@@ -1159,10 +1159,6 @@ files = [
     {file = "duckdb_engine-0.9.5.tar.gz", hash = "sha256:17fdc13068540315b64c7d174d5a260e918b1ce4b5346897caca026401afb280"},
 ]
 
-[package.dependencies]
-duckdb = ">=0.4.0"
-sqlalchemy = ">=1.3.22"
-
 [[package]]
 name = "exceptiongroup"
 version = "1.2.0"
