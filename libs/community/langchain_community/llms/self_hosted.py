@@ -34,14 +34,6 @@ def _generic_interface_fn(
     return text
 
 
-class ModelPipeline(rh.Module):
-
-    def __init__(self, load_module_fn: Callable, interface_fn: Optional[Callable] = _generic_interface_fn):
-        super().__init__()
-        self._load_module_fn = load_module_fn
-        self._interface_fn = interface_fn
-
-
 class SelfHostedPipeline(LLM):
     """Model inference on self-hosted remote hardware.
 
@@ -81,12 +73,12 @@ class SelfHostedPipeline(LLM):
     """
     pipeline_ref: Any  #: :meta private:
     client: Any  #: :meta private:
-    # inference_fn: rh.Function  #: :meta private:
-    # """Inference function to send to the remote hardware."""
-    # model_load_fn: rh.Function
-    # """Function to load the model remotely on the server."""
     load_fn_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model load function."""
+    hardware: rh.Cluster
+    """The remote hardware the model will run on"""
+    env: rh.Env
+    """The env with the necessary requirements for the model execution """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -94,8 +86,9 @@ class SelfHostedPipeline(LLM):
         extra = Extra.allow
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
+        allow_dangerous_deserialization = True
 
-    def __init__(self, model_pipeline: ModelPipeline, **kwargs: Any):
+    def __init__(self, pipline_cls: Any, **kwargs: Any):
         """Init the pipeline with an auxiliary function.
 
         The load function must be in global scope to be imported
@@ -103,11 +96,16 @@ class SelfHostedPipeline(LLM):
         Then, initialize the remote inference function.
         """
         super().__init__(**kwargs)
+        gpu, model_env = kwargs.get("hardware"), kwargs.get("env")
+        model_id, task = kwargs.get("model_id"), kwargs.get("task")
+        ModelPipeline_remote = rh.module(pipline_cls).to(system=gpu, env=model_env)
+        self.ModelPipeline_remote_instance = ModelPipeline_remote(model_id=model_id, task=task)
         _load_fn_kwargs = self.load_fn_kwargs or {}
-        self.pipeline_ref = model_pipeline.pipeline_ref
-        self.client = model_pipeline.inference_fn
-        self.hardware = model_pipeline.system
-        self.env = model_pipeline.env
+        hf_token = ModelPipeline_remote.env.secrets[0].values.get("token")
+        # if not self.pipeline_ref:
+        self.ModelPipeline_remote_instance.load_model.remote(hf_token=hf_token, **_load_fn_kwargs)
+        self.pipeline_ref = 1
+
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -127,8 +125,6 @@ class SelfHostedPipeline(LLM):
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
     ) -> str:
-        if not self.pipeline_ref:
-            self._pipeline = self.model_load_fn.remote()
-        return self.inference_fn(
-            pipeline=self._pipeline, prompt=prompt, stop=stop, **kwargs
+        return self.ModelPipeline_remote_instance.interface_fn.remote(
+            prompt=prompt, stop=stop, **kwargs
         )
