@@ -1107,8 +1107,7 @@ class Milvus(VectorStore):
             except MilvusException:
                 pass
         try:
-            return self.add_texts(texts=texts,
-                                  metadatas=metadatas, **kwargs)
+            return self.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         except MilvusException as exc:
             logger.error(
                 "Failed to upsert texts: %s error: %s", self.collection_name, exc
