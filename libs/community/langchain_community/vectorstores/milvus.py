@@ -1060,8 +1060,8 @@ class Milvus(VectorStore):
 
     def upsert_texts(
         self,
-        texts: List[str] | None = None,
-        metadatas: Optional[List[dict]] = None,
+        texts: Iterable[str],
+        metadatas: Iterable[List[dict]] = None,
         field_name: str = "ids",
         **kwargs: Any,
     ) -> List[str] | None:
@@ -1095,6 +1095,8 @@ class Milvus(VectorStore):
             return None
         if metadatas is None or len(metadatas) == 0:
             values = [metadata[field_name] for metadata in metadatas]
+        else:
+            return self.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         # Convert to set for optimize expression
         values = list(set(values))
         if values is not None and len(values):
