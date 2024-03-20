@@ -1,25 +1,25 @@
-"""Azure Cognitive Services Tools."""
+"""Azure AI Services Tools."""
 
-from langchain_community.tools.azure_cognitive_services.form_recognizer import (
-    AzureCogsFormRecognizerTool,
+from langchain_community.tools.azure_ai_services.form_recognizer import (
+    AzureAiServicesDocumentIntelligenceTool,
 )
-from langchain_community.tools.azure_cognitive_services.image_analysis import (
-    AzureCogsImageAnalysisTool,
+from langchain_community.tools.azure_ai_services.image_analysis import (
+    AzureAiServicesImageAnalysisTool,
 )
-from langchain_community.tools.azure_cognitive_services.speech2text import (
-    AzureCogsSpeech2TextTool,
+from libs.community.langchain_community.tools.azure_ai_services.speech_to_text import (
+    AzureAiServicesSpeechToTextTool,
 )
-from langchain_community.tools.azure_cognitive_services.text2speech import (
-    AzureCogsText2SpeechTool,
+from libs.community.langchain_community.tools.azure_ai_services.text_to_speech import (
+    AzureAiServicesTextToSpeechTool,
 )
-from langchain_community.tools.azure_cognitive_services.text_analytics_health import (
-    AzureCogsTextAnalyticsHealthTool,
+from libs.community.langchain_community.tools.azure_ai_services.text_analytics_for_health import (
+    AzureAiServicesTextAnalyticsForHealthTool,
 )
 
 __all__ = [
-    "AzureCogsImageAnalysisTool",
-    "AzureCogsFormRecognizerTool",
-    "AzureCogsSpeech2TextTool",
-    "AzureCogsText2SpeechTool",
-    "AzureCogsTextAnalyticsHealthTool",
+    "AzureAiServicesImageAnalysisTool",
+    "AzureAiServicesDocumentIntelligenceTool",
+    "AzureAiServicesSpeechToTextTool",
+    "AzureAiServicesTextToSpeechTool",
+    "AzureAiServicesTextAnalyticsForHealthTool",
 ]
