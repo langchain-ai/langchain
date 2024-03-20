@@ -140,8 +140,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     """
     message_dict: Dict[str, Any] = {
         "content": message.content,
-        "name": message.name,
     }
+    if message.name is not None:
+        message_dict["name"] = message.name
+    elif (
+        "name" in message.additional_kwargs
+        and message.additional_kwargs["name"] is not None
+    ):
+        # fall back on additional kwargs for backwards compatibility
+        message_dict["name"] = message.additional_kwargs["name"]
+
+    # populate role and additional message data
     if isinstance(message, ChatMessage):
         message_dict["role"] = message.role
     elif isinstance(message, HumanMessage):
@@ -171,8 +180,6 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             del message_dict["name"]
     else:
         raise TypeError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
     return message_dict
 
 
@@ -780,8 +787,7 @@ class ChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
     @overload
     def with_structured_output(
@@ -791,8 +797,7 @@ class ChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     @beta()
     def with_structured_output(
