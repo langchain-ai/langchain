@@ -144,7 +144,11 @@ def get_prompts(
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    llm_cache = get_llm_cache()
+    cache = params["cache"]
+    if isinstance(cache, BaseCache):
+        llm_cache = cache
+    else:
+        llm_cache = get_llm_cache()
     for i, prompt in enumerate(prompts):
         if llm_cache is not None:
             cache_val = llm_cache.lookup(prompt, llm_string)
@@ -164,7 +168,11 @@ async def aget_prompts(
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    llm_cache = get_llm_cache()
+    cache = params["cache"]
+    if isinstance(cache, BaseCache):
+        llm_cache = cache
+    else:
+        llm_cache = get_llm_cache()
     for i, prompt in enumerate(prompts):
         if llm_cache:
             cache_val = await llm_cache.alookup(prompt, llm_string)
@@ -177,6 +185,7 @@ async def aget_prompts(
 
 
 def update_cache(
+    cache: Union[BaseCache, bool, None],
     existing_prompts: Dict[int, List],
     llm_string: str,
     missing_prompt_idxs: List[int],
@@ -184,7 +193,10 @@ def update_cache(
     prompts: List[str],
 ) -> Optional[dict]:
     """Update the cache and get the LLM output."""
-    llm_cache = get_llm_cache()
+    if cache is not None and isinstance(cache, BaseCache):
+        llm_cache = cache
+    else:
+        llm_cache = get_llm_cache()
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
@@ -195,6 +207,7 @@ def update_cache(
 
 
 async def aupdate_cache(
+    cache: Union[BaseCache, bool, None],
     existing_prompts: Dict[int, List],
     llm_string: str,
     missing_prompt_idxs: List[int],
@@ -202,7 +215,10 @@ async def aupdate_cache(
     prompts: List[str],
 ) -> Optional[dict]:
     """Update the cache and get the LLM output. Async version"""
-    llm_cache = get_llm_cache()
+    if cache is not None and isinstance(cache, BaseCache):
+        llm_cache = cache
+    else:
+        llm_cache = get_llm_cache()
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
@@ -740,11 +756,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = get_prompts(params, prompts)
-        if isinstance(self.cache, BaseCache):
-            raise NotImplementedError(
-                "Local cache is not yet supported for " "LLMs (only chat models)"
-            )
-        disregard_cache = self.cache is not None and not self.cache
+        disregard_cache = (
+            not isinstance(self.cache, BaseCache)
+            and self.cache is not None
+            and not self.cache
+        )
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
@@ -787,7 +803,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
             )
             llm_output = update_cache(
-                existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+                self.cache,
+                existing_prompts,
+                llm_string,
+                missing_prompt_idxs,
+                new_results,
+                prompts,
             )
             run_info = (
                 [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]
@@ -953,12 +974,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = await aget_prompts(params, prompts)
-        if isinstance(self.cache, BaseCache):
-            raise NotImplementedError(
-                "Local cache is not yet supported for " "LLMs (only chat models)"
-            )
 
-        disregard_cache = self.cache is not None and not self.cache
+        disregard_cache = (
+            not isinstance(self.cache, BaseCache)
+            and self.cache is not None
+            and not self.cache
+        )
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
@@ -1015,7 +1036,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 **kwargs,  # type: ignore[arg-type]
             )
             llm_output = await aupdate_cache(
-                existing_prompts, llm_string, missing_prompt_idxs, new_results, prompts
+                self.cache,
+                existing_prompts,
+                llm_string,
+                missing_prompt_idxs,
+                new_results,
+                prompts,
             )
             run_info = (
                 [RunInfo(run_id=run_manager.run_id) for run_manager in run_managers]  # type: ignore[attr-defined]
