@@ -4,6 +4,7 @@ from typing import Any, AsyncIterator, Iterator
 import pytest
 from syrupy import SnapshotAssertion
 
+from langchain_core.language_models import FakeListLLM
 from langchain_core.load import dumps
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import (
@@ -14,7 +15,6 @@ from langchain_core.runnables import (
     RunnablePassthrough,
     RunnableWithFallbacks,
 )
-from tests.unit_tests.fake.llm import FakeListLLM
 
 
 @pytest.fixture()
