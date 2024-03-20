@@ -2505,9 +2505,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@langchain/scripts@npm:^0.0.9":
-  version: 0.0.9
-  resolution: "@langchain/scripts@npm:0.0.9"
+"@langchain/scripts@npm:^0.0.10":
+  version: 0.0.10
+  resolution: "@langchain/scripts@npm:0.0.10"
   dependencies:
     axios: ^1.6.7
     commander: ^11.1.0
@@ -2517,7 +2517,7 @@ __metadata:
     typescript: <5.2.0
   bin:
     lc-build: build.js
-  checksum: 8b0e2e73b84e5997155d8f73208b86fc3178ad72ec013f7b9fc976e52b55ce4b39e6eaf2315f3b841cc4c40e954851655e3cee3b236f557b7421bfad3be83f32
+  checksum: 2051be819a5fb9863f81c06e5504626377ac922093953c559f84ec9931108a1b72942d5f5b7e22f44dd60ca8cc7a34532d2eea03a0055b96bf2acf300ec454f6
   languageName: node
   linkType: hard
 
@@ -5922,7 +5922,7 @@ __metadata:
     "@docusaurus/preset-classic": 2.4.3
     "@docusaurus/remark-plugin-npm2yarn": ^2.4.3
     "@docusaurus/theme-mermaid": 2.4.3
-    "@langchain/scripts": ^0.0.9
+    "@langchain/scripts": ^0.0.10
     "@mdx-js/react": ^1.6.22
     "@supabase/supabase-js": ^2.39.7
     clsx: ^1.2.1
