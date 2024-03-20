@@ -88,6 +88,10 @@ class BaseCohere(Serializable):
     streaming: bool = Field(default=False)
     """Whether to stream the results."""
 
+    max_retries: Optional[int] = 3
+    """Maximum number of retries to make when generating."""
+    request_timeout: Optional[float] = None
+    """Timeout in seconds for the Cohere API request."""
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
 
@@ -105,14 +109,21 @@ class BaseCohere(Serializable):
             values["cohere_api_key"] = convert_to_secret_str(
                 get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
             )
+            max_retries = values.get("max_retries")
+            request_timeout = values.get("request_timeout")
+
             client_name = values["user_agent"]
             values["client"] = cohere.Client(
                 api_key=values["cohere_api_key"].get_secret_value(),
                 client_name=client_name,
+                timeout=request_timeout,
+                max_retries=max_retries,
             )
             values["async_client"] = cohere.AsyncClient(
                 api_key=values["cohere_api_key"].get_secret_value(),
                 client_name=client_name,
+                timeout=request_timeout,
+                max_retries=max_retries,
             )
         return values
 
