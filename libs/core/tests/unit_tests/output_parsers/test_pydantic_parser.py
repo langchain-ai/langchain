@@ -1,31 +1,34 @@
-from typing import Literal, Type, Union
+from typing import Literal
 
+import pydantic  # pydantic: ignore
 import pytest
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers.pydantic import PydanticOutputParser, TBaseModel
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.pydantic_v2 import BaseModel as V2BaseModel
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 from tests.unit_tests.fake.chat_model import ParrotFakeChatModel
 
+V1BaseModel = pydantic.BaseModel
+if PYDANTIC_MAJOR_VERSION == 2:
+    from pydantic.v1 import BaseModel  # pydantic: ignore
 
-class ForecastV2(V2BaseModel):
+    V1BaseModel = BaseModel  # type: ignore
+
+
+class ForecastV2(pydantic.BaseModel):
     temperature: int
     f_or_c: Literal["F", "C"]
     forecast: str
 
 
-class Forecast(BaseModel):
+class ForecastV1(V1BaseModel):
     temperature: int
     f_or_c: Literal["F", "C"]
     forecast: str
 
 
-TBaseModel = Union[Type[BaseModel], Type[V2BaseModel]]
-
-
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, Forecast])
+@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
 def test_pydantic_parser_chaining(
     pydantic_object: TBaseModel,
 ) -> None:
@@ -50,7 +53,7 @@ def test_pydantic_parser_chaining(
     assert res.forecast == "Sunny"
 
 
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, Forecast])
+@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
 def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
     bad_prompt = PromptTemplate(
         template="""{{

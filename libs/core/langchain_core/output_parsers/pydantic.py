@@ -1,17 +1,21 @@
 import json
 from typing import Generic, List, Type, TypeVar, Union
 
+import pydantic  # pydantic: ignore
+
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
-from langchain_core.pydantic_v2 import BaseModel as V2BaseModel
-from langchain_core.pydantic_v2 import ValidationError as V2ValidationError
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
-PydanticBaseModel = BaseModel
-if PYDANTIC_MAJOR_VERSION == 2:
-    PydanticBaseModel = Union[BaseModel, V2BaseModel]  # type: ignore
+if PYDANTIC_MAJOR_VERSION < 2:
+    PydanticBaseModel = pydantic.BaseModel
+
+else:
+    from pydantic.v1 import BaseModel  # pydantic: ignore
+
+    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
@@ -19,38 +23,47 @@ TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Type[TBaseModel]
+    pydantic_object: Type[TBaseModel]  # type: ignore
     """The pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
-        if PYDANTIC_MAJOR_VERSION == 2 and issubclass(
-            self.pydantic_object, V2BaseModel
-        ):
-            try:
-                return self.pydantic_object.model_validate(obj)
-            except V2ValidationError as e:
-                raise self._parser_exception(str(e), json.dumps(obj))
-        elif issubclass(self.pydantic_object, BaseModel):
-            return self.pydantic_object.parse_obj(obj)
-        else:
-            raise OutputParserException(
-                f"Unsupported model version for PydanticOutputParser: \
-                    {self.pydantic_object.__class__}"
-            )
+        if PYDANTIC_MAJOR_VERSION == 2:
+            import pydantic.v1 as v1  # pydantic: ignore
 
-    def _parser_exception(self, e: str, json_object: str) -> OutputParserException:
+            if issubclass(self.pydantic_object, pydantic.BaseModel):
+                try:
+                    return self.pydantic_object.model_validate(obj)
+                except pydantic.ValidationError as e:
+                    raise self._parser_exception(e, obj)
+            elif issubclass(self.pydantic_object, v1.BaseModel):
+                try:
+                    return self.pydantic_object.parse_obj(obj)
+                except v1.ValidationError as e:
+                    raise self._parser_exception(e, obj)
+            else:
+                raise OutputParserException(
+                    f"Unsupported model version for PydanticOutputParser: \
+                        {self.pydantic_object.__class__}"
+                )
+        else:  # pydantic v1
+            try:
+                return self.pydantic_object.parse_obj(obj)
+            except pydantic.ValidationError as e:
+                raise self._parser_exception(e, obj)
+
+    def _parser_exception(
+        self, e: Exception, json_object: dict
+    ) -> OutputParserException:
+        json_string = json.dumps(json_object)
         name = self.pydantic_object.__name__
-        msg = f"Failed to parse {name} from completion {json_object}. Got: {e}"
-        return OutputParserException(msg, llm_output=json_object)
+        msg = f"Failed to parse {name} from completion {json_string}. Got: {e}"
+        return OutputParserException(msg, llm_output=json_string)
 
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
     ) -> TBaseModel:
         json_object = super().parse_result(result)
-        try:
-            return self._parse_obj(json_object)
-        except ValidationError as e:
-            raise self._parser_exception(str(e), json_object)
+        return self._parse_obj(json_object)
 
     def parse(self, text: str) -> TBaseModel:
         return super().parse(text)
