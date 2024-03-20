@@ -1,5 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
+from langchain_community.llms.cohere import BaseCohere
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -18,8 +19,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-
-from langchain_cohere.llms import BaseCohere
 
 
 def get_role(message: BaseMessage) -> str:
@@ -80,7 +79,7 @@ def get_cohere_chat_request(
         "AUTO" if documents is not None or connectors is not None else None
     )
 
-    return {
+    req = {
         "message": messages[-1].content,
         "chat_history": [
             {"role": get_role(x), "message": x.content} for x in messages[:-1]
@@ -90,6 +89,8 @@ def get_cohere_chat_request(
         "prompt_truncation": prompt_truncation,
         **kwargs,
     }
+
+    return {k: v for k, v in req.items() if v is not None}
 
 
 class ChatCohere(BaseChatModel, BaseCohere):
@@ -142,7 +143,11 @@ class ChatCohere(BaseChatModel, BaseCohere):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        stream = self.client.chat(**request, stream=True)
+
+        if hasattr(self.client, "chat_stream"):  # detect and support sdk v5
+            stream = self.client.chat_stream(**request)
+        else:
+            stream = self.client.chat(**request, stream=True)
 
         for data in stream:
             if data.event_type == "text-generation":
@@ -160,7 +165,11 @@ class ChatCohere(BaseChatModel, BaseCohere):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        stream = await self.async_client.chat(**request, stream=True)
+
+        if hasattr(self.async_client, "chat_stream"):  # detect and support sdk v5
+            stream = self.async_client.chat_stream(**request)
+        else:
+            stream = self.async_client.chat(**request, stream=True)
 
         async for data in stream:
             if data.event_type == "text-generation":
@@ -220,7 +229,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             return await agenerate_from_stream(stream_iter)
 
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        response = self.client.chat(**request, stream=False)
+        response = self.client.chat(**request)
 
         message = AIMessage(content=response.text)
         generation_info = None

@@ -165,13 +165,13 @@ types = ["chardet (>=5.1.0)", "mypy", "pytest", "pytest-cov", "pytest-dependency
 
 [[package]]
 name = "cohere"
-version = "5.0.0a9"
+version = "5.0.0a12"
 description = ""
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = "<4.0,>=3.8"
 files = [
-    {file = "cohere-5.0.0a9-py3-none-any.whl", hash = "sha256:77f6d54ef4b180fc70ab8bdef8cc3232fda89a4cdfe03c6673dddde77f585a56"},
-    {file = "cohere-5.0.0a9.tar.gz", hash = "sha256:4adf23c35dcacd3320016fa4c34a732d111899ce4ec2b63fc6afcd11ed6b4feb"},
+    {file = "cohere-5.0.0a12-py3-none-any.whl", hash = "sha256:1e577f6a889984c52cb8e74b4965d2c092cea45979f03ee96cd98db1116fa31f"},
+    {file = "cohere-5.0.0a12.tar.gz", hash = "sha256:23d22d047f3f1cb924be7f44ef868aa629abb8efdec478ffcaf83f1af8d0f6ec"},
 ]
 
 [package.dependencies]
@@ -944,4 +944,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e1de70696896b6767516f6692c87c01351ba534bdd86a8ff08e8ebe81db8605d"
+content-hash = "9d6f929b43b5b280e6d43f552192d71d0f1c2d13bfa42ba15825d17ba099a9b7"

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import cohere
 from langchain_core.callbacks import (
@@ -12,17 +12,9 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-)
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+
+from .utils import _create_retry_decorator
 
 
 def enforce_stop_tokens(text: str, stop: List[str]) -> str:
@@ -33,23 +25,9 @@ def enforce_stop_tokens(text: str, stop: List[str]) -> str:
 logger = logging.getLogger(__name__)
 
 
-def _create_retry_decorator(llm: Cohere) -> Callable[[Any], Any]:
-    min_seconds = 4
-    max_seconds = 10
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(llm.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type(cohere.errors.InternalServerError)),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
-
-
 def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm.max_retries)
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
@@ -60,7 +38,7 @@ def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 
 def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(llm)
+    retry_decorator = _create_retry_decorator(llm.max_retries)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
