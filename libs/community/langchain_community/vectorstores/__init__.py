@@ -33,6 +33,7 @@ _module_lookup = {
     "AwaDB": "langchain_community.vectorstores.awadb",
     "AzureCosmosDBVectorSearch": "langchain_community.vectorstores.azure_cosmos_db",
     "AzureSearch": "langchain_community.vectorstores.azuresearch",
+    "BaiduVectorDB": "langchain_community.vectorstores.baiduvectordb",
     "BESVectorStore": "langchain_community.vectorstores.baiducloud_vector_search",
     "Bagel": "langchain_community.vectorstores.bageldb",
     "BigQueryVectorSearch": "langchain_community.vectorstores.bigquery_vector_search",
@@ -41,6 +42,7 @@ _module_lookup = {
     "Clarifai": "langchain_community.vectorstores.clarifai",
     "Clickhouse": "langchain_community.vectorstores.clickhouse",
     "ClickhouseSettings": "langchain_community.vectorstores.clickhouse",
+    "CouchbaseVectorStore": "langchain_community.vectorstores.couchbase",
     "DashVector": "langchain_community.vectorstores.dashvector",
     "DatabricksVectorSearch": "langchain_community.vectorstores.databricks_vector_search",  # noqa: E501
     "DeepLake": "langchain_community.vectorstores.deeplake",
