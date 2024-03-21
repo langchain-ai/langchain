@@ -1,7 +1,7 @@
 
 # summarize-anthropic
 
-This template uses Anthropic's `Claude2` to summarize long documents. 
+This template uses Anthropic's `claude-3-sonnet-20240229` to summarize long documents. 
 
 It leverages a large context window of 100k tokens, allowing for summarization of documents over 100 pages. 
 

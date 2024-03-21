@@ -4,7 +4,7 @@ from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_xml
 from langchain.tools import DuckDuckGoSearchRun
 from langchain.tools.render import render_text_description
-from langchain_community.chat_models import ChatAnthropic
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 
@@ -19,7 +19,7 @@ def _format_chat_history(chat_history: List[Tuple[str, str]]):
     return buffer
 
 
-model = ChatAnthropic(model="claude-2")
+model = ChatAnthropic(model="claude-3-sonnet-20240229")
 
 tools = [DuckDuckGoSearchRun()]
 

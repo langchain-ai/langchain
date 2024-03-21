@@ -6,7 +6,7 @@ Check out the prompt being used here https://smith.langchain.com/hub/bagatur/cha
 
 ## Environment Setup
 
-Uses Anthropic claude-2 chat model. Set Anthropic API key:
+Uses Anthropic claude-3-sonnet-20240229 chat model. Set Anthropic API key:
 ```bash
 export ANTHROPIC_API_KEY="..."
 ```

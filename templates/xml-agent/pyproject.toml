@@ -10,9 +10,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = "^0.1"
-anthropic = ">=0.5.0"
+anthropic = ">=0.17.0,<1"
 langchainhub = ">=0.1.13"
 duckduckgo-search = "^3.8.3"
+langchain-anthropic = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
