@@ -950,7 +950,7 @@ def _create_template_from_message_type(
     elif message_type == "system":
         message = SystemMessagePromptTemplate.from_template(cast(str, template))
     elif message_type == "placeholder":
-        if template[0] != "{" or template[-1] != "}":
+        if not isinstance(template, str) or template[0] != "{" or template[-1] != "}":
             raise ValueError(
                 r"Expected a placeholder variable of the format {variable_name},"
                 f" got {template}."
