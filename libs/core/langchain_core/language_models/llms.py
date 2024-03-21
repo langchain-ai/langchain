@@ -139,7 +139,7 @@ def _as_async_iterator(sync_iterator: Callable) -> Callable:
 def get_prompts(
     params: Dict[str, Any],
     prompts: List[str],
-    cache: Union[BaseCache, bool, None],
+    cache: Optional[Union[BaseCache, bool, None]] = None,
 ) -> Tuple[Dict[int, List], str, List[int], List[str]]:
     """Get prompts that are already cached."""
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
@@ -164,7 +164,7 @@ def get_prompts(
 async def aget_prompts(
     params: Dict[str, Any],
     prompts: List[str],
-    cache: Union[BaseCache, bool, None],
+    cache: Optional[Union[BaseCache, bool, None]] = None,
 ) -> Tuple[Dict[int, List], str, List[int], List[str]]:
     """Get prompts that are already cached. Async version."""
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
