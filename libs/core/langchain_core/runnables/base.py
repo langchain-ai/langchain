@@ -438,12 +438,63 @@ class Runnable(Generic[Input, Output], ABC):
         *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
         name: Optional[str] = None,
     ) -> RunnableSerializable[Input, Other]:
-        """Compose this runnable with another object to create a RunnableSequence."""
+        """Compose this runnable with another object to create a RunnableSequence.
+        .. code-block:: python
+
+                from langchain_community.chat_models.fake import FakeListChatModel
+                from langchain_community.llms.fake import FakeStreamingListLLM
+                from langchain_core.prompts import SystemMessagePromptTemplate
+                from langchain_core.runnables import RunnablePassthrough
+
+                prompt = (
+                        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+                        + "{question}"
+                )
+                chat_res = "i'm a chatbot"
+                llm_res = "i'm a textbot"
+                chat = FakeListChatModel(responses=[chat_res], sleep=0.01)
+                llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+                chain_pick_one = (prompt | {
+                    "chat": chat.bind(stop=["Thought:"]),
+                    "llm": llm,
+                    "passthrough": RunnablePassthrough(),
+                }).pipe(llm)
+
+                print(chain_pick_one.output_schema.schema())
+
+                # {'title': 'FakeStreamingListLLMOutput', 'type': 'string'}
+
+        """
         return RunnableSequence(self, *others, name=name)
 
     def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the dict output of this runnable.
-        Returns a new runnable."""
+        Returns a new runnable.
+        .. code-block:: python
+
+            from langchain_community.chat_models.fake import FakeListChatModel
+            from langchain_community.llms.fake import FakeStreamingListLLM
+            from langchain_core.prompts import SystemMessagePromptTemplate
+            from langchain_core.runnables import RunnablePassthrough
+
+            prompt = (
+                    SystemMessagePromptTemplate.from_template
+                    ("You are a nice assistant.")+ "{question}"
+            )
+            chat_res = "i'm a chatbot"
+            llm_res = "i'm a textbot"
+            chat = FakeListChatModel(responses=[chat_res], sleep=0.01)
+            llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
+            chain_pick_one = (prompt | {
+                "chat": chat.bind(stop=["Thought:"]),
+                "llm": llm,
+                "passthrough": RunnablePassthrough(),
+            }).pick("llm")
+
+            print(chain_pick_one.output_schema.schema())
+
+            # {'title': 'RunnableSequenceOutput', 'type': 'string'}
+        """
         from langchain_core.runnables.passthrough import RunnablePick
 
         return self | RunnablePick(keys)
