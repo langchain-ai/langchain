@@ -146,7 +146,7 @@ def get_prompts(
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    if isinstance(cache, BaseCache):
+    if cache is not None and isinstance(cache, BaseCache):
         llm_cache = cache
     else:
         llm_cache = get_llm_cache()
@@ -171,7 +171,7 @@ async def aget_prompts(
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    if isinstance(cache, BaseCache):
+    if cache is not None and isinstance(cache, BaseCache):
         llm_cache = cache
     else:
         llm_cache = get_llm_cache()
