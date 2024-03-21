@@ -447,8 +447,8 @@ class Runnable(Generic[Input, Output], ABC):
                 from langchain_core.runnables import RunnablePassthrough
 
                 prompt = (
-                        SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-                        + "{question}"
+                        SystemMessagePromptTemplate
+                        .from_template("You are a nice assistant.")+ "{question}"
                 )
                 chat_res = "i'm a chatbot"
                 llm_res = "i'm a textbot"
