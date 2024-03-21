@@ -170,7 +170,10 @@ class ChatAnthropic(BaseChatModel):
     """Total probability mass of tokens to consider at each step."""
 
     default_request_timeout: Optional[float] = None
-    """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
+    """Timeout for requests to Anthropic Completion API."""
+
+    max_retries: int = 2
+    """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
     anthropic_api_url: str = "https://api.anthropic.com"
 
@@ -208,9 +211,19 @@ class ChatAnthropic(BaseChatModel):
             or "https://api.anthropic.com"
         )
         values["anthropic_api_url"] = api_url
-        values["_client"] = anthropic.Client(api_key=api_key, base_url=api_url)
+        request_timeout = values["default_request_timeout"]
+        max_retries = values["max_retries"]
+        values["_client"] = anthropic.Client(
+            api_key=api_key,
+            base_url=api_url,
+            request_timeout=request_timeout,
+            max_retries=max_retries,
+        )
         values["_async_client"] = anthropic.AsyncClient(
-            api_key=api_key, base_url=api_url
+            api_key=api_key,
+            base_url=api_url,
+            request_timeout=request_timeout,
+            max_retries=max_retries,
         )
         return values
 
