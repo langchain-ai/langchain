@@ -169,9 +169,9 @@ class SparkLLM(LLM):
             if "data" not in content:
                 continue
             delta = content["data"]
-            yield GenerationChunk(text=delta["content"])
             if run_manager:
                 run_manager.on_llm_new_token(delta)
+            yield GenerationChunk(text=delta["content"])
 
 
 class _SparkLLMClient:
