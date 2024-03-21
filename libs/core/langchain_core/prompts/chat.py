@@ -605,7 +605,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 ("system", "You are a helpful AI bot."),
                 # Means the template will receive an optional list of messages under
                 # the "conversation" key
-                ("placeholder", "conversation")
+                ("placeholder", "{conversation}")
                 # Equivalently:
                 # MessagesPlaceholder(variable_name="conversation", optional=True)
             ])
