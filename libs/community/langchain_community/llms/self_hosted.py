@@ -1,7 +1,5 @@
-import importlib.util
 import logging
-import pickle
-from typing import Any, Callable, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 import runhouse as rh
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -17,33 +15,38 @@ class ModelPipeline:
     def __init__(self, model_id, **model_kwargs):
         super().__init__()
         self.model_id, self.model_kwargs = model_id, model_kwargs
-        self.tokenizer, self.model, self.curr_pipeline = None, None, None
+        self.tokenizer, self.model, self.curr_pipeline, self.task = None, None, None, model_kwargs.get("task", None)
 
     def load_model(self, hf_token) -> Any:
         """
         Accepts a huggingface model_id and returns a pipeline for the task.
         Sent to the remote hardware and being executed there, as part of the rh.Module(LangchainLLMModelPipeline).
         """
-        from transformers import AutoTokenizer, AutoModel
+        from transformers import AutoTokenizer, AutoModel, AutoModelForMaskedLM
         from transformers import pipeline as hf_pipeline
 
-        _model_kwargs = self.model_kwargs or {}
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id,
-                                                       token=hf_token,
-                                                       **_model_kwargs)
+                                                       token=hf_token)
 
-        self.model = AutoModel.from_pretrained(self.model_id,
-                                               token=hf_token,
-                                               **_model_kwargs)
+        try:
+            self.model = AutoModel.from_pretrained(self.model_id,
+                                                   token=hf_token)
+        except RuntimeError:
+            self.model = AutoModelForMaskedLM.from_pretrained(self.model_id,
+                                                              token=hf_token)
 
-        curr_pipeline = hf_pipeline(
-            model=self.model,
-            tokenizer=self.tokenizer,
-            token=hf_token,
-            model_kwargs=_model_kwargs
-        )
+        try:
+            curr_pipeline = hf_pipeline(
+                model=self.model,
+                tokenizer=self.tokenizer,
+                token=hf_token
+            )
 
-        self.curr_pipeline = curr_pipeline
+            self.curr_pipeline = curr_pipeline
+
+        except RuntimeError:
+            from sentence_transformers import SentenceTransformer
+            self.curr_pipeline = SentenceTransformer(self.model_id)
 
     def interface_fn(
             self,

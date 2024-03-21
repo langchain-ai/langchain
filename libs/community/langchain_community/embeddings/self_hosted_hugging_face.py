@@ -1,10 +1,13 @@
 import importlib
 import logging
-from typing import Any, Callable, List, Optional
+from typing import Any, List, Optional
+import runhouse as rh
 
 from langchain_community.embeddings.self_hosted import SelfHostedEmbeddings
+from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+DEFAULT_TASK = "sentence-similarity"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
 DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
 DEFAULT_QUERY_INSTRUCTION = (
@@ -14,46 +17,50 @@ DEFAULT_QUERY_INSTRUCTION = (
 logger = logging.getLogger(__name__)
 
 
-def _embed_documents(client: Any, *args: Any, **kwargs: Any) -> List[List[float]]:
-    """Inference function to send to the remote hardware.
+class TextModelEmbedding:
+    def __init__(self, model_id: str, instruct: bool = False, device: int = 0):
+        super().__init__()
+        self.model_id, self.instruct, self.device = model_id, instruct, device
+        self.client = None
 
-    Accepts a sentence_transformer model_id and
-    returns a list of embeddings for each document in the batch.
-    """
-    return client.encode(*args, **kwargs)
+    def load_embedding_model(self) -> Any:
+        """Load the embedding model."""
+        if not self.instruct:
+            import sentence_transformers
 
+            self.client = sentence_transformers.SentenceTransformer(self.model_id)
+        else:
+            from InstructorEmbedding import INSTRUCTOR
 
-def load_embedding_model(model_id: str, instruct: bool = False, device: int = 0) -> Any:
-    """Load the embedding model."""
-    if not instruct:
-        import sentence_transformers
+            self.client = INSTRUCTOR(self.model_id)
 
-        client = sentence_transformers.SentenceTransformer(model_id)
-    else:
-        from InstructorEmbedding import INSTRUCTOR
+        if importlib.util.find_spec("torch") is not None:
+            import torch
 
-        client = INSTRUCTOR(model_id)
+            cuda_device_count = torch.cuda.device_count()
+            if self.device < -1 or (self.device >= cuda_device_count):
+                raise ValueError(
+                    f"Got device=={self.device}, "
+                    f"device is required to be within [-1, {cuda_device_count})"
+                )
+            if self.device < 0 and cuda_device_count > 0:
+                logger.warning(
+                    "Device has %d GPUs available. "
+                    "Provide device={deviceId} to `from_model_id` to use available"
+                    "GPUs for execution. deviceId is -1 for CPU and "
+                    "can be a positive integer associated with CUDA device id.",
+                    cuda_device_count,
+                )
 
-    if importlib.util.find_spec("torch") is not None:
-        import torch
+            self.client = self.client.to(self.device)
 
-        cuda_device_count = torch.cuda.device_count()
-        if device < -1 or (device >= cuda_device_count):
-            raise ValueError(
-                f"Got device=={device}, "
-                f"device is required to be within [-1, {cuda_device_count})"
-            )
-        if device < 0 and cuda_device_count > 0:
-            logger.warning(
-                "Device has %d GPUs available. "
-                "Provide device={deviceId} to `from_model_id` to use available"
-                "GPUs for execution. deviceId is -1 for CPU and "
-                "can be a positive integer associated with CUDA device id.",
-                cuda_device_count,
-            )
+    def embed_documents(self, *args: Any, **kwargs: Any) -> List[List[float]]:
+        """Inference function to send to the remote hardware.
 
-        client = client.to(device)
-    return client
+        Accepts a sentence_transformer model_id and
+        returns a list of embeddings for each document in the batch.
+        """
+        return self.client.encode(*args, **kwargs)
 
 
 class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
@@ -71,24 +78,30 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
 
             from langchain_community.embeddings import SelfHostedHuggingFaceEmbeddings
             import runhouse as rh
-            model_id = "sentence-transformers/all-mpnet-base-v2"
-            gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
-            hf = SelfHostedHuggingFaceEmbeddings(model_id=model_id, hardware=gpu)
+            gpu = rh.cluster(name='rh-a10x', instance_type='g5.4xlarge', provider='aws')
+            gpu.run(commands=["pip install langchain"])
+            embedding_env = rh.env(name="embeddings_env",
+                                   reqs=["transformers", "torch", "accelerate", "huggingface-hub", "sentence_transformers"],
+                                   secrets=["huggingface"]  # need for downloading models from huggingface
+                                  ).to(system=gpu)
+            hf = SelfHostedHuggingFaceEmbeddings(hardware=gpu, env=embedding_env)
     """
 
     client: Any  #: :meta private:
     model_id: str = DEFAULT_MODEL_NAME
     """Model name to use."""
-    model_reqs: List[str] = ["./", "sentence_transformers", "torch"]
-    """Requirements to install on hardware to inference the model."""
+    env: Any
+    """Env that will be sent to the remote hardware, includes all requirements to install on hardware."""
     hardware: Any
     """Remote hardware to send the inference function to."""
-    model_load_fn: Callable = load_embedding_model
-    """Function to load the model remotely on the server."""
     load_fn_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model load function."""
-    inference_fn: Callable = _embed_documents
-    """Inference function to extract the embeddings."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.allow
+        arbitrary_types_allowed = True
 
     def __init__(self, **kwargs: Any):
         """Initialize the remote inference function."""
@@ -96,7 +109,10 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
         load_fn_kwargs["model_id"] = load_fn_kwargs.get("model_id", DEFAULT_MODEL_NAME)
         load_fn_kwargs["instruct"] = load_fn_kwargs.get("instruct", False)
         load_fn_kwargs["device"] = load_fn_kwargs.get("device", 0)
-        super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
+        load_fn_kwargs["hardware"] = load_fn_kwargs.get("hardware", None)
+        load_fn_kwargs["env"] = load_fn_kwargs.get("device", None)
+        load_fn_kwargs["task"] = load_fn_kwargs.get("task", DEFAULT_TASK)
+        super().__init__(load_fn_kwargs=load_fn_kwargs, embeddings_cls=TextModelEmbedding, **kwargs)
 
 
 class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
@@ -114,10 +130,13 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
 
             from langchain_community.embeddings import SelfHostedHuggingFaceInstructEmbeddings
             import runhouse as rh
-            model_name = "hkunlp/instructor-large"
-            gpu = rh.cluster(name='rh-a10x', instance_type='A100:1')
-            hf = SelfHostedHuggingFaceInstructEmbeddings(
-                model_name=model_name, hardware=gpu)
+            gpu = rh.cluster(name='rh-a10x', instance_type='g5.4xlarge', provider='aws')
+            gpu.run(commands=["pip install langchain"])
+            embedding_env = rh.env(name="embeddings_env",
+                                   reqs=["transformers", "torch", "accelerate", "huggingface-hub", "sentence_transformers"],
+                                   secrets=["huggingface"]  # need for downloading models from huggingface
+                                  ).to(system=gpu)
+            hf = SelfHostedHuggingFaceInstructEmbeddings(hardware=gpu, env=embedding_env)
     """  # noqa: E501
 
     model_id: str = DEFAULT_INSTRUCT_MODEL
@@ -126,8 +145,16 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
     """Instruction to use for embedding documents."""
     query_instruction: str = DEFAULT_QUERY_INSTRUCTION
     """Instruction to use for embedding query."""
-    model_reqs: List[str] = ["./", "InstructorEmbedding", "torch"]
-    """Requirements to install on hardware to inference the model."""
+    env: rh.Env
+    """Env that will be sent to the remote hardware, includes all requirements to install on hardware."""
+    hardware: rh.Cluster
+    """Remote hardware to send the inference function to."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.allow
+        arbitrary_types_allowed = True
 
     def __init__(self, **kwargs: Any):
         """Initialize the remote inference function."""
@@ -137,6 +164,7 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         )
         load_fn_kwargs["instruct"] = load_fn_kwargs.get("instruct", True)
         load_fn_kwargs["device"] = load_fn_kwargs.get("device", 0)
+        load_fn_kwargs["task"] = load_fn_kwargs.get("task", DEFAULT_TASK)
         super().__init__(load_fn_kwargs=load_fn_kwargs, **kwargs)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -151,7 +179,7 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         instruction_pairs = []
         for text in texts:
             instruction_pairs.append([self.embed_instruction, text])
-        embeddings = self.client(self.pipeline_ref, instruction_pairs)
+        embeddings = self.EmbeddingsPipeline_remote_instance.embed_documents(instruction_pairs)
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
@@ -164,5 +192,5 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
             Embeddings for the text.
         """
         instruction_pair = [self.query_instruction, text]
-        embedding = self.client(self.pipeline_ref, [instruction_pair])[0]
+        embedding = self.EmbeddingsPipeline_remote_instance.embed_documents(instruction_pair)[0]
         return embedding.tolist()
