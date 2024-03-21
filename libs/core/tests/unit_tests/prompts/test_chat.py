@@ -533,3 +533,16 @@ def test_chat_prompt_message_placeholder_partial() -> None:
     assert prompt.format_messages() == []
     prompt = prompt.partial(history=[("system", "foo")])
     assert prompt.format_messages() == [SystemMessage(content="foo")]
+
+
+def test_messages_prompt_accepts_list() -> None:
+    prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
+    value = prompt.invoke([("user", "Hi there")])  # type: ignore
+    assert value.to_messages() == [HumanMessage(content="Hi there")]
+
+    # Assert still raises a nice error
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", "You are a {foo}"), MessagesPlaceholder("history")]
+    )
+    with pytest.raises(TypeError):
+        prompt.invoke([("user", "Hi there")])  # type: ignore

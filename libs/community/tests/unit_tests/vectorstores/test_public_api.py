@@ -11,6 +11,7 @@ _EXPECTED = [
     "AwaDB",
     "AzureSearch",
     "Bagel",
+    "BaiduVectorDB",
     "BESVectorStore",
     "BigQueryVectorSearch",
     "Cassandra",
@@ -84,6 +85,7 @@ _EXPECTED = [
     "VectorStore",
     "Yellowbrick",
     "NeuralDBVectorStore",
+    "CouchbaseVectorStore",
 ]
 
 
