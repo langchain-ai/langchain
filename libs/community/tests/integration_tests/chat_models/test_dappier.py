@@ -13,7 +13,7 @@ from langchain_community.chat_models.dappier import (
 def test_dappier_chat() -> None:
     """Test ChatDappierAI wrapper."""
     chat = ChatDappierAI(
-        dappier_endpoint="http://api.dappier.com/app/datamodelconversation",
+        dappier_endpoint="https://api.dappier.com/app/datamodelconversation",
         dappier_model="dm_01hpsxyfm2fwdt2zet9cg6fdxt",
     )
     message = HumanMessage(content="Who are you ?")
@@ -26,7 +26,7 @@ def test_dappier_chat() -> None:
 def test_dappier_generate() -> None:
     """Test generate method of Dappier AI."""
     chat = ChatDappierAI(
-        dappier_endpoint="http://api.dappier.com/app/datamodelconversation",
+        dappier_endpoint="https://api.dappier.com/app/datamodelconversation",
         dappier_model="dm_01hpsxyfm2fwdt2zet9cg6fdxt",
     )
     chat_messages: List[List[BaseMessage]] = [
@@ -46,7 +46,7 @@ def test_dappier_generate() -> None:
 async def test_dappier_agenerate() -> None:
     """Test async generation."""
     chat = ChatDappierAI(
-        dappier_endpoint="http://api.dappier.com/app/datamodelconversation",
+        dappier_endpoint="https://api.dappier.com/app/datamodelconversation",
         dappier_model="dm_01hpsxyfm2fwdt2zet9cg6fdxt",
     )
     message = HumanMessage(content="Who won the last super bowl?")
