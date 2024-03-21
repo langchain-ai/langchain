@@ -10,6 +10,7 @@ from langchain_community.llms.databricks import (
     _load_pickled_fn_from_hex_string,
 )
 from langchain_community.llms.loading import load_llm
+from tests.integration_tests.llms.utils import assert_llm_equality
 
 
 class MockDatabricksServingEndpointClient:
@@ -79,5 +80,4 @@ def test_saving_loading_llm(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     loaded_llm = load_llm(
         tmp_path / "databricks.yaml", allow_dangerous_deserialization=True
     )
-    assert loaded_llm.endpoint_name == "chat"
-    assert loaded_llm.temperature == 0.1
+    assert_llm_equality(llm, loaded_llm)
