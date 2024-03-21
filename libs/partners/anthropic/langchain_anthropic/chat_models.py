@@ -216,13 +216,13 @@ class ChatAnthropic(BaseChatModel):
         values["_client"] = anthropic.Client(
             api_key=api_key,
             base_url=api_url,
-            request_timeout=request_timeout,
+            timeout=request_timeout,
             max_retries=max_retries,
         )
         values["_async_client"] = anthropic.AsyncClient(
             api_key=api_key,
             base_url=api_url,
-            request_timeout=request_timeout,
+            timeout=request_timeout,
             max_retries=max_retries,
         )
         return values
