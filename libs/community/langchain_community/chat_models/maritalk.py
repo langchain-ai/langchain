@@ -96,6 +96,7 @@ class ChatMaritalk(SimpleChatModel):
         """Ensures httpx is imported for asynchronous operations."""
         if self.httpx is None:
             import httpx
+
             self.httpx = httpx
 
     @property
@@ -216,10 +217,10 @@ class ChatMaritalk(SimpleChatModel):
         async with self.httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
-                "https://chat.maritaca.ai/api/chat/inference", 
+                "https://chat.maritaca.ai/api/chat/inference",
                 data=json.dumps(data),
-                headers=headers
-            ) as response:  
+                headers=headers,
+            ) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
