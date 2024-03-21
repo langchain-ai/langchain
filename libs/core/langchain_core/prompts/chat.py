@@ -574,11 +574,51 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 ("human", "{user_input}"),
             ])
 
-            messages = template.format_messages(
-                name="Bob",
-                user_input="What is your name?"
+            prompt_value = template.invoke(
+                {
+                    "name": "Bob",
+                    "user_input": "What is your name?"
+                }
             )
-    """
+            # Output:
+            # ChatPromptValue(
+            #    messages=[
+            #        SystemMessage(content='You are a helpful AI bot. Your name is Bob.'),
+            #        HumanMessage(content='Hello, how are you doing?'),
+            #        AIMessage(content="I'm doing well, thanks!"),
+            #        HumanMessage(content='What is your name?')
+            #    ]
+            #)
+
+    Single-variable template:
+
+        If your prompt has only a single input variable (i.e., 1 instance of "{variable_nams}"),
+        and you invoke the template with a non-dict object, the prompt template will
+        inject the provided argument into that variable location.
+
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate
+
+            template = ChatPromptTemplate.from_messages([
+                ("system", "You are a helpful AI bot. Your name is Carl."),
+                ("human", "{user_input}"),
+            ])
+
+            prompt_value = template.invoke("Hello, there!")
+            # Equivalent to
+            # prompt_value = template.invoke({"user_input": "Hello, there!"})
+
+            # Output:
+            #  ChatPromptValue(
+            #     messages=[
+            #         SystemMessage(content='You are a helpful AI bot. Your name is Carl.'),
+            #         HumanMessage(content='Hello, there!'),
+            #     ]
+            # )
+
+    """  # noqa: E501
 
     input_variables: List[str]
     """List of input variables in template messages. Used for validation."""

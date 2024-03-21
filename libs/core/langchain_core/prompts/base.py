@@ -89,10 +89,15 @@ class BasePromptTemplate(
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
         if not isinstance(inner_input, dict):
-            raise TypeError(
-                f"Expected mapping type as input to {self.__class__.__name__}. "
-                f"Received {type(inner_input)}."
-            )
+            if len(self.input_variables) == 1:
+                var_name = self.input_variables[0]
+                inner_input = {var_name: inner_input}
+
+            else:
+                raise TypeError(
+                    f"Expected mapping type as input to {self.__class__.__name__}. "
+                    f"Received {type(inner_input)}."
+                )
         missing = set(self.input_variables).difference(inner_input)
         if missing:
             raise KeyError(

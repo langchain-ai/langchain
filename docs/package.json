@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.18.2",
-    "@langchain/scripts": "^0.0.9",
+    "@langchain/scripts": "^0.0.10",
     "docusaurus-plugin-typedoc": "next",
     "dotenv": "^16.4.5",
     "eslint": "^8.19.0",

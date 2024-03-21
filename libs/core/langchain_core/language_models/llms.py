@@ -13,7 +13,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
     Any,
-    AsyncGenerator,
     AsyncIterator,
     Callable,
     Dict,
@@ -114,26 +113,6 @@ def create_base_retry_decorator(
         retry=retry_instance,
         before_sleep=_before_sleep,
     )
-
-
-def _as_async_iterator(sync_iterator: Callable) -> Callable:
-    """Convert a sync iterator into an async iterator."""
-
-    async def _as_sync_iterator(*args: Any, **kwargs: Any) -> AsyncGenerator:
-        iterator = await run_in_executor(None, sync_iterator, *args, **kwargs)
-        done = object()
-        while True:
-            item = await run_in_executor(
-                None,
-                next,
-                iterator,
-                done,  # type: ignore[call-arg, arg-type]
-            )
-            if item is done:
-                break
-            yield item  # type: ignore[misc]
-
-    return _as_sync_iterator
 
 
 def get_prompts(
@@ -460,28 +439,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
-        if type(self)._astream is not BaseLLM._astream:
-            # model doesn't implement streaming, so use default implementation
-            _stream_implementation = self._astream
-            using_sync_stream = False
-        elif type(self)._stream is not BaseLLM._stream:
-            # Then stream is implemented, so we can create an async iterator from it
-            # The typing is hard to type correctly with mypy here, so we cast
-            # and do a type ignore, this code is unit tested and should be fine.
-            _stream_implementation = cast(  # type: ignore
-                Callable[
-                    [
-                        str,
-                        Optional[List[str]],
-                        CallbackManagerForLLMRun,
-                        Any,
-                    ],
-                    AsyncIterator[GenerationChunk],
-                ],
-                _as_async_iterator(self._stream),
-            )
-            using_sync_stream = True
-        else:
+        if (
+            type(self)._astream is BaseLLM._astream
+            and type(self)._stream is BaseLLM._stream
+        ):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
             return
 
@@ -509,13 +470,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_id=config.pop("run_id", None),
             batch_size=1,
         )
-        run_manager_ = run_manager.get_sync() if using_sync_stream else run_manager
         generation: Optional[GenerationChunk] = None
         try:
-            async for chunk in _stream_implementation(
+            async for chunk in self._astream(
                 prompt,
                 stop=stop,
-                run_manager=run_manager_,  # type: ignore[arg-type]
+                run_manager=run_manager,
                 **kwargs,
             ):
                 yield chunk.text
@@ -571,14 +531,32 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     ) -> Iterator[GenerationChunk]:
         raise NotImplementedError()
 
-    def _astream(
+    async def _astream(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        raise NotImplementedError()
+        iterator = await run_in_executor(
+            None,
+            self._stream,
+            prompt,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
+        )
+        done = object()
+        while True:
+            item = await run_in_executor(
+                None,
+                next,
+                iterator,
+                done,  # type: ignore[call-arg, arg-type]
+            )
+            if item is done:
+                break
+            yield item  # type: ignore[misc]
 
     def generate_prompt(
         self,
