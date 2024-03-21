@@ -1,4 +1,6 @@
 """Test ChatMistral chat model."""
+from langchain_core.messages import HumanMessage
+
 from langchain_mistralai.chat_models import ChatMistralAI
 
 
@@ -61,3 +63,47 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+
+
+def test_chat_mistralai_llm_output_contains_model_name() -> None:
+    """Test llm_output contains model_name."""
+    chat = ChatMistralAI(max_tokens=10)
+    message = HumanMessage(content="Hello")
+    llm_result = chat.generate([[message]])
+    assert llm_result.llm_output is not None
+    assert llm_result.llm_output["model_name"] == chat.model
+
+
+def test_chat_mistralai_streaming_llm_output_contains_model_name() -> None:
+    """Test llm_output contains model_name."""
+    chat = ChatMistralAI(max_tokens=10, streaming=True)
+    message = HumanMessage(content="Hello")
+    llm_result = chat.generate([[message]])
+    assert llm_result.llm_output is not None
+    assert llm_result.llm_output["model_name"] == chat.model
+
+
+def test_chat_mistralai_llm_output_contains_token_usage() -> None:
+    """Test llm_output contains model_name."""
+    chat = ChatMistralAI(max_tokens=10)
+    message = HumanMessage(content="Hello")
+    llm_result = chat.generate([[message]])
+    assert llm_result.llm_output is not None
+    assert "token_usage" in llm_result.llm_output
+    token_usage = llm_result.llm_output["token_usage"]
+    assert "prompt_tokens" in token_usage
+    assert "completion_tokens" in token_usage
+    assert "total_tokens" in token_usage
+
+
+def test_chat_mistralai_streaming_llm_output_contains_token_usage() -> None:
+    """Test llm_output contains model_name."""
+    chat = ChatMistralAI(max_tokens=10, streaming=True)
+    message = HumanMessage(content="Hello")
+    llm_result = chat.generate([[message]])
+    assert llm_result.llm_output is not None
+    assert "token_usage" in llm_result.llm_output
+    token_usage = llm_result.llm_output["token_usage"]
+    assert "prompt_tokens" in token_usage
+    assert "completion_tokens" in token_usage
+    assert "total_tokens" in token_usage
