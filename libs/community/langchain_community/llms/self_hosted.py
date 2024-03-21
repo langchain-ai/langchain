@@ -13,29 +13,61 @@ from langchain_community.llms.utils import enforce_stop_tokens
 logger = logging.getLogger(__name__)
 
 
-def _generic_interface_fn(
-        self,
-        pipeline: Any,
-        prompt: str,
-        *args: Any,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
-) -> str:
-    """Inference function to send to the remote hardware.
+class ModelPipeline:
+    def __init__(self, model_id, **model_kwargs):
+        super().__init__()
+        self.model_id, self.model_kwargs = model_id, model_kwargs
+        self.tokenizer, self.model, self.curr_pipeline = None, None, None
 
-    Accepts a pipeline callable (or, more likely,
-    a key pointing to the model on the cluster's object store)
-    and returns text predictions for each document
-    in the batch.
-    """
-    text = pipeline(prompt, *args, **kwargs)
-    if stop is not None:
-        text = enforce_stop_tokens(text, stop)
-    return text
+    def load_model(self, hf_token) -> Any:
+        """
+        Accepts a huggingface model_id and returns a pipeline for the task.
+        Sent to the remote hardware and being executed there, as part of the rh.Module(LangchainLLMModelPipeline).
+        """
+        from transformers import AutoTokenizer, AutoModel
+        from transformers import pipeline as hf_pipeline
+
+        _model_kwargs = self.model_kwargs or {}
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id,
+                                                       token=hf_token,
+                                                       **_model_kwargs)
+
+        self.model = AutoModel.from_pretrained(self.model_id,
+                                               token=hf_token,
+                                               **_model_kwargs)
+
+        curr_pipeline = hf_pipeline(
+            model=self.model,
+            tokenizer=self.tokenizer,
+            token=hf_token,
+            model_kwargs=_model_kwargs
+        )
+
+        self.curr_pipeline = curr_pipeline
+
+    def interface_fn(
+            self,
+            pipeline: Any,
+            prompt: str,
+            *args: Any,
+            stop: Optional[List[str]] = None,
+            **kwargs: Any,
+    ) -> str:
+        """Inference function to send to the remote hardware.
+
+        Accepts a pipeline callable (or, more likely,
+        a key pointing to the model on the cluster's object store)
+        and returns text predictions for each document
+        in the batch.
+        """
+        text = self.curr_pipeline(prompt, *args, **kwargs)
+        if stop is not None:
+            text = enforce_stop_tokens(text, stop)
+        return text
 
 
 class SelfHostedPipeline(LLM):
-    """Model inference on self-hosted remote hardware.
+    """ A generic Model inference on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
     and Lambda, as well as servers specified
@@ -48,31 +80,23 @@ class SelfHostedPipeline(LLM):
         .. code-block:: python
 
             from langchain_community.llms import SelfHostedPipeline
-            from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
             import runhouse as rh
+
+            class LoadingModel:
+                def load_model(self, **args, **kwargs):
+                    # define your model loading function
+
+                # this is the prediction function
+                def interface_fn(self, **args, **kwargs):
+                    # define your interface_fn
 
             gpu = rh.ondemand_cluster(name="rh-a10x", instance_type="g5.2xlarge")
             my_env = rh.env(reqs=["transformers", "torch"])
 
-            def load_pipeline():
-                tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b-it")
-                model = AutoModelForCausalLM.from_pretrained("google/gemma-2b-it")
-                return pipeline(
-                    "text-generation", model=model, tokenizer=tokenizer,
-                    max_new_tokens=10
-                )
-            load_pipeline_remote = rh.function(fn=load_pipeline).to(gpu, env=model_env)
-
-            def inference_fn(pipeline, prompt, stop = None):
-                return pipeline(prompt)[0]["generated_text"]
-            inference_fn_remote = rh.function(fn=inference_fn).to(gpu, env=model_env)
-
-            llm = SelfHostedHuggingFaceLLM(
-                model_load_fn=load_pipeline_remote, inference_fn=inference_fn_remote).to(gpu, env=model_env)
+            llm = SelfHostedHuggingFaceLLM(pipline_cls=LoadingModel, hardware=gpu, env=model_env)
+            # if you will not provide a 'pipline_cls', the default 'pipline_cls' will be used.
 
     """
-    pipeline_ref: Any  #: :meta private:
-    client: Any  #: :meta private:
     load_fn_kwargs: Optional[dict] = None
     """Keyword arguments to pass to the model load function."""
     hardware: rh.Cluster
@@ -84,11 +108,9 @@ class SelfHostedPipeline(LLM):
         """Configuration for this pydantic object."""
 
         extra = Extra.allow
-        allow_population_by_field_name = True
         arbitrary_types_allowed = True
-        allow_dangerous_deserialization = True
 
-    def __init__(self, pipline_cls: Any, **kwargs: Any):
+    def __init__(self, pipline_cls: Any = ModelPipeline, **kwargs: Any):
         """Init the pipeline with an auxiliary function.
 
         The load function must be in global scope to be imported
@@ -102,10 +124,7 @@ class SelfHostedPipeline(LLM):
         self.ModelPipeline_remote_instance = ModelPipeline_remote(model_id=model_id, task=task)
         _load_fn_kwargs = self.load_fn_kwargs or {}
         hf_token = ModelPipeline_remote.env.secrets[0].values.get("token")
-        # if not self.pipeline_ref:
         self.ModelPipeline_remote_instance.load_model.remote(hf_token=hf_token, **_load_fn_kwargs)
-        self.pipeline_ref = 1
-
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -125,6 +144,6 @@ class SelfHostedPipeline(LLM):
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
     ) -> str:
-        return self.ModelPipeline_remote_instance.interface_fn.remote(
+        return self.ModelPipeline_remote_instance.interface_fn(
             prompt=prompt, stop=stop, **kwargs
         )
