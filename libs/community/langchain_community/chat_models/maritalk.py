@@ -2,7 +2,6 @@ import json
 from http import HTTPStatus
 from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
-import httpx
 import requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -89,7 +88,15 @@ class ChatMaritalk(SimpleChatModel):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        import httpx  # This eliminates the need for LangChain users to install HTTPX.
+        # httpx is not imported at the top to avoid unnecessary dependencies
+        # for users not utilizing asynchronous methods.
+        self.httpx = None
+
+    async def _ensure_httpx(self) -> None:
+        """Ensures httpx is imported for asynchronous operations."""
+        if self.httpx is None:
+            import httpx
+            self.httpx = httpx
 
     @property
     def _llm_type(self) -> str:
@@ -206,7 +213,7 @@ class ChatMaritalk(SimpleChatModel):
             **kwargs,
         }
 
-        async with httpx.AsyncClient() as client:
+        async with self.httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
                 "https://chat.maritaca.ai/api/chat/inference", 
