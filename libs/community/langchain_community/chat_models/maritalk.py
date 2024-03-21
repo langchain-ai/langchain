@@ -3,6 +3,7 @@ from http import HTTPStatus
 from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
 import requests
+import sys
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -85,19 +86,6 @@ class ChatMaritalk(SimpleChatModel):
     top_p: float = Field(default=0.95, gt=0.0, lt=1.0)
     """Nucleus sampling parameter controlling the size of 
     the probability mass considered for sampling."""
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        # httpx is not imported at the top to avoid unnecessary dependencies
-        # for users not utilizing asynchronous methods.
-        self.httpx = None
-
-    async def _ensure_httpx(self) -> None:
-        """Ensures httpx is imported for asynchronous operations."""
-        if self.httpx is None:
-            import httpx
-
-            self.httpx = httpx
 
     @property
     def _llm_type(self) -> str:
@@ -197,6 +185,10 @@ class ChatMaritalk(SimpleChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+
+        if "httpx" not in sys.modules:
+            import httpx
+
         headers = {"Authorization": f"Key {self.api_key}"}
         stopping_tokens = stop if stop is not None else []
 
@@ -214,7 +206,7 @@ class ChatMaritalk(SimpleChatModel):
             **kwargs,
         }
 
-        async with self.httpx.AsyncClient() as client:
+        async with httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
                 "https://chat.maritaca.ai/api/chat/inference",
