@@ -51,7 +51,7 @@ class BasePromptTemplate(
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
     """A dictionary of the partial variables the prompt template carries.
-    
+
     Partial variables populate the template so that you don't need to
     pass them in every time you call the prompt."""
     metadata: Optional[Dict[str, Any]] = None
@@ -108,7 +108,7 @@ class BasePromptTemplate(
         return self.format_prompt(**inner_input)
 
     def invoke(
-        self, input: Dict, config: Optional[RunnableConfig] = None
+        self, input: Dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> PromptValue:
         config = ensure_config(config)
         if self.metadata:

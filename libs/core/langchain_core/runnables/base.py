@@ -2349,6 +2349,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     patch_config(
                         config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
                     ),
+                    **kwargs,
                 )
         # finish the root run
         except BaseException as e:
