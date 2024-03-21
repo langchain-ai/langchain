@@ -993,9 +993,26 @@ def _create_template_from_message_type(
         message = SystemMessagePromptTemplate.from_template(cast(str, template))
     elif message_type == "placeholder":
         if isinstance(template, str):
-            message = MessagesPlaceholder(variable_name=template, optional=True)
+            if template[0] != "{" or template[-1] != "}":
+                raise ValueError(
+                    f"Invalid placeholder template: {template}."
+                    " Expected a variable name surrounded by curly braces."
+                )
+            var_name = template[1:-1]
+            message = MessagesPlaceholder(variable_name=var_name, optional=True)
         elif len(template) == 2 and isinstance(template[1], bool):
-            var_name, is_optional = template
+            var_name_wrapped, is_optional = template
+            if not isinstance(var_name_wrapped, str):
+                raise ValueError(
+                    "Expected variable name to be a string." f" Got: {var_name_wrapped}"
+                )
+            if var_name_wrapped[0] != "{" or var_name_wrapped[-1] != "}":
+                raise ValueError(
+                    f"Invalid placeholder template: {var_name_wrapped}."
+                    " Expected a variable name surrounded by curly braces."
+                )
+            var_name = var_name_wrapped[1:-1]
+
             message = MessagesPlaceholder(variable_name=var_name, optional=is_optional)
         else:
             raise ValueError(

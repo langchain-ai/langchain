@@ -536,7 +536,7 @@ def test_chat_prompt_message_placeholder_partial() -> None:
 
 
 def test_chat_prompt_message_placeholder_tuple() -> None:
-    prompt = ChatPromptTemplate.from_messages([("placeholder", "convo")])
+    prompt = ChatPromptTemplate.from_messages([("placeholder", "{convo}")])
     assert prompt.format_messages(convo=[("user", "foo")]) == [
         HumanMessage(content="foo")
     ]
@@ -545,7 +545,7 @@ def test_chat_prompt_message_placeholder_tuple() -> None:
 
     # Is optional = True
     optional_prompt = ChatPromptTemplate.from_messages(
-        [("placeholder", ["convo", False])]
+        [("placeholder", ["{convo}", False])]
     )
     assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
         HumanMessage(content="foo")
