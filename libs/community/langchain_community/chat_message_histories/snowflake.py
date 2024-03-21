@@ -50,7 +50,6 @@ def create_snowflake_message_model(table_name: str, DynamicBase: Any) -> Any:
 
     # Model declared inside a function to have a dynamic table name.
     class Message(DynamicBase):  # type: ignore[valid-type, misc]
-        f"""the SF_TABLE_NAME is: {SF_TABLE_NAME}"""
         __tablename__ = table_name
         id = Column(Integer, Sequence(SF_SEQUENCE_NAME), primary_key=True,autoincrement=True)
         # id = Column(Integer, primary_key=True)
@@ -93,7 +92,7 @@ class SnowflakeChatMessageHistory(SQLChatMessageHistory):
         self._create_sequence_if_not_exists()
         
     def _create_sequence_if_not_exists(self) -> None:
-        f"""the SF_SEQUENCE_NAME is: {SF_SEQUENCE_NAME}.  Make sure the Snowflake user/role has create sequence privilege."""
+        """Make sure the Snowflake user/role has create sequence privilege."""
         connection = self.engine.connect()
         query = f"create sequence if not exists {SF_SEQUENCE_NAME} start with 1 increment by 1 noorder;"
         connection.execute(query)  
