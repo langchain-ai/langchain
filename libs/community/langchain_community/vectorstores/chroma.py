@@ -796,10 +796,6 @@ class Chroma(VectorStore):
         """
         self._collection.delete(ids=ids)
         
-    def count(self) -> int:
-        """Count the number of documents in the collection."""
-        return self._collection.count()
-        
     def __len__(self) -> int:
         """Count the number of documents in the collection."""
         return self._collection.count()
