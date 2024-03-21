@@ -273,6 +273,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
         else:
             provider = self._get_provider()
             prompt, system, formatted_messages = None, None, None
+            params: Dict[str, Any] = {**kwargs}
 
             if provider == "anthropic":
                 system, formatted_messages = ChatPromptAdapter.format_messages(
@@ -282,8 +283,6 @@ class BedrockChat(BaseChatModel, BedrockBase):
                 prompt = ChatPromptAdapter.convert_messages_to_prompt(
                     provider=provider, messages=messages
                 )
-
-            params: Dict[str, Any] = {**kwargs}
 
             if stop:
                 params["stop_sequences"] = stop
