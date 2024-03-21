@@ -761,15 +761,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
-        if self.cache is not None and self.cache:
-            if (
-                not isinstance(self.cache, BaseCache)
-                and self.cache is not None
-                and self.cache
-            ):
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
+        if self.cache is None or self.cache is False:
             run_managers = [
                 callback_manager.on_llm_start(
                     dumpd(self),
@@ -981,15 +973,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
-        if self.cache is not None and self.cache:
-            if (
-                not isinstance(self.cache, BaseCache)
-                and self.cache is not None
-                and self.cache
-            ):
-                raise ValueError(
-                    "Asked to cache, but no cache found at `langchain.cache`."
-                )
+        if self.cache is None or self.cache is False:
             run_managers = await asyncio.gather(
                 *[
                     callback_manager.on_llm_start(
