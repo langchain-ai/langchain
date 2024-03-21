@@ -151,11 +151,14 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
             ("system", "You are a helpful AI bot. Your name is {name}."),
             ("human", "Hello, how are you doing?"),
             ("ai", "I'm doing well, thanks!"),
+            ("placeholder", "{chat_history}"),
             ("human", "{user_input}"),
         ]
     )
 
-    messages = template.format_messages(name="Bob", user_input="What is your name?")
+    messages = template.format_messages(
+        name="Bob", user_input="What is your name?", chat_history=[]
+    )
 
     assert messages == [
         SystemMessage(
@@ -167,6 +170,29 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
         AIMessage(
             content="I'm doing well, thanks!", additional_kwargs={}, example=False
         ),
+        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+    ]
+
+    messages = template.format_messages(
+        name="Bob",
+        user_input="What is your name?",
+        chat_history=[("human", "That's great to hear"), ("ai", "Thanks!")],
+    )
+
+    assert messages == [
+        SystemMessage(
+            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+        ),
+        HumanMessage(
+            content="Hello, how are you doing?", additional_kwargs={}, example=False
+        ),
+        AIMessage(
+            content="I'm doing well, thanks!", additional_kwargs={}, example=False
+        ),
+        HumanMessage(
+            content="That's great to hear", additional_kwargs={}, example=False
+        ),
+        AIMessage(content="Thanks!", additional_kwargs={}, example=False),
         HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
     ]
 

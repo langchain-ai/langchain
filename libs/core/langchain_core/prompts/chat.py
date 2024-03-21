@@ -889,12 +889,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         self.messages.extend([_convert_to_message(message) for message in messages])
 
     @overload
-    def __getitem__(self, index: int) -> MessageLike:
-        ...
+    def __getitem__(self, index: int) -> MessageLike: ...
 
     @overload
-    def __getitem__(self, index: slice) -> ChatPromptTemplate:
-        ...
+    def __getitem__(self, index: slice) -> ChatPromptTemplate: ...
 
     def __getitem__(
         self, index: Union[int, slice]
@@ -949,6 +947,13 @@ def _create_template_from_message_type(
         message = AIMessagePromptTemplate.from_template(cast(str, template))
     elif message_type == "system":
         message = SystemMessagePromptTemplate.from_template(cast(str, template))
+    elif message_type == "placeholder":
+        if template[0] != "{" or template[-1] != "}":
+            raise ValueError(
+                r"Expected a placeholder variable of the format {variable_name},"
+                f" got {template}."
+            )
+        message = MessagesPlaceholder(variable_name=template[1:-1])
     else:
         raise ValueError(
             f"Unexpected message type: {message_type}. Use one of 'human',"
