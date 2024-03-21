@@ -23,9 +23,13 @@ from langchain_core.vectorstores import VectorStore
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
+from pymongo.errors import CollectionInvalid
 
+from langchain_mongodb.index import (
+    create_vector_search_index,
+    update_vector_search_index,
+)
 from langchain_mongodb.utils import maximal_marginal_relevance
-from langchain_mongodb.index import ensure_vector_search_index
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
@@ -489,18 +493,20 @@ class MongoDBAtlasVectorSearch(VectorStore):
             update (bool, optional): Updates existing vectorSearch index.
                 Defaults to False.
         """
-        if (
-            self._collection.name
-            not in self._collection.database.list_collection_names()
-        ):
+        try:
             self._collection.database.create_collection(self._collection.name)
+        except CollectionInvalid:
+            pass
 
-        ensure_vector_search_index(
+        index_operation = (
+            update_vector_search_index if update else create_vector_search_index
+        )
+
+        index_operation(
             collection=self._collection,
             index_name=self._index_name,
             dimensions=dimensions,
             path=self._embedding_key,
             similarity=self._relevance_score_fn,
             filters=filters or [],
-            update=update,
         )

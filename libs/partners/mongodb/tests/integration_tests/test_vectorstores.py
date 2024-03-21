@@ -15,6 +15,7 @@ from pymongo.errors import OperationFailure
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.index import drop_vector_search_index
+from langchain_mongodb.utils import _FailCode
 from tests.utils import ConsistentFakeEmbeddings
 
 INDEX_NAME = "langchain-test-index-vectorstores"
@@ -35,7 +36,7 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
         ids = super()._insert_texts(texts, metadatas)
         timeout = TIMEOUT
         while len(ids) != self.similarity_search("sandwich") and timeout >= 0:
-            sleep(INTERVAL)
+            sleep(INTERVAL * 3)
             timeout -= INTERVAL
         return ids
 
@@ -48,22 +49,33 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
         result = super().create_index(
             dimensions=dimensions, filters=filters, update=update
         )
-        timeout = TIMEOUT
-        index_ready = False
-        while not index_ready and timeout >= 0:
+        timeout = TIMEOUT * 3
+        while timeout > 0:
             if indexes := list(
                 self._collection.list_search_indexes(name=self._index_name)
             ):
                 if indexes[0].get("status") == "READY":
-                    index_ready = True
+                    return result
+            sleep(INTERVAL * 3)
             timeout -= INTERVAL
-        if timeout <= 0:
-            if indexes := list(
-                self._collection.list_search_indexes(name=self._index_name)
-            ):
-                if indexes[0].get("status") != "READY":
-                    TimeoutError(f"{self._index_name} never reached 'status: READY'")
-        return result
+
+        raise TimeoutError(f"{self._index_name} never reached 'status: READY'")
+
+
+def _await_index_deletion(coll: Collection, index_name: str) -> None:
+    timeout = TIMEOUT * 3
+    try:
+        drop_vector_search_index(coll, index_name)
+    except OperationFailure as e:
+        # This means an ongoing drop request was made so skip
+        if e.code != _FailCode.ILLEGAL_OPERATION:
+            raise
+
+    while list(coll.list_search_indexes(name=index_name)):
+        if timeout < 0:
+            raise TimeoutError(f"Index Name: {index_name} never dropped")
+        timeout -= INTERVAL
+        sleep(INTERVAL)
 
 
 def get_collection(
@@ -104,13 +116,9 @@ class TestMongoDBAtlasVectorSearch:
         collection.delete_many({})  # type: ignore[index]
 
         # delete all indexes on index collection name
-        index_collection = get_collection(INDEX_DB_NAME, INDEX_COLLECTION_NAME)
-        index_collection.delete_many({})
-        try:
-            drop_vector_search_index(index_collection, INDEX_CREATION_NAME)
-        except OperationFailure:
-            # An ongoing drop request was made
-            pass
+        _await_index_deletion(
+            get_collection(INDEX_DB_NAME, INDEX_COLLECTION_NAME), INDEX_CREATION_NAME
+        )
 
     @pytest.fixture
     def embedding_openai(self) -> Embeddings:
@@ -272,4 +280,5 @@ class TestMongoDBAtlasVectorSearch:
         vectorstore = PatchedMongoDBAtlasVectorSearch(
             index_collection, embedding_openai, index_name=INDEX_CREATION_NAME
         )
+        vectorstore.create_index(dimensions=1536)
         vectorstore.create_index(dimensions=1536, update=True)
