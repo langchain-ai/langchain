@@ -482,13 +482,15 @@ class MongoDBAtlasVectorSearch(VectorStore):
     ) -> None:
         """Creates a MongoDB Atlas vectorSearch index for the VectorStore
 
-        Note**: This method may fail as it requires a MongoDB Atlas with these pre-requisites:
+        Note**: This method may fail as it requires a MongoDB Atlas with
+        these pre-requisites:
             - M10 cluster or higher
             - https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/#prerequisites
 
         Args:
             dimensions (int): Number of dimensions in embedding
-            filters (Optional[List[Dict[str, str]]], optional): additional filters for index definition.
+            filters (Optional[List[Dict[str, str]]], optional): additional filters
+            for index definition.
                 Defaults to None.
             update (bool, optional): Updates existing vectorSearch index.
                 Defaults to False.

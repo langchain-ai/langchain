@@ -45,7 +45,7 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
         dimensions: int,
         filters: Optional[List[Dict[str, str]]] = None,
         update: bool = False,
-    ):
+    ) -> None:
         result = super().create_index(
             dimensions=dimensions, filters=filters, update=update
         )
