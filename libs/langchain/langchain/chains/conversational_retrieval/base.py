@@ -155,6 +155,7 @@ class BaseConversationalRetrievalChain(Chain):
             docs = self._get_docs(new_question, inputs, run_manager=_run_manager)
         else:
             docs = self._get_docs(new_question, inputs)  # type: ignore[call-arg]
+
         output: Dict[str, Any] = {}
         if self.response_if_no_docs_found is not None and len(docs) == 0:
             output[self.output_key] = self.response_if_no_docs_found
@@ -163,11 +164,13 @@ class BaseConversationalRetrievalChain(Chain):
             if self.rephrase_question:
                 new_inputs["question"] = new_question
             new_inputs["chat_history"] = chat_history_str
-            answer = self.combine_docs_chain.run(
-                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            new_inputs["input_documents"] = docs
+            answer = self.combine_docs_chain(
+                inputs=new_inputs, callbacks=_run_manager.get_child()
             )
-            output[self.output_key] = answer
-
+            output[self.output_key] = answer["output_text"]
+            if "intermediate_steps" in answer:
+                output["intermediate_steps"] = answer["intermediate_steps"]
         if self.return_source_documents:
             output["source_documents"] = docs
         if self.return_generated_question:
