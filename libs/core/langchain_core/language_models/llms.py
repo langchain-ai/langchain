@@ -761,7 +761,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
-        if self.cache is None or self.cache is False:
+        if (self.cache is None and get_llm_cache() is None) or self.cache is False:
             run_managers = [
                 callback_manager.on_llm_start(
                     dumpd(self),
@@ -973,7 +973,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
-        if self.cache is None or self.cache is False:
+        if (self.cache is None and get_llm_cache() is None) or self.cache is False:
             run_managers = await asyncio.gather(
                 *[
                     callback_manager.on_llm_start(
