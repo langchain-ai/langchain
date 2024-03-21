@@ -70,6 +70,17 @@ class Yuan2(LLM):
     use_history: bool = False
     """Whether to use history or not"""
 
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the Yuan2 class."""
+        super().__init__(**kwargs)
+
+        if self.top_p > 0 and self.top_k > 0:
+            logger.warning(
+                "top_p and top_k cannot be set simultaneously. "
+                "set top_k to 0 instead..."
+            )
+            self.top_k = 0
+
     @property
     def _llm_type(self) -> str:
         return "Yuan2.0"
@@ -136,12 +147,6 @@ class Yuan2(LLM):
             input = prompt
 
         headers = {"Content-Type": "application/json"}
-        if (self.top_p or 0) > 0 and (self.top_k or 0) > 0:
-            logger.warning(
-                "top_p and top_k cannot be set simultaneously. "
-                "set top_k to 0 instead..."
-            )
-            self.top_k = 0
 
         data = json.dumps(
             {
