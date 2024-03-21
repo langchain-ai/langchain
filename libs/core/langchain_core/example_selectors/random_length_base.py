@@ -12,7 +12,7 @@ def _get_length_based(text: str) -> int:
     return len(re.split("\n| ", text))
 
 
-class RandomLenghtExampleSelector(LengthBasedExampleSelector, BaseModel):
+class RandomLengthExampleSelector(LengthBasedExampleSelector, BaseModel):
     """Select random examples based on length."""
 
     example_prompt: PromptTemplate
