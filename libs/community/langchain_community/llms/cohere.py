@@ -90,7 +90,7 @@ class BaseCohere(Serializable):
 
     max_retries: Optional[int] = 3
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[float] = None
+    request_timeout: Optional[float] = 60
     """Timeout in seconds for the Cohere API request."""
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
