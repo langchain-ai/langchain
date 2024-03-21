@@ -1,4 +1,5 @@
 """Methods for creating function specs in the style of OpenAI Functions"""
+
 from __future__ import annotations
 
 import inspect
@@ -51,13 +52,16 @@ class ToolDescription(TypedDict):
     function: FunctionDescription
 
 
-def _rm_titles(kv: dict) -> dict:
+def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     new_kv = {}
     for k, v in kv.items():
         if k == "title":
-            continue
+            if isinstance(v, dict) and prev_key == "properties" and "title" in v.keys():
+                new_kv[k] = _rm_titles(v, k)
+            else:
+                continue
         elif isinstance(v, dict):
-            new_kv[k] = _rm_titles(v)
+            new_kv[k] = _rm_titles(v, k)
         else:
             new_kv[k] = v
     return new_kv
