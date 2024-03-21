@@ -185,7 +185,6 @@ class ChatMaritalk(SimpleChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-
         if "httpx" not in sys.modules:
             import httpx
 
