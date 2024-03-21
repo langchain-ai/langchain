@@ -5,12 +5,13 @@ import pytest
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
+from langchain_core.language_models import FakeListLLM
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
     GenericFakeChatModel,
 )
 from langchain_core.messages import AIMessage
-from langchain_core.outputs import ChatGeneration
+from langchain_core.outputs import ChatGeneration, LLMResult, Generation
 
 
 class InMemoryCache(BaseCache):
@@ -31,6 +32,15 @@ class InMemoryCache(BaseCache):
     def clear(self, **kwargs: Any) -> None:
         """Clear cache."""
         self._cache = {}
+
+
+def test_local_cache_generate() -> None:
+    local_cache = InMemoryCache()
+    llm = FakeListLLM(cache=local_cache, responses=["foo", "bar"])
+    output = llm.generate(["foo"])
+    assert output.generations[0][0].text == "foo"
+    output = llm.generate(["foo"])
+    assert output.generations[0][0].text == "foo"
 
 
 def test_local_cache_sync() -> None:
