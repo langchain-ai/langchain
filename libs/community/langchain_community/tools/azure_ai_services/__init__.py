@@ -1,6 +1,6 @@
 """Azure AI Services Tools."""
 
-from langchain_community.tools.azure_ai_services.form_recognizer import (
+from libs.community.langchain_community.tools.azure_ai_services.document_intelligence import (
     AzureAiServicesDocumentIntelligenceTool,
 )
 from langchain_community.tools.azure_ai_services.image_analysis import (
