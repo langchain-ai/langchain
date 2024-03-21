@@ -22,3 +22,4 @@ class TestReduceOpenAPISpec(unittest.TestCase):
 
         self.assertEqual(len(output.endpoints), 8)
         self.assertEqual(output.endpoints[0][1], openapi_endpoint_doc_mock)
+
