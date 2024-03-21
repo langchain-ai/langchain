@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from langchain_core.callbacks import (
@@ -197,11 +198,6 @@ _message_type_lookups = {"human": "user", "ai": "assistant"}
 class BedrockChat(BaseChatModel, BedrockBase):
     """A chat model that uses the Bedrock API."""
 
-    compute_token_usage: bool = False
-    """Use a tokenizer to calculate tokens and return token usage info, 
-    such as prompt tokens count and completion tokens count.
-    """
-
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -238,7 +234,17 @@ class BedrockChat(BaseChatModel, BedrockBase):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        prompt, system, formatted_messages = self._convert_messages(messages)
+        provider = self._get_provider()
+        prompt, system, formatted_messages = None, None, None
+
+        if provider == "anthropic":
+            system, formatted_messages = ChatPromptAdapter.format_messages(
+                provider, messages
+            )
+        else:
+            prompt = ChatPromptAdapter.convert_messages_to_prompt(
+                provider=provider, messages=messages
+            )
 
         for chunk in self._prepare_input_and_invoke_stream(
             prompt=prompt,
@@ -259,18 +265,30 @@ class BedrockChat(BaseChatModel, BedrockBase):
         **kwargs: Any,
     ) -> ChatResult:
         completion = ""
+        llm_output: Dict[str, Any] = {"model_name": self.model_id}
 
         if self.streaming:
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 completion += chunk.text
         else:
-            prompt, system, formatted_messages = self._convert_messages(messages)
+            provider = self._get_provider()
+            prompt, system, formatted_messages = None, None, None
+
+            if provider == "anthropic":
+                system, formatted_messages = ChatPromptAdapter.format_messages(
+                    provider, messages
+                )
+            else:
+                prompt = ChatPromptAdapter.convert_messages_to_prompt(
+                    provider=provider, messages=messages
+                )
+
             params: Dict[str, Any] = {**kwargs}
 
             if stop:
                 params["stop_sequences"] = stop
 
-            completion = self._prepare_input_and_invoke(
+            completion, usage_info = self._prepare_input_and_invoke(
                 prompt=prompt,
                 stop=stop,
                 run_manager=run_manager,
@@ -279,73 +297,25 @@ class BedrockChat(BaseChatModel, BedrockBase):
                 **params,
             )
 
-        if self.compute_token_usage:
-            llm_output = {
-                "model_name": self.model_id,
-                "token_usage": self._get_token_usage_info(messages, completion),
-            }
-        else:
-            llm_output = None
+            llm_output["usage"] = usage_info
 
         return ChatResult(
             generations=[ChatGeneration(message=AIMessage(content=completion))],
             llm_output=llm_output,
         )
 
-    def _convert_messages(
-        self, messages: List[BaseMessage]
-    ) -> Tuple[Optional[str], Optional[str], Optional[List[dict]]]:
-        provider = self._get_provider()
-        prompt, system, formatted_messages = None, None, None
-        if provider == "anthropic":
-            system, formatted_messages = ChatPromptAdapter.format_messages(
-                provider, messages
-            )
-        else:
-            prompt = ChatPromptAdapter.convert_messages_to_prompt(
-                provider=provider, messages=messages
-            )
-        return prompt, system, formatted_messages
-
-    def _get_token_usage_info(
-        self,
-        messages: List[BaseMessage],
-        completion: str,
-    ) -> Dict[str, int]:
-        prompt, system, formatted_messages = self._convert_messages(messages)
-        prompt_tokens = 0
-        if prompt:
-            prompt_tokens += self.get_num_tokens(prompt)
-        else:
-            if system:
-                prompt_tokens += self.get_num_tokens(system)
-            if formatted_messages:
-                for message in formatted_messages:
-                    prompt_tokens += self.get_num_tokens(message["content"])
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        usage: Dict[str, int] = defaultdict(int)
+        for llm_out in llm_outputs:
+            llm_usage = llm_out.get("usage", {}) if llm_out is not None else {}
+            for key in ["prompt_tokens", "completion_tokens"]:
+                if key in llm_usage:
+                    usage[key] += llm_usage[key]
 
         return {
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": self.get_num_tokens(completion),
+            "model_name": self.model_id,
+            "usage": usage,
         }
-
-    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
-        if self.compute_token_usage:
-            prompt_tokens = sum(
-                out["token_usage"]["prompt_tokens"] for out in llm_outputs if out
-            )
-            completion_tokens = sum(
-                out["token_usage"]["completion_tokens"] for out in llm_outputs if out
-            )
-            llm_output = {
-                "model_name": self.model_id,
-                "token_usage": {
-                    "prompt_tokens": prompt_tokens,
-                    "completion_tokens": completion_tokens,
-                },
-            }
-        else:
-            llm_output = {}
-        return llm_output
 
     def get_num_tokens(self, text: str) -> int:
         if self._model_is_anthropic:

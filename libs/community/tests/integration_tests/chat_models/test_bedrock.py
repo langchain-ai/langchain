@@ -12,11 +12,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 @pytest.fixture
 def chat() -> BedrockChat:
-    return BedrockChat(
-        model_id="anthropic.claude-v2",
-        model_kwargs={"temperature": 0},
-        compute_token_usage=True,
-    )
+    return BedrockChat(model_id="anthropic.claude-v2", model_kwargs={"temperature": 0})
 
 
 @pytest.mark.scheduled
@@ -51,9 +47,9 @@ def test_chat_bedrock_generate_with_token_usage(chat: BedrockChat) -> None:
     assert isinstance(response, LLMResult)
     assert isinstance(response.llm_output, dict)
 
-    token_usage = response.llm_output["token_usage"]
-    assert token_usage["prompt_tokens"] == 2
-    assert token_usage["completion_tokens"] > 0
+    usage = response.llm_output["usage"]
+    assert usage["prompt_tokens"] == 20
+    assert usage["completion_tokens"] > 0
 
 
 @pytest.mark.scheduled
