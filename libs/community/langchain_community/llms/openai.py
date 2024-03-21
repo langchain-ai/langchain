@@ -365,7 +365,6 @@ class BaseOpenAI(BaseLLM):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.dict()
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
@@ -375,6 +374,7 @@ class BaseOpenAI(BaseLLM):
                     if chunk.generation_info
                     else None,
                 )
+            yield chunk
 
     async def _astream(
         self,

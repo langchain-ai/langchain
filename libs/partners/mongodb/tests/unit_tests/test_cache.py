@@ -54,6 +54,7 @@ class PatchedMongoDBAtlasSemanticCache(MongoDBAtlasSemanticCache):
     ):
         self.collection = MockCollection()
         self._wait_until_ready = False
+        self.score_threshold = None
         MongoDBAtlasVectorSearch.__init__(
             self,
             self.collection,
@@ -144,13 +145,17 @@ def _execute_test(
 @pytest.mark.parametrize(
     "cacher", [PatchedMongoDBCache, PatchedMongoDBAtlasSemanticCache]
 )
+@pytest.mark.parametrize("remove_score", [True, False])
 def test_mongodb_cache(
+    remove_score: bool,
     cacher: Union[MongoDBCache, MongoDBAtlasSemanticCache],
     prompt: Union[str, List[BaseMessage]],
     llm: Union[str, FakeLLM, FakeChatModel],
     response: List[Generation],
 ) -> None:
     llm_cache(cacher)
+    if remove_score:
+        get_llm_cache().score_threshold = None  # type: ignore
     try:
         _execute_test(prompt, llm, response)
     finally:
