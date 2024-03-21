@@ -758,12 +758,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = get_prompts(params, prompts)
-        disregard_cache = self.cache is not False
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
         )
-        if get_llm_cache() is None or disregard_cache:
-            if self.cache is not None and self.cache:
+        if self.cache is not None and self.cache:
+            if (
+                not isinstance(self.cache, BaseCache)
+                and self.cache is not None
+                and self.cache
+            ):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
@@ -973,12 +976,17 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompts,
         ) = await aget_prompts(params, prompts)
 
-        disregard_cache = self.cache is not False
+        # Verify whether the cache is set, and if the cache is set,
+        # verify whether the cache is available.
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
         )
-        if get_llm_cache() is None or disregard_cache:
-            if self.cache is not None and self.cache:
+        if self.cache is not None and self.cache:
+            if (
+                not isinstance(self.cache, BaseCache)
+                and self.cache is not None
+                and self.cache
+            ):
                 raise ValueError(
                     "Asked to cache, but no cache found at `langchain.cache`."
                 )
