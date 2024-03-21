@@ -9,7 +9,6 @@ import inspect
 import logging
 import uuid
 from datetime import datetime, timezone
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -430,13 +429,6 @@ def _setup_evaluation(
             run_type = "llm"
         else:
             run_type = "chain"
-            if data_type in (DataType.chat, DataType.llm):
-                val = data_type.value if isinstance(data_type, Enum) else data_type
-                raise ValueError(
-                    "Cannot evaluate a chain on dataset with "
-                    f"data_type={val}. "
-                    "Please specify a dataset with the default 'kv' data type."
-                )
             chain = llm_or_chain_factory()
             run_inputs = chain.input_keys if isinstance(chain, Chain) else None
             run_outputs = chain.output_keys if isinstance(chain, Chain) else None

@@ -112,6 +112,8 @@ def create_xml_agent(
     tools: Sequence[BaseTool],
     prompt: BasePromptTemplate,
     tools_renderer: ToolsRenderer = render_text_description,
+    *,
+    stop_sequence: Union[bool, List[str]] = True,
 ) -> Runnable:
     """Create an agent that uses XML to format its logic.
 
@@ -123,6 +125,13 @@ def create_xml_agent(
             `agent_scratchpad`: contains previous agent actions and tool outputs.
         tools_renderer: This controls how the tools are converted into a string and
             then passed into the LLM. Default is `render_text_description`.
+        stop_sequence: bool or list of str.
+            If True, adds a stop token of "</tool_input>" to avoid hallucinates.
+            If False, does not add a stop token.
+            If a list of str, uses the provided list as the stop tokens.
+
+            Default is True. You may to set this to False if the LLM you are using
+            does not support stop sequences.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -201,7 +210,12 @@ def create_xml_agent(
     prompt = prompt.partial(
         tools=tools_renderer(list(tools)),
     )
-    llm_with_stop = llm.bind(stop=["</tool_input>"])
+
+    if stop_sequence:
+        stop = ["</tool_input>"] if stop_sequence is True else stop_sequence
+        llm_with_stop = llm.bind(stop=stop)
+    else:
+        llm_with_stop = llm
 
     agent = (
         RunnablePassthrough.assign(
