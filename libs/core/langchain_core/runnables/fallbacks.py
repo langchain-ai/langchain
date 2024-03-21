@@ -161,31 +161,32 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             name=config.get("run_name"),
             run_id=config.pop("run_id", None),
         )
-        first_error = None
-        last_error = None
+        curr_error: Optional[BaseException] = None
         for runnable in self.runnables:
             try:
-                if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error
+                if self.exception_key and curr_error is not None:
+                    input[self.exception_key] = curr_error
                 output = runnable.invoke(
                     input,
                     patch_config(config, callbacks=run_manager.get_child()),
                     **kwargs,
                 )
             except self.exceptions_to_handle as e:
-                if first_error is None:
-                    first_error = e
-                last_error = e
+                if curr_error is not None:
+                    e.__cause__ = curr_error
+                curr_error = e
             except BaseException as e:
-                run_manager.on_chain_error(e)
-                raise e
+                if curr_error is not None:
+                    e.__cause__ = curr_error
+                curr_error = e
+                break
             else:
                 run_manager.on_chain_end(output)
                 return output
-        if first_error is None:
+        if curr_error is None:
             raise ValueError("No error stored at end of fallbacks.")
-        run_manager.on_chain_error(first_error)
-        raise first_error
+        run_manager.on_chain_error(curr_error)
+        raise curr_error
 
     async def ainvoke(
         self,
