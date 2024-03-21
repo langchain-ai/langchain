@@ -87,6 +87,10 @@ class ChatMaritalk(SimpleChatModel):
     """Nucleus sampling parameter controlling the size of 
     the probability mass considered for sampling."""
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        import httpx  # This eliminates the need for LangChain users to install HTTPX.
+
     @property
     def _llm_type(self) -> str:
         """Identifies the LLM type as 'maritalk'."""
