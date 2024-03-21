@@ -202,18 +202,19 @@ class LanceDB(VectorStore):
 
         return instance
 
-    def _init_table(self, data) -> Any:
+    def _init_table(self, data: List[dict]) -> Any:
         db = self.lancedb.connect("/tmp/lancedb")
         tbl = db.create_table(self._table_name, data=data, mode="overwrite")
         return tbl
 
     def delete(
         self,
-        filter: Optional[str] = None,
         ids: Optional[List[str]] = None,
+        delete_all: Optional[bool] = None,
+        filter: Optional[str] = None,
         drop_columns: Optional[List[str]] = None,
-        delete_all: Optional[bool] = False,
-    ) -> Any:
+        **kwargs: Any,
+    ) -> None:
         """
         Allows deleting rows by filtering, by ids or drop columns from the table.
 
