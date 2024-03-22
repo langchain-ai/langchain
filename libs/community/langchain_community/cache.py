@@ -811,11 +811,7 @@ class GPTCache(BaseCache):
         _gptcache = self._get_gptcache(llm_string)
 
         res = get(prompt, cache_obj=_gptcache)
-        if res:
-            return [
-                Generation(**generation_dict) for generation_dict in json.loads(res)
-            ]
-        return None
+        return _loads_generations(res) if res is not None else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache.
@@ -831,7 +827,7 @@ class GPTCache(BaseCache):
         from gptcache.adapter.api import put
 
         _gptcache = self._get_gptcache(llm_string)
-        handled_data = json.dumps([generation.dict() for generation in return_val])
+        handled_data = _dumps_generations(return_val)
         put(prompt, handled_data, cache_obj=_gptcache)
         return None
 
