@@ -11,7 +11,7 @@ from langchain_core.language_models.fake_chat_models import (
     GenericFakeChatModel,
 )
 from langchain_core.messages import AIMessage
-from langchain_core.outputs import ChatGeneration, LLMResult, Generation
+from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 
 
 class InMemoryCache(BaseCache):
