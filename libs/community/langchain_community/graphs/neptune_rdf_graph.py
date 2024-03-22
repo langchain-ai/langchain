@@ -88,7 +88,7 @@ class NeptuneRdfGraph:
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
         service: str = "neptunedata",
-        sign: bool = True
+        sign: bool = True,
     ) -> None:
         self.use_iam_auth = use_iam_auth
         self.region_name = region_name
@@ -166,7 +166,7 @@ class NeptuneRdfGraph:
         """
         Obtain Neptune statistical summary of classes and predicates in the graph.
         """
-        return self.client.get_rdf_graph_summary(mode='detailed')
+        return self.client.get_rdf_graph_summary(mode="detailed")
     
     def query(
         self,
