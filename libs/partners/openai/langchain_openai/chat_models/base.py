@@ -141,14 +141,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any] = {
         "content": message.content,
     }
-    if message.name is not None:
-        message_dict["name"] = message.name
-    elif (
-        "name" in message.additional_kwargs
-        and message.additional_kwargs["name"] is not None
-    ):
-        # fall back on additional kwargs for backwards compatibility
-        message_dict["name"] = message.additional_kwargs["name"]
+    if (name := message.name or message.additional_kwargs.get("name")) is not None:
+        message_dict["name"] = name
 
     # populate role and additional message data
     if isinstance(message, ChatMessage):
@@ -175,9 +169,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
 
-        # tool message doesn't have name: https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages
-        if message_dict["name"] is None:
-            del message_dict["name"]
+        supported_props = {"content", "role", "tool_call_id"}
+        message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
         raise TypeError(f"Got unknown type {message}")
     return message_dict
