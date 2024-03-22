@@ -61,3 +61,24 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+
+
+def test_structred_output() -> None:
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+    schema = {
+        "title": "AnswerWithJustification",
+        "description": (
+            "An answer to the user question along with justification for the answer."
+        ),
+        "type": "object",
+        "properties": {
+            "answer": {"title": "Answer", "type": "string"},
+            "justification": {"title": "Justification", "type": "string"},
+        },
+        "required": ["answer", "justification"],
+    }
+    structured_llm = llm.with_structured_output(schema)
+    result = structured_llm.invoke(
+        "What weighs more a pound of bricks or a pound of feathers"
+    )
+    assert isinstance(result, dict)
