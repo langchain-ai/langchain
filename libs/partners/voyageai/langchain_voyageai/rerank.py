@@ -18,13 +18,13 @@ class VoyageAIRerank(BaseDocumentCompressor):
     client: voyageai.Client = None
     aclient: voyageai.AsyncClient = None
     """VoyageAI clients to use for compressing documents."""
-    top_k: Optional[int] = None
-    """Number of documents to return."""
-    model: str
-    """Model to use for reranking."""
     voyageai_api_key: str
     """VoyageAI API key. Must be specified directly or via environment variable 
         VOYAGE_API_KEY."""
+    model: str
+    """Model to use for reranking."""
+    top_k: Optional[int] = None
+    """Number of documents to return."""
     truncation: bool = True
 
     class Config:
@@ -41,22 +41,18 @@ class VoyageAIRerank(BaseDocumentCompressor):
 
         return values
 
-    def rerank(
+    def _rerank(
         self,
         documents: Sequence[Union[str, Document]],
         query: str,
     ) -> RerankingObject:
-        """Returns an ordered list of documents ordered by their relevance to the provided query.
+        """Returns an ordered list of documents ordered by their relevance
+        to the provided query.
 
         Args:
             query: The query to use for reranking.
             documents: A sequence of documents to rerank.
-            model: The model to use for re-ranking. Default to self.model.
-            top_k : The number of results to return. If None returns all results.
-                Defaults to self.top_k.
-        """  # noqa: E501
-        if len(documents) == 0:  # to avoid empty api call
-            return []
+        """
         docs = [
             doc.page_content if isinstance(doc, Document) else doc for doc in documents
         ]
@@ -68,22 +64,18 @@ class VoyageAIRerank(BaseDocumentCompressor):
             truncation=self.truncation,
         )
 
-    async def arerank(
+    async def _arerank(
         self,
         documents: Sequence[Union[str, Document]],
         query: str,
     ) -> RerankingObject:
-        """Returns an ordered list of documents ordered by their relevance to the provided query.
+        """Returns an ordered list of documents ordered by their relevance
+        to the provided query.
 
         Args:
             query: The query to use for reranking.
             documents: A sequence of documents to rerank.
-            model: The model to use for re-ranking. Default to self.model.
-            top_k : The number of results to return. If None returns all results.
-                Defaults to self.top_k.
-        """  # noqa: E501
-        if len(documents) == 0:  # to avoid empty api call
-            return []
+        """
         docs = [
             doc.page_content if isinstance(doc, Document) else doc for doc in documents
         ]
@@ -112,8 +104,11 @@ class VoyageAIRerank(BaseDocumentCompressor):
         Returns:
             A sequence of compressed documents in relevance_score order.
         """
+        if len(documents) == 0:
+            return []
+
         compressed = []
-        for res in self.rerank(documents, query).results:
+        for res in self._rerank(documents, query).results:
             doc = documents[res.index]
             doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
             doc_copy.metadata["relevance_score"] = res.relevance_score
@@ -137,9 +132,11 @@ class VoyageAIRerank(BaseDocumentCompressor):
         Returns:
             A sequence of compressed documents in relevance_score order.
         """
+        if len(documents) == 0:
+            return []
+
         compressed = []
-        result = await self.arerank(documents, query)
-        for res in result.results:
+        for res in (await self._arerank(documents, query)).results:
             doc = documents[res.index]
             doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
             doc_copy.metadata["relevance_score"] = res.relevance_score
