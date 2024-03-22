@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-mistralai"
-version = "0.1.0rc0"
+version = "0.1.0rc1"
 description = "An integration package connecting Mistral and LangChain"
 authors = []
 readme = "README.md"
