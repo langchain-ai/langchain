@@ -205,6 +205,7 @@ from langchain_community.document_loaders.unstructured import (
     UnstructuredFileIOLoader,
     UnstructuredFileLoader,
 )
+from langchain_community.document_loaders.upstage import UpstageDocumentLoader
 from langchain_community.document_loaders.url import UnstructuredURLLoader
 from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain_community.document_loaders.url_selenium import SeleniumURLLoader
@@ -397,6 +398,7 @@ __all__ = [
     "UnstructuredURLLoader",
     "UnstructuredWordDocumentLoader",
     "UnstructuredXMLLoader",
+    "UpstageDocumentLoader",
     "VsdxLoader",
     "WeatherDataLoader",
     "WebBaseLoader",
