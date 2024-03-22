@@ -438,63 +438,86 @@ class Runnable(Generic[Input, Output], ABC):
         *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
         name: Optional[str] = None,
     ) -> RunnableSerializable[Input, Other]:
-        """Compose this runnable with another object to create a RunnableSequence.
-        .. code-block:: python
+        """Compose this Runnable with Runnable-like objects to make a RunnableSequence.
 
-                from langchain_community.chat_models.fake import FakeListChatModel
-                from langchain_community.llms.fake import FakeStreamingListLLM
-                from langchain_core.prompts import SystemMessagePromptTemplate
-                from langchain_core.runnables import RunnablePassthrough
+        Equivalent to `RunnableSequence(self, *others)` or `self | others[0] | ...`
 
-                prompt = (
-                        SystemMessagePromptTemplate
-                        .from_template("You are a nice assistant.")+ "{question}"
-                )
-                chat_res = "i'm a chatbot"
-                llm_res = "i'm a textbot"
-                chat = FakeListChatModel(responses=[chat_res], sleep=0.01)
-                llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
-                chain_pick_one = (prompt | {
-                    "chat": chat.bind(stop=["Thought:"]),
-                    "llm": llm,
-                    "passthrough": RunnablePassthrough(),
-                }).pipe(llm)
+        Example:
+            .. code-block:: python
 
-                print(chain_pick_one.output_schema.schema())
+                from langchain_core.runnables import RunnableLambda
 
-                # {'title': 'FakeStreamingListLLMOutput', 'type': 'string'}
+                def add_one(x: int) -> int:
+                    return x + 1
 
+                def mul_two(x: int) -> int:
+                    return x * 2
+
+                runnable_1 = RunnableLambda(add_one)
+                runnable_2 = RunnableLambda(mul_two)
+                sequence = runnable_1.pipe(runnable_2)
+                # Or equivalently:
+                # sequence = runnable_1 | runnable_2
+                # sequence = RunnableSequence(first=runnable_1, last=runnable_2)
+                sequence.invoke(1)
+                await sequence.ainvoke(1)
+                # -> 4
+
+                sequence.batch([1, 2, 3])
+                await sequence.abatch([1, 2, 3])
+                # -> [4, 6, 8]
         """
         return RunnableSequence(self, *others, name=name)
 
     def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the dict output of this runnable.
-        Returns a new runnable.
-        .. code-block:: python
 
-            from langchain_community.chat_models.fake import FakeListChatModel
-            from langchain_community.llms.fake import FakeStreamingListLLM
-            from langchain_core.prompts import SystemMessagePromptTemplate
-            from langchain_core.runnables import RunnablePassthrough
+        Pick single key:
+            .. code-block:: python
 
-            prompt = (
-                    SystemMessagePromptTemplate.from_template
-                    ("You are a nice assistant.")+ "{question}"
-            )
-            chat_res = "i'm a chatbot"
-            llm_res = "i'm a textbot"
-            chat = FakeListChatModel(responses=[chat_res], sleep=0.01)
-            llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
-            chain_pick_one = (prompt | {
-                "chat": chat.bind(stop=["Thought:"]),
-                "llm": llm,
-                "passthrough": RunnablePassthrough(),
-            }).pick("llm")
+                import json
 
-            print(chain_pick_one.output_schema.schema())
+                from langchain_core.runnables import RunnableLambda, RunnableMap
 
-            # {'title': 'RunnableSequenceOutput', 'type': 'string'}
-        """
+                as_str = RunnableLambda(str)
+                as_json = RunnableLambda(json.loads)
+                chain = RunnableMap(str=as_str, json=as_json)
+
+                chain.invoke("[1, 2, 3]")
+                # -> {"str": "[1, 2, 3]", "json": [1, 2, 3]}
+
+                json_only_chain = chain.pick("json")
+                json_only_chain.invoke("[1, 2, 3]")
+                # -> [1, 2, 3]
+
+        Pick list of keys:
+            .. code-block:: python
+
+                from typing import Any
+
+                import json
+
+                from langchain_core.runnables import RunnableLambda, RunnableMap
+
+                as_str = RunnableLambda(str)
+                as_json = RunnableLambda(json.loads)
+                def as_bytes(x: Any) -> bytes:
+                    return bytes(x, "utf-8")
+
+                chain = RunnableMap(
+                    str=as_str,
+                    json=as_json,
+                    bytes=RunnableLambda(as_bytes)
+                )
+
+                chain.invoke("[1, 2, 3]")
+                # -> {"str": "[1, 2, 3]", "json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+
+                json_and_bytes_chain = chain.pick(["json", "bytes"])
+                json_and_bytes_chain.invoke("[1, 2, 3]")
+                # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+
+        """  # noqa: E501
         from langchain_core.runnables.passthrough import RunnablePick
 
         return self | RunnablePick(keys)
