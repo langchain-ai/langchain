@@ -4,6 +4,7 @@ import logging
 from operator import itemgetter
 from typing import (
     Any,
+    AsyncContextManager,
     AsyncIterator,
     Callable,
     Dict,
@@ -15,10 +16,10 @@ from typing import (
     Type,
     Union,
     cast,
-    AsyncContextManager,
 )
 
 import httpx
+from httpx_sse import EventSource, aconnect_sse, connect_sse
 from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -55,7 +56,6 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from httpx_sse import connect_sse, aconnect_sse, EventSource
 
 logger = logging.getLogger(__name__)
 
@@ -87,13 +87,12 @@ def _convert_mistral_chat_message_to_message(
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
 
 
-async def _iter_sse(
+async def _aiter_sse(
     event_source_mgr: AsyncContextManager[EventSource],
 ) -> AsyncIterator[Dict]:
     """Iterate over the server-sent events."""
     async with event_source_mgr as event_source:
         async for event in event_source.aiter_sse():
-            print(event)
             if event.data == "[DONE]":
                 return
             yield event.json()
@@ -117,7 +116,7 @@ async def acompletion_with_retry(
                 llm.async_client, "POST", "/chat/completions", json=kwargs
             )
 
-            return _iter_sse(event_source)
+            return _aiter_sse(event_source)
         else:
             response = await llm.async_client.post(url="/chat/completions", json=kwargs)
             return response.json()
@@ -226,27 +225,28 @@ class ChatMistralAI(BaseChatModel):
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
-        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+        # retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
-        @retry_decorator
+        # @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
-            print("called")
             if "stream" not in kwargs:
                 kwargs["stream"] = False
             stream = kwargs["stream"]
-            print("stream", stream)
             if stream:
-                with connect_sse(
-                    self.client, "POST", "/chat/completions", json=kwargs
-                ) as event_source:
-                    for event in event_source.iter_sse():
-                        if event.data == "[DONE]":
-                            return
-                        yield event.json()
+
+                def iter_sse():
+                    with connect_sse(
+                        self.client, "POST", "/chat/completions", json=kwargs
+                    ) as event_source:
+                        for event in event_source.iter_sse():
+                            if event.data == "[DONE]":
+                                return
+                            yield event.json()
+
+                return iter_sse()
             else:
                 return self.client.post(url="/chat/completions", json=kwargs).json()
 
-        print("daf", kwargs)
         rtn = _completion_with_retry(**kwargs)
         return rtn
 
@@ -306,18 +306,13 @@ class ChatMistralAI(BaseChatModel):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        print("params", params)
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
-        )
-        print(
-            "respons",
         )
         return self._create_chat_result(response)
 
     def _create_chat_result(self, response: Dict) -> ChatResult:
         generations = []
-        print(response)
         for res in response["choices"]:
             finish_reason = res.get("finish_reason")
             gen = ChatGeneration(
