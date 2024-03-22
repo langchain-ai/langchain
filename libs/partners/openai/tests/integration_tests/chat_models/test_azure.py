@@ -235,8 +235,8 @@ def test_openai_structured_output(llm: AzureChatOpenAI) -> None:
         name: str
         age: int
 
-    llm = llm.with_structured_output(MyModel)
-    result = llm.invoke("I'm a 27 year old named Erick")
+    llm_structure = llm.with_structured_output(MyModel)
+    result = llm_structure.invoke("I'm a 27 year old named Erick")
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
     assert result.age == 27
