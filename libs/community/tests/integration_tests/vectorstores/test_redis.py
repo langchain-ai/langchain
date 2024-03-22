@@ -34,6 +34,10 @@ def drop(index_name: str) -> bool:
     )
 
 
+def delete_documents(index_name: str) -> bool:
+    return Redis.delete_documents(index_name=index_name, redis_url=TEST_REDIS_URL)
+
+
 def convert_bytes(data: Any) -> Any:
     if isinstance(data, bytes):
         return data.decode("ascii")
