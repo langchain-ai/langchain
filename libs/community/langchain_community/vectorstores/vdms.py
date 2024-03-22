@@ -58,7 +58,6 @@ class IndexEngine(str, Enum):
 DEFAULT_COLLECTION_NAME = "langchain"
 DEFAULT_DISTANCE_METRIC = DistanceMetric.L2
 DEFAULT_INSERT_BATCH_SIZE = 32
-DEFAULT_INSERT_NUM_WORKERS = 1
 DEFAULT_K = 3  # Number of Documents to return.
 DEFAULT_PROPERTIES = ["_distance", "id", "content"]
 DEFAULT_SEARCH_ENGINE = IndexEngine.FaissFlat
@@ -526,7 +525,6 @@ class VDMS(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
-        num_workers: int = DEFAULT_INSERT_NUM_WORKERS,
         add_path: Optional[bool] = True,
         **kwargs: Any,
     ) -> List[str]:
@@ -574,7 +572,6 @@ class VDMS(VectorStore):
             ids=ids,
             metadatas=metadatas,
             batch_size=batch_size,
-            num_workers=num_workers,
             **kwargs,
         )
         return ids
@@ -585,7 +582,6 @@ class VDMS(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
-        num_workers: int = DEFAULT_INSERT_NUM_WORKERS,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -618,7 +614,6 @@ class VDMS(VectorStore):
             ids=ids,
             metadatas=metadatas,
             batch_size=batch_size,
-            num_workers=num_workers,
             **kwargs,
         )
         # return ids
@@ -657,46 +652,32 @@ class VDMS(VectorStore):
         ids: List[str],
         metadatas: Iterable[dict],
         batch_size: int,
-        num_workers: int,
         **kwargs,
     ) -> None:
         # Get initial properties
         orig_props = self.__get_properties(self._collection_name)
-        list_of_dbs = {}
         inserted_ids = []
-        with ThreadPoolExecutor(max_workers=num_workers, thread_name_prefix='BatchWorker') as executor:
-            for thread in range(num_workers):
-                other_client = vdms.vdms()
-                other_client.connect(self.connection_args["host"], self.connection_args["port"])
-                list_of_dbs[f"BatchWorker_{thread}"] = other_client
+        other_client = vdms.vdms()
+        other_client.connect(self.connection_args["host"], self.connection_args["port"])
+        for start_idx in range(0, len(texts), batch_size):
+            end_idx = min(start_idx + batch_size, len(texts))
 
-            future_to_db = []
-            for start_idx in range(0, len(texts), batch_size):
-                end_idx = min(start_idx + batch_size, len(texts))
+            batch_texts = texts[start_idx:end_idx]
+            batch_embedding_vectors = embeddings[start_idx:end_idx]
+            batch_ids = ids[start_idx:end_idx]
+            batch_metadatas = metadatas[start_idx:end_idx]
 
-                batch_texts = texts[start_idx:end_idx]
-                batch_embedding_vectors = embeddings[start_idx:end_idx]
-                batch_ids = ids[start_idx:end_idx]
-                batch_metadatas = metadatas[start_idx:end_idx]
+            result = self.__add(
+                self._collection_name,
+                embeddings=batch_embedding_vectors,
+                texts=batch_texts,
+                metadatas=batch_metadatas,
+                ids=batch_ids,
+                other_client=other_client
+            )
 
-                future_to_db.append(
-                    executor.submit(self.thread_fn,
-                                batch_texts,
-                                batch_embedding_vectors,
-                                batch_ids,
-                                batch_metadatas,
-                                list_of_dbs)
-                )
-
-            for future in as_completed(future_to_db):
-                try:
-                    result = future.result()
-                    inserted_ids.extend(result)
-                except Exception as e:
-                    print(f"Exception: {e}")
-
-        for _, other_client in list_of_dbs.items():
-            other_client.disconnect()
+            inserted_ids.extend(result)
+        other_client.disconnect()
 
         # Update Properties
         self.__update_properties(
@@ -787,7 +768,6 @@ class VDMS(VectorStore):
         embedding_function: Embeddings,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
-        num_workers: int = DEFAULT_INSERT_NUM_WORKERS,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # Add this line
         connection_args: Optional[dict[str, Any]] = None,
         **kwargs: Any,
@@ -813,7 +793,6 @@ class VDMS(VectorStore):
             embedding_function=embedding_function,
             ids=ids,
             batch_size=batch_size,
-            num_workers=num_workers,
             collection_name=collection_name,
             connection_args=connection_args,
             **kwargs,
@@ -827,7 +806,6 @@ class VDMS(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
-        num_workers: int = DEFAULT_INSERT_NUM_WORKERS,
         collection_name: str = DEFAULT_COLLECTION_NAME,
         connection_args: Optional[dict[str, Any]] = None,
         **kwargs: Any,
@@ -856,7 +834,8 @@ class VDMS(VectorStore):
             ids = [str(uuid.uuid1()) for _ in texts]
         vdms_collection.add_texts(
             texts=texts, metadatas=metadatas, ids=ids,
-            batch_size=batch_size, num_workers=num_workers,**kwargs
+            batch_size=batch_size,
+            **kwargs
         )
         return vdms_collection
 
