@@ -81,10 +81,29 @@ class BasePromptTemplate(
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
+        partial_kwargs = {}
+        for name in self.partial_variables:
+            if callable(self.partial_variables[name]):
+                doc = self.partial_variables[name].__doc__
+                description = "By default. It's calling function."
+                if doc:
+                    description += f" Function description: {doc.strip()}"
+                partial_kwargs[name] = (
+                    str,
+                    Field(
+                        default=self.partial_variables[name](), description=description
+                    ),
+                )
+            else:
+                partial_kwargs[name] = (
+                    self.input_types.get(name, str),
+                    self.partial_variables[name],
+                )
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             "PromptInput",
             **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
+            **partial_kwargs,
         )
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
