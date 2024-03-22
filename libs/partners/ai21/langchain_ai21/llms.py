@@ -3,10 +3,11 @@ from functools import partial
 from typing import (
     Any,
     List,
+    Mapping,
     Optional,
 )
 
-from ai21.models import CompletionsResponse, Penalty
+from ai21.models import CompletionsResponse
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -47,16 +48,16 @@ class AI21LLM(BaseLLM, AI21Base):
     top_p: float = 1
     """A value controlling the diversity of the model's responses."""
 
-    top_k_returns: int = 0
+    top_k_return: int = 0
     """The number of top-scoring tokens to consider for each generation step."""
 
-    frequency_penalty: Optional[Penalty] = None
+    frequency_penalty: Optional[Any] = None
     """A penalty applied to tokens that are frequently generated."""
 
-    presence_penalty: Optional[Penalty] = None
+    presence_penalty: Optional[Any] = None
     """ A penalty applied to tokens that are already present in the prompt."""
 
-    count_penalty: Optional[Penalty] = None
+    count_penalty: Optional[Any] = None
     """A penalty applied to tokens based on their frequency 
     in the generated responses."""
 
@@ -73,6 +74,51 @@ class AI21LLM(BaseLLM, AI21Base):
         """Return type of LLM."""
         return "ai21-llm"
 
+    @property
+    def _default_params(self) -> Mapping[str, Any]:
+        base_params = {
+            "model": self.model,
+            "num_results": self.num_results,
+            "max_tokens": self.max_tokens,
+            "min_tokens": self.min_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k_return": self.top_k_return,
+        }
+
+        if self.count_penalty is not None:
+            base_params["count_penalty"] = self.count_penalty.to_dict()
+
+        if self.custom_model is not None:
+            base_params["custom_model"] = self.custom_model
+
+        if self.epoch is not None:
+            base_params["epoch"] = self.epoch
+
+        if self.frequency_penalty is not None:
+            base_params["frequency_penalty"] = self.frequency_penalty.to_dict()
+
+        if self.presence_penalty is not None:
+            base_params["presence_penalty"] = self.presence_penalty.to_dict()
+
+        return base_params
+
+    def _build_params_for_request(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> Mapping[str, Any]:
+        params = {}
+
+        if stop is not None:
+            if "stop" in kwargs:
+                raise ValueError("stop is defined in both stop and kwargs")
+            params["stop_sequences"] = stop
+
+        return {
+            **self._default_params,
+            **params,
+            **kwargs,
+        }
+
     def _generate(
         self,
         prompts: List[str],
@@ -83,10 +129,10 @@ class AI21LLM(BaseLLM, AI21Base):
         generations: List[List[Generation]] = []
         token_count = 0
 
+        params = self._build_params_for_request(stop=stop, **kwargs)
+
         for prompt in prompts:
-            response = self._invoke_completion(
-                prompt=prompt, model=self.model, stop_sequences=stop, **kwargs
-            )
+            response = self._invoke_completion(prompt=prompt, **params)
             generation = self._response_to_generation(response)
             generations.append(generation)
             token_count += self.client.count_tokens(prompt)
@@ -109,25 +155,11 @@ class AI21LLM(BaseLLM, AI21Base):
     def _invoke_completion(
         self,
         prompt: str,
-        model: str,
-        stop_sequences: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> CompletionsResponse:
         return self.client.completion.create(
             prompt=prompt,
-            model=model,
-            max_tokens=self.max_tokens,
-            num_results=self.num_results,
-            min_tokens=self.min_tokens,
-            temperature=self.temperature,
-            top_p=self.top_p,
-            top_k_return=self.top_k_returns,
-            custom_model=self.custom_model,
-            stop_sequences=stop_sequences,
-            frequency_penalty=self.frequency_penalty,
-            presence_penalty=self.presence_penalty,
-            count_penalty=self.count_penalty,
-            epoch=self.epoch,
+            **kwargs,
         )
 
     def _response_to_generation(

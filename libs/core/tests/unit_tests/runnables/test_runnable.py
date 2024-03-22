@@ -1,4 +1,5 @@
 import sys
+import uuid
 from functools import partial
 from operator import itemgetter
 from typing import (
@@ -28,6 +29,11 @@ from langchain_core.callbacks.manager import (
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
+from langchain_core.language_models import (
+    FakeListChatModel,
+    FakeListLLM,
+    FakeStreamingListLLM,
+)
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -80,8 +86,6 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.fake.chat_model import FakeListChatModel
-from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
 
 class FakeTracer(BaseTracer):
@@ -132,6 +136,22 @@ class FakeTracer(BaseTracer):
         """Persist a run."""
 
         self.runs.append(self._copy_run(run))
+
+    def flattened_runs(self) -> List[Run]:
+        q = [] + self.runs
+        result = []
+        while q:
+            parent = q.pop()
+            result.append(parent)
+            if parent.child_runs:
+                q.extend(parent.child_runs)
+        return result
+
+    @property
+    def run_ids(self) -> List[Optional[uuid.UUID]]:
+        runs = self.flattened_runs()
+        uuids_map = {v: k for k, v in self.uuids_map.items()}
+        return [uuids_map.get(r.id) for r in runs]
 
 
 class FakeRunnable(Runnable[str, int]):
@@ -1364,6 +1384,7 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             recursion_limit=25,
             configurable={"hello": "there"},
             metadata={"hello": "there", "bye": "now"},
+            run_id=None,
         ),
     )
     spy.reset_mock()
@@ -1505,6 +1526,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                run_id=None,
             ),
         ),
         mocker.call(
@@ -1514,6 +1536,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                run_id=None,
             ),
         ),
     ]
@@ -1539,6 +1562,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
+            run_id=None,
         ),
     )
     second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
@@ -1549,6 +1573,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
+            run_id=None,
         ),
     )
 
@@ -1617,6 +1642,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 recursion_limit=25,
+                run_id=None,
             ),
         ),
         mocker.call(
@@ -1626,6 +1652,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 recursion_limit=25,
+                run_id=None,
             ),
         ),
     ]
@@ -4819,27 +4846,45 @@ async def test_runnable_gen_context_config() -> None:
     }
 
     tracer = FakeTracer()
-    assert runnable.invoke(None, {"callbacks": [tracer]}) == 6
+    run_id = uuid.uuid4()
+    assert runnable.invoke(None, {"callbacks": [tracer], "run_id": run_id}) == 6
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
 
     assert list(runnable.stream(None)) == [1, 2, 3]
     assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
 
     tracer = FakeTracer()
-    assert list(runnable.stream(None, {"callbacks": [tracer]})) == [1, 2, 3]
+    run_id = uuid.uuid4()
+    assert list(runnable.stream(None, {"callbacks": [tracer], "run_id": run_id})) == [
+        1,
+        2,
+        3,
+    ]
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
+    tracer.runs.clear()
 
     tracer = FakeTracer()
-    assert runnable.batch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    run_id = uuid.uuid4()
+
+    with pytest.warns(RuntimeWarning):
+        assert runnable.batch(
+            [None, None], {"callbacks": [tracer], "run_id": run_id}
+        ) == [6, 6]
     assert len(tracer.runs) == 2
     assert tracer.runs[0].outputs == {"output": 6}
     assert tracer.runs[1].outputs == {"output": 6}
@@ -4862,19 +4907,30 @@ async def test_runnable_gen_context_config() -> None:
     arunnable = RunnableGenerator(agen)
 
     tracer = FakeTracer()
-    assert await arunnable.ainvoke(None, {"callbacks": [tracer]}) == 6
+
+    run_id = uuid.uuid4()
+    assert await arunnable.ainvoke(None, {"callbacks": [tracer], "run_id": run_id}) == 6
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
 
     assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
     assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
 
     tracer = FakeTracer()
-    assert [p async for p in arunnable.astream(None, {"callbacks": [tracer]})] == [
+    run_id = uuid.uuid4()
+    assert [
+        p
+        async for p in arunnable.astream(
+            None, {"callbacks": [tracer], "run_id": run_id}
+        )
+    ] == [
         1,
         2,
         3,
@@ -4884,9 +4940,16 @@ async def test_runnable_gen_context_config() -> None:
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
 
     tracer = FakeTracer()
-    assert await arunnable.abatch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    run_id = uuid.uuid4()
+    with pytest.warns(RuntimeWarning):
+        assert await arunnable.abatch(
+            [None, None], {"callbacks": [tracer], "run_id": run_id}
+        ) == [6, 6]
     assert len(tracer.runs) == 2
     assert tracer.runs[0].outputs == {"output": 6}
     assert tracer.runs[1].outputs == {"output": 6}

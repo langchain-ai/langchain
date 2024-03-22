@@ -31,6 +31,7 @@ from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
+    from langchain_core.caches import BaseCache
     from langchain_core.callbacks import Callbacks
     from langchain_core.outputs import LLMResult
 
@@ -78,8 +79,16 @@ class BaseLanguageModel(
     All language model wrappers inherit from BaseLanguageModel.
     """
 
-    cache: Optional[bool] = None
-    """Whether to cache the response."""
+    cache: Union[BaseCache, bool, None] = None
+    """Whether to cache the response.
+    
+    * If true, will use the global cache.
+    * If false, will not use a cache
+    * If None, will use the global cache if it's set, otherwise no cache.
+    * If instance of BaseCache, will use the provided cache.
+    
+    Caching is not currently supported for streaming methods of models.
+    """
     verbose: bool = Field(default_factory=_get_verbosity)
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)

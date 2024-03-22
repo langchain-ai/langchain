@@ -230,6 +230,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             dumpd(self),
             query,
             name=run_name,
+            run_id=kwargs.pop("run_id", None),
         )
         try:
             _kwargs = kwargs if self._expects_other_args else {}
@@ -286,6 +287,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             dumpd(self),
             query,
             name=run_name,
+            run_id=kwargs.pop("run_id", None),
         )
         try:
             _kwargs = kwargs if self._expects_other_args else {}

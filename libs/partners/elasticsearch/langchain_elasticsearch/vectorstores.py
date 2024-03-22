@@ -22,6 +22,7 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain_elasticsearch._utilities import (
     DistanceStrategy,
+    check_if_model_deployed,
     maximal_marginal_relevance,
     with_user_agent_header,
 )
@@ -199,6 +200,12 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
         else:
             return {"knn": knn}
 
+    def before_index_setup(
+        self, client: "Elasticsearch", text_field: str, vector_query_field: str
+    ) -> None:
+        if self.query_model_id:
+            check_if_model_deployed(client, self.query_model_id)
+
     def index(
         self,
         dims_length: Union[int, None],
@@ -340,8 +347,10 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
     def before_index_setup(
         self, client: "Elasticsearch", text_field: str, vector_query_field: str
     ) -> None:
-        # If model_id is provided, create a pipeline for the model
         if self.model_id:
+            check_if_model_deployed(client, self.model_id)
+
+            # Create a pipeline for the model
             client.ingest.put_pipeline(
                 id=self._get_pipeline_name(),
                 description="Embedding pipeline for langchain vectorstore",

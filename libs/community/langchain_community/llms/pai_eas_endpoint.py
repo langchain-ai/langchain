@@ -231,9 +231,9 @@ class PaiEasEndpoint(LLM):
                     # yield text, if any
                     if text:
                         res = GenerationChunk(text=text)
-                        yield res
                         if run_manager:
                             run_manager.on_llm_new_token(res.text)
+                        yield res
 
                     # break if stop sequence found
                     if stop_seq_found:

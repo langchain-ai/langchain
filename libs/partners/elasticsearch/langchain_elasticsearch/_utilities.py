@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Union
 
 import numpy as np
-from elasticsearch import Elasticsearch
+from elasticsearch import BadRequestError, ConflictError, Elasticsearch, NotFoundError
 from langchain_core import __version__ as langchain_version
 
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
@@ -88,3 +88,21 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
             similarity = np.dot(X, Y.T) / np.outer(X_norm, Y_norm)
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
         return similarity
+
+
+def check_if_model_deployed(client: Elasticsearch, model_id: str) -> None:
+    try:
+        dummy = {"x": "y"}
+        client.ml.infer_trained_model(model_id=model_id, docs=[dummy])
+    except NotFoundError as err:
+        raise err
+    except ConflictError as err:
+        raise NotFoundError(
+            f"model '{model_id}' not found, please deploy it first",
+            meta=err.meta,
+            body=err.body,
+        ) from err
+    except BadRequestError:
+        # This error is expected because we do not know the expected document
+        # shape and just use a dummy doc above.
+        pass

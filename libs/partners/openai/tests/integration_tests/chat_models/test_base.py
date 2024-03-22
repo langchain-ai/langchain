@@ -403,35 +403,67 @@ def test_invoke() -> None:
     assert isinstance(result.content, str)
 
 
-def test_logprobs() -> None:
+def test_response_metadata() -> None:
     llm = ChatOpenAI()
     result = llm.invoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
     assert result.response_metadata
+    assert all(
+        k in result.response_metadata
+        for k in (
+            "token_usage",
+            "model_name",
+            "logprobs",
+            "system_fingerprint",
+            "finish_reason",
+        )
+    )
     assert "content" in result.response_metadata["logprobs"]
 
 
-async def test_async_logprobs() -> None:
+async def test_async_response_metadata() -> None:
     llm = ChatOpenAI()
     result = await llm.ainvoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
     assert result.response_metadata
+    assert all(
+        k in result.response_metadata
+        for k in (
+            "token_usage",
+            "model_name",
+            "logprobs",
+            "system_fingerprint",
+            "finish_reason",
+        )
+    )
     assert "content" in result.response_metadata["logprobs"]
 
 
-def test_logprobs_streaming() -> None:
+def test_response_metadata_streaming() -> None:
     llm = ChatOpenAI()
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
-    assert cast(BaseMessageChunk, full).response_metadata
+    assert all(
+        k in cast(BaseMessageChunk, full).response_metadata
+        for k in (
+            "logprobs",
+            "finish_reason",
+        )
+    )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
 
 
-async def test_async_logprobs_streaming() -> None:
+async def test_async_response_metadata_streaming() -> None:
     llm = ChatOpenAI()
     full: Optional[BaseMessageChunk] = None
     async for chunk in llm.astream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
-    assert cast(BaseMessageChunk, full).response_metadata
+    assert all(
+        k in cast(BaseMessageChunk, full).response_metadata
+        for k in (
+            "logprobs",
+            "finish_reason",
+        )
+    )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]

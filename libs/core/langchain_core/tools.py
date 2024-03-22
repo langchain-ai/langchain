@@ -20,6 +20,7 @@ tool for the job.
 from __future__ import annotations
 
 import inspect
+import uuid
 import warnings
 from abc import abstractmethod
 from inspect import signature
@@ -243,6 +244,7 @@ class ChildTool(BaseTool):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             **kwargs,
         )
 
@@ -259,6 +261,7 @@ class ChildTool(BaseTool):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             **kwargs,
         )
 
@@ -339,6 +342,7 @@ class ChildTool(BaseTool):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -362,6 +366,7 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            run_id=run_id,
             # Inputs by definition should always be dicts.
             # For now, it's unclear whether this assumption is ever violated,
             # but if it is we will send a `None` value to the callback instead
@@ -430,6 +435,7 @@ class ChildTool(BaseTool):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -453,6 +459,7 @@ class ChildTool(BaseTool):
             color=start_color,
             name=run_name,
             inputs=tool_input,
+            run_id=run_id,
             **kwargs,
         )
         try:
