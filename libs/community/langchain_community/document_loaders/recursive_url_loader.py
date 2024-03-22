@@ -96,7 +96,6 @@ class RecursiveUrlLoader(BaseLoader):
         continue_on_failure: bool = True,
         *,
         base_url: Optional[str] = None,
-    None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
