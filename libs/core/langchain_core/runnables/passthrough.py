@@ -610,8 +610,30 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
 
 class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
-    """
-    Runnable that picks keys from Dict[str, Any] inputs.
+    """Runnable that picks keys from Dict[str, Any] inputs.
+
+    RunnablePick class represents a runnable that selectively picks keys from a
+    dictionary input. It allows you to specify one or more keys to extract
+    from the input dictionary. It returns a new dictionary containing only
+    the selected keys.
+
+    Example :
+        .. code-block:: python
+
+            from langchain_core.runnables.passthrough import RunnablePick
+
+            input_data = {
+                'name': 'John',
+                'age': 30,
+                'city': 'New York',
+                'country': 'USA'
+            }
+
+            runnable = RunnablePick(keys=['name', 'age'])
+
+            output_data = runnable.invoke(input_data)
+
+            print(output_data)  # Output: {'name': 'John', 'age': 30}
     """
 
     keys: Union[str, List[str]]
