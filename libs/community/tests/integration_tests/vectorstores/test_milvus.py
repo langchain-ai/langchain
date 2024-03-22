@@ -14,10 +14,12 @@ def _milvus_from_texts(
     metadatas: Optional[List[dict]] = None,
     ids: Optional[List[str]] = None,
     drop: bool = True,
+    metadata_field: Optional[str] = None,
 ) -> Milvus:
     return Milvus.from_texts(
         fake_texts,
         FakeEmbeddings(),
+        metadata_field=metadata_field,
         metadatas=metadatas,
         ids=ids,
         connection_args={"host": "127.0.0.1", "port": "19530"},
@@ -38,7 +40,9 @@ def test_milvus() -> None:
 
 def test_milvus_with_metadata() -> None:
     """Test with metadata"""
-    docsearch = _milvus_from_texts(metadatas=[{"label": "test"}] * len(fake_texts))
+    docsearch = _milvus_from_texts(
+        metadata_field="meta", metadatas=[{"label": "test"}] * len(fake_texts)
+    )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"label": "test"})]
 
@@ -64,7 +68,7 @@ def test_milvus_with_score() -> None:
     """Test end to end construction and search with scores and IDs."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
+    docsearch = _milvus_from_texts(metadata_field="meta", metadatas=metadatas)
     output = docsearch.similarity_search_with_score("foo", k=3)
     docs = [o[0] for o in output]
     scores = [o[1] for o in output]
@@ -80,7 +84,7 @@ def test_milvus_max_marginal_relevance_search() -> None:
     """Test end to end construction and MRR search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
+    docsearch = _milvus_from_texts(metadata_field="meta", metadatas=metadatas)
     output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
     assert output == [
         Document(page_content="foo", metadata={"page": 0}),
