@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import logging
 import uuid
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,7 +18,6 @@ from typing import (
 )
 
 import numpy as np
-from chromadb import QueryResult
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -28,9 +28,16 @@ if TYPE_CHECKING:
     import chromadb
     import chromadb.config
     from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
+    from chromadb.utils.data_loaders import DataLoader
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
+
+
+def encode_image(uri: str) -> str:
+    """Get base64 string from image URI."""
+    with open(uri, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
 
 
 def _results_to_docs(results: Any) -> List[Document]:
@@ -38,14 +45,27 @@ def _results_to_docs(results: Any) -> List[Document]:
 
 
 def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
+    if results["uris"]:
+        return [
+            (
+                Document(
+                    page_content=encode_image(result[0]), metadata=result[1] or {}
+                ),
+                result[2],
+            )
+            for result in zip(
+                chain(*results["documents"]),
+                chain(*results["metadatas"]),
+                chain(*results["distances"]),
+            )
+        ]
+
     return [
-        # TODO: Chroma can do batch querying,
-        # we shouldn't hard code to the 1st result
         (Document(page_content=result[0], metadata=result[1] or {}), result[2])
         for result in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
+            chain(*results["documents"]),
+            chain(*results["metadatas"]),
+            chain(*results["distances"]),
         )
     ]
 
@@ -76,11 +96,14 @@ class Chroma(VectorStore):
         collection_metadata: Optional[Dict] = None,
         client: Optional[chromadb.ClientAPI] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        data_loader: Optional[DataLoader] = None,
     ) -> None:
         """Initialize with a Chroma client."""
         try:
             import chromadb
             import chromadb.config
+            from chromadb.utils.data_loaders import ChromaLangchainPassthroughDataLoader
+            from chromadb.utils.embedding_functions import create_langchain_embedding
         except ImportError:
             raise ImportError(
                 "Could not import chromadb python package. "
@@ -123,12 +146,19 @@ class Chroma(VectorStore):
                 _client_settings.persist_directory or persist_directory
             )
 
-        self._embedding_function = embedding_function
+        self._embedding_function = (
+            create_langchain_embedding(embedding_function)
+            if embedding_function
+            else None
+        )
+
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=None,
+            embedding_function=self._embedding_function,
             metadata=collection_metadata,
+            data_loader=data_loader or ChromaLangchainPassthroughDataLoader(),
         )
+
         self.override_relevance_score_fn = relevance_score_fn
 
     @property
@@ -139,12 +169,12 @@ class Chroma(VectorStore):
     def __query_collection(
         self,
         query_texts: Optional[List[str]] = None,
-        query_embeddings: Optional[List[List[float]]] = None,
+        query_embeddings: Optional[Union[List[List[float]], List[float]]] = None,
         n_results: int = 4,
         where: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> Union[List[Document], QueryResult]:
+    ) -> List[Document]:
         """Query the chroma collection."""
         try:
             import chromadb  # noqa: F401
@@ -153,19 +183,15 @@ class Chroma(VectorStore):
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
+
         return self._collection.query(
             query_texts=query_texts,
             query_embeddings=query_embeddings,  # type: ignore
-            n_results=n_results,
+            n_results=n_results,  # type: ignore
             where=where,  # type: ignore
             where_document=where_document,  # type: ignore
             **kwargs,
         )
-
-    def encode_image(self, uri: str) -> str:
-        """Get base64 string from image URI."""
-        with open(uri, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("utf-8")
 
     def add_images(
         self,
@@ -184,70 +210,124 @@ class Chroma(VectorStore):
         Returns:
             List[str]: List of IDs of the added images.
         """
-        # Map from uris to b64 encoded strings
-        b64_texts = [self.encode_image(uri=uri) for uri in uris]
-        # Populate IDs
+
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
-        embeddings = None
-        # Set embeddings
-        if self._embedding_function is not None and hasattr(
-            self._embedding_function, "embed_image"
-        ):
-            embeddings = self._embedding_function.embed_image(uris=uris)
-        if metadatas:
-            # fill metadatas with empty dicts if somebody
-            # did not specify metadata for all images
-            length_diff = len(uris) - len(metadatas)
-            if length_diff:
-                metadatas = metadatas + [{}] * length_diff
-            empty_ids = []
-            non_empty_ids = []
-            for idx, m in enumerate(metadatas):
-                if m:
-                    non_empty_ids.append(idx)
-                else:
-                    empty_ids.append(idx)
-            if non_empty_ids:
-                metadatas = [metadatas[idx] for idx in non_empty_ids]
-                images_with_metadatas = [b64_texts[idx] for idx in non_empty_ids]
-                embeddings_with_metadatas = (
-                    [embeddings[idx] for idx in non_empty_ids] if embeddings else None
+
+        uris_with_metadatas = []
+        ids_with_metadatas = []
+        uris_metadata = []
+
+        uris_without_metadatas = []
+        ids_without_metadatas = []
+
+        metadatas = (
+            (metadatas + [{}] * (len(uris) - len(metadatas)))
+            if metadatas
+            else [{}] * len(uris)
+        )
+
+        for idx, (id, uri, metadata) in enumerate(zip(ids, uris, metadatas)):
+            if uri is None:
+                raise ValueError(
+                    f"URI at index {idx} is None. Please provide a valid URI."
                 )
-                ids_with_metadata = [ids[idx] for idx in non_empty_ids]
-                try:
-                    self._collection.upsert(
-                        metadatas=metadatas,  # type: ignore
-                        embeddings=embeddings_with_metadatas,  # type: ignore
-                        documents=images_with_metadatas,
-                        ids=ids_with_metadata,
-                    )
-                except ValueError as e:
-                    if "Expected metadata value to be" in str(e):
-                        msg = (
-                            "Try filtering complex metadata using "
-                            "langchain_community.vectorstores.utils.filter_complex_metadata."
-                        )
-                        raise ValueError(e.args[0] + "\n\n" + msg)
-                    else:
-                        raise e
-            if empty_ids:
-                images_without_metadatas = [b64_texts[j] for j in empty_ids]
-                embeddings_without_metadatas = (
-                    [embeddings[j] for j in empty_ids] if embeddings else None
-                )
-                ids_without_metadatas = [ids[j] for j in empty_ids]
+            if metadata:
+                uris_metadata.append(uri)
+                uris_with_metadatas.append(uri)
+                ids_with_metadatas.append(id)
+            else:
+                uris_without_metadatas.append(uri)
+                ids_without_metadatas.append(id)
+
+        if uris_with_metadatas:
+            try:
                 self._collection.upsert(
-                    embeddings=embeddings_without_metadatas,
-                    documents=images_without_metadatas,
-                    ids=ids_without_metadatas,
+                    metadatas=metadatas,  # type: ignore
+                    uris=uris_with_metadatas,
+                    ids=ids_with_metadatas,
                 )
-        else:
+            except ValueError as e:
+                if "Expected metadata value to be" in str(e):
+                    msg = (
+                        "Try filtering complex metadata using "
+                        "langchain_community.vectorstores.utils.filter_complex_metadata."
+                    )
+                    raise ValueError(e.args[0] + "\n\n" + msg)
+                else:
+                    raise e
+
+        if uris_without_metadatas:
             self._collection.upsert(
-                embeddings=embeddings,
-                documents=b64_texts,
-                ids=ids,
+                uris=uris_without_metadatas,
+                ids=ids_without_metadatas,
             )
+
+        return ids
+
+    def _add_texts(
+        self,
+        texts: List[str],
+        metadatas: Optional[List[dict]],
+        ids: List[str],
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add texts to the collection.
+
+        Args:
+            texts (List[str]): Texts to add to the collection.
+            metadatas (Optional[List[dict]]): Optional list of metadatas.
+            ids (List[str]): List of IDs.
+        """
+        metadatas = (
+            (metadatas + [{}] * (len(texts) - len(metadatas)))
+            if metadatas
+            else [{}] * len(texts)
+        )
+
+        documents_with_metadatas = []
+        document_metadatas = []
+        document_ids_with_metadatas = []
+
+        documents_without_metadatas = []
+        document_ids_without_metadatas = []
+
+        for idx, (id, meta, text) in enumerate(zip(ids, metadatas, texts)):
+            if text is None:
+                raise ValueError(
+                    f"Text at index {idx} is None. Please provide a valid text."
+                )
+            if meta:
+                documents_with_metadatas.append(text)
+                document_metadatas.append(meta)
+                document_ids_with_metadatas.append(id)
+            else:
+                documents_without_metadatas.append(text)
+                document_ids_without_metadatas.append(id)
+
+        if documents_with_metadatas:
+            try:
+                self._collection.upsert(
+                    metadatas=document_metadatas,  # type: ignore
+                    documents=documents_with_metadatas,
+                    ids=document_ids_with_metadatas,
+                )
+            except ValueError as e:
+                if "Expected metadata value to be" in str(e):
+                    msg = (
+                        "Try filtering complex metadata using "
+                        "langchain_community.vectorstores.utils.filter_complex_metadata."
+                    )
+                    raise ValueError(e.args[0] + "\n\n" + msg)
+                else:
+                    raise e
+
+        if documents_without_metadatas:
+            self._collection.upsert(
+                documents=documents_without_metadatas,
+                ids=document_ids_without_metadatas,
+            )
+
         return ids
 
     def add_texts(
@@ -267,64 +347,28 @@ class Chroma(VectorStore):
         Returns:
             List[str]: List of IDs of the added texts.
         """
-        # TODO: Handle the case where the user doesn't provide ids on the Collection
+
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
-        embeddings = None
-        texts = list(texts)
-        if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(texts)
-        if metadatas:
-            # fill metadatas with empty dicts if somebody
-            # did not specify metadata for all texts
-            length_diff = len(texts) - len(metadatas)
-            if length_diff:
-                metadatas = metadatas + [{}] * length_diff
-            empty_ids = []
-            non_empty_ids = []
-            for idx, m in enumerate(metadatas):
-                if m:
-                    non_empty_ids.append(idx)
-                else:
-                    empty_ids.append(idx)
-            if non_empty_ids:
-                metadatas = [metadatas[idx] for idx in non_empty_ids]
-                texts_with_metadatas = [texts[idx] for idx in non_empty_ids]
-                embeddings_with_metadatas = (
-                    [embeddings[idx] for idx in non_empty_ids] if embeddings else None
-                )
-                ids_with_metadata = [ids[idx] for idx in non_empty_ids]
-                try:
-                    self._collection.upsert(
-                        metadatas=metadatas,  # type: ignore
-                        embeddings=embeddings_with_metadatas,  # type: ignore
-                        documents=texts_with_metadatas,
-                        ids=ids_with_metadata,
-                    )
-                except ValueError as e:
-                    if "Expected metadata value to be" in str(e):
-                        msg = (
-                            "Try filtering complex metadata from the document using "
-                            "langchain_community.vectorstores.utils.filter_complex_metadata."
-                        )
-                        raise ValueError(e.args[0] + "\n\n" + msg)
-                    else:
-                        raise e
-            if empty_ids:
-                texts_without_metadatas = [texts[j] for j in empty_ids]
-                embeddings_without_metadatas = (
-                    [embeddings[j] for j in empty_ids] if embeddings else None
-                )
-                ids_without_metadatas = [ids[j] for j in empty_ids]
-                self._collection.upsert(
-                    embeddings=embeddings_without_metadatas,  # type: ignore
-                    documents=texts_without_metadatas,
-                    ids=ids_without_metadatas,
+
+        if hasattr(self._client, "max_batch_size"):  # for Chroma 0.4.10 and above
+            from chromadb.utils.batch_utils import create_batches
+
+            for batch in create_batches(
+                api=self._client,
+                ids=ids,
+                metadatas=metadatas,  # type: ignore
+                documents=list(texts),
+            ):
+                self._add_texts(
+                    texts=batch[3] if batch[3] else [],
+                    metadatas=batch[2] if batch[2] else None,  # type: ignore
+                    ids=batch[0],
                 )
         else:
-            self._collection.upsert(
-                embeddings=embeddings,  # type: ignore
-                documents=texts,
+            self._add_texts(
+                texts=list(texts),
+                metadatas=metadatas,
                 ids=ids,
             )
         return ids
@@ -638,7 +682,7 @@ class Chroma(VectorStore):
         """
         return self.update_documents([document_id], [document])
 
-    def update_documents(self, ids: List[str], documents: List[Document]) -> None:  # type: ignore
+    def update_documents(self, ids: List[str], documents: List[Document]) -> None:
         """Update a document in the collection.
 
         Args:
@@ -721,26 +765,9 @@ class Chroma(VectorStore):
             collection_metadata=collection_metadata,
             **kwargs,
         )
-        if ids is None:
-            ids = [str(uuid.uuid4()) for _ in texts]
-        if hasattr(
-            chroma_collection._client, "max_batch_size"
-        ):  # for Chroma 0.4.10 and above
-            from chromadb.utils.batch_utils import create_batches
 
-            for batch in create_batches(
-                api=chroma_collection._client,
-                ids=ids,
-                metadatas=metadatas,  # type: ignore
-                documents=texts,
-            ):
-                chroma_collection.add_texts(
-                    texts=batch[3] if batch[3] else [],
-                    metadatas=batch[2] if batch[2] else None,  # type: ignore
-                    ids=batch[0],
-                )
-        else:
-            chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+        chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+
         return chroma_collection
 
     @classmethod
