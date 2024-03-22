@@ -65,7 +65,7 @@ class NeptuneRdfGraph:
         schema_elem = graph.get_schema_elements()
         #... change schema_elements ...
         graph.load_schema(schema_elem)
-        
+
     *Security note*: Make sure that the database connection uses credentials
         that are narrowly-scoped to only include necessary permissions.
         Failure to do so may result in data corruption or loss, since the calling
@@ -143,7 +143,7 @@ class NeptuneRdfGraph:
                     "Please check that credentials in the specified "
                     "profile name are valid."
                 ) from e
-        
+
         # Set schema
         self.schema = ""
         self.schema_elements: Dict[str, Any] = {}
@@ -160,14 +160,12 @@ class NeptuneRdfGraph:
     def get_schema_elements(self) -> Dict[str, Any]:
         return self.schema_elements
 
-    def get_summary(
-        self
-    ) -> Dict[str, Any]:
+    def get_summary(self) -> Dict[str, Any]:
         """
         Obtain Neptune statistical summary of classes and predicates in the graph.
         """
         return self.client.get_rdf_graph_summary(mode="detailed")
-    
+
     def query(
         self,
         query: str,
@@ -254,13 +252,13 @@ class NeptuneRdfGraph:
             return [f"{'/'.join(tokens[0:len(tokens)-1])}/", tokens[-1]]
         else:
             raise ValueError(f"Unexpected IRI '{iri}', contains neither '#' nor '/'.")
-         
+
     def _refresh_schema(self) -> None:
         """
         Query Neptune to introspect schema.
         """
         self.schema_elements["distinct_prefixes"] = {}
-        
+
         # get summary and build list of classes and rels
         summary = self.get_summary()
         reslist = []
@@ -272,9 +270,9 @@ class NeptuneRdfGraph:
             if tokens[0] not in self.schema_elements["distinct_prefixes"]:
                 self.schema_elements["distinct_prefixes"][tokens[0]] = "y"
         self.schema_elements["classes"] = reslist
-              
+
         reslist = []
-        for r in summary['payload']['graphSummary']['predicates']:
+        for r in summary["payload"]["graphSummary"]["predicates"]:
             for p in r:
                 uri = p
                 tokens = self._get_local_name(uri)
@@ -283,7 +281,7 @@ class NeptuneRdfGraph:
                 if tokens[0] not in self.schema_elements["distinct_prefixes"]:
                     self.schema_elements["distinct_prefixes"][tokens[0]] = "y"
         self.schema_elements["rels"] = reslist
-        
+
         # get dtprops and oprops too
         for elem in ELEM_TYPES:
             if ELEM_TYPES[elem] is None:
