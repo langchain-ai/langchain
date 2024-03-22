@@ -227,6 +227,7 @@ def test_openai_invoke(llm: AzureChatOpenAI) -> None:
     assert isinstance(result.content, str)
 
 
+@pytest.mark.skip(reason="Need tool calling model deployed on azure")
 def test_openai_structured_output(llm: AzureChatOpenAI) -> None:
     class MyModel(BaseModel):
         """A Person"""
