@@ -103,15 +103,19 @@ class HuggingFacePipeline(BaseLLM):
             "text-generation": AutoModelForCausalLM,
             "text2text-generation": AutoModelForSeq2SeqLM,
             "summarization": AutoModelForSeq2SeqLM,
-            "translation": AutoModelForSeq2SeqLM
+            "translation": AutoModelForSeq2SeqLM,
         }
 
         if backend == "openvino":
             try:
-                from optimum.intel.openvino import OVModelForCausalLM, OVModelForSeq2SeqLM
+                from optimum.intel.openvino import (
+                    OVModelForCausalLM,
+                    OVModelForSeq2SeqLM,
+                )
             except ImportError:
                 raise ValueError(
-                    "Could not import optimum-intel package. Please install with pip install 'optimum[openvino,nncf]'"
+                    "Could not import optimum-intel package. " +
+                    "Please install with pip install 'optimum[openvino,nncf]'"
                 )
             task_to_model = {
                 "text-generation": OVModelForCausalLM,
