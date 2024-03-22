@@ -1,4 +1,5 @@
 """Test ChatMistral chat model."""
+
 from langchain_mistralai.chat_models import ChatMistralAI
 
 
@@ -63,7 +64,7 @@ def test_invoke() -> None:
     assert isinstance(result.content, str)
 
 
-def test_structred_output() -> None:
+def test_structured_output() -> None:
     llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
     schema = {
         "title": "AnswerWithJustification",
