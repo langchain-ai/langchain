@@ -67,7 +67,9 @@ def test_structred_output() -> None:
     llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
     schema = {
         "title": "AnswerWithJustification",
-        "description": "An answer to the user question along with justification for the answer.",
+        "description": (
+            "An answer to the user question along with justification for the answer."
+        ),
         "type": "object",
         "properties": {
             "answer": {"title": "Answer", "type": "string"},
