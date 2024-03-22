@@ -286,7 +286,7 @@ class NeptuneRdfGraph:
         for elem in ELEM_TYPES:
             if ELEM_TYPES[elem] is None:
                 continue
-            items = self.query(ELEM_TYPES[elem])
+            items = self.query(str(ELEM_TYPES[elem]))
             reslist = []
             for r in items["results"]["bindings"]:
                 uri = r["elem"]["value"]
