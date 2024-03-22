@@ -63,7 +63,7 @@ class NeptuneRdfGraph:
             port=<SPARQL port>
         )
         schema_elem = graph.get_schema_elements()
-        ... change schema_elements ...
+        #... change schema_elements ...
         graph.load_schema(schema_elem)
         
     *Security note*: Make sure that the database connection uses credentials
@@ -264,14 +264,14 @@ class NeptuneRdfGraph:
         # get summary and build list of classes and rels
         summary = self.get_summary()
         reslist = []
-        for c in summary['payload']['graphSummary']['classes']:
+        for c in summary["payload"]["graphSummary"]["classes"]:
             uri = c
             tokens = self._get_local_name(uri)
             elem_record = {"uri": uri, "local": tokens[1]}
             reslist.append(elem_record)
             if tokens[0] not in self.schema_elements["distinct_prefixes"]:
                 self.schema_elements["distinct_prefixes"][tokens[0]] = "y"
-        self.schema_elements['classes'] = reslist
+        self.schema_elements["classes"] = reslist
               
         reslist = []
         for r in summary['payload']['graphSummary']['predicates']:
@@ -282,7 +282,7 @@ class NeptuneRdfGraph:
                 reslist.append(elem_record)
                 if tokens[0] not in self.schema_elements["distinct_prefixes"]:
                     self.schema_elements["distinct_prefixes"][tokens[0]] = "y"
-        self.schema_elements['rels'] = reslist
+        self.schema_elements["rels"] = reslist
         
         # get dtprops and oprops too
         for elem in ELEM_TYPES:
