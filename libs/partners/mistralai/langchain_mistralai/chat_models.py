@@ -83,7 +83,7 @@ def _convert_mistral_chat_message_to_message(
 
     additional_kwargs: Dict = {}
     if tool_calls := _message.get("tool_calls"):
-        additional_kwargs["tool_calls"] = [tc.model_dump() for tc in tool_calls]
+        additional_kwargs["tool_calls"] = tool_calls
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
 
 
