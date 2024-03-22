@@ -230,6 +230,7 @@ class ChatMistralAI(BaseChatModel):
 
         @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
+            print("called")
             if "stream" not in kwargs:
                 kwargs["stream"] = False
             stream = kwargs["stream"]
