@@ -1,4 +1,5 @@
 """Test Anthropic Chat API wrapper."""
+
 from typing import List
 from unittest.mock import MagicMock
 
@@ -58,3 +59,43 @@ def test_different_models_bedrock(model_id: str) -> None:
 
     # should not throw an error
     model.invoke("hello there")
+
+
+def test_token_usage_bedrock() -> None:
+    model_id = "anthropic.claude-v2"
+    client = MagicMock()
+    respbody = MagicMock()
+    respbody.read.return_value = MagicMock(
+        decode=MagicMock(
+            return_value=b"""
+{
+    "id": "dummy",
+    "model": "anthropic.claude-v2",
+    "type" : "message",
+    "role" : "assistant",
+    "content": [
+        {
+            "type": "text",
+            "text": "dummy"
+        }
+    ],
+    "stop_reason": "dummy",
+    "stop_sequence": "dummy",
+    "usage": {
+        "input_tokens": 12,
+        "output_tokens": 10
+    }
+}
+"""
+        ),
+    )
+    client.invoke_model.return_value = {"body": respbody}
+
+    model = BedrockChat(model_id=model_id, client=client)
+
+    res = model.invoke("hello there")
+    assert res.response_metadata["model_name"] == model_id
+    assert res.response_metadata["usage"] == {
+        "input_tokens": 12,
+        "output_tokens": 10,
+    }

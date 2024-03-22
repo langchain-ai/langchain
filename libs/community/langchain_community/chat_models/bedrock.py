@@ -287,7 +287,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
             if stop:
                 params["stop_sequences"] = stop
 
-            completion = self._prepare_input_and_invoke(
+            completion, usage = self._prepare_input_and_invoke(
                 prompt=prompt,
                 stop=stop,
                 run_manager=run_manager,
@@ -297,7 +297,8 @@ class BedrockChat(BaseChatModel, BedrockBase):
             )
 
         return ChatResult(
-            generations=[ChatGeneration(message=AIMessage(content=completion))]
+            generations=[ChatGeneration(message=AIMessage(content=completion))],
+            llm_output={"usage": usage, "model_name": self.model_id},
         )
 
     def get_num_tokens(self, text: str) -> int:

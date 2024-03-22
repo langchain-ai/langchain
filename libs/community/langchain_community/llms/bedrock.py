@@ -11,6 +11,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Tuple,
 )
 
 from langchain_core.callbacks import (
@@ -145,26 +146,39 @@ class LLMInputOutputAdapter:
             response_body = json.loads(response.get("body").read().decode())
             if "completion" in response_body:
                 text = response_body.get("completion")
+                usage = None
             elif "content" in response_body:
                 content = response_body.get("content")
                 text = content[0].get("text")
+                usage = response_body.get("usage")
         else:
             response_body = json.loads(response.get("body").read())
 
             if provider == "ai21":
                 text = response_body.get("completions")[0].get("data").get("text")
+                usage = None
             elif provider == "cohere":
                 text = response_body.get("generations")[0].get("text")
+                usage = None
             elif provider == "meta":
                 text = response_body.get("generation")
+                usage = {
+                    "prompt_token_count": response_body.get("prompt_token_count"),
+                    "generation_token_count": response_body.get(
+                        "generation_token_count"
+                    ),
+                }
             elif provider == "mistral":
                 text = response_body.get("outputs")[0].get("text")
+                usage = None
             else:
                 text = response_body.get("results")[0].get("outputText")
+                usage = {"tokenCount": response_body.get("tokenCount")}
 
         return {
             "text": text,
             "body": response_body,
+            "usage": usage,
         }
 
     @classmethod
@@ -498,7 +512,7 @@ class BedrockBase(BaseModel, ABC):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> Tuple[str, Dict]:
         _model_kwargs = self.model_kwargs or {}
 
         provider = self._get_provider()
@@ -531,7 +545,7 @@ class BedrockBase(BaseModel, ABC):
         try:
             response = self.client.invoke_model(**request_options)
 
-            text, body = LLMInputOutputAdapter.prepare_output(
+            text, body, usage = LLMInputOutputAdapter.prepare_output(
                 provider, response
             ).values()
 
@@ -554,7 +568,7 @@ class BedrockBase(BaseModel, ABC):
                 **services_trace,
             )
 
-        return text
+        return text, usage
 
     def _get_bedrock_services_signal(self, body: dict) -> dict:
         """
@@ -826,7 +840,7 @@ class Bedrock(LLM, BedrockBase):
 
         return self._prepare_input_and_invoke(
             prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
-        )
+        )[0]
 
     async def _astream(
         self,
