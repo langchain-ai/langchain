@@ -264,7 +264,6 @@ class VDMS(VectorStore):
         embeddings: Iterable[List[float]],
         metadatas: Optional[Iterable[dict]] = None,
         ids: Optional[List[str]] = None,
-        other_client: Optional[vdms.vdms] = None,
     ) -> None:
         _len_check_if_sized(texts, embeddings, "texts", "embeddings")
 
@@ -282,7 +281,7 @@ class VDMS(VectorStore):
             # all_blobs = []
             query, blob = self.__get_add_query(
                 collection_name, metadata=meta, embedding=emb,
-                document=doc, id=id, other_client=other_client
+                document=doc, id=id
             )
 
             if blob is not None:
@@ -290,8 +289,7 @@ class VDMS(VectorStore):
                 all_blobs.append(blob)
                 inserted_ids.append(id)
 
-        response, response_array = self.__run_vdms_query(all_queries, all_blobs,
-                                                        other_client=other_client)
+        response, response_array = self.__run_vdms_query(all_queries, all_blobs)
 
         return inserted_ids
 
@@ -364,14 +362,12 @@ class VDMS(VectorStore):
         embedding: Optional[Any] = None,
         document: Optional[Any] = None,
         id: Optional[str] = None,
-        other_client: Optional[vdms.vdms] = None,
     ) -> Tuple[Dict[str, Dict[str, Any]], Union[bytes, None]]:
-        client = other_client if other_client is not None else self._client
         if id is None:
             props = {}
         else:
             props = {"id": id}
-            id_exists, query = check_descriptor_exists_by_id(client, collection_name, id)
+            id_exists, query = check_descriptor_exists_by_id(self._client, collection_name, id)
             if id_exists:
                 skipped_value = {
                     prop_key: prop_val[-1]
@@ -424,15 +420,13 @@ class VDMS(VectorStore):
         self,
         all_queries: Iterable[str],
         all_blobs: Optional[Iterable] = [],
-        print_last_response: Optional[bool] = False,
-        other_client: Optional[vdms.vdms] = None
+        print_last_response: Optional[bool] = False
     ):
-        client = other_client if other_client is not None else self._client
-        response, response_array = client.query(all_queries, all_blobs)
+        response, response_array = self._client.query(all_queries, all_blobs)
 
         _ = check_valid_response(all_queries, response)
         if print_last_response:
-            client.print_last_response()
+            self._client.print_last_response()
         return response, response_array
 
     def __update(
@@ -517,7 +511,6 @@ class VDMS(VectorStore):
                     all_properties=current_collection_properties,
                 )
                 response, _ = self.__run_vdms_query(all_queries, [blob_arr])
-                # self._client.print_last_response()
 
     def add_images(
         self,
@@ -538,7 +531,6 @@ class VDMS(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of unique IDs.
             batch_size (int): Number of concurrent requests to send to the server.
-            num_workers (int): Number of workers to insert data in server.
             add_path: Bool to add image path as metadata
 
         Returns:
@@ -591,7 +583,6 @@ class VDMS(VectorStore):
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of unique IDs.
             batch_size (int): Number of concurrent requests to send to the server.
-            num_workers (int): Number of workers to insert data in server.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -618,33 +609,6 @@ class VDMS(VectorStore):
         )
         # return ids
 
-    def thread_fn(
-        self,
-        batch_texts,
-        batch_embedding_vectors,
-        batch_ids,
-        batch_metadatas,
-        list_of_dbs
-        ):
-
-        if current_thread().name in list_of_dbs:
-            other_client = list_of_dbs[current_thread().name]
-        else:
-            other_client = vdms.vdms()
-            other_client.connect(self.connection_args["host"], self.connection_args["port"])
-            list_of_dbs[current_thread().name] = other_client
-
-        inserted_ids = self.__add(
-            self._collection_name,
-            embeddings=batch_embedding_vectors,
-            texts=batch_texts,
-            metadatas=batch_metadatas,
-            ids=batch_ids,
-            other_client=other_client
-        )
-
-        return inserted_ids
-
     def __from(
         self,
         texts: Iterable[str],
@@ -657,8 +621,6 @@ class VDMS(VectorStore):
         # Get initial properties
         orig_props = self.__get_properties(self._collection_name)
         inserted_ids = []
-        other_client = vdms.vdms()
-        other_client.connect(self.connection_args["host"], self.connection_args["port"])
         for start_idx in range(0, len(texts), batch_size):
             end_idx = min(start_idx + batch_size, len(texts))
 
@@ -672,12 +634,10 @@ class VDMS(VectorStore):
                 embeddings=batch_embedding_vectors,
                 texts=batch_texts,
                 metadatas=batch_metadatas,
-                ids=batch_ids,
-                other_client=other_client
+                ids=batch_ids
             )
 
             inserted_ids.extend(result)
-        other_client.disconnect()
 
         # Update Properties
         self.__update_properties(
@@ -781,7 +741,6 @@ class VDMS(VectorStore):
             embedding_function (Embeddings): Embedding function. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             batch_size (int): Number of concurrent requests to send to the server.
-            num_workers (int): Number of workers to insert data in server.
 
         Returns:
             VDMS: VDMS vectorstore.
@@ -818,7 +777,6 @@ class VDMS(VectorStore):
             metadatas (Optional[List[dict]]): List of metadatas. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
             batch_size (int): Number of concurrent requests to send to the server.
-            num_workers (int): Number of workers to insert data in server.
             collection_name (str): Name of the collection to create.
 
         Returns:
