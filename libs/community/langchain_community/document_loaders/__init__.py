@@ -14,6 +14,7 @@
 
     Document, <name>TextSplitter
 """
+
 import importlib
 from typing import Any
 
@@ -189,6 +190,7 @@ _module_lookup = {
     "UnstructuredURLLoader": "langchain_community.document_loaders.url",
     "UnstructuredWordDocumentLoader": "langchain_community.document_loaders.word_document",  # noqa: E501
     "UnstructuredXMLLoader": "langchain_community.document_loaders.xml",
+    "UpstageDocumentLoader": "langchain_community.document_loaders.upstage",
     "VsdxLoader": "langchain_community.document_loaders.vsdx",
     "WeatherDataLoader": "langchain_community.document_loaders.weather",
     "WebBaseLoader": "langchain_community.document_loaders.web_base",
