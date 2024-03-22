@@ -122,7 +122,7 @@ class RecursiveUrlLoader(BaseLoader):
                 URLs with error responses (400-599).
             continue_on_failure: If True, continue if getting or parsing a link raises
                 an exception. Otherwise, raise the exception.
-            base_url: the base url to check for outside links against.
+            base_url: The base url to check for outside links against.
         """
 
         self.url = url
