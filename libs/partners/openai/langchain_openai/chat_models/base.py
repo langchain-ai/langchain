@@ -176,7 +176,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["tool_call_id"] = message.tool_call_id
 
         # tool message doesn't have name: https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages
-        if message_dict["name"] is None:
+        if "name" in message_dict and message_dict["name"] is None:
             del message_dict["name"]
     else:
         raise TypeError(f"Got unknown type {message}")
