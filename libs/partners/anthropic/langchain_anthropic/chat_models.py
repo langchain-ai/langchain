@@ -169,8 +169,12 @@ class ChatAnthropic(BaseChatModel):
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
 
-    default_request_timeout: Optional[float] = None
-    """Timeout for requests to Anthropic Completion API."""
+    default_request_timeout: Optional[float] = -1.0
+    """Timeout for requests to Anthropic Completion API.
+    
+    A value <= 0 indicates the timeout param should not be passed to Anthropic 
+        client. Anything else is passed through, including None.
+    """
 
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
@@ -211,20 +215,22 @@ class ChatAnthropic(BaseChatModel):
             or "https://api.anthropic.com"
         )
         values["anthropic_api_url"] = api_url
-        request_timeout = values["default_request_timeout"]
-        max_retries = values["max_retries"]
-        values["_client"] = anthropic.Client(
-            api_key=api_key,
-            base_url=api_url,
-            timeout=request_timeout,
-            max_retries=max_retries,
-        )
-        values["_async_client"] = anthropic.AsyncClient(
-            api_key=api_key,
-            base_url=api_url,
-            timeout=request_timeout,
-            max_retries=max_retries,
-        )
+        client_params = {
+            "api_key": api_key,
+            "base_url": api_url,
+            "max_retries": values["max_retries"],
+        }
+        # value <= 0 indicates the param should be ignored. None is a meaningful value
+        # for Anthropic client and treated differently than not specifying the param at
+        # all.
+        if (
+            values["default_request_timeout"] is None
+            or values["default_request_timeout"] > 0
+        ):
+            client_params["timeout"] = values["default_request_timeout"]
+
+        values["_client"] = anthropic.Client(**client_params)
+        values["_async_client"] = anthropic.AsyncClient(**client_params)
         return values
 
     def _format_params(
