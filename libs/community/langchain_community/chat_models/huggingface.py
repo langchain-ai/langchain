@@ -1,5 +1,5 @@
 """Hugging Face Chat Wrapper."""
-from typing import Any, AsyncIterator, List, Iterator, Optional
+from typing import Any, AsyncIterator, Iterator, List, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -7,8 +7,6 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
-    agenerate_from_stream,
-    generate_from_stream,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -104,7 +102,7 @@ class ChatHuggingFace(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         request = self._to_chat_prompt(messages)
-        async for data in self.llm._astream(request, **kwargs):  # await 대신 async for 사용
+        async for data in self.llm._astream(request, **kwargs):
             delta = data.text
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
@@ -118,12 +116,6 @@ class ChatHuggingFace(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return generate_from_stream(stream_iter)
-
         llm_input = self._to_chat_prompt(messages)
         llm_result = self.llm._generate(
             prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
@@ -137,12 +129,6 @@ class ChatHuggingFace(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._astream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return await agenerate_from_stream(stream_iter)
-
         llm_input = self._to_chat_prompt(messages)
         llm_result = await self.llm._agenerate(
             prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
