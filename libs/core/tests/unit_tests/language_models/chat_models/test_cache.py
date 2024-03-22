@@ -34,13 +34,20 @@ class InMemoryCache(BaseCache):
         self._cache = {}
 
 
-def test_local_cache_generate() -> None:
+def test_local_cache_generate_sync() -> None:
+    global_cache = InMemoryCache()
     local_cache = InMemoryCache()
-    llm = FakeListLLM(cache=local_cache, responses=["foo", "bar"])
-    output = llm.generate(["foo"])
-    assert output.generations[0][0].text == "foo"
-    output = llm.generate(["foo"])
-    assert output.generations[0][0].text == "foo"
+    try:
+        set_llm_cache(global_cache)
+        llm = FakeListLLM(cache=local_cache, responses=["foo", "bar"])
+        output = llm.generate(["foo"])
+        assert output.generations[0][0].text == "foo"
+        output = llm.generate(["foo"])
+        assert output.generations[0][0].text == "foo"
+        assert global_cache._cache == {}
+        assert len(local_cache._cache) == 1
+    finally:
+        set_llm_cache(None)
 
 
 def test_local_cache_sync() -> None:
@@ -70,6 +77,22 @@ def test_local_cache_sync() -> None:
         assert global_cache._cache == {}
         # The local cache should be populated
         assert len(local_cache._cache) == 2
+    finally:
+        set_llm_cache(None)
+
+
+async def test_local_cache_generate_async() -> None:
+    global_cache = InMemoryCache()
+    local_cache = InMemoryCache()
+    try:
+        set_llm_cache(global_cache)
+        llm = FakeListLLM(cache=local_cache, responses=["foo", "bar"])
+        output = await llm.agenerate(["foo"])
+        assert output.generations[0][0].text == "foo"
+        output = await llm.agenerate(["foo"])
+        assert output.generations[0][0].text == "foo"
+        assert global_cache._cache == {}
+        assert len(local_cache._cache) == 1
     finally:
         set_llm_cache(None)
 
