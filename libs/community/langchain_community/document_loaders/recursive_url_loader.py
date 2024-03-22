@@ -83,6 +83,7 @@ class RecursiveUrlLoader(BaseLoader):
     def __init__(
         self,
         url: str,
+        base_url: Optional[str] = None,
         max_depth: Optional[int] = 2,
         use_async: Optional[bool] = None,
         extractor: Optional[Callable[[str], str]] = None,
@@ -99,6 +100,7 @@ class RecursiveUrlLoader(BaseLoader):
 
         Args:
             url: The URL to crawl.
+            base_url: the base url to check for outside links against.
             max_depth: The max depth of the recursive loading.
             use_async: Whether to use asynchronous loading.
                 If True, this function will not be lazy, but it will still work in the
@@ -123,6 +125,7 @@ class RecursiveUrlLoader(BaseLoader):
         """
 
         self.url = url
+        self.base_url = base_url if base_url is not None else url
         self.max_depth = max_depth if max_depth is not None else 2
         self.use_async = use_async if use_async is not None else False
         self.extractor = extractor if extractor is not None else lambda x: x
@@ -187,7 +190,7 @@ class RecursiveUrlLoader(BaseLoader):
         sub_links = extract_sub_links(
             response.text,
             url,
-            base_url=self.url,
+            base_url=self.base_url,
             pattern=self.link_regex,
             prevent_outside=self.prevent_outside,
             exclude_prefixes=self.exclude_dirs,
@@ -273,7 +276,7 @@ class RecursiveUrlLoader(BaseLoader):
             sub_links = extract_sub_links(
                 text,
                 url,
-                base_url=self.url,
+                base_url=self.base_url,
                 pattern=self.link_regex,
                 prevent_outside=self.prevent_outside,
                 exclude_prefixes=self.exclude_dirs,
