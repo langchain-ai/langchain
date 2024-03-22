@@ -1,5 +1,5 @@
 """Hugging Face Chat Wrapper."""
-from typing import Any, AsyncIterator, List, Iterator, Optional
+from typing import Any, AsyncIterator, Iterator, List, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -35,7 +35,8 @@ DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."
 
 
 class ChatHuggingFace(BaseChatModel):
-    """Hugging Face LLMs as ChatModels.
+    """
+    Wrapper for using Hugging Face LLM's as ChatModels.
 
     Works with `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`,
     and `HuggingFaceHub` LLMs.
@@ -53,6 +54,7 @@ class ChatHuggingFace(BaseChatModel):
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
     tokenizer: Any = None
     model_id: Optional[str] = None
+    streaming: bool = False
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
@@ -88,8 +90,8 @@ class ChatHuggingFace(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         request = self._to_chat_prompt(messages)
 
-        for data in self.llm._stream(request, **kwargs):
-            delta = data.text
+        for data in self.llm.stream(request, **kwargs):
+            delta = data
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
                 run_manager.on_llm_new_token(delta, chunk=chunk)
@@ -103,8 +105,8 @@ class ChatHuggingFace(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         request = self._to_chat_prompt(messages)
-        async for data in self.llm._astream(request, **kwargs):  # await 대신 async for 사용
-            delta = data.text
+        async for data in self.llm.astream(request, **kwargs):
+            delta = data
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
                 await run_manager.on_llm_new_token(delta, chunk=chunk)
