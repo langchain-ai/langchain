@@ -1,4 +1,5 @@
 """Test ChatOpenAI chat model."""
+
 from typing import Any, Optional, cast
 
 import pytest
@@ -467,3 +468,17 @@ async def test_async_response_metadata_streaming() -> None:
         )
     )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
+
+
+def test_openai_structured_output() -> None:
+    class MyModel(BaseModel):
+        """A Person"""
+
+        name: str
+        age: int
+
+    llm = ChatOpenAI().with_structured_output(MyModel)
+    result = llm.invoke("I'm a 27 year old named Erick")
+    assert isinstance(result, MyModel)
+    assert result.name == "Erick"
+    assert result.age == 27
