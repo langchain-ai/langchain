@@ -1,4 +1,5 @@
 """Test AzureChatOpenAI wrapper."""
+
 import os
 from typing import Any, Optional
 
@@ -6,6 +7,7 @@ import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage, BaseMessageChunk, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_openai import AzureChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -223,3 +225,18 @@ def test_openai_invoke(llm: AzureChatOpenAI) -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+
+
+@pytest.mark.skip(reason="Need tool calling model deployed on azure")
+def test_openai_structured_output(llm: AzureChatOpenAI) -> None:
+    class MyModel(BaseModel):
+        """A Person"""
+
+        name: str
+        age: int
+
+    llm_structure = llm.with_structured_output(MyModel)
+    result = llm_structure.invoke("I'm a 27 year old named Erick")
+    assert isinstance(result, MyModel)
+    assert result.name == "Erick"
+    assert result.age == 27
