@@ -1005,6 +1005,7 @@ dataclasses-json = ">= 0.5.7, < 0.7"
 gigachain-community = ">=0.0.28,<0.1"
 gigachain-core = "^0.1.31"
 gigachain-text-splitters = ">=0.0.1,<0.1"
+gigachat = "^0.1.20"
 jsonpatch = "^1.33"
 langsmith = "^0.1.17"
 numpy = "^1"
@@ -1130,6 +1131,21 @@ gigachain-core = "^0.1.28"
 [package.source]
 type = "directory"
 url = "libs/text-splitters"
+
+[[package]]
+name = "gigachat"
+version = "0.1.21"
+description = "GigaChat. Python-library for GigaChain and LangChain"
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "gigachat-0.1.21-py3-none-any.whl", hash = "sha256:e9bfccd22bcfd2dce8bfd108c6a80c9f38a3e46b0c98b050ca851e7500934624"},
+    {file = "gigachat-0.1.21.tar.gz", hash = "sha256:247a7d58a90ae06903dbbbea52bcda63befe16527d476d979882d84713c71242"},
+]
+
+[package.dependencies]
+httpx = "<1"
+pydantic = ">=1"
 
 [[package]]
 name = "greenlet"
@@ -4362,4 +4378,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "92ff31de91cc5aec6f3f0110db221bcee7b052af77e26b146ef17b6aa97121c6"
+content-hash = "a1950d4fecd2a8d02d2161ced6ec86514a4686f64488398934e80b7ee7f6adab"

@@ -1159,10 +1159,6 @@ files = [
     {file = "duckdb_engine-0.9.5.tar.gz", hash = "sha256:17fdc13068540315b64c7d174d5a260e918b1ce4b5346897caca026401afb280"},
 ]
 
-[package.dependencies]
-duckdb = ">=0.4.0"
-sqlalchemy = ">=1.3.22"
-
 [[package]]
 name = "exceptiongroup"
 version = "1.2.0"
@@ -1493,6 +1489,21 @@ gigachain-core = "^0.1.28"
 [package.source]
 type = "directory"
 url = "../text-splitters"
+
+[[package]]
+name = "gigachat"
+version = "0.1.20"
+description = "GigaChat. Python-library for GigaChain and LangChain"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "gigachat-0.1.20-py3-none-any.whl", hash = "sha256:227b0d285d990bcb4a47d2098e06f9ffb3935fc4f4a0989f1789787908ec12b4"},
+    {file = "gigachat-0.1.20.tar.gz", hash = "sha256:221b4f32591985848c52838dd4d654fa2b91d2bc3a44ebbdebf1385531526b47"},
+]
+
+[package.dependencies]
+httpx = "<1"
+pydantic = ">=1"
 
 [[package]]
 name = "googleapis-common-protos"
@@ -6324,4 +6335,4 @@ qdrant = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "ee84a1534830b0f6424ef8b7351c1f2a816ca405561c0c011d8c0b7b1ca49345"
+content-hash = "aa3d52cbca8fa185477da7420a282201a6cccc70960f7010b8dcbcd389957066"

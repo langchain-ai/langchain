@@ -15,6 +15,7 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+gigachat = "^0.1.20"
 gigachain-core = "^0.1.31"
 gigachain-text-splitters = ">=0.0.1,<0.1"
 gigachain-community = ">=0.0.28,<0.1"

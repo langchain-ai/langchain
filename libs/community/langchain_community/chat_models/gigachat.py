@@ -72,9 +72,13 @@ def _convert_dict_to_message(message: Messages) -> BaseMessage:
     from gigachat.models import MessagesRole
 
     additional_kwargs: Dict = {}
-    if message.function_call:
+    if function_call := message.function_call:
         # Dump to JSON to use the same logic as OpenAI
-        additional_kwargs["function_call"] = message.function_call
+        from gigachat.models.function_call import FunctionCall
+        if isinstance(function_call, FunctionCall):
+            additional_kwargs["function_call"] = dict(function_call)
+        elif isinstance(function_call, dict):
+            additional_kwargs["function_call"] = function_call
 
     if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)

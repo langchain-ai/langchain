@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 import requests
 
 DEFAULT_REF = os.environ.get("LANGCHAIN_HUB_DEFAULT_REF", "master")
+LANGCHAINHUB_REPO = "https://raw.githubusercontent.com/ai-forever/gigachain"
 URL_BASE = os.environ.get(
     "LANGCHAIN_HUB_URL_BASE",
     "https://raw.githubusercontent.com/ai-forever/gigachain/{ref}/hub/",
@@ -43,6 +44,8 @@ def try_load_from_hub(
     # Instead, use PurePosixPath to ensure that forward slashes are used as the
     # path separator, regardless of the operating system.
     full_url = urljoin(URL_BASE.format(ref=ref), PurePosixPath(remote_path).__str__())
+    if not full_url.startswith(LANGCHAINHUB_REPO):
+        raise ValueError(f"Invalid hub path: {path}")
 
     r = requests.get(full_url, timeout=5)
     if r.status_code != 200:

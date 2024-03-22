@@ -110,7 +110,6 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
                     ).data:
                         result.append(embedding.embedding)
         else:
-            result: List[List[float]] = []
             size = 0
             local_texts = []
             for text in texts:
