@@ -551,7 +551,10 @@ MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTempla
 
 MessageLikeRepresentation = Union[
     MessageLike,
-    Tuple[Union[str, Type], Union[str, List[dict], List[object]]],
+    Tuple[
+        Union[str, Type],
+        Union[str, List[dict], List[object]],
+    ],
     str,
 ]
 
@@ -587,6 +590,45 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             #        HumanMessage(content='Hello, how are you doing?'),
             #        AIMessage(content="I'm doing well, thanks!"),
             #        HumanMessage(content='What is your name?')
+            #    ]
+            #)
+
+    Messages Placeholder:
+
+        .. code-block:: python
+
+            # In addition to Human/AI/Tool/Function messages,
+            # you can initialize the template with a MessagesPlaceholder
+            # either using the class directly or with the shorthand tuple syntax:
+
+            template = ChatPromptTemplate.from_messages([
+                ("system", "You are a helpful AI bot."),
+                # Means the template will receive an optional list of messages under
+                # the "conversation" key
+                ("placeholder", "{conversation}")
+                # Equivalently:
+                # MessagesPlaceholder(variable_name="conversation", optional=True)
+            ])
+
+            prompt_value = template.invoke(
+                {
+                    "conversation": [
+                        ("human", "Hi!"),
+                        ("ai", "How can I assist you today?"),
+                        ("human", "Can you make me an ice cream sundae?"),
+                        ("ai", "No.")
+                    ]
+                }
+            )
+
+            # Output:
+            # ChatPromptValue(
+            #    messages=[
+            #        SystemMessage(content='You are a helpful AI bot.'),
+            #        HumanMessage(content='Hi!'),
+            #        AIMessage(content='How can I assist you today?'),
+            #        HumanMessage(content='Can you make me an ice cream sundae?'),
+            #        AIMessage(content='No.'),
             #    ]
             #)
 
@@ -949,6 +991,36 @@ def _create_template_from_message_type(
         message = AIMessagePromptTemplate.from_template(cast(str, template))
     elif message_type == "system":
         message = SystemMessagePromptTemplate.from_template(cast(str, template))
+    elif message_type == "placeholder":
+        if isinstance(template, str):
+            if template[0] != "{" or template[-1] != "}":
+                raise ValueError(
+                    f"Invalid placeholder template: {template}."
+                    " Expected a variable name surrounded by curly braces."
+                )
+            var_name = template[1:-1]
+            message = MessagesPlaceholder(variable_name=var_name, optional=True)
+        elif len(template) == 2 and isinstance(template[1], bool):
+            var_name_wrapped, is_optional = template
+            if not isinstance(var_name_wrapped, str):
+                raise ValueError(
+                    "Expected variable name to be a string." f" Got: {var_name_wrapped}"
+                )
+            if var_name_wrapped[0] != "{" or var_name_wrapped[-1] != "}":
+                raise ValueError(
+                    f"Invalid placeholder template: {var_name_wrapped}."
+                    " Expected a variable name surrounded by curly braces."
+                )
+            var_name = var_name_wrapped[1:-1]
+
+            message = MessagesPlaceholder(variable_name=var_name, optional=is_optional)
+        else:
+            raise ValueError(
+                "Unexpected arguments for placeholder message type."
+                " Expected either a single string variable name"
+                " or a list of [variable_name: str, is_optional: bool]."
+                f" Got: {template}"
+            )
     else:
         raise ValueError(
             f"Unexpected message type: {message_type}. Use one of 'human',"
