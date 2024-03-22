@@ -487,3 +487,17 @@ def test_tool_use() -> None:
     )
     msgs.extend([ai_msg, tool_msg])
     llm_with_tool.invoke(msgs)
+
+
+def test_openai_structured_output() -> None:
+    class MyModel(BaseModel):
+        """A Person"""
+
+        name: str
+        age: int
+
+    llm = ChatOpenAI().with_structured_output(MyModel)
+    result = llm.invoke("I'm a 27 year old named Erick")
+    assert isinstance(result, MyModel)
+    assert result.name == "Erick"
+    assert result.age == 27
