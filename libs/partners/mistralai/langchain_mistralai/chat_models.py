@@ -234,7 +234,7 @@ class ChatMistralAI(BaseChatModel):
             stream = kwargs["stream"]
             if stream:
 
-                def iter_sse():
+                def iter_sse() -> Iterator[Dict]:
                     with connect_sse(
                         self.client, "POST", "/chat/completions", json=kwargs
                     ) as event_source:
