@@ -83,7 +83,6 @@ class RecursiveUrlLoader(BaseLoader):
     def __init__(
         self,
         url: str,
-        base_url: Optional[str] = None,
         max_depth: Optional[int] = 2,
         use_async: Optional[bool] = None,
         extractor: Optional[Callable[[str], str]] = None,
@@ -95,12 +94,14 @@ class RecursiveUrlLoader(BaseLoader):
         headers: Optional[dict] = None,
         check_response_status: bool = False,
         continue_on_failure: bool = True,
+        *,
+        base_url: Optional[str] = None,
+    None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
         Args:
             url: The URL to crawl.
-            base_url: the base url to check for outside links against.
             max_depth: The max depth of the recursive loading.
             use_async: Whether to use asynchronous loading.
                 If True, this function will not be lazy, but it will still work in the
@@ -122,10 +123,10 @@ class RecursiveUrlLoader(BaseLoader):
                 URLs with error responses (400-599).
             continue_on_failure: If True, continue if getting or parsing a link raises
                 an exception. Otherwise, raise the exception.
+            base_url: the base url to check for outside links against.
         """
 
         self.url = url
-        self.base_url = base_url if base_url is not None else url
         self.max_depth = max_depth if max_depth is not None else 2
         self.use_async = use_async if use_async is not None else False
         self.extractor = extractor if extractor is not None else lambda x: x
@@ -149,6 +150,7 @@ class RecursiveUrlLoader(BaseLoader):
         self.headers = headers
         self.check_response_status = check_response_status
         self.continue_on_failure = continue_on_failure
+        self.base_url = base_url if base_url is not None else url
 
     def _get_child_links_recursive(
         self, url: str, visited: Set[str], *, depth: int = 0
