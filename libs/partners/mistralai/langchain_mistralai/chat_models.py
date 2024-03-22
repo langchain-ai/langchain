@@ -15,6 +15,7 @@ from typing import (
     Type,
     Union,
     cast,
+    AsyncContextManager,
 )
 
 import httpx
@@ -87,14 +88,15 @@ def _convert_mistral_chat_message_to_message(
 
 
 async def _iter_sse(
-    event_source: EventSource,
+    event_source_mgr: AsyncContextManager[EventSource],
 ) -> AsyncIterator[Dict]:
     """Iterate over the server-sent events."""
-    async for event in event_source.aiter_sse():
-        print(event)
-        if event.data == "[DONE]":
-            return
-        yield event.json()
+    async with event_source_mgr as event_source:
+        async for event in event_source.aiter_sse():
+            print(event)
+            if event.data == "[DONE]":
+                return
+            yield event.json()
 
 
 async def acompletion_with_retry(
@@ -111,14 +113,14 @@ async def acompletion_with_retry(
             kwargs["stream"] = False
         stream = kwargs["stream"]
         if stream:
-            print("pre", kwargs)
-            async with aconnect_sse(
+            event_source = aconnect_sse(
                 llm.async_client, "POST", "/chat/completions", json=kwargs
-            ) as event_source:
-                return _iter_sse(event_source)
+            )
+
+            return _iter_sse(event_source)
         else:
             response = await llm.async_client.post(url="/chat/completions", json=kwargs)
-            return await response.json()
+            return response.json()
 
     return await _completion_with_retry(**kwargs)
 
@@ -231,6 +233,7 @@ class ChatMistralAI(BaseChatModel):
             if "stream" not in kwargs:
                 kwargs["stream"] = False
             stream = kwargs["stream"]
+            print("stream", stream)
             if stream:
                 with connect_sse(
                     self.client, "POST", "/chat/completions", json=kwargs
@@ -242,7 +245,9 @@ class ChatMistralAI(BaseChatModel):
             else:
                 return self.client.post(url="/chat/completions", json=kwargs).json()
 
-        return _completion_with_retry(**kwargs)
+        print("daf", kwargs)
+        rtn = _completion_with_retry(**kwargs)
+        return rtn
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -300,8 +305,12 @@ class ChatMistralAI(BaseChatModel):
 
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
+        print("params", params)
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
+        )
+        print(
+            "respons",
         )
         return self._create_chat_result(response)
 
