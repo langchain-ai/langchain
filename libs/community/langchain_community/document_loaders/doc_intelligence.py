@@ -1,4 +1,4 @@
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional
 
 from langchain_core.documents import Document
 
