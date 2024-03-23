@@ -28,7 +28,7 @@ class S3FileLoader(UnstructuredBaseLoader):
         aws_session_token: Optional[str] = None,
         boto_config: Optional[botocore.client.Config] = None,
         mode: str = "single",
-        post_processors: Optional[List[Callable]] = None
+        post_processors: Optional[List[Callable]] = None,
     ):
         """Initialize with bucket and key name.
 
@@ -84,9 +84,9 @@ class S3FileLoader(UnstructuredBaseLoader):
             object is set on the session, the config object used when creating
             the client will be the result of calling ``merge()`` on the
             default config with the config provided to this call.
-        :param mode: Mode in which to read the file. Valid options are: single, 
+        :param mode: Mode in which to read the file. Valid options are: single,
         paged and elements
-        :param post_processors: Post processing functions to be applied to 
+        :param post_processors: Post processing functions to be applied to
         extracted elements
         """
         super().__init__(mode, post_processors)
