@@ -197,7 +197,6 @@ def _load_package_modules(
             print(
                 f"Error: Unable to import module '{namespace}' with error: {e}"
             )  # noqa: T201
-
     return modules_by_namespace
 
 
