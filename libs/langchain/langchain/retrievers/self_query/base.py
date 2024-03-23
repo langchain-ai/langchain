@@ -7,6 +7,7 @@ from langchain_community.vectorstores import (
     Chroma,
     DashVector,
     DeepLake,
+    Dingo,
     ElasticsearchStore,
     Milvus,
     MongoDBAtlasVectorSearch,
@@ -39,6 +40,7 @@ from langchain.retrievers.self_query.astradb import AstraDBTranslator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
+from langchain.retrievers.self_query.dingo import DingoDBTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
 from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.mongodb_atlas import MongoDBAtlasTranslator
@@ -54,6 +56,7 @@ from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 
 logger = logging.getLogger(__name__)
+QUERY_CONSTRUCTOR_RUN_NAME = "query_constructor"
 
 
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
@@ -64,6 +67,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
+        Dingo: DingoDBTranslator,
         Weaviate: WeaviateTranslator,
         Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
@@ -244,7 +248,10 @@ class SelfQueryRetriever(BaseRetriever):
             enable_limit=enable_limit,
             **chain_kwargs,
         )
-        return cls(
+        query_constructor = query_constructor.with_config(
+            run_name=QUERY_CONSTRUCTOR_RUN_NAME
+        )
+        return cls(  # type: ignore[call-arg]
             query_constructor=query_constructor,
             vectorstore=vectorstore,
             use_original_query=use_original_query,
