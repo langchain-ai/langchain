@@ -41,7 +41,7 @@ def test_from_texts_with_metadatas() -> None:
     embedding_function = FakeEmbeddings()
     texts = ["foo", "bar", "baz"]
     ids = [f"test_from_texts_with_metadatas_{i}" for i in range(len(texts))]
-    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    metadatas = [{"page": str(i)} for i in range(1,len(texts)+1)]
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
@@ -52,7 +52,7 @@ def test_from_texts_with_metadatas() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [
-        Document(page_content="foo", metadata={"page": "0", "id": ids[0]})
+        Document(page_content="foo", metadata={"page": "1", "id": ids[0]})
     ]
 
 
@@ -63,7 +63,7 @@ def test_from_texts_with_metadatas_with_scores() -> None:
     embedding_function = FakeEmbeddings()
     texts = ["foo", "bar", "baz"]
     ids = [f"test_from_texts_with_metadatas_with_scores_{i}" for i in range(len(texts))]
-    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    metadatas = [{"page": str(i)} for i in range(1,len(texts)+1)]
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
@@ -74,7 +74,7 @@ def test_from_texts_with_metadatas_with_scores() -> None:
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0", "id": ids[0]}), 0.0)
+        (Document(page_content="foo", metadata={"page": "1", "id": ids[0]}), 0.0)
     ]
 
 
@@ -85,7 +85,7 @@ def test_from_texts_with_metadatas_with_scores_using_vector() -> None:
     embedding_function = FakeEmbeddings()
     texts = ["foo", "bar", "baz"]
     ids = [f"test_from_texts_with_metadatas_{i}" for i in range(len(texts))]
-    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    metadatas = [{"page": str(i)} for i in range(1,len(texts)+1)]
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
@@ -96,7 +96,7 @@ def test_from_texts_with_metadatas_with_scores_using_vector() -> None:
     )
     output = docsearch._similarity_search_with_relevance_scores("foo", k=1)
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0", "id": ids[0]}), 0.0)
+        (Document(page_content="foo", metadata={"page": "1", "id": ids[0]}), 0.0)
     ]
 
 
@@ -126,7 +126,8 @@ def test_search_filter() -> None:
         "far", k=2, filter={"first_letter": ["==", "b"]}
     )
     assert output == [
-        Document(page_content="bar", metadata={"first_letter": "b", "id": ids[1]})
+        Document(page_content="bar", metadata={"first_letter": "b", "id": ids[1]}),
+        Document(page_content="baz", metadata={"first_letter": "b", "id": ids[2]})
     ]
 
 
@@ -163,6 +164,10 @@ def test_search_filter_with_scores() -> None:
         (
             Document(page_content="bar", metadata={"first_letter": "b", "id": ids[1]}),
             1.0,
+        ),
+        (
+            Document(page_content="baz", metadata={"first_letter": "b", "id": ids[2]}),
+            4.0,
         )
     ]
 
@@ -235,7 +240,7 @@ def test_update_document() -> None:
     document_id = "doc1"
 
     # Create an instance of Document with initial content and metadata
-    original_doc = Document(page_content=initial_content, metadata={"page": "0"})
+    original_doc = Document(page_content=initial_content, metadata={"page": "1"})
 
     # Initialize a VDMS instance with the original document
     docsearch = VDMS.from_documents(
@@ -256,7 +261,7 @@ def test_update_document() -> None:
     updated_content = "updated foo"
 
     # Create a new Document instance with the updated content and the same id
-    updated_doc = Document(page_content=updated_content, metadata={"page": "0"})
+    updated_doc = Document(page_content=updated_content, metadata={"page": "1"})
 
     # Update the document in the VDMS instance
     docsearch.update_document(
@@ -269,7 +274,7 @@ def test_update_document() -> None:
     # Assert that the updated document is returned by the search
     assert output == [
         Document(
-            page_content=updated_content, metadata={"page": "0", "id": document_id}
+            page_content=updated_content, metadata={"page": "1", "id": document_id}
         )
     ]
 
@@ -293,8 +298,8 @@ def test_with_relevance_score() -> None:
     collection_name = "test_with_relevance_score"
     embedding_function = FakeEmbeddings()
     texts = ["foo", "bar", "baz"]
-    ids = [f"test_mmr_by_vector_{i}" for i in range(len(texts))]
-    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    ids = [f"test_relevance_scores_{i}" for i in range(len(texts))]
+    metadatas = [{"page": str(i)} for i in range(1,len(texts)+1)]
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
@@ -305,9 +310,9 @@ def test_with_relevance_score() -> None:
     )
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0", "id": ids[0]}), 0.0),
-        (Document(page_content="bar", metadata={"page": "1", "id": ids[1]}), 0.25),
-        (Document(page_content="baz", metadata={"page": "2", "id": ids[2]}), 1.0),
+        (Document(page_content="foo", metadata={"page": "1", "id": ids[0]}), 0.0),
+        (Document(page_content="bar", metadata={"page": "2", "id": ids[1]}), 0.25),
+        (Document(page_content="baz", metadata={"page": "3", "id": ids[2]}), 1.0),
     ]
 
 

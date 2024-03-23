@@ -1,12 +1,10 @@
 from __future__ import annotations
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from enum import Enum
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from threading import current_thread
 from typing import (
     Any,
     Callable,
@@ -59,6 +57,7 @@ DEFAULT_COLLECTION_NAME = "langchain"
 DEFAULT_DISTANCE_METRIC = DistanceMetric.L2
 DEFAULT_INSERT_BATCH_SIZE = 32
 DEFAULT_K = 3  # Number of Documents to return.
+DEFAULT_FETCH_K = 50 # Number of Documents to fetch to pass to knn when filters applied.
 DEFAULT_PROPERTIES = ["_distance", "id", "content"]
 DEFAULT_SEARCH_ENGINE = IndexEngine.FaissFlat
 DEFAULT_VDMS_CONNECTION = {"host": "localhost", "port": 55555}
@@ -93,6 +92,8 @@ class VDMS(VectorStore):
     - a host (str) and port (int) associated with a deployed VDMS Server
 
     Visit https://github.com/IntelLabs/vdms/wiki more information.
+
+    IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
 
     Args:
         collection_name: Name of data collection [Default: langchain]
@@ -203,30 +204,26 @@ class VDMS(VectorStore):
         - embedding dimensionality
         - etc.
         """
-        if self.override_relevance_score_fn:
+        if self.override_relevance_score_fn is not None:
             return self.override_relevance_score_fn
 
-        # Default strategy is to rely on distance strategy provided in
-        # vectorstore constructor
-        if self.distance_strategy.lower() == "ip":
-            return self._max_inner_product_relevance_score_fn
-        elif self.distance_strategy.lower() == "l2":
-            # Default behavior is to use euclidean distance relevancy
-            return self._euclidean_relevance_score_fn
-        # elif self.distance_strategy.lower() == "cosine":
-        #     return self._cosine_relevance_score_fn
+        # Default strategy is to rely on distance strategy provided
+        # in vectorstore constructor
+        if self.distance_strategy.lower() in ["ip", "l2"]:
+            return lambda x: x
         else:
             raise ValueError(
-                "Unknown distance strategy, must be cosine, max_inner_product,"
-                " or euclidean"
+                "No supported normalization function"
+                f" for distance_strategy of {self.distance_strategy}."
+                "Consider providing relevance_score_fn to VDMS constructor."
             )
 
     def _similarity_search_with_relevance_scores(
         self,
         query: str,
         k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, Any]] = None,
-        # where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
@@ -242,8 +239,8 @@ class VDMS(VectorStore):
         docs_and_scores = self.similarity_search_with_score(
             query,
             k,
+            fetch_k,
             filter,
-            # where_document,
             **kwargs,
         )
 
@@ -277,8 +274,6 @@ class VDMS(VectorStore):
         all_blobs = []
         inserted_ids = []
         for meta, emb, doc, id in zip(metadatas, embeddings, texts, ids):
-            # all_queries = []
-            # all_blobs = []
             query, blob = self.__get_add_query(
                 collection_name, metadata=meta, embedding=emb,
                 document=doc, id=id
@@ -716,6 +711,86 @@ class VDMS(VectorStore):
         name = collection_name if collection_name is not None else self._collection_name
         return self.__delete(name, ids=ids, constraints=constraints)
 
+    def get_k_candidates(self, setname, fetch_k, results, all_blobs, normalize=False):
+        max_dist = 1
+        command_str = "FindDescriptor"
+        query = add_descriptor(
+            command_str,
+            setname,
+            k_neighbors=fetch_k,
+            results=results,
+        )
+        response, response_array = self.__run_vdms_query([query], all_blobs)
+
+        if normalize:
+            max_dist = response[0][command_str]['entities'][-1]["_distance"]
+
+        return response, response_array, max_dist
+
+    def get_descriptor_response(
+        self,
+        command_str: str,
+        setname: str,
+        k_neighbors: Optional[int] = DEFAULT_K,
+        fetch_k: Optional[int] = DEFAULT_FETCH_K,
+        constraints: Optional[dict] = None,
+        results: Optional[dict] = None,
+        query_embedding: Optional[List[float]] = None,
+        normalize_distance: bool = False,
+    ):
+        all_blobs = []
+        blob = embedding2bytes(query_embedding)
+        all_blobs.append(blob)
+
+        if constraints is None:
+            # K results returned
+            response, response_array, max_dist = \
+                self.get_k_candidates(setname, k_neighbors, results,
+                                      all_blobs, normalize=normalize_distance)
+        else:
+            # (1) Find docs satisfy constraints
+            # (2) Find top fetch_k results
+            # (3) Intersection of (1) & (2) using ids
+            if results is None:
+                results = {"limit": fetch_k, "list": ["id"]}
+            else:
+                results["limit"] = fetch_k
+                if "list" not in results:
+                    results["list"] = ["id"]
+                elif "id" not in results["list"]:
+                    results["list"].append("id")
+            query = add_descriptor(
+                command_str,
+                setname,
+                constraints=constraints,
+                results=results,
+            )
+            response, response_array = self.__run_vdms_query([query])
+            ids_of_interest = [ent["id"] for ent in response[0][command_str]["entities"]]
+
+            response, response_array, max_dist = \
+                self.get_k_candidates(setname, fetch_k, results,
+                                      all_blobs, normalize=normalize_distance)
+
+            new_entities = []
+            for ent in response[0][command_str]["entities"]:
+                if ent["id"] in ids_of_interest:
+                    new_entities.append(ent)
+                if len(new_entities) == k_neighbors:
+                    break
+            response[0][command_str]["entities"] = new_entities
+            response[0][command_str]["returned"] = len(new_entities)
+            if len(new_entities) < k_neighbors:
+                print("Returned items < k_neighbors; Try increasing fetch_k")
+
+        if normalize_distance:
+            max_dist = 1.0 if max_dist == 0 else max_dist
+            for ent_idx, ent in enumerate(response[0][command_str]["entities"]):
+                ent["_distance"] = ent["_distance"] / max_dist
+                response[0][command_str]["entities"][ent_idx]["_distance"] = ent["_distance"]
+
+        return response, response_array
+
     def encode_image(self, image_path: str) -> str:
         with open(image_path, "rb") as f:
             blob = f.read()
@@ -805,7 +880,7 @@ class VDMS(VectorStore):
         include: List[str] = ["metadata"],
     ) -> Tuple[Any, Any]:
         """Gets the collection.
-        Get embeddings and their associate data from the data store.
+        Get embeddings and their associated data from the data store.
         If no constraints provided returns all embeddings up to limit.
 
         Args:
@@ -817,15 +892,6 @@ class VDMS(VectorStore):
                      Ids are always included.
                      Defaults to `["metadatas", "documents"]`. Optional.
         """
-        # kwargs: Dict[str, Any] = {
-        #     "constraints": constraints,
-        #     "include": include,
-        # }
-
-        # if limit is not None:
-        #     kwargs["limit"] = limit
-
-        # return self.get_entries(collection_name, **kwargs)
         all_queries: List[Any] = []
         all_blobs: List[Any] = []
 
@@ -846,10 +912,6 @@ class VDMS(VectorStore):
         query = add_descriptor(
             "FindDescriptor",
             collection_name,
-            label=None,
-            ref=None,
-            props=None,
-            link=None,
             k_neighbors=None,
             constraints=constraints,
             results=results,
@@ -868,7 +930,6 @@ class VDMS(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
-        # where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -900,7 +961,6 @@ class VDMS(VectorStore):
             fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
-            # where_document=where_document,
         )
         return docs
 
@@ -911,7 +971,6 @@ class VDMS(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
-        # where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -931,13 +990,10 @@ class VDMS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        # if isinstance(embedding[0], float):
-        #     embedding = [embedding]
         results = self.query_collection_embeddings(
             query_embeddings=embedding,
             n_results=fetch_k,
             filter=filter,
-            # where_document=where_document,
             include=["metadatas", "documents", "distances", "embeddings"],
         )
 
@@ -962,7 +1018,6 @@ class VDMS(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
-        # where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -994,7 +1049,6 @@ class VDMS(VectorStore):
             fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
-            # where_document=where_document,
         )
         return docs
 
@@ -1005,7 +1059,6 @@ class VDMS(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
-        # where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -1025,13 +1078,10 @@ class VDMS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        # if isinstance(embedding[0], float):
-        #     embedding = [embedding]
         results = self.query_collection_embeddings(
             query_embeddings=embedding,
             n_results=fetch_k,
             filter=filter,
-            # where_document=where_document,
             include=["metadatas", "documents", "distances", "embeddings"],
         )
 
@@ -1056,14 +1106,14 @@ class VDMS(VectorStore):
         collection_name: Optional[str] = None,
         query_embeddings: Optional[List[float]] = None,
         n_results: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
         filter: Union[None, Dict[str, Any]] = None,
         results: Union[None, Dict[str, Any]] = None,
         normalize_distance: bool = False,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         all_responses: List[Any] = []
-        # all_queries = []
-        # all_blobs = []
+
         if collection_name is None:
             collection_name = self._collection_name
 
@@ -1082,65 +1132,15 @@ class VDMS(VectorStore):
             }
 
         for qemb in query_embeddings:
-            all_queries = []
-            all_blobs = []
-
-            query = add_descriptor(
+            response, response_array = self.get_descriptor_response(
                 "FindDescriptor",
                 collection_name,
-                label=None,
-                ref=None,
-                props=None,
-                link=None,
                 k_neighbors=n_results,
+                fetch_k=fetch_k,
                 constraints=filter,
                 results=results,
-            )
-
-            all_queries.append(query)
-
-            # if qemb:
-            # emb = np.array(qemb, dtype="float32")
-            # blob2 = emb.tobytes()
-            blob = embedding2bytes(qemb)
-            all_blobs.append(blob)
-
-            if normalize_distance:
-                # results["sort"] = "_distance"
-                query = add_descriptor(
-                    "FindDescriptor",
-                    collection_name,
-                    label=None,
-                    ref=None,
-                    props=None,
-                    link=None,
-                    k_neighbors=1000,
-                    constraints=filter,
-                    results=results,
-                )
-                all_queries.append(query)
-                all_blobs.append(blob)
-
-            response, response_array = self.__run_vdms_query(all_queries, all_blobs)
-            # self.print_last_response()
-
-            if normalize_distance and len(response) == 2:
-                # normalize distances and remove query
-                max_dist = max(
-                    [
-                        ent["_distance"]
-                        for ent in response[1]["FindDescriptor"]["entities"]
-                    ]
-                )
-                del response[1]
-                if len(response_array) > 0:
-                    # TODO implement-> remove blobs
-                    pass
-                for ent_idx, ent in enumerate(
-                    response[0]["FindDescriptor"]["entities"]
-                ):
-                    ent["_distance"] = ent["_distance"] / max_dist
-                    response[0]["FindDescriptor"]["entities"][ent_idx] = ent
+                normalize_distance=normalize_distance,
+                query_embedding=qemb)
             all_responses.append([response, response_array])
 
         return all_responses
@@ -1149,6 +1149,7 @@ class VDMS(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -1156,14 +1157,15 @@ class VDMS(VectorStore):
 
         Args:
             query (str): Query text to search for.
-            k (int): Number of results to return. Defaults to 4.
+            k (int): Number of results to return. Defaults to 3.
+            fetch_k (int): Number of candidates to fetch for knn (>= k).
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List[Document]: List of documents most similar to the query text.
         """
         docs_and_scores = self.similarity_search_with_score(
-            query, k, filter=filter, **kwargs
+            query, k, fetch_k, filter=filter, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -1171,29 +1173,24 @@ class VDMS(VectorStore):
         self,
         embedding: List[float],
         k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, str]] = None,
-        # where_document: Optional[Dict[str, str]] = None,
-        # normalize_distance=False,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            k (int): Number of Documents to return. Defaults to 3.
+            fetch_k (int): Number of candidates to fetch for knn (>= k).
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
             List of Documents most similar to the query vector.
         """
-        # if isinstance(embedding[0], float):
-        #     embedding = [embedding]
-
-        # if normalize_distance:
-        #     kwargs["normalize_distance"] = normalize_distance
         results = self.query_collection_embeddings(
             query_embeddings=embedding,
             n_results=k,
+            fetch_k=fetch_k,
             filter=filter,
-            # where_document=where_document,
             **kwargs,
         )
 
@@ -1203,16 +1200,16 @@ class VDMS(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, str]] = None,
-        # where_document: Optional[Dict[str, str]] = None,
-        # normalize_distance=False,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with VDMS with distance.
 
         Args:
             query (str): Query text to search for.
-            k (int): Number of results to return. Defaults to 4.
+            k (int): Number of results to return. Defaults to 3.
+            fetch_k (int): Number of candidates to fetch for knn (>= k).
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
@@ -1220,9 +1217,6 @@ class VDMS(VectorStore):
             the query text and cosine distance in float for each.
             Lower score represents more similarity.
         """
-        # if normalize_distance:
-        #     kwargs["normalize_distance"] = normalize_distance
-
         if self.embedding_function is None:
             raise ValueError("Must provide embedding function")
         else:
@@ -1230,8 +1224,8 @@ class VDMS(VectorStore):
             results = self.query_collection_embeddings(
                 query_embeddings=query_embedding,
                 n_results=k,
+                fetch_k=fetch_k,
                 filter=filter,
-                # where_document=where_document,
                 **kwargs,
             )
 
@@ -1241,9 +1235,8 @@ class VDMS(VectorStore):
         self,
         embedding: List[float],
         k: int = DEFAULT_K,
+        fetch_k: int = DEFAULT_FETCH_K,
         filter: Optional[Dict[str, str]] = None,
-        # where_document: Optional[Dict[str, str]] = None,
-        # normalize_distance=False,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
@@ -1251,7 +1244,8 @@ class VDMS(VectorStore):
 
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            k (int): Number of Documents to return. Defaults to 3.
+            fetch_k (int): Number of candidates to fetch for knn (>= k).
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
@@ -1259,14 +1253,13 @@ class VDMS(VectorStore):
             the query text and cosine distance in float for each.
             Lower score represents more similarity.
         """
-        # if normalize_distance:
         kwargs["normalize_distance"] = True
 
         results = self.query_collection_embeddings(
             query_embeddings=embedding,
             n_results=k,
+            fetch_k=fetch_k,
             filter=filter,
-            # where_document=where_document,
             **kwargs,
         )
         return _results_to_docs_and_scores(results)
@@ -1309,7 +1302,6 @@ class VDMS(VectorStore):
 """
 VDMS UTILITY
 """
-
 
 def _results_to_docs(results: Any) -> List[Document]:
     return [doc for doc, _ in _results_to_docs_and_scores(results)]
@@ -1512,9 +1504,9 @@ def bytes2str(in_bytes: bytes) -> str:
     return in_bytes.decode()
 
 
-
 def get_cmds_from_query(all_queries: list):
     return list(set([k for q in all_queries for k in q.keys()]))
+
 
 def check_valid_response(all_queries: List[dict], response: Any) -> bool:
     cmd_list = get_cmds_from_query(all_queries)
@@ -1637,5 +1629,3 @@ def validate_vdms_properties(metadata: Dict) -> Dict:
             new_metadata[key] = value
     return new_metadata
 
-
-#
