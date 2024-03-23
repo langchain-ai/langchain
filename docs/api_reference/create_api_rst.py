@@ -194,9 +194,7 @@ def _load_package_modules(
             modules_by_namespace[top_namespace] = _module_members
 
         except (ImportError, AttributeError, TypeError) as e:
-            print(
-                f"Error: Unable to import module '{namespace}' with error: {e}"
-            )  # noqa: T201
+            print(f"Error: Unable to import module '{namespace}' with error: {e}")
     return modules_by_namespace
 
 
