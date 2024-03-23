@@ -1,8 +1,6 @@
 from langchain_voyageai import __all__
 
-EXPECTED_ALL = [
-    "VoyageAIEmbeddings",
-]
+EXPECTED_ALL = ["VoyageAIEmbeddings", "VoyageAIRerank"]
 
 
 def test_all_imports() -> None:
