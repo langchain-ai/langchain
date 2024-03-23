@@ -128,13 +128,13 @@ def _convert_delta_to_message_chunk(
     _delta: Dict, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = _delta.get("role")
-    content = _delta.get("content", "")
+    content = _delta.get("content") or ""
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
         if tool_calls := _delta.get("tool_calls"):
-            additional_kwargs["tool_calls"] = [tc.model_dump() for tc in tool_calls]
+            additional_kwargs["tool_calls"] = tool_calls
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -355,8 +355,6 @@ class ChatMistralAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
-            if not delta["content"]:
-                continue
             new_chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
@@ -384,8 +382,6 @@ class ChatMistralAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             delta = chunk["choices"][0]["delta"]
-            if not delta["content"]:
-                continue
             new_chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
