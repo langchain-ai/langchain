@@ -1,7 +1,8 @@
 import logging
-import runhouse as rh
 from typing import Any, List, Mapping, Optional
 
+import runhouse as rh
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.llms.self_hosted import SelfHostedPipeline
@@ -13,12 +14,17 @@ VALID_TASKS = ("text-generation", "text2text-generation", "summarization")
 
 
 class LangchainLLMModelPipeline:
-    def __init__(self, model_id=DEFAULT_MODEL_ID, task=DEFAULT_TASK, **model_kwargs):
+    def __init__(
+        self,
+        model_id: str = DEFAULT_MODEL_ID,
+        task: str = DEFAULT_TASK,
+        **model_kwargs: Any,
+    ):
         super().__init__()
         self.model_id, self.model_kwargs, self.task = model_id, model_kwargs, task
         self.tokenizer, self.model, self.curr_pipeline = None, None, None
 
-    def load_model(self, hf_token) -> Any:
+    def load_model(self, hf_token: str) -> Any:
         """
         Accepts a huggingface model_id and returns a pipeline for the task.
         Sent to the remote hardware and being executed there,
@@ -188,6 +194,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         return self.ModelPipeline_remote_instance.interface_fn(

@@ -1,7 +1,7 @@
 import logging
-import runhouse as rh
 from typing import Any, List, Mapping, Optional
 
+import runhouse as rh
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelPipeline:
-    def __init__(self, model_id, **model_kwargs):
+    def __init__(self, model_id: str, **model_kwargs: Any):
         super().__init__()
         self.model_id, self.model_kwargs = model_id, model_kwargs
         self.tokenizer, self.model, self.curr_pipeline, self.task = (
@@ -22,7 +22,7 @@ class ModelPipeline:
             model_kwargs.get("task", None),
         )
 
-    def load_model(self, hf_token) -> Any:
+    def load_model(self, hf_token: str) -> Any:
         """
         Accepts a huggingface model_id and returns a pipeline for the task.
         Sent to the remote hardware and being executed there, as part of the

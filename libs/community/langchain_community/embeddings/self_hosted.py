@@ -1,6 +1,6 @@
 from typing import Any, List
-import runhouse as rh
 
+import runhouse as rh
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Extra
 
@@ -13,7 +13,7 @@ class EmbeddingsClass:
         self.model_id, self.instruct, self.device = model_id, instruct, device
         self.client = None
 
-    def load_embedding_model(self):
+    def load_embedding_model(self) -> Any:
         import sentence_transformers
 
         self.client = sentence_transformers.SentenceTransformer(self.model_id)
