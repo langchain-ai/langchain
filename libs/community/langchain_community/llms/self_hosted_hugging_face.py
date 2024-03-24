@@ -78,7 +78,7 @@ class LangchainLLMModelPipeline:
         """
         from langchain_community.llms.utils import enforce_stop_tokens
         response = self.curr_pipeline(prompt,
-                                      max_new_tokens=64,
+                                      max_new_tokens=256,
                                       do_sample=True,
                                       num_return_sequences=1,
                                       add_special_tokens=True,
@@ -174,10 +174,8 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
             self,
             prompt: str,
             stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
     ) -> str:
-        kwargs["max_length"] = max(len(prompt), 10240)
         return self.ModelPipeline_remote_instance.interface_fn(
             prompt=prompt, stop=stop, **kwargs
         )
