@@ -77,7 +77,12 @@ class LangchainLLMModelPipeline:
         Sent to the remote hardware and being executed there, as part of the rh.Module(LangchainLLMModelPipeline).
         """
         from langchain_community.llms.utils import enforce_stop_tokens
-        response = self.curr_pipeline(prompt, *args, **kwargs)
+        response = self.curr_pipeline(prompt,
+                                      max_new_tokens=64,
+                                      do_sample=True,
+                                      num_return_sequences=1,
+                                      add_special_tokens=True,
+                                      *args, **kwargs)
         if self.curr_pipeline.task in ["text2text-generation", "text-generation"]:
             text = response[0]["generated_text"][len(prompt):]
         elif self.curr_pipeline.task == "summarization":
