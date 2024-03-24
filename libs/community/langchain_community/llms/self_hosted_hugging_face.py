@@ -1,8 +1,7 @@
-import runhouse as rh
 import logging
 from typing import Any, List, Mapping, Optional
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+import runhouse as rh
 from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.llms.self_hosted import SelfHostedPipeline
@@ -22,11 +21,12 @@ class LangchainLLMModelPipeline:
     def load_model(self, hf_token) -> Any:
         """
         Accepts a huggingface model_id and returns a pipeline for the task.
-        Sent to the remote hardware and being executed there, as part of the rh.Module(LangchainLLMModelPipeline).
+        Sent to the remote hardware and being executed there,
+        as part of the rh.Module(LangchainLLMModelPipeline).
         """
-        from transformers import AutoTokenizer, AutoModelForCausalLM
-        from transformers import pipeline as hf_pipeline
         import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import pipeline as hf_pipeline
 
         if self.task not in VALID_TASKS:
             raise ValueError(
@@ -35,24 +35,28 @@ class LangchainLLMModelPipeline:
             )
 
         _model_kwargs = self.model_kwargs or {}
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id,
-                                                       torch_dtype=torch.float16,
-                                                       device_map=torch.device("cpu"),
-                                                       token=hf_token,
-                                                       **_model_kwargs)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_id,
+            torch_dtype=torch.float16,
+            device_map=torch.device("cpu"),
+            token=hf_token,
+            **_model_kwargs,
+        )
 
-        self.model = AutoModelForCausalLM.from_pretrained(self.model_id,
-                                                          torch_dtype=torch.float16,
-                                                          device_map=torch.device("cpu"),
-                                                          token=hf_token,
-                                                          **_model_kwargs)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_id,
+            torch_dtype=torch.float16,
+            device_map=torch.device("cpu"),
+            token=hf_token,
+            **_model_kwargs,
+        )
 
         curr_pipeline = hf_pipeline(
             task=self.task,
             model=self.model,
             tokenizer=self.tokenizer,
             token=hf_token,
-            model_kwargs=_model_kwargs
+            model_kwargs=_model_kwargs,
         )
         if curr_pipeline.task not in VALID_TASKS:
             raise ValueError(
@@ -63,30 +67,35 @@ class LangchainLLMModelPipeline:
         self.curr_pipeline = curr_pipeline
 
     def interface_fn(
-            self,
-            prompt: str,
-            *args: Any,
-            stop: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        *args: Any,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> str:
         """
         The prediction function of the model.
         Accepts a Hugging Face pipeline (or more likely,
         a key pointing to such a pipeline on the cluster's object store)
         and returns generated text.
-        Sent to the remote hardware and being executed there, as part of the rh.Module(LangchainLLMModelPipeline).
+        Sent to the remote hardware and being executed there, as part of the
+        rh.Module(LangchainLLMModelPipeline).
         """
         from langchain_community.llms.utils import enforce_stop_tokens
-        response = self.curr_pipeline(prompt,
-                                      max_new_tokens=256,
-                                      do_sample=True,
-                                      num_return_sequences=1,
-                                      add_special_tokens=True,
-                                      *args, **kwargs)
+
+        response = self.curr_pipeline(
+            prompt,
+            max_new_tokens=256,
+            do_sample=True,
+            num_return_sequences=1,
+            add_special_tokens=True,
+            *args,
+            **kwargs,
+        )
         if self.curr_pipeline.task in ["text2text-generation", "text-generation"]:
-            text = response[0]["generated_text"][len(prompt):]
+            text = response[0]["generated_text"][len(prompt) :]
         elif self.curr_pipeline.task == "summarization":
-            text = response[0]["summary_text"][len(prompt):]
+            text = response[0]["summary_text"][len(prompt) :]
         else:
             raise ValueError(
                 f"Got invalid task {self.curr_pipeline.task}, "
@@ -115,17 +124,25 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
             from langchain_community.llms import SelfHostedHuggingFaceLLM
             import runhouse as rh
             gpu = rh.cluster(name="rh-a10x", instance_type="g5.2xlarge")
-            model_env = rh.env(reqs=["transformers", "torch", "accelerate", "huggingface-hub"],
-                               secrets=["huggingface"]  # need for downloading google/gemma-2b-it).to(system=gpu)
+            model_env = rh.env(reqs=["transformers",
+                                    "torch",
+                                    "accelerate",
+                                    "huggingface-hub"],
+                               secrets=["huggingface"]
+                               # need for downloading google/gemma-2b-it).to(system=gpu)
             hf = SelfHostedHuggingFaceLLM(
-                model_id="google/gemma-2b-it", task="text2text-generation", hardware=gpu, env=model_env)
+                model_id="google/gemma-2b-it",
+                task="text2text-generation",
+                hardware=gpu,
+                env=model_env)
 
     """
 
     model_id: str = DEFAULT_MODEL_ID
     """Hugging Face model_id to load the model."""
     task: str = DEFAULT_TASK
-    """Hugging Face task ("text-generation", "text2text-generation" or "summarization")."""
+    """Hugging Face task ("text-generation", "text2text-generation" or 
+    "summarization")."""
     device: int = 0
     """Device to use for inference. -1 for CPU, 0 for GPU, 1 for second GPU, etc."""
     model_kwargs: Optional[dict] = None
@@ -154,27 +171,24 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
             "device": kwargs.get("device", 0),
             "load_fn_kwargs": kwargs.get("model_kwargs", None),
             "hardware": kwargs.get("hardware"),
-            "env": kwargs.get("env")
+            "env": kwargs.get("env"),
         }
         super().__init__(pipline_cls=LangchainLLMModelPipeline, **load_fn_kwargs)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"model_id": self.model_id},
-            **{"model_kwargs": self.model_kwargs}
-        }
+        return {**{"model_id": self.model_id}, **{"model_kwargs": self.model_kwargs}}
 
     @property
     def _llm_type(self) -> str:
         return "selfhosted_huggingface_pipeline"
 
     def _call(
-            self,
-            prompt: str,
-            stop: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> str:
         return self.ModelPipeline_remote_instance.interface_fn(
             prompt=prompt, stop=stop, **kwargs

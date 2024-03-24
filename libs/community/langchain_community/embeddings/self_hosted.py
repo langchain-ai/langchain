@@ -1,7 +1,6 @@
-import runhouse as rh
-
 from typing import Any, List
 
+import runhouse as rh
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Extra
 
@@ -9,7 +8,6 @@ from langchain_community.llms.self_hosted import SelfHostedPipeline
 
 
 class EmbeddingsClass:
-
     def __init__(self, model_id: str, instruct: bool = False, device: int = 0):
         super().__init__()
         self.model_id, self.instruct, self.device = model_id, instruct, device
@@ -46,23 +44,35 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
             import runhouse as rh
 
             class MyEmbeddingsClass:
-                def __init__(self, model_id: str, instruct: bool = False, device: int = 0):
+                def __init__(self,
+                            model_id: str,
+                            instruct: bool = False,
+                            device: int = 0):
                     ... construction implementation here ...
 
                 def load_embedding_model(self):
                     ... load_embedding_model implementation here ...
 
-                def embed_documents(self, *args: Any, **kwargs: Any) -> List[List[float]]:
+                def embed_documents(self, *args: Any, **kwargs: Any) ->
+                                                                    List[List[float]]:
                     .. embed_documents implementation here ...
 
             gpu = rh.cluster(name='rh-a10x', instance_type='g5.4xlarge', provider='aws')
             gpu.run(commands=["pip install langchain"])
             embedding_env = rh.env(name="embeddings_env",
-                                   reqs=["transformers", "torch", "accelerate", "huggingface-hub", "sentence_transformers"],
-                                   secrets=["huggingface"]  # need for downloading models from huggingface
+                                   reqs=["transformers",
+                                        "torch",
+                                        "accelerate",
+                                        "huggingface-hub",
+                                        "sentence_transformers"],
+                                   secrets=["huggingface"]
+                                   # need for downloading models from huggingface
                                   ).to(system=gpu)
-            hf = SelfHostedEmbeddings(embeddings_cls=MyEmbeddingsClass, hardware=gpu, env=embedding_env)
-            # if embeddings_cls is not provided, the default embeddings_cls will be used.
+            hf = SelfHostedEmbeddings(embeddings_cls=MyEmbeddingsClass,
+                                      hardware=gpu,
+                                      env=embedding_env)
+            # if embeddings_cls is not provided,
+                    the default embeddings_cls will be used.
     """
 
     inference_kwargs: Any = None
@@ -74,7 +84,12 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
         extra = Extra.allow
         arbitrary_types_allowed = True
 
-    def __init__(self, embeddings_cls: Any = EmbeddingsClass, load_fn_kwargs: Any = None, **kwargs: Any):
+    def __init__(
+        self,
+        embeddings_cls: Any = EmbeddingsClass,
+        load_fn_kwargs: Any = None,
+        **kwargs: Any,
+    ):
         """Init the pipeline with an auxiliary function.
 
         The load function must be in global scope to be imported
@@ -82,12 +97,21 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
         Then, initialize the remote inference function.
         """
         gpu, embeddings_env = kwargs.get("hardware"), kwargs.get("env")
-        model_id, task = load_fn_kwargs.get("model_id", None), load_fn_kwargs.get("task", None)
+        model_id, task = (
+            load_fn_kwargs.get("model_id", None),
+            load_fn_kwargs.get("task", None),
+        )
         super().__init__(hardware=gpu, env=embeddings_env, model_id=model_id, task=task)
-        EmbeddingsPipeline_remote = rh.module(embeddings_cls).to(system=gpu, env=embeddings_env)
-        self.EmbeddingsPipeline_remote_instance = EmbeddingsPipeline_remote(model_id=model_id)
+        EmbeddingsPipeline_remote = rh.module(embeddings_cls).to(
+            system=gpu, env=embeddings_env
+        )
+        self.EmbeddingsPipeline_remote_instance = EmbeddingsPipeline_remote(
+            model_id=model_id
+        )
         _load_fn_kwargs = self.load_fn_kwargs or {}
-        self.EmbeddingsPipeline_remote_instance.load_embedding_model.remote(**_load_fn_kwargs)
+        self.EmbeddingsPipeline_remote_instance.load_embedding_model.remote(
+            **_load_fn_kwargs
+        )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.

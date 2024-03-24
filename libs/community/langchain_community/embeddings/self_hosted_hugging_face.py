@@ -1,10 +1,11 @@
 import importlib
 import logging
 from typing import Any, List, Optional
+
 import runhouse as rh
+from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.embeddings.self_hosted import SelfHostedEmbeddings
-from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_TASK = "sentence-similarity"
@@ -81,8 +82,13 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
             gpu = rh.cluster(name='rh-a10x', instance_type='g5.4xlarge', provider='aws')
             gpu.run(commands=["pip install langchain"])
             embedding_env = rh.env(name="embeddings_env",
-                                   reqs=["transformers", "torch", "accelerate", "huggingface-hub", "sentence_transformers"],
-                                   secrets=["huggingface"]  # need for downloading models from huggingface
+                                   reqs=["transformers",
+                                        "torch",
+                                        "accelerate",
+                                        "huggingface-hub",
+                                        "sentence_transformers"],
+                                   secrets=["huggingface"]
+                                   # need for downloading models from huggingface
                                   ).to(system=gpu)
             hf = SelfHostedHuggingFaceEmbeddings(hardware=gpu, env=embedding_env)
     """
@@ -91,7 +97,8 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
     model_id: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     env: Any
-    """Env that will be sent to the remote hardware, includes all requirements to install on hardware."""
+    """Env that will be sent to the remote hardware, 
+    includes all requirements to install on hardware."""
     hardware: Any
     """Remote hardware to send the inference function to."""
     load_fn_kwargs: Optional[dict] = None
@@ -112,7 +119,9 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
         load_fn_kwargs["hardware"] = load_fn_kwargs.get("hardware", None)
         load_fn_kwargs["env"] = load_fn_kwargs.get("device", None)
         load_fn_kwargs["task"] = load_fn_kwargs.get("task", DEFAULT_TASK)
-        super().__init__(load_fn_kwargs=load_fn_kwargs, embeddings_cls=TextModelEmbedding, **kwargs)
+        super().__init__(
+            load_fn_kwargs=load_fn_kwargs, embeddings_cls=TextModelEmbedding, **kwargs
+        )
 
 
 class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
@@ -128,15 +137,22 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings import SelfHostedHuggingFaceInstructEmbeddings
+            from langchain_community.embeddings import
+                                                SelfHostedHuggingFaceInstructEmbeddings
             import runhouse as rh
             gpu = rh.cluster(name='rh-a10x', instance_type='g5.4xlarge', provider='aws')
             gpu.run(commands=["pip install langchain"])
             embedding_env = rh.env(name="embeddings_env",
-                                   reqs=["transformers", "torch", "accelerate", "huggingface-hub", "sentence_transformers"],
-                                   secrets=["huggingface"]  # need for downloading models from huggingface
+                                   reqs=["transformers",
+                                        "torch",
+                                        "accelerate",
+                                        "huggingface-hub",
+                                        "sentence_transformers"],
+                                   secrets=["huggingface"]
+                                   # need for downloading models from huggingface
                                   ).to(system=gpu)
-            hf = SelfHostedHuggingFaceInstructEmbeddings(hardware=gpu, env=embedding_env)
+            hf = SelfHostedHuggingFaceInstructEmbeddings(hardware=gpu,
+                                                         env=embedding_env)
     """  # noqa: E501
 
     model_id: str = DEFAULT_INSTRUCT_MODEL
@@ -146,7 +162,8 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
     query_instruction: str = DEFAULT_QUERY_INSTRUCTION
     """Instruction to use for embedding query."""
     env: rh.Env
-    """Env that will be sent to the remote hardware, includes all requirements to install on hardware."""
+    """Env that will be sent to the remote hardware, 
+    includes all requirements to install on hardware."""
     hardware: rh.Cluster
     """Remote hardware to send the inference function to."""
 
@@ -179,7 +196,9 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
         instruction_pairs = []
         for text in texts:
             instruction_pairs.append([self.embed_instruction, text])
-        embeddings = self.EmbeddingsPipeline_remote_instance.embed_documents(instruction_pairs)
+        embeddings = self.EmbeddingsPipeline_remote_instance.embed_documents(
+            instruction_pairs
+        )
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
@@ -192,5 +211,7 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
             Embeddings for the text.
         """
         instruction_pair = [self.query_instruction, text]
-        embedding = self.EmbeddingsPipeline_remote_instance.embed_documents(instruction_pair)[0]
+        embedding = self.EmbeddingsPipeline_remote_instance.embed_documents(
+            instruction_pair
+        )[0]
         return embedding.tolist()
