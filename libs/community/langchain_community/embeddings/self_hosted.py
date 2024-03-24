@@ -1,4 +1,5 @@
 from typing import Any, List
+import runhouse as rh
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Extra
@@ -95,8 +96,6 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
         and run on the server, i.e. in a module and not a REPL or closure.
         Then, initialize the remote inference function.
         """
-
-        import runhouse as rh
 
         gpu, embeddings_env = kwargs.get("hardware"), kwargs.get("env")
         model_id, task = (

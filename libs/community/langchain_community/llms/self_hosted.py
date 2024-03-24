@@ -1,7 +1,7 @@
 import logging
+import runhouse as rh
 from typing import Any, List, Mapping, Optional
 
-import runhouse as rh
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra
@@ -123,6 +123,7 @@ class SelfHostedPipeline(LLM):
         and run on the server, i.e. in a module and not a REPL or closure.
         Then, initialize the remote inference function.
         """
+
         super().__init__(**kwargs)
         gpu, model_env = kwargs.get("hardware"), kwargs.get("env")
         model_id, task = kwargs.get("model_id"), kwargs.get("task")

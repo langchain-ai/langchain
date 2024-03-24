@@ -1,5 +1,6 @@
 import importlib
 import logging
+import runhouse as rh
 from typing import Any, List, Optional
 
 from langchain_core.pydantic_v1 import Extra
@@ -154,8 +155,6 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
             hf = SelfHostedHuggingFaceInstructEmbeddings(hardware=gpu,
                                                          env=embedding_env)
     """  # noqa: E501
-
-    import runhouse as rh
 
     model_id: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""

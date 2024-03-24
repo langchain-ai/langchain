@@ -1,4 +1,5 @@
 import logging
+import runhouse as rh
 from typing import Any, List, Mapping, Optional
 
 from langchain_core.pydantic_v1 import Extra
@@ -106,8 +107,6 @@ class LangchainLLMModelPipeline:
 
 
 class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
-    import runhouse as rh
-
     """HuggingFace Pipeline API to run on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
