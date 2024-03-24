@@ -62,6 +62,7 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import LLM, aget_prompts, get_prompts
@@ -1390,6 +1391,11 @@ class SQLAlchemyMd5Cache(BaseCache):
 ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_cache"
 
 
+@deprecated(
+    since="0.0.28",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBCache",
+)
 class AstraDBCache(BaseCache):
     @staticmethod
     def _make_id(prompt: str, llm_string: str) -> str:
@@ -1588,6 +1594,11 @@ def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
     return decorating_function
 
 
+@deprecated(
+    since="0.0.28",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBSemanticCache",
+)
 class AstraDBSemanticCache(BaseCache):
     def __init__(
         self,
