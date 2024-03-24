@@ -93,9 +93,9 @@ class LangchainLLMModelPipeline:
             **kwargs,
         )
         if self.curr_pipeline.task in ["text2text-generation", "text-generation"]:
-            text = response[0]["generated_text"][len(prompt) :]
+            text = response[0]["generated_text"][len(prompt):]
         elif self.curr_pipeline.task == "summarization":
-            text = response[0]["summary_text"][len(prompt) :]
+            text = response[0]["summary_text"][len(prompt):]
         else:
             raise ValueError(
                 f"Got invalid task {self.curr_pipeline.task}, "
