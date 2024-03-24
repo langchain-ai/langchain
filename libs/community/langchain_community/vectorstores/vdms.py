@@ -752,13 +752,11 @@ class VDMS(VectorStore):
             # (2) Find top fetch_k results
             # (3) Intersection of (1) & (2) using ids
             if results is None:
-                results = {"limit": fetch_k, "list": ["id"]}
-            else:
-                results["limit"] = fetch_k
-                if "list" not in results:
-                    results["list"] = ["id"]
-                elif "id" not in results["list"]:
-                    results["list"].append("id")
+                results = {"list": ["id"]}
+            elif "list" not in results:
+                results["list"] = ["id"]
+            elif "id" not in results["list"]:
+                results["list"].append("id")
             query = add_descriptor(
                 command_str,
                 setname,
