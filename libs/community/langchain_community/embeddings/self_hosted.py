@@ -96,6 +96,7 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
         and run on the server, i.e. in a module and not a REPL or closure.
         Then, initialize the remote inference function.
         """
+
         gpu, embeddings_env = kwargs.get("hardware"), kwargs.get("env")
         model_id, task = (
             load_fn_kwargs.get("model_id", None),

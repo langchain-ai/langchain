@@ -9,8 +9,6 @@ def test_importable_all() -> None:
         if relative_path.endswith(".typed"):
             continue
         module_name = relative_path.split(".")[0]
-        if module_name == "runhouse":
-            continue
 
         module = importlib.import_module("langchain_community." + module_name)
         all_ = getattr(module, "__all__", [])
