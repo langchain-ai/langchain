@@ -2,7 +2,6 @@ import importlib
 import logging
 from typing import Any, List, Optional
 
-import runhouse as rh
 from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.embeddings.self_hosted import SelfHostedEmbeddings
@@ -125,6 +124,7 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
 
 
 class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
+
     """HuggingFace InstructEmbedding models on self-hosted remote hardware.
 
     Supported hardware includes auto-launched instances on AWS, GCP, Azure,
@@ -154,6 +154,8 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
             hf = SelfHostedHuggingFaceInstructEmbeddings(hardware=gpu,
                                                          env=embedding_env)
     """  # noqa: E501
+
+    import runhouse as rh
 
     model_id: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""
