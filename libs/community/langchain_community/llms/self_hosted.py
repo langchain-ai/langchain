@@ -28,12 +28,8 @@ class ModelPipeline:
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id,
                                                        token=hf_token)
 
-        try:
-            self.model = AutoModel.from_pretrained(self.model_id,
-                                                   token=hf_token)
-        except RuntimeError:
-            self.model = AutoModelForMaskedLM.from_pretrained(self.model_id,
-                                                              token=hf_token)
+        self.model = AutoModel.from_pretrained(self.model_id,
+                                               token=hf_token)
 
         try:
             curr_pipeline = hf_pipeline(
