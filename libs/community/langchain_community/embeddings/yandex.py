@@ -149,10 +149,10 @@ def _embed_with_retry(llm: YandexGPTEmbeddings, **kwargs: Any) -> Any:
 def _make_request(self: YandexGPTEmbeddings, texts: List[str]):  # type: ignore[no-untyped-def]
     try:
         import grpc
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+        from yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2 import (  # noqa: E501
             TextEmbeddingRequest,
         )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+        from yandex.cloud.ai.foundation_models.v1.embedding.embedding_service_pb2_grpc import (  # noqa: E501
             EmbeddingsServiceStub,
         )
     except ImportError as e:

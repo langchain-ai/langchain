@@ -127,14 +127,14 @@ def _make_request(
     try:
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+        from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
             CompletionOptions,
             Message,
         )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+        from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
             CompletionRequest,
         )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+        from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
             TextGenerationServiceStub,
         )
     except ImportError as e:
@@ -166,15 +166,15 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
 
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+        from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
             CompletionOptions,
             Message,
         )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+        from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
             CompletionRequest,
             CompletionResponse,
         )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+        from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
             TextGenerationAsyncServiceStub,
         )
         from yandex.cloud.operation.operation_service_pb2 import GetOperationRequest
