@@ -109,7 +109,7 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
             if result.tags is not None:
                 res_dict["tags"] = [tag.name for tag in result.tags.list]
 
-            if result.read is not None:
+            if result.read is not None and len(result.read.blocks) > 0:
                 res_dict["text"] = [line.text for line in result.read.blocks[0].lines]
 
         return res_dict

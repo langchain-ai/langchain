@@ -28,3 +28,5 @@ class AzureAiServicesToolkit(BaseToolkit):
             AzureAiServicesTextToSpeechTool(),
             AzureAiServicesTextAnalyticsForHealthTool(),
         ]
+
+        return tools

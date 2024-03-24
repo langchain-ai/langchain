@@ -18,17 +18,17 @@ class AzureAiServicesTextToSpeechTool(BaseTool):
     In order to set this up, follow instructions at:
     https://learn.microsoft.com/en-us/azure/ai-services/speech-service/get-started-text-to-speech?pivots=programming-language-python
     """
-
-    azure_ai_services_key: str = ""  #: :meta private:
-    azure_ai_services_region: str = ""  #: :meta private:
-    speech_language: str = "en-US"  #: :meta private:
-    speech_config: Any  #: :meta private:
-
     name: str = "azure_ai_services_text_to_speech"
     description: str = (
         "A wrapper around Azure AI Services Text to Speech API. "
         "Useful for when you need to convert text to speech. "
     )
+    return_direct: bool = True
+
+    azure_ai_services_key: str = ""  #: :meta private:
+    azure_ai_services_region: str = ""  #: :meta private:
+    speech_language: str = "en-US"  #: :meta private:
+    speech_config: Any  #: :meta private:
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
