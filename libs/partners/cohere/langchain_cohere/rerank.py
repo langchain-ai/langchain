@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+import cohere
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.pydantic_v1 import Extra, root_validator
@@ -34,13 +35,6 @@ class CohereRerank(BaseDocumentCompressor):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if not values.get("client"):
-            try:
-                import cohere
-            except ImportError:
-                raise ImportError(
-                    "Could not import cohere python package. "
-                    "Please install it with `pip install cohere`."
-                )
             cohere_api_key = get_from_dict_or_env(
                 values, "cohere_api_key", "COHERE_API_KEY"
             )
