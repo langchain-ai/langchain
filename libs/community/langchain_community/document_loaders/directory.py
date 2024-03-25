@@ -206,8 +206,6 @@ class DirectoryLoader(BaseLoader):
         if not p.is_dir():
             raise ValueError(f"Expected directory, got file: '{self.path}'")
 
-        docs: List[Document] = []
-
         paths = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
         items = [
             path
