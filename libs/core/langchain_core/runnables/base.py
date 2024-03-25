@@ -438,12 +438,86 @@ class Runnable(Generic[Input, Output], ABC):
         *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
         name: Optional[str] = None,
     ) -> RunnableSerializable[Input, Other]:
-        """Compose this runnable with another object to create a RunnableSequence."""
+        """Compose this Runnable with Runnable-like objects to make a RunnableSequence.
+
+        Equivalent to `RunnableSequence(self, *others)` or `self | others[0] | ...`
+
+        Example:
+            .. code-block:: python
+
+                from langchain_core.runnables import RunnableLambda
+
+                def add_one(x: int) -> int:
+                    return x + 1
+
+                def mul_two(x: int) -> int:
+                    return x * 2
+
+                runnable_1 = RunnableLambda(add_one)
+                runnable_2 = RunnableLambda(mul_two)
+                sequence = runnable_1.pipe(runnable_2)
+                # Or equivalently:
+                # sequence = runnable_1 | runnable_2
+                # sequence = RunnableSequence(first=runnable_1, last=runnable_2)
+                sequence.invoke(1)
+                await sequence.ainvoke(1)
+                # -> 4
+
+                sequence.batch([1, 2, 3])
+                await sequence.abatch([1, 2, 3])
+                # -> [4, 6, 8]
+        """
         return RunnableSequence(self, *others, name=name)
 
     def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the dict output of this runnable.
-        Returns a new runnable."""
+
+        Pick single key:
+            .. code-block:: python
+
+                import json
+
+                from langchain_core.runnables import RunnableLambda, RunnableMap
+
+                as_str = RunnableLambda(str)
+                as_json = RunnableLambda(json.loads)
+                chain = RunnableMap(str=as_str, json=as_json)
+
+                chain.invoke("[1, 2, 3]")
+                # -> {"str": "[1, 2, 3]", "json": [1, 2, 3]}
+
+                json_only_chain = chain.pick("json")
+                json_only_chain.invoke("[1, 2, 3]")
+                # -> [1, 2, 3]
+
+        Pick list of keys:
+            .. code-block:: python
+
+                from typing import Any
+
+                import json
+
+                from langchain_core.runnables import RunnableLambda, RunnableMap
+
+                as_str = RunnableLambda(str)
+                as_json = RunnableLambda(json.loads)
+                def as_bytes(x: Any) -> bytes:
+                    return bytes(x, "utf-8")
+
+                chain = RunnableMap(
+                    str=as_str,
+                    json=as_json,
+                    bytes=RunnableLambda(as_bytes)
+                )
+
+                chain.invoke("[1, 2, 3]")
+                # -> {"str": "[1, 2, 3]", "json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+
+                json_and_bytes_chain = chain.pick(["json", "bytes"])
+                json_and_bytes_chain.invoke("[1, 2, 3]")
+                # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+
+        """  # noqa: E501
         from langchain_core.runnables.passthrough import RunnablePick
 
         return self | RunnablePick(keys)
