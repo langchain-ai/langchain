@@ -4293,8 +4293,8 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
 
                 prompt = (
-                    SystemMessagePromptTemplate.from_template("You are a nice assistant.")
-                    + "{question}"
+                    SystemMessagePromptTemplate.from_template
+                    ("You are a nice assistant.") + "{question}"
                 )
                 chat = FakeListChatModel(responses=["foo"])
 
