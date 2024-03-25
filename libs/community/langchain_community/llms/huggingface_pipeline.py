@@ -27,7 +27,8 @@ class HuggingFacePipeline(BaseLLM):
 
     To use, you should have the ``transformers`` python package installed.
 
-    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
+    Only supports `text-generation`, `text2text-generation`, `summarization` and
+    `translation`  for now.
 
     Example using from_model_id:
         .. code-block:: python
