@@ -2042,3 +2042,4 @@ class AzureCosmosDBSemanticCache(BaseCache):
     def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
         if not isinstance(value, enum_type):
             raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
+            
