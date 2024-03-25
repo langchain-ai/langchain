@@ -99,7 +99,7 @@ class Cohere(LLM, BaseCohere):
 
             from langchain_cohere import Cohere
 
-            cohere = Cohere(model="gptd-instruct-tft", cohere_api_key="my-api-key")
+            cohere = Cohere(cohere_api_key="my-api-key")
     """
 
     max_tokens: Optional[int] = None
