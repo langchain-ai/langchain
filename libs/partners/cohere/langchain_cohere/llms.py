@@ -55,7 +55,7 @@ class BaseCohere(Serializable):
     model: Optional[str] = Field(default=None)
     """Model name to use."""
 
-    temperature: float = 0.75
+    temperature: Optional[float] = None
     """A non-negative float that tunes the degree of randomness in generation."""
 
     cohere_api_key: Optional[SecretStr] = None
@@ -102,19 +102,19 @@ class Cohere(LLM, BaseCohere):
             cohere = Cohere(model="gptd-instruct-tft", cohere_api_key="my-api-key")
     """
 
-    max_tokens: int = 256
+    max_tokens: Optional[int] = None
     """Denotes the number of tokens to predict per generation."""
 
-    k: int = 0
+    k: Optional[int] = None
     """Number of most likely tokens to consider at each step."""
 
-    p: int = 1
+    p: Optional[int] = None
     """Total probability mass of tokens to consider at each step."""
 
-    frequency_penalty: float = 0.0
+    frequency_penalty: Optional[float] = None
     """Penalizes repeated tokens according to frequency. Between 0 and 1."""
 
-    presence_penalty: float = 0.0
+    presence_penalty: Optional[float] = None
     """Penalizes repeated tokens. Between 0 and 1."""
 
     truncate: Optional[str] = None
@@ -132,16 +132,17 @@ class Cohere(LLM, BaseCohere):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Cohere API."""
-        return {
-            "max_tokens": self.max_tokens,
+        """Configurable parameters for calling Cohere's generate API."""
+        base_params = {
+            "model": self.model,
             "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
             "k": self.k,
             "p": self.p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
-            "truncate": self.truncate,
         }
+        return {k: v for k, v in base_params.items() if v is not None}
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -150,7 +151,7 @@ class Cohere(LLM, BaseCohere):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return self._default_params
 
     @property
     def _llm_type(self) -> str:
