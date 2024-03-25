@@ -11,17 +11,20 @@ def test_initialization() -> None:
     ChatCohere(cohere_api_key="test")
 
 
-@pytest.mark.parametrize("chat_cohere,expected", [
-    pytest.param(ChatCohere(cohere_api_key="test"), {}, id="defaults"),
-    pytest.param(ChatCohere(
-        cohere_api_key="test",
-        model="foo",
-        temperature=1.0
-    ), {
-        "model": "foo",
-        "temperature": 1.0,
-    }, id="values are set")
-])
+@pytest.mark.parametrize(
+    "chat_cohere,expected",
+    [
+        pytest.param(ChatCohere(cohere_api_key="test"), {}, id="defaults"),
+        pytest.param(
+            ChatCohere(cohere_api_key="test", model="foo", temperature=1.0),
+            {
+                "model": "foo",
+                "temperature": 1.0,
+            },
+            id="values are set",
+        ),
+    ],
+)
 def test_default_params(chat_cohere: ChatCohere, expected: typing.Dict):
     actual = chat_cohere._default_params
     assert expected == actual
