@@ -3,18 +3,13 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from langchain_core._api.deprecation import deprecated
-from langchain_core.documents import Document
+import cohere
+from langchain_core.callbacks.manager import Callbacks
+from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.pydantic_v1 import Extra, root_validator
-
-from langchain.callbacks.manager import Callbacks
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
-from langchain.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env
 
 
-@deprecated(
-    since="0.0.30", removal="0.2.0", alternative_import="langchain_cohere.CohereRerank"
-)
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
 
@@ -40,13 +35,6 @@ class CohereRerank(BaseDocumentCompressor):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if not values.get("client"):
-            try:
-                import cohere
-            except ImportError:
-                raise ImportError(
-                    "Could not import cohere python package. "
-                    "Please install it with `pip install cohere`."
-                )
             cohere_api_key = get_from_dict_or_env(
                 values, "cohere_api_key", "COHERE_API_KEY"
             )

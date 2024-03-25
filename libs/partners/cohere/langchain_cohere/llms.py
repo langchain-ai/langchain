@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+import re
+from typing import Any, Dict, List, Optional
 
-from langchain_core._api.deprecation import deprecated
+import cohere
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -12,40 +13,16 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
 
-from langchain_community.llms.utils import enforce_stop_tokens
+from .utils import _create_retry_decorator
+
+
+def enforce_stop_tokens(text: str, stop: List[str]) -> str:
+    """Cut off the text as soon as any stop words occur."""
+    return re.split("|".join(stop), text, maxsplit=1)[0]
+
 
 logger = logging.getLogger(__name__)
-
-
-def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
-    import cohere
-
-    # support v4 and v5
-    retry_conditions = (
-        retry_if_exception_type(cohere.error.CohereError)
-        if hasattr(cohere, "error")
-        else retry_if_exception_type(Exception)
-    )
-
-    min_seconds = 4
-    max_seconds = 10
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=retry_conditions,
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
 
 
 def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
@@ -70,18 +47,15 @@ def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
     return _completion_with_retry(**kwargs)
 
 
-@deprecated(
-    since="0.0.30", removal="0.2.0", alternative_import="langchain_cohere.BaseCohere"
-)
 class BaseCohere(Serializable):
     """Base class for Cohere models."""
 
-    client: Any  #: :meta private:
-    async_client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model: Optional[str] = Field(default=None)
     """Model name to use."""
 
-    temperature: float = 0.75
+    temperature: Optional[float] = None
     """A non-negative float that tunes the degree of randomness in generation."""
 
     cohere_api_key: Optional[SecretStr] = None
@@ -98,32 +72,21 @@ class BaseCohere(Serializable):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        try:
-            import cohere
-        except ImportError:
-            raise ImportError(
-                "Could not import cohere python package. "
-                "Please install it with `pip install cohere`."
-            )
-        else:
-            values["cohere_api_key"] = convert_to_secret_str(
-                get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
-            )
-            client_name = values["user_agent"]
-            values["client"] = cohere.Client(
-                api_key=values["cohere_api_key"].get_secret_value(),
-                client_name=client_name,
-            )
-            values["async_client"] = cohere.AsyncClient(
-                api_key=values["cohere_api_key"].get_secret_value(),
-                client_name=client_name,
-            )
+        values["cohere_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
+        )
+        client_name = values["user_agent"]
+        values["client"] = cohere.Client(
+            api_key=values["cohere_api_key"].get_secret_value(),
+            client_name=client_name,
+        )
+        values["async_client"] = cohere.AsyncClient(
+            api_key=values["cohere_api_key"].get_secret_value(),
+            client_name=client_name,
+        )
         return values
 
 
-@deprecated(
-    since="0.1.14", removal="0.2.0", alternative_import="langchain_cohere.Cohere"
-)
 class Cohere(LLM, BaseCohere):
     """Cohere large language models.
 
@@ -134,24 +97,24 @@ class Cohere(LLM, BaseCohere):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms import Cohere
+            from langchain_cohere import Cohere
 
-            cohere = Cohere(model="gptd-instruct-tft", cohere_api_key="my-api-key")
+            cohere = Cohere(cohere_api_key="my-api-key")
     """
 
-    max_tokens: int = 256
+    max_tokens: Optional[int] = None
     """Denotes the number of tokens to predict per generation."""
 
-    k: int = 0
+    k: Optional[int] = None
     """Number of most likely tokens to consider at each step."""
 
-    p: int = 1
+    p: Optional[int] = None
     """Total probability mass of tokens to consider at each step."""
 
-    frequency_penalty: float = 0.0
+    frequency_penalty: Optional[float] = None
     """Penalizes repeated tokens according to frequency. Between 0 and 1."""
 
-    presence_penalty: float = 0.0
+    presence_penalty: Optional[float] = None
     """Penalizes repeated tokens. Between 0 and 1."""
 
     truncate: Optional[str] = None
@@ -164,20 +127,23 @@ class Cohere(LLM, BaseCohere):
     class Config:
         """Configuration for this pydantic object."""
 
+        arbitrary_types_allowed = True
         extra = Extra.forbid
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling Cohere API."""
-        return {
-            "max_tokens": self.max_tokens,
+        """Configurable parameters for calling Cohere's generate API."""
+        base_params = {
+            "model": self.model,
             "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
             "k": self.k,
             "p": self.p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "truncate": self.truncate,
         }
+        return {k: v for k, v in base_params.items() if v is not None}
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -186,7 +152,7 @@ class Cohere(LLM, BaseCohere):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return self._default_params
 
     @property
     def _llm_type(self) -> str:
