@@ -156,8 +156,8 @@ const config = {
           {
             type: "docSidebar",
             position: "left",
-            sidebarId: "use_cases",
-            label: "Use cases",
+            sidebarId: "modules",
+            label: "Modules",
           },
           {
             type: "docSidebar",
