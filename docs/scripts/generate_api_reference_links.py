@@ -64,7 +64,7 @@ def main():
     global_imports = {}
 
     for file in find_files(args.docs_dir):
-        print(f"Adding links for imports in {file}")
+        print(f"Adding links for imports in {file}")  # noqa: T201
         file_imports = replace_imports(file)
 
         if file_imports:

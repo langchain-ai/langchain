@@ -154,6 +154,7 @@ class Milvus(VectorStore):
             "RHNSW_PQ": {"metric_type": "L2", "params": {"ef": 10}},
             "IVF_HNSW": {"metric_type": "L2", "params": {"nprobe": 10, "ef": 10}},
             "ANNOY": {"metric_type": "L2", "params": {"search_k": 10}},
+            "SCANN": {"metric_type": "L2", "params": {"search_k": 10}},
             "AUTOINDEX": {"metric_type": "L2", "params": {}},
         }
 
@@ -464,6 +465,7 @@ class Milvus(VectorStore):
         from pymilvus import Collection, utility
         from pymilvus.client.types import LoadState
 
+        timeout = self.timeout or timeout
         if (
             isinstance(self.col, Collection)
             and self._get_index() is not None
@@ -480,7 +482,7 @@ class Milvus(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         batch_size: int = 1000,
         *,
         ids: Optional[List[str]] = None,
@@ -501,7 +503,7 @@ class Milvus(VectorStore):
             metadatas (Optional[List[dict]]): Metadata dicts attached to each of
                 the texts. Defaults to None.
             should be less than 65535 bytes. Required and work when auto_id is False.
-            timeout (Optional[int]): Timeout for each batch insert. Defaults
+            timeout (Optional[float]): Timeout for each batch insert. Defaults
                 to None.
             batch_size (int, optional): Batch size to use for insertion.
                 Defaults to 1000.
@@ -554,10 +556,10 @@ class Milvus(VectorStore):
         }
 
         if not self.auto_id:
-            insert_dict[self._primary_field] = ids
+            insert_dict[self._primary_field] = ids  # type: ignore[assignment]
 
         if self._metadata_field is not None:
-            for d in metadatas:
+            for d in metadatas:  # type: ignore[union-attr]
                 insert_dict.setdefault(self._metadata_field, []).append(d)
         else:
             # Collect the metadata into the insert dict.
@@ -569,7 +571,7 @@ class Milvus(VectorStore):
                             if self.auto_id
                             else [x for x in self.fields]
                         )
-                        for key in keys:
+                        if key in keys:
                             insert_dict.setdefault(key, []).append(value)
 
         # Total insert count
@@ -583,10 +585,13 @@ class Milvus(VectorStore):
             # Grab end index
             end = min(i + batch_size, total_count)
             # Convert dict to list of lists batch for insertion
-            insert_list = [insert_dict[x][i:end] for x in self.fields]
+            insert_list = [
+                insert_dict[x][i:end] for x in self.fields if x in insert_dict
+            ]
             # Insert into the collection.
             try:
                 res: Collection
+                timeout = self.timeout or timeout
                 res = self.col.insert(insert_list, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
             except MilvusException as e:
@@ -603,7 +608,7 @@ class Milvus(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search against the query string.
@@ -624,6 +629,7 @@ class Milvus(VectorStore):
         if self.col is None:
             logger.debug("No existing collection to search.")
             return []
+        timeout = self.timeout or timeout
         res = self.similarity_search_with_score(
             query=query, k=k, param=param, expr=expr, timeout=timeout, **kwargs
         )
@@ -635,7 +641,7 @@ class Milvus(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search against the query string.
@@ -656,6 +662,7 @@ class Milvus(VectorStore):
         if self.col is None:
             logger.debug("No existing collection to search.")
             return []
+        timeout = self.timeout or timeout
         res = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, param=param, expr=expr, timeout=timeout, **kwargs
         )
@@ -667,7 +674,7 @@ class Milvus(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score.
@@ -682,7 +689,7 @@ class Milvus(VectorStore):
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
-            timeout (int, optional): How long to wait before timeout error.
+            timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
             kwargs: Collection.search() keyword arguments.
 
@@ -695,7 +702,7 @@ class Milvus(VectorStore):
 
         # Embed the query text.
         embedding = self.embedding_func.embed_query(query)
-
+        timeout = self.timeout or timeout
         res = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, param=param, expr=expr, timeout=timeout, **kwargs
         )
@@ -707,7 +714,7 @@ class Milvus(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score.
@@ -722,7 +729,7 @@ class Milvus(VectorStore):
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
-            timeout (int, optional): How long to wait before timeout error.
+            timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
             kwargs: Collection.search() keyword arguments.
 
@@ -736,10 +743,10 @@ class Milvus(VectorStore):
         if param is None:
             param = self.search_params
 
-        # Determine result metadata fields.
-        output_fields = [x for x in self.fields if x != self._primary_field]
+        # Determine result metadata fields with PK.
+        output_fields = self.fields[:]
         output_fields.remove(self._vector_field)
-
+        timeout = self.timeout or timeout
         # Perform the search.
         res = self.col.search(
             data=[embedding],
@@ -769,7 +776,7 @@ class Milvus(VectorStore):
         lambda_mult: float = 0.5,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a search and return results that are reordered by MMR.
@@ -786,7 +793,7 @@ class Milvus(VectorStore):
             param (dict, optional): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
-            timeout (int, optional): How long to wait before timeout error.
+            timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
             kwargs: Collection.search() keyword arguments.
 
@@ -799,7 +806,7 @@ class Milvus(VectorStore):
             return []
 
         embedding = self.embedding_func.embed_query(query)
-
+        timeout = self.timeout or timeout
         return self.max_marginal_relevance_search_by_vector(
             embedding=embedding,
             k=k,
@@ -819,7 +826,7 @@ class Milvus(VectorStore):
         lambda_mult: float = 0.5,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a search and return results that are reordered by MMR.
@@ -836,7 +843,7 @@ class Milvus(VectorStore):
             param (dict, optional): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
-            timeout (int, optional): How long to wait before timeout error.
+            timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
             kwargs: Collection.search() keyword arguments.
 
@@ -853,7 +860,7 @@ class Milvus(VectorStore):
         # Determine result metadata fields.
         output_fields = self.fields[:]
         output_fields.remove(self._vector_field)
-
+        timeout = self.timeout or timeout
         # Perform the search.
         res = self.col.search(
             data=[embedding],
@@ -901,7 +908,7 @@ class Milvus(VectorStore):
                 ret.append(documents[x])
         return ret
 
-    def delete(
+    def delete(  # type: ignore[no-untyped-def]
         self, ids: Optional[List[str]] = None, expr: Optional[str] = None, **kwargs: str
     ):
         """Delete by vector ID or boolean expression.
@@ -923,7 +930,7 @@ class Milvus(VectorStore):
             assert isinstance(
                 expr, str
             ), "Either ids list or expr string must be provided."
-        return self.col.delete(expr=expr, **kwargs)
+        return self.col.delete(expr=expr, **kwargs)  # type: ignore[union-attr]
 
     @classmethod
     def from_texts(
@@ -989,3 +996,64 @@ class Milvus(VectorStore):
             page_content=data.pop(self._text_field),
             metadata=data.pop(self._metadata_field) if self._metadata_field else data,
         )
+
+    def get_pks(self, expr: str, **kwargs: Any) -> List[int] | None:
+        """Get primary keys with expression
+
+        Args:
+            expr: Expression - E.g: "id in [1, 2]", or "title LIKE 'Abc%'"
+
+        Returns:
+            List[int]: List of IDs (Primary Keys)
+        """
+
+        from pymilvus import MilvusException
+
+        if self.col is None:
+            logger.debug("No existing collection to get pk.")
+            return None
+
+        try:
+            query_result = self.col.query(
+                expr=expr, output_fields=[self._primary_field]
+            )
+        except MilvusException as exc:
+            logger.error("Failed to get ids: %s error: %s", self.collection_name, exc)
+            raise exc
+        pks = [item.get(self._primary_field) for item in query_result]
+        return pks
+
+    def upsert(
+        self,
+        ids: Optional[List[str]] = None,
+        documents: List[Document] | None = None,
+        **kwargs: Any,
+    ) -> List[str] | None:
+        """Update/Insert documents to the vectorstore.
+
+        Args:
+            ids: IDs to update - Let's call get_pks to get ids with expression \n
+            documents (List[Document]): Documents to add to the vectorstore.
+
+        Returns:
+            List[str]: IDs of the added texts.
+        """
+
+        from pymilvus import MilvusException
+
+        if documents is None or len(documents) == 0:
+            logger.debug("No documents to upsert.")
+            return None
+
+        if ids is not None and len(ids):
+            try:
+                self.delete(ids=ids)
+            except MilvusException:
+                pass
+        try:
+            return self.add_documents(documents=documents, **kwargs)
+        except MilvusException as exc:
+            logger.error(
+                "Failed to upsert entities: %s error: %s", self.collection_name, exc
+            )
+            raise exc

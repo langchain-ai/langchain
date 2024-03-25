@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional
+from typing import Iterator, Optional
 
 from langchain_core.documents import Document
 
@@ -77,10 +77,6 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             mode=mode,
         )
 
-    def load(self) -> List[Document]:
-        """Load given path as pages."""
-        return list(self.lazy_load())
-
     def lazy_load(
         self,
     ) -> Iterator[Document]:
@@ -89,4 +85,4 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             blob = Blob.from_path(self.file_path)
             yield from self.parser.parse(blob)
         else:
-            yield from self.parser.parse_url(self.url_path)
+            yield from self.parser.parse_url(self.url_path)  # type: ignore[arg-type]

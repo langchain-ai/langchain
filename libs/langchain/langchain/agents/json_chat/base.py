@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import List, Sequence, Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -8,11 +8,15 @@ from langchain_core.tools import BaseTool
 from langchain.agents.format_scratchpad import format_log_to_messages
 from langchain.agents.json_chat.prompt import TEMPLATE_TOOL_RESPONSE
 from langchain.agents.output_parsers import JSONAgentOutputParser
-from langchain.tools.render import render_text_description
+from langchain.tools.render import ToolsRenderer, render_text_description
 
 
 def create_json_chat_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: ChatPromptTemplate,
+    stop_sequence: Union[bool, List[str]] = True,
+    tools_renderer: ToolsRenderer = render_text_description,
 ) -> Runnable:
     """Create an agent that uses JSON to format its logic, build for Chat Models.
 
@@ -20,6 +24,15 @@ def create_json_chat_agent(
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more.
+        stop_sequence: bool or list of str.
+            If True, adds a stop token of "Observation:" to avoid hallucinates. 
+            If False, does not add a stop token.
+            If a list of str, uses the provided list as the stop tokens.
+            
+            Default is True. You may to set this to False if the LLM you are using
+            does not support stop sequences.
+        tools_renderer: This controls how the tools are converted into a string and
+            then passed into the LLM. Default is `render_text_description`.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -145,10 +158,14 @@ def create_json_chat_agent(
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
     prompt = prompt.partial(
-        tools=render_text_description(list(tools)),
+        tools=tools_renderer(list(tools)),
         tool_names=", ".join([t.name for t in tools]),
     )
-    llm_with_stop = llm.bind(stop=["\nObservation"])
+    if stop_sequence:
+        stop = ["\nObservation"] if stop_sequence is True else stop_sequence
+        llm_to_use = llm.bind(stop=stop)
+    else:
+        llm_to_use = llm
 
     agent = (
         RunnablePassthrough.assign(
@@ -157,7 +174,7 @@ def create_json_chat_agent(
             )
         )
         | prompt
-        | llm_with_stop
+        | llm_to_use
         | JSONAgentOutputParser()
     )
     return agent

@@ -42,10 +42,10 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
             embeddings = YandexGPTEmbeddings(iam_token="t1.9eu...", model_uri="emb://<folder-id>/text-search-query/latest")
     """
 
-    iam_token: SecretStr = ""
+    iam_token: SecretStr = ""  # type: ignore[assignment]
     """Yandex Cloud IAM token for service account
     with the `ai.languageModels.user` role"""
-    api_key: SecretStr = ""
+    api_key: SecretStr = ""  # type: ignore[assignment]
     """Yandex Cloud Api Key for service account
     with the `ai.languageModels.user` role"""
     model_uri: str = ""
@@ -146,7 +146,7 @@ def _embed_with_retry(llm: YandexGPTEmbeddings, **kwargs: Any) -> Any:
     return _completion_with_retry(**kwargs)
 
 
-def _make_request(self: YandexGPTEmbeddings, texts: List[str]):
+def _make_request(self: YandexGPTEmbeddings, texts: List[str]):  # type: ignore[no-untyped-def]
     try:
         import grpc
         from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
@@ -167,7 +167,7 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str]):
     for text in texts:
         request = TextEmbeddingRequest(model_uri=self.model_uri, text=text)
         stub = EmbeddingsServiceStub(channel)
-        res = stub.TextEmbedding(request, metadata=self._grpc_metadata)
+        res = stub.TextEmbedding(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
         result.append(list(res.embedding))
         time.sleep(self.sleep_interval)
 

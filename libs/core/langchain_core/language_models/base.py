@@ -5,17 +5,20 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
+    Type,
     TypeVar,
     Union,
 )
 
 from typing_extensions import TypeAlias
 
-from langchain_core._api import deprecated
+from langchain_core._api import beta, deprecated
 from langchain_core.messages import (
     AnyMessage,
     BaseMessage,
@@ -23,10 +26,12 @@ from langchain_core.messages import (
     get_buffer_string,
 )
 from langchain_core.prompt_values import PromptValue
+from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
+    from langchain_core.caches import BaseCache
     from langchain_core.callbacks import Callbacks
     from langchain_core.outputs import LLMResult
 
@@ -60,6 +65,12 @@ LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
 
 
+def _get_verbosity() -> bool:
+    from langchain_core.globals import get_verbose
+
+    return get_verbose()
+
+
 class BaseLanguageModel(
     RunnableSerializable[LanguageModelInput, LanguageModelOutputVar], ABC
 ):
@@ -67,6 +78,36 @@ class BaseLanguageModel(
 
     All language model wrappers inherit from BaseLanguageModel.
     """
+
+    cache: Union[BaseCache, bool, None] = None
+    """Whether to cache the response.
+    
+    * If true, will use the global cache.
+    * If false, will not use a cache
+    * If None, will use the global cache if it's set, otherwise no cache.
+    * If instance of BaseCache, will use the provided cache.
+    
+    Caching is not currently supported for streaming methods of models.
+    """
+    verbose: bool = Field(default_factory=_get_verbosity)
+    """Whether to print out response text."""
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    """Callbacks to add to the run trace."""
+    tags: Optional[List[str]] = Field(default=None, exclude=True)
+    """Tags to add to the run trace."""
+    metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
+    """Metadata to add to the run trace."""
+
+    @validator("verbose", pre=True, always=True)
+    def set_verbose(cls, verbose: Optional[bool]) -> bool:
+        """If verbose is None, set it.
+
+        This allows users to pass in None as verbose to access the global setting.
+        """
+        if verbose is None:
+            return _get_verbosity()
+        else:
+            return verbose
 
     @property
     def InputType(self) -> TypeAlias:
@@ -154,6 +195,13 @@ class BaseLanguageModel(
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
+
+    @beta()
+    def with_structured_output(
+        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Implement this if there is a way of steering the model to generate responses that match a given schema."""  # noqa: E501
+        raise NotImplementedError()
 
     @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     @abstractmethod
@@ -246,6 +294,11 @@ class BaseLanguageModel(
         Returns:
             Top model prediction as a message.
         """
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {}
 
     def get_token_ids(self, text: str) -> List[int]:
         """Return the ordered ids of the tokens in a text.
