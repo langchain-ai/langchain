@@ -35,7 +35,6 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
@@ -48,10 +47,10 @@ logger = logging.getLogger(__name__)
 
 
 def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
-    from gigachat.models import MessagesRole, FunctionCall
+    from gigachat.models import FunctionCall, MessagesRole
 
     additional_kwargs: Dict = {}
-    if message.function_call:
+    if function_call := message.function_call:
         if isinstance(function_call, FunctionCall):
             additional_kwargs["function_call"] = dict(function_call)
         elif isinstance(function_call, dict):
