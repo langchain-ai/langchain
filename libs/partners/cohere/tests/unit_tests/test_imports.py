@@ -1,7 +1,6 @@
 from langchain_cohere import __all__
 
 EXPECTED_ALL = [
-    "BaseCohere",
     "ChatCohere",
     "CohereVectorStore",
     "CohereEmbeddings",
