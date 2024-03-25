@@ -6,6 +6,7 @@
 
     BaseCallbackHandler --> <name>CallbackHandler  # Example: AimCallbackHandler
 """
+import importlib
 import warnings
 from typing import Any
 
@@ -30,6 +31,10 @@ from langchain.utils.interactive_env import is_interactive_env
 
 
 def __getattr__(name: str) -> Any:
+    try:
+        return importlib.import_module("." + name, __name__)
+    except ModuleNotFoundError:
+        pass
     from langchain_community import callbacks
 
     # If not in interactive env, raise warning.
