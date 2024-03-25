@@ -57,7 +57,7 @@ DEFAULT_COLLECTION_NAME = "langchain"
 DEFAULT_DISTANCE_METRIC = DistanceMetric.L2
 DEFAULT_INSERT_BATCH_SIZE = 32
 DEFAULT_K = 3  # Number of Documents to return.
-DEFAULT_FETCH_K = 50 # Number of Documents to fetch to pass to knn when filters applied.
+DEFAULT_FETCH_K = DEFAULT_K * 5 # Number of Documents to fetch to pass to knn when filters applied.
 DEFAULT_PROPERTIES = ["_distance", "id", "content"]
 DEFAULT_SEARCH_ENGINE = IndexEngine.FaissFlat
 DEFAULT_VDMS_CONNECTION = {"host": "localhost", "port": 55555}
@@ -748,15 +748,14 @@ class VDMS(VectorStore):
                 self.get_k_candidates(setname, k_neighbors, results,
                                       all_blobs, normalize=normalize_distance)
         else:
-            # (1) Find docs satisfy constraints
-            # (2) Find top fetch_k results
-            # (3) Intersection of (1) & (2) using ids
             if results is None:
                 results = {"list": ["id"]}
             elif "list" not in results:
                 results["list"] = ["id"]
             elif "id" not in results["list"]:
                 results["list"].append("id")
+
+            # (1) Find docs satisfy constraints
             query = add_descriptor(
                 command_str,
                 setname,
@@ -766,10 +765,12 @@ class VDMS(VectorStore):
             response, response_array = self.__run_vdms_query([query])
             ids_of_interest = [ent["id"] for ent in response[0][command_str]["entities"]]
 
+            # (2) Find top fetch_k results
             response, response_array, max_dist = \
                 self.get_k_candidates(setname, fetch_k, results,
                                       all_blobs, normalize=normalize_distance)
 
+            # (3) Intersection of (1) & (2) using ids
             new_entities = []
             for ent in response[0][command_str]["entities"]:
                 if ent["id"] in ids_of_interest:
@@ -925,7 +926,7 @@ class VDMS(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        fetch_k: int = 20,
+        fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
@@ -966,7 +967,7 @@ class VDMS(VectorStore):
         self,
         embedding: List[float],
         k: int = DEFAULT_K,
-        fetch_k: int = 20,
+        fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
@@ -1013,7 +1014,7 @@ class VDMS(VectorStore):
         self,
         query: str,
         k: int = DEFAULT_K,
-        fetch_k: int = 20,
+        fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
@@ -1054,7 +1055,7 @@ class VDMS(VectorStore):
         self,
         embedding: List[float],
         k: int = DEFAULT_K,
-        fetch_k: int = 20,
+        fetch_k: int = DEFAULT_FETCH_K,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
@@ -1624,6 +1625,6 @@ def validate_vdms_properties(metadata: Dict) -> Dict:
     new_metadata = {}
     for key, value in metadata.items():
         if not isinstance(value, list):
-            new_metadata[key] = value
+            new_metadata[str(key)] = value
     return new_metadata
 
