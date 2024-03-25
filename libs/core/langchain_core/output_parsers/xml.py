@@ -61,7 +61,9 @@ class XMLOutputParser(BaseTransformOutputParser):
         self, input: Iterator[Union[str, BaseMessage]]
     ) -> Iterator[AddableDict]:
         xml_start_re = re.compile(r"<[a-zA-Z:_]")
-        parser = ET.XMLPullParser(["start", "end"])
+        parser = ET.XMLPullParser(
+            ["start", "end"], _parser=DefusedXMLParser(target=TreeBuilder())
+        )
         xml_started = False
         current_path: List[str] = []
         current_path_has_children = False
@@ -109,8 +111,9 @@ class XMLOutputParser(BaseTransformOutputParser):
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[AddableDict]:
-        parser = DefusedXMLParser(target=TreeBuilder())
-        parser = ET.XMLPullParser(["start", "end"], _parser=parser)
+        parser = ET.XMLPullParser(
+            ["start", "end"], _parser=DefusedXMLParser(target=TreeBuilder())
+        )
         current_path: List[str] = []
         current_path_has_children = False
         async for chunk in input:
