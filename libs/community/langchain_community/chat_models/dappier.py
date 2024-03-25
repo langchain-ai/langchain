@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from aiohttp import ClientSession
 from langchain_core.callbacks import (
@@ -19,7 +19,9 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_community.utilities.requests import Requests
 
 
-def _format_dappier_messages(messages: List[BaseMessage]) -> List[Dict[str, str]]:
+def _format_dappier_messages(
+    messages: List[BaseMessage],
+) -> List[Dict[str, Union[str, List[Union[str, Dict[Any, Any]]]]]]:
     formatted_messages = []
 
     for message in messages:
