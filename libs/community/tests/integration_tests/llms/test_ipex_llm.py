@@ -1,12 +1,12 @@
-"""Test BigDL LLM"""
+"""Test IPEX LLM"""
 from langchain_core.outputs import LLMResult
 
-from langchain_community.llms.bigdl import BigdlLLM
+from langchain_community.llms.ipex_llm import IPEXLLM
 
 
 def test_call() -> None:
-    """Test valid call to baichuan."""
-    llm = BigdlLLM.from_model_id(
+    """Test valid call to ipex-llm."""
+    llm = IPEXLLM.from_model_id(
         model_id="lmsys/vicuna-7b-v1.5",
         model_kwargs={"temperature": 0, "max_length": 16, "trust_remote_code": True},
     )
@@ -15,8 +15,8 @@ def test_call() -> None:
 
 
 def test_generate() -> None:
-    """Test valid call to baichuan."""
-    llm = BigdlLLM.from_model_id(
+    """Test valid call to ipex-llm."""
+    llm = IPEXLLM.from_model_id(
         model_id="lmsys/vicuna-7b-v1.5",
         model_kwargs={"temperature": 0, "max_length": 16, "trust_remote_code": True},
     )

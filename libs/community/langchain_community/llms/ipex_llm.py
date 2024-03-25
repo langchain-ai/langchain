@@ -10,14 +10,14 @@ DEFAULT_MODEL_ID = "gpt2"
 logger = logging.getLogger(__name__)
 
 
-class BigdlLLM(LLM):
-    """Wrapper around the BigDL-LLM Transformer-INT4 model
+class IPEXLLM(LLM):
+    """Wrapper around the IPEX-LLM model
 
     Example:
         .. code-block:: python
 
-            from langchain.llms import TransformersLLM
-            llm = TransformersLLM.from_model_id(model_id="THUDM/chatglm-6b")
+            from langchain.llms import IPEXLLM
+            llm = IPEXLLM.from_model_id(model_id="THUDM/chatglm-6b")
     """
 
     model_id: str = DEFAULT_MODEL_ID
@@ -25,7 +25,7 @@ class BigdlLLM(LLM):
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
     model: Any  #: :meta private:
-    """BigDL-LLM Transformers-INT4 model."""
+    """IPEXLLM model."""
     tokenizer: Any  #: :meta private:
     """Huggingface tokenizer model."""
     streaming: bool = True
@@ -56,7 +56,7 @@ class BigdlLLM(LLM):
             An object of TransformersLLM.
         """
         try:
-            from bigdl.llm.transformers import (
+            from ipex_llm.transformers import (
                 AutoModel,
                 AutoModelForCausalLM,
             )
@@ -64,8 +64,8 @@ class BigdlLLM(LLM):
 
         except ImportError:
             raise ValueError(
-                "Could not import bigdl-llm or transformers. "
-                "Please install it with `pip install --pre --upgrade bigdl-llm[all]`."
+                "Could not import ipex_llm or transformers. "
+                "Please install it with `pip install --pre --upgrade ipex_llm[all]`."
             )
 
         _model_kwargs = model_kwargs or {}
@@ -109,7 +109,7 @@ class BigdlLLM(LLM):
 
         Args:
 
-            model_id: Path for the bigdl transformers low-bit model checkpoint folder.
+            model_id: Path for the ipex-llm transformers low-bit model checkpoint folder.
             model_kwargs: Keyword arguments to pass to the model and tokenizer.
             kwargs: Extra arguments to pass to the model and tokenizer.
 
@@ -117,7 +117,7 @@ class BigdlLLM(LLM):
             An object of TransformersLLM.
         """
         try:
-            from bigdl.llm.transformers import (
+            from ipex_llm.transformers import (
                 AutoModel,
                 AutoModelForCausalLM,
             )
@@ -125,8 +125,8 @@ class BigdlLLM(LLM):
 
         except ImportError:
             raise ValueError(
-                "Could not import bigdl-llm or transformers. "
-                "Please install it with `pip install --pre --upgrade bigdl-llm[all]`"
+                "Could not import ipex_llm or transformers. "
+                "Please install it with `pip install --pre --upgrade ipex_llm[all]`"
             )
 
         _model_kwargs = model_kwargs or {}
@@ -163,7 +163,7 @@ class BigdlLLM(LLM):
 
     @property
     def _llm_type(self) -> str:
-        return "BigDL-llm"
+        return "ipex-llm"
 
     def _call(
         self,
