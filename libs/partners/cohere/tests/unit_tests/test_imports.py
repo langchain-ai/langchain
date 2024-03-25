@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "CohereVectorStore",
     "CohereEmbeddings",
     "CohereRagRetriever",
+    "CohereRerank",
 ]
 
 
