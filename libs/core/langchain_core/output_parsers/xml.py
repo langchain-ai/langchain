@@ -57,6 +57,105 @@ class XMLOutputParser(BaseTransformOutputParser):
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 
+    def _transform(
+        self, input: Iterator[Union[str, BaseMessage]]
+    ) -> Iterator[AddableDict]:
+        parser = ET.XMLPullParser(["start", "end"])
+        xml_start_re = re.compile(r"<[a-zA-Z:_]")
+        xml_started = False
+        current_path: List[str] = []
+        current_path_has_children = False
+        buffer = ""
+        for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                # extract text
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                chunk = chunk_content
+            # add chunk to buffer of unprocessed text
+            buffer += chunk
+            # if xml string hasn't started yet, continue to next chunk
+            if not xml_started:
+                if match := xml_start_re.search(buffer):
+                    # if xml string has started, remove all text before it
+                    buffer = buffer[match.start() :]
+                    xml_started = True
+                else:
+                    continue
+            # feed buffer to parser
+            parser.feed(buffer)
+            buffer = ""
+            # yield all events
+
+            for event, elem in parser.read_events():
+                if event == "start":
+                    # update current path
+                    current_path.append(elem.tag)
+                    current_path_has_children = False
+                elif event == "end":
+                    # remove last element from current path
+                    current_path.pop()
+                    # yield element
+                    if not current_path_has_children:
+                        yield nested_element(current_path, elem)
+                    # prevent yielding of parent element
+                    if current_path:
+                        current_path_has_children = True
+                    else:
+                        xml_started = False
+        # close parser
+        parser.close()
+
+    async def _atransform(
+        self, input: AsyncIterator[Union[str, BaseMessage]]
+    ) -> AsyncIterator[AddableDict]:
+        parser = ET.XMLPullParser(["start", "end"])
+        xml_start_re = re.compile(r"<[a-zA-Z:_]")
+        xml_started = False
+        current_path: List[str] = []
+        current_path_has_children = False
+        buffer = ""
+        async for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                # extract text
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                chunk = chunk_content
+            # add chunk to buffer of unprocessed text
+            buffer += chunk
+            # if xml string hasn't started yet, continue to next chunk
+            if not xml_started:
+                if match := xml_start_re.search(buffer):
+                    # if xml string has started, remove all text before it
+                    buffer = buffer[match.start() :]
+                    xml_started = True
+                else:
+                    continue
+            # feed buffer to parser
+            parser.feed(buffer)
+            buffer = ""
+            # yield all events
+            for event, elem in parser.read_events():
+                if event == "start":
+                    # update current path
+                    current_path.append(elem.tag)
+                    current_path_has_children = False
+                elif event == "end":
+                    # remove last element from current path
+                    current_path.pop()
+                    # yield element
+                    if not current_path_has_children:
+                        yield nested_element(current_path, elem)
+                    # prevent yielding of parent element
+                    if current_path:
+                        current_path_has_children = True
+                    else:
+                        xml_started = False
+        # close parser
+        parser.close()
+
     def _root_to_dict(self, root: ET.Element) -> Dict[str, List[Any]]:
         """Converts xml tree to python dictionary."""
         result: Dict[str, List[Any]] = {root.tag: []}
