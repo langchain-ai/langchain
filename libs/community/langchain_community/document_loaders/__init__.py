@@ -40,6 +40,7 @@ _module_lookup = {
     "AsyncChromiumLoader": "langchain_community.document_loaders.chromium",
     "AsyncHtmlLoader": "langchain_community.document_loaders.async_html",
     "AthenaLoader": "langchain_community.document_loaders.athena",
+    "AutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",
     "AzureAIDataLoader": "langchain_community.document_loaders.azure_ai_data",
     "AzureAIDocumentIntelligenceLoader": "langchain_community.document_loaders.doc_intelligence",  # noqa: E501
     "AzureBlobStorageContainerLoader": "langchain_community.document_loaders.azure_blob_storage_container",  # noqa: E501

@@ -25,6 +25,7 @@ EXPECTED_ALL = [
     "AstraDBLoader",
     "AsyncHtmlLoader",
     "AthenaLoader",
+    "AutonomousDatabaseLoader",
     "AzureAIDataLoader",
     "AzureAIDocumentIntelligenceLoader",
     "AzureBlobStorageContainerLoader",
