@@ -28,36 +28,10 @@ def test_extract_functions_classes() -> None:
         "A000-INITIALIZE-PARA.\n    DISPLAY 'Initialization Paragraph'.\n    MOVE 'New Value' TO SAMPLE-VAR.",
         "A100-PROCESS-PARA.\n    DISPLAY SAMPLE-VAR.\n    STOP RUN.",
     ]
-    # assert extracted_code == [
-    #     "IDENTIFICATION DIVISION.\n    "
-    #     "PROGRAM-ID. SampleProgram.\n    "
-    #     "DATA DIVISION.",
-    #     "WORKING-STORAGE SECTION.\n   "
-    #     "01  SAMPLE-VAR         PIC X(20)   VALUE 'Sample Value'.\n\n"
-    #     "PROCEDURE DIVISION.\n    ",
-    #     "A000-INITIALIZE-PARA.\n    "
-    #     "DISPLAY 'Initialization Paragraph'.\n    "
-    #     "MOVE 'New Value' TO SAMPLE-VAR.\n\n",
-    #     "A100-PROCESS-PARA.\n    "
-    #     "DISPLAY SAMPLE-VAR.\n    "
-    #     "STOP RUN.",
-    # ]
 
 
 def test_simplify_code() -> None:
     """Test that code is simplified correctly."""
-    # expected_simplified_code = (
-    #     "IDENTIFICATION DIVISION.\n"
-    #     "PROGRAM-ID. SampleProgram.\n"
-    #     "DATA DIVISION.\n"
-    #     "WORKING-STORAGE SECTION.\n"
-    #     "* OMITTED CODE *\n"
-    #     "PROCEDURE DIVISION.\n"
-    #     "A000-INITIALIZE-PARA.\n"
-    #     "* OMITTED CODE *\n"
-    #     "A100-PROCESS-PARA.\n"
-    #     "* OMITTED CODE *\n"
-    # )
     expected_simplified_code = ""
     segmenter = CobolSegmenter(EXAMPLE_CODE)
     simplified_code = segmenter.simplify_code()
