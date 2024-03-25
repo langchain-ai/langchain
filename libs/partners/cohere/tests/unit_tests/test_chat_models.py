@@ -25,6 +25,6 @@ def test_initialization() -> None:
         ),
     ],
 )
-def test_default_params(chat_cohere: ChatCohere, expected: typing.Dict):
+def test_default_params(chat_cohere: ChatCohere, expected: typing.Dict) -> None:
     actual = chat_cohere._default_params
     assert expected == actual

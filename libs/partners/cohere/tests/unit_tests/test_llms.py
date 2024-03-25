@@ -48,7 +48,7 @@ def test_cohere_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     ],
 )
-def test_default_params(cohere: Cohere, expected: typing.Dict):
+def test_default_params(cohere: Cohere, expected: typing.Dict) -> None:
     actual = cohere._default_params
     assert expected == actual
 
