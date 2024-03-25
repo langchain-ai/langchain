@@ -32,6 +32,7 @@ def test_cohere_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
                 p=4,
                 frequency_penalty=0.5,
                 presence_penalty=0.6,
+                truncate="START",
             ),
             {
                 "model": "foo",
@@ -41,6 +42,7 @@ def test_cohere_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
                 "p": 4,
                 "frequency_penalty": 0.5,
                 "presence_penalty": 0.6,
+                "truncate": "START",
             },
             id="with values set",
         ),

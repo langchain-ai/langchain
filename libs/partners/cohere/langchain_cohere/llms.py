@@ -141,6 +141,7 @@ class Cohere(LLM, BaseCohere):
             "p": self.p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
+            "truncate": self.truncate,
         }
         return {k: v for k, v in base_params.items() if v is not None}
 
