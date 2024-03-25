@@ -3,9 +3,6 @@ from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import TreeBuilder
 
-from defusedxml import ElementTree as DET  # type: ignore[import]
-from defusedxml.ElementTree import DefusedXMLParser  # type: ignore[import]
-
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
@@ -40,6 +37,9 @@ class XMLOutputParser(BaseTransformOutputParser):
 
     def parse(self, text: str) -> Dict[str, List[Any]]:
         # Try to find XML string within triple backticks
+        from defusedxml import ElementTree as DET  # type: ignore[import]
+        from defusedxml.ElementTree import DefusedXMLParser  # type: ignore[import]
+
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
         if match is not None:
             # If match found, use the content within the backticks
@@ -60,6 +60,8 @@ class XMLOutputParser(BaseTransformOutputParser):
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
     ) -> Iterator[AddableDict]:
+        from defusedxml.ElementTree import DefusedXMLParser  # type: ignore[import]
+
         parser = ET.XMLPullParser(
             ["start", "end"], _parser=DefusedXMLParser(target=TreeBuilder())
         )
@@ -112,6 +114,8 @@ class XMLOutputParser(BaseTransformOutputParser):
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[AddableDict]:
+        from defusedxml.ElementTree import DefusedXMLParser  # type: ignore[import]
+
         _parser = DefusedXMLParser(target=TreeBuilder())
         parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
         xml_start_re = re.compile(r"<[a-zA-Z:_]")
