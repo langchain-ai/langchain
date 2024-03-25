@@ -64,8 +64,8 @@ class IPEXLLM(LLM):
 
         except ImportError:
             raise ValueError(
-                "Could not import ipex_llm or transformers. "
-                "Please install it with `pip install --pre --upgrade ipex_llm[all]`."
+                "Could not import ipex-llm or transformers. "
+                "Please install it with `pip install --pre --upgrade ipex-llm[all]`."
             )
 
         _model_kwargs = model_kwargs or {}
@@ -125,8 +125,8 @@ class IPEXLLM(LLM):
 
         except ImportError:
             raise ValueError(
-                "Could not import ipex_llm or transformers. "
-                "Please install it with `pip install --pre --upgrade ipex_llm[all]`"
+                "Could not import ipex-llm or transformers. "
+                "Please install it with `pip install --pre --upgrade ipex-llm[all]`."
             )
 
         _model_kwargs = model_kwargs or {}
