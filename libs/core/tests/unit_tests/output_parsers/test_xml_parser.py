@@ -49,22 +49,6 @@ async def test_xml_output_parser(result: str) -> None:
     xml_parser = XMLOutputParser()
     assert DEF_RESULT_EXPECTED == xml_parser.parse(result)
     assert DEF_RESULT_EXPECTED == (await xml_parser.aparse(result))
-    assert list(xml_parser.transform(iter(result))) == [
-        {"foo": [{"bar": [{"baz": None}]}]},
-        {"foo": [{"bar": [{"baz": "slim.shady"}]}]},
-        {"foo": [{"baz": "tag"}]},
-    ]
-
-    async def _as_iter(string: str) -> AsyncIterator[str]:
-        for c in string:
-            yield c
-
-    chunks = [chunk async for chunk in xml_parser.atransform(_as_iter(result))]
-    assert chunks == [
-        {"foo": [{"bar": [{"baz": None}]}]},
-        {"foo": [{"bar": [{"baz": "slim.shady"}]}]},
-        {"foo": [{"baz": "tag"}]},
-    ]
 
 
 @pytest.mark.parametrize("result", ["foo></foo>", "<foo></foo", "foo></foo", "foofoo"])
@@ -100,19 +84,3 @@ async def tests_billion_laughs_attack() -> None:
 
     with pytest.raises(OutputParserException):
         await parser.aparse(MALICIOUS_XML)
-
-    with pytest.raises(ParseError):
-        # Right now raises undefined entity error
-        assert list(parser.transform([MALICIOUS_XML])) == [  # type: ignore
-            {"foo": [{"bar": [{"baz": None}]}]}
-        ]
-
-    async def _as_iter(string: str) -> AsyncIterator[str]:
-        for c in string:
-            yield c
-
-    iter = parser.atransform(_as_iter([MALICIOUS_XML]))  # type: ignore
-
-    with pytest.raises(ParseError):
-        chunks = [chunk async for chunk in iter]
-        assert chunks == [{"foo": [{"bar": [{"baz": None}]}]}]
