@@ -3,6 +3,7 @@ import logging
 from time import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@deprecated("0.0.27", alternative="Use langchain-elasticsearch package", pending=True)
 class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
     """Chat message history that stores history in Elasticsearch.
 

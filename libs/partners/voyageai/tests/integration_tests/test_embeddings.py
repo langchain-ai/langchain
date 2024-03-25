@@ -1,6 +1,6 @@
 """Test VoyageAI embeddings."""
 
-from langchain_voyageai.embeddings import VoyageAIEmbeddings
+from langchain_voyageai import VoyageAIEmbeddings
 
 # Please set VOYAGE_API_KEY in the environment variables
 MODEL = "voyage-2"
@@ -18,7 +18,7 @@ def test_langchain_voyageai_embedding_documents() -> None:
 def test_langchain_voyageai_embedding_documents_multiple() -> None:
     """Test voyage embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
-    embedding = VoyageAIEmbeddings(model=MODEL, embed_batch_size=2)
+    embedding = VoyageAIEmbeddings(model=MODEL, batch_size=2)
     output = embedding.embed_documents(documents)
     assert len(output) == 3
     assert len(output[0]) == 1024
@@ -37,7 +37,7 @@ def test_langchain_voyageai_embedding_query() -> None:
 async def test_langchain_voyageai_async_embedding_documents_multiple() -> None:
     """Test voyage embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
-    embedding = VoyageAIEmbeddings(model=MODEL, embed_batch_size=2)
+    embedding = VoyageAIEmbeddings(model=MODEL, batch_size=2)
     output = await embedding.aembed_documents(documents)
     assert len(output) == 3
     assert len(output[0]) == 1024
