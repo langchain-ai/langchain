@@ -109,7 +109,7 @@ class IPEXLLM(LLM):
 
         Args:
 
-            model_id: Path for the ipex-llm transformers low-bit model checkpoint folder.
+            model_id: Path for the ipex-llm transformers low-bit model folder.
             model_kwargs: Keyword arguments to pass to the model and tokenizer.
             kwargs: Extra arguments to pass to the model and tokenizer.
 
