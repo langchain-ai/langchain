@@ -46,7 +46,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "numpy",
             "python",
             "requests",
-            "semantic-text-splitter",
             "tenacity",
         ]
     )
