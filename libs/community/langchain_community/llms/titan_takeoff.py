@@ -114,17 +114,17 @@ class TitanTakeoff(LLM):
         """Initialize the Titan Takeoff language wrapper.
 
         Args:
-            base_url (str, optional): The base URL where the Takeoff 
+            base_url (str, optional): The base URL where the Takeoff
                 Inference Server is listening. Defaults to `http://localhost`.
             port (int, optional): What port is Takeoff Inference API
                 listening on. Defaults to 3000.
             mgmt_port (int, optional): What port is Takeoff Management API
                 listening on. Defaults to 3001.
             streaming (bool, optional): Whether you want to by default use the
-                generate_stream endpoint over generate to stream responses. 
-                Defaults to False. In reality, this is not significantly different 
-                as the streamed response is buffered and returned similar to the 
-                non-streamed response, but the run manager is applied per token 
+                generate_stream endpoint over generate to stream responses.
+                Defaults to False. In reality, this is not significantly different
+                as the streamed response is buffered and returned similar to the
+                non-streamed response, but the run manager is applied per token
                 generated.
             models (List[ReaderConfig], optional): Any readers you'd like to
                 spin up on. Defaults to [].
