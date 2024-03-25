@@ -1,7 +1,6 @@
 import re
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 from xml.etree import ElementTree as ET
-from xml.etree.ElementTree import TreeBuilder
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
@@ -61,13 +60,7 @@ class XMLOutputParser(BaseTransformOutputParser):
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
     ) -> Iterator[AddableDict]:
-        # Imports are temporarily placed here to avoid issue with caching on CI
-        # likely if you're reading this you can move them to the top of the file
-        from defusedxml.ElementTree import DefusedXMLParser  # type: ignore[import]
-
-        parser = ET.XMLPullParser(
-            ["start", "end"], _parser=DefusedXMLParser(target=TreeBuilder())
-        )
+        parser = ET.XMLPullParser(["start", "end"])
         xml_start_re = re.compile(r"<[a-zA-Z:_]")
         xml_started = False
         current_path: List[str] = []
@@ -117,12 +110,7 @@ class XMLOutputParser(BaseTransformOutputParser):
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[AddableDict]:
-        # Imports are temporarily placed here to avoid issue with caching on CI
-        # likely if you're reading this you can move them to the top of the file
-        from defusedxml.ElementTree import DefusedXMLParser  # type: ignore[import]
-
-        _parser = DefusedXMLParser(target=TreeBuilder())
-        parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
+        parser = ET.XMLPullParser(["start", "end"])
         xml_start_re = re.compile(r"<[a-zA-Z:_]")
         xml_started = False
         current_path: List[str] = []
