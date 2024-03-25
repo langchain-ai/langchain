@@ -56,16 +56,50 @@ class _MockStructuredTool(BaseTool):
     async def _arun(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         raise NotImplementedError
 
+class _MockSchemaSingle(BaseModel):
+    arg1: str
 
-def test_structured_args() -> None:
+
+class _MockStructuredToolSingle(BaseTool):
+    name: str = "structured_api_single_argument"
+    args_schema: Type[BaseModel] = _MockSchemaSingle
+    description: str = "A Structured Tool with single argument"
+
+    def _run(self, arg1: str) -> str:
+        return arg1
+
+    async def _arun(self, arg1: str) -> str:
+        raise NotImplementedError
+
+@pytest.mark.parametrize(
+    "args",
+    (
+        {"arg1": 1, "arg2": True, "arg3": {"foo": "bar"}},
+        '{"arg1": 1, "arg2": true, "arg3": {"foo": "bar"}}',
+    ),
+)
+def test_structured_args(args: Union[dict, str]) -> None:
     """Test functionality with structured arguments."""
     structured_api = _MockStructuredTool()
     assert isinstance(structured_api, BaseTool)
     assert structured_api.name == "structured_api"
     expected_result = "1 True {'foo': 'bar'}"
-    args = {"arg1": 1, "arg2": True, "arg3": {"foo": "bar"}}
     assert structured_api.run(args) == expected_result
 
+@pytest.mark.parametrize(
+    "arg",
+    (
+        {"arg1": "foobar"},
+        '{"arg1": "foobar"}',
+    ),
+)
+def test_structured_args_single_arg(arg: Union[dict, str]) -> None:
+    """Test functionality with structured arguments."""
+    structured_api = _MockStructuredToolSingle()
+    assert isinstance(structured_api, BaseTool)
+    assert structured_api.name == "structured_api_single_argument"
+    expected_result = "foobar"
+    assert structured_api.run(arg) == expected_result
 
 def test_misannotated_base_tool_raises_error() -> None:
     """Test that a BaseTool with the incorrect typehint raises an exception.""" ""
@@ -267,6 +301,43 @@ def test_structured_tool_types_parsed() -> None:
     }
     assert result == expected
 
+
+@pytest.mark.parametrize(
+    "args",
+    (
+        {"arg1": 1, "arg2": True, "arg3": {"foo": "bar"}},
+        '{"arg1": 1, "arg2": true, "arg3": {"foo": "bar"}}',
+    ),
+)
+def test_structured_tool_decorator_multiple_input_parsed(
+    args: Union[Dict[str, Any], str]
+) -> None:
+    """Test structured tool decorator multiple input parsed. If input is
+    parsed as JSON string it should be parsed accordingly."""
+
+    @tool
+    def search_api(arg1: int, arg2: bool, arg3: dict) -> str:
+        """Search the API for the query."""
+        return "API result"
+
+    assert isinstance(search_api, BaseTool)
+    assert search_api.name == "search_api"
+    assert not search_api.return_direct
+    assert search_api(args) == "API result"
+
+
+def test_structured_tool_decorator_single_input_parsed() -> None:
+    """Test structured tool decorator single input parsed."""
+
+    @tool
+    def search_api(arg1: str) -> str:
+        """Search the API for the query."""
+        return "API result"
+
+    assert isinstance(search_api, BaseTool)
+    assert search_api.name == "search_api"
+    assert not search_api.return_direct
+    assert search_api("test") == "API result"
 
 def test_base_tool_inheritance_base_schema() -> None:
     """Test schema is correctly inferred when inheriting from BaseTool."""

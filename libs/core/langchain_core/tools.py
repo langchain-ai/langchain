@@ -275,8 +275,15 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
-                key_ = next(iter(input_args.__fields__.keys()))
-                input_args.validate({key_: tool_input})
+                try:
+                    # try parse to obj, convert to dict and validate schema
+                    # e.g. '{"arg1":"foo", "arg2":"bar"}'
+                    tool_input = input_args.parse_raw(tool_input).dict()
+                except ValidationError:
+                    # old style with one argument
+                    # e.g. "test"
+                    key_ = next(iter(input_args.__fields__.keys()))
+                    input_args.validate({key_: tool_input})
             return tool_input
         else:
             if input_args is not None:
