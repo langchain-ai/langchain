@@ -103,7 +103,7 @@ async def tests_billion_laughs_attack() -> None:
 
     with pytest.raises(ParseError):
         # Right now raises undefined entity error
-        assert list(parser.transform(iter(MALICIOUS_XML))) == [
+        assert list(parser.transform([MALICIOUS_XML])) == [
             {"foo": [{"bar": [{"baz": None}]}]}
         ]
 
@@ -112,5 +112,5 @@ async def tests_billion_laughs_attack() -> None:
             yield c
 
     with pytest.raises(ParseError):
-        chunks = [chunk async for chunk in parser.atransform(_as_iter(MALICIOUS_XML))]
+        chunks = [chunk async for chunk in parser.atransform(_as_iter([MALICIOUS_XML]))]
         assert chunks == [{"foo": [{"bar": [{"baz": None}]}]}]
