@@ -39,7 +39,6 @@ class XMLOutputParser(BaseTransformOutputParser):
         # Imports are temporarily placed here to avoid issue with caching on CI
         # likely if you're reading this you can move them to the top of the file
         from defusedxml import ElementTree as DET  # type: ignore[import]
-        from defusedxml.ElementTree import DefusedXMLParser  # type: ignore[import]
 
         # Try to find XML string within triple backticks
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
