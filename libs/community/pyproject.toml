@@ -267,7 +267,8 @@ extended_testing = [
  "rdflib",
  "tidb-vector",
  "cloudpickle",
- "friendli-client"
+ "friendli-client",
+ "runhouse"
 ]
 
 [tool.ruff]
