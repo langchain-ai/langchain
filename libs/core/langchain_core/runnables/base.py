@@ -1471,6 +1471,18 @@ class Runnable(Generic[Input, Output], ABC):
         """
         Return a new Runnable that maps a list of inputs to a list of outputs,
         by calling invoke() with each input.
+
+        Example:
+
+            .. code-block:: python
+
+                    from langchain_core.runnables import RunnableLambda
+
+                    def _lambda(x: int) -> int:
+                        return x + 1
+
+                    runnable = RunnableLambda(_lambda)
+                    print(runnable.map().invoke([1, 2, 3])) # [2, 3, 4]
         """
         return RunnableEach(bound=self)
 
@@ -4238,6 +4250,44 @@ class RunnableEach(RunnableEachBase[Input, Output]):
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
+
+            .. code-block:: python
+
+                from langchain_community.chat_models import FakeListChatModel
+                from langchain_core.prompts import SystemMessagePromptTemplate
+                from langchain_core.runnables import Runnable, RunnableConfig
+                from langchain_core.tracers import Run
+
+                start = 0
+                end = 0
+
+
+                def _start(run: Run, config: RunnableConfig) -> None:
+                    global start
+                    start += 1
+
+
+                def _end(run: Run, config: RunnableConfig) -> None:
+                    global end
+                    end += 1
+
+
+                prompt = (
+                    SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+                    + "{question}"
+                )
+                chat = FakeListChatModel(responses=["foo"])
+
+                chain: Runnable = prompt | chat
+
+                chain.with_listeners(on_start=_start, on_end=_end).invoke(
+                    {"question": "Who are you?"}
+                )
+                chain.invoke({"question": "Who are you?"})
+
+                print(start)  # 1
+                print(end)  # 1
+
         """
         return RunnableEach(
             bound=self.bound.with_listeners(
