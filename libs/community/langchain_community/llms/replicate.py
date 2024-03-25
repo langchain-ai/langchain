@@ -177,12 +177,12 @@ class Replicate(LLM):
                     if not output:
                         break
             if output:
-                yield GenerationChunk(text=output)
                 if run_manager:
                     run_manager.on_llm_new_token(
                         output,
                         verbose=self.verbose,
                     )
+                yield GenerationChunk(text=output)
             if stop_condition_reached:
                 break
 
