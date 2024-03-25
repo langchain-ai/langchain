@@ -278,9 +278,10 @@ class NeptuneRdfGraph:
 
         # get dtprops and oprops too
         for elem in ELEM_TYPES:
-            if ELEM_TYPES[elem] is None:
+            q = ELEM_TYPES.get(elem)
+            if not q:
                 continue
-            items = self.query(str(ELEM_TYPES[elem]))
+            items = self.query(q)
             reslist = []
             for r in items["results"]["bindings"]:
                 uri = r["elem"]["value"]
