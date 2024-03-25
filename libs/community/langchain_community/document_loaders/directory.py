@@ -2,7 +2,7 @@ import concurrent
 import logging
 import random
 from pathlib import Path
-from typing import Any, List, Optional, Sequence, Type, Union
+from typing import Any, Iterator, List, Optional, Sequence, Type, Union
 
 from langchain_core.documents import Document
 
@@ -197,3 +197,59 @@ class DirectoryLoader(BaseLoader):
             pbar.close()
 
         return docs
+    
+    def lazy_load(self) -> Iterator[Document]:
+        """Load documents lazily."""
+        p = Path(self.path)
+        if not p.exists():
+            raise FileNotFoundError(f"Directory not found: '{self.path}'")
+        if not p.is_dir():
+            raise ValueError(f"Expected directory, got file: '{self.path}'")
+
+        docs: List[Document] = []
+
+        paths = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
+        items = [
+            path
+            for path in paths
+            if not (self.exclude and any(path.match(glob) for glob in self.exclude))
+        ]
+
+        if self.sample_size > 0:
+            if self.randomize_sample:
+                randomizer = random.Random(
+                    self.sample_seed if self.sample_seed else None
+                )
+                randomizer.shuffle(items)
+            items = items[: min(len(items), self.sample_size)]
+
+        for i in items:
+            yield from self.lazy_load_file(i, p)
+    
+    def lazy_load_file(
+        self, item: Path, path: Path
+    ) -> Iterator[Document]:
+        """Load a file.
+
+        Args:
+            item: File path.
+            path: Directory path.
+
+        """
+        if item.is_file():
+            if _is_visible(item.relative_to(path)) or self.load_hidden:
+                try:
+                    logger.debug(f"Processing file: {str(item)}")
+                    loader = self.loader_cls(str(item), **self.loader_kwargs)
+                    try:
+                        for subdoc in loader.lazy_load():
+                            yield subdoc
+                    except NotImplementedError:
+                        for subdoc in loader.load():
+                            yield subdoc
+                except Exception as e:
+                    if self.silent_errors:
+                        logger.warning(f"Error loading file {str(item)}: {e}")
+                    else:
+                        logger.error(f"Error loading file {str(item)}")
+                        raise e
