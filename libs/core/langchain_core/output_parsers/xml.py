@@ -1,6 +1,10 @@
 import re
-import xml.etree.ElementTree as ET
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from xml.etree import ElementTree as ET
+from xml.etree.ElementTree import TreeBuilder
+
+from defusedxml import ElementTree as DET
+from defusedxml.ElementTree import DefusedXMLParser
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
@@ -46,10 +50,10 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         text = text.strip()
         try:
-            root = ET.fromstring(text)
+            root = DET.fromstring(text)
             return self._root_to_dict(root)
 
-        except ET.ParseError as e:
+        except DET.ParseError as e:
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 
@@ -105,7 +109,8 @@ class XMLOutputParser(BaseTransformOutputParser):
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[AddableDict]:
-        parser = ET.XMLPullParser(["start", "end"])
+        parser = DefusedXMLParser(target=TreeBuilder())
+        parser = ET.XMLPullParser(["start", "end"], _parser=parser)
         current_path: List[str] = []
         current_path_has_children = False
         async for chunk in input:
