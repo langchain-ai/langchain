@@ -156,6 +156,18 @@ class Milvus(VectorStore):
             "ANNOY": {"metric_type": "L2", "params": {"search_k": 10}},
             "SCANN": {"metric_type": "L2", "params": {"search_k": 10}},
             "AUTOINDEX": {"metric_type": "L2", "params": {}},
+            "GPU_CAGRA": {
+                "metric_type": "L2",
+                "params": {
+                    "itopk_size": 128,
+                    "search_width": 4,
+                    "min_iterations": 0,
+                    "max_iterations": 0,
+                    "team_size": 0,
+                },
+            },
+            "GPU_IVF_FLAT": {"metric_type": "L2", "params": {"nprobe": 10}},
+            "GPU_IVF_PQ": {"metric_type": "L2", "params": {"nprobe": 10}},
         }
 
         self.embedding_func = embedding_function
