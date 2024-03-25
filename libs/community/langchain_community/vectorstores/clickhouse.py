@@ -198,7 +198,8 @@ class Clickhouse(VectorStore):
         if self.config.index_type:
             # Enable index
             self.client.command(
-                f"SET allow_experimental_{self.config.index_type}_index=1")
+                f"SET allow_experimental_{self.config.index_type}_index=1"
+            )
         self.client.command(self.schema)
 
     def _schema(self, dim, index_params):
@@ -206,11 +207,11 @@ class Clickhouse(VectorStore):
         :param dim: dimension of embeddings
         :param index_params: parameters used for index
 
-        This function returns a `CREATE TABLE` statement based on the value of 
+        This function returns a `CREATE TABLE` statement based on the value of
         `self.config.index_type`.
-        If an index type is specified that index will be created, otherwise 
+        If an index type is specified that index will be created, otherwise
         no index will be created.
-        In the case of there being no index, a linear scan will be performed 
+        In the case of there being no index, a linear scan will be performed
         when the embedding field is queried.
         """
 
