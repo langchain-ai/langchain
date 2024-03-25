@@ -1,18 +1,14 @@
+import typing
 from typing import Any, Dict, List, Optional
 
-from langchain_core._api.deprecation import deprecated
+import cohere
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_community.llms.cohere import _create_retry_decorator
+from .utils import _create_retry_decorator
 
 
-@deprecated(
-    since="0.0.30",
-    removal="0.2.0",
-    alternative_import="langchain_cohere.CohereEmbeddings",
-)
 class CohereEmbeddings(BaseModel, Embeddings):
     """Cohere embedding models.
 
@@ -23,7 +19,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings import CohereEmbeddings
+            from langchain_cohere import CohereEmbeddings
             cohere = CohereEmbeddings(
                 model="embed-english-light-v3.0",
                 cohere_api_key="my-api-key"
@@ -52,6 +48,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
+        arbitrary_types_allowed = True
         extra = Extra.forbid
 
     @root_validator()
@@ -62,25 +59,18 @@ class CohereEmbeddings(BaseModel, Embeddings):
         )
         request_timeout = values.get("request_timeout")
 
-        try:
-            import cohere
+        client_name = values["user_agent"]
+        values["client"] = cohere.Client(
+            cohere_api_key,
+            timeout=request_timeout,
+            client_name=client_name,
+        )
+        values["async_client"] = cohere.AsyncClient(
+            cohere_api_key,
+            timeout=request_timeout,
+            client_name=client_name,
+        )
 
-            client_name = values["user_agent"]
-            values["client"] = cohere.Client(
-                cohere_api_key,
-                timeout=request_timeout,
-                client_name=client_name,
-            )
-            values["async_client"] = cohere.AsyncClient(
-                cohere_api_key,
-                timeout=request_timeout,
-                client_name=client_name,
-            )
-        except ImportError:
-            raise ValueError(
-                "Could not import cohere python package. "
-                "Please install it with `pip install cohere`."
-            )
         return values
 
     def embed_with_retry(self, **kwargs: Any) -> Any:
@@ -104,7 +94,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return _embed_with_retry(**kwargs)
 
     def embed(
-        self, texts: List[str], *, input_type: Optional[str] = None
+        self,
+        texts: List[str],
+        *,
+        input_type: typing.Optional[cohere.EmbedInputType] = None,
     ) -> List[List[float]]:
         embeddings = self.embed_with_retry(
             model=self.model,
@@ -115,7 +108,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
         return [list(map(float, e)) for e in embeddings]
 
     async def aembed(
-        self, texts: List[str], *, input_type: Optional[str] = None
+        self,
+        texts: List[str],
+        *,
+        input_type: typing.Optional[cohere.EmbedInputType] = None,
     ) -> List[List[float]]:
         embeddings = (
             await self.aembed_with_retry(

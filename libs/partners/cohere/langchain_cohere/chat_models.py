@@ -1,6 +1,5 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -20,7 +19,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
-from langchain_community.llms.cohere import BaseCohere
+from langchain_cohere.llms import BaseCohere
 
 
 def get_role(message: BaseMessage) -> str:
@@ -95,9 +94,6 @@ def get_cohere_chat_request(
     return {k: v for k, v in req.items() if v is not None}
 
 
-@deprecated(
-    since="0.0.30", removal="0.2.0", alternative_import="langchain_cohere.ChatCohere"
-)
 class ChatCohere(BaseChatModel, BaseCohere):
     """`Cohere` chat large language models.
 
@@ -108,10 +104,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatCohere
+            from langchain_cohere import ChatCohere
             from langchain_core.messages import HumanMessage
 
-            chat = ChatCohere(model="command", max_tokens=256, temperature=0.75)
+            chat = ChatCohere(cohere_api_key="my-api-key")
 
             messages = [HumanMessage(content="knock knock")]
             chat.invoke(messages)
@@ -131,14 +127,16 @@ class ChatCohere(BaseChatModel, BaseCohere):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Cohere API."""
-        return {
+        base_params = {
+            "model": self.model,
             "temperature": self.temperature,
         }
+        return {k: v for k, v in base_params.items() if v is not None}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return self._default_params
 
     def _stream(
         self,
@@ -248,4 +246,4 @@ class ChatCohere(BaseChatModel, BaseCohere):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
-        return len(self.client.tokenize(text=text).tokens)
+        return len(self.client.tokenize(text).tokens)
