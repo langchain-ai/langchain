@@ -976,14 +976,15 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         **kwargs: Any,
     ) -> None:
         """Run when tool ends running.
 
         Args:
-            output (str): The output of the tool.
+            output (Any): The output of the tool.
         """
+        output = str(output)
         handle_event(
             self.handlers,
             "on_tool_end",
@@ -1038,12 +1039,13 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
         )
 
     @shielded
-    async def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    async def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running.
 
         Args:
-            output (str): The output of the tool.
+            output (Any): The output of the tool.
         """
+        output = str(output)
         await ahandle_event(
             self.handlers,
             "on_tool_end",
@@ -1181,6 +1183,7 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[CallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1195,8 +1198,9 @@ class CallbackManager(BaseCallbackManager):
                 prompt as an LLM run.
         """
         managers = []
-        for prompt in prompts:
-            run_id_ = uuid.uuid4()
+        for i, prompt in enumerate(prompts):
+            # Can't have duplicate runs with the same run ID (if provided)
+            run_id_ = run_id if i == 0 and run_id is not None else uuid.uuid4()
             handle_event(
                 self.handlers,
                 "on_llm_start",
@@ -1229,6 +1233,7 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[CallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1245,7 +1250,11 @@ class CallbackManager(BaseCallbackManager):
 
         managers = []
         for message_list in messages:
-            run_id_ = uuid.uuid4()
+            if run_id is not None:
+                run_id_ = run_id
+                run_id = None
+            else:
+                run_id_ = uuid.uuid4()
             handle_event(
                 self.handlers,
                 "on_chat_model_start",
@@ -1518,6 +1527,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         prompts: List[str],
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[AsyncCallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1537,7 +1547,11 @@ class AsyncCallbackManager(BaseCallbackManager):
         managers = []
 
         for prompt in prompts:
-            run_id_ = uuid.uuid4()
+            if run_id is not None:
+                run_id_ = run_id
+                run_id = None
+            else:
+                run_id_ = uuid.uuid4()
 
             tasks.append(
                 ahandle_event(
@@ -1575,6 +1589,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: Dict[str, Any],
         messages: List[List[BaseMessage]],
+        run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[AsyncCallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1593,7 +1608,11 @@ class AsyncCallbackManager(BaseCallbackManager):
         managers = []
 
         for message_list in messages:
-            run_id_ = uuid.uuid4()
+            if run_id is not None:
+                run_id_ = run_id
+                run_id = None
+            else:
+                run_id_ = uuid.uuid4()
 
             tasks.append(
                 ahandle_event(
