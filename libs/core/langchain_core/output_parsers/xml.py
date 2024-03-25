@@ -3,8 +3,8 @@ from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import TreeBuilder
 
-from defusedxml import ElementTree as DET
-from defusedxml.ElementTree import DefusedXMLParser
+from defusedxml import ElementTree as DET  # type: ignore[import]
+from defusedxml.ElementTree import DefusedXMLParser  # type: ignore[import]
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
