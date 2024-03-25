@@ -18,6 +18,7 @@ class AzureAiServicesTextToSpeechTool(BaseTool):
     In order to set this up, follow instructions at:
     https://learn.microsoft.com/en-us/azure/ai-services/speech-service/get-started-text-to-speech?pivots=programming-language-python
     """
+
     name: str = "azure_ai_services_text_to_speech"
     description: str = (
         "A wrapper around Azure AI Services Text to Speech API. "
@@ -99,4 +100,6 @@ class AzureAiServicesTextToSpeechTool(BaseTool):
             speech_file = self._text_to_speech(query, self.speech_language)
             return speech_file
         except Exception as e:
-            raise RuntimeError(f"Error while running AzureAiServicesTextToSpeechTool: {e}")
+            raise RuntimeError(
+                f"Error while running AzureAiServicesTextToSpeechTool: {e}"
+            )

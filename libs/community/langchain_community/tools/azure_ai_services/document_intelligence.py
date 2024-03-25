@@ -140,4 +140,6 @@ class AzureAiServicesDocumentIntelligenceTool(BaseTool):
 
             return self._format_document_analysis_result(document_analysis_result)
         except Exception as e:
-            raise RuntimeError(f"Error while running AzureAiServicesDocumentIntelligenceTool: {e}")
+            raise RuntimeError(
+                f"Error while running AzureAiServicesDocumentIntelligenceTool: {e}"
+            )

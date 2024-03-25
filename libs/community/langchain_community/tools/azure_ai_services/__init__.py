@@ -9,11 +9,11 @@ from langchain_community.tools.azure_ai_services.image_analysis import (
 from langchain_community.tools.azure_ai_services.speech_to_text import (
     AzureAiServicesSpeechToTextTool,
 )
-from langchain_community.tools.azure_ai_services.text_to_speech import (
-    AzureAiServicesTextToSpeechTool,
-)
 from langchain_community.tools.azure_ai_services.text_analytics_for_health import (
     AzureAiServicesTextAnalyticsForHealthTool,
+)
+from langchain_community.tools.azure_ai_services.text_to_speech import (
+    AzureAiServicesTextToSpeechTool,
 )
 
 __all__ = [

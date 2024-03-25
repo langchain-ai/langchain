@@ -117,4 +117,6 @@ class AzureAiServicesSpeechToTextTool(BaseTool):
             text = self._speech_to_text(query, self.speech_language)
             return text
         except Exception as e:
-            raise RuntimeError(f"Error while running AzureAiServicesSpeechToTextTool: {e}")
+            raise RuntimeError(
+                f"Error while running AzureAiServicesSpeechToTextTool: {e}"
+            )

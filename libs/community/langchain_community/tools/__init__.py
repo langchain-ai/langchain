@@ -16,6 +16,7 @@ tool for the job.
 
     CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
 """
+
 import importlib
 from typing import Any
 
@@ -35,7 +36,7 @@ _module_lookup = {
     "AzureAiImageAnalysisTool": "langchain_community.tools.azure_ai_services",
     "AzureAiSpeechToTextTool": "langchain_community.tools.azure_ai_services",
     "AzureAiTextToSpeechTool": "langchain_community.tools.azure_ai_services",
-    "AzureAiTextAnalyticsForHealthTool": "langchain_community.tools.azure_ai_services", # noqa: E501
+    "AzureAiTextAnalyticsForHealthTool": "langchain_community.tools.azure_ai_services",  # noqa: E501
     "AzureCogsFormRecognizerTool": "langchain_community.tools.azure_cognitive_services",
     "AzureCogsImageAnalysisTool": "langchain_community.tools.azure_cognitive_services",
     "AzureCogsSpeech2TextTool": "langchain_community.tools.azure_cognitive_services",

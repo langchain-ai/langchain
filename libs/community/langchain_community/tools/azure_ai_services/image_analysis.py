@@ -44,27 +44,29 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
         azure_ai_services_endpoint = get_from_dict_or_env(
             values, "azure_ai_services_endpoint", "AZURE_AI_SERVICES_ENDPOINT"
         )
-        
+
         """Validate that azure-ai-vision-imageanalysis is installed."""
         try:
             from azure.ai.vision.imageanalysis import ImageAnalysisClient
-            from azure.core.credentials import AzureKeyCredential
             from azure.ai.vision.imageanalysis.models import VisualFeatures
+            from azure.core.credentials import AzureKeyCredential
         except ImportError:
             raise ImportError(
                 "azure-ai-vision-imageanalysis is not installed. "
                 "Run `pip install azure-ai-vision-imageanalysis` to install. "
             )
-        
-        """Validate that the Azure AI Vision Image Analysis client can be initialized."""
+
+        """Validate Azure AI Vision Image Analysis client can be initialized."""
         try:
             values["image_analysis_client"] = ImageAnalysisClient(
                 endpoint=azure_ai_services_endpoint,
-                credential=AzureKeyCredential(azure_ai_services_key)
+                credential=AzureKeyCredential(azure_ai_services_key),
             )
         except Exception as e:
-            raise RuntimeError(f"Initialization of Azure AI Vision Image Analysis client failed: {e}")
-        
+            raise RuntimeError(
+                f"Initialization of Azure AI Vision Image Analysis client failed: {e}"
+            )
+
         values["visual_features"] = [
             VisualFeatures.TAGS,
             VisualFeatures.OBJECTS,
@@ -119,8 +121,13 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
         if "caption" in image_analysis_result:
             formatted_result.append("Caption: " + image_analysis_result["caption"])
 
-        if "objects" in image_analysis_result and len(image_analysis_result["objects"]) > 0:
-            formatted_result.append("Objects: " + ", ".join(image_analysis_result["objects"]))
+        if (
+            "objects" in image_analysis_result
+            and len(image_analysis_result["objects"]) > 0
+        ):
+            formatted_result.append(
+                "Objects: " + ", ".join(image_analysis_result["objects"])
+            )
 
         if "tags" in image_analysis_result and len(image_analysis_result["tags"]) > 0:
             formatted_result.append("Tags: " + ", ".join(image_analysis_result["tags"]))
