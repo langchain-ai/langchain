@@ -31,7 +31,12 @@ class LangchainLLMModelPipeline:
         as part of the rh.Module(LangchainLLMModelPipeline).
         """
         import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import (
+            AutoModel,
+            AutoModelForCausalLM,
+            AutoTokenizer,
+            T5ForConditionalGeneration,
+        )
         from transformers import pipeline as hf_pipeline
 
         if self.task not in VALID_TASKS:
@@ -49,13 +54,31 @@ class LangchainLLMModelPipeline:
             **_model_kwargs,
         )
 
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_id,
-            torch_dtype=torch.float16,
-            device_map=torch.device("cpu"),
-            token=hf_token,
-            **_model_kwargs,
-        )
+        try:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_id,
+                torch_dtype=torch.float64,
+                device_map=torch.device("cpu"),
+                token=hf_token,
+                **_model_kwargs,
+            )
+        except ValueError:
+            if "google" in self.model_id and "t5" in self.model_id:
+                self.model = T5ForConditionalGeneration.from_pretrained(
+                    self.model_id,
+                    torch_dtype=torch.float64,
+                    device_map=torch.device("cpu"),
+                    token=hf_token,
+                    **_model_kwargs,
+                )
+            else:
+                self.model = AutoModel.from_pretrained(
+                    self.model_id,
+                    torch_dtype=torch.float16,
+                    device_map=torch.device("cpu"),
+                    token=hf_token,
+                    **_model_kwargs,
+                )
 
         curr_pipeline = hf_pipeline(
             task=self.task,
@@ -94,7 +117,6 @@ class LangchainLLMModelPipeline:
             max_new_tokens=256,
             do_sample=True,
             num_return_sequences=1,
-            add_special_tokens=True,
             *args,
             **kwargs,
         )

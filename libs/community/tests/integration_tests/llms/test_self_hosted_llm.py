@@ -20,7 +20,7 @@ def get_remote_env(gpu: Any) -> Any:
 
     model_env = rh.env(
         name="model_env",
-        reqs=[model_reqs],
+        reqs=model_reqs,
         secrets=["huggingface"],  # need for downloading models from huggingface
     ).to(system=gpu)
 
@@ -30,10 +30,10 @@ def get_remote_env(gpu: Any) -> Any:
 def test_self_hosted_huggingface_pipeline_text_generation() -> None:
     """Test valid call to self-hosted HuggingFace text generation model."""
     gpu = get_remote_instance()
+    gpu.up_if_not()
     env = get_remote_env(gpu)
     llm = SelfHostedHuggingFaceLLM(
         model_id="google/gemma-2b-it",
-        model_kwargs={"n_positions": 1024},
         hardware=gpu,
         env=env,
     )
@@ -44,6 +44,7 @@ def test_self_hosted_huggingface_pipeline_text_generation() -> None:
 def test_self_hosted_huggingface_pipeline_text2text_generation() -> None:
     """Test valid call to self-hosted HuggingFace text2text generation model."""
     gpu = get_remote_instance()
+    gpu.up_if_not()
     env = get_remote_env(gpu)
     llm = SelfHostedHuggingFaceLLM(
         model_id="google/flan-t5-small",
@@ -58,6 +59,7 @@ def test_self_hosted_huggingface_pipeline_text2text_generation() -> None:
 def test_self_hosted_huggingface_pipeline_summarization() -> None:
     """Test valid call to self-hosted HuggingFace summarization model."""
     gpu = get_remote_instance()
+    gpu.up_if_not()
     env = get_remote_env(gpu)
     llm = SelfHostedHuggingFaceLLM(
         model_id="facebook/bart-large-cnn",
