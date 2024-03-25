@@ -11,6 +11,12 @@ EXPECTED_ALL = [
     "LanguageModelLike",
     "get_tokenizer",
     "LanguageModelLike",
+    "FakeMessagesListChatModel",
+    "FakeListChatModel",
+    "GenericFakeChatModel",
+    "FakeStreamingListLLM",
+    "FakeListLLM",
+    "ParrotFakeChatModel",
 ]
 
 
