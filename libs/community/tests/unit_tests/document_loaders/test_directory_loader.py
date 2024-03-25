@@ -1,6 +1,6 @@
 from pathlib import Path
-import pytest
 
+import pytest
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.csv_loader import CSVLoader
@@ -39,7 +39,9 @@ class TestDirectoryLoader:
         # Assert
         loader = DirectoryLoader(dir_path, glob=file_name, loader_cls=CSVLoader)
         for _ in loader.lazy_load():
-            pytest.fail("DirectoryLoader.lazy_load should not yield something for an empty file")
+            pytest.fail(
+                "DirectoryLoader.lazy_load should not yield something for an empty file"
+            )
 
     # Tests that lazy loading multiple CSV files is handled correctly.
     def test_directory_loader_lazy_load_multiple_files(self) -> None:

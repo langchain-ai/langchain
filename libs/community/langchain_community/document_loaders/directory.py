@@ -7,12 +7,13 @@ from typing import Any, Iterator, List, Optional, Sequence, Type, Union
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_community.document_loaders.html_bs import BSHTMLLoader
 from langchain_community.document_loaders.text import TextLoader
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 
 FILE_LOADER_TYPE = Union[
-    Type[UnstructuredFileLoader], Type[TextLoader], Type[BSHTMLLoader]
+    Type[UnstructuredFileLoader], Type[TextLoader], Type[BSHTMLLoader], Type[CSVLoader]
 ]
 logger = logging.getLogger(__name__)
 
@@ -197,7 +198,7 @@ class DirectoryLoader(BaseLoader):
             pbar.close()
 
         return docs
-    
+
     def lazy_load(self) -> Iterator[Document]:
         """Load documents lazily."""
         p = Path(self.path)
@@ -223,10 +224,8 @@ class DirectoryLoader(BaseLoader):
 
         for i in items:
             yield from self.lazy_load_file(i, p)
-    
-    def lazy_load_file(
-        self, item: Path, path: Path
-    ) -> Iterator[Document]:
+
+    def lazy_load_file(self, item: Path, path: Path) -> Iterator[Document]:
         """Load a file.
 
         Args:
