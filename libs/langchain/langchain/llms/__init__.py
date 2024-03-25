@@ -701,6 +701,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "nlpcloud": _import_nlpcloud,
         "ollama": _import_ollama,
         "openai": _import_openai,
+        "openaichat": _import_openai_chat,
         "openlm": _import_openlm,
         "pai_eas_endpoint": _import_pai_eas_endpoint,
         "petals": _import_petals,
