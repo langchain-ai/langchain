@@ -6,6 +6,7 @@ import json
 import re
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Iterable,
     List,
@@ -197,6 +198,7 @@ class HanaDB(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Add more texts to the vectorstore.
 
