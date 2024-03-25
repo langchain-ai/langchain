@@ -148,7 +148,9 @@ class _BaseGigaChat(Serializable):
             "repetition_penalty": self.repetition_penalty,
         }
 
-    def tokens_count(self, input_: List[str], model: Optional[str] = None) -> List[Any]:
+    def tokens_count(
+        self, input_: List[str], model: Optional[str] = None
+    ) -> List[gm.TokensCount]:
         """Get tokens of string list"""
         return self._client.tokens_count(input_, model)
 
@@ -158,19 +160,19 @@ class _BaseGigaChat(Serializable):
         """Get tokens of strings list (async)"""
         return await self._client.atokens_count(input_, model)
 
-    def get_models(self) -> Any:
+    def get_models(self) -> gm.Models:
         """Get available models of Gigachat"""
         return self._client.get_models()
 
-    async def aget_models(self) -> Any:
+    async def aget_models(self) -> gm.Models:
         """Get available models of Gigachat (async)"""
         return await self._client.aget_models()
 
-    def get_model(self, model: str) -> Any:
+    def get_model(self, model: str) -> gm.Model:
         """Get info about model"""
         return self._client.get_model(model)
 
-    async def aget_model(self, model: str) -> Any:
+    async def aget_model(self, model: str) -> gm.Model:
         """Get info about model (async)"""
         return await self._client.aget_model(model)
 

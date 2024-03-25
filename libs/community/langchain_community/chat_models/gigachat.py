@@ -48,11 +48,14 @@ logger = logging.getLogger(__name__)
 
 
 def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
-    from gigachat.models import MessagesRole
+    from gigachat.models import MessagesRole, FunctionCall
 
     additional_kwargs: Dict = {}
     if message.function_call:
-        additional_kwargs["function_call"] = message.function_call
+        if isinstance(function_call, FunctionCall):
+            additional_kwargs["function_call"] = dict(function_call)
+        elif isinstance(function_call, dict):
+            additional_kwargs["function_call"] = function_call
 
     if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)
@@ -85,35 +88,6 @@ def _convert_message_to_dict(message: gm.BaseMessage) -> gm.Messages:
         raise TypeError(f"Got unknown type {message}")
 
 
-def _convert_function_to_dict(function: Dict) -> gm.Function:
-    from gigachat.models import Function, FunctionParameters
-
-    res = Function(name=function["name"], description=function["description"])
-
-    if "parameters" in function:
-        if isinstance(function["parameters"], dict):
-            if "properties" in function["parameters"]:
-                props = function["parameters"]["properties"]
-                properties = {}
-
-                for k, v in props.items():
-                    properties[k] = {"type": v["type"], "description": v["description"]}
-
-                res.parameters = FunctionParameters(
-                    type="object",
-                    properties=properties,
-                    required=props.get("required", []),
-                )
-            else:
-                raise TypeError(
-                    f"No properties in parameters in {function['parameters']}"
-                )
-        else:
-            raise TypeError(f"Got unknown type {function['parameters']}")
-
-    return res
-
-
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
@@ -125,8 +99,6 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
-    if _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = _dict["tool_calls"]
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
@@ -136,8 +108,6 @@ def _convert_delta_to_message_chunk(
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
-    elif role == "tool" or default_class == ToolMessageChunk:
-        return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
