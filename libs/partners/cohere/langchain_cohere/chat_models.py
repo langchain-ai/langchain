@@ -107,7 +107,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             from langchain_cohere import ChatCohere
             from langchain_core.messages import HumanMessage
 
-            chat = ChatCohere(model="command", max_tokens=256, temperature=0.75)
+            chat = ChatCohere(cohere_api_key="my-api-key")
 
             messages = [HumanMessage(content="knock knock")]
             chat.invoke(messages)
@@ -127,14 +127,16 @@ class ChatCohere(BaseChatModel, BaseCohere):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Cohere API."""
-        return {
+        base_params = {
+            "model": self.model,
             "temperature": self.temperature,
         }
+        return {k: v for k, v in base_params.items() if v is not None}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return self._default_params
 
     def _stream(
         self,
