@@ -34,6 +34,7 @@ class NeptuneRdfGraph:
     Args:
         host: endpoint for the database instance
         port: port number for the database instance, default is 8182
+        use_iam_auth: boolean indicating IAM auth is enabled in Neptune cluster
         use_https: whether to use secure connection, default is True
         client: optional boto3 Neptune client
         credentials_profile_name: optional AWS profile name
