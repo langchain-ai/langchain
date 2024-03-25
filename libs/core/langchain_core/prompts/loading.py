@@ -1,8 +1,9 @@
 """Load prompts."""
+
 import json
 import logging
 from pathlib import Path
-from typing import Callable, Dict, Union
+from typing import Dict, Optional, Union
 
 import yaml
 
@@ -17,20 +18,27 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/pro
 logger = logging.getLogger(__name__)
 
 
-def load_prompt_from_config(config: dict) -> BasePromptTemplate:
+def load_prompt_from_config(
+    config: dict, template_base_path: Optional[Union[str, Path]] = None
+) -> BasePromptTemplate:
     """Load prompt from Config Dict."""
     if "_type" not in config:
         logger.warning("No `_type` key found, defaulting to `prompt`.")
     config_type = config.pop("_type", "prompt")
 
-    if config_type not in type_to_loader_dict:
+    if config_type not in ["chat", "prompt", "few_shot"]:
         raise ValueError(f"Loading {config_type} prompt not supported")
 
-    prompt_loader = type_to_loader_dict[config_type]
-    return prompt_loader(config)
+    if config_type == "chat":
+        return _load_chat_prompt(config)
+    if config_type == "prompt":
+        return _load_prompt(config, template_base_path)
+    return _load_few_shot_prompt(config, template_base_path)
 
 
-def _load_template(var_name: str, config: dict) -> dict:
+def _load_template(
+    var_name: str, config: dict, template_base_path: Optional[Union[str, Path]] = None
+) -> dict:
     """Load template from the path if applicable."""
     # Check if template_path exists in config.
     if f"{var_name}_path" in config:
@@ -41,6 +49,9 @@ def _load_template(var_name: str, config: dict) -> dict:
             )
         # Pop the template path from the config.
         template_path = Path(config.pop(f"{var_name}_path"))
+        # if base path is provided, join the path with it.
+        if template_base_path:
+            template_path = template_base_path / template_path
         # Load the template.
         if template_path.suffix == ".txt":
             with open(template_path) as f:
@@ -52,12 +63,17 @@ def _load_template(var_name: str, config: dict) -> dict:
     return config
 
 
-def _load_examples(config: dict) -> dict:
+def _load_examples(
+    config: dict, template_base_path: Optional[Union[str, Path]] = None
+) -> dict:
     """Load examples if necessary."""
     if isinstance(config["examples"], list):
         pass
     elif isinstance(config["examples"], str):
-        with open(config["examples"]) as f:
+        examples_file_path = Path(config["examples"])
+        if template_base_path:
+            examples_file_path = template_base_path / examples_file_path
+        with open(examples_file_path) as f:
             if config["examples"].endswith(".json"):
                 examples = json.load(f)
             elif config["examples"].endswith((".yaml", ".yml")):
@@ -85,7 +101,9 @@ def _load_output_parser(config: dict) -> dict:
     return config
 
 
-def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
+def _load_few_shot_prompt(
+    config: dict, template_base_path: Optional[Union[str, Path]] = None
+) -> FewShotPromptTemplate:
     """Load the "few shot" prompt from the config."""
     # Load the suffix and prefix templates.
     config = _load_template("suffix", config)
@@ -101,15 +119,17 @@ def _load_few_shot_prompt(config: dict) -> FewShotPromptTemplate:
     else:
         config["example_prompt"] = load_prompt_from_config(config["example_prompt"])
     # Load the examples.
-    config = _load_examples(config)
+    config = _load_examples(config, template_base_path)
     config = _load_output_parser(config)
     return FewShotPromptTemplate(**config)
 
 
-def _load_prompt(config: dict) -> PromptTemplate:
+def _load_prompt(
+    config: dict, template_base_path: Optional[Union[str, Path]] = None
+) -> PromptTemplate:
     """Load the prompt template from config."""
     # Load the template from disk if necessary.
-    config = _load_template("template", config)
+    config = _load_template("template", config, template_base_path)
     config = _load_output_parser(config)
 
     template_format = config.get("template_format", "f-string")
@@ -125,17 +145,21 @@ def _load_prompt(config: dict) -> PromptTemplate:
     return PromptTemplate(**config)
 
 
-def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
+def load_prompt(
+    path: Union[str, Path], template_base_path: Optional[Union[str, Path]] = None
+) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs."""
     if hub_result := try_load_from_hub(
         path, _load_prompt_from_file, "prompts", {"py", "json", "yaml"}
     ):
         return hub_result
     else:
-        return _load_prompt_from_file(path)
+        return _load_prompt_from_file(path, template_base_path)
 
 
-def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
+def _load_prompt_from_file(
+    file: Union[str, Path], template_base_path: Optional[Union[str, Path]] = None
+) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.
     if isinstance(file, str):
@@ -152,7 +176,7 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
     else:
         raise ValueError(f"Got unsupported file type {file_path.suffix}")
     # Load the prompt from the config now.
-    return load_prompt_from_config(config)
+    return load_prompt_from_config(config, template_base_path)
 
 
 def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
@@ -166,10 +190,3 @@ def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
         raise ValueError("Can't load chat prompt without template")
 
     return ChatPromptTemplate.from_template(template=template, **config)
-
-
-type_to_loader_dict: Dict[str, Callable[[dict], BasePromptTemplate]] = {
-    "prompt": _load_prompt,
-    "few_shot": _load_few_shot_prompt,
-    "chat": _load_chat_prompt,
-}
