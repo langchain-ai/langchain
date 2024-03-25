@@ -111,9 +111,8 @@ async def tests_billion_laughs_attack() -> None:
         for c in string:
             yield c
 
+    iter = parser.atransform(_as_iter([MALICIOUS_XML]))  # type: ignore
+
     with pytest.raises(ParseError):
-        chunks = [
-            chunk
-            async for chunk in parser.atransform(_as_iter([MALICIOUS_XML]))  # type: ignore
-        ]
+        chunks = [chunk async for chunk in iter]
         assert chunks == [{"foo": [{"bar": [{"baz": None}]}]}]
