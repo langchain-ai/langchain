@@ -1,6 +1,7 @@
 # langchain-robocorp
 
-This package contains the LangChain integrations for [Robocorp](https://github.com/robocorp/robocorp).
+This package contains the LangChain integrations for [Robocorp Action Server](https://github.com/robocorp/robocorp).
+Action Server enables an agent to execute actions in the real world. 
 
 ## Installation
 

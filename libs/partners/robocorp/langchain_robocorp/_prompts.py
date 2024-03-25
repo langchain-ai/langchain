@@ -1,7 +1,3 @@
-# flake8: noqa
-TOOLKIT_TOOL_DESCRIPTION = """{description}. The tool must be invoked with a complete sentence starting with "{name}" and additional information on {required_params}."""
-
-
 API_CONTROLLER_PROMPT = """You are turning user input into a json query for an API request tool.
 
 The final output to the tool should be a json string with a single key "data".
