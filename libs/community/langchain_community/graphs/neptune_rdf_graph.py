@@ -44,13 +44,6 @@ class NeptuneRdfGraph:
     Example:
         .. code-block:: python
 
-        graph = NeptuneGraph(
-            host='<my-cluster>',
-            port=8182
-        )
-    Example:
-        .. code-block:: python
-
         graph = NeptuneRdfGraph(
             host='<SPARQL host'>,
             port=<SPARQL port>
