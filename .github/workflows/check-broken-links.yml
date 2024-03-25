@@ -25,4 +25,4 @@ jobs:
       - name: Check broken links for .mdx files
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
-          file-extension: .mdx
+          file-extension: '.mdx'
