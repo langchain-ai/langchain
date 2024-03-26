@@ -129,6 +129,7 @@ class VDMS(VectorStore):
 
     def __init__(
         self,
+        *,
         embedding_function: Optional[Embeddings] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # DescriptorSet name
         distance_strategy: Union[DistanceMetric, str] = DEFAULT_DISTANCE_METRIC,
