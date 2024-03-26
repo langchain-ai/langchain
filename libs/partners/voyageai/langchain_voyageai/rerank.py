@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from copy import deepcopy
 from typing import Dict, Optional, Sequence, Union
 
@@ -7,8 +8,8 @@ import voyageai  # type: ignore
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.documents.compressor import BaseDocumentCompressor
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str
 from voyageai.object import RerankingObject  # type: ignore
 
 
@@ -18,7 +19,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
     client: voyageai.Client = None
     aclient: voyageai.AsyncClient = None
     """VoyageAI clients to use for compressing documents."""
-    voyageai_api_key: str
+    voyage_api_key: Optional[SecretStr] = None
     """VoyageAI API key. Must be specified directly or via environment variable 
         VOYAGE_API_KEY."""
     model: str
@@ -33,11 +34,19 @@ class VoyageAIRerank(BaseDocumentCompressor):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        voyageai_api_key = get_from_dict_or_env(
-            values, "voyageai_api_key", "VOYAGE_API_KEY"
+        voyage_api_key = values.get("voyage_api_key") or os.getenv(
+            "VOYAGE_API_KEY", None
         )
-        values["client"] = voyageai.Client(api_key=voyageai_api_key)
-        values["aclient"] = voyageai.AsyncClient(api_key=voyageai_api_key)
+        if voyage_api_key:
+            api_key_secretstr = convert_to_secret_str(voyage_api_key)
+            values["voyage_api_key"] = api_key_secretstr
+
+            api_key_str = api_key_secretstr.get_secret_value()
+        else:
+            api_key_str = None
+
+        values["client"] = voyageai.Client(api_key=api_key_str)
+        values["aclient"] = voyageai.AsyncClient(api_key=api_key_str)
 
         return values
 
