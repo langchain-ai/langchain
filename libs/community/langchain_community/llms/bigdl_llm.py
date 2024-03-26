@@ -1,8 +1,9 @@
 import logging
-from typing import Any, List, Mapping, Optional
+from typing import Any, Optional
 
 from langchain_community.llms.ipex_llm import IpexLLM
 from langchain_core.language_models.llms import LLM
+
 logger = logging.getLogger(__name__)
 
 class BigdlLLM(IpexLLM):
@@ -100,7 +101,7 @@ class BigdlLLM(IpexLLM):
         logger.warning("BigdlLLM was deprecated. Please use IpexLLM instead.")
         
         try:
-            from  bigdl.llm.transformers import (
+            from bigdl.llm.transformers import (
                 AutoModel,
                 AutoModelForCausalLM,
             )
