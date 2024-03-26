@@ -37,6 +37,7 @@ _EXPECTED = [
     "HanaDB",
     "Hologres",
     "InfinispanVS",
+    "InMemoryVectorStore",
     "KDBAI",
     "Kinetica",
     "KineticaSettings",

@@ -4,55 +4,25 @@ from typing import Any, Dict, Optional, Sequence
 
 import requests
 
-CLASS_QUERY = """
-SELECT DISTINCT ?elem ?com
-WHERE { 
- ?instance a ?elem .
- OPTIONAL { ?instance rdf:type/rdfs:subClassOf* ?elem } .
- #FILTER (isIRI(?elem)) .
- OPTIONAL { ?elem rdfs:comment ?com filter (lang(?com) = "en")}
-}
-"""
-
-REL_QUERY = """
-SELECT DISTINCT ?elem ?com
-WHERE { 
- ?subj ?elem ?obj . 
- OPTIONAL { 
-     ?elem rdf:type/rdfs:subPropertyOf* ?proptype .
-     VALUES  ?proptype  { rdf:Property owl:DatatypeProperty owl:ObjectProperty } .
- } . 
- OPTIONAL { ?elem rdfs:comment ?com filter (lang(?com) = "en")} 
-}
-"""
-
+# Query to find OWL datatype properties
 DTPROP_QUERY = """
-SELECT DISTINCT ?elem ?com
+SELECT DISTINCT ?elem 
 WHERE { 
- ?subj ?elem ?obj . 
- OPTIONAL { 
-     ?elem rdf:type/rdfs:subPropertyOf* ?proptype .
-     ?proptype  a owl:DatatypeProperty .
- } . 
- OPTIONAL { ?elem rdfs:comment ?com filter (lang(?com) = "en")} 
+ ?elem a owl:DatatypeProperty . 
 }
 """
 
+# Query to find OWL object properties
 OPROP_QUERY = """
-SELECT DISTINCT ?elem ?com
+SELECT DISTINCT ?elem 
 WHERE { 
- ?subj ?elem ?obj . 
- OPTIONAL { 
-     ?elem rdf:type/rdfs:subPropertyOf* ?proptype .
-     ?proptype  a owl:ObjectProperty .
- } . 
- OPTIONAL { ?elem rdfs:comment ?com filter (lang(?com) = "en")} 
+ ?elem a owl:ObjectProperty . 
 }
 """
 
 ELEM_TYPES = {
-    "classes": CLASS_QUERY,
-    "rels": REL_QUERY,
+    "classes": None,
+    "rels": None,
     "dtprops": DTPROP_QUERY,
     "oprops": OPROP_QUERY,
 }
@@ -62,32 +32,33 @@ class NeptuneRdfGraph:
     """Neptune wrapper for RDF graph operations.
 
     Args:
-        host: SPARQL endpoint host for Neptune
-        port: SPARQL endpoint port for Neptune. Defaults 8182.
+        host: endpoint for the database instance
+        port: port number for the database instance, default is 8182
         use_iam_auth: boolean indicating IAM auth is enabled in Neptune cluster
-        region_name: AWS region required if use_iam_auth is True, e.g., us-west-2
-        hide_comments: whether to include ontology comments in schema for prompt
+        use_https: whether to use secure connection, default is True
+        client: optional boto3 Neptune client
+        credentials_profile_name: optional AWS profile name
+        region_name: optional AWS region, e.g., us-west-2
+        service: optional service name, default is neptunedata
+        sign: optional, whether to sign the request payload, default is True
 
     Example:
         .. code-block:: python
 
         graph = NeptuneRdfGraph(
             host='<SPARQL host'>,
-            port=<SPARQL port>,
-            use_iam_auth=False
+            port=<SPARQL port>
         )
         schema = graph.get_schema()
 
         OR
         graph = NeptuneRdfGraph(
             host='<SPARQL host'>,
-            port=<SPARQL port>,
-            use_iam_auth=False
+            port=<SPARQL port>
         )
         schema_elem = graph.get_schema_elements()
-        ... change schema_elements ...
+        #... change schema_elements ...
         graph.load_schema(schema_elem)
-        schema = graph.get_schema()
 
     *Security note*: Make sure that the database connection uses credentials
         that are narrowly-scoped to only include necessary permissions.
@@ -105,27 +76,67 @@ class NeptuneRdfGraph:
         self,
         host: str,
         port: int = 8182,
+        use_https: bool = True,
         use_iam_auth: bool = False,
+        client: Any = None,
+        credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
-        hide_comments: bool = False,
+        service: str = "neptunedata",
+        sign: bool = True,
     ) -> None:
         self.use_iam_auth = use_iam_auth
         self.region_name = region_name
-        self.hide_comments = hide_comments
         self.query_endpoint = f"https://{host}:{port}/sparql"
 
-        if self.use_iam_auth:
-            try:
+        try:
+            if client is not None:
+                self.client = client
+            else:
                 import boto3
 
-                self.session = boto3.Session()
-            except ImportError:
-                raise ImportError(
-                    "Could not import boto3 python package. "
-                    "Please install it with `pip install boto3`."
-                )
-        else:
-            self.session = None
+                if credentials_profile_name is not None:
+                    self.session = boto3.Session(profile_name=credentials_profile_name)
+                else:
+                    # use default credentials
+                    self.session = boto3.Session()
+
+                client_params = {}
+                if region_name:
+                    client_params["region_name"] = region_name
+
+                protocol = "https" if use_https else "http"
+
+                client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
+
+                if sign:
+                    self.client = self.session.client(service, **client_params)
+                else:
+                    from botocore import UNSIGNED
+                    from botocore.config import Config
+
+                    self.client = self.session.client(
+                        service,
+                        **client_params,
+                        config=Config(signature_version=UNSIGNED),
+                    )
+
+        except ImportError:
+            raise ModuleNotFoundError(
+                "Could not import boto3 python package. "
+                "Please install it with `pip install boto3`."
+            )
+        except Exception as e:
+            if type(e).__name__ == "UnknownServiceError":
+                raise ModuleNotFoundError(
+                    "NeptuneGraph requires a boto3 version 1.28.38 or greater."
+                    "Please install it with `pip install -U boto3`."
+                ) from e
+            else:
+                raise ValueError(
+                    "Could not load credentials to authenticate with AWS client. "
+                    "Please check that credentials in the specified "
+                    "profile name are valid."
+                ) from e
 
         # Set schema
         self.schema = ""
@@ -142,6 +153,12 @@ class NeptuneRdfGraph:
     @property
     def get_schema_elements(self) -> Dict[str, Any]:
         return self.schema_elements
+
+    def get_summary(self) -> Dict[str, Any]:
+        """
+        Obtain Neptune statistical summary of classes and predicates in the graph.
+        """
+        return self.client.get_rdf_graph_summary(mode="detailed")
 
     def query(
         self,
@@ -197,12 +214,10 @@ class NeptuneRdfGraph:
         elem_str = {}
         for elem in ELEM_TYPES:
             res_list = []
-            for elem_rec in self.schema_elements[elem]:
+            for elem_rec in schema_elements[elem]:
                 uri = elem_rec["uri"]
                 local = elem_rec["local"]
                 res_str = f"<{uri}> ({local})"
-                if self.hide_comments is False:
-                    res_str = res_str + f", {elem_rec['comment']}"
                 res_list.append(res_str)
             elem_str[elem] = ", ".join(res_list)
 
@@ -210,12 +225,12 @@ class NeptuneRdfGraph:
             "In the following, each IRI is followed by the local name and "
             "optionally its description in parentheses. \n"
             "The graph supports the following node types:\n"
-            f"{elem_str['classes']}"
+            f"{elem_str['classes']}\n"
             "The graph supports the following relationships:\n"
-            f"{elem_str['rels']}"
-            "The graph supports the following OWL object properties, "
-            f"{elem_str['dtprops']}"
-            "The graph supports the following OWL data properties, "
+            f"{elem_str['rels']}\n"
+            "The graph supports the following OWL object properties:\n"
+            f"{elem_str['dtprops']}\n"
+            "The graph supports the following OWL data properties:\n"
             f"{elem_str['oprops']}"
         )
 
@@ -238,15 +253,40 @@ class NeptuneRdfGraph:
         """
         self.schema_elements["distinct_prefixes"] = {}
 
+        # get summary and build list of classes and rels
+        summary = self.get_summary()
+        reslist = []
+        for c in summary["payload"]["graphSummary"]["classes"]:
+            uri = c
+            tokens = self._get_local_name(uri)
+            elem_record = {"uri": uri, "local": tokens[1]}
+            reslist.append(elem_record)
+            if tokens[0] not in self.schema_elements["distinct_prefixes"]:
+                self.schema_elements["distinct_prefixes"][tokens[0]] = "y"
+        self.schema_elements["classes"] = reslist
+
+        reslist = []
+        for r in summary["payload"]["graphSummary"]["predicates"]:
+            for p in r:
+                uri = p
+                tokens = self._get_local_name(uri)
+                elem_record = {"uri": uri, "local": tokens[1]}
+                reslist.append(elem_record)
+                if tokens[0] not in self.schema_elements["distinct_prefixes"]:
+                    self.schema_elements["distinct_prefixes"][tokens[0]] = "y"
+        self.schema_elements["rels"] = reslist
+
+        # get dtprops and oprops too
         for elem in ELEM_TYPES:
-            items = self.query(ELEM_TYPES[elem])
+            q = ELEM_TYPES.get(elem)
+            if not q:
+                continue
+            items = self.query(q)
             reslist = []
             for r in items["results"]["bindings"]:
                 uri = r["elem"]["value"]
                 tokens = self._get_local_name(uri)
                 elem_record = {"uri": uri, "local": tokens[1]}
-                if not self.hide_comments:
-                    elem_record["comment"] = r["com"]["value"] if "com" in r else ""
                 reslist.append(elem_record)
                 if tokens[0] not in self.schema_elements["distinct_prefixes"]:
                     self.schema_elements["distinct_prefixes"][tokens[0]] = "y"
