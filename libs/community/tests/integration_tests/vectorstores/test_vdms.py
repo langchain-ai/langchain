@@ -41,11 +41,11 @@ def test_from_texts_with_metadatas() -> None:
     embedding_function = FakeEmbeddings()
     texts = ["foo", "bar", "baz"]
     ids = [f"test_from_texts_with_metadatas_{i}" for i in range(len(texts))]
-    metadatas = [{"page": str(i)} for i in range(1,len(texts)+1)]
+    metadatas = [{"page": str(i)} for i in range(1, len(texts) + 1)]
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
         connection_args=connection_args,
@@ -63,11 +63,11 @@ def test_from_texts_with_metadatas_with_scores() -> None:
     embedding_function = FakeEmbeddings()
     texts = ["foo", "bar", "baz"]
     ids = [f"test_from_texts_with_metadatas_with_scores_{i}" for i in range(len(texts))]
-    metadatas = [{"page": str(i)} for i in range(1,len(texts)+1)]
+    metadatas = [{"page": str(i)} for i in range(1, len(texts) + 1)]
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
         connection_args=connection_args,
@@ -85,11 +85,11 @@ def test_from_texts_with_metadatas_with_scores_using_vector() -> None:
     embedding_function = FakeEmbeddings()
     texts = ["foo", "bar", "baz"]
     ids = [f"test_from_texts_with_metadatas_{i}" for i in range(len(texts))]
-    metadatas = [{"page": str(i)} for i in range(1,len(texts)+1)]
+    metadatas = [{"page": str(i)} for i in range(1, len(texts) + 1)]
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
         connection_args=connection_args,
@@ -111,7 +111,7 @@ def test_search_filter() -> None:
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
         connection_args=connection_args,
@@ -127,7 +127,7 @@ def test_search_filter() -> None:
     )
     assert output == [
         Document(page_content="bar", metadata={"first_letter": "b", "id": ids[1]}),
-        Document(page_content="baz", metadata={"first_letter": "b", "id": ids[2]})
+        Document(page_content="baz", metadata={"first_letter": "b", "id": ids[2]}),
     ]
 
 
@@ -142,7 +142,7 @@ def test_search_filter_with_scores() -> None:
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
         connection_args=connection_args,
@@ -168,7 +168,7 @@ def test_search_filter_with_scores() -> None:
         (
             Document(page_content="baz", metadata={"first_letter": "b", "id": ids[2]}),
             4.0,
-        )
+        ),
     ]
 
 
@@ -182,7 +182,7 @@ def test_mmr() -> None:
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         collection_name=collection_name,
         connection_args=connection_args,
     )
@@ -200,7 +200,7 @@ def test_mmr_by_vector() -> None:
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         collection_name=collection_name,
         connection_args=connection_args,
     )
@@ -217,7 +217,7 @@ def test_with_include_parameter() -> None:
     texts = ["foo", "bar", "baz"]
     docsearch = VDMS.from_texts(
         texts=texts,
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         collection_name=collection_name,
         connection_args=connection_args,
     )
@@ -247,7 +247,7 @@ def test_update_document() -> None:
         connection_args=connection_args,
         collection_name=collection_name,
         documents=[original_doc],
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         ids=[document_id],
     )
     response, old_embedding = docsearch.get(
@@ -299,11 +299,11 @@ def test_with_relevance_score() -> None:
     embedding_function = FakeEmbeddings()
     texts = ["foo", "bar", "baz"]
     ids = [f"test_relevance_scores_{i}" for i in range(len(texts))]
-    metadatas = [{"page": str(i)} for i in range(1,len(texts)+1)]
+    metadatas = [{"page": str(i)} for i in range(1, len(texts) + 1)]
     docsearch = VDMS.from_texts(
         texts=texts,
         ids=ids,
-        embedding_function=embedding_function,
+        embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
         connection_args=connection_args,
