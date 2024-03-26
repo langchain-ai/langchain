@@ -10,7 +10,7 @@ class ChatDatabricks(ChatMlflow):
     """`Databricks` chat models API.
 
     To use, you should have the ``mlflow`` python package installed.
-    For more information, see https://mlflow.org/docs/latest/llms/deployments/databricks.html.
+    For more information, see https://mlflow.org/docs/latest/llms/deployments.
 
     Example:
         .. code-block:: python

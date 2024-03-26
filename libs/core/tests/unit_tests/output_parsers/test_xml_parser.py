@@ -1,6 +1,7 @@
 """Test XMLOutputParser"""
 import pytest
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.xml import XMLOutputParser
 
 DEF_RESULT_ENCODING = """<?xml version="1.0" encoding="UTF-8"?>
@@ -59,6 +60,6 @@ def test_xml_output_parser_fail(result: str) -> None:
 
     xml_parser = XMLOutputParser()
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(OutputParserException) as e:
         xml_parser.parse(result)
-    assert "Could not parse output" in str(e)
+    assert "Failed to parse" in str(e)
