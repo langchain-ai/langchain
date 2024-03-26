@@ -2,7 +2,7 @@ import concurrent
 import logging
 import random
 from pathlib import Path
-from typing import Any, Iterator, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Iterator, List, Optional, Sequence, Type, Union
 
 from langchain_core.documents import Document
 
@@ -179,8 +179,8 @@ class DirectoryLoader(BaseLoader):
         if pbar:
             pbar.close()
 
-    def _to_non_generator(self, func):
-        def non_generator(*args, **kwargs):
+    def _to_non_generator(self, func) -> Callable:
+        def non_generator(*args, **kwargs) -> List:
             return [x for x in func(*args, **kwargs)]
 
         return non_generator
