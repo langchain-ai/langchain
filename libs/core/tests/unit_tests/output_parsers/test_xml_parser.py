@@ -63,3 +63,13 @@ def test_xml_output_parser_fail(result: str) -> None:
     with pytest.raises(OutputParserException) as e:
         xml_parser.parse(result)
     assert "Failed to parse" in str(e)
+
+
+def test_check_if_installed() -> None:
+    """Checking env"""
+    # Check if defusedxml is installed
+    try:
+        import defusedxml
+        raise ValueError('Oh no! defusedxml is installed!')
+    except ImportError:
+        raise ImportError("Please install defusedxml to run this test")
