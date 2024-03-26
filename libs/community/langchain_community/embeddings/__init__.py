@@ -38,6 +38,7 @@ _module_lookup = {
     "GPT4AllEmbeddings": "langchain_community.embeddings.gpt4all",
     "GooglePalmEmbeddings": "langchain_community.embeddings.google_palm",
     "GradientEmbeddings": "langchain_community.embeddings.gradient_ai",
+    "GigaChatEmbeddings": "langchain_community.embeddings.gigachat",
     "HuggingFaceBgeEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceHubEmbeddings": "langchain_community.embeddings.huggingface_hub",
@@ -80,6 +81,8 @@ _module_lookup = {
     "VoyageEmbeddings": "langchain_community.embeddings.voyageai",
     "XinferenceEmbeddings": "langchain_community.embeddings.xinference",
     "TitanTakeoffEmbed": "langchain_community.embeddings.titan_takeoff",
+    "PremAIEmbeddings": "langchain_community.embeddings.premai",
+    "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
 }
 
 
