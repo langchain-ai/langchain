@@ -178,6 +178,8 @@ def _get_search_client(
 
         # Create the semantic settings with the configuration
         if semantic_configurations:
+            if not isinstance(semantic_configurations, list):
+                semantic_configurations = [semantic_configurations]
             semantic_search = SemanticSearch(
                 configurations=semantic_configurations,
                 default_configuration_name=semantic_configuration_name,
@@ -228,7 +230,9 @@ class AzureSearch(VectorStore):
         semantic_configuration_name: Optional[str] = None,
         fields: Optional[List[SearchField]] = None,
         vector_search: Optional[VectorSearch] = None,
-        semantic_configurations: Optional[List[SemanticConfiguration]] = None,
+        semantic_configurations: Optional[
+            Union[SemanticConfiguration, List[SemanticConfiguration]]
+        ] = None,
         scoring_profiles: Optional[List[ScoringProfile]] = None,
         default_scoring_profile: Optional[str] = None,
         cors_options: Optional[CorsOptions] = None,
