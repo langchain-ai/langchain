@@ -1,7 +1,8 @@
 import os
 import tempfile
 from abc import ABC
-from typing import List
+from pathlib import Path
+from typing import List, Union
 from urllib.parse import urlparse
 
 import requests
@@ -13,9 +14,9 @@ from langchain_community.document_loaders.parsers import VsdxParser
 
 
 class VsdxLoader(BaseLoader, ABC):
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: Union[str, Path]):
         """Initialize with file path."""
-        self.file_path = file_path
+        self.file_path = str(file_path)
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
