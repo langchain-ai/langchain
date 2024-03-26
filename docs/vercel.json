@@ -89,6 +89,10 @@
       "destination": "/docs/integrations/llms/huggingface_endpoint"
     },
     {
+      "source": "/docs/integrations/llms/bigdl",
+      "destination": "/docs/integrations/llms/ipex_llm"
+    },
+    {
       "source": "/docs/integrations/llms/ipex_llm",
       "destination": "/docs/integrations/llms/ipex_llm"
     },
