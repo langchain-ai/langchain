@@ -80,6 +80,7 @@ _module_lookup = {
     "VolcanoEmbeddings": "langchain_community.embeddings.volcengine",
     "VoyageEmbeddings": "langchain_community.embeddings.voyageai",
     "XinferenceEmbeddings": "langchain_community.embeddings.xinference",
+    "PremAIEmbeddings": "langchain_community.embeddings.premai",
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
 }
 
