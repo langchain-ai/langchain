@@ -18,13 +18,13 @@ structured outputs from models more generally.
 LangChain comes with a number of utilities to make function-calling
 easy. Namely, it comes with:
 
--   simple syntax for binding functions to models
--   converters for formatting various types of objects to the expected
-    function schemas
--   output parsers for extracting the function invocations from API
-    responses
--   chains for getting structured outputs from a model, built on top of
-    function calling
+- simple syntax for binding functions to models
+- converters for formatting various types of objects to the expected
+  function schemas
+- output parsers for extracting the function invocations from API
+  responses
+- chains for getting structured outputs from a model, built on top of
+  function calling
 
 We’ll focus here on the first two points. For a detailed guide on output
 parsing check out the [OpenAI Tools output
@@ -37,7 +37,6 @@ Before getting started make sure you have `langchain-core` installed.
 ```python
 %pip install -qU langchain-core langchain-openai
 ```
-
 
 ```python
 import getpass
@@ -64,10 +63,10 @@ class Multiply(BaseModel):
     b: int = Field(..., description="Second integer")
 ```
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 
-import ChatModelTabs from "@theme/ChatModelTabs"
+import ChatModelTabs from "@theme/ChatModelTabs";
 
 <ChatModelTabs
   customVarName="llm"
@@ -83,7 +82,7 @@ llm_with_tools = llm.bind_tools([Multiply])
 llm_with_tools.invoke("what's 3 * 12")
 ```
 
-``` text
+```text
 AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Q8ZQ97Qrj5zalugSkYMGV1Uo', 'function': {'arguments': '{"a":3,"b":12}', 'name': 'Multiply'}, 'type': 'function'}]})
 ```
 
@@ -97,7 +96,7 @@ tool_chain = llm_with_tools | JsonOutputToolsParser()
 tool_chain.invoke("what's 3 * 12")
 ```
 
-``` text
+```text
 [{'type': 'Multiply', 'args': {'a': 3, 'b': 12}}]
 ```
 
@@ -110,7 +109,7 @@ tool_chain = llm_with_tools | PydanticToolsParser(tools=[Multiply])
 tool_chain.invoke("what's 3 * 12")
 ```
 
-``` text
+```text
 [Multiply(a=3, b=12)]
 ```
 
@@ -123,7 +122,7 @@ llm_with_tools = llm.bind_tools([Multiply], tool_choice="Multiply")
 llm_with_tools.invoke("what's 3 * 12")
 ```
 
-``` text
+```text
 AIMessage(content='', additional_kwargs={'tool_calls': [{'index': 0, 'id': 'call_qIP2bJugb67LGvc6Zhwkvfqc', 'type': 'function', 'function': {'name': 'Multiply', 'arguments': '{"a": 3, "b": 12}'}}]})
 ```
 
@@ -137,7 +136,7 @@ llm_with_multiply.invoke(
 )
 ```
 
-``` text
+```text
 AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_f3DApOzb60iYjTfOhVFhDRMI', 'function': {'arguments': '{"a":5,"b":10}', 'name': 'Multiply'}, 'type': 'function'}]})
 ```
 
@@ -170,7 +169,7 @@ def multiply(a: int, b: int) -> int:
 print(json.dumps(convert_to_openai_tool(multiply), indent=2))
 ```
 
-``` text
+```text
 {
   "type": "function",
   "function": {
@@ -213,7 +212,7 @@ class multiply(BaseModel):
 print(json.dumps(convert_to_openai_tool(multiply), indent=2))
 ```
 
-``` text
+```text
 {
   "type": "function",
   "function": {
@@ -268,7 +267,7 @@ class Multiply(BaseTool):
 print(json.dumps(convert_to_openai_tool(Multiply()), indent=2))
 ```
 
-``` text
+```text
 {
   "type": "function",
   "function": {
@@ -297,14 +296,14 @@ print(json.dumps(convert_to_openai_tool(Multiply()), indent=2))
 
 ## Next steps
 
--   **Output parsing**: See [OpenAI Tools output
-    parsers](../../../../docs/modules/model_io/output_parsers/types/openai_tools)
-    and [OpenAI Functions output
-    parsers](../../../../docs/modules/model_io/output_parsers/types/openai_functions)
-    to learn about extracting the function calling API responses into
-    various formats.
--   **Structured output chains**: [Some models have constructors](../../../../docs/guides/structured_output) that
-    handle creating a structured output chain for you.
--   **Tool use**: See how to construct chains and agents that actually
-    call the invoked tools in [these
-    guides](../../../../docs/use_cases/tool_use/).
+- **Output parsing**: See [OpenAI Tools output
+  parsers](../../../../docs/modules/model_io/output_parsers/types/openai_tools)
+  and [OpenAI Functions output
+  parsers](../../../../docs/modules/model_io/output_parsers/types/openai_functions)
+  to learn about extracting the function calling API responses into
+  various formats.
+- **Structured output chains**: [Some models have constructors](../../../../docs/guides/structured_output) that
+  handle creating a structured output chain for you.
+- **Tool use**: See how to construct chains and agents that actually
+  call the invoked tools in [these
+  guides](../../../../docs/use_cases/tool_use/).
