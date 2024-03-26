@@ -64,6 +64,7 @@ _module_lookup = {
     "PromptLayerChatOpenAI": "langchain_community.chat_models.promptlayer_openai",
     "QianfanChatEndpoint": "langchain_community.chat_models.baidu_qianfan_endpoint",
     "VolcEngineMaasChat": "langchain_community.chat_models.volcengine_maas",
+    "ChatPremAI": "langchain_community.chat_models.premai",
 }
 
 
