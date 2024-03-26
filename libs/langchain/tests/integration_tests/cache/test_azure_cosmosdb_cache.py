@@ -36,6 +36,7 @@ m = 16
 ef_construction = 64
 ef_search = 40
 score_threshold = 0.1
+application_name = "LANGCHAIN_CACHING_PYTHON"
 
 
 def _has_env_vars() -> bool:
@@ -66,6 +67,7 @@ def test_azure_cosmos_db_semantic_cache() -> None:
             ef_construction=ef_construction,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            application_name=application_name,
         )
     )
 
@@ -103,6 +105,7 @@ def test_azure_cosmos_db_semantic_cache_inner_product() -> None:
             ef_construction=ef_construction,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            application_name=application_name,
         )
     )
 
@@ -140,6 +143,7 @@ def test_azure_cosmos_db_semantic_cache_multi() -> None:
             ef_construction=ef_construction,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            application_name=application_name,
         )
     )
 
@@ -179,6 +183,7 @@ def test_azure_cosmos_db_semantic_cache_multi_inner_product() -> None:
             ef_construction=ef_construction,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            application_name=application_name,
         )
     )
 
@@ -218,6 +223,7 @@ def test_azure_cosmos_db_semantic_cache_hnsw() -> None:
             ef_construction=ef_construction,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            application_name=application_name,
         )
     )
 
@@ -255,6 +261,7 @@ def test_azure_cosmos_db_semantic_cache_inner_product_hnsw() -> None:
             ef_construction=ef_construction,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            application_name=application_name,
         )
     )
 
@@ -292,6 +299,7 @@ def test_azure_cosmos_db_semantic_cache_multi_hnsw() -> None:
             ef_construction=ef_construction,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            application_name=application_name,
         )
     )
 
@@ -331,6 +339,7 @@ def test_azure_cosmos_db_semantic_cache_multi_inner_product_hnsw() -> None:
             ef_construction=ef_construction,
             ef_search=ef_search,
             score_threshold=score_threshold,
+            application_name=application_name,
         )
     )
 
