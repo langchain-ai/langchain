@@ -112,92 +112,9 @@ class DirectoryLoader(BaseLoader):
         self.randomize_sample = randomize_sample
         self.sample_seed = sample_seed
 
-    def load_file(
-        self, item: Path, path: Path, docs: List[Document], pbar: Optional[Any]
-    ) -> None:
-        """Load a file.
-
-        Args:
-            item: File path.
-            path: Directory path.
-            docs: List of documents to append to.
-            pbar: Progress bar. Defaults to None.
-
-        """
-        if item.is_file():
-            if _is_visible(item.relative_to(path)) or self.load_hidden:
-                try:
-                    logger.debug(f"Processing file: {str(item)}")
-                    sub_docs = self.loader_cls(str(item), **self.loader_kwargs).load()
-                    docs.extend(sub_docs)
-                except Exception as e:
-                    if self.silent_errors:
-                        logger.warning(f"Error loading file {str(item)}: {e}")
-                    else:
-                        logger.error(f"Error loading file {str(item)}")
-                        raise e
-                finally:
-                    if pbar:
-                        pbar.update(1)
-
     def load(self) -> List[Document]:
         """Load documents."""
-        p = Path(self.path)
-        if not p.exists():
-            raise FileNotFoundError(f"Directory not found: '{self.path}'")
-        if not p.is_dir():
-            raise ValueError(f"Expected directory, got file: '{self.path}'")
-
-        docs: List[Document] = []
-
-        paths = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
-        items = [
-            path
-            for path in paths
-            if not (self.exclude and any(path.match(glob) for glob in self.exclude))
-        ]
-
-        if self.sample_size > 0:
-            if self.randomize_sample:
-                randomizer = random.Random(
-                    self.sample_seed if self.sample_seed else None
-                )
-                randomizer.shuffle(items)
-            items = items[: min(len(items), self.sample_size)]
-
-        pbar = None
-        if self.show_progress:
-            try:
-                from tqdm import tqdm
-
-                pbar = tqdm(total=len(items))
-            except ImportError as e:
-                logger.warning(
-                    "To log the progress of DirectoryLoader you need to install tqdm, "
-                    "`pip install tqdm`"
-                )
-                if self.silent_errors:
-                    logger.warning(e)
-                else:
-                    raise ImportError(
-                        "To log the progress of DirectoryLoader "
-                        "you need to install tqdm, "
-                        "`pip install tqdm`"
-                    )
-
-        if self.use_multithreading:
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=self.max_concurrency
-            ) as executor:
-                executor.map(lambda i: self.load_file(i, p, docs, pbar), items)
-        else:
-            for i in items:
-                self.load_file(i, p, docs, pbar)
-
-        if pbar:
-            pbar.close()
-
-        return docs
+        return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
         """Load documents lazily."""
@@ -241,19 +158,20 @@ class DirectoryLoader(BaseLoader):
                         "you need to install tqdm, "
                         "`pip install tqdm`"
                     )
-        
+
         if self.use_multithreading:
+            futures = []
             with concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.max_concurrency
             ) as executor:
-                future_to_doc = {
-                    executor.submit(self._lazy_load_file, i, p, pbar): i
-                    for i in items
-                }
-                for future in concurrent.futures.as_completed(future_to_doc):
-                    doc = future.result()
-                    if doc is not None:
-                        yield from doc
+                for i in items:
+                    futures.append(
+                        executor.submit(
+                            self._to_non_generator(self._lazy_load_file), i, p, pbar
+                        )
+                    )
+                for future in concurrent.futures.as_completed(futures):
+                    yield future.result()
         else:
             for i in items:
                 yield from self._lazy_load_file(i, p, pbar)
@@ -261,13 +179,21 @@ class DirectoryLoader(BaseLoader):
         if pbar:
             pbar.close()
 
+    def _to_non_generator(self, func):
+        def non_generator(*args, **kwargs):
+            return [x for x in func(*args, **kwargs)]
 
-    def _lazy_load_file(self, item: Path, path: Path, pbar: Optional[Any]) -> Iterator[Document]:
+        return non_generator
+
+    def _lazy_load_file(
+        self, item: Path, path: Path, pbar: Optional[Any]
+    ) -> Iterator[Document]:
         """Load a file.
 
         Args:
             item: File path.
             path: Directory path.
+            pbar: Progress bar. Defaults to None.
 
         """
         if item.is_file():
