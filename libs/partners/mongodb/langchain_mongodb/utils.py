@@ -21,7 +21,6 @@ Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
 class _FailCode:
     INDEX_NOT_FOUND = 27
     INDEX_ALREADY_EXISTS = 68
-    ILLEGAL_OPERATION = 20
 
 
 def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:

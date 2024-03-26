@@ -15,7 +15,6 @@ from pymongo.errors import OperationFailure
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.index import drop_vector_search_index
-from langchain_mongodb.utils import _FailCode
 from tests.utils import ConsistentFakeEmbeddings
 
 INDEX_NAME = "langchain-test-index-vectorstores"
@@ -66,10 +65,9 @@ def _await_index_deletion(coll: Collection, index_name: str) -> None:
     timeout = TIMEOUT * 3
     try:
         drop_vector_search_index(coll, index_name)
-    except OperationFailure as e:
-        # This means an ongoing drop request was made so skip
-        if e.code != _FailCode.ILLEGAL_OPERATION:
-            raise
+    except OperationFailure:
+        # This most likely means an ongoing drop request was made so skip
+        pass
 
     while list(coll.list_search_indexes(name=index_name)):
         if timeout < 0:

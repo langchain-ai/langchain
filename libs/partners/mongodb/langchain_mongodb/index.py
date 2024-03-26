@@ -81,9 +81,8 @@ def drop_vector_search_index(collection: Collection, index_name: str) -> None:
         collection.database.command(
             {"dropSearchIndex": collection.name, "name": index_name}
         )
-    except OperationFailure as e:
-        if e.code == _FailCode.ILLEGAL_OPERATION:
-            logger.error("Index Name %s not found; no delete scheduled", index_name)
+    except OperationFailure:
+        logger.error("Index Name %s not found; no delete scheduled", index_name)
 
 
 def update_vector_search_index(
