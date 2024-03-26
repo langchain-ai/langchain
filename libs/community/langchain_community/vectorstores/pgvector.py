@@ -286,7 +286,7 @@ class PGVector(VectorStore):
         self.engine_args = engine_args or {}
         self._bind = connection if connection else self._create_engine()
         self.use_jsonb = use_jsonb
-        self.create_extension = create_extension 
+        self.create_extension = create_extension
 
         if not use_jsonb:
             # Replace with a deprecation warning.
