@@ -16,6 +16,7 @@ from .beta_decorator import (
 )
 from .deprecation import (
     LangChainDeprecationWarning,
+    caller_aware_warn,
     deprecated,
     suppress_langchain_deprecation_warning,
     surface_langchain_deprecation_warnings,
@@ -35,4 +36,5 @@ __all__ = [
     "suppress_langchain_deprecation_warning",
     "surface_langchain_deprecation_warnings",
     "warn_deprecated",
+    "caller_aware_warn",
 ]

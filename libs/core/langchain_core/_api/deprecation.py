@@ -13,6 +13,7 @@ https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecati
 import contextlib
 import functools
 import inspect
+import os
 import warnings
 from typing import Any, Callable, Generator, Type, TypeVar
 
@@ -25,6 +26,15 @@ class LangChainDeprecationWarning(DeprecationWarning):
 
 class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
     """A class for issuing deprecation warnings for LangChain users."""
+
+SURFACE_INTERNAL_WARNINGS = (
+    os.environ.get("SURFACE_INTERNAL_WARNINGS", "false").lower() == "true"
+)
+
+
+def _get_surface_internal_warnings() -> bool:
+    """Mocked for testing."""
+    return SURFACE_INTERNAL_WARNINGS
 
 
 # PUBLIC API
@@ -379,8 +389,11 @@ def warn_deprecated(
     warning_cls = (
         LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
     )
-    warning = warning_cls(message)
-    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=2)
+    caller_aware_warn(
+        message,
+        category=warning_cls,
+        surface_internal_warnings=_get_surface_internal_warnings(),
+    )
 
 
 def surface_langchain_deprecation_warnings() -> None:
@@ -394,3 +407,18 @@ def surface_langchain_deprecation_warnings() -> None:
         "default",
         category=LangChainDeprecationWarning,
     )
+
+
+def caller_aware_warn(
+    message: str,
+    *,
+    category: Type[Warning] = LangChainDeprecationWarning,
+    surface_internal_warnings: bool = False,
+) -> None:
+    """Warn deprecated"""
+    if surface_internal_warnings:
+        warnings.warn(message, category=category, stacklevel=2)
+    else:
+        if is_caller_internal(depth=2):
+            return
+        warnings.warn(message, category=category, stacklevel=2)

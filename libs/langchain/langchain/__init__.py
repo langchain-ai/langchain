@@ -1,10 +1,12 @@
 # ruff: noqa: E402
 """Main entrypoint into package."""
-import warnings
 from importlib import metadata
 from typing import Any, Optional
 
-from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
+from langchain_core._api.deprecation import (
+    caller_aware_warn,
+    surface_langchain_deprecation_warnings,
+)
 
 try:
     __version__ = metadata.version(__package__)
@@ -26,13 +28,13 @@ def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
         return
 
     if replacement:
-        warnings.warn(
+        caller_aware_warn(
             f"Importing {name} from langchain root module is no longer supported. "
-            f"Please use {replacement} instead."
+            f"Please use {replacement} instead.",
         )
     else:
-        warnings.warn(
-            f"Importing {name} from langchain root module is no longer supported."
+        caller_aware_warn(
+            f"Importing {name} from langchain root module is no longer supported.",
         )
 
 

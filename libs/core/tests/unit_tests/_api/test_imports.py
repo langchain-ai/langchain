@@ -12,6 +12,7 @@ EXPECTED_ALL = [
     "warn_deprecated",
     "as_import_path",
     "get_relative_path",
+    "caller_aware_warn",
 ]
 
 
