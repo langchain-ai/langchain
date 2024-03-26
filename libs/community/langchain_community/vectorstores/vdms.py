@@ -119,24 +119,22 @@ class VDMS(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import VDMS
-            from langchain_community.vectorstores.vdms import VDMS_Client
-            from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
+            from langchain_community.embeddings import HuggingFaceEmbeddings
+            from langchain_community.vectorstores.vdms import VDMS, VDMS_Client
 
-            client = VDMS_Client("localhost", 55555)
             vectorstore = VDMS(
                 collection_name="langchain-demo",
                 distance_strategy="L2",
                 engine="FaissFlat"
-                client=client,
+                client=VDMS_Client("localhost", 55555),
                 embedding_function=HuggingFaceEmbeddings(),
             )
     """
 
     def __init__(
         self,
-        *,
         client: vdms.vdms,
+        *,
         embedding_function: Optional[Embeddings] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # DescriptorSet name
         distance_strategy: DISTANCE_METRICS = "L2",
