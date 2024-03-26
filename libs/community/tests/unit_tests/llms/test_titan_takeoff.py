@@ -4,17 +4,18 @@
 import json
 
 import pytest
-import responses
 
 from langchain_community.llms import TitanTakeoff, TitanTakeoffPro
 
 
-@responses.activate
 @pytest.mark.requires("takeoff_client")
+@pytest.mark.requires("pytest_httpx")
 @pytest.mark.parametrize("streaming", [True, False])
 @pytest.mark.parametrize("takeoff_object", [TitanTakeoff, TitanTakeoffPro])
-def test_titan_takeoff_call(streaming, takeoff_object) -> None:
+def test_titan_takeoff_call(httpx_mock, streaming, takeoff_object) -> None:
     """Test valid call to Titan Takeoff."""
+    from pytest_httpx import IteratorStream
+
     port = 2345
     url = (
         f"http://localhost:{port}/generate_stream"
@@ -22,20 +23,17 @@ def test_titan_takeoff_call(streaming, takeoff_object) -> None:
         else f"http://localhost:{port}/generate"
     )
 
-    def stream_response(request):
-        payload = json.loads(request.body)
-        headers = {"request-id": "728d329e-0e86-11e4-a748-0c84dc037c13"}
-
-        return (200, headers, json.dumps({"text": payload["text"]}))
-
     if streaming:
-        responses.add_callback(responses.POST, url, callback=stream_response)
+        httpx_mock.add_response(
+            method="POST",
+            url=url,
+            stream=IteratorStream([b"data: ask someone else\n\n"]),
+        )
     else:
-        responses.add(
-            responses.POST,
-            url,
+        httpx_mock.add_response(
+            method="POST",
+            url=url,
             json={"text": "ask someone else"},
-            content_type="application/json",
         )
 
     llm = takeoff_object(port=port, streaming=streaming)
@@ -44,55 +42,52 @@ def test_titan_takeoff_call(streaming, takeoff_object) -> None:
         number_of_calls += 1
         output = function_call("What is 2 + 2?")
         assert isinstance(output, str)
-        assert len(responses.calls) == number_of_calls
-        assert responses.calls[0].request.url == url
+        assert len(httpx_mock.get_requests()) == number_of_calls
+        assert httpx_mock.get_requests()[0].url == url
         assert (
-            json.loads(responses.calls[0].request.body.decode("utf-8"))["text"]
-            == "What is 2 + 2?"
+            json.loads(httpx_mock.get_requests()[0].content)["text"] == "What is 2 + 2?"
         )
 
     if streaming:
         output = llm._stream("What is 2 + 2?")
         for chunk in output:
-            assert isinstance(chunk, str)
-        assert len(responses.calls) == number_of_calls + 1
-        assert responses.calls[0].request.url == url
+            assert isinstance(chunk.text, str)
+        assert len(httpx_mock.get_requests()) == number_of_calls + 1
+        assert httpx_mock.get_requests()[0].url == url
         assert (
-            json.loads(responses.calls[0].request.body.decode("utf-8"))["text"]
-            == "What is 2 + 2?"
+            json.loads(httpx_mock.get_requests()[0].content)["text"] == "What is 2 + 2?"
         )
 
 
-@responses.activate
+@pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
 @pytest.mark.parametrize("streaming", [True, False])
 @pytest.mark.parametrize("takeoff_object", [TitanTakeoff, TitanTakeoffPro])
-def test_titan_takeoff_bad_call(streaming, takeoff_object) -> None:
+def test_titan_takeoff_bad_call(httpx_mock, streaming, takeoff_object) -> None:
     """Test valid call to Titan Takeoff."""
-    from takeoff_client import TakeoffError
+    from takeoff_client import TakeoffException
 
     url = (
         "http://localhost:3000/generate"
         if not streaming
         else "http://localhost:3000/generate_stream"
     )
-    responses.add(responses.POST, url, json={"text": "bad things"}, status=400)
-
-    llm = takeoff_object(streaming=streaming)
-    with pytest.raises(TakeoffError):
-        llm("What is 2 + 2?")
-    assert len(responses.calls) == 1
-    assert responses.calls[0].request.url == url
-    assert (
-        json.loads(responses.calls[0].request.body.decode("utf-8"))["text"]
-        == "What is 2 + 2?"
+    httpx_mock.add_response(
+        method="POST", url=url, json={"text": "bad things"}, status_code=400
     )
 
+    llm = takeoff_object(streaming=streaming)
+    with pytest.raises(TakeoffException):
+        llm("What is 2 + 2?")
+    assert len(httpx_mock.get_requests()) == 1
+    assert httpx_mock.get_requests()[0].url == url
+    assert json.loads(httpx_mock.get_requests()[0].content)["text"] == "What is 2 + 2?"
 
-@responses.activate
+
+@pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
 @pytest.mark.parametrize("takeoff_object", [TitanTakeoff, TitanTakeoffPro])
-def test_titan_takeoff_model_initialisation(takeoff_object) -> None:
+def test_titan_takeoff_model_initialisation(httpx_mock, takeoff_object) -> None:
     """Test valid call to Titan Takeoff."""
     mgnt_port = 36452
     inf_port = 46253
@@ -109,8 +104,12 @@ def test_titan_takeoff_model_initialisation(takeoff_object) -> None:
     reader_2 = reader_1.copy()
     reader_2["model_name"] = "test2"
 
-    responses.add(responses.POST, mgnt_url, json={"key": "value"}, status=201)
-    responses.add(responses.POST, gen_url, json={"text": "value"}, status=200)
+    httpx_mock.add_response(
+        method="POST", url=mgnt_url, json={"key": "value"}, status_code=201
+    )
+    httpx_mock.add_response(
+        method="POST", url=gen_url, json={"text": "value"}, status_code=200
+    )
 
     llm = takeoff_object(
         port=inf_port, mgmt_port=mgnt_port, models=[reader_1, reader_2]
@@ -119,17 +118,14 @@ def test_titan_takeoff_model_initialisation(takeoff_object) -> None:
 
     assert isinstance(output, str)
     # Ensure the management api was called to create the reader
-    assert len(responses.calls) == 3
+    assert len(httpx_mock.get_requests()) == 3
     for key, value in reader_1.items():
-        assert json.loads(responses.calls[0].request.body.decode("utf-8"))[key] == value
-    assert responses.calls[0].request.url == mgnt_url
+        assert json.loads(httpx_mock.get_requests()[0].content)[key] == value
+    assert httpx_mock.get_requests()[0].url == mgnt_url
     # Also second call should be made to spin uo reader 2
     for key, value in reader_2.items():
-        assert json.loads(responses.calls[1].request.body.decode("utf-8"))[key] == value
-    assert responses.calls[1].request.url == mgnt_url
+        assert json.loads(httpx_mock.get_requests()[1].content)[key] == value
+    assert httpx_mock.get_requests()[1].url == mgnt_url
     # Ensure the third call is to generate endpoint to inference
-    assert responses.calls[2].request.url == gen_url
-    assert (
-        json.loads(responses.calls[2].request.body.decode("utf-8"))["text"]
-        == "What is 2 + 2?"
-    )
+    assert httpx_mock.get_requests()[2].url == gen_url
+    assert json.loads(httpx_mock.get_requests()[2].content)["text"] == "What is 2 + 2?"

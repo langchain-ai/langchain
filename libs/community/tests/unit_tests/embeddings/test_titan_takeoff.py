@@ -4,23 +4,21 @@
 import json
 
 import pytest
-import responses
 
 from langchain_community.embeddings import TitanTakeoffEmbed
 from langchain_community.embeddings.titan_takeoff import MissingConsumerGroup
 
 
-@responses.activate
+@pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
-def test_titan_takeoff_call() -> None:
+def test_titan_takeoff_call(httpx_mock) -> None:
     """Test valid call to Titan Takeoff."""
     port = 2345
 
-    responses.add(
-        responses.POST,
-        f"http://localhost:{port}/embed",
+    httpx_mock.add_response(
+        method="POST",
+        url=f"http://localhost:{port}/embed",
         json={"result": [0.46635, 0.234, -0.8521]},
-        content_type="application/json",
     )
 
     embedding = TitanTakeoffEmbed(port=port)
@@ -31,26 +29,24 @@ def test_titan_takeoff_call() -> None:
     assert isinstance(output_1, list)
     assert isinstance(output_2, list)
 
-    assert len(responses.calls) == 2
+    assert len(httpx_mock.get_requests()) == 2
     for n in range(2):
-        assert responses.calls[n].request.url == f"http://localhost:{port}/embed"
+        assert httpx_mock.get_requests()[n].url == f"http://localhost:{port}/embed"
         assert (
-            json.loads(responses.calls[n].request.body.decode("utf-8"))["text"]
-            == "What is 2 + 2?"
+            json.loads(httpx_mock.get_requests()[n].content)["text"] == "What is 2 + 2?"
         )
 
 
-@responses.activate
+@pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
-def test_no_consumer_group_fails() -> None:
+def test_no_consumer_group_fails(httpx_mock) -> None:
     """Test that not specifying a consumer group fails."""
     port = 2345
 
-    responses.add(
-        responses.POST,
-        f"http://localhost:{port}/embed",
+    httpx_mock.add_response(
+        method="POST",
+        url=f"http://localhost:{port}/embed",
         json={"result": [0.46635, 0.234, -0.8521]},
-        content_type="application/json",
     )
 
     embedding = TitanTakeoffEmbed(port=port)
@@ -65,9 +61,9 @@ def test_no_consumer_group_fails() -> None:
     embedding.embed_query("What is 2 + 2?", "primary")
 
 
-@responses.activate
+@pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
-def test_takeoff_initialization() -> None:
+def test_takeoff_initialization(httpx_mock) -> None:
     """Test valid call to Titan Takeoff."""
     mgnt_port = 36452
     inf_port = 46253
@@ -82,9 +78,14 @@ def test_takeoff_initialization() -> None:
     reader_2["model_name"] = "test2"
     reader_2["device"] = "cuda"
 
-    responses.add(responses.POST, mgnt_url, json={"key": "value"}, status=201)
-    responses.add(
-        responses.POST, embed_url, json={"result": [0.34, 0.43, -0.934532]}, status=200
+    httpx_mock.add_response(
+        method="POST", url=mgnt_url, json={"key": "value"}, status_code=201
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=embed_url,
+        json={"result": [0.34, 0.43, -0.934532]},
+        status_code=200,
     )
 
     llm = TitanTakeoffEmbed(
@@ -98,26 +99,25 @@ def test_takeoff_initialization() -> None:
     assert isinstance(output_1, list)
     assert isinstance(output_2, list)
     # Ensure the management api was called to create the reader
-    assert len(responses.calls) == 4
+    assert len(httpx_mock.get_requests()) == 4
     for key, value in reader_1.items():
-        assert json.loads(responses.calls[0].request.body.decode("utf-8"))[key] == value
-    assert responses.calls[0].request.url == mgnt_url
+        assert json.loads(httpx_mock.get_requests()[0].content)[key] == value
+    assert httpx_mock.get_requests()[0].url == mgnt_url
     # Also second call should be made to spin uo reader 2
     for key, value in reader_2.items():
-        assert json.loads(responses.calls[1].request.body.decode("utf-8"))[key] == value
-    assert responses.calls[1].request.url == mgnt_url
+        assert json.loads(httpx_mock.get_requests()[1].content)[key] == value
+    assert httpx_mock.get_requests()[1].url == mgnt_url
     # Ensure the third call is to generate endpoint to inference
     for n in range(2, 4):
-        assert responses.calls[n].request.url == embed_url
+        assert httpx_mock.get_requests()[n].url == embed_url
         assert (
-            json.loads(responses.calls[n].request.body.decode("utf-8"))["text"]
-            == "What is 2 + 2?"
+            json.loads(httpx_mock.get_requests()[n].content)["text"] == "What is 2 + 2?"
         )
 
 
-@responses.activate
+@pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
-def test_takeoff_initialization_with_more_than_one_consumer_group() -> None:
+def test_takeoff_initialization_with_more_than_one_consumer_group(httpx_mock) -> None:
     """Test valid call to Titan Takeoff."""
     mgnt_port = 36452
     inf_port = 46253
@@ -133,9 +133,14 @@ def test_takeoff_initialization_with_more_than_one_consumer_group() -> None:
     reader_2["device"] = "cuda"
     reader_2["consumer_group"] = "embed2"
 
-    responses.add(responses.POST, mgnt_url, json={"key": "value"}, status=201)
-    responses.add(
-        responses.POST, embed_url, json={"result": [0.34, 0.43, -0.934532]}, status=200
+    httpx_mock.add_response(
+        method="POST", url=mgnt_url, json={"key": "value"}, status_code=201
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=embed_url,
+        json={"result": [0.34, 0.43, -0.934532]},
+        status_code=200,
     )
 
     llm = TitanTakeoffEmbed(
@@ -154,18 +159,17 @@ def test_takeoff_initialization_with_more_than_one_consumer_group() -> None:
     assert isinstance(output_1, list)
     assert isinstance(output_2, list)
     # Ensure the management api was called to create the reader
-    assert len(responses.calls) == 4
+    assert len(httpx_mock.get_requests()) == 4
     for key, value in reader_1.items():
-        assert json.loads(responses.calls[0].request.body.decode("utf-8"))[key] == value
-    assert responses.calls[0].request.url == mgnt_url
+        assert json.loads(httpx_mock.get_requests()[0].content)[key] == value
+    assert httpx_mock.get_requests()[0].url == mgnt_url
     # Also second call should be made to spin uo reader 2
     for key, value in reader_2.items():
-        assert json.loads(responses.calls[1].request.body.decode("utf-8"))[key] == value
-    assert responses.calls[1].request.url == mgnt_url
+        assert json.loads(httpx_mock.get_requests()[1].content)[key] == value
+    assert httpx_mock.get_requests()[1].url == mgnt_url
     # Ensure the third call is to generate endpoint to inference
     for n in range(2, 4):
-        assert responses.calls[n].request.url == embed_url
+        assert httpx_mock.get_requests()[n].url == embed_url
         assert (
-            json.loads(responses.calls[n].request.body.decode("utf-8"))["text"]
-            == "What is 2 + 2?"
+            json.loads(httpx_mock.get_requests()[n].content)["text"] == "What is 2 + 2?"
         )
