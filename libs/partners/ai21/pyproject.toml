@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.22"
+langchain-text-splitters = "^0.0.1"
 ai21 = "^2.1.2"
 
 [tool.poetry.group.test]

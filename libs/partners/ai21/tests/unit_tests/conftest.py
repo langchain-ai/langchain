@@ -16,11 +16,12 @@ from ai21.models import (
     FinishReason,
     Penalty,
     RoleType,
+    SegmentationResponse,
 )
+from ai21.models.responses.segmentation_response import Segment
 from pytest_mock import MockerFixture
 
 DUMMY_API_KEY = "test_api_key"
-
 
 BASIC_EXAMPLE_LLM_PARAMETERS = {
     "num_results": 3,
@@ -37,6 +38,32 @@ BASIC_EXAMPLE_LLM_PARAMETERS = {
         apply_to_emojis=True,
     ),
 }
+
+SEGMENTS = [
+    Segment(
+        segment_type="normal_text",
+        segment_text=(
+            "The original full name of the franchise is Pocket Monsters "
+            "(ポケットモンスター, Poketto Monsutā), which was abbreviated to "
+            "Pokemon during development of the original games.\n\nWhen the "
+            "franchise was released internationally, the short form of the "
+            "title was used, with an acute accent (´) over the e to aid "
+            "in pronunciation."
+        ),
+    ),
+    Segment(
+        segment_type="normal_text",
+        segment_text=(
+            "Pokémon refers to both the franchise itself and the creatures "
+            "within its fictional universe.\n\nAs a noun, it is identical in "
+            "both the singular and plural, as is every individual species "
+            'name;[10] it is grammatically correct to say "one Pokémon" '
+            'and "many Pokémon", as well as "one Pikachu" and "many '
+            'Pikachu".\n\nIn English, Pokémon may be pronounced either '
+            "/'powkɛmon/ (poe-keh-mon) or /'powkɪmon/ (poe-key-mon)."
+        ),
+    ),
+]
 
 
 BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT = {
@@ -122,6 +149,18 @@ def mock_client_with_contextual_answers(mocker: MockerFixture) -> Mock:
         id="some_id",
         answer="some answer",
         answer_in_context=False,
+    )
+
+    return mock_client
+
+
+@pytest.fixture
+def mock_client_with_semantic_text_splitter(mocker: MockerFixture) -> Mock:
+    mock_client = mocker.MagicMock(spec=AI21Client)
+    mock_client.segmentation = mocker.MagicMock()
+    mock_client.segmentation.create.return_value = SegmentationResponse(
+        id="12345",
+        segments=SEGMENTS,
     )
 
     return mock_client
