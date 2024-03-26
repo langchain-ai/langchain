@@ -61,7 +61,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
         """Hello Doc"""
         return [Document(page_content="hello")]
 
-    chain = foo | get_docs
+    chain = RunnableLambda(foo) | get_docs
     events = await _collect_events(chain.astream_events({}, version="v1"))
     assert events == [
         {
