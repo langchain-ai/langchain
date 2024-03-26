@@ -2,7 +2,6 @@
 import typing
 
 import pytest
-
 from cohere.types import NonStreamedChatResponse, ToolCall
 
 from langchain_cohere.chat_models import ChatCohere
@@ -32,32 +31,51 @@ def test_default_params(chat_cohere: ChatCohere, expected: typing.Dict) -> None:
     assert expected == actual
 
 
-@pytest.mark.parametrize("response, expected", [
-    pytest.param(
-        NonStreamedChatResponse(
-            generation_id="foo",
-            text="",
-            tool_calls=[
-                ToolCall(name="tool1", parameters={"arg1": 1, "arg2": "2"}),
-                ToolCall(name="tool2", parameters={"arg3": 3, "arg4": "4"}),
-            ]
-        ),
-        {
-            "documents": None,
-            "citations": None,
-            "search_results": None,
-            "search_queries": None,
-            "is_search_required": None,
-            "generation_id": "foo",
-            "tool_calls": [
-                {"id": "foo", "function": {"name": "tool1", "arguments": {"arg1": 1, "arg2": "2"}}, "type": "function"},
-                {"id": "foo", "function": {"name": "tool2", "arguments": {"arg3": 3, "arg4": "4"}}, "type": "function"},
-            ]
-        },
-        id="with tool calls"
-    )
-])
-def test_get_generation_info(response: typing.Any, expected: typing.Dict[str, typing.Any]):
+@pytest.mark.parametrize(
+    "response, expected",
+    [
+        pytest.param(
+            NonStreamedChatResponse(
+                generation_id="foo",
+                text="",
+                tool_calls=[
+                    ToolCall(name="tool1", parameters={"arg1": 1, "arg2": "2"}),
+                    ToolCall(name="tool2", parameters={"arg3": 3, "arg4": "4"}),
+                ],
+            ),
+            {
+                "documents": None,
+                "citations": None,
+                "search_results": None,
+                "search_queries": None,
+                "is_search_required": None,
+                "generation_id": "foo",
+                "tool_calls": [
+                    {
+                        "id": "foo",
+                        "function": {
+                            "name": "tool1",
+                            "arguments": {"arg1": 1, "arg2": "2"},
+                        },
+                        "type": "function",
+                    },
+                    {
+                        "id": "foo",
+                        "function": {
+                            "name": "tool2",
+                            "arguments": {"arg3": 3, "arg4": "4"},
+                        },
+                        "type": "function",
+                    },
+                ],
+            },
+            id="with tool calls",
+        )
+    ],
+)
+def test_get_generation_info(
+    response: typing.Any, expected: typing.Dict[str, typing.Any]
+):
     chat_cohere = ChatCohere(cohere_api_key="test")
 
     actual = chat_cohere._get_generation_info(response)
