@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 from typing import List, Tuple
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,9 @@ def _extract_import_statements(notebook_path: str) -> List[Tuple[str, str]]:
     return import_statements
 
 
-def _check_import_statements(import_statements: List[Tuple[str, str]]) -> None:
+def _get_bad_imports(import_statements: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    """Collect offending import statements."""
+    offending_imports = []
     for module, item in import_statements:
         try:
             if item:
@@ -59,15 +62,47 @@ def _check_import_statements(import_statements: List[Tuple[str, str]]) -> None:
                     importlib.import_module(full_module_name)
                 except ModuleNotFoundError:
                     # attribute
-                    imported_module = importlib.import_module(module)
-                    getattr(imported_module, item)
+                    try:
+                        imported_module = importlib.import_module(module)
+                        getattr(imported_module, item)
+                    except Exception as e:
+                        offending_imports.append((module, item))
+                except Exception as e:
+                    offending_imports.append((module, item))
             else:
                 importlib.import_module(module)
         except Exception as e:
-            logger.error(f"Failed to resolve '{item}' in module '{module}'. Error: {e}")
+            offending_imports.append((module, item))
+
+    return offending_imports
 
 
-def check_notebooks(directory: str) -> None:
+def _is_relevant_import(module: str) -> bool:
+    """Check if module is recognized."""
+    # Ignore things like langchain_{bla}, where bla is unrecognized.
+    recognized_packages = [
+        "langchain",
+        "langchain_core",
+        "langchain_community",
+        "langchain_experimental",
+        "langchain_text_splitters",
+    ]
+    return module.split(".")[0] in recognized_packages
+
+
+def _serialize_bad_imports(bad_files: list) -> str:
+    """Serialize bad imports to a string."""
+    bad_imports_str = ""
+    for file, bad_imports in bad_files:
+        bad_imports_str += f"File: {file}\n"
+        for module, item in bad_imports:
+            bad_imports_str += f"    {module}.{item}\n"
+    return bad_imports_str
+
+
+def check_notebooks(directory: str) -> list:
+    """Check notebooks for broken import statements."""
+    bad_files = []
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(".ipynb"):
@@ -75,10 +110,23 @@ def check_notebooks(directory: str) -> None:
                 import_statements = [
                     (module, item)
                     for module, item in _extract_import_statements(notebook_path)
-                    if "langchain" in module
+                    if _is_relevant_import(module)
                 ]
-                _check_import_statements(import_statements)
+                bad_imports = _get_bad_imports(import_statements)
+                if bad_imports:
+                    bad_files.append(
+                        (
+                            file,
+                            bad_imports,
+                        )
+                    )
+    return bad_files
 
 
 if __name__ == "__main__":
-    check_notebooks(DOCS_DIR)
+    bad_files = check_notebooks(DOCS_DIR)
+    if bad_files:
+        warnings.warn(
+            "Found bad imports:\n"
+            f"{_serialize_bad_imports(bad_files)}"
+        )
