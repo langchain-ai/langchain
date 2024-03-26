@@ -37,7 +37,7 @@ def expected_documents() -> List[Document]:
 
 
 @patch(
-    "langchain_community.document_loaders.oracleadb_loader.AutonomousDatabaseLoader._run_query"
+    "langchain_community.document_loaders.oracleadb_loader.OracleAutonomousDatabaseLoader._run_query"
 )
 def test_oracle_loader_load(mock_query: MagicMock) -> None:
     """Test oracleDB loader load function."""

@@ -40,7 +40,6 @@ _module_lookup = {
     "AsyncChromiumLoader": "langchain_community.document_loaders.chromium",
     "AsyncHtmlLoader": "langchain_community.document_loaders.async_html",
     "AthenaLoader": "langchain_community.document_loaders.athena",
-    "AutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",
     "AzureAIDataLoader": "langchain_community.document_loaders.azure_ai_data",
     "AzureAIDocumentIntelligenceLoader": "langchain_community.document_loaders.doc_intelligence",  # noqa: E501
     "AzureBlobStorageContainerLoader": "langchain_community.document_loaders.azure_blob_storage_container",  # noqa: E501
@@ -122,6 +121,7 @@ _module_lookup = {
     "OneDriveLoader": "langchain_community.document_loaders.onedrive",
     "OnlinePDFLoader": "langchain_community.document_loaders.pdf",
     "OpenCityDataLoader": "langchain_community.document_loaders.open_city_data",
+    "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
     "OutlookMessageLoader": "langchain_community.document_loaders.email",
     "PDFMinerLoader": "langchain_community.document_loaders.pdf",
     "PDFMinerPDFasHTMLLoader": "langchain_community.document_loaders.pdf",
