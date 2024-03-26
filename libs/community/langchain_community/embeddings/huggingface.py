@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
-
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
 DEFAULT_BGE_MODEL = "BAAI/bge-large-en"
@@ -43,6 +42,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     cache_folder: Optional[str] = None
     """Path to store models. 
     Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
+    backend: str = "default",
+    """Backend name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -55,18 +56,32 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
-        try:
-            import sentence_transformers
+        
+        if  self.backend == "openvino":
+            try:
+                import ov_embedding
 
-        except ImportError as exc:
-            raise ImportError(
-                "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence-transformers`."
-            ) from exc
-
-        self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
-        )
+            except ImportError as exc:
+                raise ImportError(
+                    "Could not import optimum-intel python package. "
+                    "Please install it with: "
+                    "pip install 'optimum[openvino,nncf]' "
+                ) from exc
+                
+            self.client = ov_embedding.OpenVINOEmbedding(
+                self.model_name, **self.model_kwargs)
+        else:
+            try:
+                import sentence_transformers
+                
+            except ImportError as exc:
+                raise ImportError(
+                    "Could not import sentence_transformers python package. "
+                    "Please install it with `pip install sentence-transformers`."
+                ) from exc
+        
+            self.client = sentence_transformers.SentenceTransformer(
+                self.model_name, cache_folder=self.cache_folder, **self.model_kwargs)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -85,7 +100,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         import sentence_transformers
 
         texts = list(map(lambda x: x.replace("\n", " "), texts))
-        if self.multi_process:
+        if self.multi_process and self.backend == "default":
             pool = self.client.start_multi_process_pool()
             embeddings = self.client.encode_multi_process(texts, pool)
             sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
@@ -233,6 +248,8 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     cache_folder: Optional[str] = None
     """Path to store models.
     Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
+    backend: str = "default",
+    """Backend name to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -245,18 +262,31 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
-        try:
-            import sentence_transformers
-
-        except ImportError as exc:
-            raise ImportError(
-                "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
-            ) from exc
-
-        self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
-        )
+        if  self.backend == "openvino":
+            try:
+                import ov_embedding
+                
+            except ImportError as exc:
+                raise ImportError(
+                    "Could not import optimum-intel python package. "
+                    "Please install it with: "
+                    "pip install 'optimum[openvino,nncf]' "
+                ) from exc
+                
+            self.client = ov_embedding.OpenVINOEmbedding(
+                self.model_name, **self.model_kwargs)
+        else:
+            try:
+                import sentence_transformers
+                
+            except ImportError as exc:
+                raise ImportError(
+                    "Could not import sentence_transformers python package. "
+                    "Please install it with `pip install sentence-transformers`."
+                ) from exc
+        
+            self.client = sentence_transformers.SentenceTransformer(
+                self.model_name, cache_folder=self.cache_folder, **self.model_kwargs)
         if "-zh" in self.model_name:
             self.query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_ZH
 
