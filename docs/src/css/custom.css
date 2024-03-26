@@ -91,17 +91,17 @@
   font-size: 0.85rem;
 }
 
-.theme-doc-sidebar-menu > .theme-doc-sidebar-item-category:not(:first-of-type) {
-  margin-top: 1.5rem;
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-category:not(:first-of-type),
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-link {
+  margin-top: 1rem;
 }
 
-.theme-doc-sidebar-item-category {
+.theme-doc-sidebar-item-category, .theme-doc-sidebar-menu > .theme-doc-sidebar-item-link {
   font-size: 1rem;
   font-weight: 700;
 }
 
 .theme-doc-sidebar-item-category button:before {
-  /* background-color: red; */
   height: 1rem;
   width: 1rem;
 }
@@ -125,7 +125,6 @@
 .theme-doc-sidebar-item-category > div > a::after {
   opacity: 0.5;
 }
-
 
 .markdown > h2 {
   margin-top: 2rem;

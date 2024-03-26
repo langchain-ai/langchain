@@ -156,12 +156,6 @@ const config = {
           {
             type: "docSidebar",
             position: "left",
-            sidebarId: "modules",
-            label: "Modules",
-          },
-          {
-            type: "docSidebar",
-            position: "left",
             sidebarId: "integrations",
             label: "Integrations",
           },
@@ -188,11 +182,6 @@ const config = {
               {
                 to: "/docs/packages",
                 label: "Versioning",
-              },
-              {
-                type: "docSidebar",
-                sidebarId: "changelog",
-                label: "Changelog",
               },
               {
                 to: "/docs/contributing",
