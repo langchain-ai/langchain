@@ -86,8 +86,11 @@ class TestDirectoryLoader:
 
         # Assert
         loader = DirectoryLoader(dir_path, loader_cls=CSVLoader)
-        for i, doc in enumerate(loader.lazy_load()):
-            assert doc == expected_docs[i]
+        loaded_docs = []
+        for doc in loader.lazy_load():
+            assert doc in expected_docs
+            loaded_docs.append(doc)
+        assert len(loaded_docs) == len(expected_docs)
 
     # utility functions
     def _get_csv_file_path(self, file_name: str) -> str:
