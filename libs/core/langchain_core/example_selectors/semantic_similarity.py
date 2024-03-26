@@ -28,11 +28,14 @@ def _example_to_text(example: Dict[str, str], input_keys: Optional[List[str]]) -
 class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
     """Example selector that selects examples based on SemanticSimilarity.
 
-    The example select is able to retrieve examples from a vectorstore based on
-    semantic similarity of the example content to the
+    This selector is able to retrieve examples from a vectorstore based on
+    semantic similarity of the query to examples stored in the vectorstore.
 
-
-
+    Selecting examples dynamically based on semantic similarity can be useful
+    in situations where there is a large number of examples, and we want to
+    select a subset of examples that are most similar to the input query to
+    improve the performance of the model while keeping the prompt size
+    within the limits of the model.
     """
 
     vectorstore: VectorStore
