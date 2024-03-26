@@ -1,10 +1,11 @@
 """Test ChatCohere chat model."""
 
-from langchain_cohere import ChatCohere
 from langchain_core.documents import Document
 from langchain_core.messages.human import HumanMessage
 from langchain_core.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
+
+from langchain_cohere import ChatCohere
 
 
 def test_connectors() -> None:
