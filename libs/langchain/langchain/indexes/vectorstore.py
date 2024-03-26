@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Type
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.llms.openai import OpenAI
-from langchain_community.vectorstores.chroma import Chroma
+from langchain_community.vectorstores.inmemory import InMemoryVectorStore
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
@@ -64,7 +64,7 @@ class VectorStoreIndexWrapper(BaseModel):
 class VectorstoreIndexCreator(BaseModel):
     """Logic for creating indexes."""
 
-    vectorstore_cls: Type[VectorStore] = Chroma
+    vectorstore_cls: Type[VectorStore] = InMemoryVectorStore
     embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
     vectorstore_kwargs: dict = Field(default_factory=dict)
