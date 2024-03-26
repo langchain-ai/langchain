@@ -96,12 +96,48 @@ class BaseMessagePromptTemplate(Serializable, ABC):
 
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
-    """Prompt template that assumes variable is already list of messages."""
+    """Prompt template that assumes variable is already list of messages.
+    
+    A placeholder which can be used to pass in a list of messages. 
+
+    Examples:
+        Basic usage.
+
+        .. code-block:: python
+        
+            from langchain_core.prompts import MessagesPlaceholder
+
+            prompt = MessagesPlaceholder("history")
+            prompt.format_messages() # raises KeyError
+
+            prompt = MessagesPlaceholder("history", optional=True)
+            prompt.format_messages() # returns empty list []
+
+            prompt.format_messages(history=[("system", "You are an AI assistant."), "Hello!"])
+            # returns list [
+            #           SystemMessage(content="You are an AI assistant."),
+            #           HumanMessage(content="Hello!"),
+            #           ]
+
+        Building a prompt with chat history.
+
+        .. code-block:: python
+
+            prompt = ChatPromptTemplate.from_messages( 
+                [
+                    ("system", "You are a helpful assistant."),
+                    MessagesPlaceholder(variable_name="history"),
+                    ("human", "{question}")
+                ]
+            )    
+    """
 
     variable_name: str
     """Name of variable to use as messages."""
 
     optional: bool = False
+    """False means messages must be passed via variable_name.
+    True means messages may not be passed via variable_name."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
