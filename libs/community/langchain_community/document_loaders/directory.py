@@ -222,10 +222,30 @@ class DirectoryLoader(BaseLoader):
                 randomizer.shuffle(items)
             items = items[: min(len(items), self.sample_size)]
 
-        for i in items:
-            yield from self.lazy_load_file(i, p)
+        pbar = None
+        if self.show_progress:
+            try:
+                from tqdm import tqdm
 
-    def lazy_load_file(self, item: Path, path: Path) -> Iterator[Document]:
+                pbar = tqdm(total=len(items))
+            except ImportError as e:
+                logger.warning(
+                    "To log the progress of DirectoryLoader you need to install tqdm, "
+                    "`pip install tqdm`"
+                )
+                if self.silent_errors:
+                    logger.warning(e)
+                else:
+                    raise ImportError(
+                        "To log the progress of DirectoryLoader "
+                        "you need to install tqdm, "
+                        "`pip install tqdm`"
+                    )
+        
+        for i in items:
+            yield from self.lazy_load_file(i, p, pbar)
+
+    def lazy_load_file(self, item: Path, path: Path, pbar: Optional[Any]) -> Iterator[Document]:
         """Load a file.
 
         Args:
@@ -250,3 +270,6 @@ class DirectoryLoader(BaseLoader):
                     else:
                         logger.error(f"Error loading file {str(item)}")
                         raise e
+                finally:
+                    if pbar:
+                        pbar.update(1)
