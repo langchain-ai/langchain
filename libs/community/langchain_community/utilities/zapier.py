@@ -16,8 +16,8 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from requests import Request, Session
 
 
@@ -40,8 +40,8 @@ class ZapierNLAWrapper(BaseModel):
     your own provider and generate credentials.
     """
 
-    zapier_nla_api_key: str
-    zapier_nla_oauth_access_token: str
+    zapier_nla_api_key: SecretStr
+    zapier_nla_oauth_access_token: SecretStr
     zapier_nla_api_base: str = "https://nla.zapier.com/api/v1/"
 
     class Config:
@@ -58,10 +58,13 @@ class ZapierNLAWrapper(BaseModel):
 
         if self.zapier_nla_oauth_access_token:
             headers.update(
-                {"Authorization": f"Bearer {self.zapier_nla_oauth_access_token}"}
+                {
+                    "Authorization": "Bearer "
+                    f"{self.zapier_nla_oauth_access_token.get_secret_value()}"
+                }
             )
         else:
-            headers.update({"X-API-Key": self.zapier_nla_api_key})
+            headers.update({"X-API-Key": self.zapier_nla_api_key.get_secret_value()})
 
         return headers
 
@@ -123,11 +126,13 @@ class ZapierNLAWrapper(BaseModel):
             values["zapier_nla_oauth_access_token"] = ""
 
         # we require at least one API Key
-        zapier_nla_api_key = get_from_dict_or_env(
-            values,
-            "zapier_nla_api_key",
-            "ZAPIER_NLA_API_KEY",
-            zapier_nla_api_key_default,
+        zapier_nla_api_key = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "zapier_nla_api_key",
+                "ZAPIER_NLA_API_KEY",
+                zapier_nla_api_key_default,
+            )
         )
 
         values["zapier_nla_api_key"] = zapier_nla_api_key
@@ -176,8 +181,8 @@ class ZapierNLAWrapper(BaseModel):
         https://nla.zapier.com/docs/using-the-api#ai-guessing)
         """
         session = self._get_session()
+        response = session.get(self.zapier_nla_api_base + "exposed/")
         try:
-            response = session.get(self.zapier_nla_api_base + "exposed/")
             response.raise_for_status()
         except requests.HTTPError as http_err:
             if response.status_code == 401:
