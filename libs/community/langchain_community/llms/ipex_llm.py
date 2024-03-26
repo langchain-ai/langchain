@@ -10,14 +10,14 @@ DEFAULT_MODEL_ID = "gpt2"
 logger = logging.getLogger(__name__)
 
 
-class IPEXLLM(LLM):
-    """Wrapper around the IPEX-LLM model
+class IpexLLM(LLM):
+    """Wrapper around the IpexLLM model
 
     Example:
         .. code-block:: python
 
-            from langchain.llms import IPEXLLM
-            llm = IPEXLLM.from_model_id(model_id="THUDM/chatglm-6b")
+            from langchain_community.llms import IpexLLM
+            llm = IpexLLM.from_model_id(model_id="THUDM/chatglm-6b")
     """
 
     model_id: str = DEFAULT_MODEL_ID
@@ -25,7 +25,7 @@ class IPEXLLM(LLM):
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
     model: Any  #: :meta private:
-    """IPEXLLM model."""
+    """IpexLLM model."""
     tokenizer: Any  #: :meta private:
     """Huggingface tokenizer model."""
     streaming: bool = True
@@ -53,7 +53,7 @@ class IPEXLLM(LLM):
             kwargs: Extra arguments to pass to the model and tokenizer.
 
         Returns:
-            An object of TransformersLLM.
+            An object of IpexLLM.
         """
         try:
             from ipex_llm.transformers import (
@@ -114,7 +114,7 @@ class IPEXLLM(LLM):
             kwargs: Extra arguments to pass to the model and tokenizer.
 
         Returns:
-            An object of TransformersLLM.
+            An object of IpexLLM.
         """
         try:
             from ipex_llm.transformers import (
