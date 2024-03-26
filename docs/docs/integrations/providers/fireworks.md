@@ -33,10 +33,10 @@ There are two ways to authenticate using your Fireworks API key:
 ## Using the Fireworks LLM module
 
 Fireworks integrates with Langchain through the LLM module. In this example, we
-will work the mixtral-8x7b-instruct model. 
+will work the mixtral-8x7b-instruct model.
 
 ```python
-from langchain_fireworks import Fireworks 
+from langchain_fireworks import Fireworks
 
 llm = Fireworks(
     fireworks_api_key="<KEY>",

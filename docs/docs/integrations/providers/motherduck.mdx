@@ -1,6 +1,6 @@
 # Motherduck
 
->[Motherduck](https://motherduck.com/) is a managed DuckDB-in-the-cloud service.
+> [Motherduck](https://motherduck.com/) is a managed DuckDB-in-the-cloud service.
 
 ## Installation and Setup
 
@@ -35,7 +35,6 @@ db_chain = SQLDatabaseChain.from_llm(OpenAI(temperature=0), db, verbose=True)
 
 From here, see the [SQL Chain](/docs/use_cases/sql/) documentation on how to use.
 
-
 ## LLMCache
 
 You can also easily use Motherduck to cache LLM requests.
@@ -49,5 +48,3 @@ set_llm_cache(SQLAlchemyCache(engine=eng))
 ```
 
 From here, see the [LLM Caching](/docs/integrations/llms/llm_caching) documentation on how to use.
-
-

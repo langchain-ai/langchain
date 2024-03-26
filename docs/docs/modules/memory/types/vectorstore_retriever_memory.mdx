@@ -19,7 +19,6 @@ from langchain.prompts import PromptTemplate
 
 Depending on the store you choose, this step may look different. Consult the relevant vector store documentation for more details.
 
-
 ```python
 import faiss
 
@@ -37,7 +36,6 @@ vectorstore = FAISS(embedding_fn, index, InMemoryDocstore({}), {})
 
 The memory object is instantiated from any vector store retriever.
 
-
 ```python
 # In actual usage, you would set `k` to be a higher value, but we use k=1 to show that
 # the vector lookup still returns the semantically relevant information
@@ -49,7 +47,6 @@ memory.save_context({"input": "My favorite food is pizza"}, {"output": "that's g
 memory.save_context({"input": "My favorite sport is soccer"}, {"output": "..."})
 memory.save_context({"input": "I don't the Celtics"}, {"output": "ok"}) #
 ```
-
 
 ```python
 print(memory.load_memory_variables({"prompt": "what sport should i watch?"})["history"])
@@ -65,8 +62,8 @@ print(memory.load_memory_variables({"prompt": "what sport should i watch?"})["hi
 </CodeOutputBlock>
 
 ## Using in a chain
-Let's walk through an example, again setting `verbose=True` so we can see the prompt.
 
+Let's walk through an example, again setting `verbose=True` so we can see the prompt.
 
 ```python
 llm = OpenAI(temperature=0) # Can be any valid LLM
@@ -122,7 +119,6 @@ conversation_with_summary.predict(input="Hi, my name is Perry, what's up?")
 
 </CodeOutputBlock>
 
-
 ```python
 # Here, the basketball related content is surfaced
 conversation_with_summary.predict(input="what's my favorite sport?")
@@ -157,7 +153,6 @@ conversation_with_summary.predict(input="what's my favorite sport?")
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 # Even though the language model is stateless, since relevant memory is fetched, it can "reason" about the time.
@@ -194,7 +189,6 @@ conversation_with_summary.predict(input="Whats my favorite food")
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 # The memories from the conversation are automatically stored,

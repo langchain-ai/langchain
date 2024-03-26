@@ -1,6 +1,6 @@
 # HTML
 
->[The HyperText Markup Language or HTML](https://en.wikipedia.org/wiki/HTML) is the standard markup language for documents designed to be displayed in a web browser.
+> [The HyperText Markup Language or HTML](https://en.wikipedia.org/wiki/HTML) is the standard markup language for documents designed to be displayed in a web browser.
 
 This covers how to load `HTML` documents into a document format that we can use downstream.
 
@@ -8,16 +8,13 @@ This covers how to load `HTML` documents into a document format that we can use 
 from langchain_community.document_loaders import UnstructuredHTMLLoader
 ```
 
-
 ```python
 loader = UnstructuredHTMLLoader("example_data/fake-content.html")
 ```
 
-
 ```python
 data = loader.load()
 ```
-
 
 ```python
 data
@@ -33,13 +30,11 @@ data
 
 ## Loading HTML with BeautifulSoup4
 
-We can also use `BeautifulSoup4` to load HTML documents using the `BSHTMLLoader`.  This will extract the text from the HTML into `page_content`, and the page title as `title` into `metadata`.
-
+We can also use `BeautifulSoup4` to load HTML documents using the `BSHTMLLoader`. This will extract the text from the HTML into `page_content`, and the page title as `title` into `metadata`.
 
 ```python
 from langchain_community.document_loaders import BSHTMLLoader
 ```
-
 
 ```python
 loader = BSHTMLLoader("example_data/fake-content.html")

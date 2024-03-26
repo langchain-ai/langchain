@@ -1,6 +1,7 @@
 # Quickstart
 
 In this quickstart we'll show you how to:
+
 - Get setup with LangChain, LangSmith and LangServe
 - Use the most basic and common components of LangChain: prompt templates, models, and output parsers
 - Use LangChain Expression Language, the protocol that LangChain is built on and which facilitates component chaining
@@ -22,8 +23,8 @@ You do not NEED to go through the guide in a Jupyter Notebook, but it is recomme
 
 To install LangChain run:
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 import CodeBlock from "@theme/CodeBlock";
 
 <Tabs>
@@ -31,10 +32,11 @@ import CodeBlock from "@theme/CodeBlock";
     <CodeBlock language="bash">pip install langchain</CodeBlock>
   </TabItem>
   <TabItem value="conda" label="Conda">
-    <CodeBlock language="bash">conda install langchain -c conda-forge</CodeBlock>
+    <CodeBlock language="bash">
+      conda install langchain -c conda-forge
+    </CodeBlock>
   </TabItem>
 </Tabs>
-
 
 For more details, see our [Installation guide](/docs/get_started/installation).
 
@@ -105,10 +107,11 @@ llm = ChatOpenAI(openai_api_key="...")
 
 First, follow [these instructions](https://github.com/jmorganca/ollama) to set up and run a local Ollama instance:
 
-* [Download](https://ollama.ai/download)
-* Fetch a model via `ollama pull llama2`
+- [Download](https://ollama.ai/download)
+- Fetch a model via `ollama pull llama2`
 
 Then, make sure the Ollama server is running. After that, you can do:
+
 ```python
 from langchain_community.llms import Ollama
 llm = Ollama(model="llama2")
@@ -198,7 +201,7 @@ prompt = ChatPromptTemplate.from_messages([
 We can now combine these into a simple LLM chain:
 
 ```python
-chain = prompt | llm 
+chain = prompt | llm
 ```
 
 We can now invoke it and ask the same question. It still won't know the answer, but it should respond in a more proper tone for a technical writer!
@@ -231,15 +234,14 @@ chain.invoke({"input": "how can langsmith help with testing?"})
 
 We've now successfully set up a basic LLM chain. We only touched on the basics of prompts, models, and output parsers - for a deeper dive into everything mentioned here, see [this section of documentation](/docs/modules/model_io).
 
-
 ## Retrieval Chain
 
 In order to properly answer the original question ("how can langsmith help with testing?"), we need to provide additional context to the LLM.
-We can do this via *retrieval*.
+We can do this via _retrieval_.
 Retrieval is useful when you have **too much data** to pass to the LLM directly.
 You can then use a retriever to fetch only the most relevant pieces and pass those in.
 
-In this process, we will look up relevant documents from a *Retriever* and then pass them into the prompt.
+In this process, we will look up relevant documents from a _Retriever_ and then pass them into the prompt.
 A Retriever can be backed by anything - a SQL table, the internet, etc - but in this instance we will populate a vector store and use that as a retriever. For more information on vectorstores, see [this documentation](/docs/modules/data_connection/vectorstores).
 
 First, we need to load the data that we want to index. In order to do this, we will use the WebBaseLoader. This requires installing [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/):
@@ -249,7 +251,6 @@ pip install beautifulsoup4
 ```
 
 After that, we can import and use WebBaseLoader.
-
 
 ```python
 from langchain_community.document_loaders import WebBaseLoader
@@ -283,6 +284,7 @@ from langchain_community.embeddings import OllamaEmbeddings
 
 embeddings = OllamaEmbeddings()
 ```
+
   </TabItem>
 <TabItem value="cohere" label="Cohere (API)" default>
 
@@ -411,6 +413,7 @@ retriever_chain.invoke({
     "input": "Tell me how"
 })
 ```
+
 You should see that this returns documents about testing in LangSmith. This is because the LLM generated a new query, combining the chat history with the follow up question.
 
 Now that we have this new retriever, we can create a new chain to continue the conversation with these retrieved documents in mind.
@@ -435,6 +438,7 @@ retrieval_chain.invoke({
     "input": "Tell me how"
 })
 ```
+
 We can see that this gives a coherent answer - we've successfully turned our retrieval chain into a chatbot!
 
 ## Agent
@@ -462,12 +466,12 @@ retriever_tool = create_retriever_tool(
 )
 ```
 
-
 The search tool that we will use is [Tavily](/docs/integrations/retrievers/tavily). This will require an API key (they have generous free tier). After creating it on their platform, you need to set it as an environment variable:
 
 ```shell
 export TAVILY_API_KEY=...
 ```
+
 If you do not want to set up an API key, you can skip creating this tool.
 
 ```python
@@ -485,6 +489,7 @@ tools = [retriever_tool, search]
 Now that we have the tools, we can create an agent to use them. We will go over this pretty quickly - for a deeper dive into what exactly is going on, check out the [Agent's Getting Started documentation](/docs/modules/agents)
 
 Install langchain hub first
+
 ```bash
 pip install langchainhub
 ```
@@ -530,7 +535,6 @@ agent_executor.invoke({
 
 We've now successfully set up a basic agent. We only touched on the basics of agents - for a deeper dive into everything mentioned here, see [this section of documentation](/docs/modules/agents).
 
-
 ## Serving with LangServe
 
 Now that we've built an application, we need to serve it. That's where LangServe comes in.
@@ -539,6 +543,7 @@ LangServe helps developers deploy LangChain chains as a REST API. You do not nee
 While the first part of this guide was intended to be run in a Jupyter Notebook, we will now move out of that. We will be creating a Python file and then interacting with it from the command line.
 
 Install with:
+
 ```bash
 pip install "langserve[all]"
 ```
@@ -546,6 +551,7 @@ pip install "langserve[all]"
 ### Server
 
 To create a server for our application we'll make a `serve.py` file. This will contain our logic for serving our application. It consists of three things:
+
 1. The definition of our chain that we just built above
 2. Our FastAPI app
 3. A definition of a route from which to serve the chain, which is done with `langserve.add_routes`
@@ -632,9 +638,11 @@ if __name__ == "__main__":
 ```
 
 And that's it! If we execute this file:
+
 ```bash
 python serve.py
 ```
+
 we should see our chain being served at localhost:8000.
 
 ### Playground

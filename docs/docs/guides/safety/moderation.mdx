@@ -1,15 +1,15 @@
 # Moderation chain
 
-This notebook walks through examples of how to use a moderation chain, and several common ways for doing so. 
-Moderation chains are useful for detecting text that could be hateful, violent, etc. This can be useful to apply on both user input, but also on the output of a Language Model. 
-Some API providers, like OpenAI, [specifically prohibit](https://beta.openai.com/docs/usage-policies/use-case-policy) you, or your end users, from generating some 
-types of harmful content. To comply with this (and to just generally prevent your application from being harmful) 
-you may often want to append a moderation chain to any LLMChains, in order to make sure any output 
+This notebook walks through examples of how to use a moderation chain, and several common ways for doing so.
+Moderation chains are useful for detecting text that could be hateful, violent, etc. This can be useful to apply on both user input, but also on the output of a Language Model.
+Some API providers, like OpenAI, [specifically prohibit](https://beta.openai.com/docs/usage-policies/use-case-policy) you, or your end users, from generating some
+types of harmful content. To comply with this (and to just generally prevent your application from being harmful)
+you may often want to append a moderation chain to any LLMChains, in order to make sure any output
 the LLM generates is not harmful.
 
-If the content passed into the moderation chain is harmful, there is not one best way to handle it, 
-it probably depends on your application. Sometimes you may want to throw an error in the Chain 
-(and have your application handle that). Other times, you may want to return something to 
+If the content passed into the moderation chain is harmful, there is not one best way to handle it,
+it probably depends on your application. Sometimes you may want to throw an error in the Chain
+(and have your application handle that). Other times, you may want to return something to
 the user explaining that the text was harmful. There could be other ways to handle it.
 We will cover all these ways in this walkthrough.
 
@@ -17,9 +17,6 @@ We'll show:
 
 1. How to run any piece of text through a moderation chain.
 2. How to append a Moderation chain to an LLMChain.
-
-
-
 
 ```python
 from langchain_openai import OpenAI
@@ -29,9 +26,8 @@ from langchain.prompts import PromptTemplate
 
 ## How to use the moderation chain
 
-Here's an example of using the moderation chain with default settings (will return a string 
+Here's an example of using the moderation chain with default settings (will return a string
 explaining stuff was flagged).
-
 
 ```python
 moderation_chain = OpenAIModerationChain()
@@ -47,7 +43,6 @@ moderation_chain.run("This is okay")
 
 </CodeOutputBlock>
 
-
 ```python
 moderation_chain.run("I will kill you")
 ```
@@ -62,7 +57,6 @@ moderation_chain.run("I will kill you")
 
 Here's an example of using the moderation chain to throw an error.
 
-
 ```python
 moderation_chain_error = OpenAIModerationChain(error=True)
 
@@ -76,7 +70,6 @@ moderation_chain_error.run("This is okay")
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 moderation_chain_error.run("I will kill you")
@@ -133,9 +126,8 @@ moderation_chain_error.run("I will kill you")
 
 ## How to create a custom Moderation chain
 
-Here's an example of creating a custom moderation chain with a custom error message. 
+Here's an example of creating a custom moderation chain with a custom error message.
 It requires some knowledge of OpenAI's moderation endpoint results. See [docs here](https://beta.openai.com/docs/api-reference/moderations).
-
 
 ```python
 class CustomModeration(OpenAIModerationChain):
@@ -158,7 +150,6 @@ custom_moderation.run("This is okay")
 
 </CodeOutputBlock>
 
-
 ```python
 custom_moderation.run("I will kill you")
 ```
@@ -175,9 +166,8 @@ custom_moderation.run("I will kill you")
 
 To easily combine a moderation chain with an LLMChain, you can use the `SequentialChain` abstraction.
 
-Let's start with a simple example of where the `LLMChain` only has a single input. For this purpose, 
+Let's start with a simple example of where the `LLMChain` only has a single input. For this purpose,
 we will prompt the model, so it says something harmful.
-
 
 ```python
 prompt = PromptTemplate.from_template("{text}")
@@ -204,7 +194,6 @@ llm_chain.run(text)
 
 </CodeOutputBlock>
 
-
 ```python
 chain = SimpleSequentialChain(chains=[llm_chain, moderation_chain])
 
@@ -220,7 +209,6 @@ chain.run(text)
 </CodeOutputBlock>
 
 Now let's walk through an example of using it with an LLMChain which has multiple inputs (a bit more tricky because we can't use the SimpleSequentialChain)
-
 
 ```python
 prompt = PromptTemplate.from_template("{setup}{new_input}Person2:")
@@ -247,7 +235,6 @@ llm_chain(inputs, return_only_outputs=True)
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 # Setting the input/output keys so it lines up

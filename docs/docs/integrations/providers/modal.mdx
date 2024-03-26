@@ -1,7 +1,7 @@
 # Modal
 
 This page covers how to use the Modal ecosystem to run LangChain custom LLMs.
-It is broken into two parts: 
+It is broken into two parts:
 
 1. Modal installation and web endpoint deployment
 2. Using deployed web endpoint with `LLM` wrapper class.
@@ -78,7 +78,7 @@ Your web endpoint will acquire a persistent URL under the `modal.run` domain.
 
 ## LLM wrapper around Modal web endpoint
 
-The  `Modal` LLM wrapper class which will accept your deployed web endpoint's URL.
+The `Modal` LLM wrapper class which will accept your deployed web endpoint's URL.
 
 ```python
 from langchain_community.llms import Modal
@@ -92,4 +92,3 @@ question = "What NFL team won the Super Bowl in the year Justin Beiber was born?
 
 llm_chain.run(question)
 ```
-

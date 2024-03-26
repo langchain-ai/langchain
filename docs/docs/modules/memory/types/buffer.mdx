@@ -8,12 +8,10 @@ We can first extract it as a string.
 from langchain.memory import ConversationBufferMemory
 ```
 
-
 ```python
 memory = ConversationBufferMemory()
 memory.save_context({"input": "hi"}, {"output": "whats up"})
 ```
-
 
 ```python
 memory.load_memory_variables({})
@@ -29,12 +27,10 @@ memory.load_memory_variables({})
 
 We can also get the history as a list of messages (this is useful if you are using this with a chat model).
 
-
 ```python
 memory = ConversationBufferMemory(return_messages=True)
 memory.save_context({"input": "hi"}, {"output": "whats up"})
 ```
-
 
 ```python
 memory.load_memory_variables({})
@@ -50,8 +46,8 @@ memory.load_memory_variables({})
 </CodeOutputBlock>
 
 ## Using in a chain
-Finally, let's take a look at using this in a chain (setting `verbose=True` so we can see the prompt).
 
+Finally, let's take a look at using this in a chain (setting `verbose=True` so we can see the prompt).
 
 ```python
 from langchain_openai import OpenAI
@@ -65,7 +61,6 @@ conversation = ConversationChain(
     memory=ConversationBufferMemory()
 )
 ```
-
 
 ```python
 conversation.predict(input="Hi there!")
@@ -96,7 +91,6 @@ conversation.predict(input="Hi there!")
 
 </CodeOutputBlock>
 
-
 ```python
 conversation.predict(input="I'm doing well! Just having a conversation with an AI.")
 ```
@@ -126,7 +120,6 @@ conversation.predict(input="I'm doing well! Just having a conversation with an A
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 conversation.predict(input="Tell me about yourself.")

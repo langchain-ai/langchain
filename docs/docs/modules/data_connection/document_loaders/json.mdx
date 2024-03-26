@@ -1,22 +1,19 @@
 # JSON
 
->[JSON (JavaScript Object Notation)](https://en.wikipedia.org/wiki/JSON) is an open standard file format and data interchange format that uses human-readable text to store and transmit data objects consisting of attribute–value pairs and arrays (or other serializable values).
+> [JSON (JavaScript Object Notation)](https://en.wikipedia.org/wiki/JSON) is an open standard file format and data interchange format that uses human-readable text to store and transmit data objects consisting of attribute–value pairs and arrays (or other serializable values).
 
->[JSON Lines](https://jsonlines.org/) is a file format where each line is a valid JSON value.
+> [JSON Lines](https://jsonlines.org/) is a file format where each line is a valid JSON value.
 
->The `JSONLoader` uses a specified [jq schema](https://en.wikipedia.org/wiki/Jq_(programming_language)) to parse the JSON files. It uses the `jq` python package.
-Check this [manual](https://stedolan.github.io/jq/manual/#Basicfilters) for a detailed documentation of the `jq` syntax.
-
+> The `JSONLoader` uses a specified [jq schema](<https://en.wikipedia.org/wiki/Jq_(programming_language)>) to parse the JSON files. It uses the `jq` python package.
+> Check this [manual](https://stedolan.github.io/jq/manual/#Basicfilters) for a detailed documentation of the `jq` syntax.
 
 ```python
 #!pip install jq
 ```
 
-
 ```python
 from langchain_community.document_loaders import JSONLoader
 ```
-
 
 ```python
 import json
@@ -27,7 +24,6 @@ from pprint import pprint
 file_path='./example_data/facebook_chat.json'
 data = json.loads(Path(file_path).read_text())
 ```
-
 
 ```python
 pprint(data)
@@ -84,11 +80,9 @@ pprint(data)
 
 </CodeOutputBlock>
 
-
 ## Using `JSONLoader`
 
 Suppose we are interested in extracting the values under the `content` field within the `messages` key of the JSON data. This can easily be done through the `JSONLoader` as shown below.
-
 
 ### JSON file
 
@@ -100,7 +94,6 @@ loader = JSONLoader(
 
 data = loader.load()
 ```
-
 
 ```python
 pprint(data)
@@ -124,7 +117,6 @@ pprint(data)
 
 </CodeOutputBlock>
 
-
 ### JSON Lines file
 
 If you want to load documents from a JSON Lines file, you pass `json_lines=True`
@@ -146,7 +138,6 @@ pprint(Path(file_path).read_text())
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 loader = JSONLoader(
@@ -171,7 +162,6 @@ pprint(data)
 ```
 
 </CodeOutputBlock>
-
 
 Another option is set `jq_schema='.'` and provide `content_key`:
 
@@ -201,7 +191,7 @@ pprint(data)
 
 ### JSON file with jq schema `content_key`
 
-To load documents from a JSON file using the content_key within the jq schema, set is_content_key_jq_parsable=True. 
+To load documents from a JSON file using the content_key within the jq schema, set is_content_key_jq_parsable=True.
 Ensure that content_key is compatible and can be parsed using the jq schema.
 
 ```python
@@ -212,21 +202,27 @@ pprint(Path(file_path).read_text())
 <CodeOutputBlock lang="python">
 
 ```json
-    {"data": [
-        {"attributes": {
-            "message": "message1",
-            "tags": [
-            "tag1"]},
-        "id": "1"},
-        {"attributes": {
-            "message": "message2",
-            "tags": [
-            "tag2"]},
-        "id": "2"}]}
+{
+  "data": [
+    {
+      "attributes": {
+        "message": "message1",
+        "tags": ["tag1"]
+      },
+      "id": "1"
+    },
+    {
+      "attributes": {
+        "message": "message2",
+        "tags": ["tag2"]
+      },
+      "id": "2"
+    }
+  ]
+}
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 loader = JSONLoader(
@@ -274,7 +270,6 @@ This allows us to pass the records (dict) into the `metadata_func` that has to b
 
 Additionally, we now have to explicitly specify in the loader, via the `content_key` argument, the key from the record where the value for the `page_content` needs to be extracted from.
 
-
 ```python
 # Define the metadata extraction function.
 def metadata_func(record: dict, metadata: dict) -> dict:
@@ -294,7 +289,6 @@ loader = JSONLoader(
 
 data = loader.load()
 ```
-
 
 ```python
 pprint(data)
@@ -328,7 +322,6 @@ For example, the default metadata contains the `source` and the `seq_num` keys. 
 
 The example below shows how we can modify the `source` to only contain information of the file source relative to the `langchain` directory.
 
-
 ```python
 # Define the metadata extraction function.
 def metadata_func(record: dict, metadata: dict) -> dict:
@@ -353,7 +346,6 @@ loader = JSONLoader(
 
 data = loader.load()
 ```
-
 
 ```python
 pprint(data)

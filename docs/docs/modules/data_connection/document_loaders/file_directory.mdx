@@ -10,16 +10,13 @@ from langchain_community.document_loaders import DirectoryLoader
 
 We can use the `glob` parameter to control which files to load. Note that here it doesn't load the `.rst` file or the `.html` files.
 
-
 ```python
 loader = DirectoryLoader('../', glob="**/*.md")
 ```
 
-
 ```python
 docs = loader.load()
 ```
-
 
 ```python
 len(docs)
@@ -36,7 +33,6 @@ len(docs)
 ## Show a progress bar
 
 By default a progress bar will not be shown. To show a progress bar, install the `tqdm` library (e.g. `pip install tqdm`), and set the `show_progress` parameter to `True`.
-
 
 ```python
 loader = DirectoryLoader('../', glob="**/*.md", show_progress=True)
@@ -58,30 +54,26 @@ docs = loader.load()
 
 By default the loading happens in one thread. In order to utilize several threads set the `use_multithreading` flag to true.
 
-
 ```python
 loader = DirectoryLoader('../', glob="**/*.md", use_multithreading=True)
 docs = loader.load()
 ```
 
 ## Change loader class
-By default this uses the `UnstructuredLoader` class. However, you can change up the type of loader pretty easily.
 
+By default this uses the `UnstructuredLoader` class. However, you can change up the type of loader pretty easily.
 
 ```python
 from langchain_community.document_loaders import TextLoader
 ```
 
-
 ```python
 loader = DirectoryLoader('../', glob="**/*.md", loader_cls=TextLoader)
 ```
 
-
 ```python
 docs = loader.load()
 ```
-
 
 ```python
 len(docs)
@@ -97,21 +89,17 @@ len(docs)
 
 If you need to load Python source code files, use the `PythonLoader`.
 
-
 ```python
 from langchain_community.document_loaders import PythonLoader
 ```
-
 
 ```python
 loader = DirectoryLoader('../../../../../', glob="**/*.py", loader_cls=PythonLoader)
 ```
 
-
 ```python
 docs = loader.load()
 ```
-
 
 ```python
 len(docs)
@@ -131,7 +119,6 @@ In this example we will see some strategies that can be useful when loading a la
 
 First to illustrate the problem, let's try to load multiple texts with arbitrary encodings.
 
-
 ```python
 path = '../../../../../tests/integration_tests/examples'
 loader = DirectoryLoader(path, glob="**/*.txt", loader_cls=TextLoader)
@@ -139,16 +126,16 @@ loader = DirectoryLoader(path, glob="**/*.txt", loader_cls=TextLoader)
 
 ### A. Default Behavior
 
-
 ```python
 loader.load()
 ```
 
 <HTMLOutputBlock center>
 
-
 ```html
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #800000; text-decoration-color: #800000">╭─────────────────────────────── </span><span style="color: #800000; text-decoration-color: #800000; font-weight: bold">Traceback </span><span style="color: #bf7f7f; text-decoration-color: #bf7f7f; font-weight: bold">(most recent call last)</span><span style="color: #800000; text-decoration-color: #800000"> ────────────────────────────────╮</span>
+<pre
+  style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"
+><span style="color: #800000; text-decoration-color: #800000">╭─────────────────────────────── </span><span style="color: #800000; text-decoration-color: #800000; font-weight: bold">Traceback </span><span style="color: #bf7f7f; text-decoration-color: #bf7f7f; font-weight: bold">(most recent call last)</span><span style="color: #800000; text-decoration-color: #800000"> ────────────────────────────────╮</span>
 <span style="color: #800000; text-decoration-color: #800000">│</span> <span style="color: #bfbf7f; text-decoration-color: #bfbf7f">/data/source/langchain/langchain/document_loaders/</span><span style="color: #808000; text-decoration-color: #808000; font-weight: bold">text.py</span>:<span style="color: #0000ff; text-decoration-color: #0000ff">29</span> in <span style="color: #00ff00; text-decoration-color: #00ff00">load</span>                             <span style="color: #800000; text-decoration-color: #800000">│</span>
 <span style="color: #800000; text-decoration-color: #800000">│</span>                                                                                                  <span style="color: #800000; text-decoration-color: #800000">│</span>
 <span style="color: #800000; text-decoration-color: #800000">│</span>   <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">26 </span><span style="color: #7f7f7f; text-decoration-color: #7f7f7f">│   │   </span>text = <span style="color: #808000; text-decoration-color: #808000">""</span>                                                                           <span style="color: #800000; text-decoration-color: #800000">│</span>
@@ -213,7 +200,6 @@ loader.load()
 </pre>
 ```
 
-
 </HTMLOutputBlock>
 
 The file `example-non-utf8.txt` uses a different encoding, so the `load()` function fails with a helpful message indicating which file failed decoding.
@@ -223,7 +209,6 @@ With the default behavior of `TextLoader` any failure to load any of the documen
 ### B. Silent fail
 
 We can pass the parameter `silent_errors` to the `DirectoryLoader` to skip the files which could not be loaded and continue the load process.
-
 
 ```python
 loader = DirectoryLoader(path, glob="**/*.txt", loader_cls=TextLoader, silent_errors=True)
@@ -237,7 +222,6 @@ docs = loader.load()
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 doc_sources = [doc.metadata['source']  for doc in docs]
@@ -257,13 +241,11 @@ doc_sources
 
 We can also ask `TextLoader` to auto detect the file encoding before failing, by passing the `autodetect_encoding` to the loader class.
 
-
 ```python
 text_loader_kwargs={'autodetect_encoding': True}
 loader = DirectoryLoader(path, glob="**/*.txt", loader_cls=TextLoader, loader_kwargs=text_loader_kwargs)
 docs = loader.load()
 ```
-
 
 ```python
 doc_sources = [doc.metadata['source']  for doc in docs]

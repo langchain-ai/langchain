@@ -7,10 +7,10 @@ sidebar_class_name: hidden
 
 Many LLM applications require user-specific data that is not part of the model's training set.
 The primary way of accomplishing this is through Retrieval Augmented Generation (RAG).
-In this process, external data is *retrieved* and then passed to the LLM when doing the *generation* step.
+In this process, external data is _retrieved_ and then passed to the LLM when doing the _generation_ step.
 
 LangChain provides all the building blocks for RAG applications - from simple to complex.
-This section of the documentation covers everything related to the *retrieval* step - e.g. the fetching of the data.
+This section of the documentation covers everything related to the _retrieval_ step - e.g. the fetching of the data.
 Although this sounds simple, it can be subtly complex.
 This encompasses several key modules.
 
@@ -56,7 +56,7 @@ However, we have also added a collection of algorithms on top of this to increas
 These include:
 
 - [Parent Document Retriever](/docs/modules/data_connection/retrievers/parent_document_retriever): This allows you to create multiple embeddings per parent document, allowing you to look up smaller chunks but return larger context.
-- [Self Query Retriever](/docs/modules/data_connection/retrievers/self_query): User questions often contain a reference to something that isn't just semantic but rather expresses some logic that can best be represented as a metadata filter. Self-query allows you to parse out the *semantic* part of a query from other *metadata filters* present in the query.
+- [Self Query Retriever](/docs/modules/data_connection/retrievers/self_query): User questions often contain a reference to something that isn't just semantic but rather expresses some logic that can best be represented as a metadata filter. Self-query allows you to parse out the _semantic_ part of a query from other _metadata filters_ present in the query.
 - [Ensemble Retriever](/docs/modules/data_connection/retrievers/ensemble): Sometimes you may want to retrieve documents from multiple different sources, or using multiple different algorithms. The ensemble retriever allows you to easily do this.
 - And more!
 

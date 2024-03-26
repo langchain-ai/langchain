@@ -60,7 +60,7 @@ const config = {
             },
             {
               test: /\.ya?ml$/,
-              use: 'yaml-loader'
+              use: "yaml-loader",
             },
             {
               test: /\.ipynb$/,
@@ -146,7 +146,10 @@ const config = {
       },
       image: "img/brand/theme-image.png",
       navbar: {
-        logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
+        logo: {
+          src: "img/brand/wordmark.png",
+          srcDark: "img/brand/wordmark-dark.png",
+        },
         items: [
           {
             to: "/docs/get_started/introduction",
@@ -205,17 +208,17 @@ const config = {
               },
               {
                 label: "Cookbooks",
-                href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
+                href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md",
               },
               {
                 to: "/docs/additional_resources/tutorials",
-                label: "Tutorials"
+                label: "Tutorials",
               },
               {
                 to: "/docs/additional_resources/youtube",
-                label: "YouTube"
+                label: "YouTube",
               },
-            ]
+            ],
           },
           {
             type: "dropdown",
@@ -250,7 +253,7 @@ const config = {
                 href: "https://js.langchain.com",
                 label: "JS/TS Docs",
               },
-            ]
+            ],
           },
           {
             href: "https://chat.langchain.com",

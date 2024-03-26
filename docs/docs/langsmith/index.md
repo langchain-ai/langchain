@@ -19,4 +19,3 @@ check out the [LangSmith Cookbook](https://github.com/langchain-ai/langsmith-coo
 - How to evaluate and audit your RAG workflows ([link](https://github.com/langchain-ai/langsmith-cookbook/tree/main/testing-examples/qa-correctness)).
 - How to fine-tune an LLM on real usage data ([link](https://github.com/langchain-ai/langsmith-cookbook/blob/main/fine-tuning-examples/export-to-openai/fine-tuning-on-chat-runs.ipynb)).
 - How to use the [LangChain Hub](https://smith.langchain.com/hub) to version your prompts ([link](https://github.com/langchain-ai/langsmith-cookbook/blob/main/hub-examples/retrieval-qa-chain/retrieval-qa.ipynb))
-

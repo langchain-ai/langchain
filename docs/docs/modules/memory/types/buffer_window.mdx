@@ -8,13 +8,11 @@ Let's first explore the basic functionality of this type of memory.
 from langchain.memory import ConversationBufferWindowMemory
 ```
 
-
 ```python
 memory = ConversationBufferWindowMemory( k=1)
 memory.save_context({"input": "hi"}, {"output": "whats up"})
 memory.save_context({"input": "not much you"}, {"output": "not much"})
 ```
-
 
 ```python
 memory.load_memory_variables({})
@@ -30,13 +28,11 @@ memory.load_memory_variables({})
 
 We can also get the history as a list of messages (this is useful if you are using this with a chat model).
 
-
 ```python
 memory = ConversationBufferWindowMemory( k=1, return_messages=True)
 memory.save_context({"input": "hi"}, {"output": "whats up"})
 memory.save_context({"input": "not much you"}, {"output": "not much"})
 ```
-
 
 ```python
 memory.load_memory_variables({})
@@ -52,8 +48,8 @@ memory.load_memory_variables({})
 </CodeOutputBlock>
 
 ## Using in a chain
-Let's walk through an example, again setting `verbose=True` so we can see the prompt.
 
+Let's walk through an example, again setting `verbose=True` so we can see the prompt.
 
 ```python
 from langchain_openai import OpenAI
@@ -92,7 +88,6 @@ conversation_with_summary.predict(input="Hi, what's up?")
 
 </CodeOutputBlock>
 
-
 ```python
 conversation_with_summary.predict(input="What's their issues?")
 ```
@@ -122,7 +117,6 @@ conversation_with_summary.predict(input="What's their issues?")
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 conversation_with_summary.predict(input="Is it going well?")
@@ -155,7 +149,6 @@ conversation_with_summary.predict(input="Is it going well?")
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 # Notice here that the first interaction does not appear.

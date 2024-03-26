@@ -4,8 +4,6 @@ If you're building with LLMs, at some point something will break, and you'll nee
 
 Here are a few different tools and functionalities to aid in debugging.
 
-
-
 ## Tracing
 
 Platforms with tracing capabilities like [LangSmith](/docs/langsmith/) and [WandB](/docs/integrations/providers/wandb_tracing) are the most comprehensive solutions for debugging. These platforms make it easy to not only log and visualize LLM apps, but also to actively debug, test and refine them.
@@ -16,12 +14,11 @@ For anyone building production-grade LLM applications, we highly recommend using
 
 ## `set_debug` and `set_verbose`
 
-If you're prototyping in Jupyter Notebooks or running Python scripts, it can be helpful to print out the intermediate steps of a Chain run. 
+If you're prototyping in Jupyter Notebooks or running Python scripts, it can be helpful to print out the intermediate steps of a Chain run.
 
 There are a number of ways to enable printing at varying degrees of verbosity.
 
 Let's suppose we have a simple agent, and want to visualize the actions it takes and tool outputs it receives. Without any debugging, here's what we see:
-
 
 ```python
 from langchain.agents import AgentType, initialize_agent, load_tools
@@ -31,7 +28,6 @@ llm = ChatOpenAI(model_name="gpt-4", temperature=0)
 tools = load_tools(["ddg-search", "llm-math"], llm=llm)
 agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION)
 ```
-
 
 ```python
 agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?")
@@ -49,7 +45,6 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 Setting the global `debug` flag will cause all LangChain components with callback support (chains, models, agents, tools, retrievers) to print the inputs they receive and outputs they generate. This is the most verbose setting and will fully log raw inputs and outputs.
 
-
 ```python
 from langchain.globals import set_debug
 
@@ -62,7 +57,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 <CodeOutputBlock lang="python">
 
-```
+````
     [chain/start] [1:RunTypeEnum.chain:AgentExecutor] Entering Chain run with input:
     {
       "input": "Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?"
@@ -370,7 +365,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 
     'The director of the 2023 film Oppenheimer is Christopher Nolan and he is 52 years old. His age in days is approximately 18980 days.'
-```
+````
 
 </CodeOutputBlock>
 
@@ -379,7 +374,6 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 ### `set_verbose(True)`
 
 Setting the `verbose` flag will print out inputs and outputs in a slightly more readable format and will skip logging certain raw outputs (like the token usage stats for an LLM call) so that you can focus on application logic.
-
 
 ```python
 from langchain.globals import set_verbose
@@ -393,21 +387,21 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 <CodeOutputBlock lang="python">
 
-```
-    
-    
+````
+
+
     > Entering new AgentExecutor chain...
-    
-    
+
+
     > Entering new LLMChain chain...
     Prompt after formatting:
     Answer the following questions as best you can. You have access to the following tools:
-    
+
     duckduckgo_search: A wrapper around DuckDuckGo Search. Useful for when you need to answer questions about current events. Input should be a search query.
     Calculator: Useful for when you need to answer questions about math.
-    
+
     Use the following format:
-    
+
     Question: the input question you must answer
     Thought: you should always think about what to do
     Action: the action to take, should be one of [duckduckgo_search, Calculator]
@@ -416,28 +410,28 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     ... (this Thought/Action/Action Input/Observation can repeat N times)
     Thought: I now know the final answer
     Final Answer: the final answer to the original input question
-    
+
     Begin!
-    
+
     Question: Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?
     Thought:
-    
+
     > Finished chain.
     First, I need to find out who directed the film Oppenheimer in 2023 and their birth date to calculate their age.
     Action: duckduckgo_search
     Action Input: "Director of the 2023 film Oppenheimer"
     Observation: Oppenheimer: Directed by Christopher Nolan. With Cillian Murphy, Emily Blunt, Robert Downey Jr., Alden Ehrenreich. The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb. In Christopher Nolan's new film, "Oppenheimer," Cillian Murphy stars as J. Robert ... 2023, 12:16 p.m. ET. ... including his role as the director of the Manhattan Engineer District, better ... J Robert Oppenheimer was the director of the secret Los Alamos Laboratory. It was established under US president Franklin D Roosevelt as part of the Manhattan Project to build the first atomic bomb. He oversaw the first atomic bomb detonation in the New Mexico desert in July 1945, code-named "Trinity". In this opening salvo of 2023's Oscar battle, Nolan has enjoined a star-studded cast for a retelling of the brilliant and haunted life of J. Robert Oppenheimer, the American physicist whose... Oppenheimer is a 2023 epic biographical thriller film written and directed by Christopher Nolan.It is based on the 2005 biography American Prometheus by Kai Bird and Martin J. Sherwin about J. Robert Oppenheimer, a theoretical physicist who was pivotal in developing the first nuclear weapons as part of the Manhattan Project and thereby ushering in the Atomic Age.
     Thought:
-    
+
     > Entering new LLMChain chain...
     Prompt after formatting:
     Answer the following questions as best you can. You have access to the following tools:
-    
+
     duckduckgo_search: A wrapper around DuckDuckGo Search. Useful for when you need to answer questions about current events. Input should be a search query.
     Calculator: Useful for when you need to answer questions about math.
-    
+
     Use the following format:
-    
+
     Question: the input question you must answer
     Thought: you should always think about what to do
     Action: the action to take, should be one of [duckduckgo_search, Calculator]
@@ -446,32 +440,32 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     ... (this Thought/Action/Action Input/Observation can repeat N times)
     Thought: I now know the final answer
     Final Answer: the final answer to the original input question
-    
+
     Begin!
-    
+
     Question: Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?
     Thought:First, I need to find out who directed the film Oppenheimer in 2023 and their birth date to calculate their age.
     Action: duckduckgo_search
     Action Input: "Director of the 2023 film Oppenheimer"
     Observation: Oppenheimer: Directed by Christopher Nolan. With Cillian Murphy, Emily Blunt, Robert Downey Jr., Alden Ehrenreich. The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb. In Christopher Nolan's new film, "Oppenheimer," Cillian Murphy stars as J. Robert ... 2023, 12:16 p.m. ET. ... including his role as the director of the Manhattan Engineer District, better ... J Robert Oppenheimer was the director of the secret Los Alamos Laboratory. It was established under US president Franklin D Roosevelt as part of the Manhattan Project to build the first atomic bomb. He oversaw the first atomic bomb detonation in the New Mexico desert in July 1945, code-named "Trinity". In this opening salvo of 2023's Oscar battle, Nolan has enjoined a star-studded cast for a retelling of the brilliant and haunted life of J. Robert Oppenheimer, the American physicist whose... Oppenheimer is a 2023 epic biographical thriller film written and directed by Christopher Nolan.It is based on the 2005 biography American Prometheus by Kai Bird and Martin J. Sherwin about J. Robert Oppenheimer, a theoretical physicist who was pivotal in developing the first nuclear weapons as part of the Manhattan Project and thereby ushering in the Atomic Age.
     Thought:
-    
+
     > Finished chain.
     The director of the 2023 film Oppenheimer is Christopher Nolan. Now I need to find out his birth date to calculate his age.
     Action: duckduckgo_search
     Action Input: "Christopher Nolan birth date"
     Observation: July 30, 1970 (age 52) London England Notable Works: "Dunkirk" "Tenet" "The Prestige" See all related content → Recent News Jul. 13, 2023, 11:11 AM ET (AP) Cillian Murphy, playing Oppenheimer, finally gets to lead a Christopher Nolan film Christopher Edward Nolan CBE (born 30 July 1970) is a British and American filmmaker. Known for his Hollywood blockbusters with complex storytelling, Nolan is considered a leading filmmaker of the 21st century. His films have grossed $5 billion worldwide. The recipient of many accolades, he has been nominated for five Academy Awards, five BAFTA Awards and six Golden Globe Awards. Christopher Nolan is currently 52 according to his birthdate July 30, 1970 Sun Sign Leo Born Place Westminster, London, England, United Kingdom Residence Los Angeles, California, United States Nationality Education Chris attended Haileybury and Imperial Service College, in Hertford Heath, Hertfordshire. Christopher Nolan's next movie will study the man who developed the atomic bomb, J. Robert Oppenheimer. Here's the release date, plot, trailers & more. July 2023 sees the release of Christopher Nolan's new film, Oppenheimer, his first movie since 2020's Tenet and his split from Warner Bros. Billed as an epic thriller about "the man who ...
     Thought:
-    
+
     > Entering new LLMChain chain...
     Prompt after formatting:
     Answer the following questions as best you can. You have access to the following tools:
-    
+
     duckduckgo_search: A wrapper around DuckDuckGo Search. Useful for when you need to answer questions about current events. Input should be a search query.
     Calculator: Useful for when you need to answer questions about math.
-    
+
     Use the following format:
-    
+
     Question: the input question you must answer
     Thought: you should always think about what to do
     Action: the action to take, should be one of [duckduckgo_search, Calculator]
@@ -480,9 +474,9 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     ... (this Thought/Action/Action Input/Observation can repeat N times)
     Thought: I now know the final answer
     Final Answer: the final answer to the original input question
-    
+
     Begin!
-    
+
     Question: Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?
     Thought:First, I need to find out who directed the film Oppenheimer in 2023 and their birth date to calculate their age.
     Action: duckduckgo_search
@@ -493,19 +487,19 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     Action Input: "Christopher Nolan birth date"
     Observation: July 30, 1970 (age 52) London England Notable Works: "Dunkirk" "Tenet" "The Prestige" See all related content → Recent News Jul. 13, 2023, 11:11 AM ET (AP) Cillian Murphy, playing Oppenheimer, finally gets to lead a Christopher Nolan film Christopher Edward Nolan CBE (born 30 July 1970) is a British and American filmmaker. Known for his Hollywood blockbusters with complex storytelling, Nolan is considered a leading filmmaker of the 21st century. His films have grossed $5 billion worldwide. The recipient of many accolades, he has been nominated for five Academy Awards, five BAFTA Awards and six Golden Globe Awards. Christopher Nolan is currently 52 according to his birthdate July 30, 1970 Sun Sign Leo Born Place Westminster, London, England, United Kingdom Residence Los Angeles, California, United States Nationality Education Chris attended Haileybury and Imperial Service College, in Hertford Heath, Hertfordshire. Christopher Nolan's next movie will study the man who developed the atomic bomb, J. Robert Oppenheimer. Here's the release date, plot, trailers & more. July 2023 sees the release of Christopher Nolan's new film, Oppenheimer, his first movie since 2020's Tenet and his split from Warner Bros. Billed as an epic thriller about "the man who ...
     Thought:
-    
+
     > Finished chain.
     Christopher Nolan was born on July 30, 1970. Now I need to calculate his age in 2023 and then convert it into days.
     Action: Calculator
     Action Input: (2023 - 1970) * 365
-    
+
     > Entering new LLMMathChain chain...
     (2023 - 1970) * 365
-    
+
     > Entering new LLMChain chain...
     Prompt after formatting:
     Translate a math problem into a expression that can be executed using Python's numexpr library. Use the output of running this code to answer the question.
-    
+
     Question: ${Question with math problem.}
     ```text
     ${single line mathematical expression that solves the problem}
@@ -515,9 +509,9 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     ${Output of running the code}
     ```
     Answer: ${Answer}
-    
+
     Begin.
-    
+
     Question: What is 37593 * 67?
     ```text
     37593 * 67
@@ -527,7 +521,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     2518731
     ```
     Answer: 2518731
-    
+
     Question: 37593^(1/5)
     ```text
     37593**(1/5)
@@ -537,31 +531,31 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     8.222831614237718
     ```
     Answer: 8.222831614237718
-    
+
     Question: (2023 - 1970) * 365
-    
-    
+
+
     > Finished chain.
     ```text
     (2023 - 1970) * 365
     ```
     ...numexpr.evaluate("(2023 - 1970) * 365")...
-    
+
     Answer: 19345
     > Finished chain.
-    
+
     Observation: Answer: 19345
     Thought:
-    
+
     > Entering new LLMChain chain...
     Prompt after formatting:
     Answer the following questions as best you can. You have access to the following tools:
-    
+
     duckduckgo_search: A wrapper around DuckDuckGo Search. Useful for when you need to answer questions about current events. Input should be a search query.
     Calculator: Useful for when you need to answer questions about math.
-    
+
     Use the following format:
-    
+
     Question: the input question you must answer
     Thought: you should always think about what to do
     Action: the action to take, should be one of [duckduckgo_search, Calculator]
@@ -570,9 +564,9 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     ... (this Thought/Action/Action Input/Observation can repeat N times)
     Thought: I now know the final answer
     Final Answer: the final answer to the original input question
-    
+
     Begin!
-    
+
     Question: Who directed the 2023 film Oppenheimer and what is their age? What is their age in days (assume 365 days per year)?
     Thought:First, I need to find out who directed the film Oppenheimer in 2023 and their birth date to calculate their age.
     Action: duckduckgo_search
@@ -587,16 +581,16 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     Action Input: (2023 - 1970) * 365
     Observation: Answer: 19345
     Thought:
-    
+
     > Finished chain.
     I now know the final answer
     Final Answer: The director of the 2023 film Oppenheimer is Christopher Nolan and he is 53 years old in 2023. His age in days is 19345 days.
-    
+
     > Finished chain.
 
 
     'The director of the 2023 film Oppenheimer is Christopher Nolan and he is 53 years old in 2023. His age in days is 19345 days.'
-```
+````
 
 </CodeOutputBlock>
 
@@ -606,12 +600,11 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
 
 You can also scope verbosity down to a single object, in which case only the inputs and outputs to that object are printed (along with any additional callbacks calls made specifically by that object).
 
-
 ```python
 # Passing verbose=True to initialize_agent will pass that along to the AgentExecutor (which is a Chain).
 agent = initialize_agent(
-    tools, 
-    llm, 
+    tools,
+    llm,
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose=True,
 )
@@ -643,7 +636,7 @@ agent.run("Who directed the 2023 film Oppenheimer and what is their age? What is
     Observation: Answer: 19345
     Thought:I now know the final answer
     Final Answer: The director of the 2023 film Oppenheimer is Christopher Nolan. He is 53 years old in 2023, which is approximately 19345 days.
-    
+
     > Finished chain.
 
 

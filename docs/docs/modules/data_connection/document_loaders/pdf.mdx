@@ -4,7 +4,7 @@ keywords: [PyPDFDirectoryLoader, PyMuPDFLoader]
 
 # PDF
 
->[Portable Document Format (PDF)](https://en.wikipedia.org/wiki/PDF), standardized as ISO 32000, is a file format developed by Adobe in 1992 to present documents, including text formatting and images, in a manner independent of application software, hardware, and operating systems.
+> [Portable Document Format (PDF)](https://en.wikipedia.org/wiki/PDF), standardized as ISO 32000, is a file format developed by Adobe in 1992 to present documents, including text formatting and images, in a manner independent of application software, hardware, and operating systems.
 
 This covers how to load `PDF` documents into the Document format that we use downstream.
 
@@ -12,11 +12,9 @@ This covers how to load `PDF` documents into the Document format that we use dow
 
 Load PDF using `pypdf` into array of documents, where each document contains the page content and metadata with `page` number.
 
-
 ```bash
 pip install pypdf
 ```
-
 
 ```python
 from langchain_community.document_loaders import PyPDFLoader
@@ -24,7 +22,6 @@ from langchain_community.document_loaders import PyPDFLoader
 loader = PyPDFLoader("example_data/layout-parser-paper.pdf")
 pages = loader.load_and_split()
 ```
-
 
 ```python
 pages[0]
@@ -42,7 +39,6 @@ An advantage of this approach is that documents can be retrieved with page numbe
 
 We want to use `OpenAIEmbeddings` so we have to get the OpenAI API Key.
 
-
 ```python
 import os
 import getpass
@@ -57,7 +53,6 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 from langchain_community.vectorstores import FAISS
@@ -84,7 +79,6 @@ for doc in docs:
 
 </CodeOutputBlock>
 
-
 ### Extracting images
 
 Using the `rapidocr-onnxruntime` package we can extract images as text as well:
@@ -107,21 +101,17 @@ pages[4].page_content
 
 </CodeOutputBlock>
 
-
 ## Using MathPix
 
 Inspired by Daniel Gross's [https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21](https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21)
-
 
 ```python
 from langchain_community.document_loaders import MathpixPDFLoader
 ```
 
-
 ```python
 loader = MathpixPDFLoader("example_data/layout-parser-paper.pdf")
 ```
-
 
 ```python
 data = loader.load()
@@ -129,16 +119,13 @@ data = loader.load()
 
 ## Using Unstructured
 
-
 ```python
 from langchain_community.document_loaders import UnstructuredPDFLoader
 ```
 
-
 ```python
 loader = UnstructuredPDFLoader("example_data/layout-parser-paper.pdf")
 ```
-
 
 ```python
 data = loader.load()
@@ -148,16 +135,13 @@ data = loader.load()
 
 Under the hood, Unstructured creates different "elements" for different chunks of text. By default we combine those together, but you can easily keep that separation by specifying `mode="elements"`.
 
-
 ```python
 loader = UnstructuredPDFLoader("example_data/layout-parser-paper.pdf", mode="elements")
 ```
 
-
 ```python
 data = loader.load()
 ```
-
 
 ```python
 data[0]
@@ -177,22 +161,17 @@ This covers how to load online PDFs into a document format that we can use downs
 
 Note: all other PDF loaders can also be used to fetch remote PDFs, but `OnlinePDFLoader` is a legacy function, and works specifically with `UnstructuredPDFLoader`.
 
-
-
 ```python
 from langchain_community.document_loaders import OnlinePDFLoader
 ```
-
 
 ```python
 loader = OnlinePDFLoader("https://arxiv.org/pdf/2302.03803.pdf")
 ```
 
-
 ```python
 data = loader.load()
 ```
-
 
 ```python
 print(data)
@@ -208,16 +187,13 @@ print(data)
 
 ## Using PyPDFium2
 
-
 ```python
 from langchain_community.document_loaders import PyPDFium2Loader
 ```
 
-
 ```python
 loader = PyPDFium2Loader("example_data/layout-parser-paper.pdf")
 ```
-
 
 ```python
 data = loader.load()
@@ -225,16 +201,13 @@ data = loader.load()
 
 ## Using PDFMiner
 
-
 ```python
 from langchain_community.document_loaders import PDFMinerLoader
 ```
 
-
 ```python
 loader = PDFMinerLoader("example_data/layout-parser-paper.pdf")
 ```
-
 
 ```python
 data = loader.load()
@@ -244,28 +217,23 @@ data = loader.load()
 
 This can be helpful for chunking texts semantically into sections as the output html content can be parsed via `BeautifulSoup` to get more structured and rich information about font size, page numbers, PDF headers/footers, etc.
 
-
 ```python
 from langchain_community.document_loaders import PDFMinerPDFasHTMLLoader
 ```
-
 
 ```python
 loader = PDFMinerPDFasHTMLLoader("example_data/layout-parser-paper.pdf")
 ```
 
-
 ```python
 data = loader.load()[0]   # entire PDF is loaded as a single Document
 ```
-
 
 ```python
 from bs4 import BeautifulSoup
 soup = BeautifulSoup(data.page_content,'html.parser')
 content = soup.find_all('div')
 ```
-
 
 ```python
 import re
@@ -296,7 +264,6 @@ snippets.append((cur_text,cur_fs))
 # headers/footers in a PDF appear on multiple pages so if we find duplicates it's safe to assume that it is redundant info)
 ```
 
-
 ```python
 from langchain.docstore.document import Document
 cur_idx = -1
@@ -326,7 +293,6 @@ for s in snippets:
     cur_idx += 1
 ```
 
-
 ```python
 semantic_snippets[4]
 ```
@@ -343,21 +309,17 @@ semantic_snippets[4]
 
 This is the fastest of the PDF parsing options, and contains detailed metadata about the PDF and its pages, as well as returns one document per page.
 
-
 ```python
 from langchain_community.document_loaders import PyMuPDFLoader
 ```
-
 
 ```python
 loader = PyMuPDFLoader("example_data/layout-parser-paper.pdf")
 ```
 
-
 ```python
 data = loader.load()
 ```
-
 
 ```python
 data[0]
@@ -377,16 +339,13 @@ Additionally, you can pass along any of the options from the [PyMuPDF documentat
 
 Load PDFs from directory
 
-
 ```python
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 ```
 
-
 ```python
 loader = PyPDFDirectoryLoader("example_data/")
 ```
-
 
 ```python
 docs = loader.load()
@@ -396,21 +355,17 @@ docs = loader.load()
 
 Like PyMuPDF, the output Documents contain detailed metadata about the PDF and its pages, and returns one document per page.
 
-
 ```python
 from langchain_community.document_loaders import PDFPlumberLoader
 ```
-
 
 ```python
 loader = PDFPlumberLoader("example_data/layout-parser-paper.pdf")
 ```
 
-
 ```python
 data = loader.load()
 ```
-
 
 ```python
 data[0]
@@ -426,7 +381,7 @@ data[0]
 
 ## Using AmazonTextractPDFParser
 
-The AmazonTextractPDFLoader calls the [Amazon Textract Service](https://aws.amazon.com/textract/) to convert PDFs into a Document structure. The loader does pure OCR at the moment, with more features like layout support planned, depending on demand.  Single and multi-page documents are supported with up to 3000 pages and 512 MB of size.
+The AmazonTextractPDFLoader calls the [Amazon Textract Service](https://aws.amazon.com/textract/) to convert PDFs into a Document structure. The loader does pure OCR at the moment, with more features like layout support planned, depending on demand. Single and multi-page documents are supported with up to 3000 pages and 512 MB of size.
 
 For the call to be successful an AWS account is required, similar to the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) requirements.
 

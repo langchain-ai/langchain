@@ -1,6 +1,6 @@
 # CSV
 
->A [comma-separated values (CSV)](https://en.wikipedia.org/wiki/Comma-separated_values) file is a delimited text file that uses a comma to separate values. Each line of the file is a data record. Each record consists of one or more fields, separated by commas.
+> A [comma-separated values (CSV)](https://en.wikipedia.org/wiki/Comma-separated_values) file is a delimited text file that uses a comma to separate values. Each line of the file is a data record. Each record consists of one or more fields, separated by commas.
 
 Load CSV data with a single row per document.
 
@@ -11,7 +11,6 @@ from langchain_community.document_loaders.csv_loader import CSVLoader
 loader = CSVLoader(file_path='./example_data/mlb_teams_2012.csv')
 data = loader.load()
 ```
-
 
 ```python
 print(data)
@@ -29,7 +28,6 @@ print(data)
 
 See the [csv module](https://docs.python.org/3/library/csv.html) documentation for more information of what csv args are supported.
 
-
 ```python
 loader = CSVLoader(file_path='./example_data/mlb_teams_2012.csv', csv_args={
     'delimiter': ',',
@@ -39,7 +37,6 @@ loader = CSVLoader(file_path='./example_data/mlb_teams_2012.csv', csv_args={
 
 data = loader.load()
 ```
-
 
 ```python
 print(data)
@@ -59,13 +56,11 @@ Use the `source_column` argument to specify a source for the document created fr
 
 This is useful when using documents loaded from CSV files for chains that answer questions using sources.
 
-
 ```python
 loader = CSVLoader(file_path='./example_data/mlb_teams_2012.csv', source_column="Team")
 
 data = loader.load()
 ```
-
 
 ```python
 print(data)

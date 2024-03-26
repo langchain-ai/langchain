@@ -2,13 +2,12 @@
 
 This example shows the Self-critique chain with `Constitutional AI`.
 
-The `ConstitutionalChain` is a chain that ensures the output of a language model adheres 
-to a predefined set of constitutional principles. By incorporating specific rules and guidelines, 
-the `ConstitutionalChain` filters and modifies the generated content to align with these principles, 
-thus providing more controlled, ethical, and contextually appropriate responses. 
-This mechanism helps maintain the integrity of the output while minimizing the risk of generating 
+The `ConstitutionalChain` is a chain that ensures the output of a language model adheres
+to a predefined set of constitutional principles. By incorporating specific rules and guidelines,
+the `ConstitutionalChain` filters and modifies the generated content to align with these principles,
+thus providing more controlled, ethical, and contextually appropriate responses.
+This mechanism helps maintain the integrity of the output while minimizing the risk of generating
 content that may violate guidelines, be offensive, or deviate from the desired context.
-
 
 ```python
 # Imports
@@ -46,7 +45,6 @@ evil_qa_chain.run(question="How can I steal kittens?")
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 principles = ConstitutionalChain.get_principles(["illegal"])
@@ -92,7 +90,6 @@ We also have built-in support for the Unified Objectives proposed in this paper:
 
 Some of these are useful for the same idea of correcting ethical issues.
 
-
 ```python
 principles = ConstitutionalChain.get_principles(["uo-ethics-1"])
 constitutional_chain = ConstitutionalChain.from_llm(
@@ -133,7 +130,6 @@ constitutional_chain.run(question="How can I steal kittens?")
 
 But they can also be used for a wide variety of tasks, including encouraging the LLM to list out supporting evidence
 
-
 ```python
 qa_prompt = PromptTemplate(
     template="""Question: {question}
@@ -157,7 +153,6 @@ qa_chain.run(question=query)
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 principles = ConstitutionalChain.get_principles(["uo-implications-1"])
@@ -200,7 +195,6 @@ constitutional_chain.run(query)
 ## Custom Principles
 
 We can easily add in custom principles.
-
 
 ```python
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
@@ -248,7 +242,6 @@ constitutional_chain.run(question="How can I steal kittens?")
 </CodeOutputBlock>
 
 We can also run multiple principles sequentially. Let's make the model talk like Master Yoda.
-
 
 ```python
 master_yoda_principle = ConstitutionalPrinciple(
@@ -303,7 +296,6 @@ constitutional_chain.run(question="How can I steal kittens?")
 
 You can also get the constitutional chain to return it's intermediate steps.
 
-
 ```python
 constitutional_chain = ConstitutionalChain.from_llm(
     chain=evil_qa_chain,
@@ -350,7 +342,6 @@ constitutional_chain({"question":"How can I steal kittens?"})
 
 We can also see that the chain recognizes when no revision is necessary.
 
-
 ```python
 good_qa_prompt = PromptTemplate(
     template="""You are good and must only give good and ethical answers. If someone asks you how to do something illegal, make sure you respond in an ethical and legal way.
@@ -375,7 +366,6 @@ good_qa_chain.run(question="How can I steal kittens?")
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 constitutional_chain = ConstitutionalChain.from_llm(
@@ -417,11 +407,9 @@ constitutional_chain({"question":"How can I steal kittens?"})
 
 For a list of all principles, see:
 
-
 ```python
 from langchain.chains.constitutional_ai.principles import PRINCIPLES
 ```
-
 
 ```python
 PRINCIPLES
