@@ -1,4 +1,5 @@
 """Test ChatCohere chat model."""
+from typing import Any, Dict, List
 
 from langchain_core.documents import Document
 from langchain_core.messages.human import HumanMessage
@@ -31,10 +32,10 @@ def test_documents_chain() -> None:
     """Test documents paraneter support from ChatCohere."""
     llm = ChatCohere()
 
-    def get_documents(_):
+    def get_documents(_: Any) -> List[Document]:
         return [Document(page_content="The sky is green.")]
 
-    def format_input_msgs(input):
+    def format_input_msgs(input: Dict[str, Any]) -> List[HumanMessage]:
         return [
             HumanMessage(
                 input["message"],
