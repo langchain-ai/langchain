@@ -77,7 +77,7 @@ We’ll use the following packages:
 %pip install --upgrade --quiet  langchain langchain-community langchainhub langchain-openai chromadb bs4
 ```
 
-We need to set environment variable `OPENAI_API_KEY`, which can be done
+We need to set environment variable `OPENAI_API_KEY` for the embeddings model, which can be done
 directly or loaded from a `.env` file like so:
 
 ```python
@@ -125,10 +125,13 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 ```
 
+import ChatModelTabs from "@theme/ChatModelTabs"
+
+<ChatModelTabs customVarName="llm" />
 
 ```python
 # Load, chunk and index the contents of the blog.
@@ -149,8 +152,6 @@ vectorstore = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings
 # Retrieve and generate using the relevant snippets of the blog.
 retriever = vectorstore.as_retriever()
 prompt = hub.pull("rlm/rag-prompt")
-llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
-
 
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
@@ -463,31 +464,7 @@ or `ChatModel` could be substituted in.
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-<Tabs>
-<TabItem value="openai" label="OpenAI" default>
-
-```python
-from langchain_openai import ChatOpenAI
-
-llm = ChatOpenAI(model_name="gpt-3.5-turbo-0125", temperature=0)
-```
-
-</TabItem>
-<TabItem value="local" label="Anthropic">
-
-```python
-%pip install -qU langchain-anthropic
-```
-
-
-```python
-from langchain_anthropic import ChatAnthropic
-
-llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2, max_tokens=1024)
-```
-
-</TabItem>
-</Tabs>
+<ChatModelTabs customVarName="llm" anthropicParams={`"model="claude-3-sonnet-20240229", temperature=0.2, max_tokens=1024"`} />
 
 We’ll use a prompt for RAG that is checked into the LangChain prompt hub
 ([here](https://smith.langchain.com/hub/rlm/rag-prompt)).
