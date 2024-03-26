@@ -1,6 +1,7 @@
 from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
 
 from langchain.agents import AgentOutputParser
 
@@ -32,9 +33,22 @@ class XMLAgentOutputParser(AgentOutputParser):
         if "</tool>" in text:
             tool, tool_input = text.split("</tool>")
             _tool = tool.split("<tool>")[1]
-            _tool_input = tool_input.split("<tool_input>")[1]
-            if "</tool_input>" in _tool_input:
-                _tool_input = _tool_input.split("</tool_input>")[0]
+            if "<tool_input>" in tool_input:
+                _tool_input = tool_input.split("<tool_input>")[1]
+                if "</tool_input>" in _tool_input:
+                    _tool_input = _tool_input.split("</tool_input>")[0]
+            else:
+                raise OutputParserException(
+                    error=ValueError("Invalid format for output."),
+                    llm_output=text,
+                    observation=(
+                        "ERROR: For a fool invocation, be sure to include a <tool_input> and"
+                        "</tool_input> tags. A function without parameters could be invoked with a "
+                        "an empty dictionary as the tool input.\n"
+                        "To invoke a tool, use the format "
+                        "`<tool>$TOOL_NAME</tool><tool_input>$TOOL_INPUT</tool_input>`.\n "
+                    ),
+                )
             return AgentAction(tool=_tool, tool_input=_tool_input, log=text)
         elif "<final_answer>" in text:
             _, answer = text.split("<final_answer>")
@@ -42,10 +56,25 @@ class XMLAgentOutputParser(AgentOutputParser):
                 answer = answer.split("</final_answer>")[0]
             return AgentFinish(return_values={"output": answer}, log=text)
         else:
-            raise ValueError
+            raise OutputParserException(
+                error=ValueError("Invalid format for output."),
+                llm_output=text,
+                observation=(
+                    "ERROR: Please either invoke a tool or provide a final answer."
+                    "To invoke a tool, use the format "
+                    "`<tool>$TOOL_NAME</tool><tool_input>$TOOL_INPUT</tool_input>`. "
+                    "where $TOOL_NAME is one of the provided tools and $TOOL_INPUT "
+                    "is a dictionary of arguments to pass to the tool, "
+                    "matching the schema.\n"
+                ),
+                send_to_llm=True,
+            )
 
     def get_format_instructions(self) -> str:
-        raise NotImplementedError
+        """Get the format instructions for this output parser."""
+        raise NotImplementedError(
+            "XMLAgentOutputParser does contain format instructions."
+        )
 
     @property
     def _type(self) -> str:
