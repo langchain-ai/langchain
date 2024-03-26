@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 
-class AutonomousDatabaseLoader(BaseLoader):
+class OracleAutonomousDatabaseLoader(BaseLoader):
     """
     Load from oracle adb
 

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.oracleadb_loader import (
-    AutonomousDatabaseLoader,
+    OracleAutonomousDatabaseLoader,
 )
 
 
@@ -43,7 +43,7 @@ def test_oracle_loader_load(mock_query: MagicMock) -> None:
     """Test oracleDB loader load function."""
 
     mock_query.return_value = raw_docs()
-    loader = AutonomousDatabaseLoader(
+    loader = OracleAutonomousDatabaseLoader(
         query="Test query",
         user="Test user",
         password="Test password",
