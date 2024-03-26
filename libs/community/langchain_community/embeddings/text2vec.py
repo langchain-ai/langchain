@@ -33,7 +33,11 @@ class Text2vecEmbeddings(Embeddings, BaseModel):
     model: Any = None
 
     def __init__(
-        self, *, model: Any = None, model_name_or_path: Optional[str] = None, **kwargs: Any
+        self,
+        *,
+        model: Any = None,
+        model_name_or_path: Optional[str] = None,
+        **kwargs: Any,
     ):
         try:
             from text2vec import SentenceModel
