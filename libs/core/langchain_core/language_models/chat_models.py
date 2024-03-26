@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import uuid
 import warnings
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     AsyncIterator,
-    Callable,
     Dict,
     Iterator,
     List,
@@ -20,6 +19,7 @@ from typing import (
 )
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -95,26 +95,6 @@ async def agenerate_from_stream(
             )
         ]
     )
-
-
-def _as_async_iterator(sync_iterator: Callable) -> Callable:
-    """Convert a sync iterator into an async iterator."""
-
-    async def _as_sync_iterator(*args: Any, **kwargs: Any) -> AsyncGenerator:
-        iterator = await run_in_executor(None, sync_iterator, *args, **kwargs)
-        done = object()
-        while True:
-            item = await run_in_executor(
-                None,
-                next,
-                iterator,
-                done,  # type: ignore[call-arg, arg-type]
-            )
-            if item is done:
-                break
-            yield item  # type: ignore[misc]
-
-    return _as_sync_iterator
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
@@ -234,6 +214,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 batch_size=1,
             )
             generation: Optional[ChatGenerationChunk] = None
@@ -267,26 +248,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
-        if type(self)._astream is not BaseChatModel._astream:
-            # Then astream is implemented
-            _stream_implementation = self._astream
-        elif type(self)._stream is not BaseChatModel._stream:
-            # Then stream is implemented, so we can create an async iterator from it
-            # The typing is hard to type correctly with mypy here, so we cast
-            # and do a type ignore, this code is unit tested and should be fine.
-            _stream_implementation = cast(  # type: ignore
-                Callable[
-                    [
-                        List[BaseMessage],
-                        Optional[List[str]],
-                        CallbackManagerForLLMRun,
-                        Any,
-                    ],
-                    AsyncIterator[ChatGenerationChunk],
-                ],
-                _as_async_iterator(self._stream),
-            )
-        else:  # No async or sync stream is implemented, so fall back to ainvoke
+        if (
+            type(self)._astream is BaseChatModel._astream
+            and type(self)._stream is BaseChatModel._stream
+        ):
+            # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 BaseMessageChunk,
                 await self.ainvoke(input, config=config, stop=stop, **kwargs),
@@ -312,12 +278,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             batch_size=1,
         )
+
         generation: Optional[ChatGenerationChunk] = None
         try:
-            async for chunk in _stream_implementation(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+            async for chunk in self._astream(
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
             ):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 yield chunk.message
@@ -371,6 +342,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Pass a sequence of prompts to the model and return model generations.
@@ -415,6 +387,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=run_name,
+            run_id=run_id,
             batch_size=len(messages),
         )
         results = []
@@ -456,6 +429,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Asynchronously pass a sequence of prompts to a model and return generations.
@@ -502,6 +476,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             options=options,
             name=run_name,
             batch_size=len(messages),
+            run_id=run_id,
         )
 
         results = await asyncio.gather(
@@ -589,7 +564,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        llm_cache = get_llm_cache()
+        if isinstance(self.cache, BaseCache):
+            llm_cache = self.cache
+        else:
+            llm_cache = get_llm_cache()
+        # We should check the cache unless it's explicitly set to False
+        # A None cache means we should use the default global cache
+        # if it's configured.
         check_cache = self.cache or self.cache is None
         if check_cache:
             if llm_cache:
@@ -611,10 +592,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             result = self._generate(messages, stop=stop, **kwargs)
 
+        # Add response metadata to each generation
         for generation in result.generations:
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
+        if len(result.generations) == 1 and result.llm_output is not None:
+            result.generations[0].message.response_metadata = {
+                **result.llm_output,
+                **result.generations[0].message.response_metadata,
+            }
         if check_cache and llm_cache:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
@@ -626,7 +613,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        llm_cache = get_llm_cache()
+        if isinstance(self.cache, BaseCache):
+            llm_cache = self.cache
+        else:
+            llm_cache = get_llm_cache()
+        # We should check the cache unless it's explicitly set to False
+        # A None cache means we should use the default global cache
+        # if it's configured.
         check_cache = self.cache or self.cache is None
         if check_cache:
             if llm_cache:
@@ -647,10 +640,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
         else:
             result = await self._agenerate(messages, stop=stop, **kwargs)
+
+        # Add response metadata to each generation
         for generation in result.generations:
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
+        if len(result.generations) == 1 and result.llm_output is not None:
+            result.generations[0].message.response_metadata = {
+                **result.llm_output,
+                **result.generations[0].message.response_metadata,
+            }
         if check_cache and llm_cache:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
@@ -691,14 +691,32 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> Iterator[ChatGenerationChunk]:
         raise NotImplementedError()
 
-    def _astream(
+    async def _astream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        raise NotImplementedError()
+        iterator = await run_in_executor(
+            None,
+            self._stream,
+            messages,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
+        )
+        done = object()
+        while True:
+            item = await run_in_executor(
+                None,
+                next,
+                iterator,
+                done,  # type: ignore[call-arg, arg-type]
+            )
+            if item is done:
+                break
+            yield item  # type: ignore[misc]
 
     @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
     def __call__(
