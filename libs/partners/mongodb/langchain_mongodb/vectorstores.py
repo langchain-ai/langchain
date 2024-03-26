@@ -50,8 +50,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import MongoDBAtlasVectorSearch
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_mongodb.vectorstores import MongoDBAtlasVectorSearch
+            from langchain_mongodb.embeddings.openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
