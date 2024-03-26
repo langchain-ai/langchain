@@ -270,6 +270,7 @@ extended_testing = [
  "tidb-vector",
  "cloudpickle",
  "friendli-client",
+ "semantic-text-splitter",
  "premai"
 ]
 
