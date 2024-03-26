@@ -63,6 +63,10 @@ responses = "^0.25.0"
 numpy = "^1.24.0"
 
 
+[tool.poetry.group.test_integration]
+optional = true
+dependencies = {}
+
 [tool.poetry.extras]
 extended_testing = ["jinja2"]
 
