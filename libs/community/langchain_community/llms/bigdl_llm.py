@@ -33,6 +33,8 @@ class BigdlLLM(IpexLLM):
         Returns:
             An object of BigdlLLM.
         """
+        logger.warning("BigdlLLM was deprecated. Please use IpexLLM instead.")
+        
         try:
             from bigdl.llm.transformers import (
                 AutoModel,
@@ -94,6 +96,9 @@ class BigdlLLM(IpexLLM):
         Returns:
             An object of BigdlLLM.
         """
+        
+        logger.warning("BigdlLLM was deprecated. Please use IpexLLM instead.")
+        
         try:
             from  bigdl.llm.transformers import (
                 AutoModel,

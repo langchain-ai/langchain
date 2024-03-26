@@ -113,6 +113,10 @@ def _import_bedrock() -> Type[BaseLLM]:
 
     return Bedrock
 
+def _import_bigdlllm() -> Type[BaseLLM]:
+    from langchain_community.llms.bigdl_llm import BigdlLLM
+
+    return BigdlLLM
 
 def _import_bittensor() -> Type[BaseLLM]:
     from langchain_community.llms.bittensor import NIBittensorLLM
@@ -649,6 +653,8 @@ def __getattr__(name: str) -> Any:
         return _import_beam()
     elif name == "Bedrock":
         return _import_bedrock()
+    elif name == "BigdlLLM":
+        return _import_bigdlllm()
     elif name == "NIBittensorLLM":
         return _import_bittensor()
     elif name == "CerebriumAI":
