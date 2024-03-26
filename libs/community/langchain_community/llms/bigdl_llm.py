@@ -7,6 +7,7 @@ from langchain_community.llms.ipex_llm import IpexLLM
 
 logger = logging.getLogger(__name__)
 
+
 class BigdlLLM(IpexLLM):
     """Wrapper around the BigdlLLM model
 
@@ -16,6 +17,7 @@ class BigdlLLM(IpexLLM):
             from langchain_community.llms import BigdlLLM
             llm = BigdlLLM.from_model_id(model_id="THUDM/chatglm-6b")
     """
+
     @classmethod
     def from_model_id(
         cls,
@@ -36,7 +38,7 @@ class BigdlLLM(IpexLLM):
             An object of BigdlLLM.
         """
         logger.warning("BigdlLLM was deprecated. Please use IpexLLM instead.")
-        
+
         try:
             from bigdl.llm.transformers import (
                 AutoModel,
@@ -98,9 +100,9 @@ class BigdlLLM(IpexLLM):
         Returns:
             An object of BigdlLLM.
         """
-        
+
         logger.warning("BigdlLLM was deprecated. Please use IpexLLM instead.")
-        
+
         try:
             from bigdl.llm.transformers import (
                 AutoModel,
@@ -137,7 +139,7 @@ class BigdlLLM(IpexLLM):
             model_kwargs=_model_kwargs,
             **kwargs,
         )
-        
+
     @property
     def _llm_type(self) -> str:
         return "bigdl-llm"
