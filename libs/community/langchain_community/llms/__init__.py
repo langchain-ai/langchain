@@ -113,10 +113,12 @@ def _import_bedrock() -> Type[BaseLLM]:
 
     return Bedrock
 
+
 def _import_bigdlllm() -> Type[BaseLLM]:
     from langchain_community.llms.bigdl_llm import BigdlLLM
 
     return BigdlLLM
+
 
 def _import_bittensor() -> Type[BaseLLM]:
     from langchain_community.llms.bittensor import NIBittensorLLM
@@ -281,10 +283,12 @@ def _import_human() -> Type[BaseLLM]:
 
     return HumanInputLLM
 
+
 def _import_ipex_llm() -> Type[BaseLLM]:
     from langchain_community.llms.ipex_llm import IpexLLM
 
     return IpexLLM
+
 
 def _import_javelin_ai_gateway() -> Type[BaseLLM]:
     from langchain_community.llms.javelin_ai_gateway import JavelinAIGateway
