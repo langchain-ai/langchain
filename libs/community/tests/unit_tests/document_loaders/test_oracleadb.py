@@ -1,5 +1,5 @@
 from typing import Dict, List
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from langchain_core.documents import Document
 
@@ -36,9 +36,13 @@ def expected_documents() -> List[Document]:
     ]
 
 
-def test_oracle_loader_load() -> None:
+@patch(
+    "langchain_community.document_loaders.oracleadb_loader.AutonomousDatabaseLoader._run_query"
+)
+def test_oracle_loader_load(mock_query: MagicMock) -> None:
     """Test oracleDB loader load function."""
 
+    mock_query.return_value = raw_docs()
     loader = AutonomousDatabaseLoader(
         query="Test query",
         user="Test user",
@@ -47,7 +51,6 @@ def test_oracle_loader_load() -> None:
         metadata=["FIELD1"],
     )
 
-    loader._run_query = MagicMock(return_value=raw_docs())
     documents = loader.load()
 
     assert documents == expected_documents()

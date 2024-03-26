@@ -23,6 +23,7 @@ class AutonomousDatabaseLoader(BaseLoader):
         query: str,
         user: str,
         password: str,
+        *,
         schema: Optional[str] = None,
         tns_name: Optional[str] = None,
         config_dir: Optional[str] = None,
@@ -67,10 +68,10 @@ class AutonomousDatabaseLoader(BaseLoader):
         self.metadata = metadata
 
         # dsn
-        self.dsn = None
+        self.dsn: Optional[str]
         self._set_dsn()
 
-    def _set_dsn(self):
+    def _set_dsn(self) -> None:
         if self.connection_string:
             self.dsn = self.connection_string
         elif self.tns_name:
