@@ -60,8 +60,8 @@ class XMLOutputParser(BaseTransformOutputParser):
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
     ) -> Iterator[AddableDict]:
-        parser = ET.XMLPullParser(["start", "end"])
         xml_start_re = re.compile(r"<[a-zA-Z:_]")
+        parser = ET.XMLPullParser(["start", "end"])
         xml_started = False
         current_path: List[str] = []
         current_path_has_children = False
@@ -87,7 +87,6 @@ class XMLOutputParser(BaseTransformOutputParser):
             parser.feed(buffer)
             buffer = ""
             # yield all events
-
             for event, elem in parser.read_events():
                 if event == "start":
                     # update current path
@@ -111,11 +110,8 @@ class XMLOutputParser(BaseTransformOutputParser):
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[AddableDict]:
         parser = ET.XMLPullParser(["start", "end"])
-        xml_start_re = re.compile(r"<[a-zA-Z:_]")
-        xml_started = False
         current_path: List[str] = []
         current_path_has_children = False
-        buffer = ""
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
                 # extract text
@@ -123,19 +119,8 @@ class XMLOutputParser(BaseTransformOutputParser):
                 if not isinstance(chunk_content, str):
                     continue
                 chunk = chunk_content
-            # add chunk to buffer of unprocessed text
-            buffer += chunk
-            # if xml string hasn't started yet, continue to next chunk
-            if not xml_started:
-                if match := xml_start_re.search(buffer):
-                    # if xml string has started, remove all text before it
-                    buffer = buffer[match.start() :]
-                    xml_started = True
-                else:
-                    continue
-            # feed buffer to parser
-            parser.feed(buffer)
-            buffer = ""
+            # pass chunk to parser
+            parser.feed(chunk)
             # yield all events
             for event, elem in parser.read_events():
                 if event == "start":
@@ -149,10 +134,7 @@ class XMLOutputParser(BaseTransformOutputParser):
                     if not current_path_has_children:
                         yield nested_element(current_path, elem)
                     # prevent yielding of parent element
-                    if current_path:
-                        current_path_has_children = True
-                    else:
-                        xml_started = False
+                    current_path_has_children = True
         # close parser
         parser.close()
 
