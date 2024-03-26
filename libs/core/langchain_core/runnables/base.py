@@ -1491,6 +1491,18 @@ class Runnable(Generic[Input, Output], ABC):
         """
         Return a new Runnable that maps a list of inputs to a list of outputs,
         by calling invoke() with each input.
+
+        Example:
+
+            .. code-block:: python
+
+                    from langchain_core.runnables import RunnableLambda
+
+                    def _lambda(x: int) -> int:
+                        return x + 1
+
+                    runnable = RunnableLambda(_lambda)
+                    print(runnable.map().invoke([1, 2, 3])) # [2, 3, 4]
         """
         return RunnableEach(bound=self)
 
