@@ -2,18 +2,18 @@ import importlib
 import json
 import logging
 import os
-from pathlib import Path
 import re
-from typing import List, Tuple
 import warnings
+from pathlib import Path
+from typing import List, Tuple
 
 logger = logging.getLogger(__name__)
 
 DOCS_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs"
 import_pattern = re.compile(
-    r"import\s+(\w+)|from\s+([\w\.]+)\s+import\s+((?:\w+(?:,\s*)?)+|\(.*?\))",
-    re.DOTALL
+    r"import\s+(\w+)|from\s+([\w\.]+)\s+import\s+((?:\w+(?:,\s*)?)+|\(.*?\))", re.DOTALL
 )
+
 
 def _get_imports_from_code_cell(code_lines: str) -> List[Tuple[str, str]]:
     """Get (module, import) statements from a single code cell."""
@@ -29,10 +29,10 @@ def _get_imports_from_code_cell(code_lines: str) -> List[Tuple[str, str]]:
         matches = import_pattern.findall(line)
         for match in matches:
             if match[0]:  # simple import statement
-                import_statements.append((match[0], ''))
+                import_statements.append((match[0], ""))
             else:  # from ___ import statement
                 module, items = match[1], match[2]
-                items_list = items.replace(' ', '').split(',')
+                items_list = items.replace(" ", "").split(",")
                 for item in items_list:
                     import_statements.append((module, item))
     return import_statements
@@ -126,7 +126,4 @@ def check_notebooks(directory: str) -> list:
 if __name__ == "__main__":
     bad_files = check_notebooks(DOCS_DIR)
     if bad_files:
-        warnings.warn(
-            "Found bad imports:\n"
-            f"{_serialize_bad_imports(bad_files)}"
-        )
+        warnings.warn("Found bad imports:\n" f"{_serialize_bad_imports(bad_files)}")
