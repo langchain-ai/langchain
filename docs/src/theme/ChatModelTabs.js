@@ -52,6 +52,7 @@ export default function ChatModelTabs(props) {
     hideFireworks,
     hideMistral,
     hideGoogle,
+    hideTogether,
     customVarName,
   } = props;
 
