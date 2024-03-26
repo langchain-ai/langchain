@@ -235,6 +235,8 @@ class PGVector(VectorStore):
             for querying.
             It's provided here for backwards compatibility with older versions,
             and will be removed in the future.
+        create_extension: If True, will create the vector extension if it doesn't exist.
+            disabling creation is useful when using ReadOnly Databases.
 
     Example:
         .. code-block:: python
@@ -269,6 +271,7 @@ class PGVector(VectorStore):
         connection: Optional[sqlalchemy.engine.Connection] = None,
         engine_args: Optional[dict[str, Any]] = None,
         use_jsonb: bool = False,
+        create_extension: bool = True,
     ) -> None:
         """Initialize the PGVector store."""
         self.connection_string = connection_string
@@ -283,6 +286,7 @@ class PGVector(VectorStore):
         self.engine_args = engine_args or {}
         self._bind = connection if connection else self._create_engine()
         self.use_jsonb = use_jsonb
+        self.create_extension = create_extension
 
         if not use_jsonb:
             # Replace with a deprecation warning.
@@ -311,7 +315,8 @@ class PGVector(VectorStore):
         self,
     ) -> None:
         """Initialize the store."""
-        self.create_vector_extension()
+        if self.create_extension:
+            self.create_vector_extension()
 
         EmbeddingStore, CollectionStore = _get_embedding_collection_store(
             self._embedding_length, use_jsonb=self.use_jsonb
