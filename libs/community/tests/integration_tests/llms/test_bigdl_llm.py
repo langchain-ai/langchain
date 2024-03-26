@@ -1,4 +1,4 @@
-"""Test IPEX LLM"""
+"""Test BigdlLLM"""
 from langchain_core.outputs import LLMResult
 
 from langchain_community.llms.bigdl_llm import BigdlLLM
