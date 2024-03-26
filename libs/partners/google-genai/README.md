@@ -1,4 +1,4 @@
-# # langchain-google-genai
+# langchain-google-genai
 
 This package has moved!
 
