@@ -167,7 +167,7 @@ const config = {
           },
           {
             href: "https://api.python.langchain.com",
-            label: "API",
+            label: "API Reference",
             position: "left",
           },
           {
