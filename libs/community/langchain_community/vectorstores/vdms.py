@@ -1445,9 +1445,7 @@ def add_descriptorset(
 def add_entity_with_blob(
     collection_name: str, all_properties: List
 ) -> Tuple[Dict[str, Any], bytes]:
-    all_properties_str = (
-        ",".join(all_properties) if len(all_properties) > 0 else ""
-    )
+    all_properties_str = ",".join(all_properties) if len(all_properties) > 0 else ""
 
     querytype = "AddEntity"
     entity: Dict[str, Any] = {}
