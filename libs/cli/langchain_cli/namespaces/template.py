@@ -101,6 +101,13 @@ def serve(
             help="Whether to include a configurable route",
         ),
     ] = True,
+    chat: Annotated[
+        bool,
+        typer.Option(
+            "--chat/--no-chat",
+            help="Whether to use the chat playground",
+        ),
+    ] = False,
 ) -> None:
     """
     Starts a demo app for this template.
@@ -115,9 +122,13 @@ def serve(
     host_str = host if host is not None else "127.0.0.1"
 
     script = (
-        "langchain_cli.dev_scripts:create_demo_server"
+        ("langchain_cli.dev_scripts:create_demo_server" + "_chat" if chat else "")
         if not configurable
-        else "langchain_cli.dev_scripts:create_demo_server_configurable"
+        else (
+            "langchain_cli.dev_scripts:create_demo_server_configurable" + "_chat"
+            if chat
+            else ""
+        )
     )
 
     import uvicorn
