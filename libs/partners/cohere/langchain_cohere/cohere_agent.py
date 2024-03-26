@@ -1,8 +1,8 @@
 from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, Union
 
-from langchain.agents.agent import MultiActionAgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.outputs.chat_generation import ChatGeneration
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -92,7 +92,7 @@ def convert_to_cohere_tool(
         )
 
 
-class CohereToolsAgentOutputParser(MultiActionAgentOutputParser):
+class CohereToolsAgentOutputParser(BaseOutputParser[Union[List[AgentAction], AgentFinish]]):
     """Parses a message into agent actions/finish."""
 
     def parse_result(
