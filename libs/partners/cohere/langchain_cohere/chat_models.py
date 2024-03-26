@@ -1,5 +1,7 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
+from cohere.types import ToolCall
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -217,7 +219,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             "search_queries": response.search_queries,
             "is_search_required": response.is_search_required,
             "generation_id": response.generation_id,
-            "tool_calls": response.tool_calls,
+            "tool_calls": _format_cohere_tool_calls(response.generation_id, response.tool_calls),
         }
         if hasattr(response, "token_count"):
             generation_info["token_count"] = response.tool_calls
@@ -274,3 +276,21 @@ class ChatCohere(BaseChatModel, BaseCohere):
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
         return len(self.client.tokenize(text).tokens)
+
+
+def _format_cohere_tool_calls(generation_id: str, tool_calls: Optional[List[ToolCall]] = None) -> List[Dict]:
+    """Formats a Cohere API response into the tool call format used elsewhere in Langchain"""
+    if not tool_calls:
+        return []
+
+    formatted_tool_calls = []
+    for tool_call in tool_calls:
+        formatted_tool_calls.append({
+            "id": generation_id,
+            "function": {
+                "name": tool_call.name,
+                "arguments": tool_call.parameters,
+            },
+            "type": "function",
+        })
+    return formatted_tool_calls
