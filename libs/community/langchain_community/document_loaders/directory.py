@@ -243,9 +243,9 @@ class DirectoryLoader(BaseLoader):
                     )
         
         for i in items:
-            yield from self.lazy_load_file(i, p, pbar)
+            yield from self._lazy_load_file(i, p, pbar)
 
-    def lazy_load_file(self, item: Path, path: Path, pbar: Optional[Any]) -> Iterator[Document]:
+    def _lazy_load_file(self, item: Path, path: Path, pbar: Optional[Any]) -> Iterator[Document]:
         """Load a file.
 
         Args:
