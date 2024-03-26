@@ -123,10 +123,10 @@ class VDMS(VectorStore):
             from langchain_community.vectorstores.vdms import VDMS, VDMS_Client
 
             vectorstore = VDMS(
+                client=VDMS_Client("localhost", 55555),
                 collection_name="langchain-demo",
                 distance_strategy="L2",
                 engine="FaissFlat"
-                client=VDMS_Client("localhost", 55555),
                 embedding_function=HuggingFaceEmbeddings(),
             )
     """
