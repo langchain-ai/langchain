@@ -92,7 +92,9 @@ def convert_to_cohere_tool(
         )
 
 
-class CohereToolsAgentOutputParser(BaseOutputParser[Union[List[AgentAction], AgentFinish]]):
+class CohereToolsAgentOutputParser(
+    BaseOutputParser[Union[List[AgentAction], AgentFinish]]
+):
     """Parses a message into agent actions/finish."""
 
     def parse_result(
