@@ -242,8 +242,25 @@ class DirectoryLoader(BaseLoader):
                         "`pip install tqdm`"
                     )
         
-        for i in items:
-            yield from self._lazy_load_file(i, p, pbar)
+        if self.use_multithreading:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.max_concurrency
+            ) as executor:
+                future_to_doc = {
+                    executor.submit(self._lazy_load_file, i, p, pbar): i
+                    for i in items
+                }
+                for future in concurrent.futures.as_completed(future_to_doc):
+                    doc = future.result()
+                    if doc is not None:
+                        yield from doc
+        else:
+            for i in items:
+                yield from self._lazy_load_file(i, p, pbar)
+
+        if pbar:
+            pbar.close()
+
 
     def _lazy_load_file(self, item: Path, path: Path, pbar: Optional[Any]) -> Iterator[Document]:
         """Load a file.
