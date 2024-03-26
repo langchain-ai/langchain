@@ -1,7 +1,7 @@
 import json
 import zipfile
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -11,7 +11,7 @@ from langchain_community.document_loaders.base import BaseLoader
 class SlackDirectoryLoader(BaseLoader):
     """Load from a `Slack` directory dump."""
 
-    def __init__(self, zip_path: str, workspace_url: Optional[str] = None):
+    def __init__(self, zip_path: Union[str, Path], workspace_url: Optional[str] = None):
         """Initialize the SlackDirectoryLoader.
 
         Args:
