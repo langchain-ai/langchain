@@ -17,8 +17,23 @@ def sorted_values(values: Dict[str, str]) -> List[Any]:
     return [values[val] for val in sorted(values)]
 
 
+def _example_to_text(example: Dict[str, str], input_keys: Optional[List[str]]) -> str:
+    """Convert example to text for vectorstore for indexing purposes."""
+    if input_keys:
+        return " ".join(sorted_values({key: example[key] for key in input_keys}))
+    else:
+        return " ".join(sorted_values(example))
+
+
 class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
-    """Example selector that selects examples based on SemanticSimilarity."""
+    """Example selector that selects examples based on SemanticSimilarity.
+
+    The example select is able to retrieve examples from a vectorstore based on
+    semantic similarity of the example content to the
+
+
+
+    """
 
     vectorstore: VectorStore
     """VectorStore than contains information about examples."""
@@ -38,16 +53,8 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @staticmethod
-    def _example_to_text(
-        example: Dict[str, str], input_keys: Optional[List[str]]
-    ) -> str:
-        if input_keys:
-            return " ".join(sorted_values({key: example[key] for key in input_keys}))
-        else:
-            return " ".join(sorted_values(example))
-
     def _documents_to_examples(self, documents: List[Document]) -> List[dict]:
+        """Convert the metadata of the documents into examples."""
         # Get the examples from the metadata.
         # This assumes that examples are stored in metadata.
         examples = [dict(e.metadata) for e in documents]
@@ -59,14 +66,14 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
     def add_example(self, example: Dict[str, str]) -> str:
         """Add new example to vectorstore."""
         ids = self.vectorstore.add_texts(
-            [self._example_to_text(example, self.input_keys)], metadatas=[example]
+            [_example_to_text(example, self.input_keys)], metadatas=[example]
         )
         return ids[0]
 
     async def aadd_example(self, example: Dict[str, str]) -> str:
         """Add new example to vectorstore."""
         ids = await self.vectorstore.aadd_texts(
-            [self._example_to_text(example, self.input_keys)], metadatas=[example]
+            [_example_to_text(example, self.input_keys)], metadatas=[example]
         )
         return ids[0]
 
@@ -75,7 +82,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         # Get the docs with the highest similarity.
         vectorstore_kwargs = self.vectorstore_kwargs or {}
         example_docs = self.vectorstore.similarity_search(
-            self._example_to_text(input_variables, self.input_keys),
+            _example_to_text(input_variables, self.input_keys),
             k=self.k,
             **vectorstore_kwargs,
         )
@@ -86,7 +93,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         # Get the docs with the highest similarity.
         vectorstore_kwargs = self.vectorstore_kwargs or {}
         example_docs = await self.vectorstore.asimilarity_search(
-            self._example_to_text(input_variables, self.input_keys),
+            _example_to_text(input_variables, self.input_keys),
             k=self.k,
             **vectorstore_kwargs,
         )
@@ -121,7 +128,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         Returns:
             The ExampleSelector instantiated, backed by a vector store.
         """
-        string_examples = [cls._example_to_text(eg, input_keys) for eg in examples]
+        string_examples = [_example_to_text(eg, input_keys) for eg in examples]
         vectorstore = vectorstore_cls.from_texts(
             string_examples, embeddings, metadatas=examples, **vectorstore_cls_kwargs
         )
@@ -162,7 +169,7 @@ class SemanticSimilarityExampleSelector(BaseExampleSelector, BaseModel):
         Returns:
             The ExampleSelector instantiated, backed by a vector store.
         """
-        string_examples = [cls._example_to_text(eg, input_keys) for eg in examples]
+        string_examples = [_example_to_text(eg, input_keys) for eg in examples]
         vectorstore = await vectorstore_cls.afrom_texts(
             string_examples, embeddings, metadatas=examples, **vectorstore_cls_kwargs
         )
