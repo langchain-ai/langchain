@@ -5,7 +5,8 @@ import os
 import pytest
 from langchain_core.documents import Document
 
-from langchain_community.vectorstores.vdms import VDMS, embedding2bytes
+from langchain_community.vectorstores import VDMS
+from langchain_community.vectorstores.vdms import VDMS_Client, embedding2bytes
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
@@ -13,16 +14,14 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 
 logging.basicConfig(level=logging.DEBUG)
 
-"""
-cd tests/integration_tests/vectorstores/docker-compose
-docker-compose -f vdms.yml up -d
-
-By default runs against local docker instance of VDMS using port (VDMS_DBPORT) 55555.
-Use the following to specify different port:
-VDMS_DBPORT=<port> docker-compose -f vdms.yml up -d
-"""
-
-connection_args = {"host": "localhost", "port": os.getenv("VDMS_DBPORT", 55555)}
+# The connection string matches the default settings in the docker-compose file
+# located in the root of the repository: [root]/docker/docker-compose.yml
+# To spin up VDMS:
+# cd [root]/docker/docker-compose.yml
+# docker compose up -d vdms
+vdms_client = VDMS_Client(
+    host=os.getenv("VDMS_DBHOST", "localhost"), port=int(os.getenv("VDMS_DBPORT", 6025))
+)
 
 
 @pytest.mark.requires("vdms")
@@ -30,7 +29,7 @@ def test_init_from_client() -> None:
     embedding_function = FakeEmbeddings()
     _ = VDMS(
         embedding_function=embedding_function,
-        connection_args=connection_args,
+        client=vdms_client,
     )
 
 
@@ -48,7 +47,7 @@ def test_from_texts_with_metadatas() -> None:
         embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [
@@ -70,7 +69,7 @@ def test_from_texts_with_metadatas_with_scores() -> None:
         embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [
@@ -92,7 +91,7 @@ def test_from_texts_with_metadatas_with_scores_using_vector() -> None:
         embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     output = docsearch._similarity_search_with_relevance_scores("foo", k=1)
     assert output == [
@@ -114,7 +113,7 @@ def test_search_filter() -> None:
         embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     output = docsearch.similarity_search(
         "far", k=1, filter={"first_letter": ["==", "f"]}
@@ -145,7 +144,7 @@ def test_search_filter_with_scores() -> None:
         embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     output = docsearch.similarity_search_with_score(
         "far", k=1, filter={"first_letter": ["==", "f"]}
@@ -184,7 +183,7 @@ def test_mmr() -> None:
         ids=ids,
         embedding=embedding_function,
         collection_name=collection_name,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     output = docsearch.max_marginal_relevance_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"id": ids[0]})]
@@ -202,7 +201,7 @@ def test_mmr_by_vector() -> None:
         ids=ids,
         embedding=embedding_function,
         collection_name=collection_name,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     embedded_query = embedding_function.embed_query("foo")
     output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
@@ -219,7 +218,7 @@ def test_with_include_parameter() -> None:
         texts=texts,
         embedding=embedding_function,
         collection_name=collection_name,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     response, response_array = docsearch.get(collection_name, include=["embeddings"])
     assert response_array != []
@@ -244,7 +243,7 @@ def test_update_document() -> None:
 
     # Initialize a VDMS instance with the original document
     docsearch = VDMS.from_documents(
-        connection_args=connection_args,
+        client=vdms_client,
         collection_name=collection_name,
         documents=[original_doc],
         embedding=embedding_function,
@@ -306,7 +305,7 @@ def test_with_relevance_score() -> None:
         embedding=embedding_function,
         metadatas=metadatas,
         collection_name=collection_name,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
     assert output == [
@@ -323,7 +322,7 @@ def test_add_documents_no_metadata() -> None:
     db = VDMS(
         collection_name=collection_name,
         embedding_function=embedding_function,
-        connection_args=connection_args,
+        client=vdms_client,
     )
     db.add_documents([Document(page_content="foo")])
 
@@ -335,7 +334,7 @@ def test_add_documents_mixed_metadata() -> None:
     db = VDMS(
         collection_name=collection_name,
         embedding_function=embedding_function,
-        connection_args=connection_args,
+        client=vdms_client,
     )
 
     docs = [

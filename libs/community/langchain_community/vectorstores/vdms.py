@@ -4,18 +4,19 @@ import base64
 import logging
 import uuid
 from copy import deepcopy
-from enum import Enum
 from typing import (
     Any,
     Callable,
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Sized,
     Tuple,
     Type,
     Union,
+    get_args,
 )
 
 import numpy as np
@@ -34,40 +35,30 @@ except ImportError:
     )
 
 
-class DistanceMetric(str, Enum):
-    """
-    Enumerator of the Distance strategies for calculating distances
-    between vectors.
-    """
-
-    L2 = "L2"  # Euclidean Distance
-    IP = "IP"  # Inner Product
-
-
-class IndexEngine(str, Enum):
-    """
-    Enumerator of the underlying implementation for indexing
-    """
-
-    TileDBDense = "TileDBDense"
-    TileDBSparse = "TileDBSparse"
-    FaissFlat = "FaissFlat"
-    FaissIVFFlat = "FaissIVFFlat"
-    Flinng = "Flinng"
-
-
+DISTANCE_METRICS = Literal[
+    "L2",  # Euclidean Distance
+    "IP",  # Inner Product
+]
+AVAILABLE_DISTANCE_METRICS: List[DISTANCE_METRICS] = list(get_args(DISTANCE_METRICS))
+ENGINES = Literal[
+    "TileDBDense",  # TileDB Dense
+    "TileDBSparse",  # TileDB Sparse
+    "FaissFlat",  # FAISS IndexFlat
+    "FaissIVFFlat",  # FAISS IndexIVFFlat
+    "Flinng",  # FLINNG
+]
+AVAILABLE_ENGINES: List[ENGINES] = list(get_args(ENGINES))
 DEFAULT_COLLECTION_NAME = "langchain"
-DEFAULT_DISTANCE_METRIC = DistanceMetric.L2
 DEFAULT_INSERT_BATCH_SIZE = 32
 # Number of Documents to return.
 DEFAULT_K = 3
 # Number of Documents to fetch to pass to knn when filters applied.
 DEFAULT_FETCH_K = DEFAULT_K * 5
 DEFAULT_PROPERTIES = ["_distance", "id", "content"]
-DEFAULT_SEARCH_ENGINE = IndexEngine.FaissFlat
-DEFAULT_VDMS_CONNECTION = {"host": "localhost", "port": 55555}
 INVALID_DOC_METADATA_KEYS = ["_distance", "content", "blob"]
 INVALID_METADATA_VALUE = ["Missing property", None, {}]  # type: List
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -89,6 +80,19 @@ def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
     return
 
 
+def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
+    """
+    Wrapper to initiate and connect a VDMS client to a VDMS server
+
+    Args:
+        host: IP or hostname of VDMS server
+        port: Port to connect to VDMS server
+    """
+    client = vdms.vdms()
+    client.connect(host, port)
+    return client
+
+
 class VDMS(VectorStore):
     """Wrapper around Intel Lab's VDMS for vector-store workloads.
 
@@ -101,13 +105,13 @@ class VDMS(VectorStore):
     IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
 
     Args:
+        client: VDMS Client used to connect to VDMS server
         collection_name: Name of data collection [Default: langchain]
         distance_strategy: Method used to calculate distances. VDMS supports
             "L2" (euclidean distance) or "IP" (inner product) [Default: L2]
         engine: Underlying implementation for indexing and computing distances.
             VDMS supports TileDBDense, TileDBSparse, FaissFlat, FaissIVFFlat,
             and Flinng [Default: FaissFlat]
-        connection_args: Dictionary defining "host" and "port" for VDMS server
         embedding_function: Any embedding function implementing
             `langchain_core.embeddings.Embeddings` interface.
         relevance_score_fn: Function for obtaining relevance score
@@ -116,13 +120,15 @@ class VDMS(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import VDMS
+            from langchain_community.vectorstores.vdms import VDMS_Client
             from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 
+            client = VDMS_Client("localhost", 55555)
             vectorstore = VDMS(
                 collection_name="langchain-demo",
                 distance_strategy="L2",
                 engine="FaissFlat"
-                connection_args={"host": "localhost", "port": 55555},
+                client=client,
                 embedding_function=HuggingFaceEmbeddings(),
             )
     """
@@ -130,21 +136,19 @@ class VDMS(VectorStore):
     def __init__(
         self,
         *,
+        client: vdms.vdms,
         embedding_function: Optional[Embeddings] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # DescriptorSet name
-        distance_strategy: Union[DistanceMetric, str] = DEFAULT_DISTANCE_METRIC,
-        engine: Union[IndexEngine, str] = DEFAULT_SEARCH_ENGINE,
-        connection_args: Dict[str, Any] = DEFAULT_VDMS_CONNECTION,
+        distance_strategy: DISTANCE_METRICS = "L2",
+        engine: ENGINES = "FaissFlat",
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
-        # Connect to VDMS Server
-        self._create_connection_alias(connection_args)
-
         # Check required parameters
+        self._client = client
         self.similarity_search_engine = engine
         self.distance_strategy = distance_strategy
         self.embedding_function = embedding_function
-        self.check_required_inputs(collection_name)
+        self._check_required_inputs(collection_name)
 
         # Update other parameters
         self.override_relevance_score_fn = relevance_score_fn
@@ -159,21 +163,6 @@ class VDMS(VectorStore):
     @property
     def embeddings(self) -> Optional[Embeddings]:
         return self.embedding_function
-
-    def _create_connection_alias(self, connection_args: Dict[str, Any]) -> Any:
-        if connection_args is None:
-            connection_args = DEFAULT_VDMS_CONNECTION
-        elif "host" not in connection_args:
-            connection_args["host"] = DEFAULT_VDMS_CONNECTION["host"]
-        elif "port" not in connection_args:
-            connection_args["port"] = DEFAULT_VDMS_CONNECTION["port"]
-
-        if not isinstance(connection_args["port"], int):
-            connection_args["port"] = int(connection_args["port"])
-
-        self._client = vdms.vdms()
-        self._client.connect(connection_args["host"], connection_args["port"])
-        self.connection_args = connection_args
 
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
         if isinstance(self.embedding_function, Embeddings):
@@ -234,14 +223,7 @@ class VDMS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores on a scale from 0 to 1."""
-        # Pop score threshold so that only relevancy scores, not raw scores, are
-        # filtered.
-        # relevance_score_fn = self._select_relevance_score_fn()
         if self.override_relevance_score_fn is None:
-            # raise ValueError(
-            #     "normalize_score_fn must be provided to"
-            #     " VDMS constructor to normalize scores"
-            # )
             kwargs["normalize_distance"] = True
         docs_and_scores = self.similarity_search_with_score(
             query,
@@ -297,10 +279,10 @@ class VDMS(VectorStore):
     def __add_set(
         self,
         collection_name: str,
-        engine: Union[IndexEngine, str] = IndexEngine.FaissFlat,
-        metric: Union[DistanceMetric, str] = DistanceMetric.L2,
+        engine: ENGINES = "FaissFlat",
+        metric: DISTANCE_METRICS = "L2",
     ) -> str:
-        query = add_descriptorset(
+        query = _add_descriptorset(
             "AddDescriptorSet",
             collection_name,
             self.embedding_dimension,
@@ -338,7 +320,7 @@ class VDMS(VectorStore):
         if ids is not None:
             constraints["id"] = ["==", ids[0]]  # if len(ids) > 1 else ids[0]]
 
-        query = add_descriptor(
+        query = _add_descriptor(
             "FindDescriptor",
             collection_name,
             label=None,
@@ -366,7 +348,7 @@ class VDMS(VectorStore):
             props: Dict[str, Any] = {}
         else:
             props = {"id": id}
-            id_exists, query = check_descriptor_exists_by_id(
+            id_exists, query = _check_descriptor_exists_by_id(
                 self._client, collection_name, id
             )
             if id_exists:
@@ -391,7 +373,7 @@ class VDMS(VectorStore):
             if k not in self.collection_properties:
                 self.collection_properties.append(k)
 
-        query = add_descriptor(
+        query = _add_descriptor(
             "AddDescriptor",
             collection_name,
             label=None,
@@ -416,12 +398,12 @@ class VDMS(VectorStore):
         unique_entity: Optional[bool] = False,
         deletion: Optional[bool] = False,
     ) -> List[str]:
-        find_query = find_property_entity(
+        find_query = _find_property_entity(
             collection_name, unique_entity=unique_entity, deletion=deletion
         )
         response, response_blob = self.__run_vdms_query([find_query])
         if len(response_blob) > 0:
-            collection_properties = bytes2str(response_blob[0]).split(",")
+            collection_properties = _bytes2str(response_blob[0]).split(",")
         else:
             collection_properties = deepcopy(DEFAULT_PROPERTIES)
         return collection_properties
@@ -434,7 +416,7 @@ class VDMS(VectorStore):
     ) -> Tuple[Any, Any]:
         response, response_array = self._client.query(all_queries, all_blobs)
 
-        _ = check_valid_response(all_queries, response)
+        _ = _check_valid_response(all_queries, response)
         if print_last_response:
             self._client.print_last_response()
         return response, response_array
@@ -469,7 +451,7 @@ class VDMS(VectorStore):
             if id is not None:
                 constraints["id"] = ["==", id]
 
-            query = add_descriptor(
+            query = _add_descriptor(
                 "FindDescriptor",
                 collection_name,
                 label=None,
@@ -511,7 +493,7 @@ class VDMS(VectorStore):
                     current_collection_properties.append(prop)
 
             if current_collection_properties != old_collection_properties:
-                all_queries, blob_arr = build_property_query(
+                all_queries, blob_arr = _build_property_query(
                     collection_name,
                     command_type="update",
                     all_properties=current_collection_properties,
@@ -562,7 +544,7 @@ class VDMS(VectorStore):
         if metadatas is None:
             metadatas = [{} for _ in uris]
         else:
-            metadatas = [validate_vdms_properties(m) for m in metadatas]
+            metadatas = [_validate_vdms_properties(m) for m in metadatas]
 
         self.__from(
             texts=b64_texts,
@@ -603,7 +585,7 @@ class VDMS(VectorStore):
         if metadatas is None:
             metadatas = [{} for _ in texts]
         else:
-            metadatas = [validate_vdms_properties(m) for m in metadatas]
+            metadatas = [_validate_vdms_properties(m) for m in metadatas]
 
         inserted_ids = self.__from(
             texts=texts,
@@ -652,13 +634,20 @@ class VDMS(VectorStore):
         )
         return inserted_ids
 
-    def check_required_inputs(self, collection_name: str) -> None:
+    def _check_required_inputs(self, collection_name: str) -> None:
+        # Check connection to client
+        if not self._client.is_connected():
+            raise ValueError(
+                "VDMS client must be connected to a VDMS server."
+                + "Please use VDMS_Client to establish a connection"
+            )
+
         # Check Distance Metric
-        if self.distance_strategy not in sorted(DistanceMetric):
+        if self.distance_strategy not in AVAILABLE_DISTANCE_METRICS:
             raise ValueError("distance_strategy must be either 'L2' or 'IP'")
 
         # Check Engines
-        if self.similarity_search_engine not in sorted(IndexEngine):
+        if self.similarity_search_engine not in AVAILABLE_ENGINES:
             raise ValueError(
                 "engine must be either 'TileDBDense', 'TileDBSparse', "
                 + "'FaissFlat', 'FaissIVFFlat', or 'Flinng'"
@@ -682,7 +671,7 @@ class VDMS(VectorStore):
         all_blobs: List[Any] = []
 
         results = {"count": "", "list": ["id"]}  # collection_properties}
-        query = add_descriptor(
+        query = _add_descriptor(
             "FindDescriptor",
             collection_name,
             label=None,
@@ -731,7 +720,7 @@ class VDMS(VectorStore):
     ) -> Tuple[List[Dict[str, Any]], List, float]:
         max_dist = 1
         command_str = "FindDescriptor"
-        query = add_descriptor(
+        query = _add_descriptor(
             command_str,
             setname,
             k_neighbors=fetch_k,
@@ -773,7 +762,7 @@ class VDMS(VectorStore):
                 results["list"].append("id")
 
             # (1) Find docs satisfy constraints
-            query = add_descriptor(
+            query = _add_descriptor(
                 command_str,
                 setname,
                 constraints=constraints,
@@ -825,14 +814,12 @@ class VDMS(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # Add this line
-        connection_args: Dict[str, Any] = DEFAULT_VDMS_CONNECTION,
         **kwargs: Any,
     ) -> VDMS:
         """Create a VDMS vectorstore from a list of documents.
 
         Args:
             collection_name (str): Name of the collection to create.
-            connection_args: Dictionary defining "host" and "port" for VDMS server
             documents (List[Document]): List of documents to add to vectorstore.
             embedding (Embeddings): Embedding function. Defaults to None.
             ids (Optional[List[str]]): List of document IDs. Defaults to None.
@@ -841,16 +828,17 @@ class VDMS(VectorStore):
         Returns:
             VDMS: VDMS vectorstore.
         """
+        client: vdms.vdms = kwargs["client"]
 
         return cls.from_texts(
+            client=client,
             texts=[doc.page_content for doc in documents],
             metadatas=[doc.metadata for doc in documents],
             embedding=embedding,
             ids=ids,
             batch_size=batch_size,
             collection_name=collection_name,
-            connection_args=connection_args,
-            **kwargs,
+            # **kwargs,
         )
 
     @classmethod
@@ -862,7 +850,6 @@ class VDMS(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         collection_name: str = DEFAULT_COLLECTION_NAME,
-        connection_args: Dict[str, Any] = DEFAULT_VDMS_CONNECTION,
         **kwargs: Any,
     ) -> VDMS:
         """Create a VDMS vectorstore from a raw documents.
@@ -878,16 +865,20 @@ class VDMS(VectorStore):
         Returns:
             VDMS: VDMS vectorstore.
         """
+        client: vdms.vdms = kwargs["client"]
         vdms_collection = cls(
             collection_name=collection_name,
             embedding_function=embedding,
-            connection_args=connection_args,
-            **kwargs,
+            client=client,
+            # **kwargs,
         )
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
         vdms_collection.add_texts(
-            texts=texts, metadatas=metadatas, ids=ids, batch_size=batch_size, **kwargs
+            texts=texts,
+            metadatas=metadatas,
+            ids=ids,
+            batch_size=batch_size,  # **kwargs
         )
         return vdms_collection
 
@@ -928,7 +919,7 @@ class VDMS(VectorStore):
         if "embeddings" in include:
             results["blob"] = True
 
-        query = add_descriptor(
+        query = _add_descriptor(
             "FindDescriptor",
             collection_name,
             k_neighbors=None,
@@ -1015,7 +1006,7 @@ class VDMS(VectorStore):
             include=["metadatas", "documents", "distances", "embeddings"],
         )
 
-        embedding_list = [list(bytes2embedding(result)) for result in results[0][1]]
+        embedding_list = [list(_bytes2embedding(result)) for result in results[0][1]]
 
         mmr_selected = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
@@ -1103,7 +1094,7 @@ class VDMS(VectorStore):
             include=["metadatas", "documents", "distances", "embeddings"],
         )
 
-        embedding_list = [list(bytes2embedding(result)) for result in results[0][1]]
+        embedding_list = [list(_bytes2embedding(result)) for result in results[0][1]]
 
         mmr_selected = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
@@ -1301,7 +1292,7 @@ class VDMS(VectorStore):
         """
         text = [document.page_content for document in documents]
         metadata = [
-            validate_vdms_properties(document.metadata) for document in documents
+            _validate_vdms_properties(document.metadata) for document in documents
         ]
         embeddings = self._embed_documents(text)
 
@@ -1314,9 +1305,7 @@ class VDMS(VectorStore):
         )
 
 
-"""
-VDMS UTILITY
-"""
+# VDMS UTILITY
 
 
 def _results_to_docs(results: Any) -> List[Document]:
@@ -1350,7 +1339,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return final_res
 
 
-def add_descriptor(
+def _add_descriptor(
     command_str: str,
     setname: str,
     label: Optional[str] = None,
@@ -1388,7 +1377,7 @@ def add_descriptor(
     return query
 
 
-def add_descriptorset(
+def _add_descriptorset(
     command_str: str,
     name: str,
     num_dims: Optional[int] = None,
@@ -1443,7 +1432,7 @@ def add_descriptorset(
     return query
 
 
-def add_entity_with_blob(
+def _add_entity_with_blob(
     collection_name: str, all_properties: List
 ) -> Tuple[Dict[str, Any], bytes]:
     all_properties_str = ",".join(all_properties) if len(all_properties) > 0 else ""
@@ -1458,14 +1447,14 @@ def add_entity_with_blob(
     props["content"] = all_properties_str
     entity["properties"] = props
 
-    byte_data = str2bytes(all_properties_str)
+    byte_data = _str2bytes(all_properties_str)
 
     query: Dict[str, Any] = {}
     query[querytype] = entity
     return query, byte_data
 
 
-def build_property_query(
+def _build_property_query(
     collection_name: str,
     command_type: str = "find",
     all_properties: List = [],
@@ -1479,42 +1468,42 @@ def build_property_query(
         raise ValueError("[!] Invalid type. Choices are : {}".format(",".join(choices)))
 
     if command_type.lower() == "find":
-        query = find_property_entity(collection_name, unique_entity=True)
+        query = _find_property_entity(collection_name, unique_entity=True)
         all_queries.append(query)
 
     elif command_type.lower() == "add":
-        query, byte_data = add_entity_with_blob(collection_name, all_properties)
+        query, byte_data = _add_entity_with_blob(collection_name, all_properties)
         all_queries.append(query)
         blob_arr.append(byte_data)
 
     elif command_type.lower() == "update":
         # Find & Delete
-        query = find_property_entity(collection_name, deletion=True)
+        query = _find_property_entity(collection_name, deletion=True)
         all_queries.append(query)
 
         # Add
-        query, byte_data = add_entity_with_blob(collection_name, all_properties)
+        query, byte_data = _add_entity_with_blob(collection_name, all_properties)
         all_queries.append(query)
         blob_arr.append(byte_data)
 
     return all_queries, blob_arr
 
 
-def bytes2embedding(blob: bytes) -> Any:
+def _bytes2embedding(blob: bytes) -> Any:
     emb = np.frombuffer(blob, dtype="float32")
     return emb
 
 
-def bytes2str(in_bytes: bytes) -> str:
+def _bytes2str(in_bytes: bytes) -> str:
     return in_bytes.decode()
 
 
-def get_cmds_from_query(all_queries: list) -> List[str]:
+def _get_cmds_from_query(all_queries: list) -> List[str]:
     return list(set([k for q in all_queries for k in q.keys()]))
 
 
-def check_valid_response(all_queries: List[dict], response: Any) -> bool:
-    cmd_list = get_cmds_from_query(all_queries)
+def _check_valid_response(all_queries: List[dict], response: Any) -> bool:
+    cmd_list = _get_cmds_from_query(all_queries)
     valid_res = isinstance(response, list) and any(
         cmd in response[0]
         and "returned" in response[0][cmd]
@@ -1524,13 +1513,13 @@ def check_valid_response(all_queries: List[dict], response: Any) -> bool:
     return valid_res
 
 
-def check_descriptor_exists_by_id(
+def _check_descriptor_exists_by_id(
     client: vdms.vdms,
     setname: str,
     id: str,
 ) -> Tuple[bool, Any]:
     constraints = {"id": ["==", id]}
-    findDescriptor = add_descriptor(
+    findDescriptor = _add_descriptor(
         "FindDescriptor",
         setname,
         constraints=constraints,
@@ -1539,48 +1528,8 @@ def check_descriptor_exists_by_id(
     all_queries = [findDescriptor]
     res, _ = client.query(all_queries)
 
-    valid_res = check_valid_response(all_queries, res)
+    valid_res = _check_valid_response(all_queries, res)
     return valid_res, findDescriptor
-
-
-def check_vdms_then_adddescriptor(
-    client: vdms.vdms,
-    setname: str,
-    label: Optional[str] = None,
-    ref: Optional[int] = None,
-    props: Optional[dict] = None,
-    link: Optional[dict] = None,
-    k_neighbors: Optional[int] = None,
-) -> Dict[str, Dict[str, Any]]:
-    addDescriptor = add_descriptor(
-        "AddDescriptor", setname, ref=ref, label=label, props=props, link=link
-    )
-
-    props_as_constraints = (
-        None if props is None else {k: ["==", v] for k, v in props.items() if k == "id"}
-    )
-    results = (
-        None
-        if props_as_constraints is None
-        else {"list": list(props_as_constraints.keys()), "limit": 1}
-    )
-
-    findDescriptor = add_descriptor(
-        "FindDescriptor",
-        setname,
-        k_neighbors=k_neighbors,
-        constraints=props_as_constraints,
-        results=results,
-    )
-    all_queries = [findDescriptor]
-    res, _ = client.query(all_queries)
-
-    valid_res = check_valid_response(all_queries, res)
-    if valid_res:
-        if ref is not None:
-            findDescriptor["FindDescriptor"]["_ref"] = ref
-        return findDescriptor
-    return addDescriptor
 
 
 def embedding2bytes(embedding: Union[List[float], None]) -> Union[bytes, None]:
@@ -1591,7 +1540,7 @@ def embedding2bytes(embedding: Union[List[float], None]) -> Union[bytes, None]:
     return blob
 
 
-def find_property_entity(
+def _find_property_entity(
     collection_name: str,
     unique_entity: Optional[bool] = False,
     deletion: Optional[bool] = False,
@@ -1619,11 +1568,11 @@ def find_property_entity(
     return query
 
 
-def str2bytes(in_str: str) -> bytes:
+def _str2bytes(in_str: str) -> bytes:
     return str.encode(in_str)
 
 
-def validate_vdms_properties(metadata: Dict[str, Any]) -> Dict:
+def _validate_vdms_properties(metadata: Dict[str, Any]) -> Dict:
     new_metadata: Dict[str, Any] = {}
     for key, value in metadata.items():
         if not isinstance(value, list):
