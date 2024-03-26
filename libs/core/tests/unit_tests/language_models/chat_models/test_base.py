@@ -5,7 +5,7 @@ from typing import Any, AsyncIterator, Iterator, List, Optional
 import pytest
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models import BaseChatModel, FakeListChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -21,7 +21,6 @@ from tests.unit_tests.fake.callbacks import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
-from tests.unit_tests.fake.chat_model import FakeListChatModel
 
 
 @pytest.fixture
