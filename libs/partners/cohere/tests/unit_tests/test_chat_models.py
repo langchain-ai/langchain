@@ -75,7 +75,7 @@ def test_default_params(chat_cohere: ChatCohere, expected: typing.Dict) -> None:
 )
 def test_get_generation_info(
     response: typing.Any, expected: typing.Dict[str, typing.Any]
-):
+) -> None:
     chat_cohere = ChatCohere(cohere_api_key="test")
 
     actual = chat_cohere._get_generation_info(response)

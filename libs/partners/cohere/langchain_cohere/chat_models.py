@@ -282,7 +282,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
 def _format_cohere_tool_calls(
     generation_id: str, tool_calls: Optional[List[ToolCall]] = None
 ) -> List[Dict]:
-    """Formats a Cohere API response into the tool call format used elsewhere in Langchain"""
+    """
+    Formats a Cohere API response into the tool call format used elsewhere in Langchain.
+    """
     if not tool_calls:
         return []
 

@@ -44,7 +44,7 @@ def create_cohere_tools_agent(
 def format_to_cohere_tools(
     tools: Sequence[BaseTool],
     intermediate_steps: Sequence[Tuple[AgentAction, str]],
-) -> List[Tool]:
+) -> List[Dict[str, Any]]:
     if (
         len(intermediate_steps) == 1
         and intermediate_steps[0][0].tool == "directly_answer"
@@ -78,7 +78,7 @@ def format_to_cohere_tools_messages(
 
 def convert_to_cohere_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
-) -> Tool:
+) -> Dict[str, Any]:
     """Convert a raw function/class to a Cohere tool."""
     if isinstance(tool, BaseTool):
         return Tool(
@@ -92,8 +92,10 @@ def convert_to_cohere_tool(
                 )
                 for param_name, param_definition in tool.args.items()
             },
-        )
+        ).dict()
     elif isinstance(tool, dict):
+        if not all(k in tool for k in ("title", "description", "properties")):
+            raise ValueError()
         return Tool(
             name=tool.get("name"),
             description=tool.get("description"),
@@ -104,11 +106,12 @@ def convert_to_cohere_tool(
                     required="default" in param_definition,
                 )
                 for param_name, param_definition in tool.get("properties", {}).items()
-            }
-        )
+            },
+        ).dict()
     else:
         raise ValueError(
-            f"Unsupported tool type {type(tool)}. Tools must be passed in as BaseTool."
+            f"Unsupported tool type {type(tool)}. "
+            f"Tools must be passed in as BaseTool or a JSON schema dict."
         )
 
 
