@@ -112,7 +112,7 @@ class VDMS(VectorStore):
         engine: Underlying implementation for indexing and computing distances.
             VDMS supports TileDBDense, TileDBSparse, FaissFlat, FaissIVFFlat,
             and Flinng [Default: FaissFlat]
-        embedding_function: Any embedding function implementing
+        embedding: Any embedding function implementing
             `langchain_core.embeddings.Embeddings` interface.
         relevance_score_fn: Function for obtaining relevance score
 
@@ -124,10 +124,10 @@ class VDMS(VectorStore):
 
             vectorstore = VDMS(
                 client=VDMS_Client("localhost", 55555),
+                embedding=HuggingFaceEmbeddings(),
                 collection_name="langchain-demo",
                 distance_strategy="L2",
-                engine="FaissFlat"
-                embedding_function=HuggingFaceEmbeddings(),
+                engine="FaissFlat",
             )
     """
 
@@ -135,7 +135,7 @@ class VDMS(VectorStore):
         self,
         client: vdms.vdms,
         *,
-        embedding_function: Optional[Embeddings] = None,
+        embedding: Optional[Embeddings] = None,
         collection_name: str = DEFAULT_COLLECTION_NAME,  # DescriptorSet name
         distance_strategy: DISTANCE_METRICS = "L2",
         engine: ENGINES = "FaissFlat",
@@ -145,7 +145,7 @@ class VDMS(VectorStore):
         self._client = client
         self.similarity_search_engine = engine
         self.distance_strategy = distance_strategy
-        self.embedding_function = embedding_function
+        self.embedding = embedding
         self._check_required_inputs(collection_name)
 
         # Update other parameters
@@ -160,32 +160,30 @@ class VDMS(VectorStore):
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
-        return self.embedding_function
+        return self.embedding
 
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
-        if isinstance(self.embedding_function, Embeddings):
-            return self.embedding_function.embed_documents(texts)
+        if isinstance(self.embedding, Embeddings):
+            return self.embedding.embed_documents(texts)
         else:
-            p_str = "Must provide `embedding_function` which is expected"
+            p_str = "Must provide `embedding` which is expected"
             p_str += " to be an Embeddings object"
             raise ValueError(p_str)
 
     def _embed_image(self, uris: List[str]) -> List[List[float]]:
-        if self.embedding_function is not None and hasattr(
-            self.embedding_function, "embed_image"
-        ):
-            return self.embedding_function.embed_image(uris=uris)
+        if self.embedding is not None and hasattr(self.embedding, "embed_image"):
+            return self.embedding.embed_image(uris=uris)
         else:
             raise ValueError(
-                "Must provide `embedding_function` which has attribute `embed_image`"
+                "Must provide `embedding` which has attribute `embed_image`"
             )
 
     def _embed_query(self, text: str) -> List[float]:
-        if isinstance(self.embedding_function, Embeddings):
-            return self.embedding_function.embed_query(text)
+        if isinstance(self.embedding, Embeddings):
+            return self.embedding.embed_query(text)
         else:
             raise ValueError(
-                "Must provide `embedding_function` which is expected"
+                "Must provide `embedding` which is expected"
                 " to be an Embeddings object"
             )
 
@@ -652,7 +650,7 @@ class VDMS(VectorStore):
             )
 
         # Check Embedding Func is provided and store dimension size
-        if self.embedding_function is None:
+        if self.embedding is None:
             raise ValueError("Must provide embedding function")
 
         self.embedding_dimension = len(self._embed_query("This is a sample sentence."))
@@ -866,7 +864,7 @@ class VDMS(VectorStore):
         client: vdms.vdms = kwargs["client"]
         vdms_collection = cls(
             collection_name=collection_name,
-            embedding_function=embedding,
+            embedding=embedding,
             client=client,
             # **kwargs,
         )
@@ -956,7 +954,7 @@ class VDMS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        if self.embedding_function is None:
+        if self.embedding is None:
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
@@ -1044,7 +1042,7 @@ class VDMS(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        if self.embedding_function is None:
+        if self.embedding is None:
             raise ValueError(
                 "For MMR search, you must specify an embedding function on" "creation."
             )
@@ -1221,7 +1219,7 @@ class VDMS(VectorStore):
             the query text and cosine distance in float for each.
             Lower score represents more similarity.
         """
-        if self.embedding_function is None:
+        if self.embedding is None:
             raise ValueError("Must provide embedding function")
         else:
             query_embedding: List[float] = self._embed_query(query)
