@@ -69,7 +69,9 @@ def _get_search_client(
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
-    semantic_configurations: Optional[List[SemanticConfiguration]] = None,
+    semantic_configurations: Optional[
+        Union[SemanticConfiguration, List[SemanticConfiguration]]
+    ] = None,
     scoring_profiles: Optional[List[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
     default_fields: Optional[List[SearchField]] = None,
