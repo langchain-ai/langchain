@@ -1,8 +1,9 @@
-import logging
 from typing import Any, Optional
 
 from langchain_community.llms.ipex_llm import IpexLLM
 from langchain_core.language_models.llms import LLM
+
+import logging
 
 logger = logging.getLogger(__name__)
 

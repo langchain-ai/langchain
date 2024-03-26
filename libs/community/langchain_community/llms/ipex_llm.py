@@ -1,4 +1,3 @@
-import logging
 from typing import Any, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -6,6 +5,8 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_ID = "gpt2"
+
+import logging
 
 logger = logging.getLogger(__name__)
 
