@@ -88,7 +88,7 @@ class ConversationalChatAgent(Agent):
             HumanMessagePromptTemplate.from_template(final_prompt),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)  # type: ignore[arg-type]
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
