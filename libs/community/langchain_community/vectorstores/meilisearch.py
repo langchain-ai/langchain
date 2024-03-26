@@ -76,13 +76,14 @@ class Meilisearch(VectorStore):
     def __init__(
         self,
         embedding: Embeddings,
-        embedders: Optional[Dict[str, Any]] = None,
         client: Optional[Client] = None,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         index_name: str = "langchain-demo",
         text_key: str = "text",
         metadata_key: str = "metadata",
+        *,
+        embedders: Optional[Dict[str, Any]] = None,
     ):
         """Initialize with Meilisearch client."""
         client = _create_client(client=client, url=url, api_key=api_key)
