@@ -95,12 +95,12 @@ def serve(
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
     configurable: Annotated[
-        bool,
+        Optional[bool],
         typer.Option(
             "--configurable/--no-configurable",
             help="Whether to include a configurable route",
         ),
-    ] = True,
+    ] = None,  # defaults to `not chat_playground`
     chat_playground: Annotated[
         bool,
         typer.Option(
