@@ -47,6 +47,7 @@ def get_role(message: BaseMessage) -> str:
 def get_cohere_chat_request(
     messages: List[BaseMessage],
     *,
+    documents: Optional[List[Dict[str, str]]] = None,
     connectors: Optional[List[Dict[str, str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -60,24 +61,33 @@ def get_cohere_chat_request(
     Returns:
         The request for the Cohere chat API.
     """
-    documents = (
-        None
-        if "source_documents" not in kwargs
-        else [
-            {
-                "snippet": doc.page_content,
-                "id": doc.metadata.get("id") or f"doc-{str(i)}",
-            }
-            for i, doc in enumerate(kwargs["source_documents"])
-        ]
-    )
-    kwargs.pop("source_documents", None)
-    maybe_connectors = connectors if documents is None else None
+    additional_kwargs = messages[-1].additional_kwargs
+
+    # cohere SDK will fail loudly if both connectors and documents are provided
+    if (
+        len(additional_kwargs.get("documents", [])) > 0
+        and documents
+        and len(documents) > 0
+    ):
+        raise ValueError(
+            "Received documents both as a keyword argument and as an prompt additional"
+            "keywword argument. Please choose only one option."
+        )
+
+    formatted_docs = [
+        {
+            "text": doc.page_content,
+            "id": doc.metadata.get("id") or f"doc-{str(i)}",
+        }
+        for i, doc in enumerate(additional_kwargs.get("documents", []))
+    ] or documents
+    if not formatted_docs:
+        formatted_docs = None
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
     prompt_truncation = (
-        "AUTO" if documents is not None or connectors is not None else None
+        "AUTO" if formatted_docs is not None or connectors is not None else None
     )
 
     req = {
@@ -85,8 +95,8 @@ def get_cohere_chat_request(
         "chat_history": [
             {"role": get_role(x), "message": x.content} for x in messages[:-1]
         ],
-        "documents": documents,
-        "connectors": maybe_connectors,
+        "documents": formatted_docs,
+        "connectors": connectors,
         "prompt_truncation": prompt_truncation,
         **kwargs,
     }
