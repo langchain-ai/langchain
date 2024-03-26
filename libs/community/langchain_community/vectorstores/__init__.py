@@ -60,6 +60,7 @@ _module_lookup = {
     "HanaDB": "langchain_community.vectorstores.hanavector",
     "Hologres": "langchain_community.vectorstores.hologres",
     "InfinispanVS": "langchain_community.vectorstores.infinispanvs",
+    "InMemoryVectorStore": "langchain_community.vectorstores.inmemory",
     "KDBAI": "langchain_community.vectorstores.kdbai",
     "Kinetica": "langchain_community.vectorstores.kinetica",
     "KineticaSettings": "langchain_community.vectorstores.kinetica",
