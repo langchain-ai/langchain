@@ -135,3 +135,7 @@ class BigdlLLM(IpexLLM):
             model_kwargs=_model_kwargs,
             **kwargs,
         )
+        
+    @property
+    def _llm_type(self) -> str:
+        return "bigdl-llm"
