@@ -321,8 +321,30 @@ class ChatOpenAI(BaseChatModel):
             }
 
             if not values.get("client"):
+                openai_proxy = values.get("openai_proxy")
+                if openai_proxy and not values.get("http_client"):
+                    try:
+                        import httpx
+                    except ImportError:
+                        raise ImportError(
+                            "Could not import httpx python package. "
+                            "Please install it with `pip install httpx`."
+                        )
+                    http_client = httpx.Client(proxy=openai_proxy)
+                    client_params["http_client"] = http_client
                 values["client"] = openai.OpenAI(**client_params).chat.completions
             if not values.get("async_client"):
+                openai_proxy = values.get("openai_proxy")
+                if openai_proxy and not values.get("http_client"):
+                    try:
+                        import httpx
+                    except ImportError:
+                        raise ImportError(
+                            "Could not import httpx python package. "
+                            "Please install it with `pip install httpx`."
+                        )
+                    http_client = httpx.AsyncClient(proxy=openai_proxy)
+                    client_params["http_client"] = http_client
                 values["async_client"] = openai.AsyncOpenAI(
                     **client_params
                 ).chat.completions
