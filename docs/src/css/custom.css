@@ -30,7 +30,7 @@
   --ifm-code-font-size: 95%;
   --ifm-font-family-base: 'Manrope';
   --ifm-menu-link-padding-horizontal: 0.5rem;
-  --ifm-menu-link-padding-vertical: 0.25rem;
+  --ifm-menu-link-padding-vertical: 0.375rem;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -94,6 +94,22 @@
 .theme-doc-sidebar-menu > .theme-doc-sidebar-item-category:not(:first-of-type),
 .theme-doc-sidebar-menu > .theme-doc-sidebar-item-link {
   margin-top: 1rem;
+}
+
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-link,
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-category {
+  margin-top: 0;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-category > ul {
+  margin-top: 0;
+}
+
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-link a,
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-category a {
+  margin-top: 0;
 }
 
 .theme-doc-sidebar-item-category, .theme-doc-sidebar-menu > .theme-doc-sidebar-item-link {
