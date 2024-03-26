@@ -47,6 +47,7 @@ def get_role(message: BaseMessage) -> str:
 def get_cohere_chat_request(
     messages: List[BaseMessage],
     *,
+    documents: Optional[List[Dict[str, str]]] = None,
     connectors: Optional[List[Dict[str, str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -63,20 +64,20 @@ def get_cohere_chat_request(
     additional_kwargs = messages[-1].additional_kwargs
 
     # cohere SDK will fail loudly if both connectors and documents are provided
-    documents = [
+    formatted_docs = [
         {
-            "snippet": doc.page_content,
+            "text": doc.page_content,
             "id": doc.metadata.get("id") or f"doc-{str(i)}",
         }
         for i, doc in enumerate(additional_kwargs.get("documents", []))
-    ]
-    if not documents:
-        documents = None
+    ] or documents
+    if not formatted_docs:
+        formatted_docs = None
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
     prompt_truncation = (
-        "AUTO" if documents is not None or connectors is not None else None
+        "AUTO" if formatted_docs is not None or connectors is not None else None
     )
 
     req = {
@@ -84,7 +85,7 @@ def get_cohere_chat_request(
         "chat_history": [
             {"role": get_role(x), "message": x.content} for x in messages[:-1]
         ],
-        "documents": documents,
+        "documents": formatted_docs,
         "connectors": connectors,
         "prompt_truncation": prompt_truncation,
         **kwargs,
