@@ -17,7 +17,6 @@ def chat() -> ChatPremAI:
     return ChatPremAI(project_id=8)
 
 
-@pytest.mark.scheduled
 def test_chat_premai() -> None:
     """Test ChatPremAI wrapper."""
     chat = ChatPremAI(project_id=8)
@@ -27,7 +26,6 @@ def test_chat_premai() -> None:
     assert isinstance(response.content, str)
 
 
-@pytest.mark.scheduled
 def test_chat_prem_system_message() -> None:
     """Test ChatPremAI wrapper for system message"""
     chat = ChatPremAI(project_id=8)
@@ -38,14 +36,12 @@ def test_chat_prem_system_message() -> None:
     assert isinstance(response.content, str)
 
 
-@pytest.mark.scheduled
 def test_chat_prem_model() -> None:
     """Test ChatPremAI wrapper handles model_name."""
     chat = ChatPremAI(model="foo", project_id=8)
     assert chat.model == "foo"
 
 
-@pytest.mark.scheduled
 def test_chat_prem_generate() -> None:
     """Test ChatPremAI wrapper with generate."""
     chat = ChatPremAI(project_id=8)
@@ -60,14 +56,12 @@ def test_chat_prem_generate() -> None:
             assert generation.text == generation.message.content
 
 
-@pytest.mark.scheduled
 async def test_prem_invoke(chat: ChatPremAI) -> None:
     """Tests chat completion with invoke"""
     result = chat.invoke("How is the weather in New York today?")
     assert isinstance(result.content, str)
 
 
-@pytest.mark.scheduled
 def test_prem_streaming() -> None:
     """Test streaming tokens from Prem."""
     chat = ChatPremAI(project_id=8, streaming=True)
