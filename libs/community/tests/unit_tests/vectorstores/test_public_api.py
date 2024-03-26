@@ -28,6 +28,7 @@ _EXPECTED = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "DocumentDBVectorSearch",
+    "DuckDB",
     "ElasticKnnSearch",
     "ElasticVectorSearch",
     "ElasticsearchStore",
@@ -85,6 +86,7 @@ _EXPECTED = [
     "VectorStore",
     "Yellowbrick",
     "NeuralDBVectorStore",
+    "CouchbaseVectorStore",
 ]
 
 

@@ -42,6 +42,7 @@ _module_lookup = {
     "Clarifai": "langchain_community.vectorstores.clarifai",
     "Clickhouse": "langchain_community.vectorstores.clickhouse",
     "ClickhouseSettings": "langchain_community.vectorstores.clickhouse",
+    "CouchbaseVectorStore": "langchain_community.vectorstores.couchbase",
     "DashVector": "langchain_community.vectorstores.dashvector",
     "DatabricksVectorSearch": "langchain_community.vectorstores.databricks_vector_search",  # noqa: E501
     "DeepLake": "langchain_community.vectorstores.deeplake",
@@ -50,6 +51,7 @@ _module_lookup = {
     "DocArrayHnswSearch": "langchain_community.vectorstores.docarray",
     "DocArrayInMemorySearch": "langchain_community.vectorstores.docarray",
     "DocumentDBVectorSearch": "langchain_community.vectorstores.documentdb",
+    "DuckDB": "langchain_community.vectorstores.duckdb",
     "ElasticKnnSearch": "langchain_community.vectorstores.elastic_vector_search",
     "ElasticVectorSearch": "langchain_community.vectorstores.elastic_vector_search",
     "ElasticsearchStore": "langchain_community.vectorstores.elasticsearch",
