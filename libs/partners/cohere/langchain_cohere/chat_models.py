@@ -47,7 +47,7 @@ def get_role(message: BaseMessage) -> str:
 def get_cohere_chat_request(
     messages: List[BaseMessage],
     *,
-    connectors: Optional[List[str]] = None,
+    connectors: Optional[List[Dict[str, str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Get the request for the Cohere chat API.
@@ -72,9 +72,6 @@ def get_cohere_chat_request(
     ]
     if not documents:
         documents = None
-
-    if connectors is not None:
-        connectors = [{"id": x} for x in connectors]
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
