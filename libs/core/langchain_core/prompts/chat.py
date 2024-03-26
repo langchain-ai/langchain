@@ -101,7 +101,8 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     A placeholder which can be used to pass in a list of messages. 
 
     Examples:
-        Basic usage.
+       
+    Basic usage.
 
         .. code-block:: python
         
@@ -113,13 +114,16 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             prompt = MessagesPlaceholder("history", optional=True)
             prompt.format_messages() # returns empty list []
 
-            prompt.format_messages(history=[("system", "You are an AI assistant."), "Hello!"])
+            prompt.format_messages(history=[
+                ("system", "You are an AI assistant."),
+                "Hello!",
+                ])
             # returns list [
             #           SystemMessage(content="You are an AI assistant."),
             #           HumanMessage(content="Hello!"),
             #           ]
 
-        Building a prompt with chat history.
+    Building a prompt with chat history.
 
         .. code-block:: python
 
