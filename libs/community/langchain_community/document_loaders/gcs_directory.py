@@ -74,9 +74,8 @@ class GCSDirectoryLoader(BaseLoader):
                 docs.extend(loader.load())
             except Exception as e:
                 if self.continue_on_failure:
-                    logger.warn(f"Problem processing blob {blob.name}, message: {e}")
+                    logger.warning(f"Problem processing blob {blob.name}, message: {e}")
                     continue
                 else:
-                    logger.error(f"Problem processing blob {blob.name}.")
                     raise e
         return docs
