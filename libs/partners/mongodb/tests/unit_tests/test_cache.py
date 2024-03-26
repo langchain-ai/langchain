@@ -30,7 +30,6 @@ class PatchedMongoDBCache(MongoDBCache):
         self.__database_name = database_name
         self.__collection_name = collection_name
         self.client = {self.__database_name: {self.__collection_name: MockCollection()}}  # type: ignore
-        self._local_cache = {}
 
     @property
     def database(self) -> Any:  # type: ignore
@@ -55,7 +54,7 @@ class PatchedMongoDBAtlasSemanticCache(MongoDBAtlasSemanticCache):
     ):
         self.collection = MockCollection()
         self._wait_until_ready = False
-        self._local_cache = dict()
+        self.score_threshold = None
         MongoDBAtlasVectorSearch.__init__(
             self,
             self.collection,
@@ -146,13 +145,17 @@ def _execute_test(
 @pytest.mark.parametrize(
     "cacher", [PatchedMongoDBCache, PatchedMongoDBAtlasSemanticCache]
 )
+@pytest.mark.parametrize("remove_score", [True, False])
 def test_mongodb_cache(
+    remove_score: bool,
     cacher: Union[MongoDBCache, MongoDBAtlasSemanticCache],
     prompt: Union[str, List[BaseMessage]],
     llm: Union[str, FakeLLM, FakeChatModel],
     response: List[Generation],
 ) -> None:
     llm_cache(cacher)
+    if remove_score:
+        get_llm_cache().score_threshold = None  # type: ignore
     try:
         _execute_test(prompt, llm, response)
     finally:

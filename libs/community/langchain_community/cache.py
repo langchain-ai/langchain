@@ -62,6 +62,7 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import LLM, aget_prompts, get_prompts
@@ -1390,6 +1391,11 @@ class SQLAlchemyMd5Cache(BaseCache):
 ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_cache"
 
 
+@deprecated(
+    since="0.0.28",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBCache",
+)
 class AstraDBCache(BaseCache):
     @staticmethod
     def _make_id(prompt: str, llm_string: str) -> str:
@@ -1588,6 +1594,11 @@ def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
     return decorating_function
 
 
+@deprecated(
+    since="0.0.28",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBSemanticCache",
+)
 class AstraDBSemanticCache(BaseCache):
     def __init__(
         self,
@@ -1868,6 +1879,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         ef_construction: int = 64,
         ef_search: int = 40,
         score_threshold: Optional[float] = None,
+        application_name: str = "LANGCHAIN_CACHING_PYTHON",
     ):
         """
         Args:
@@ -1909,6 +1921,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
                        (40 by default). A higher value provides better
                        recall at the cost of speed.
             score_threshold: Maximum score used to filter the vector search documents.
+            application_name: Application name for the client for tracking and logging
         """
 
         self._validate_enum_value(similarity, CosmosDBSimilarityType)
@@ -1931,6 +1944,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         self.ef_search = ef_search
         self.score_threshold = score_threshold
         self._cache_dict: Dict[str, AzureCosmosDBVectorSearch] = {}
+        self.application_name = application_name
 
     def _index_name(self, llm_string: str) -> str:
         hashed_index = _hash(llm_string)
@@ -1961,6 +1975,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
                 namespace=namespace,
                 embedding=self.embedding,
                 index_name=index_name,
+                application_name=self.application_name,
             )
 
         # create index for the vectorstore

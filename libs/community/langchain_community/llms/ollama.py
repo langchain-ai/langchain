@@ -1,5 +1,5 @@
 import json
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Union
 
 import aiohttp
 import requests
@@ -111,6 +111,18 @@ class _OllamaCommon(BaseLanguageModel):
     timeout: Optional[int] = None
     """Timeout for the request stream"""
 
+    keep_alive: Optional[Union[int, str]] = None
+    """How long the model will stay loaded into memory.
+
+    The parameter (Default: 5 minutes) can be set to:
+    1. a duration string in Golang (such as "10m" or "24h");
+    2. a number in seconds (such as 3600);
+    3. any negative number which will keep the model loaded \
+        in memory (e.g. -1 or "-1m");
+    4. 0 which will unload the model immediately after generating a response;
+
+    See the [Ollama documents](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-keep-a-model-loaded-in-memory-or-make-it-unload-immediately)"""
+
     headers: Optional[dict] = None
     """Additional headers to pass to endpoint (e.g. Authorization, Referer).
     This is useful when Ollama is hosted on cloud services that require
@@ -141,6 +153,7 @@ class _OllamaCommon(BaseLanguageModel):
             },
             "system": self.system,
             "template": self.template,
+            "keep_alive": self.keep_alive,
         }
 
     @property
@@ -462,12 +475,12 @@ class Ollama(BaseLLM, _OllamaCommon):
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(
                         chunk.text,
                         verbose=self.verbose,
                     )
+                yield chunk
 
     async def _astream(
         self,
@@ -479,9 +492,9 @@ class Ollama(BaseLLM, _OllamaCommon):
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
-                yield chunk
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         chunk.text,
                         verbose=self.verbose,
                     )
+                yield chunk

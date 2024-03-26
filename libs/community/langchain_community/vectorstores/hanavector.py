@@ -6,6 +6,7 @@ import json
 import re
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Iterable,
     List,
@@ -91,10 +92,10 @@ class HanaDB(VectorStore):
         # Check if the table exists, and eventually create it
         if not self._table_exists(self.table_name):
             sql_str = (
-                f"CREATE TABLE {self.table_name}("
-                f"{self.content_column} NCLOB, "
-                f"{self.metadata_column} NCLOB, "
-                f"{self.vector_column} REAL_VECTOR "
+                f'CREATE TABLE "{self.table_name}"('
+                f'"{self.content_column}" NCLOB, '
+                f'"{self.metadata_column}" NCLOB, '
+                f'"{self.vector_column}" REAL_VECTOR '
             )
             if self.vector_column_length == -1:
                 sql_str += ");"
@@ -197,6 +198,7 @@ class HanaDB(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Add more texts to the vectorstore.
 
@@ -226,8 +228,8 @@ class HanaDB(VectorStore):
                     else self.embedding.embed_documents([text])[0]
                 )
                 sql_str = (
-                    f"INSERT INTO {self.table_name} ({self.content_column}, "
-                    f"{self.metadata_column}, {self.vector_column}) "
+                    f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
+                    f'"{self.metadata_column}", "{self.vector_column}") '
                     f"VALUES (?, ?, TO_REAL_VECTOR (?));"
                 )
                 cur.execute(
@@ -338,12 +340,12 @@ class HanaDB(VectorStore):
         embedding_as_str = ",".join(map(str, embedding))
         sql_str = (
             f"SELECT TOP {k}"
-            f"  {self.content_column}, "  # row[0]
-            f"  {self.metadata_column}, "  # row[1]
-            f"  TO_NVARCHAR({self.vector_column}), "  # row[2]
-            f"  {distance_func_name}({self.vector_column}, TO_REAL_VECTOR "
+            f'  "{self.content_column}", '  # row[0]
+            f'  "{self.metadata_column}", '  # row[1]
+            f'  TO_NVARCHAR("{self.vector_column}"), '  # row[2]
+            f'  {distance_func_name}("{self.vector_column}", TO_REAL_VECTOR '
             f"     (ARRAY({embedding_as_str}))) AS CS "  # row[3]
-            f"FROM {self.table_name}"
+            f'FROM "{self.table_name}"'
         )
         order_str = f" order by CS {HANA_DISTANCE_FUNCTION[self.distance_strategy][1]}"
         where_str, query_tuple = self._create_where_by_filter(filter)
@@ -449,7 +451,7 @@ class HanaDB(VectorStore):
             raise ValueError("Parameter 'filter' is required when calling 'delete'")
 
         where_str, query_tuple = self._create_where_by_filter(filter)
-        sql_str = f"DELETE FROM {self.table_name} {where_str}"
+        sql_str = f'DELETE FROM "{self.table_name}" {where_str}'
 
         try:
             cur = self.connection.cursor()
