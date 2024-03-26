@@ -21,6 +21,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         api_version: Optional[str] = None,
         api_model: str = "prebuilt-layout",
         mode: str = "markdown",
+        *,
         analysis_features: Optional[List[str]] = None,
     ) -> None:
         """

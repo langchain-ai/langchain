@@ -20,6 +20,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         api_version: Optional[str] = None,
         api_model: str = "prebuilt-layout",
         mode: str = "markdown",
+        *,
         analysis_features: Optional[List[str]] = None,
     ):
         from azure.ai.documentintelligence import DocumentIntelligenceClient
@@ -42,7 +43,8 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
                 [feature not in _SUPPORTED_FEATURES for feature in analysis_features]
             ):
                 logger.warning(
-                    f"The current supported features are: {[f.value for f in _SUPPORTED_FEATURES]}. "
+                    f"The current supported features are: "
+                    f"{[f.value for f in _SUPPORTED_FEATURES]}. "
                     "Using other features may result in unexpected behavior."
                 )
 
