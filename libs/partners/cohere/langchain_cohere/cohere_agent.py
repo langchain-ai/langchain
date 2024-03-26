@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, Union
 
+from cohere.types import Tool, ToolParameterDefinitionsValue
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
@@ -43,7 +44,7 @@ def create_cohere_tools_agent(
 def format_to_cohere_tools(
     tools: Sequence[BaseTool],
     intermediate_steps: Sequence[Tuple[AgentAction, str]],
-) -> List[Dict[str, Any]]:
+) -> List[Tool]:
     if (
         len(intermediate_steps) == 1
         and intermediate_steps[0][0].tool == "directly_answer"
@@ -77,18 +78,37 @@ def format_to_cohere_tools_messages(
 
 def convert_to_cohere_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
-) -> Dict[str, Any]:
-    """Convert a raw function/class to an Cohere tool."""
+) -> Tool:
+    """Convert a raw function/class to a Cohere tool."""
     if isinstance(tool, BaseTool):
-        return {
-            "name": tool.name,
-            "description": tool.description,
-            "parameter_definitions": tool.args,
-        }
+        return Tool(
+            name=tool.name,
+            description=tool.description,
+            parameter_definitions={
+                param_name: ToolParameterDefinitionsValue(
+                    description=param_definition.get("description"),
+                    type=param_definition.get("type"),
+                    required="default" in param_definition,
+                )
+                for param_name, param_definition in tool.args.items()
+            },
+        )
+    elif isinstance(tool, dict):
+        return Tool(
+            name=tool.get("name"),
+            description=tool.get("description"),
+            parameter_definitions={
+                param_name: ToolParameterDefinitionsValue(
+                    description=param_definition.get("description"),
+                    type=param_definition.get("type"),
+                    required="default" in param_definition,
+                )
+                for param_name, param_definition in tool.get("properties", {}).items()
+            }
+        )
     else:
         raise ValueError(
-            f"Unsupported tool type {type(tool)}. Tools must be passed in"
-            f" as BaseTool"
+            f"Unsupported tool type {type(tool)}. Tools must be passed in as BaseTool."
         )
 
 
