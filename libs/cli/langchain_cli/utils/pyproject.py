@@ -1,10 +1,8 @@
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Tuple
 
 from tomlkit import dump, inline_table, load
 from tomlkit.items import InlineTable
-
-from typing import Tuple
 
 
 def _get_dep_inline_table(path: Path) -> InlineTable:
