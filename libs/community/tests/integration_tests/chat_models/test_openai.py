@@ -11,9 +11,9 @@ from langchain_core.outputs import (
 )
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
-from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 from langchain_community.chat_models.openai import ChatOpenAI
+from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
 @pytest.mark.scheduled
@@ -112,9 +112,9 @@ def test_chat_openai_streaming_generation_info() -> None:
         saved_things: dict = {}
 
         def on_llm_end(
-                self,
-                *args: Any,
-                **kwargs: Any,
+            self,
+            *args: Any,
+            **kwargs: Any,
         ) -> Any:
             # Save the generation
             self.saved_things["generation"] = args[0]
