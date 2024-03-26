@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, Union
 
+from langchain.agents.agent import MultiActionAgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.outputs import Generation
@@ -9,8 +10,6 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.tools import BaseTool
-
-from langchain.agents.agent import MultiActionAgentOutputParser
 
 
 def create_cohere_tools_agent(
@@ -103,9 +102,7 @@ class CohereToolsAgentOutputParser(MultiActionAgentOutputParser):
             raise ValueError(f"Expected ChatGeneration, got {type(result)}")
         if result[0].message.additional_kwargs["tool_calls"]:
             return [
-                AgentAction(
-                    tool=tool.name, tool_input=tool.parameters, log=tool.name
-                )
+                AgentAction(tool=tool.name, tool_input=tool.parameters, log=tool.name)
                 for tool in result[0].message.additional_kwargs["tool_calls"]
             ]
         else:
