@@ -1,5 +1,6 @@
 import logging
 import time
+import os
 from typing import Dict, Iterator, Optional, Tuple
 
 from langchain_core.documents import Document
@@ -25,10 +26,13 @@ class OpenAIWhisperParser(BaseBlobParser):
     """
 
     def __init__(
-        self, api_key: Optional[str] = None, *, chunk_duration_threshold: float = 0.1
+        self, api_key: Optional[str] = None, *, chunk_duration_threshold: float = 0.1,\
+		base_url: Optional[str] = None
     ):
         self.api_key = api_key
         self.chunk_duration_threshold = chunk_duration_threshold
+		self.base_url= base_url
+
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -51,11 +55,14 @@ class OpenAIWhisperParser(BaseBlobParser):
 
         if is_openai_v1():
             # api_key optional, defaults to `os.environ['OPENAI_API_KEY']`
-            client = openai.OpenAI(api_key=self.api_key)
+            self.base_url = os.environ.get("OPENAI_API_BASE")
+            client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
         else:
             # Set the API key if provided
             if self.api_key:
                 openai.api_key = self.api_key
+            if self.base_url:
+                openai.base_url = self.base_url
 
         # Audio file from disk
         audio = AudioSegment.from_file(blob.path)
