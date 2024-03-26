@@ -26,10 +26,10 @@ class Text2vecEmbeddings(Embeddings, BaseModel):
             )
     """
 
-    model_name_or_path: Optional[str] = (None,)
-    encoder_type: Any = ("MEAN",)
-    max_seq_length: int = (256,)
-    device: Optional[str] = (None,)
+    model_name_or_path: Optional[str] = None
+    encoder_type: Any = "MEAN"
+    max_seq_length: int = 256
+    device: Optional[str] = None
     model: Any = None
 
     def __init__(
