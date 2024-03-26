@@ -1,3 +1,4 @@
+import logging
 from typing import Callable, List, Optional
 
 from langchain_core.documents import Document
@@ -6,9 +7,8 @@ from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.gcs_file import GCSFileLoader
 from langchain_community.utilities.vertexai import get_client_info
 
-import logging
-
 logger = logging.getLogger(__name__)
+
 
 class GCSDirectoryLoader(BaseLoader):
     """Load from GCS directory."""
@@ -19,7 +19,7 @@ class GCSDirectoryLoader(BaseLoader):
         bucket: str,
         prefix: str = "",
         loader_func: Optional[Callable[[str], BaseLoader]] = None,
-        use_try_except: bool = False,
+        continue_on_failure: bool = False,
     ):
         """Initialize with bucket and key name.
 
@@ -30,15 +30,15 @@ class GCSDirectoryLoader(BaseLoader):
             loader_func: A loader function that instantiates a loader based on a
                 file_path argument. If nothing is provided, the  GCSFileLoader
                 would use its default loader.
-            try_except: To use try-except block for each file within the GCS directory. 
-                If set to `True`, then failure to process a file will not cause an error.
-                Default to disabled.
+            continue_on_failure: To use try-except block for each file within the GCS
+                directory. If set to `True`, then failure to process a file will not
+                cause an error.
         """
         self.project_name = project_name
         self.bucket = bucket
         self.prefix = prefix
         self._loader_func = loader_func
-        self.use_try_except = use_try_except
+        self.continue_on_failure = continue_on_failure
 
     def load(self) -> List[Document]:
         """Load documents."""
@@ -66,11 +66,14 @@ class GCSDirectoryLoader(BaseLoader):
             # Use the try-except block here
             try:
                 loader = GCSFileLoader(
-                    self.project_name, self.bucket, blob.name, loader_func=self._loader_func
+                    self.project_name,
+                    self.bucket,
+                    blob.name,
+                    loader_func=self._loader_func,
                 )
                 docs.extend(loader.load())
             except Exception as e:
-                if self.use_try_except:
+                if self.continue_on_failure:
                     logger.warn(f"Problem processing blob {blob.name}, message: {e}")
                     continue
                 else:
