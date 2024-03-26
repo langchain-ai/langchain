@@ -202,7 +202,7 @@ class AzureChatOpenAI(ChatOpenAI):
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"deployment_name": self.deployment_name},
+            **{"azure_deployment": self.deployment_name},
             **super()._identifying_params,
         }
 
