@@ -18,7 +18,6 @@ PyYAML = ">=5.3"
 requests = "^2"
 packaging = "^23.2"
 jinja2 = { version = "^3", optional = true }
-defusedxml = "^0.7"
 
 [tool.poetry.group.lint]
 optional = true
