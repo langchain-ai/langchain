@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-mistralai"
-version = "0.0.5"
+version = "0.1.0"
 description = "An integration package connecting Mistral and LangChain"
 authors = []
 readme = "README.md"
@@ -12,9 +12,10 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.27"
-mistralai = [{version = "^0.1", python = "^3.9"}, {version = ">=0.0.11,<0.2", python="3.8"}]
+langchain-core = "^0.1.31"
 tokenizers = "^0.15.1"
+httpx = ">=0.25.2,<1"
+httpx-sse = ">=0.3.1,<1"
 
 [tool.poetry.group.test]
 optional = true
@@ -24,16 +25,16 @@ pytest = "^7.3.0"
 pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
 
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.test_integration.dependencies]
+
 [tool.poetry.group.codespell]
 optional = true
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
 
 [tool.poetry.group.lint]
 optional = true
