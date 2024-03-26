@@ -3,7 +3,7 @@ from langchain_cohere import ChatCohere
 
 
 def test_stream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from ChatCohere."""
     llm = ChatCohere()
 
     for token in llm.stream("I'm Pickle Rick"):
@@ -11,7 +11,7 @@ def test_stream() -> None:
 
 
 async def test_astream() -> None:
-    """Test streaming tokens from OpenAI."""
+    """Test streaming tokens from ChatCohere."""
     llm = ChatCohere()
 
     async for token in llm.astream("I'm Pickle Rick"):
