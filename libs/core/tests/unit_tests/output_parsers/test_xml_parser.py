@@ -45,18 +45,14 @@ DEF_RESULT_EXPECTED = {
 
 async def _test_parser(parser: XMLOutputParser, content: str) -> None:
     """Test parser."""
-    xml_content = parser.parse(content)
-    assert DEF_RESULT_EXPECTED == xml_content
+    assert parser.parse(content) == DEF_RESULT_EXPECTED
+    assert await parser.aparse(content) == DEF_RESULT_EXPECTED
 
     assert list(parser.transform(iter(content))) == [
         {"foo": [{"bar": [{"baz": None}]}]},
         {"foo": [{"bar": [{"baz": "slim.shady"}]}]},
         {"foo": [{"baz": "tag"}]},
     ]
-
-    async def _as_iter(iterable: Iterable[str]) -> AsyncIterator[str]:
-        for item in iterable:
-            yield item
 
     chunks = [chunk async for chunk in parser.atransform(_as_iter(content))]
 
@@ -67,40 +63,30 @@ async def _test_parser(parser: XMLOutputParser, content: str) -> None:
     ]
 
 
-<<<<<<< HEAD
-ROOT_LEVEL_ONLY_ENCODING = """<?xml version="1.0" encoding="UTF-8"?>
+ROOT_LEVEL_ONLY = """<?xml version="1.0" encoding="UTF-8"?>
 <body>Text of the body.</body>
 """
 
 ROOT_LEVEL_ONLY_EXPECTED = {"body": "Text of the body."}
 
 
-@pytest.mark.parametrize(
-    "result",
-    [
-        ROOT_LEVEL_ONLY_ENCODING,
-        ROOT_LEVEL_ONLY_ENCODING[ROOT_LEVEL_ONLY_ENCODING.find("\n") :],
-        f"""
-```xml
-{ROOT_LEVEL_ONLY_ENCODING}
-```
-""",
-        f"""
-Some random text
-```xml
-{ROOT_LEVEL_ONLY_ENCODING}
-```
-More random text
-""",
-    ],
-)
-def test_root_only_xml_output_parser(result: str) -> None:
+async def _as_iter(iterable: Iterable[str]) -> AsyncIterator[str]:
+    for item in iterable:
+        yield item
+
+
+async def test_root_only_xml_output_parser() -> None:
     """Test XMLOutputParser when xml only contains the root level tag"""
+    xml_parser = XMLOutputParser(parser="xml")
+    assert xml_parser.parse(ROOT_LEVEL_ONLY) == {"body": "Text of the body."}
+    assert await xml_parser.aparse(ROOT_LEVEL_ONLY) == {"body": "Text of the body."}
+    assert list(xml_parser.transform(iter(ROOT_LEVEL_ONLY))) == [
+        {"body": "Text of the body."}
+    ]
+    chunks = [chunk async for chunk in xml_parser.atransform(_as_iter(ROOT_LEVEL_ONLY))]
+    assert chunks == [{"body": "Text of the body."}]
 
-    xml_parser = XMLOutputParser()
 
-    assert xml_parser.parse(result) == ROOT_LEVEL_ONLY_EXPECTED
-=======
 @pytest.mark.parametrize(
     "content",
     [
@@ -133,7 +119,6 @@ async def test_xml_output_parser_defused(content: str) -> None:
     """Test XMLOutputParser."""
     xml_parser = XMLOutputParser(parser="defusedxml")
     await _test_parser(xml_parser, content)
->>>>>>> master
 
 
 @pytest.mark.parametrize("result", ["foo></foo>", "<foo></foo", "foo></foo", "foofoo"])

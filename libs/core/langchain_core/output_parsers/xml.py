@@ -155,7 +155,7 @@ class XMLOutputParser(BaseTransformOutputParser):
     def get_format_instructions(self) -> str:
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> Union[Dict[str, str], Dict[str, List[Any]]]:
+    def parse(self, text: str) -> Dict[str, List[Any]]:
         # Try to find XML string within triple backticks
         # Imports are temporarily placed here to avoid issue with caching on CI
         # likely if you're reading this you can move them to the top of the file
