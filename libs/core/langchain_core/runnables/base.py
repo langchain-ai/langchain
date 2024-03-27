@@ -1337,7 +1337,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
         Bind arguments to a Runnable, returning a new Runnable.
 
-        Useful when a runnable in a chain requires an argument that is not 
+        Useful when a runnable in a chain requires an argument that is not
         in the output of the previous runnable or included in the user input.
 
         Example:
