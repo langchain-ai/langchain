@@ -7,6 +7,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Type,
     Union,
 )
 
@@ -30,6 +31,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 
@@ -160,7 +162,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], BaseTool, Type[BaseModel]]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         formatted_tools = _format_to_cohere_tools(tools)
