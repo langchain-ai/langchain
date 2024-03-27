@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+from typing import Dict, Union
 from unittest.mock import MagicMock, Mock, patch
 
 from langchain_community.document_loaders.upstage import (
@@ -11,7 +12,7 @@ from langchain_community.document_loaders.upstage import (
 
 class TestUpstageDocumentLoader(unittest.TestCase):
     def setUp(self) -> None:
-        self.mock_response_json = {
+        self.mock_response_json: Dict[str, Union[int, str, list]] = {
             "api": "1.0",
             "billed_pages": 16,
             "elements": [
