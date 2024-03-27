@@ -11,7 +11,7 @@ from typing import (
     Union,
 )
 
-from cohere.types import ToolCall
+from cohere.types import NonStreamedChatResponse, ToolCall
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -233,7 +233,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
                     generation_info=generation_info,
                 )
 
-    def _get_generation_info(self, response: Any) -> Dict[str, Any]:
+    def _get_generation_info(self, response: NonStreamedChatResponse) -> Dict[str, Any]:
         """Get the generation info from cohere API response."""
         generation_info = {
             "documents": response.documents,
@@ -242,12 +242,13 @@ class ChatCohere(BaseChatModel, BaseCohere):
             "search_queries": response.search_queries,
             "is_search_required": response.is_search_required,
             "generation_id": response.generation_id,
-            "tool_calls": _format_cohere_tool_calls(
-                response.generation_id, response.tool_calls
-            ),
         }
+        if response.tool_calls is not None:
+            generation_info["tool_calls"] = _format_cohere_tool_calls(
+                response.generation_id or "", response.tool_calls
+            )
         if hasattr(response, "token_count"):
-            generation_info["token_count"] = response.tool_calls
+            generation_info["token_count"] = response.token_count
         return generation_info
 
     def _generate(

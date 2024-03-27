@@ -80,7 +80,7 @@ def test_invoke_tool_calls() -> None:
     tool_llm = llm.bind_tools([Person])
 
     # where it calls the tool
-    result = tool_llm.stream("Erick, 27 years old")
+    result = tool_llm.invoke("Erick, 27 years old")
 
     assert isinstance(result, AIMessage)
     additional_kwargs = result.additional_kwargs
@@ -121,7 +121,7 @@ def test_streaming_tool_call() -> None:
     }
 
     # where it doesn't call the tool
-    strm = tool_llm.stream("What is 2+2?")
+    strm = llm.stream("What is 2+2?")
     acc: Any = None
     for chunk in strm:
         assert isinstance(chunk, AIMessageChunk)
