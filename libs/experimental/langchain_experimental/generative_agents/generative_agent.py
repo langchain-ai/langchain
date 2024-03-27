@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
 
 from langchain_experimental.generative_agents.memory import GenerativeAgentMemory
 from langchain_experimental.pydantic_v1 import BaseModel, Field

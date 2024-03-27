@@ -1,8 +1,8 @@
 """Test EcloudESVectorStore functionality."""
+from __future__ import annotations
 
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from elasticsearch.client import Elasticsearch
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores.ecloud_vector_search import EcloudESVectorStore
@@ -10,6 +10,9 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
     fake_texts,
 )
+
+if TYPE_CHECKING:
+    from elasticsearch.client import Elasticsearch
 
 user = "elastic"
 password = "*****"

@@ -276,7 +276,7 @@ class EcloudESVectorStore(VectorStore):
 
     @staticmethod
     def get_dense_specific_model_similarity_params(
-        search_params: Dict[str, Any]
+        search_params: Dict[str, Any],
     ) -> Dict:
         model = search_params.get("model", "exact")
         similarity = search_params.get("similarity", "cosine")
@@ -301,7 +301,7 @@ class EcloudESVectorStore(VectorStore):
 
     @staticmethod
     def get_sparse_specific_model_similarity_params(
-        search_params: Dict[str, Any]
+        search_params: Dict[str, Any],
     ) -> Dict:
         model = search_params.get("model", "exact")
         similarity = search_params.get("similarity", "hamming")
