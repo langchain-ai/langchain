@@ -1334,7 +1334,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.28"
+version = "0.1.34"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1342,7 +1342,6 @@ files = []
 develop = true
 
 [package.dependencies]
-anyio = ">=3,<5"
 jsonpatch = "^1.33"
 langsmith = "^0.1.0"
 packaging = "^23.2"
@@ -3778,4 +3777,4 @@ extended-testing = ["lxml"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2091dd8bede19182cda2c2d8a7b21977da03e5636e8228b9dc652f9f45ff46ee"
+content-hash = "fe806285e128aea892ae5bad012f7fe7ecb7dc85ba2261c2eb5788d3c529ce2e"

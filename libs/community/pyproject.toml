@@ -35,7 +35,7 @@ html2text = {version="^2020.1.16", optional=true}
 numexpr = {version="^2.8.6", optional=true}
 jq = {version = "^1.4.1", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
-lxml = {version = "^4.9.2", optional = true}
+lxml = {version = ">=4.9.3,<6.0", optional = true}
 pymupdf = {version = "^1.22.3", optional = true}
 rapidocr-onnxruntime = {version = "^1.3.2", optional = true, python = ">=3.8.1,<3.12"}
 pypdfium2 = {version = "^4.10.0", optional = true}
