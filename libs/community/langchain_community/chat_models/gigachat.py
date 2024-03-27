@@ -304,7 +304,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
 
             choice = chunk["choices"][0]
             content = choice.get("delta", {}).get("content", {})
-            chunk = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
+            chunk_m = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
 
             finish_reason = choice.get("finish_reason")
 
@@ -315,7 +315,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             if run_manager:
                 run_manager.on_llm_new_token(content)
 
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield ChatGenerationChunk(message=chunk_m, generation_info=generation_info)
 
     async def _astream(
         self,
@@ -337,7 +337,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
 
             choice = chunk["choices"][0]
             content = choice.get("delta", {}).get("content", {})
-            chunk = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
+            chunk_m = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
 
             finish_reason = choice.get("finish_reason")
 
@@ -345,7 +345,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
 
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield ChatGenerationChunk(message=chunk_m, generation_info=generation_info)
             if run_manager:
                 await run_manager.on_llm_new_token(content)
 
