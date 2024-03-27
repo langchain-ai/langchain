@@ -382,7 +382,7 @@ class ChatOpenAI(BaseChatModel):
 
         if not values.get("client"):
             openai_proxy = values.get("openai_proxy")
-            http_client = values["http_client"]
+            http_client = values.get("http_client")
             if openai_proxy and not http_client:
                 try:
                     import httpx
@@ -398,7 +398,7 @@ class ChatOpenAI(BaseChatModel):
             ).chat.completions
         if not values.get("async_client"):
             openai_proxy = values.get("openai_proxy")
-            http_async_client = values["http_async_client"]
+            http_async_client = values.get("http_async_client")
             if openai_proxy and not http_async_client:
                 try:
                     import httpx
