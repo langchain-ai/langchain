@@ -41,7 +41,7 @@ class _StreamingParser:
         """
         if parser == "defusedxml":
             try:
-                from defusedxml import ElementTree as DET
+                from defusedxml import ElementTree as DET  # type: ignore
             except ImportError:
                 raise ImportError(
                     "defusedxml is not installed. "
@@ -51,7 +51,6 @@ class _StreamingParser:
             _parser = DET.DefusedXMLParser(target=TreeBuilder())
         else:
             _parser = None
-
         self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
         self.xml_start_re = re.compile(r"<[a-zA-Z:_]")
         self.current_path: List[str] = []
@@ -162,7 +161,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
             try:
-                from defusedxml import ElementTree as DET
+                from defusedxml import ElementTree as DET  # type: ignore
             except ImportError:
                 raise ImportError(
                     "defusedxml is not installed. "
