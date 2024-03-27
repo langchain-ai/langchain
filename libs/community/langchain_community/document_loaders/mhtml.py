@@ -1,5 +1,6 @@
 import email
 import logging
+from pathlib import Path
 from typing import Dict, Iterator, Union
 
 from langchain_core.documents import Document
@@ -14,7 +15,7 @@ class MHTMLLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, Path],
         open_encoding: Union[str, None] = None,
         bs_kwargs: Union[dict, None] = None,
         get_text_separator: str = "",
@@ -69,7 +70,7 @@ class MHTMLLoader(BaseLoader):
                         title = ""
 
                     metadata: Dict[str, Union[str, None]] = {
-                        "source": self.file_path,
+                        "source": str(self.file_path),
                         "title": title,
                     }
                     yield Document(page_content=text, metadata=metadata)
