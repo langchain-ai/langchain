@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "ChatAI21",
     "AI21Embeddings",
     "AI21ContextualAnswers",
+    "AI21SemanticTextSplitter",
 ]
 
 
