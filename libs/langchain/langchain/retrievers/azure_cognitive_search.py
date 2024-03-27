@@ -1,5 +1,5 @@
-from langchain_community.retrievers.azure_cognitive_search import (
-    AzureCognitiveSearchRetriever,
+from langchain_community.retrievers.azure_ai_search import (
+    AzureAISearchRetriever,
 )
 
-__all__ = ["AzureCognitiveSearchRetriever"]
+__all__ = ["AzureAISearchRetriever"]
