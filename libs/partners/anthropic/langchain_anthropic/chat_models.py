@@ -270,10 +270,13 @@ class ChatAnthropic(BaseChatModel):
 
     def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
         data_dict = data.model_dump()
-        content = data_dict.pop("content")
+        content = data_dict["content"]
+        llm_output = {
+            k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
+        }
         return ChatResult(
             generations=[ChatGeneration(message=AIMessage(content=content[0]["text"]))],
-            llm_output=data_dict,
+            llm_output=llm_output,
         )
 
     def _generate(
