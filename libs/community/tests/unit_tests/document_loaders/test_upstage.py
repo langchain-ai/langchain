@@ -10,7 +10,7 @@ from langchain_community.document_loaders.upstage import (
 
 
 class TestUpstageDocumentLoader(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.mock_response_json = {
             "api": "1.0",
             "billed_pages": 16,
@@ -50,7 +50,7 @@ class TestUpstageDocumentLoader(unittest.TestCase):
         }
 
     @patch("requests.post")
-    def test_none_split_text_output(self, mock_post):
+    def test_none_split_text_output(self, mock_post) -> None:
         mock_post.return_value = MagicMock(
             status_code=200, json=MagicMock(return_value=self.mock_response_json)
         )
@@ -72,7 +72,7 @@ class TestUpstageDocumentLoader(unittest.TestCase):
         self.assertEqual(documents[0].metadata["split"], SplitType.NONE.value)
 
     @patch("requests.post")
-    def test_element_split_text_output(self, mock_post):
+    def test_element_split_text_output(self, mock_post) -> None:
         mock_post.return_value = MagicMock(
             status_code=200, json=MagicMock(return_value=self.mock_response_json)
         )
@@ -104,7 +104,7 @@ class TestUpstageDocumentLoader(unittest.TestCase):
             self.assertEqual(document.metadata["split"], SplitType.ELEMENT.value)
 
     @patch("requests.post")
-    def test_page_split_text_output(self, mock_post):
+    def test_page_split_text_output(self, mock_post) -> None:
         mock_post.return_value = MagicMock(
             status_code=200, json=MagicMock(return_value=self.mock_response_json)
         )
@@ -130,7 +130,7 @@ class TestUpstageDocumentLoader(unittest.TestCase):
             self.assertEqual(document.metadata["split"], SplitType.PAGE.value)
 
     @patch("requests.post")
-    def test_none_split_html_output(self, mock_post):
+    def test_none_split_html_output(self, mock_post) -> None:
         mock_post.return_value = MagicMock(
             status_code=200, json=MagicMock(return_value=self.mock_response_json)
         )
@@ -152,7 +152,7 @@ class TestUpstageDocumentLoader(unittest.TestCase):
         self.assertEqual(documents[0].metadata["split"], SplitType.NONE.value)
 
     @patch("requests.post")
-    def test_element_split_html_output(self, mock_post):
+    def test_element_split_html_output(self, mock_post) -> None:
         mock_post.return_value = MagicMock(
             status_code=200, json=MagicMock(return_value=self.mock_response_json)
         )
@@ -184,7 +184,7 @@ class TestUpstageDocumentLoader(unittest.TestCase):
             self.assertEqual(document.metadata["split"], SplitType.ELEMENT.value)
 
     @patch("requests.post")
-    def test_page_split_html_output(self, mock_post):
+    def test_page_split_html_output(self, mock_post) -> None:
         mock_post.return_value = MagicMock(
             status_code=200, json=MagicMock(return_value=self.mock_response_json)
         )
