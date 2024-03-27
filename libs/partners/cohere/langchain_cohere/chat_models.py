@@ -1,10 +1,20 @@
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from cohere.types import ToolCall
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -19,7 +29,10 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 
+from langchain_cohere.cohere_agent import format_to_cohere_tools
 from langchain_cohere.llms import BaseCohere
 
 
@@ -143,6 +156,14 @@ class ChatCohere(BaseChatModel, BaseCohere):
             "temperature": self.temperature,
         }
         return {k: v for k, v in base_params.items() if v is not None}
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = format_to_cohere_tools(tools)
+        return super().bind(tools=formatted_tools, **kwargs)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
