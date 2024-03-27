@@ -65,6 +65,12 @@ class Meilisearch(VectorStore):
             # api_key is optional; provide it if your meilisearch instance requires it
             client = meilisearch.Client(url='http://127.0.0.1:7700', api_key='***')
             embeddings = OpenAIEmbeddings()
+            embedders = {
+                "theEmbedderName": {
+                    "source": "userProvided",
+                    "dimensions": "1536"
+                }
+            }
             vectorstore = Meilisearch(
                 embedding=embeddings,
                 embedders=embedders,
@@ -134,7 +140,6 @@ class Meilisearch(VectorStore):
             metadata = metadatas[i]
             metadata[self._text_key] = text
             embedding = embedding_vectors[i]
-            embedder_name
             docs.append(
                 {
                     "id": id,
