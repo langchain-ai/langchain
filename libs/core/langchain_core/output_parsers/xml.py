@@ -1,4 +1,5 @@
 import re
+import xml
 import xml.etree.ElementTree as ET
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
@@ -81,33 +82,52 @@ class XMLOutputParser(BaseTransformOutputParser):
                     continue
             # feed buffer to parser
             parser.feed(buffer)
+
             buffer = ""
             # yield all events
-            for event, elem in parser.read_events():
-                if event == "start":
-                    # update current path
-                    current_path.append(elem.tag)
-                    current_path_has_children = False
-                elif event == "end":
-                    # remove last element from current path
-                    current_path.pop()
-                    # yield element
-                    if not current_path_has_children:
-                        yield nested_element(current_path, elem)
-                    # prevent yielding of parent element
-                    if current_path:
-                        current_path_has_children = True
-                    else:
-                        xml_started = False
+            try:
+                for event, elem in parser.read_events():
+                    if event == "start":
+                        # update current path
+                        current_path.append(elem.tag)
+                        current_path_has_children = False
+                    elif event == "end":
+                        # remove last element from current path
+                        #
+                        current_path.pop()
+                        # yield element
+                        if not current_path_has_children:
+                            yield nested_element(current_path, elem)
+                        # prevent yielding of parent element
+                        if current_path:
+                            current_path_has_children = True
+                        else:
+                            xml_started = False
+            except xml.etree.ElementTree.ParseError:
+                # This might be junk at the end of the XML input.
+                # Let's check whether the current path is empty.
+                if not current_path:
+                    # If it is empty, we can ignore this error.
+                    break
+                else:
+                    raise
+
         # close parser
-        parser.close()
+        try:
+            parser.close()
+        except xml.etree.ElementTree.ParseError:
+            # Ignore. This will ignore any incomplete XML at the end of the input
+            pass
 
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[AddableDict]:
+        xml_start_re = re.compile(r"<[a-zA-Z:_]")
         parser = ET.XMLPullParser(["start", "end"])
+        xml_started = False
         current_path: List[str] = []
         current_path_has_children = False
+        buffer = ""
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
                 # extract text
@@ -115,24 +135,54 @@ class XMLOutputParser(BaseTransformOutputParser):
                 if not isinstance(chunk_content, str):
                     continue
                 chunk = chunk_content
-            # pass chunk to parser
-            parser.feed(chunk)
+            # add chunk to buffer of unprocessed text
+            buffer += chunk
+            # if xml string hasn't started yet, continue to next chunk
+            if not xml_started:
+                if match := xml_start_re.search(buffer):
+                    # if xml string has started, remove all text before it
+                    buffer = buffer[match.start() :]
+                    xml_started = True
+                else:
+                    continue
+            # feed buffer to parser
+            parser.feed(buffer)
+
+            buffer = ""
             # yield all events
-            for event, elem in parser.read_events():
-                if event == "start":
-                    # update current path
-                    current_path.append(elem.tag)
-                    current_path_has_children = False
-                elif event == "end":
-                    # remove last element from current path
-                    current_path.pop()
-                    # yield element
-                    if not current_path_has_children:
-                        yield nested_element(current_path, elem)
-                    # prevent yielding of parent element
-                    current_path_has_children = True
+            try:
+                for event, elem in parser.read_events():
+                    if event == "start":
+                        # update current path
+                        current_path.append(elem.tag)
+                        current_path_has_children = False
+                    elif event == "end":
+                        # remove last element from current path
+                        #
+                        current_path.pop()
+                        # yield element
+                        if not current_path_has_children:
+                            yield nested_element(current_path, elem)
+                        # prevent yielding of parent element
+                        if current_path:
+                            current_path_has_children = True
+                        else:
+                            xml_started = False
+            except xml.etree.ElementTree.ParseError:
+                # This might be junk at the end of the XML input.
+                # Let's check whether the current path is empty.
+                if not current_path:
+                    # If it is empty, we can ignore this error.
+                    break
+                else:
+                    raise
+
         # close parser
-        parser.close()
+        try:
+            parser.close()
+        except xml.etree.ElementTree.ParseError:
+            # Ignore. This will ignore any incomplete XML at the end of the input
+            pass
 
     def _root_to_dict(self, root: ET.Element) -> Dict[str, List[Any]]:
         """Converts xml tree to python dictionary."""
