@@ -91,7 +91,7 @@ def test__convert_message_to_dict_ai() -> None:
 @pytest.mark.parametrize(
     "role", (MessagesRole.SYSTEM, MessagesRole.USER, MessagesRole.ASSISTANT)
 )
-def test__convert_message_to_dict_chat(role: str) -> None:
+def test__convert_message_to_dict_chat(role: MessagesRole) -> None:
     message = ChatMessage(role=role, content="foo")
     expected = Messages(role=role, content="foo")
 
