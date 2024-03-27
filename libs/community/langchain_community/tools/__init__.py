@@ -32,11 +32,11 @@ _module_lookup = {
     "AIPluginTool": "langchain_community.tools.plugin",
     "APIOperation": "langchain_community.tools.openapi.utils.api_models",
     "ArxivQueryRun": "langchain_community.tools.arxiv.tool",
-    "AzureAiDocumentIntelligenceTool": "langchain_community.tools.azure_ai_services",
-    "AzureAiImageAnalysisTool": "langchain_community.tools.azure_ai_services",
-    "AzureAiSpeechToTextTool": "langchain_community.tools.azure_ai_services",
-    "AzureAiTextToSpeechTool": "langchain_community.tools.azure_ai_services",
-    "AzureAiTextAnalyticsForHealthTool": "langchain_community.tools.azure_ai_services",  # noqa: E501
+    "AzureAiServicesDocumentIntelligenceTool": "langchain_community.tools.azure_ai_services",
+    "AzureAiServicesImageAnalysisTool": "langchain_community.tools.azure_ai_services",
+    "AzureAiServicesSpeechToTextTool": "langchain_community.tools.azure_ai_services",
+    "AzureAiServicesTextToSpeechTool": "langchain_community.tools.azure_ai_services",
+    "AzureAiServicesTextAnalyticsForHealthTool": "langchain_community.tools.azure_ai_services",  # noqa: E501
     "AzureCogsFormRecognizerTool": "langchain_community.tools.azure_cognitive_services",
     "AzureCogsImageAnalysisTool": "langchain_community.tools.azure_cognitive_services",
     "AzureCogsSpeech2TextTool": "langchain_community.tools.azure_cognitive_services",
