@@ -3,13 +3,17 @@
 ARG POETRY_HOME=/opt/poetry
 
 # Use the Python base image
-FROM python:3.11.2-bullseye AS builder
+FROM python:3.11-alpine3.19 AS builder
 
 # Define the version of Poetry to install (default is 1.4.2)
 ARG POETRY_VERSION=1.4.2
 
 # Define the directory to install Poetry to (default is /opt/poetry)
 ARG POETRY_HOME
+
+# Install build dependencies
+# hadolint ignore=DL3018
+RUN apk --no-cache add build-base
 
 # Create a Python virtual environment for Poetry and install it
 RUN python3 -m venv ${POETRY_HOME} && \
@@ -28,7 +32,9 @@ FROM builder AS dependencies
 ARG POETRY_HOME
 
 # Copy only the dependency files for installation
-COPY pyproject.toml poetry.lock poetry.toml ./
+COPY core /core
+COPY community /community
+COPY langchain/pyproject.toml langchain/poetry.lock langchain/poetry.toml ./
 
 # Install the Poetry dependencies (this layer will be cached as long as the dependencies don't change)
 RUN $POETRY_HOME/bin/poetry install --no-interaction --no-ansi --with test
@@ -37,7 +43,7 @@ RUN $POETRY_HOME/bin/poetry install --no-interaction --no-ansi --with test
 FROM dependencies AS tests
 
 # Copy the rest of the app source code (this layer will be invalidated and rebuilt whenever the source code changes)
-COPY . .
+COPY langchain .
 
 RUN /opt/poetry/bin/poetry install --no-interaction --no-ansi --with test
 
