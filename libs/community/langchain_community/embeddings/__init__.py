@@ -68,7 +68,6 @@ _module_lookup = {
     "OpenAIEmbeddings": "langchain_community.embeddings.openai",
     "OpenVINOEmbeddings": "langchain_community.embeddings.openvino",
     "OpenVINOBgeEmbeddings": "langchain_community.embeddings.openvino",
-    "exit": "langchain_community.embeddings.ov_embedding",
     "QianfanEmbeddingsEndpoint": "langchain_community.embeddings.baidu_qianfan_endpoint",  # noqa: E501
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",

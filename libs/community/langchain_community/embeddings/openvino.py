@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field
@@ -53,7 +53,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
 
         try:
             from optimum.intel.openvino import OVModelForFeatureExtraction
-        except ImportError:
+        except ImportError as e:
             raise ValueError(
                 "Could not import optimum-intel python package. "
                 "Please install it with: "
@@ -79,7 +79,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             ) from e
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
 
-    def _text_length(self, text: Union[List[int], List[List[int]]]):
+    def _text_length(self, text: Any) -> int:
         """
         Help function to get the length for the input text. Text can be either
         a list of ints (which means a single text as input), or a tuple of list of ints
@@ -99,9 +99,9 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
 
     def encode(
         self,
-        sentences: Union[str, List[str]],
+        sentences: Any,
         batch_size: int = 4,
-        show_progress_bar: bool = None,
+        show_progress_bar: bool = False,
         convert_to_numpy: bool = True,
         convert_to_tensor: bool = False,
         mean_pooling: bool = False,
@@ -112,16 +112,13 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
 
         :param sentences: the sentences to embed.
         :param batch_size: the batch size used for the computation.
-        :param show_progress_bar: Whether to output a progress bar when encode sentences.
-        :param convert_to_numpy: Whether the output should be a list of numpy vectors. If False, it is a list of PyTorch tensors.
-        :param convert_to_tensor: Whether the output should be one large tensor. Overwrites `convert_to_numpy`.
+        :param show_progress_bar: Whether to output a progress bar.
+        :param convert_to_numpy: Whether the output should be a list of numpy vectors.
+        :param convert_to_tensor: Whether the output should be one large tensor.
         :param mean_pooling: Whether to pool returned vectors.
-        :param normalize_embeddings: Whether to normalize returned vectors to have length 1. In that case,
-            the faster dot-product (util.dot_score) instead of cosine similarity can be used.
+        :param normalize_embeddings: Whether to normalize returned vectors.
 
-        :return: By default, a 2d numpy array with shape [num_inputs, output_dimension] is returned. If only one string
-            input is provided, then the output is a 1d array with shape [output_dimension]. If `convert_to_tensor`, a
-            torch Tensor is returned instead.
+        :return: By default, a 2d numpy array with shape [num_inputs, output_dimension].
         """
         try:
             import numpy as np
@@ -142,7 +139,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
                 "Unable to import torch, please install with " "`pip install -U torch`."
             ) from e
 
-        def mean_pooling(model_output, attention_mask):
+        def run_mean_pooling(model_output: Any, attention_mask: Any) -> Any:
             token_embeddings = model_output[
                 0
             ]  # First element of model_output contains all token embeddings
@@ -163,7 +160,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             sentences = [sentences]
             input_was_string = True
 
-        all_embeddings = []
+        all_embeddings: Any = []
         length_sorted_idx = np.argsort([-self._text_length(sen) for sen in sentences])
         sentences_sorted = [sentences[idx] for idx in length_sorted_idx]
 
@@ -177,7 +174,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
 
             out_features = self.ov_model(**features)
             if mean_pooling:
-                embeddings = mean_pooling(out_features, features["attention_mask"])
+                embeddings = run_mean_pooling(out_features, features["attention_mask"])
             else:
                 embeddings = out_features[0][:, 0]
             if normalize_embeddings:

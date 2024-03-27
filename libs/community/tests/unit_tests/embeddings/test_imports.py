@@ -67,6 +67,8 @@ EXPECTED_ALL = [
     "SparkLLMTextEmbeddings",
     "PremAIEmbeddings",
     "YandexGPTEmbeddings",
+    "OpenVINOEmbeddings",
+    "OpenVINOBgeEmbeddings",
 ]
 
 
