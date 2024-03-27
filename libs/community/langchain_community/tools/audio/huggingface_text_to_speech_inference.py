@@ -1,7 +1,8 @@
 import logging
 import os
-from typing import Optional
-from uuid import uuid4
+import uuid
+from datetime import datetime
+from typing import Callable, Literal, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -26,6 +27,8 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
 
     model: str
     file_extension: str
+    destination_dir: str
+    file_namer: Callable[[], str]
 
     api_url: str
     huggingface_api_key: SecretStr
@@ -38,6 +41,8 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
         model: str,
         file_extension: str,
         *,
+        destination_dir: str = "./tts",
+        file_naming_func: Literal["uuid", "timestamp"] = "uuid",
         huggingface_api_key: Optional[SecretStr] = None,
     ) -> None:
         if not huggingface_api_key:
@@ -54,17 +59,23 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
                 f"'{self._HUGGINGFACE_API_KEY_ENV_NAME}' must be or set or passed"
             )
 
+        if file_naming_func == "uuid":
+            file_namer = lambda: str(uuid.uuid4())  # noqa: E731
+        elif file_naming_func == "timestamp":
+            file_namer = lambda: str(int(datetime.now().timestamp()))  # noqa: E731
+
         super().__init__(
             model=model,
             file_extension=file_extension,
             api_url=f"{self._HUGGINGFACE_API_URL_ROOT}/{model}",
+            destination_dir=destination_dir,
+            file_namer=file_namer,
             huggingface_api_key=huggingface_api_key,
         )
 
     def _run(
         self,
         query: str,
-        output_base_name: Optional[str] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         response = requests.post(
@@ -76,10 +87,16 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
         )
         audio_bytes = response.content
 
-        if output_base_name is None:
-            output_base_name = str(uuid4())
+        try:
+            os.makedirs(self.destination_dir, exist_ok=True)
+        except Exception as e:
+            logger.error(f"Error creating directory '{self.destination_dir}': {e}")
+            raise
 
-        output_file = f"{output_base_name}.{self.file_extension}"
+        output_file = os.path.join(
+            self.destination_dir,
+            f"{str(self.file_namer())}.{self.file_extension}",
+        )
 
         try:
             with open(output_file, mode="xb") as f:
