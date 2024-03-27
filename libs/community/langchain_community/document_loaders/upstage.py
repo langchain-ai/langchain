@@ -34,7 +34,7 @@ class SplitType(Enum):
     PAGE = "page"
 
 
-def validate_api_key(api_key: str):
+def validate_api_key(api_key: str) -> None:
     """
     Validates the provided API key.
 
@@ -51,7 +51,7 @@ def validate_api_key(api_key: str):
         raise ValueError("API Key is required for Upstage Document Loader")
 
 
-def validate_file_path(file_path: str):
+def validate_file_path(file_path: str) -> None:
     """
     Validates if a file exists at the given file path.
 
@@ -65,7 +65,7 @@ def validate_file_path(file_path: str):
         raise FileNotFoundError(f"File not found: {file_path}")
 
 
-def parse_output(data: dict, output_type: str):
+def parse_output(data: dict, output_type: str) -> str:
     """
     Parse the output data based on the specified output type.
 
