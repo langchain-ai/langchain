@@ -129,10 +129,12 @@ class CohereToolsAgentOutputParser(
             actions = []
             for tool in result[0].message.additional_kwargs["tool_calls"]:
                 function = tool.get("function", {})
-                actions += [AgentAction(
-                    tool=function.get("name"),
-                    tool_input=function.get("arguments"),
-                    log=function.get("name"))
+                actions += [
+                    AgentAction(
+                        tool=function.get("name"),
+                        tool_input=function.get("arguments"),
+                        log=function.get("name"),
+                    )
                 ]
             return actions
         else:
