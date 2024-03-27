@@ -1,12 +1,13 @@
 """Test XMLOutputParser"""
-from typing import AsyncIterator
+import importlib
+from typing import AsyncIterator, Iterable
 
 import pytest
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.xml import XMLOutputParser
 
-DEF_RESULT_ENCODING = """<?xml version="1.0" encoding="UTF-8"?>
+DATA = """
  <foo>
     <bar>
         <baz></baz>
@@ -14,6 +15,25 @@ DEF_RESULT_ENCODING = """<?xml version="1.0" encoding="UTF-8"?>
     </bar>
     <baz>tag</baz>
 </foo>"""
+
+WITH_XML_HEADER = f"""<?xml version="1.0" encoding="UTF-8"?>
+{DATA}"""
+
+
+IN_XML_TAGS_WITH_XML_HEADER = f"""
+```xml
+{WITH_XML_HEADER}
+```
+"""
+
+IN_XML_TAGS_WITH_HEADER_AND_TRAILING_JUNK = f"""
+Some random text
+```xml
+{WITH_XML_HEADER}
+```
+More random text
+"""
+
 
 DEF_RESULT_EXPECTED = {
     "foo": [
@@ -23,54 +43,69 @@ DEF_RESULT_EXPECTED = {
 }
 
 
+async def _test_parser(parser: XMLOutputParser, content: str) -> None:
+    """Test parser."""
+    xml_content = parser.parse(content)
+    assert DEF_RESULT_EXPECTED == xml_content
+
+    assert list(parser.transform(iter(content))) == [
+        {"foo": [{"bar": [{"baz": None}]}]},
+        {"foo": [{"bar": [{"baz": "slim.shady"}]}]},
+        {"foo": [{"baz": "tag"}]},
+    ]
+
+    async def _as_iter(iterable: Iterable[str]) -> AsyncIterator[str]:
+        for item in iterable:
+            yield item
+
+    chunks = [chunk async for chunk in parser.atransform(_as_iter(content))]
+
+    assert list(chunks) == [
+        {"foo": [{"bar": [{"baz": None}]}]},
+        {"foo": [{"bar": [{"baz": "slim.shady"}]}]},
+        {"foo": [{"baz": "tag"}]},
+    ]
+
+
 @pytest.mark.parametrize(
-    "result",
+    "content",
     [
-        DEF_RESULT_ENCODING,
-        DEF_RESULT_ENCODING[DEF_RESULT_ENCODING.find("\n") :],
-        f"""
-```xml
-{DEF_RESULT_ENCODING}
-```
-""",
-        f"""
-Some random text
-```xml
-{DEF_RESULT_ENCODING}
-```
-More random text
-""",
+        DATA,  # has no xml header
+        WITH_XML_HEADER,
+        IN_XML_TAGS_WITH_XML_HEADER,
+        IN_XML_TAGS_WITH_HEADER_AND_TRAILING_JUNK,
     ],
 )
-async def test_xml_output_parser(result: str) -> None:
+async def test_xml_output_parser(content: str) -> None:
     """Test XMLOutputParser."""
+    xml_parser = XMLOutputParser(parser="xml")
+    await _test_parser(xml_parser, content)
 
-    xml_parser = XMLOutputParser()
-    assert DEF_RESULT_EXPECTED == xml_parser.parse(result)
-    assert DEF_RESULT_EXPECTED == (await xml_parser.aparse(result))
-    assert list(xml_parser.transform(iter(result))) == [
-        {"foo": [{"bar": [{"baz": None}]}]},
-        {"foo": [{"bar": [{"baz": "slim.shady"}]}]},
-        {"foo": [{"baz": "tag"}]},
-    ]
 
-    async def _as_iter(string: str) -> AsyncIterator[str]:
-        for c in string:
-            yield c
-
-    chunks = [chunk async for chunk in xml_parser.atransform(_as_iter(result))]
-    assert chunks == [
-        {"foo": [{"bar": [{"baz": None}]}]},
-        {"foo": [{"bar": [{"baz": "slim.shady"}]}]},
-        {"foo": [{"baz": "tag"}]},
-    ]
+@pytest.mark.skipif(
+    importlib.util.find_spec("defusedxml") is None,
+    reason="defusedxml is not installed",
+)
+@pytest.mark.parametrize(
+    "content",
+    [
+        DATA,  # has no xml header
+        WITH_XML_HEADER,
+        IN_XML_TAGS_WITH_XML_HEADER,
+        IN_XML_TAGS_WITH_HEADER_AND_TRAILING_JUNK,
+    ],
+)
+async def test_xml_output_parser_defused(content: str) -> None:
+    """Test XMLOutputParser."""
+    xml_parser = XMLOutputParser(parser="defusedxml")
+    await _test_parser(xml_parser, content)
 
 
 @pytest.mark.parametrize("result", ["foo></foo>", "<foo></foo", "foo></foo", "foofoo"])
 def test_xml_output_parser_fail(result: str) -> None:
     """Test XMLOutputParser where complete output is not in XML format."""
 
-    xml_parser = XMLOutputParser()
+    xml_parser = XMLOutputParser(parser="xml")
 
     with pytest.raises(OutputParserException) as e:
         xml_parser.parse(result)
@@ -93,7 +128,9 @@ MALICIOUS_XML = """<?xml version="1.0"?>
 
 
 async def tests_billion_laughs_attack() -> None:
-    parser = XMLOutputParser()
+    # Testing with standard XML parser since it's safe to use in
+    # newer versions of Python
+    parser = XMLOutputParser(parser="xml")
     with pytest.raises(OutputParserException):
         parser.parse(MALICIOUS_XML)
 
