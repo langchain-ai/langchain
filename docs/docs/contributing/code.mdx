@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 ---
+
 # Contribute Code
 
 To contribute to this project, please follow the ["fork and pull request"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow.
@@ -13,6 +14,7 @@ Pull requests cannot land without passing the formatting, linting, and testing c
 [Formatting and Linting](#formatting-and-linting) for how to run these checks locally.
 
 It's essential that we maintain great documentation and testing. If you:
+
 - Fix a bug
   - Add a relevant unit or integration test when possible. These live in `tests/unit_tests` and `tests/integration_tests`.
 - Make an improvement
@@ -34,7 +36,7 @@ For a [development container](https://containers.dev/), see the [.devcontainer f
 
 This project utilizes [Poetry](https://python-poetry.org/) v1.7.1+ as a dependency manager.
 
-❗Note: *Before installing Poetry*, if you use `Conda`, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
+❗Note: _Before installing Poetry_, if you use `Conda`, create and activate a new Conda env (e.g. `conda create -n langchain python=3.9`)
 
 Install Poetry: **[documentation on how to install it](https://python-poetry.org/docs/#installation)**.
 
@@ -44,6 +46,7 @@ tell Poetry to use the virtualenv python environment (`poetry config virtualenvs
 ### Different packages
 
 This repository contains multiple packages:
+
 - `langchain-core`: Base interfaces for key abstractions as well as logic for combining them in chains (LangChain Expression Language).
 - `langchain-community`: Third-party integrations of various components.
 - `langchain`: Chains, agents, and retrieval logic that makes up the cognitive architecture of your applications.
@@ -219,16 +222,20 @@ any side effects (no warnings, no errors, no exceptions).
 To introduce the dependency to the pyproject.toml file correctly, please do the following:
 
 1. Add the dependency to the main group as an optional dependency
-  ```bash
-  poetry add --optional [package_name]
-  ```
+
+```bash
+poetry add --optional [package_name]
+```
+
 2. Open pyproject.toml and add the dependency to the `extended_testing` extra
 3. Relock the poetry file to update the extra.
-  ```bash
-  poetry lock --no-update
-  ```
+
+```bash
+poetry lock --no-update
+```
+
 4. Add a unit test that the very least attempts to import the new code. Ideally, the unit
-test makes use of lightweight fixtures to test the logic of the code.
+   test makes use of lightweight fixtures to test the logic of the code.
 5. Please use the `@pytest.mark.requires(package_name)` decorator for any tests that require the dependency.
 
 ## Adding a Jupyter Notebook

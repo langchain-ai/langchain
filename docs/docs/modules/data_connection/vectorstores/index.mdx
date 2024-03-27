@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 ---
+
 # Vector stores
 
 :::info
@@ -18,8 +19,8 @@ for you.
 
 This walkthrough showcases basic functionality related to vector stores. A key part of working with vector stores is creating the vector to put in them, which is usually created via embeddings. Therefore, it is recommended that you familiarize yourself with the [text embedding model](/docs/modules/data_connection/text_embedding/) interfaces before diving into this.
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 
 There are many great vector store options, here are a few that are free, open-source, and run entirely on your local machine. Review all integrations for many great hosted offerings.
 
@@ -33,7 +34,6 @@ pip install chromadb
 ```
 
 We want to use OpenAIEmbeddings so we have to get the OpenAI API Key.
-
 
 ```python
 import os
@@ -66,7 +66,6 @@ pip install faiss-cpu
 
 We want to use OpenAIEmbeddings so we have to get the OpenAI API Key.
 
-
 ```python
 import os
 import getpass
@@ -97,7 +96,6 @@ pip install lancedb
 ```
 
 We want to use OpenAIEmbeddings so we have to get the OpenAI API Key.
-
 
 ```python
 import os
@@ -136,8 +134,6 @@ db = LanceDB.from_documents(documents, OpenAIEmbeddings())
 
   </TabItem>
 </Tabs>
-
-
 
 ### Similarity search
 

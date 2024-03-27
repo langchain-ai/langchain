@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 ---
+
 # Text embedding models
 
 :::info
@@ -17,8 +18,8 @@ The base Embeddings class in LangChain provides two methods: one for embedding d
 
 ### Setup
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 
 <Tabs>
   <TabItem value="openai" label="OpenAI" default>
@@ -43,6 +44,7 @@ embeddings_model = OpenAIEmbeddings(openai_api_key="...")
 ```
 
 Otherwise you can initialize without any params:
+
 ```python
 from langchain_openai import OpenAIEmbeddings
 
@@ -73,6 +75,7 @@ embeddings_model = CohereEmbeddings(cohere_api_key="...")
 ```
 
 Otherwise you can initialize without any params:
+
 ```python
 from langchain_community.embeddings import CohereEmbeddings
 
@@ -83,6 +86,7 @@ embeddings_model = CohereEmbeddings()
 </Tabs>
 
 ### `embed_documents`
+
 #### Embed list of texts
 
 ```python
@@ -107,7 +111,9 @@ len(embeddings), len(embeddings[0])
 </CodeOutputBlock>
 
 ### `embed_query`
+
 #### Embed single query
+
 Embed a single piece of text for the purpose of comparing to other embedded pieces of texts.
 
 ```python

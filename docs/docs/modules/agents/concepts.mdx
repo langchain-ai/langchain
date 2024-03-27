@@ -4,7 +4,6 @@ sidebar_position: 1
 
 # Concepts
 
-
 The core idea of agents is to use a language model to choose a sequence of actions to take.
 In chains, a sequence of actions is hardcoded (in code).
 In agents, a language model is used as a reasoning engine to determine which actions to take and in which order.
@@ -86,8 +85,8 @@ The `Tool` abstraction consists of two components:
 1. The input schema for the tool. This tells the LLM what parameters are needed to call the tool. Without this, it will not know what the correct inputs are. These parameters should be sensibly named and described.
 2. The function to run. This is generally just a Python function that is invoked.
 
-
 ### Considerations
+
 There are two important design considerations around tools:
 
 1. Giving the agent access to the right tools
@@ -108,4 +107,3 @@ For example, the GitHub toolkit has a tool for searching through GitHub issues, 
 
 LangChain provides a wide set of toolkits to get started.
 For a full list of built-in toolkits, see the [toolkits integrations section](/docs/integrations/toolkits/)
-

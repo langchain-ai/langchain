@@ -10,7 +10,6 @@ from langchain.memory import ConversationEntityMemory
 llm = OpenAI(temperature=0)
 ```
 
-
 ```python
 memory = ConversationEntityMemory(llm=llm)
 _input = {"input": "Deven & Sam are working on a hackathon project"}
@@ -20,7 +19,6 @@ memory.save_context(
     {"output": " That sounds like a great project! What kind of project are they working on?"}
 )
 ```
-
 
 ```python
 memory.load_memory_variables({"input": 'who is Sam'})
@@ -35,7 +33,6 @@ memory.load_memory_variables({"input": 'who is Sam'})
 
 </CodeOutputBlock>
 
-
 ```python
 memory = ConversationEntityMemory(llm=llm, return_messages=True)
 _input = {"input": "Deven & Sam are working on a hackathon project"}
@@ -45,7 +42,6 @@ memory.save_context(
     {"output": " That sounds like a great project! What kind of project are they working on?"}
 )
 ```
-
 
 ```python
 memory.load_memory_variables({"input": 'who is Sam'})
@@ -62,8 +58,8 @@ memory.load_memory_variables({"input": 'who is Sam'})
 </CodeOutputBlock>
 
 ## Using in a chain
-Let's now use it in a chain!
 
+Let's now use it in a chain!
 
 ```python
 from langchain.chains import ConversationChain
@@ -73,7 +69,6 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 ```
 
-
 ```python
 conversation = ConversationChain(
     llm=llm,
@@ -82,7 +77,6 @@ conversation = ConversationChain(
     memory=ConversationEntityMemory(llm=llm)
 )
 ```
-
 
 ```python
 conversation.predict(input="Deven & Sam are working on a hackathon project")
@@ -123,7 +117,6 @@ conversation.predict(input="Deven & Sam are working on a hackathon project")
 
 </CodeOutputBlock>
 
-
 ```python
 conversation.memory.entity_store.store
 ```
@@ -136,7 +129,6 @@ conversation.memory.entity_store.store
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 conversation.predict(input="They are trying to add more complex memory structures to Langchain")
@@ -177,7 +169,6 @@ conversation.predict(input="They are trying to add more complex memory structure
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 conversation.predict(input="They are adding in a key-value store for entities mentioned so far in the conversation.")
@@ -220,7 +211,6 @@ conversation.predict(input="They are adding in a key-value store for entities me
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 conversation.predict(input="What do you know about Deven & Sam?")
@@ -267,8 +257,8 @@ conversation.predict(input="What do you know about Deven & Sam?")
 </CodeOutputBlock>
 
 ## Inspecting the memory store
-We can also inspect the memory store directly. In the following examples, we look at it directly, and then go through some examples of adding information and watch how it changes.
 
+We can also inspect the memory store directly. In the following examples, we look at it directly, and then go through some examples of adding information and watch how it changes.
 
 ```python
 from pprint import pprint
@@ -298,7 +288,6 @@ pprint(conversation.memory.entity_store.store)
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 conversation.predict(input="Sam is the founder of a company called Daimon.")
@@ -345,7 +334,6 @@ conversation.predict(input="Sam is the founder of a company called Daimon.")
 
 </CodeOutputBlock>
 
-
 ```python
 from pprint import pprint
 pprint(conversation.memory.entity_store.store)
@@ -376,7 +364,6 @@ pprint(conversation.memory.entity_store.store)
 ```
 
 </CodeOutputBlock>
-
 
 ```python
 conversation.predict(input="What do you know about Sam?")

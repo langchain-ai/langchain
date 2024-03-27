@@ -1,8 +1,9 @@
 # Datadog Tracing
 
->[ddtrace](https://github.com/DataDog/dd-trace-py) is a Datadog application performance monitoring (APM) library which provides an integration to monitor your LangChain application.
+> [ddtrace](https://github.com/DataDog/dd-trace-py) is a Datadog application performance monitoring (APM) library which provides an integration to monitor your LangChain application.
 
 Key features of the ddtrace integration for LangChain:
+
 - Traces: Capture LangChain requests, parameters, prompt-completions, and help visualize LangChain operations.
 - Metrics: Capture LangChain request latency, errors, and token/cost usage (for OpenAI LLMs and chat models).
 - Logs: Store prompt completion data for each LangChain operation.
@@ -34,7 +35,6 @@ docker run -d --cgroupns host \
 ```
 pip install ddtrace>=1.17
 ```
-
 
 3. The LangChain integration can be enabled automatically when you prefix your LangChain Python application command with `ddtrace-run`:
 
@@ -68,11 +68,9 @@ patch(langchain=True)
 
 See the [APM Python library documentation][https://ddtrace.readthedocs.io/en/stable/installation_quickstart.html] for more advanced usage.
 
-
 ## Configuration
 
 See the [APM Python library documentation][https://ddtrace.readthedocs.io/en/stable/integrations.html#langchain] for all the available configuration options.
-
 
 ### Log Prompt & Completion Sampling
 
@@ -81,7 +79,6 @@ To enable log prompt and completion sampling, set the `DD_LANGCHAIN_LOGS_ENABLED
 To adjust the log sample rate, see the [APM library documentation][https://ddtrace.readthedocs.io/en/stable/integrations.html#langchain].
 
 **Note**: Logs submission requires `DD_API_KEY` to be specified when running `ddtrace-run`.
-
 
 ## Troubleshooting
 

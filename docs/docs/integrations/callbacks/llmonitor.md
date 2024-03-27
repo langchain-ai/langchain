@@ -1,6 +1,6 @@
 # LLMonitor
 
->[LLMonitor](https://llmonitor.com?utm_source=langchain&utm_medium=py&utm_campaign=docs) is an open-source observability platform that provides cost and usage analytics, user tracking, tracing and evaluation tools.
+> [LLMonitor](https://llmonitor.com?utm_source=langchain&utm_medium=py&utm_campaign=docs) is an open-source observability platform that provides cost and usage analytics, user tracking, tracing and evaluation tools.
 
 <video controls width='100%' >
   <source src='https://llmonitor.com/videos/demo-annotated.mp4'/>
@@ -101,6 +101,7 @@ agent.run(
 ```
 
 ## User Tracking
+
 User tracking allows you to identify your users, track their cost, conversations and more.
 
 ```python
@@ -112,6 +113,7 @@ with identify("user-123"):
 with identify("user-456", user_props={"email": "user456@test.com"}):
     agen.run("Who is Leo DiCaprio's girlfriend?")
 ```
+
 ## Support
 
 For any question or issue with integration you can reach out to the LLMonitor team on [Discord](http://discord.com/invite/8PafSG58kK) or via [email](mailto:vince@llmonitor.com).

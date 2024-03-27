@@ -2,6 +2,7 @@
 sidebar_position: 3
 sidebar_class_name: hidden
 ---
+
 # [Beta] Memory
 
 Most LLM applications have a conversational interface. An essential component of a conversation is being able to refer to information introduced earlier in the conversation.
@@ -24,27 +25,27 @@ The main exception to this is the `ChatMessageHistory` functionality. This funct
 
 - [Integrations](/docs/integrations/memory): For an introduction to the various `ChatMessageHistory` integrations, see these docs
 
-
-
-
 ## Introduction
 
 A memory system needs to support two basic actions: reading and writing.
 Recall that every chain defines some core execution logic that expects certain inputs.
 Some of these inputs come directly from the user, but some of these inputs can come from memory.
 A chain will interact with its memory system twice in a given run.
+
 1. AFTER receiving the initial user inputs but BEFORE executing the core logic, a chain will READ from its memory system and augment the user inputs.
 2. AFTER executing the core logic but BEFORE returning the answer, a chain will WRITE the inputs and outputs of the current run to memory, so that they can be referred to in future runs.
 
 ![Diagram illustrating the READ and WRITE operations of a memory system in a conversational interface.](/img/memory_diagram.png "Memory System Diagram")
 
-
 ## Building memory into a system
+
 The two core design decisions in any memory system are:
+
 - How state is stored
 - How state is queried
 
 ### Storing: List of chat messages
+
 Underlying any memory is a history of all chat interactions.
 Even if these are not all used directly, they need to be stored in some form.
 One of the key parts of the LangChain memory module is a series of integrations for storing these chat messages,
@@ -53,6 +54,7 @@ from in-memory lists to persistent databases.
 - [Chat message storage](/docs/modules/memory/chat_messages/): How to work with Chat Messages, and the various integrations offered.
 
 ### Querying: Data structures and algorithms on top of chat messages
+
 Keeping a list of chat messages is fairly straight-forward.
 What is less straight-forward are the data structures and algorithms built on top of chat messages that serve a view of those messages that is most useful.
 
@@ -85,6 +87,7 @@ Note that here we cover general concepts that are useful for most types of memor
 Each individual memory type may very well have its own parameters and concepts that are necessary to understand.
 
 ### What variables get returned from memory
+
 Before going into the chain, various variables are read from memory.
 These have specific names which need to align with the variables the chain expects.
 You can see what these variables are by calling `memory.load_memory_variables({})`.
@@ -113,6 +116,7 @@ memory = ConversationBufferMemory(memory_key="chat_history")
 memory.chat_memory.add_user_message("hi!")
 memory.chat_memory.add_ai_message("what's up?")
 ```
+
 <CodeOutputBlock lang="python">
 
 ```
@@ -137,6 +141,7 @@ memory = ConversationBufferMemory(return_messages=True)
 memory.chat_memory.add_user_message("hi!")
 memory.chat_memory.add_ai_message("what's up?")
 ```
+
 <CodeOutputBlock lang="python">
 
 ```
@@ -160,7 +165,6 @@ Finally, let's take a look at using this in a chain.
 We'll use an `LLMChain`, and show working with both an LLM and a ChatModel.
 
 #### Using an LLM
-
 
 ```python
 from langchain_openai import OpenAI
@@ -189,15 +193,12 @@ conversation = LLMChain(
 )
 ```
 
-
 ```python
 # Notice that we just pass in the `question` variables - `chat_history` gets populated by memory
 conversation({"question": "hi"})
 ```
 
-
 #### Using a ChatModel
-
 
 ```python
 from langchain_openai import ChatOpenAI
@@ -233,16 +234,13 @@ conversation = LLMChain(
 )
 ```
 
-
 ```python
 # Notice that we just pass in the `question` variables - `chat_history` gets populated by memory
 conversation({"question": "hi"})
 ```
-
 
 ## Next steps
 
 And that's it for getting started!
 Please see the other sections for walkthroughs of more advanced topics,
 like custom memory, multiple memories, and more.
-

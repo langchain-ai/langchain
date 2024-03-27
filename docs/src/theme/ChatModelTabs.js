@@ -36,11 +36,15 @@ export default function ChatModelTabs(props) {
     hideGoogle,
   } = props;
 
-  const openAIParamsOrDefault = openaiParams ?? `model="gpt-3.5-turbo-0125"`
-  const anthropicParamsOrDefault = anthropicParams ?? `model="claude-3-sonnet-20240229"`
-  const fireworksParamsOrDefault = fireworksParams ?? `model="accounts/fireworks/models/mixtral-8x7b-instruct"`
-  const mistralParamsOrDefault = mistralParams ?? `model="mistral-large-latest"`
-  const googleParamsOrDefault = googleParams ?? `model="gemini-pro"`
+  const openAIParamsOrDefault = openaiParams ?? `model="gpt-3.5-turbo-0125"`;
+  const anthropicParamsOrDefault =
+    anthropicParams ?? `model="claude-3-sonnet-20240229"`;
+  const fireworksParamsOrDefault =
+    fireworksParams ??
+    `model="accounts/fireworks/models/mixtral-8x7b-instruct"`;
+  const mistralParamsOrDefault =
+    mistralParams ?? `model="mistral-large-latest"`;
+  const googleParamsOrDefault = googleParams ?? `model="gemini-pro"`;
 
   const tabItems = [
     {
@@ -87,17 +91,26 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-google-genai",
       default: false,
       shouldHide: hideGoogle,
-    }
-  ]
+    },
+  ];
 
   return (
     <Tabs groupId="modelTabs">
-      {tabItems.filter((tabItem) => !tabItem.shouldHide).map((tabItem) => (
-        <TabItem value={tabItem.value} label={tabItem.label} default={tabItem.default}>
-          <Setup apiKeyName={tabItem.apiKeyName} packageName={tabItem.packageName} />
-          <CodeBlock language="python">{tabItem.text}</CodeBlock>
-        </TabItem>
-      ))}
+      {tabItems
+        .filter((tabItem) => !tabItem.shouldHide)
+        .map((tabItem) => (
+          <TabItem
+            value={tabItem.value}
+            label={tabItem.label}
+            default={tabItem.default}
+          >
+            <Setup
+              apiKeyName={tabItem.apiKeyName}
+              packageName={tabItem.packageName}
+            />
+            <CodeBlock language="python">{tabItem.text}</CodeBlock>
+          </TabItem>
+        ))}
     </Tabs>
   );
 }

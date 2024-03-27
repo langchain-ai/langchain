@@ -46,11 +46,11 @@ If you add support for a new external API, please add a new integration test.
 
 **Warning:** Almost no tests should be integration tests.
 
-  Tests that require making network connections make it difficult for other
-  developers to test the code.
+Tests that require making network connections make it difficult for other
+developers to test the code.
 
-  Instead favor relying on `responses` library and/or mock.patch to mock
-  requests using small fixtures.
+Instead favor relying on `responses` library and/or mock.patch to mock
+requests using small fixtures.
 
 To install dependencies for integration tests:
 
@@ -95,7 +95,6 @@ docker-compose -f elasticsearch.yml up
 
 For environments that requires more involving preparation, look for `*.sh`. For instance,
 `opensearch.sh` builds a required docker image and then launch opensearch.
-
 
 ### Prepare environment variables for local testing:
 
