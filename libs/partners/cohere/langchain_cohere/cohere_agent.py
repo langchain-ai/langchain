@@ -16,11 +16,11 @@ from langchain_core.tools import BaseTool
 def create_cohere_tools_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ) -> Runnable:
-    def llm_with_tools(input: Dict) -> Runnable:
-        tool_results = input["tool_results"] if len(input["tool_results"]) > 0 else None
-        tools = input["tools"] if len(input["tools"]) > 0 else None
+    def llm_with_tools(input_: Dict) -> Runnable:
+        tool_results = input_["tool_results"] if len(input_["tool_results"]) > 0 else None
+        tools_ = input_["tools"] if len(input_["tools"]) > 0 else None
         return RunnableLambda(lambda x: x["input"]) | llm.bind(
-            tools=tools, tool_results=tool_results
+            tools=tools_, tool_results=tool_results
         )
 
     agent = (
