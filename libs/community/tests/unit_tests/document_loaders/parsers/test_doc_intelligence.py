@@ -20,7 +20,9 @@ def test_doc_intelligence(mock_credential: MagicMock, mock_client: MagicMock) ->
     mock_client.assert_called_once_with(
         endpoint=endpoint,
         credential=mock_credential(),
-        headers={"x-ms-useragent": "langchain-parser/1.0.0",},
+        headers={
+            "x-ms-useragent": "langchain-parser/1.0.0",
+        },
         features=None,
     )
     assert parser.client == mock_client()
