@@ -78,12 +78,12 @@ async def _test_parser(parser: XMLOutputParser, content: str) -> None:
 )
 async def test_xml_output_parser(content: str) -> None:
     """Test XMLOutputParser."""
-    xml_parser = XMLOutputParser()
+    xml_parser = XMLOutputParser(parser="xml")
     await _test_parser(xml_parser, content)
 
 
 @pytest.mark.skipif(
-    importlib.util.find_spec("defusedxml") is not None,
+    importlib.util.find_spec("defusedxml") is None,
     reason="defusedxml is not installed",
 )
 @pytest.mark.parametrize(

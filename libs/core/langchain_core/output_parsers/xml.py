@@ -142,7 +142,7 @@ class XMLOutputParser(BaseTransformOutputParser):
     * 'xml' is the standard library parser.
     
     Use `xml` only if you are sure that your distribution of the standard library
-    is not vulnerable to XML vulnerabilities.
+    is not vulnerable to XML vulnerabilities. 
     
     Please review the following resources for more information:
     
