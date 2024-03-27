@@ -3,9 +3,9 @@ import logging
 import re
 from typing import List, Sequence, Union
 
-from langchain.agents.agent import MultiActionAgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
@@ -27,14 +27,14 @@ def create_cohere_multi_hop_agent(
     multi_hop_prompt = multi_hop_prompt_template.partial(
         tools="\n".join([render_tool_description(t) for t in tools]),
     )
-    llm_with_tools = llm.bind(stop=["\nObservation:"])
+    llm_with_tools = llm.bind(stop=["\nObservation:"], raw_prompting=True)
 
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_cohere_log_to_str(
                 x["intermediate_steps"],
             ),
-            input=lambda x: prompt.format_messages(
+            input=lambda x: prompt.format(
                 input=x["input"], agent_scratchpad=x["intermediate_steps"]
             ),
         )
@@ -45,7 +45,9 @@ def create_cohere_multi_hop_agent(
     return agent
 
 
-class CohereToolsMultiHopAgentOutputParser(MultiActionAgentOutputParser):
+class CohereToolsMultiHopAgentOutputParser(
+    BaseOutputParser[Union[List[AgentAction], AgentFinish]]
+):
     """Parses a message into agent actions/finish."""
 
     @property
@@ -185,15 +187,69 @@ class CohereToolsMultiHopAgentOutputParser(MultiActionAgentOutputParser):
             )
 
 
+def get_type(type_: str, is_optional: bool) -> str:
+    if is_optional:
+        return f"Optional[{type_}]"
+    else:
+        return type_
+
+
+def get_tool_signature(tool: BaseTool) -> str:
+    """Get the tool signature."""
+    args = []
+    for parameter_name, parameter_definition in tool.args.items():
+        type_ = get_type(
+            parameter_definition.get("type"), "default" in parameter_definition
+        )
+        args.append(f"{parameter_name}: {type_}")
+    signature = ", ".join(args)
+    return f"def {tool.name}({signature}) -> List[Dict]"
+
+
+def get_tool_args(tool: BaseTool) -> str:
+    """Get the tool args."""
+    if not tool.args:
+        return ""
+    rendered_args = []
+    for parameter_name, parameter_definition in tool.args.items():
+        type_ = get_type(
+            parameter_definition.get("type"), "default" in parameter_definition
+        )
+        description = parameter_definition.get("description")
+        rendered_args.append(f"{parameter_name} ({type_}): {description}")
+    return "\n             ".join(rendered_args)
+
+
 def render_tool_description(tool: BaseTool) -> str:
-    """Render the tool name and description. TODO: better way to render?"""
-    template = """```python
-    def {TOOL_NAME}():
-        \"\"\"{DESCRIPTION}
-      \"\"\"
-        pass
-    ```"""
-    return template.format(TOOL_NAME=tool.name, DESCRIPTION=tool.description)
+    """Render the tool name and description.
+
+    For example:
+    ```python
+        def calculator_calc(expression: str) -> List[Dict]:
+            \"\"\"This is a powerful multi-purpose calculator.
+            It is capable of a wide array of math calculation and a range of features.
+            Args:
+                expression (str): The expression for the calculator to evaluate.
+
+            \"\"\"
+            pass
+        ```
+    """
+
+    template = """
+```python
+{tool_signature}
+    \"\"\"{tool_description}
+    Args: 
+        {tool_args}
+    \"\"\"
+    pass
+```"""
+    return template.format(
+        tool_signature=get_tool_signature(tool),
+        tool_description=tool.description,
+        tool_args=get_tool_args(tool),
+    )
 
 
 def format_cohere_log_to_str(
