@@ -157,6 +157,7 @@ tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
+vdms = "^0.0.20"
 
 [tool.poetry.group.lint]
 optional = true

@@ -16,8 +16,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 # The connection string matches the default settings in the docker-compose file
 # located in the root of the repository: [root]/docker/docker-compose.yml
-# To spin up VDMS:
-# cd [root]/docker/docker-compose.yml
+# To spin up a detached VDMS server:
+# cd [root]/docker
 # docker compose up -d vdms
 vdms_client = VDMS_Client(
     host=os.getenv("VDMS_DBHOST", "localhost"), port=int(os.getenv("VDMS_DBPORT", 6025))
