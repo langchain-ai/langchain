@@ -1,92 +1,69 @@
 import base64
-from dataclasses import dataclass, asdict
 import re
-from langchain_core.runnables.graph import Edge
-from enum import Enum
+from dataclasses import asdict
+from typing import List, Optional
+
+from langchain_core.runnables.graph import (
+    CurveStyle,
+    Edge,
+    MermaidDrawMethod,
+    NodeColors,
+)
 
 
-class CurveStyle(Enum):
-    """Enum for different curve styles supported by Mermaid"""
-    BASIS = "basis"
-    BUMP_X = "bumpX"
-    BUMP_Y = "bumpY"
-    CARDINAL = "cardinal"
-    CATMULL_ROM = "catmullRom"
-    LINEAR = "linear"
-    MONOTONE_X = "monotoneX"
-    MONOTONE_Y = "monotoneY"
-    NATURAL = "natural"
-    STEP = "step"
-    STEP_AFTER = "stepAfter"
-    STEP_BEFORE = "stepBefore"
-
-
-@dataclass
-class NodeColors:
-    """Schema for Hexadecimal color codes for different node types"""
-    start: str = "#ffdfba"
-    end: str = "#baffc9"
-    other: str = "#fad7de"
-
-
-
-def draw_mermaid(node_ids: list[str], edges: list[Edge], curve_style: CurveStyle = CurveStyle.LINEAR, node_colors: NodeColors = NodeColors(), wrap_label_n_words: int = 9) -> str:
+def draw_mermaid(
+    nodes: dict[str, str],
+    edges: List[Edge],
+    first_node_label: Optional[str] = None,
+    last_node_label: Optional[str] = None,
+    curve_style: CurveStyle = CurveStyle.LINEAR,
+    node_colors: NodeColors = NodeColors(),
+    wrap_label_n_words: int = 9,
+) -> str:
     """Draws a Mermaid graph using the provided graph data
 
     Args:
-        node_ids (list[str]): List of node ids
-        edges (list[Edge]): List of edges, object with source, target and data (optionally).
-        curve_style (CurveStyle, optional): Curve style for the edges supported by Mermaid. Defaults to CurveStyle.LINEAR.
-        node_colors (NodeColors, optional): Node colors for the different node types. Defaults to the default colors for NodeColors class.
-        wrap_label_n_words (int, optional): Number of words to wrap the edge labels. Defaults to 9.
+        nodes (dict[str, str]): List of node ids
+        edges (List[Edge]): List of edges, object with source,
+        target and data.
+        curve_style (CurveStyle, optional): Curve style for the edges.
+        node_colors (NodeColors, optional): Node colors for different types.
+        wrap_label_n_words (int, optional): Words to wrap the edge labels.
 
     Returns:
         str: Mermaid graph syntax
-
-    Example: 
-        >>> node_ids = ['A', 'B', 'C', 'D']
-        >>> edges = [Edge('A', 'B'), Edge('B', 'C'), Edge('B', 'D'), Edge('A', 'D', 'end')]
-        >>> mermaid_syntax = draw_mermaid(node_ids, edges, curve_style=CurveStyle.LINEAR, node_colors=NodeColors(start="#ffdfba", end="#baffc9", other="#fad7de"), wrap_label_n_words=9)
-        >>> print(mermaid_syntax)
-        %%{init: {'flowchart': {'curve': 'linear', 'defaultRenderer': 'elk'}}}%%
-        graph TD;
-            A([A]):::otherclass;
-            B([B]):::otherclass;
-            C([C]):::otherclass;
-            D([D]):::otherclass;
-            A --> B;
-            B --> C;
-            B --> D;
-            A -- end --> D;
-            classDef startclass fill:#ffdfba;
-            classDef endclass fill:#baffc9;
-            classDef otherclass fill:#fad7de;
-        """
+    """
     # Initialize Mermaid graph configuration
-    mermaid_graph = f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}', 'defaultRenderer': 'elk'}}}}}}%%\ngraph TD;\n"
+    mermaid_graph = (
+        f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}', "
+        f"'defaultRenderer': 'elk'}}}}}}%%\ngraph TD;\n"
+    )
 
     # Node formatting templates
-    format_dict = {
-        '__start__': '{0}[{0}]:::startclass',
-        '__end__': '{0}[{0}]:::endclass',
-        'default': '{0}([{0}]):::otherclass'
-    }
+    default_class_label = "default"
+    format_dict = {default_class_label: "{0}([{0}]):::otherclass"}
+    if first_node_label is not None:
+        format_dict[first_node_label] = "{0}[{0}]:::startclass"
+    if last_node_label is not None:
+        format_dict[last_node_label] = "{0}[{0}]:::endclass"
 
     # Filter out nodes that were created due to conditional edges
-    pure_nodes = [n for n in node_ids if 'edges' not in n]
+    pure_nodes = {id: value for id, value in nodes.items() if "edges" not in value}
 
     # Add __end__ node if it is in any of the edges.target
-    if any('__end__' in edge.target for edge in edges):
-        pure_nodes.append('__end__')
+    if any("__end__" in edge.target for edge in edges):
+        pure_nodes["__end__"] = "__end__"
 
     # Add nodes to the graph
-    for node in pure_nodes:
-        node_label = format_dict.get(node, format_dict['default']).format(node)
+    for node in pure_nodes.values():
+        node_label = format_dict.get(node, format_dict[default_class_label]).format(
+            _escape_node_label(node)
+        )
         mermaid_graph += f"\t{node_label};\n"
 
     # Add edges to the graph
     for edge in edges:
-        source, target = _adjust_mermaid_edge(edge, pure_nodes)
+        source, target = _adjust_mermaid_edge(edge, nodes, pure_nodes)
         if source == target:  # Ignore loops
             continue
 
@@ -97,135 +74,168 @@ def draw_mermaid(node_ids: list[str], edges: list[Edge], curve_style: CurveStyle
             # Group words into chunks of wrap_label_n_words size
             if len(words) > wrap_label_n_words:
                 edge_data = "<br>".join(
-                    [' '.join(words[i:i + wrap_label_n_words]) for i in range(0, len(words), wrap_label_n_words)])
+                    [
+                        " ".join(words[i : i + wrap_label_n_words])
+                        for i in range(0, len(words), wrap_label_n_words)
+                    ]
+                )
             edge_label = f" -- {edge_data} --> "
         else:
             edge_label = " --> "
-        mermaid_graph += f"\t{source}{edge_label}{target};\n"
+        mermaid_graph += (
+            f"\t{_escape_node_label(source)}{edge_label}"
+            f"{_escape_node_label(target)};\n"
+        )
 
     # Add custom styles for nodes
     mermaid_graph += _generate_mermaid_graph_styles(node_colors)
     return mermaid_graph
 
 
-def _adjust_mermaid_edge(edge: Edge, pure_nodes: list[str]) -> tuple[str, str]:
-    """ If the node is a result of a conditional edge, map to the pure node """
-    adjust_node = lambda node: next((n for n in pure_nodes if n in node), node)
-    return adjust_node(edge.source), adjust_node(edge.target)
+def _escape_node_label(node_label: str) -> str:
+    """Escapes the node label for Mermaid syntax."""
+    return re.sub(r"[^a-zA-Z-_]", "_", node_label)
+
+
+def _adjust_mermaid_edge(
+    edge: Edge, nodes: dict[str, str], pure_nodes: dict[str, str]
+) -> tuple[str, str]:
+    """Adjusts Mermaid edge to map conditional nodes to pure nodes."""
+    source_node_label = nodes.get(edge.source, edge.source)
+    target_node_label = nodes.get(edge.target, edge.target)
+
+    # TODO: Filter overlapping nodes with ::edges
+
+    return source_node_label, target_node_label
 
 
 def _generate_mermaid_graph_styles(node_colors: NodeColors) -> str:
-    """Generates Mermaid graph styles for different node types"""
+    """Generates Mermaid graph styles for different node types."""
     styles = ""
     for class_name, color in asdict(node_colors).items():
         styles += f"\tclassDef {class_name}class fill:{color};\n"
     return styles
 
 
-class MermaidDrawMethod(Enum):
-    PYPPETEER = "pyppeteer" # Uses Pyppeteer to render the graph
-    API = "api" # Uses Mermaid.INK API to render the graph
-
-
-def draw_mermaid_png(mermaid_syntax: str, output_file: str = 'graph.png', draw_method: MermaidDrawMethod = MermaidDrawMethod.PYPPETEER, background_color: str = 'white', padding: int = 10):
-    """Draws a Mermaid graph using the provided graph data and saves it as a PNG image
-
-    Args:
-        mermaid_syntax (str): Mermaid graph syntax. Generated using `draw_mermaid` method.
-        output_file (str, optional): Output file path. Defaults to "graph.png".
-        draw_method (MermaidDrawMethod, optional): Method to use for drawing the graph. The methods available and their usage are: 
-            - MermaidDrawMethod.API: Uses Mermaid.INK API to render the graph (default)
-            - MermaidDrawMethod.PYPPETEER: Uses Pyppeteer to render the graph. It requires Pyppeteer to be installed. 
-        background_color (str, optional): CSS background color for the graph. Defaults to 'white'.
-        padding (int, optional): Padding around the graph. Defaults to 10. (Only available for Pyppeteer method)
-
-    Example:
-        >>> node_ids = ['A', 'B', 'C', 'D']
-        >>> edges = [Edge('A', 'B'), Edge('B', 'C'), Edge('B', 'D'), Edge('A', 'D', 'end')]
-        >>> mermaid_syntax = draw_mermaid(node_ids, edges)
-        >>> draw_mermaid_png(mermaid_syntax, output_file='graph_api.png', draw_method=MermaidDrawMethod.API)
-        >>> # draw_mermaid_png(mermaid_syntax, output_file='graph_pyppeteer.png', draw_method=MermaidDrawMethod.PYPPETEER) # (Optionally if Pyppeteer is installed)
-    """
+def draw_mermaid_png(
+    mermaid_syntax: str,
+    output_file_path: str = "graph.png",
+    draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
+    background_color: str = "white",
+    padding: int = 10,
+) -> None:
+    """Draws a Mermaid graph as PNG using provided syntax."""
     if draw_method == MermaidDrawMethod.PYPPETEER:
         import asyncio
-        asyncio.run(_render_mermaid_using_pyppeteer(mermaid_syntax, output_file, background_color, padding))
-    elif draw_method == MermaidDrawMethod.API:
-        _render_mermaid_using_api(mermaid_syntax,output_file, background_color)
-    else:
-        raise ValueError(f"Invalid draw method: {draw_method}. Supported draw methods are: {', '.join([m.value for m in MermaidDrawMethod])}")
 
-async def _render_mermaid_using_pyppeteer(mermaid_syntax: str, output_file: str, background_color: str = 'white', padding: int = 10):   
-    """Renders the Mermaid graph using Pyppeteer and saves it as a PNG image. It requires Pyppeteer to be installed. 
-    
-    Args:
-        mermaid_syntax (str): Mermaid graph syntax. Generated using `draw_mermaid` method.
-        output_file (str): Output file path.
-        background_color (str, optional): CSS background color for the graph. Defaults to 'white'.
-        padding (int, optional): Padding around the graph. Defaults to 10.
-    """ 
+        asyncio.run(
+            _render_mermaid_using_pyppeteer(
+                mermaid_syntax, output_file_path, background_color, padding
+            )
+        )
+    elif draw_method == MermaidDrawMethod.API:
+        _render_mermaid_using_api(mermaid_syntax, output_file_path, background_color)
+    else:
+        supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
+        raise ValueError(
+            f"Invalid draw method: {draw_method}. "
+            f"Supported draw methods are: {supported_methods}"
+        )
+
+
+async def _render_mermaid_using_pyppeteer(
+    mermaid_syntax: str,
+    output_file_path: str,
+    background_color: str = "white",
+    padding: int = 10,
+) -> None:
+    """Renders Mermaid graph using Pyppeteer."""
     try:
-        from pyppeteer import launch
+        from pyppeteer import launch  # type: ignore[import]
     except ImportError as e:
-        raise ImportError("Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`.") from e
+        raise ImportError(
+            "Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`."
+        ) from e
 
     browser = await launch()
     page = await browser.newPage()
 
     # Setup Mermaid JS
-    await page.goto('about:blank')
-    await page.addScriptTag({'url': 'https://unpkg.com/mermaid/dist/mermaid.min.js'})
-    await page.evaluate('''() => {
+    await page.goto("about:blank")
+    await page.addScriptTag({"url": "https://unpkg.com/mermaid/dist/mermaid.min.js"})
+    await page.evaluate(
+        """() => {
                 mermaid.initialize({startOnLoad:true});
-            }''')
+            }"""
+    )
 
     # Render SVG
-    svg_code = await page.evaluate(f"""(mermaidGraph) => {{
+    svg_code = await page.evaluate(
+        """(mermaidGraph) => {
                 return mermaid.mermaidAPI.render('mermaid', mermaidGraph);
-            }}""", mermaid_syntax)
+            }""",
+        mermaid_syntax,
+    )
 
     # Set the page background to white
-    await page.evaluate(f'''(svg, background_color) => {{
+    await page.evaluate(
+        """(svg, background_color) => {
             document.body.innerHTML = svg;
             document.body.style.background = background_color;
-        }}''', svg_code['svg'], background_color)
+        }""",
+        svg_code["svg"],
+        background_color,
+    )
 
     # Take a screenshot
-    dimensions = await page.evaluate('''() => {
+    dimensions = await page.evaluate(
+        """() => {
             const svgElement = document.querySelector('svg');
             const rect = svgElement.getBoundingClientRect();
             return { width: rect.width, height: rect.height };
-        }''')
-    await page.setViewport({
-        'width': int(dimensions['width'] + padding),
-        'height': int(dimensions['height'] + padding)
-    })
-    await page.screenshot({'path': output_file, 'fullPage': False})
+        }"""
+    )
+    await page.setViewport(
+        {
+            "width": int(dimensions["width"] + padding),
+            "height": int(dimensions["height"] + padding),
+        }
+    )
+    await page.screenshot({"path": output_file_path, "fullPage": False})
     await browser.close()
 
-def _render_mermaid_using_api(mermaid_syntax: str, output_file: str, background_color: str = 'white'):
-    """Renders the Mermaid graph using the Mermaid.INK API and saves it as a PNG image.
-    Args:
-        mermaid_syntax (str): Mermaid graph syntax. Generated using `draw_mermaid` method.
-        output_file (str): Output file path.
-        background_color (str, optional): CSS background color for the graph. Defaults to 'white'.
-    """
+
+def _render_mermaid_using_api(
+    mermaid_syntax: str, output_file_path: str, background_color: str = "white"
+) -> None:
+    """Renders Mermaid graph using the Mermaid.INK API."""
     try:
-        import requests
+        import requests  # type: ignore[import]
     except ImportError as e:
-        raise ImportError("Install the `requests` module to use the Mermaid.INK API: `pip install requests`.") from e
+        raise ImportError(
+            "Install the `requests` module to use the Mermaid.INK API: "
+            "`pip install requests`."
+        ) from e
 
     # Use Mermaid API to render the image
-    mermaid_syntax_encoded = base64.b64encode(mermaid_syntax.encode("utf8")).decode("ascii")
+    mermaid_syntax_encoded = base64.b64encode(mermaid_syntax.encode("utf8")).decode(
+        "ascii"
+    )
 
     # Check if the background color is a hexadecimal color code using regex
-    hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+    hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
     if not hex_color_pattern.match(background_color):
         background_color = f"!{background_color}"
 
-    image_url = f"https://mermaid.ink/img/{mermaid_syntax_encoded}?bgColor={background_color}"
+    image_url = (
+        f"https://mermaid.ink/img/{mermaid_syntax_encoded}?bgColor={background_color}"
+    )
     response = requests.get(image_url)
     if response.status_code == 200:
-        with open(output_file, "wb") as file:
+        with open(output_file_path, "wb") as file:
             file.write(response.content)
     else:
-        raise Exception("Failed to render the image, make sure your graph is correct.")
+        raise ValueError(
+            f"Failed to render the graph using the Mermaid.INK API. "
+            f"Status code: {response.status_code}."
+        )
