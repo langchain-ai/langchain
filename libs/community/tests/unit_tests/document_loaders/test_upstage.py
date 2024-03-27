@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, SupportsIndex, Union
 from unittest.mock import MagicMock, Mock, patch
 
 from langchain_community.document_loaders.upstage import (
@@ -12,39 +12,37 @@ from langchain_community.document_loaders.upstage import (
 
 class TestUpstageDocumentLoader(unittest.TestCase):
     def setUp(self) -> None:
-        self.mock_response_json: Dict[str, Union[str, int, List]] = {
+        self.mock_response_json: Dict[str, Union[SupportsIndex, slice, str, int]] = {
             "api": "1.0",
             "billed_pages": 16,
-            "elements": List(
-                [
-                    {
-                        "bounding_box": [
-                            {"x": 74, "y": 906},
-                            {"x": 148, "y": 906},
-                            {"x": 148, "y": 2338},
-                            {"x": 74, "y": 2338},
-                        ],
-                        "category": "header",
-                        "html": "2021arXiv:2103.15348v2",
-                        "id": 0,
-                        "page": 1,
-                        "text": "arXiv:2103.15348v2",
-                    },
-                    {
-                        "bounding_box": [
-                            {"x": 654, "y": 474},
-                            {"x": 1912, "y": 474},
-                            {"x": 1912, "y": 614},
-                            {"x": 654, "y": 614},
-                        ],
-                        "category": "paragraph",
-                        "html": "LayoutParser Toolkit",
-                        "id": 1,
-                        "page": 1,
-                        "text": "LayoutParser Toolkit",
-                    },
-                ]
-            ),
+            "elements": [
+                {
+                    "bounding_box": [
+                        {"x": 74, "y": 906},
+                        {"x": 148, "y": 906},
+                        {"x": 148, "y": 2338},
+                        {"x": 74, "y": 2338},
+                    ],
+                    "category": "header",
+                    "html": "2021arXiv:2103.15348v2",
+                    "id": 0,
+                    "page": 1,
+                    "text": "arXiv:2103.15348v2",
+                },
+                {
+                    "bounding_box": [
+                        {"x": 654, "y": 474},
+                        {"x": 1912, "y": 474},
+                        {"x": 1912, "y": 614},
+                        {"x": 654, "y": 614},
+                    ],
+                    "category": "paragraph",
+                    "html": "LayoutParser Toolkit",
+                    "id": 1,
+                    "page": 1,
+                    "text": "LayoutParser Toolkit",
+                },
+            ],
             "html": "<header id='0'>arXiv:2103.15348v2</header>"
             + "<p id='1'>LayoutParser Toolkit</p>",
             "mimetype": "multipart/form-data",
