@@ -207,9 +207,9 @@ def get_loader_full_path(loader: BaseLoader) -> str:
             elif isinstance(loader, S3FileLoader):
                 location = f"s3://{loader.bucket}/{loader.key}"
         elif "source" in loader_dict:
-            location = loader_dict.get("source")
+            location = loader_dict["source"]
             if location and "channel" in loader_dict:
-                channel = loader_dict.get("channel")
+                channel = loader_dict["channel"]
                 if channel:
                     location = f"{location}/{channel}"
         elif "path" in loader_dict:
