@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import TYPE_CHECKING
 
 import pytest
 from langchain_core.documents import Document
