@@ -1,5 +1,6 @@
 """Test base LLM functionality."""
-from sqlalchemy import Column, Integer, Sequence, String, create_engine
+from sqlalchemy import (Column, DateTime, Integer,
+                        Sequence, String, create_engine)
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -61,6 +62,7 @@ def test_custom_caching() -> None:
         prompt = Column(String, nullable=False)
         llm = Column(String, nullable=False)
         idx = Column(Integer)
+        datetime = Column(DateTime)
         response = Column(String)
 
     engine = create_engine("sqlite://")
