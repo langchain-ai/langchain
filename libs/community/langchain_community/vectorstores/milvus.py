@@ -1068,7 +1068,7 @@ class Milvus(VectorStore):
                 "Failed to upsert entities: %s error: %s", self.collection_name, exc
             )
             raise exc
-        
+
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Run more documents through the embeddings and add to the vectorstore.
 
@@ -1081,5 +1081,4 @@ class Milvus(VectorStore):
         # TODO: Handle the case where the user doesn't provide ids on the Collection
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        return self.add_texts(texts, metadatas, **kwargs)    
-
+        return self.add_texts(texts, metadatas, **kwargs)
