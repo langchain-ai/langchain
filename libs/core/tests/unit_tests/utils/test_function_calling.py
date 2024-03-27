@@ -71,6 +71,21 @@ def json_schema() -> Dict:
     }
 
 
+@pytest.fixture()
+def json_schema_lax() -> Dict:
+    return {
+        "type": "object",
+        "properties": {
+            "arg1": {"description": "foo", "type": "integer"},
+            "arg2": {
+                "description": "one of 'bar', 'baz'",
+                "enum": ["bar", "baz"],
+                "type": "string",
+            },
+        },
+    }
+
+
 def test_convert_to_openai_function(
     pydantic: Type[BaseModel],
     function: Callable,
@@ -97,6 +112,26 @@ def test_convert_to_openai_function(
     for fn in (pydantic, function, dummy_tool, json_schema, expected):
         actual = convert_to_openai_function(fn)  # type: ignore
         assert actual == expected
+
+
+def test_convert_lax_jsonschema_to_openai_function(json_schema_lax: Dict) -> None:
+    expected = {
+        "name": "extract",
+        "description": "",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {"description": "foo", "type": "integer"},
+                "arg2": {
+                    "description": "one of 'bar', 'baz'",
+                    "enum": ["bar", "baz"],
+                    "type": "string",
+                },
+            },
+        },
+    }
+
+    assert convert_to_openai_function(json_schema_lax) == expected
 
 
 @pytest.mark.xfail(reason="Pydantic converts Optional[str] to str in .schema()")
