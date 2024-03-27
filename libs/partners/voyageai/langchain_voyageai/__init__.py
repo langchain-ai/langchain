@@ -3,5 +3,5 @@ from langchain_voyageai.rerank import  VoyageAIRerank
 
 __all__ = [
     "VoyageAIEmbeddings",
-    " VoyageAIRerank"
+    "VoyageAIRerank"
 ]
