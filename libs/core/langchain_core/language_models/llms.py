@@ -7,6 +7,7 @@ import functools
 import inspect
 import json
 import logging
+import uuid
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -37,6 +38,7 @@ from tenacity import (
 )
 
 from langchain_core._api import deprecated
+from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
@@ -250,6 +252,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 tags=config.get("tags"),
                 metadata=config.get("metadata"),
                 run_name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 **kwargs,
             )
             .generations[0][0]
@@ -272,6 +275,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             **kwargs,
         )
         return llm_result.generations[0][0].text
@@ -402,6 +406,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 invocation_params=params,
                 options=options,
                 name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 batch_size=1,
             )
             generation: Optional[GenerationChunk] = None
@@ -434,54 +439,59 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
-        if type(self)._astream == BaseLLM._astream:
-            # model doesn't implement streaming, so use default implementation
+        if (
+            type(self)._astream is BaseLLM._astream
+            and type(self)._stream is BaseLLM._stream
+        ):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
+            return
+
+        prompt = self._convert_input(input).to_string()
+        config = ensure_config(config)
+        params = self.dict()
+        params["stop"] = stop
+        params = {**params, **kwargs}
+        options = {"stop": stop}
+        callback_manager = AsyncCallbackManager.configure(
+            config.get("callbacks"),
+            self.callbacks,
+            self.verbose,
+            config.get("tags"),
+            self.tags,
+            config.get("metadata"),
+            self.metadata,
+        )
+        (run_manager,) = await callback_manager.on_llm_start(
+            dumpd(self),
+            [prompt],
+            invocation_params=params,
+            options=options,
+            name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
+            batch_size=1,
+        )
+        generation: Optional[GenerationChunk] = None
+        try:
+            async for chunk in self._astream(
+                prompt,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
+            ):
+                yield chunk.text
+                if generation is None:
+                    generation = chunk
+                else:
+                    generation += chunk
+            assert generation is not None
+        except BaseException as e:
+            await run_manager.on_llm_error(
+                e,
+                response=LLMResult(generations=[[generation]] if generation else []),
+            )
+            raise e
         else:
-            prompt = self._convert_input(input).to_string()
-            config = ensure_config(config)
-            params = self.dict()
-            params["stop"] = stop
-            params = {**params, **kwargs}
-            options = {"stop": stop}
-            callback_manager = AsyncCallbackManager.configure(
-                config.get("callbacks"),
-                self.callbacks,
-                self.verbose,
-                config.get("tags"),
-                self.tags,
-                config.get("metadata"),
-                self.metadata,
-            )
-            (run_manager,) = await callback_manager.on_llm_start(
-                dumpd(self),
-                [prompt],
-                invocation_params=params,
-                options=options,
-                name=config.get("run_name"),
-                batch_size=1,
-            )
-            generation: Optional[GenerationChunk] = None
-            try:
-                async for chunk in self._astream(
-                    prompt, stop=stop, run_manager=run_manager, **kwargs
-                ):
-                    yield chunk.text
-                    if generation is None:
-                        generation = chunk
-                    else:
-                        generation += chunk
-                assert generation is not None
-            except BaseException as e:
-                await run_manager.on_llm_error(
-                    e,
-                    response=LLMResult(
-                        generations=[[generation]] if generation else []
-                    ),
-                )
-                raise e
-            else:
-                await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+            await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
     # --- Custom methods ---
 
@@ -521,14 +531,32 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     ) -> Iterator[GenerationChunk]:
         raise NotImplementedError()
 
-    def _astream(
+    async def _astream(
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        raise NotImplementedError()
+        iterator = await run_in_executor(
+            None,
+            self._stream,
+            prompt,
+            stop,
+            run_manager.get_sync() if run_manager else None,
+            **kwargs,
+        )
+        done = object()
+        while True:
+            item = await run_in_executor(
+                None,
+                next,
+                iterator,
+                done,  # type: ignore[call-arg, arg-type]
+            )
+            if item is done:
+                break
+            yield item  # type: ignore[misc]
 
     def generate_prompt(
         self,
@@ -594,6 +622,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         tags: Optional[Union[List[str], List[List[str]]]] = None,
         metadata: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
         run_name: Optional[Union[str, List[str]]] = None,
+        run_id: Optional[Union[uuid.UUID, List[Optional[uuid.UUID]]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Pass a sequence of prompts to a model and return generations.
@@ -679,7 +708,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ] * len(prompts)
             run_name_list = [cast(Optional[str], run_name)] * len(prompts)
-
+        run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
         options = {"stop": stop}
@@ -689,6 +718,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = get_prompts(params, prompts)
+        if isinstance(self.cache, BaseCache):
+            raise NotImplementedError(
+                "Local cache is not yet supported for " "LLMs (only chat models)"
+            )
         disregard_cache = self.cache is not None and not self.cache
         new_arg_supported = inspect.signature(self._generate).parameters.get(
             "run_manager"
@@ -706,9 +739,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     options=options,
                     name=run_name,
                     batch_size=len(prompts),
+                    run_id=run_id_,
                 )[0]
-                for callback_manager, prompt, run_name in zip(
-                    callback_managers, prompts, run_name_list
+                for callback_manager, prompt, run_name, run_id_ in zip(
+                    callback_managers, prompts, run_name_list, run_ids_list
                 )
             ]
             output = self._generate_helper(
@@ -743,6 +777,21 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_info = None
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
+
+    @staticmethod
+    def _get_run_ids_list(
+        run_id: Optional[Union[uuid.UUID, List[Optional[uuid.UUID]]]], prompts: list
+    ) -> list:
+        if run_id is None:
+            return [None] * len(prompts)
+        if isinstance(run_id, list):
+            if len(run_id) != len(prompts):
+                raise ValueError(
+                    "Number of manually provided run_id's does not match batch length."
+                    f" {len(run_id)} != {len(prompts)}"
+                )
+            return run_id
+        return [run_id] + [None] * (len(prompts) - 1)
 
     async def _agenerate_helper(
         self,
@@ -795,6 +844,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         tags: Optional[Union[List[str], List[List[str]]]] = None,
         metadata: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
         run_name: Optional[Union[str, List[str]]] = None,
+        run_id: Optional[Union[uuid.UUID, List[Optional[uuid.UUID]]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Asynchronously pass a sequence of prompts to a model and return generations.
@@ -871,7 +921,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ] * len(prompts)
             run_name_list = [cast(Optional[str], run_name)] * len(prompts)
-
+        run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
         options = {"stop": stop}
@@ -881,6 +931,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = await aget_prompts(params, prompts)
+        if isinstance(self.cache, BaseCache):
+            raise NotImplementedError(
+                "Local cache is not yet supported for " "LLMs (only chat models)"
+            )
+
         disregard_cache = self.cache is not None and not self.cache
         new_arg_supported = inspect.signature(self._agenerate).parameters.get(
             "run_manager"
@@ -899,9 +954,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         options=options,
                         name=run_name,
                         batch_size=len(prompts),
+                        run_id=run_id_,
                     )
-                    for callback_manager, prompt, run_name in zip(
-                        callback_managers, prompts, run_name_list
+                    for callback_manager, prompt, run_name, run_id_ in zip(
+                        callback_managers, prompts, run_name_list, run_ids_list
                     )
                 ]
             )
