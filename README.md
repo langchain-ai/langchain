@@ -283,7 +283,7 @@ pip uninstall langchain
 pip install -U gigachain_core
 pip install -U gigachain_community
 pip install -U gigachain_experimental
-pip install -U gigahain_openai
+pip install -U gigachain_openai
 pip install -U gigachain
 ```
 
