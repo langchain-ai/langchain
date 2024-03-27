@@ -20,7 +20,6 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         api_version: Optional[str] = None,
         api_model: str = "prebuilt-layout",
         mode: str = "markdown",
-        *,
         analysis_features: Optional[List[str]] = None,
     ):
         from azure.ai.documentintelligence import DocumentIntelligenceClient
