@@ -30,7 +30,7 @@ api_docs_build:
 	cd docs/api_reference && poetry run make html
 
 api_docs_clean:
-	rm -f docs/api_reference/api_reference.rst
+	find ./docs/api_reference -name '*_api_reference.rst' -delete
 	cd docs/api_reference && poetry run make clean
 
 api_docs_linkcheck:

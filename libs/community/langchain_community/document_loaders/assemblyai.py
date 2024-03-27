@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Iterator, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Iterator, Optional, Union
 
 import requests
 from langchain_core.documents import Document
@@ -44,7 +45,7 @@ class AssemblyAIAudioTranscriptLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, Path],
         *,
         transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
         config: Optional[assemblyai.TranscriptionConfig] = None,
@@ -71,7 +72,7 @@ class AssemblyAIAudioTranscriptLoader(BaseLoader):
         if api_key is not None:
             assemblyai.settings.api_key = api_key
 
-        self.file_path = file_path
+        self.file_path = str(file_path)
         self.transcript_format = transcript_format
         self.transcriber = assemblyai.Transcriber(config=config)
 

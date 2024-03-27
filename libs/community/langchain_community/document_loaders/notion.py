@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from langchain_core.documents import Document
 
@@ -9,7 +9,7 @@ from langchain_community.document_loaders.base import BaseLoader
 class NotionDirectoryLoader(BaseLoader):
     """Load `Notion directory` dump."""
 
-    def __init__(self, path: str, *, encoding: str = "utf-8") -> None:
+    def __init__(self, path: Union[str, Path], *, encoding: str = "utf-8") -> None:
         """Initialize with a file path."""
         self.file_path = path
         self.encoding = encoding

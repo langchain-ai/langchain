@@ -1,3 +1,4 @@
+"""Experimental **text splitter** based on semantic similarity."""
 import copy
 import re
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast

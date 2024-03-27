@@ -28,7 +28,7 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
     api_key: str = ""
     """API Key. Both Admin and Query keys work, but for reading data it's
     recommended to use a Query key."""
-    api_version: str = "2020-06-30"
+    api_version: str = "2023-11-01"
     """API version"""
     aiosession: Optional[aiohttp.ClientSession] = None
     """ClientSession, in case we want to reuse connection for better performance."""
@@ -59,7 +59,14 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
         url_suffix = get_from_env(
             "", "AZURE_COGNITIVE_SEARCH_URL_SUFFIX", DEFAULT_URL_SUFFIX
         )
-        base_url = f"https://{self.service_name}.{url_suffix}/"
+        if url_suffix in self.service_name and "https://" in self.service_name:
+            base_url = f"{self.service_name}/"
+        elif url_suffix in self.service_name and "https://" not in self.service_name:
+            base_url = f"https://{self.service_name}/"
+        elif url_suffix not in self.service_name and "https://" in self.service_name:
+            base_url = f"{self.service_name}.{url_suffix}/"
+        else:
+            base_url = self.service_name
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
         top_param = f"&$top={self.top_k}" if self.top_k else ""
         return base_url + endpoint_path + f"&search={query}" + top_param

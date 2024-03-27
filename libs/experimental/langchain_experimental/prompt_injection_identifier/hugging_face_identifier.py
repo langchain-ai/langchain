@@ -50,7 +50,7 @@ def _model_default_factory(
 
 
 class HuggingFaceInjectionIdentifier(BaseTool):
-    """Tool that uses HuggingFace Prompt Injection to
+    """Tool that uses HuggingFace Prompt Injection model to
     detect prompt injection attacks."""
 
     name: str = "hugging_face_injection_identifier"

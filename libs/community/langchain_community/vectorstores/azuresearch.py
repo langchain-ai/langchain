@@ -69,7 +69,9 @@ def _get_search_client(
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
-    semantic_configurations: Optional[SemanticConfiguration] = None,
+    semantic_configurations: Optional[
+        Union[SemanticConfiguration, List[SemanticConfiguration]]
+    ] = None,
     scoring_profiles: Optional[List[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
     default_fields: Optional[List[SearchField]] = None,
@@ -175,8 +177,15 @@ def _get_search_client(
             )
 
         # Create the semantic settings with the configuration
-        semantic_search = None
-        if semantic_configurations is None and semantic_configuration_name is not None:
+        if semantic_configurations:
+            if not isinstance(semantic_configurations, list):
+                semantic_configurations = [semantic_configurations]
+            semantic_search = SemanticSearch(
+                configurations=semantic_configurations,
+                default_configuration_name=semantic_configuration_name,
+            )
+        elif semantic_configuration_name:
+            # use default semantic configuration
             semantic_configuration = SemanticConfiguration(
                 name=semantic_configuration_name,
                 prioritized_fields=SemanticPrioritizedFields(
@@ -184,6 +193,9 @@ def _get_search_client(
                 ),
             )
             semantic_search = SemanticSearch(configurations=[semantic_configuration])
+        else:
+            # don't use semantic search
+            semantic_search = None
 
         # Create the search index with the semantic settings and vector search
         index = SearchIndex(
@@ -218,7 +230,9 @@ class AzureSearch(VectorStore):
         semantic_configuration_name: Optional[str] = None,
         fields: Optional[List[SearchField]] = None,
         vector_search: Optional[VectorSearch] = None,
-        semantic_configurations: Optional[SemanticConfiguration] = None,
+        semantic_configurations: Optional[
+            Union[SemanticConfiguration, List[SemanticConfiguration]]
+        ] = None,
         scoring_profiles: Optional[List[ScoringProfile]] = None,
         default_scoring_profile: Optional[str] = None,
         cors_options: Optional[CorsOptions] = None,
@@ -604,7 +618,7 @@ class AzureSearch(VectorStore):
                             if result.get("@search.captions")
                             else {},
                             "answers": semantic_answers_dict.get(
-                                json.loads(result["metadata"]).get("key"),
+                                result.get(FIELDS_ID, ""),
                                 "",
                             ),
                         },

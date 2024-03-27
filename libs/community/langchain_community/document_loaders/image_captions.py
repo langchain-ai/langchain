@@ -1,4 +1,5 @@
 from io import BytesIO
+from pathlib import Path
 from typing import Any, List, Tuple, Union
 
 import requests
@@ -17,7 +18,7 @@ class ImageCaptionLoader(BaseLoader):
 
     def __init__(
         self,
-        images: Union[str, bytes, List[Union[str, bytes]]],
+        images: Union[str, Path, bytes, List[Union[str, bytes, Path]]],
         blip_processor: str = "Salesforce/blip-image-captioning-base",
         blip_model: str = "Salesforce/blip-image-captioning-base",
     ):
@@ -29,7 +30,7 @@ class ImageCaptionLoader(BaseLoader):
             blip_processor: The name of the pre-trained BLIP processor.
             blip_model: The name of the pre-trained BLIP model.
         """
-        if isinstance(images, (str, bytes)):
+        if isinstance(images, (str, Path, bytes)):
             self.images = [images]
         else:
             self.images = images
@@ -61,7 +62,7 @@ class ImageCaptionLoader(BaseLoader):
         return results
 
     def _get_captions_and_metadata(
-        self, model: Any, processor: Any, image: Union[str, bytes]
+        self, model: Any, processor: Any, image: Union[str, Path, bytes]
     ) -> Tuple[str, dict]:
         """Helper function for getting the captions and metadata of an image."""
         try:
@@ -76,7 +77,9 @@ class ImageCaptionLoader(BaseLoader):
         try:
             if isinstance(image, bytes):
                 image = Image.open(BytesIO(image)).convert("RGB")
-            elif image.startswith("http://") or image.startswith("https://"):
+            elif isinstance(image, str) and (
+                image.startswith("http://") or image.startswith("https://")
+            ):
                 image = Image.open(requests.get(image, stream=True).raw).convert("RGB")
             else:
                 image = Image.open(image).convert("RGB")
@@ -94,6 +97,6 @@ class ImageCaptionLoader(BaseLoader):
         if isinstance(image_source, bytes):
             metadata: dict = {"image_source": "Image bytes provided"}
         else:
-            metadata = {"image_path": image_source}
+            metadata = {"image_path": str(image_source)}
 
         return caption, metadata

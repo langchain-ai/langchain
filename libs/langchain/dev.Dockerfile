@@ -35,7 +35,7 @@ FROM langchain-dev-base AS langchain-dev-dependencies
 ARG PYTHON_VIRTUALENV_HOME
 
 # Copy only the dependency files for installation
-COPY libs/langchain/pyproject.toml libs/langchain/poetry.toml ./
+COPY libs/langchain/pyproject.toml libs/langchain/poetry.toml libs/langchain/poetry.lock ./
 
 # Copy the langchain library for installation
 COPY libs/langchain/ libs/langchain/

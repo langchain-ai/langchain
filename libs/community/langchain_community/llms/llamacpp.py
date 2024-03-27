@@ -344,11 +344,11 @@ class LlamaCpp(LLM):
                 text=part["choices"][0]["text"],
                 generation_info={"logprobs": logprobs},
             )
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
                     token=chunk.text, verbose=self.verbose, log_probs=logprobs
                 )
+            yield chunk
 
     def get_num_tokens(self, text: str) -> int:
         tokenized_text = self.client.tokenize(text.encode("utf-8"))

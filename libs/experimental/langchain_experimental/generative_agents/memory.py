@@ -4,11 +4,11 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import BaseMemory, Document
 from langchain.utils import mock_now
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
 
 logger = logging.getLogger(__name__)
 

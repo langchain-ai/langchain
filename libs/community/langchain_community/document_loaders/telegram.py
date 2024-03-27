@@ -25,7 +25,7 @@ def concatenate_rows(row: dict) -> str:
 class TelegramChatFileLoader(BaseLoader):
     """Load from `Telegram chat` dump."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: Union[str, Path]):
         """Initialize with a path."""
         self.file_path = path
 

@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Union
 
 from langchain_core.documents import Document
 
@@ -14,7 +14,10 @@ class AcreomLoader(BaseLoader):
     """Regex to match front matter metadata in markdown files."""
 
     def __init__(
-        self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
+        self,
+        path: Union[str, Path],
+        encoding: str = "UTF-8",
+        collect_metadata: bool = True,
     ):
         """Initialize the loader."""
         self.file_path = path

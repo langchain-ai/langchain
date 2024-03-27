@@ -143,24 +143,26 @@ def map_to_base_relationship(rel: Any) -> Relationship:
 
 
 class LLMGraphTransformer:
-    """
-    A class designed to transform documents into graph-based documents using a LLM.
+    """Transform documents into graph-based documents using a LLM.
+
     It allows specifying constraints on the types of nodes and relationships to include
     in the output graph. The class doesn't support neither extract and node or
     relationship properties
 
     Args:
         llm (BaseLanguageModel): An instance of a language model supporting structured
-        output. allowed_nodes (List[str], optional): Specifies which node types are
-        allowed in the graph. Defaults to an empty list, allowing all node types.
+          output.
+        allowed_nodes (List[str], optional): Specifies which node types are
+          allowed in the graph. Defaults to an empty list, allowing all node types.
         allowed_relationships (List[str], optional): Specifies which relationship types
-        are allowed in the graph. Defaults to an empty list, allowing all relationship
-        types.
-        prompt (Optional[ChatPromptTemplate], optional): The prompt to pass to the to
-        the LLM with additional instructions.
+          are allowed in the graph. Defaults to an empty list, allowing all relationship
+          types.
+        prompt (Optional[ChatPromptTemplate], optional): The prompt to pass to
+          the LLM with additional instructions.
         strict_mode (bool, optional): Determines whether the transformer should apply
-        filtering to strictly adhere to `allowed_nodes` and `allowed_relationships`.
-        Defaults to True.
+          filtering to strictly adhere to `allowed_nodes` and `allowed_relationships`.
+          Defaults to True.
+
     Example:
         .. code-block:: python
             from langchain_experimental.graph_transformers import LLMGraphTransformer

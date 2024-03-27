@@ -94,6 +94,8 @@ class RecursiveUrlLoader(BaseLoader):
         headers: Optional[dict] = None,
         check_response_status: bool = False,
         continue_on_failure: bool = True,
+        *,
+        base_url: Optional[str] = None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
@@ -120,6 +122,7 @@ class RecursiveUrlLoader(BaseLoader):
                 URLs with error responses (400-599).
             continue_on_failure: If True, continue if getting or parsing a link raises
                 an exception. Otherwise, raise the exception.
+            base_url: The base url to check for outside links against.
         """
 
         self.url = url
@@ -146,6 +149,7 @@ class RecursiveUrlLoader(BaseLoader):
         self.headers = headers
         self.check_response_status = check_response_status
         self.continue_on_failure = continue_on_failure
+        self.base_url = base_url if base_url is not None else url
 
     def _get_child_links_recursive(
         self, url: str, visited: Set[str], *, depth: int = 0
@@ -187,7 +191,7 @@ class RecursiveUrlLoader(BaseLoader):
         sub_links = extract_sub_links(
             response.text,
             url,
-            base_url=self.url,
+            base_url=self.base_url,
             pattern=self.link_regex,
             prevent_outside=self.prevent_outside,
             exclude_prefixes=self.exclude_dirs,
@@ -273,7 +277,7 @@ class RecursiveUrlLoader(BaseLoader):
             sub_links = extract_sub_links(
                 text,
                 url,
-                base_url=self.url,
+                base_url=self.base_url,
                 pattern=self.link_regex,
                 prevent_outside=self.prevent_outside,
                 exclude_prefixes=self.exclude_dirs,

@@ -1,7 +1,7 @@
 """Loads .ipynb notebook files."""
 import json
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Union
 
 from langchain_core.documents import Document
 
@@ -75,7 +75,7 @@ class NotebookLoader(BaseLoader):
 
     def __init__(
         self,
-        path: str,
+        path: Union[str, Path],
         include_outputs: bool = False,
         max_output_length: int = 10,
         remove_newline: bool = False,

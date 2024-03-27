@@ -155,7 +155,7 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     removed_protocol = gitstring.split("://")[-1]
     removed_basename = re.split(r"[/:]", removed_protocol, 1)[-1]
     removed_extras = removed_basename.split("#")[0]
-    foldername = re.sub(r"[^a-zA-Z0-9_]", "_", removed_extras)
+    foldername = re.sub(r"\W", "_", removed_extras)
 
     directory_name = f"{foldername}_{hashed}"
     return repo_dir / directory_name

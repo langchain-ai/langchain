@@ -69,7 +69,7 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
         Z = 1 - simd.cdist(X, Y, metric="cosine")
         if isinstance(Z, float):
             return np.array([Z])
-        return Z
+        return np.array(Z)
     except ImportError:
         X_norm = np.linalg.norm(X, axis=1)
         Y_norm = np.linalg.norm(Y, axis=1)

@@ -2,7 +2,8 @@
 import os
 import tempfile
 from abc import ABC
-from typing import List
+from pathlib import Path
+from typing import List, Union
 from urllib.parse import urlparse
 
 import requests
@@ -19,9 +20,9 @@ class Docx2txtLoader(BaseLoader, ABC):
     to a temporary file, and use that, then clean up the temporary file after completion
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: Union[str, Path]):
         """Initialize with file path."""
-        self.file_path = file_path
+        self.file_path = str(file_path)
         if "~" in self.file_path:
             self.file_path = os.path.expanduser(self.file_path)
 
