@@ -34,13 +34,14 @@ class Together(LLM):
             model = Together(model_name="mistralai/Mixtral-8x7B-Instruct-v0.1")
     """
 
-    base_url: str = "https://api.together.xyz/inference"
-    """Base inference API URL."""
+    base_url: str = "https://api.together.xyz/v1/completions"
+    """Base completions API URL."""
     together_api_key: SecretStr
     """Together AI API key. Get it here: https://api.together.xyz/settings/api-keys"""
     model: str
     """Model name. Available models listed here: 
-        https://docs.together.ai/docs/inference-models
+        Base Models: https://docs.together.ai/docs/inference-models#language-models
+        Chat Models: https://docs.together.ai/docs/inference-models#chat-models
     """
     temperature: Optional[float] = None
     """Model temperature."""
@@ -88,7 +89,7 @@ class Together(LLM):
         return "together"
 
     def _format_output(self, output: dict) -> str:
-        return output["output"]["choices"][0]["text"]
+        return output["choices"][0]["text"]
 
     @staticmethod
     def get_user_agent() -> str:
@@ -148,9 +149,6 @@ class Together(LLM):
             )
 
         data = response.json()
-        if data.get("status") != "finished":
-            err_msg = data.get("error", "Undefined Error")
-            raise Exception(err_msg)
 
         output = self._format_output(data)
 
@@ -202,10 +200,6 @@ class Together(LLM):
                     )
 
                 response_json = await response.json()
-
-                if response_json.get("status") != "finished":
-                    err_msg = response_json.get("error", "Undefined Error")
-                    raise Exception(err_msg)
 
                 output = self._format_output(response_json)
                 return output
