@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/providers/optimum_intel",
+      "destination": "/docs/integrations/providers/intel"
+    },
+    {
       "source": "/docs/integrations/providers/facebook_chat",
       "destination": "/docs/integrations/providers/facebook"
     },
