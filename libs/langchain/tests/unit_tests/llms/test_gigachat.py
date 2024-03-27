@@ -9,6 +9,7 @@ from gigachat.models import (
     ChatCompletionChunk,
     Choices,
     ChoicesChunk,
+    MessagesRole,
     Messages,
     MessagesChunk,
     Usage,
@@ -27,7 +28,7 @@ def chat_completion() -> ChatCompletion:
         choices=[
             Choices(
                 message=Messages(
-                    role="assistant",
+                    role=MessagesRole.ASSISTANT,
                     content="Bar Baz",
                 ),
                 index=0,
