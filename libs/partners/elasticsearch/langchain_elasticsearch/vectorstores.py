@@ -397,7 +397,7 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
 class BM25RetrievalStrategy(BaseRetrievalStrategy):
     """Retrieval strategy using the native BM25 algorithm of Elasticsearch."""
 
-    def __init__(self, k1: float, b: float):
+    def __init__(self, k1: Union[float, None], b: Union[float, None]):
         self.k1 = k1
         self.b = b
 
@@ -436,25 +436,29 @@ class BM25RetrievalStrategy(BaseRetrievalStrategy):
         text_field: str,
         similarity: Union[DistanceStrategy, None],
     ) -> Dict:
-        return {
-            "mappings": {
-                "properties": {
-                    text_field: {
-                        "type": "text",
-                        "similarity": "custom_bm25",
-                    },
-                },
-            },
-            "settings": {
-                "similarity": {
-                    "custom_bm25": {
-                        "type": "BM25",
-                        "k1": self.k1,
-                        "b": self.b,
-                    }
+        mappings: Dict = {
+            "properties": {
+                text_field: {
+                    "type": "text",
+                    "similarity": "custom_bm25",
                 },
             },
         }
+        settings: Dict = {
+            "similarity": {
+                "custom_bm25": {
+                    "type": "BM25",
+                },
+            },
+        }
+
+        if self.k1 is not None:
+            settings["similarity"]["custom_bm25"]["k1"] = self.k1
+
+        if self.b is not None:
+            settings["similarity"]["custom_bm25"]["b"] = self.b
+
+        return {"mappings": mappings, "settings": settings}
 
     def require_inference(self) -> bool:
         return False
@@ -1359,12 +1363,14 @@ class ElasticsearchStore(VectorStore):
 
     @staticmethod
     def BM25RetrievalStrategy(
-        k1: float = 2.0, b: float = 0.75
+        k1: Union[float, None] = None, b: Union[float, None] = None
     ) -> "BM25RetrievalStrategy":
         """Used to apply BM25 without vector search.
 
         Args:
-            k1: Optional. Default is 2.0. This corresponds to the BM25 parameter, k1.
-            b: Optional. Default is 0.75. This corresponds to the BM25 parameter, b.
+            k1: Optional. This corresponds to the BM25 parameter, k1. Default is None,
+                which uses the default setting of Elasticsearch.
+            b: Optional. This corresponds to the BM25 parameter, b. Default is None,
+               which uses the default setting of Elasticsearch.
         """
         return BM25RetrievalStrategy(k1=k1, b=b)
