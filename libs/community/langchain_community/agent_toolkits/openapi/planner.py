@@ -355,6 +355,14 @@ def create_openapi_agent(
     We use a top-level "orchestrator" agent to invoke the planner and controller,
     rather than a top-level planner
     that invokes a controller with its plan. This is to keep the planner simple.
+
+    You need to set allow_dangerous_requests to True to use Agent with BaseRequestsTool.
+    Requests can be dangerous and can lead to security vulnerabilities.
+    For example, users can ask a server to make a request to an internal
+    server. It's recommended to use requests through a proxy server
+    and avoid accepting inputs from untrusted sources without proper sandboxing.
+    Please see: https://python.langchain.com/docs/security
+    for further security information.
     """
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
