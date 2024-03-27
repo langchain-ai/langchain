@@ -1,4 +1,6 @@
 """Test VDMS functionality."""
+from __future__ import annotations
+
 import logging
 import os
 
@@ -12,20 +14,27 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
 )
 
+if TYPE_CHECKING:
+    import vdms
+
 logging.basicConfig(level=logging.DEBUG)
+
 
 # The connection string matches the default settings in the docker-compose file
 # located in the root of the repository: [root]/docker/docker-compose.yml
 # To spin up a detached VDMS server:
 # cd [root]/docker
 # docker compose up -d vdms
-vdms_client = VDMS_Client(
-    host=os.getenv("VDMS_DBHOST", "localhost"), port=int(os.getenv("VDMS_DBPORT", 6025))
-)
+@pytest.fixture
+def vdms_client() -> vdms.vdms:
+    return VDMS_Client(
+        host=os.getenv("VDMS_DBHOST", "localhost"),
+        port=int(os.getenv("VDMS_DBPORT", 6025)),
+    )
 
 
 @pytest.mark.requires("vdms")
-def test_init_from_client() -> None:
+def test_init_from_client(vdms_client: vdms.vdms) -> None:
     embedding_function = FakeEmbeddings()
     _ = VDMS(
         embedding_function=embedding_function,
@@ -34,7 +43,7 @@ def test_init_from_client() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_from_texts_with_metadatas() -> None:
+def test_from_texts_with_metadatas(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and search."""
     collection_name = "test_from_texts_with_metadatas"
     embedding_function = FakeEmbeddings()
@@ -56,7 +65,7 @@ def test_from_texts_with_metadatas() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_from_texts_with_metadatas_with_scores() -> None:
+def test_from_texts_with_metadatas_with_scores(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and scored search."""
     collection_name = "test_from_texts_with_metadatas_with_scores"
     embedding_function = FakeEmbeddings()
@@ -78,7 +87,9 @@ def test_from_texts_with_metadatas_with_scores() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_from_texts_with_metadatas_with_scores_using_vector() -> None:
+def test_from_texts_with_metadatas_with_scores_using_vector(
+    vdms_client: vdms.vdms,
+) -> None:
     """Test end to end construction and scored search, using embedding vector."""
     collection_name = "test_from_texts_with_metadatas_with_scores_using_vector"
     embedding_function = FakeEmbeddings()
@@ -100,7 +111,7 @@ def test_from_texts_with_metadatas_with_scores_using_vector() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_search_filter() -> None:
+def test_search_filter(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and search with metadata filtering."""
     collection_name = "test_search_filter"
     embedding_function = FakeEmbeddings()
@@ -131,7 +142,7 @@ def test_search_filter() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_search_filter_with_scores() -> None:
+def test_search_filter_with_scores(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and scored search with metadata filtering."""
     collection_name = "test_search_filter_with_scores"
     embedding_function = FakeEmbeddings()
@@ -172,7 +183,7 @@ def test_search_filter_with_scores() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_mmr() -> None:
+def test_mmr(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and search."""
     collection_name = "test_mmr"
     embedding_function = FakeEmbeddings()
@@ -190,7 +201,7 @@ def test_mmr() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_mmr_by_vector() -> None:
+def test_mmr_by_vector(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and search."""
     collection_name = "test_mmr_by_vector"
     embedding_function = FakeEmbeddings()
@@ -209,7 +220,7 @@ def test_mmr_by_vector() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_with_include_parameter() -> None:
+def test_with_include_parameter(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and include parameter."""
     collection_name = "test_with_include_parameter"
     embedding_function = FakeEmbeddings()
@@ -227,7 +238,7 @@ def test_with_include_parameter() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_update_document() -> None:
+def test_update_document(vdms_client: vdms.vdms) -> None:
     """Test the update_document function in the VDMS class."""
     collection_name = "test_update_document"
 
@@ -292,7 +303,7 @@ def test_update_document() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_with_relevance_score() -> None:
+def test_with_relevance_score(vdms_client: vdms.vdms) -> None:
     """Test to make sure the relevance score is scaled to 0-1."""
     collection_name = "test_with_relevance_score"
     embedding_function = FakeEmbeddings()
@@ -316,7 +327,7 @@ def test_with_relevance_score() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_add_documents_no_metadata() -> None:
+def test_add_documents_no_metadata(vdms_client: vdms.vdms) -> None:
     collection_name = "test_add_documents_no_metadata"
     embedding_function = FakeEmbeddings()
     db = VDMS(
@@ -328,7 +339,7 @@ def test_add_documents_no_metadata() -> None:
 
 
 @pytest.mark.requires("vdms")
-def test_add_documents_mixed_metadata() -> None:
+def test_add_documents_mixed_metadata(vdms_client: vdms.vdms) -> None:
     collection_name = "test_add_documents_mixed_metadata"
     embedding_function = FakeEmbeddings()
     db = VDMS(

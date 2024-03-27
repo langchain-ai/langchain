@@ -5,6 +5,7 @@ import logging
 import uuid
 from copy import deepcopy
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -26,13 +27,8 @@ from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
-try:
+if TYPE_CHECKING:
     import vdms
-except ImportError:
-    raise ImportError(
-        "Could not import vdms python package. "
-        "Please install it with `pip install vdms."
-    )
 
 
 DISTANCE_METRICS = Literal[
@@ -88,6 +84,14 @@ def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
         host: IP or hostname of VDMS server
         port: Port to connect to VDMS server
     """
+    try:
+        import vdms
+    except ImportError:
+        raise ImportError(
+            "Could not import vdms python package. "
+            "Please install it with `pip install vdms."
+        )
+
     client = vdms.vdms()
     client.connect(host, port)
     return client
