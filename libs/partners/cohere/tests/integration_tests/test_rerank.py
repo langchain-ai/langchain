@@ -1,6 +1,7 @@
 """Test Cohere reranks."""
-from langchain_cohere import CohereRerank
 from langchain_core.documents import Document
+
+from langchain_cohere import CohereRerank
 
 
 def test_langchain_cohere_rerank_documents() -> None:
