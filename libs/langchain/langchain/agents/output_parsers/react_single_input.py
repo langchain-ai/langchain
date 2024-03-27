@@ -7,7 +7,9 @@ from langchain_core.exceptions import OutputParserException
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 
-FINAL_ANSWER_ACTION = "Final Answer:"
+FINAL_ANSWER_ACTIONS = [
+    "Final Answer:**", "Final Answer:", "Final Answer**:", "Final Answer"
+]
 MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = (
     "Invalid Format: Missing 'Action:' after 'Thought:"
 )
@@ -49,27 +51,24 @@ class ReActSingleInputOutputParser(AgentOutputParser):
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        includes_answer = FINAL_ANSWER_ACTION in text
+        for final_answer_action in FINAL_ANSWER_ACTIONS:
+            includes_answer = final_answer_action in text 
+            if includes_answer:
+                return AgentFinish(
+                    {"output": text.split(final_answer_action)[-1].strip()}, text
+                )
+                
         regex = (
             r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
         )
         action_match = re.search(regex, text, re.DOTALL)
         if action_match:
-            if includes_answer:
-                raise OutputParserException(
-                    f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}"
-                )
             action = action_match.group(1).strip()
             action_input = action_match.group(2)
             tool_input = action_input.strip(" ")
             tool_input = tool_input.strip('"')
 
             return AgentAction(action, tool_input, text)
-
-        elif includes_answer:
-            return AgentFinish(
-                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
-            )
 
         if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
             raise OutputParserException(
