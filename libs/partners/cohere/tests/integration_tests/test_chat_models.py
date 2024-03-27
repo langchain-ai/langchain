@@ -3,7 +3,7 @@
 import json
 from typing import Any
 
-from langchain_core.messages import AIMessageChunk
+from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_cohere import ChatCohere
@@ -71,7 +71,26 @@ def test_invoke() -> None:
 
 
 def test_invoke_tool_calls() -> None:
-    pass
+    llm = ChatCohere(temperature=0)
+
+    class Person(BaseModel):
+        name: str
+        age: int
+
+    tool_llm = llm.bind_tools([Person])
+
+    # where it calls the tool
+    result = tool_llm.stream("Erick, 27 years old")
+
+    assert isinstance(result, AIMessage)
+    additional_kwargs = result.additional_kwargs
+    assert "tool_calls" in additional_kwargs
+    assert len(additional_kwargs["tool_calls"]) == 1
+    assert additional_kwargs["tool_calls"][0]["function"]["name"] == "Person"
+    assert json.loads(additional_kwargs["tool_calls"][0]["function"]["arguments"]) == {
+        "name": "Erick",
+        "age": 27,
+    }
 
 
 def test_streaming_tool_call() -> None:
