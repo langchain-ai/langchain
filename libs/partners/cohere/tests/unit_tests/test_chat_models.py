@@ -55,7 +55,7 @@ def test_default_params(chat_cohere: ChatCohere, expected: typing.Dict) -> None:
                         "id": "foo",
                         "function": {
                             "name": "tool1",
-                            "arguments": {"arg1": 1, "arg2": "2"},
+                            "arguments": '{"arg1": 1, "arg2": "2"}',
                         },
                         "type": "function",
                     },
@@ -63,7 +63,7 @@ def test_default_params(chat_cohere: ChatCohere, expected: typing.Dict) -> None:
                         "id": "foo",
                         "function": {
                             "name": "tool2",
-                            "arguments": {"arg3": 3, "arg4": "4"},
+                            "arguments": '{"arg3": 3, "arg4": "4"}',
                         },
                         "type": "function",
                     },
