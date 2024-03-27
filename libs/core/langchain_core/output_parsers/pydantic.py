@@ -28,19 +28,17 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
         if PYDANTIC_MAJOR_VERSION == 2:
-            import pydantic.v1 as v1  # pydantic: ignore
-
             try:
                 if issubclass(self.pydantic_object, pydantic.BaseModel):
                     return self.pydantic_object.model_validate(obj)
-                elif issubclass(self.pydantic_object, v1.BaseModel):
+                elif issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                     return self.pydantic_object.parse_obj(obj)
                 else:
                     raise OutputParserException(
                         f"Unsupported model version for PydanticOutputParser: \
                             {self.pydantic_object.__class__}"
                     )
-            except (pydantic.ValidationError, v1.ValidationError) as e:
+            except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
                 raise self._parser_exception(e, obj)
         else:  # pydantic v1
             try:
