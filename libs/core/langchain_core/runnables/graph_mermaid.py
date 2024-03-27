@@ -1,4 +1,6 @@
+import base64
 from dataclasses import dataclass, asdict
+import re
 from langchain_core.runnables.graph import Edge
 from enum import Enum
 
@@ -125,15 +127,17 @@ class MermaidDrawMethod(Enum):
     API = "api" # Uses Mermaid.INK API to render the graph
 
 
-def draw_mermaid_png(mermaid_syntax: str, output_file: str = 'graph.png', draw_method: MermaidDrawMethod = MermaidDrawMethod.PYPPETEER):
+def draw_mermaid_png(mermaid_syntax: str, output_file: str = 'graph.png', draw_method: MermaidDrawMethod = MermaidDrawMethod.PYPPETEER, background_color: str = 'white', padding: int = 10):
     """Draws a Mermaid graph using the provided graph data and saves it as a PNG image
 
     Args:
         mermaid_syntax (str): Mermaid graph syntax. Generated using `draw_mermaid` method.
         output_file (str, optional): Output file path. Defaults to "graph.png".
         draw_method (MermaidDrawMethod, optional): Method to use for drawing the graph. The methods available and their usage are: 
-        - MermaidDrawMethod.API: Uses Mermaid.INK API to render the graph (default)
-        - MermaidDrawMethod.PYPPETEER: Uses Pyppeteer to render the graph
+            - MermaidDrawMethod.API: Uses Mermaid.INK API to render the graph (default)
+            - MermaidDrawMethod.PYPPETEER: Uses Pyppeteer to render the graph. It requires Pyppeteer to be installed. 
+        background_color (str, optional): CSS background color for the graph. Defaults to 'white'.
+        padding (int, optional): Padding around the graph. Defaults to 10. (Only available for Pyppeteer method)
 
     Example:
         >>> node_ids = ['A', 'B', 'C', 'D']
@@ -144,18 +148,25 @@ def draw_mermaid_png(mermaid_syntax: str, output_file: str = 'graph.png', draw_m
     """
     if draw_method == MermaidDrawMethod.PYPPETEER:
         import asyncio
-        asyncio.run(_render_mermaid_using_pyppeteer(mermaid_syntax, output_file))
+        asyncio.run(_render_mermaid_using_pyppeteer(mermaid_syntax, output_file, background_color, padding))
     elif draw_method == MermaidDrawMethod.API:
-        _render_mermaid_using_api(mermaid_syntax,output_file)
+        _render_mermaid_using_api(mermaid_syntax,output_file, background_color)
     else:
         raise ValueError(f"Invalid draw method: {draw_method}. Supported draw methods are: {', '.join([m.value for m in MermaidDrawMethod])}")
 
-async def _render_mermaid_using_pyppeteer(mermaid_syntax: str, output_file: str):   
-    """Renders the Mermaid graph using Pyppeteer and saves it as a PNG image. It requires Pyppeteer to be installed. """ 
+async def _render_mermaid_using_pyppeteer(mermaid_syntax: str, output_file: str, background_color: str = 'white', padding: int = 10):   
+    """Renders the Mermaid graph using Pyppeteer and saves it as a PNG image. It requires Pyppeteer to be installed. 
+    
+    Args:
+        mermaid_syntax (str): Mermaid graph syntax. Generated using `draw_mermaid` method.
+        output_file (str): Output file path.
+        background_color (str, optional): CSS background color for the graph. Defaults to 'white'.
+        padding (int, optional): Padding around the graph. Defaults to 10.
+    """ 
     try:
         from pyppeteer import launch
-    except ImportError:
-        raise ImportError("Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`.")
+    except ImportError as e:
+        raise ImportError("Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`.") from e
 
     browser = await launch()
     page = await browser.newPage()
@@ -173,10 +184,10 @@ async def _render_mermaid_using_pyppeteer(mermaid_syntax: str, output_file: str)
             }}""", mermaid_syntax)
 
     # Set the page background to white
-    await page.evaluate('''(svg) => {
+    await page.evaluate(f'''(svg, background_color) => {{
             document.body.innerHTML = svg;
-            document.body.style.background = 'white'; // Set the page background to white
-        }''', svg_code['svg'])
+            document.body.style.background = background_color;
+        }}''', svg_code['svg'], background_color)
 
     # Take a screenshot
     dimensions = await page.evaluate('''() => {
@@ -184,7 +195,6 @@ async def _render_mermaid_using_pyppeteer(mermaid_syntax: str, output_file: str)
             const rect = svgElement.getBoundingClientRect();
             return { width: rect.width, height: rect.height };
         }''')
-    padding = 10  # Reduce padding to 10px or to a value that works for your case
     await page.setViewport({
         'width': int(dimensions['width'] + padding),
         'height': int(dimensions['height'] + padding)
@@ -192,17 +202,27 @@ async def _render_mermaid_using_pyppeteer(mermaid_syntax: str, output_file: str)
     await page.screenshot({'path': output_file, 'fullPage': False})
     await browser.close()
 
-def _render_mermaid_using_api(mermaid_syntax: str, output_file: str):
-    """Renders the Mermaid graph using the Mermaid.INK API and saves it as a PNG image."""
-    import base64
+def _render_mermaid_using_api(mermaid_syntax: str, output_file: str, background_color: str = 'white'):
+    """Renders the Mermaid graph using the Mermaid.INK API and saves it as a PNG image.
+    Args:
+        mermaid_syntax (str): Mermaid graph syntax. Generated using `draw_mermaid` method.
+        output_file (str): Output file path.
+        background_color (str, optional): CSS background color for the graph. Defaults to 'white'.
+    """
     try:
         import requests
-    except ImportError:
-        raise ImportError("Install the `requests` module to use the Mermaid.INK API: `pip install requests`.")
+    except ImportError as e:
+        raise ImportError("Install the `requests` module to use the Mermaid.INK API: `pip install requests`.") from e
 
     # Use Mermaid API to render the image
     mermaid_syntax_encoded = base64.b64encode(mermaid_syntax.encode("utf8")).decode("ascii")
-    image_url = f"https://mermaid.ink/img/{mermaid_syntax_encoded}"
+
+    # Check if the background color is a hexadecimal color code using regex
+    hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+    if not hex_color_pattern.match(background_color):
+        background_color = f"!{background_color}"
+
+    image_url = f"https://mermaid.ink/img/{mermaid_syntax_encoded}?bgColor={background_color}"
     response = requests.get(image_url)
     if response.status_code == 200:
         with open(output_file, "wb") as file:
