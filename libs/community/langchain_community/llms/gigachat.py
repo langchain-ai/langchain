@@ -312,7 +312,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
                 content = chunk.choices[0].delta.content
                 yield GenerationChunk(text=content)
                 if run_manager:
-                    run_manager.on_llm_new_token(content)
+                    run_manager.on_llm_new_token(content if content is not None else "")
 
     async def _astream(
         self,
@@ -328,7 +328,9 @@ class GigaChat(_BaseGigaChat, BaseLLM):
                 content = chunk.choices[0].delta.content
                 yield GenerationChunk(text=content)
                 if run_manager:
-                    await run_manager.on_llm_new_token(content)
+                    await run_manager.on_llm_new_token(
+                        content if content is not None else ""
+                    )
 
     class Config:
         extra = "allow"

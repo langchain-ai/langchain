@@ -92,7 +92,7 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
 
-def _convert_message_to_dict(message: gm.BaseMessage) -> gm.Messages:
+def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     from gigachat.models import Messages, MessagesRole
 
     if isinstance(message, SystemMessage):
@@ -293,9 +293,12 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         payload = self._build_payload(messages, **kwargs)
 
-        for chunk in self._client.stream(payload):
-            if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+        for chunk_d in self._client.stream(payload):
+            chunk = {}
+            if not isinstance(chunk_d, dict):
+                chunk = chunk_d.dict()
+            else:
+                chunk = chunk_d
             if len(chunk["choices"]) == 0:
                 continue
 
@@ -323,9 +326,12 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         payload = self._build_payload(messages, **kwargs)
 
-        async for chunk in self._client.astream(payload):
-            if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+        async for chunk_d in self._client.astream(payload):
+            chunk = {}
+            if not isinstance(chunk_d, dict):
+                chunk = chunk_d.dict()
+            else:
+                chunk = chunk_d
             if len(chunk["choices"]) == 0:
                 continue
 
