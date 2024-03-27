@@ -595,6 +595,37 @@ documents = docai_wh_retriever.get_relevant_documents(
 )
 ```
 
+## Graphs
+
+### Enterprise Knowledge Graph
+
+> [Google Cloud Enterprise Knowledge Graph](https://cloud.google.com/enterprise-knowledge-graph/docs/overview)
+> organizes siloed information into organizational knowledge,
+> which involves consolidating, standardizing, reconciling,
+> and surfacing data in an efficient and useful way.
+
+We need to install a python package.
+
+```bash
+pip install google-cloud-enterprise-knowledge-graph
+```
+
+```python
+from langchain_community.graphs import GoogleEnterpriseKnowledgeGraph
+
+PROJECT_ID = "YOUR_PROJECT_ID"
+LOCATION = "YOUR_LOCATION"
+
+ekg = GoogleEnterpriseKnowledgeGraph(project_id=PROJECT_ID, location=LOCATION)
+# Optional
+params = {
+    "languages": ["en"],
+    "types": ["Organization"],
+    "limit": 100,
+}
+results = ekg.query("Google", params=params)
+```
+
 ## Tools
 
 ### Text-to-Speech
