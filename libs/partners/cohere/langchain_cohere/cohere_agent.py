@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, List, Sequence, Tuple, Type, Union
 
 from cohere.types import Tool, ToolParameterDefinitionsValue
 from langchain_core.agents import AgentAction, AgentFinish
@@ -9,7 +9,8 @@ from langchain_core.outputs.chat_generation import ChatGeneration
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.runnables.base import RunnableLambda
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseModel, BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 
 def create_cohere_tools_agent(
@@ -69,7 +70,9 @@ def format_to_cohere_tools_messages(
     return tool_results
 
 
-def convert_to_cohere_tool(tool: Union[Dict[str, Any], BaseTool]) -> Dict[str, Any]:
+def convert_to_cohere_tool(
+    tool: Union[Dict[str, Any], BaseTool, Type[BaseModel]],
+) -> Dict[str, Any]:
     """Convert BaseTool or JSON schema dict to a Cohere tool."""
     if isinstance(tool, BaseTool):
         return Tool(
@@ -84,11 +87,28 @@ def convert_to_cohere_tool(tool: Union[Dict[str, Any], BaseTool]) -> Dict[str, A
                 for param_name, param_definition in tool.args.items()
             },
         ).dict()
+    elif issubclass(tool, BaseModel):
+        as_json_schema_function = convert_to_openai_function(tool)
+        parameters = as_json_schema_function.get("parameters", {})
+        properties = parameters.get("properties", {})
+        return Tool(
+            name=as_json_schema_function.get("name"),
+            description=as_json_schema_function.get(
+                "description", as_json_schema_function.get("name")
+            ),
+            parameter_definitions={
+                param_name: ToolParameterDefinitionsValue(
+                    description=param_definition.get("description"),
+                    type=param_definition.get("type"),
+                    required=param_name in parameters.get("required", []),
+                )
+                for param_name, param_definition in properties.items()
+            },
+        ).dict()
     elif isinstance(tool, dict):
         if not all(k in tool for k in ("title", "description", "properties")):
             raise ValueError(
-                "Unsupported dict type. "
-                "Tools must be passed in as BaseTool or a JSON schema dict."
+                "Unsupported dict type. Tools must be passed in as BaseTool, a JSON schema dict, or a BaseModel implementation"  # noqa: E501
             )
         return Tool(
             name=tool.get("name"),
@@ -104,8 +124,7 @@ def convert_to_cohere_tool(tool: Union[Dict[str, Any], BaseTool]) -> Dict[str, A
         ).dict()
     else:
         raise ValueError(
-            f"Unsupported tool type {type(tool)}. "
-            f"Tools must be passed in as BaseTool or a JSON schema dict."
+            f"Unsupported tool type {type(tool)}. Tools must be passed in as BaseTool, a JSON schema dict, or a BaseModel implementation."  # noqa: E501
         )
 
 

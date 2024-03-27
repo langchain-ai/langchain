@@ -6,10 +6,12 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Type,
     Union,
 )
 
 from cohere.types import ToolCall
+from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -28,11 +30,16 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseModel, BaseTool
 
-from langchain_cohere.cohere_agent import format_to_cohere_tools
+from langchain_cohere.cohere_agent import convert_to_cohere_tool, format_to_cohere_tools
 from langchain_cohere.llms import BaseCohere
 
 
@@ -164,6 +171,39 @@ class ChatCohere(BaseChatModel, BaseCohere):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         formatted_tools = format_to_cohere_tools(tools)
         return super().bind(tools=formatted_tools, **kwargs)
+
+    @beta()
+    def with_structured_output(
+        self,
+        schema: Union[Dict, Type[BaseModel]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict.
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns either a dict or
+            Pydantic class as output.
+        """
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        llm = self.bind_tools([schema])
+        if is_pydantic_schema:
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
+            )
+        else:
+            key_name = convert_to_cohere_tool(schema)["name"]
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
+            )
+
+        return llm | output_parser
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
