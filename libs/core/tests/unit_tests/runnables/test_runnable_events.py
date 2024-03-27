@@ -1254,9 +1254,9 @@ async def test_runnable_with_message_history() -> None:
         input_messages_key="question",
         history_messages_key="history",
     )
-    with_message_history.with_config(
+    await with_message_history.with_config(
         {"configurable": {"session_id": "session-123"}}
-    ).invoke({"question": "hello"})
+    ).ainvoke({"question": "hello"})
 
     assert store == {
         "session-123": [HumanMessage(content="hello"), AIMessage(content="hello")]
