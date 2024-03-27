@@ -81,6 +81,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "SurrealDBStore",
         "TileDB",
         "TimescaleVector",
+        "TencentVectorDB",
         "Vald",
         "Vearch",
         "VespaStore",

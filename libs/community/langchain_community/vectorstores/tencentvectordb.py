@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, cast, Sequence
 
 from langchain_community.embeddings import FakeEmbeddings, DeterministicFakeEmbedding
 from pydantic import BaseModel
@@ -18,7 +18,8 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 
 logger = logging.getLogger(__name__)
-
+tvdb_enum = guard_import("tcvectordb.model.enum")
+FieldType = tvdb_enum.FieldType
 
 class ConnectionParams:
     """Tencent vector DB Connection params.
@@ -67,17 +68,35 @@ class IndexParams:
 
 
 class MetaField(BaseModel):
-    """MetaField for Tencent vector DB.
+    """MetaData Field for Tencent vector DB.
     """
     name: str
     description: Optional[str]
-    data_type: str
+    data_type: FieldType
     index: bool = False
 
 
 # 判断是否有效的Embeddings类，无值或为FakeEmbeddings类则无效
 def is_valid_embedding(embedding: Embeddings) -> bool:
     return embedding is not None and not isinstance(embedding, (FakeEmbeddings, DeterministicFakeEmbedding))
+
+
+def translate_filter(lc_filter: str, allowed_fields: Optional[Sequence[str]] = None) -> str:
+    from langchain.chains.query_constructor.base import fix_filter_directive
+    from langchain.chains.query_constructor.ir import FilterDirective
+    from langchain.chains.query_constructor.parser import get_parser
+    from langchain.retrievers.self_query.tencentvectordb import TencentVectorDBTranslator
+    tvdb_visitor = TencentVectorDBTranslator(allowed_fields)
+    flt = cast(
+        Optional[FilterDirective],
+        get_parser(
+            allowed_comparators=tvdb_visitor.allowed_comparators,
+            allowed_operators=tvdb_visitor.allowed_operators,
+            allowed_attributes=allowed_fields,
+        ).parse(lc_filter)
+    )
+    flt = fix_filter_directive(flt)
+    return flt.accept(tvdb_visitor)
 
 
 class TencentVectorDB(VectorStore):
@@ -180,7 +199,8 @@ class TencentVectorDB(VectorStore):
         if self.meta_fields is not None:
             index_meta_fields = [field for field in self.meta_fields if field.index]
             for field in index_meta_fields:
-                index.add(vdb_index.FilterIndex(field.name, field.data_type, enum.IndexType.FILTER))
+                ft_index = vdb_index.FilterIndex(field.name, field.data_type, enum.IndexType.FILTER)
+                index.add(ft_index)
         else:
             index.add(vdb_index.FilterIndex(self.field_metadata, enum.FieldType.String, enum.IndexType.FILTER))
         self.collection = self.database.create_collection(
@@ -195,6 +215,19 @@ class TencentVectorDB(VectorStore):
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_func
+
+    def delete(
+            self, ids: Optional[List[str]] = None,
+            filter_expr: Optional[str] = None,
+            **kwargs: Any) -> Optional[bool]:
+        """Delete documents from the collection."""
+        delete_attrs = {}
+        if ids:
+            delete_attrs['ids'] = ids
+        if filter_expr:
+            delete_attrs['filter'] = self.document.Filter(filter_expr)
+        self.collection.delete(**delete_attrs)
+        return True
 
     @classmethod
     def from_texts(
@@ -218,10 +251,9 @@ class TencentVectorDB(VectorStore):
         if connection_params is None:
             raise ValueError("connection_params is empty")
         enum = guard_import("tcvectordb.model.enum")
-        # 确保embedding和t_vdb_embedding至少有一个不为空
         if embedding is None and t_vdb_embedding is None:
             raise ValueError("embedding and t_vdb_embedding cannot be both None")
-        if embedding:
+        if is_valid_embedding(embedding):
             embeddings = embedding.embed_documents(texts[0:1]) if embedding else None
             dimension = len(embeddings[0])
         else:
@@ -231,7 +263,7 @@ class TencentVectorDB(VectorStore):
                     f"embedding model `{t_vdb_embedding}` is invalid. "
                     f"choices are {[member.model_name for member in enum.EmbeddingModel]}"
                 )
-            dimension = embedding_model[0].dimensions
+            dimension = embedding_model[0]._EmbeddingModel__dimensions
         if index_params is None:
             index_params = IndexParams(dimension=dimension)
         else:
@@ -256,6 +288,7 @@ class TencentVectorDB(VectorStore):
         metadatas: Optional[List[dict]] = None,
         timeout: Optional[int] = None,
         batch_size: int = 1000,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Insert text data into TencentVectorDB."""
@@ -263,9 +296,7 @@ class TencentVectorDB(VectorStore):
         if len(texts) == 0:
             logger.debug("Nothing to insert, skipping.")
             return []
-        if self.embedding_model:
-            pass
-        if self.embedding_func:
+        if is_valid_embedding(self.embedding_func):
             embeddings = self.embedding_func.embed_documents(texts)
         else:
             embeddings = []
@@ -282,8 +313,9 @@ class TencentVectorDB(VectorStore):
                     metadata = {}
                     if metadatas is not None:
                         metadata = {"metadata": json.dumps(metadatas[id])}
+                doc_id = ids[id] if ids else None
                 doc_attrs = {
-                    "id": "{}-{}-{}".format(time.time_ns(), hash(texts[id]), id)
+                    "id": doc_id or "{}-{}-{}".format(time.time_ns(), hash(texts[id]), id)
                 }
                 if embeddings:
                     doc_attrs["vector"] = embeddings[id]
@@ -292,7 +324,7 @@ class TencentVectorDB(VectorStore):
                 doc_attrs.update(metadata)
                 doc = self.document.Document(**doc_attrs)
                 docs.append(doc)
-                pks.append(str(id))
+                pks.append(doc_attrs["id"])
             self.collection.upsert(docs, timeout)
         return pks
 
@@ -352,11 +384,14 @@ class TencentVectorDB(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
+        filter: Optional[str] = None,
         timeout: Optional[int] = None,
         query: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score."""
+        if filter and not expr:
+            expr = translate_filter(filter, [f.name for f in (self.meta_fields or []) if f.index])
         search_args = {
             "filter": self.document.Filter(expr) if expr else None,
             "params": self.document.HNSWSearchParams(ef=(param or {}).get("ef", 10)),
@@ -428,10 +463,13 @@ class TencentVectorDB(VectorStore):
         lambda_mult: float = 0.5,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
+        filter: Optional[str] = None,
         timeout: Optional[int] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a search and return results that are reordered by MMR."""
+        if filter and not expr:
+            expr = translate_filter(filter, [f.name for f in (self.meta_fields or []) if f.index])
         res: List[List[Dict]] = self.collection.search(
             vectors=[embedding],
             filter=self.document.Filter(expr) if expr else None,
