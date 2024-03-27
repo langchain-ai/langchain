@@ -1,5 +1,3 @@
-"""Upstage document loader using Layout-Analyzer Model."""
-
 import os
 from enum import Enum
 from typing import List
@@ -94,8 +92,10 @@ class UpstageDocumentLoader(BaseLoader):
 
     Args:
         file_path (str): The path to the file to be loaded.
-        output_type (str, optional): The desired output type. Defaults to OutputType.TEXT.value.
-        split (str, optional): The split type for the document. Defaults to SplitType.NONE.value.
+        output_type (str, optional): The desired output type.
+                                     Defaults to OutputType.TEXT.value.
+        split (str, optional): The split type for the document.
+                               Defaults to SplitType.NONE.value.
         api_key (str, optional): The API key for authentication. Defaults to "".
 
     Attributes:
@@ -131,14 +131,16 @@ class UpstageDocumentLoader(BaseLoader):
     def load(self) -> List[Document]:
         """Load data into Document objects.
 
-        This method sends a POST request to the LAYOUT_ANALYZER_URL with the provided API key and file.
-        It parses the response JSON and creates Document objects based on the split type.
+        This method sends a POST request to the LAYOUT_ANALYZER_URL
+        with the provided API key and file. It parses the response
+        JSON and creates Document objects based on the split type.
 
         Returns:
             List[Document]: A list of Document objects containing the loaded data.
 
         Raises:
-            ValueError: If the API call returns a non-200 status code or an invalid split type is provided.
+            ValueError: If the API call returns a non-200 status code
+                        or an invalid split type is provided.
         """
 
         url = LAYOUT_ANALYZER_URL
