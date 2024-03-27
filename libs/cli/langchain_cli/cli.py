@@ -8,7 +8,7 @@ from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
-__version__ = "0.0.20"
+__version__ = "0.0.22rc0"
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
@@ -91,7 +91,7 @@ def install_rus_certs() -> None:
             outfile.write(b"\n\n# --- BEGIN %s ---\n\n" % url.encode())
             outfile.write(response.content.replace(b"\r\n", b"\n"))
             outfile.write(b"\n\n# --- END %s ---\n\n" % url.encode())
-        print("Сертификат Минцифры установлен!")
+        exit("Сертификат Минцифры установлен!")
 
 
 if __name__ == "__main__":

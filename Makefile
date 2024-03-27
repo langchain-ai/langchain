@@ -30,7 +30,7 @@ api_docs_build:
 	cd docs/api_reference && poetry run make html
 
 api_docs_clean:
-	rm -f docs/api_reference/api_reference.rst
+	find ./docs/api_reference -name '*_api_reference.rst' -delete
 	cd docs/api_reference && poetry run make clean
 
 api_docs_linkcheck:
@@ -57,6 +57,9 @@ format format_diff:
 	poetry run ruff --select I --fix docs templates cookbook
 
 
+lock_diff:
+	@echo "Locking dependencies..."
+	@ for d in $$(git diff --name-only --diff-filter=d $$(git rev-parse --abbrev-ref HEAD) | grep -E '\pyproject.toml$$' | xargs dirname); do (cd $$d && echo "Locking $$d" && poetry lock --no-update); done;
 ######################
 # BUILD ALL
 ######################

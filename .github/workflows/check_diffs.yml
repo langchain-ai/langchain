@@ -116,8 +116,7 @@ jobs:
         shell: bash
         run: |
           echo "Running extended tests, installing dependencies with poetry..."
-          poetry install --with test
-          poetry run pip install -r extended_requirements.txt
+          poetry install -E extended_testing --with test
 
       - name: Run extended tests
         run: make extended_tests

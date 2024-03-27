@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from functools import cached_property
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Iterator, List, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -13,6 +13,10 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import root_validator
+
+if TYPE_CHECKING:
+    import gigachat
+    import gigachat.models as gm
 
 logger = logging.getLogger(__name__)
 
@@ -55,12 +59,19 @@ class _BaseGigaChat(Serializable):
     streaming: bool = False
     """ Whether to stream the results or not. """
     temperature: Optional[float] = None
-    """What sampling temperature to use."""
+    """ What sampling temperature to use. """
     max_tokens: Optional[int] = None
     """ Maximum number of tokens to generate """
     use_api_for_tokens: bool = False
-    """ Verbose logging """
+    """ Use GigaChat API for tokens count """
     verbose: bool = False
+    """ Verbose logging """
+    top_p: Optional[float] = None
+    """ top_p value to use for nucleus sampling. Must be between 0.0 and 1.0 """
+    repetition_penalty: Optional[float] = None
+    """ The penalty applied to repeated tokens """
+    update_interval: Optional[float] = None
+    """ Minimum interval in seconds that elapses between sending tokens """
 
     @property
     def _llm_type(self) -> str:
@@ -80,7 +91,7 @@ class _BaseGigaChat(Serializable):
         return True
 
     @cached_property
-    def _client(self) -> Any:
+    def _client(self) -> gigachat.GigaChat:
         """Returns GigaChat API client"""
         import gigachat
 
@@ -119,7 +130,7 @@ class _BaseGigaChat(Serializable):
             logger.warning(f"Extra fields {diff} in GigaChat class")
         if "profanity" in fields and values.get("profanity") is False:
             logger.warning(
-                "Profanity field is deprecated. Use 'profanity_check' instead."
+                "'profanity' field is deprecated. Use 'profanity_check' instead."
             )
             if values.get("profanity_check") is None:
                 values["profanity_check"] = values.get("profanity")
@@ -131,34 +142,38 @@ class _BaseGigaChat(Serializable):
         return {
             "temperature": self.temperature,
             "model": self.model,
-            "profanity": self.profanity and self.profanity_check,
+            "profanity": self.profanity_check,
             "streaming": self.streaming,
             "max_tokens": self.max_tokens,
+            "top_p": self.top_p,
+            "repetition_penalty": self.repetition_penalty,
         }
 
-    def tokens_count(self, input_: List[str], model: Optional[str] = None) -> List[Any]:
+    def tokens_count(
+        self, input_: List[str], model: Optional[str] = None
+    ) -> List[gm.TokensCount]:
         """Get tokens of string list"""
         return self._client.tokens_count(input_, model)
 
     async def atokens_count(
         self, input_: List[str], model: Optional[str] = None
-    ) -> List[Any]:
+    ) -> List[gm.TokensCount]:
         """Get tokens of strings list (async)"""
         return await self._client.atokens_count(input_, model)
 
-    def get_models(self) -> Any:
+    def get_models(self) -> gm.Models:
         """Get available models of Gigachat"""
         return self._client.get_models()
 
-    async def aget_models(self) -> Any:
+    async def aget_models(self) -> gm.Models:
         """Get available models of Gigachat (async)"""
         return await self._client.aget_models()
 
-    def get_model(self, model: str) -> Any:
+    def get_model(self, model: str) -> gm.Model:
         """Get info about model"""
         return self._client.get_model(model)
 
-    async def aget_model(self, model: str) -> Any:
+    async def aget_model(self, model: str) -> gm.Model:
         """Get info about model (async)"""
         return await self._client.aget_model(model)
 
@@ -179,7 +194,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
         .. code-block:: python
 
             from langchain_community.llms import GigaChat
-            giga = GigaChat(credentials=..., verify_ssl_certs=False)
+            giga = GigaChat(credentials=..., scope=..., verify_ssl_certs=False)
     """
 
     payload_role: str = "user"
@@ -187,14 +202,21 @@ class GigaChat(_BaseGigaChat, BaseLLM):
     def _build_payload(self, messages: List[str]) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
             "messages": [{"role": self.payload_role, "content": m} for m in messages],
-            "profanity_check": self.profanity_check,
         }
-        if self.temperature is not None:
-            payload["temperature"] = self.temperature
-        if self.max_tokens is not None:
-            payload["max_tokens"] = self.max_tokens
         if self.model:
             payload["model"] = self.model
+        if self.profanity_check is not None:
+            payload["profanity_check"] = self.profanity_check
+        if self.temperature is not None:
+            payload["temperature"] = self.temperature
+        if self.top_p is not None:
+            payload["top_p"] = self.top_p
+        if self.max_tokens is not None:
+            payload["max_tokens"] = self.max_tokens
+        if self.repetition_penalty is not None:
+            payload["repetition_penalty"] = self.repetition_penalty
+        if self.update_interval is not None:
+            payload["update_interval"] = self.update_interval
 
         if self.verbose:
             logger.warning("Giga request: %s", json.dumps(payload, ensure_ascii=False))
