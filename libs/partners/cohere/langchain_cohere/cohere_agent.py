@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Sequence, Tuple, Union
 
 from cohere.types import Tool, ToolParameterDefinitionsValue
 from langchain_core.agents import AgentAction, AgentFinish
@@ -7,7 +7,6 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.outputs.chat_generation import ChatGeneration
 from langchain_core.prompts.chat import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.tools import BaseTool
@@ -17,7 +16,9 @@ def create_cohere_tools_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ) -> Runnable:
     def llm_with_tools(input_: Dict) -> Runnable:
-        tool_results = input_["tool_results"] if len(input_["tool_results"]) > 0 else None
+        tool_results = (
+            input_["tool_results"] if len(input_["tool_results"]) > 0 else None
+        )
         tools_ = input_["tools"] if len(input_["tools"]) > 0 else None
         return RunnableLambda(lambda x: x["input"]) | llm.bind(
             tools=tools_, tool_results=tool_results
@@ -41,7 +42,9 @@ def create_cohere_tools_agent(
     return agent
 
 
-def format_to_cohere_tools(tools: Sequence[BaseTool]) -> List[Dict[str, Any]]:
+def format_to_cohere_tools(
+    tools: Sequence[Union[Dict[str, Any], BaseTool]],
+) -> List[Dict[str, Any]]:
     return [convert_to_cohere_tool(tool) for tool in tools]
 
 
@@ -66,9 +69,7 @@ def format_to_cohere_tools_messages(
     return tool_results
 
 
-def convert_to_cohere_tool(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
-) -> Dict[str, Any]:
+def convert_to_cohere_tool(tool: Union[Dict[str, Any], BaseTool]) -> Dict[str, Any]:
     """Convert BaseTool or JSON schema dict to a Cohere tool."""
     if isinstance(tool, BaseTool):
         return Tool(
@@ -122,13 +123,13 @@ class CohereToolsAgentOutputParser(
             actions = []
             for tool in result[0].message.additional_kwargs["tool_calls"]:
                 function = tool.get("function", {})
-                actions += [
+                actions.append(
                     AgentAction(
                         tool=function.get("name"),
                         tool_input=function.get("arguments"),
                         log=function.get("name"),
                     )
-                ]
+                )
             return actions
         else:
             return AgentFinish(
