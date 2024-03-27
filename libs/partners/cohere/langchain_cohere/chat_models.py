@@ -1,3 +1,4 @@
+import json
 from typing import (
     Any,
     AsyncIterator,
@@ -356,7 +357,7 @@ def _format_cohere_tool_calls(
                 "id": generation_id,
                 "function": {
                     "name": tool_call.name,
-                    "arguments": tool_call.parameters,
+                    "arguments": json.dumps(tool_call.parameters),
                 },
                 "type": "function",
             }
