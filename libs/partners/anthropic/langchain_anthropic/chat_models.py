@@ -26,7 +26,12 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 
-_message_type_lookups = {"human": "user", "ai": "assistant"}
+_message_type_lookups = {
+    "human": "user",
+    "ai": "assistant",
+    "AIMessageChunk": "assistant",
+    "HumanMessageChunk": "user",
+}
 
 
 def _format_image(image_url: str) -> Dict:
