@@ -15,7 +15,12 @@ docs_build:
 	docs/.local_build.sh
 
 docs_clean:
-	rm -r _dist
+	@if [ -d _dist ]; then \
+			rm -r _dist; \
+			echo "Directory _dist has been cleaned."; \
+	else \
+			echo "Nothing to clean."; \
+	fi
 
 docs_linkcheck:
 	poetry run linkchecker _dist/docs/ --ignore-url node_modules
@@ -25,7 +30,7 @@ api_docs_build:
 	cd docs/api_reference && poetry run make html
 
 api_docs_clean:
-	rm -f docs/api_reference/api_reference.rst
+	find ./docs/api_reference -name '*_api_reference.rst' -delete
 	cd docs/api_reference && poetry run make clean
 
 api_docs_linkcheck:
@@ -45,10 +50,12 @@ lint lint_package lint_tests:
 	poetry run ruff docs templates cookbook
 	poetry run ruff format docs templates cookbook --diff
 	poetry run ruff --select I docs templates cookbook
+	git grep 'from langchain import' docs/docs templates cookbook | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
 
 format format_diff:
 	poetry run ruff format docs templates cookbook
 	poetry run ruff --select I --fix docs templates cookbook
+
 
 ######################
 # HELP

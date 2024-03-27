@@ -11,7 +11,7 @@ from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 class WikipediaQueryRun(BaseTool):
     """Tool that searches the Wikipedia API."""
 
-    name: str = "Wikipedia"
+    name: str = "wikipedia"
     description: str = (
         "A wrapper around Wikipedia. "
         "Useful for when you need to answer general questions about "

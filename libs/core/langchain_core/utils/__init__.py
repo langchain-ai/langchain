@@ -4,6 +4,7 @@
 These functions do not depend on any other LangChain module.
 """
 
+from langchain_core.utils import image
 from langchain_core.utils.env import get_from_dict_or_env, get_from_env
 from langchain_core.utils.formatting import StrictFormatter, formatter
 from langchain_core.utils.input import (
@@ -41,6 +42,7 @@ __all__ = [
     "xor_args",
     "try_load_from_hub",
     "build_extra_kwargs",
+    "image",
     "get_from_env",
     "get_from_dict_or_env",
     "stringify_dict",

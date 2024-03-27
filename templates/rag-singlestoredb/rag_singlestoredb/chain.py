@@ -1,10 +1,10 @@
 import os
 
-from langchain.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import SingleStoreDB
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
@@ -21,7 +21,7 @@ if os.environ.get("SINGLESTOREDB_URL", None) is None:
 # data = loader.load()
 
 # # Split
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 # all_splits = text_splitter.split_documents(data)

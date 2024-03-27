@@ -5,10 +5,10 @@ import tempfile
 
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.tools import Tool
-from langchain.prompts import ChatPromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field, ValidationError, validator
 from langchain_community.chat_models import ChatOpenAI
 from langchain_core.language_models import BaseLLM
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import ConfigurableField, Runnable
 
 

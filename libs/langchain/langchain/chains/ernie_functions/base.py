@@ -13,19 +13,22 @@ from typing import (
     cast,
 )
 
-from langchain_core.output_parsers import BaseGenerationOutputParser, BaseOutputParser
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import (
+    BaseGenerationOutputParser,
+    BaseLLMOutputParser,
+    BaseOutputParser,
+)
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 
-from langchain.base_language import BaseLanguageModel
 from langchain.chains import LLMChain
 from langchain.output_parsers.ernie_functions import (
     JsonOutputFunctionsParser,
     PydanticAttrOutputFunctionsParser,
     PydanticOutputFunctionsParser,
 )
-from langchain.prompts import BasePromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BaseLLMOutputParser
 from langchain.utils.ernie_functions import convert_pydantic_to_ernie_function
 
 PYTHON_TO_JSON_TYPES = {
@@ -307,31 +310,31 @@ def create_structured_output_runnable(
     Example:
         .. code-block:: python
 
-                from typing import Optional
+            from typing import Optional
 
-                from langchain.chains.ernie_functions import create_structured_output_chain
-                from langchain_community.chat_models import ErnieBotChat
-                from langchain.prompts import ChatPromptTemplate
-                from langchain.pydantic_v1 import BaseModel, Field
+            from langchain.chains.ernie_functions import create_structured_output_chain
+            from langchain_community.chat_models import ErnieBotChat
+            from langchain.prompts import ChatPromptTemplate
+            from langchain.pydantic_v1 import BaseModel, Field
 
-                class Dog(BaseModel):
-                    \"\"\"Identifying information about a dog.\"\"\"
+            class Dog(BaseModel):
+                \"\"\"Identifying information about a dog.\"\"\"
 
-                    name: str = Field(..., description="The dog's name")
-                    color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+                name: str = Field(..., description="The dog's name")
+                color: str = Field(..., description="The dog's color")
+                fav_food: Optional[str] = Field(None, description="The dog's favorite food")
 
-                llm = ErnieBotChat(model_name="ERNIE-Bot-4")
-                prompt = ChatPromptTemplate.from_messages(
-                    [
-                        ("user", "Use the given format to extract information from the following input: {input}"),
-                        ("assistant", "OK!"),
-                        ("user", "Tip: Make sure to answer in the correct format"),
-                    ]
-                )
-                chain = create_structured_output_chain(Dog, llm, prompt)
-                chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
-                # -> Dog(name="Harry", color="brown", fav_food="chicken")
+            llm = ErnieBotChat(model_name="ERNIE-Bot-4")
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("user", "Use the given format to extract information from the following input: {input}"),
+                    ("assistant", "OK!"),
+                    ("user", "Tip: Make sure to answer in the correct format"),
+                ]
+            )
+            chain = create_structured_output_chain(Dog, llm, prompt)
+            chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
+            # -> Dog(name="Harry", color="brown", fav_food="chicken")
     """  # noqa: E501
     if isinstance(output_schema, dict):
         function: Any = {

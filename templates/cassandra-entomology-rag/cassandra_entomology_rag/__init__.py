@@ -1,11 +1,11 @@
 import os
 
 import cassio
-from langchain.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Cassandra
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 
 from .populate_vector_store import populate
@@ -42,7 +42,7 @@ retriever = vector_store.as_retriever(search_kwargs={"k": 3})
 # Please remove this and/or adapt to your use case!
 inserted_lines = populate(vector_store)
 if inserted_lines:
-    print(f"Done ({inserted_lines} lines inserted).")
+    print(f"Done ({inserted_lines} lines inserted).")  # noqa: T201
 
 entomology_template = """
 You are an expert entomologist, tasked with answering enthusiast biologists' questions.

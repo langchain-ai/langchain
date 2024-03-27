@@ -1,10 +1,12 @@
 """Azure OpenAI embeddings wrapper."""
+
 from __future__ import annotations
 
 import os
 import warnings
 from typing import Callable, Dict, Optional, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -12,6 +14,11 @@ from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.utils.openai import is_openai_v1
 
 
+@deprecated(
+    since="0.0.9",
+    removal="0.2.0",
+    alternative_import="langchain_openai.AzureOpenAIEmbeddings",
+)
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     """`Azure OpenAI` Embeddings API."""
 

@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
@@ -15,7 +15,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must
             exist in advance. If you need help on how to create a `FeedbackDataset` in
             Argilla, please visit
-            https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html.
+            https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html.
         workspace_name: name of the workspace in Argilla where the specified
             `FeedbackDataset` lives in. Defaults to `None`, which means that the
             default workspace will be used.
@@ -54,7 +54,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
 
     REPO_URL: str = "https://github.com/argilla-io/argilla"
     ISSUES_URL: str = f"{REPO_URL}/issues"
-    BLOG_URL: str = "https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html"  # noqa: E501
+    BLOG_URL: str = "https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html"  # noqa: E501
 
     DEFAULT_API_URL: str = "http://localhost:6900"
 
@@ -71,7 +71,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             dataset_name: name of the `FeedbackDataset` in Argilla. Note that it must
                 exist in advance. If you need help on how to create a `FeedbackDataset`
                 in Argilla, please visit
-                https://docs.argilla.io/en/latest/guides/llms/practical_guides/use_argilla_callback_in_langchain.html.
+                https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html.
             workspace_name: name of the workspace in Argilla where the specified
                 `FeedbackDataset` lives in. Defaults to `None`, which means that the
                 default workspace will be used.
@@ -134,7 +134,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                     " default API key in Argilla Quickstart."
                 ),
             )
-            api_url = self.DEFAULT_API_URL
+            api_key = self.DEFAULT_API_KEY
 
         # Connect to Argilla with the provided credentials, if applicable
         try:
@@ -269,8 +269,8 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
             for key in [str(kwargs["parent_run_id"]), str(kwargs["run_id"])]
         ):
             return
-        prompts = self.prompts.get(str(kwargs["parent_run_id"])) or self.prompts.get(
-            str(kwargs["run_id"])
+        prompts: List = self.prompts.get(str(kwargs["parent_run_id"])) or cast(
+            List, self.prompts.get(str(kwargs["run_id"]), [])
         )
         for chain_output_key, chain_output_val in outputs.items():
             if isinstance(chain_output_val, list):
@@ -283,10 +283,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                                 "response": output["text"].strip(),
                             },
                         }
-                        for prompt, output in zip(
-                            prompts,  # type: ignore
-                            chain_output_val,
-                        )
+                        for prompt, output in zip(prompts, chain_output_val)
                     ]
                 )
             else:
@@ -295,7 +292,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                     records=[
                         {
                             "fields": {
-                                "prompt": " ".join(prompts),  # type: ignore
+                                "prompt": " ".join(prompts),
                                 "response": chain_output_val.strip(),
                             },
                         }
@@ -331,7 +328,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,

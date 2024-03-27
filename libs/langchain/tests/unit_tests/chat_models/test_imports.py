@@ -1,4 +1,5 @@
-from langchain.chat_models import __all__
+from langchain import chat_models
+from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "ChatOpenAI",
@@ -35,4 +36,5 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(chat_models.__all__) == set(EXPECTED_ALL)
+    assert_all_importable(chat_models)

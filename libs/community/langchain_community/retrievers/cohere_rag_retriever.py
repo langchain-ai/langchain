@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -17,10 +18,14 @@ if TYPE_CHECKING:
 
 
 def _get_docs(response: Any) -> List[Document]:
-    docs = [
-        Document(page_content=doc["snippet"], metadata=doc)
-        for doc in response.generation_info["documents"]
-    ]
+    docs = (
+        []
+        if "documents" not in response.generation_info
+        else [
+            Document(page_content=doc["snippet"], metadata=doc)
+            for doc in response.generation_info["documents"]
+        ]
+    )
     docs.append(
         Document(
             page_content=response.message.content,
@@ -36,6 +41,11 @@ def _get_docs(response: Any) -> List[Document]:
     return docs
 
 
+@deprecated(
+    since="0.0.30",
+    removal="0.2.0",
+    alternative_import="langchain_cohere.CohereRagRetriever",
+)
 class CohereRagRetriever(BaseRetriever):
     """Cohere Chat API with RAG."""
 

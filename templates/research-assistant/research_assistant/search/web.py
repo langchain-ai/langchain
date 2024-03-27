@@ -3,12 +3,12 @@ from typing import Any
 
 import requests
 from bs4 import BeautifulSoup
-from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers.tavily_search_api import TavilySearchAPIRetriever
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import (
     ConfigurableField,
     Runnable,
@@ -40,7 +40,7 @@ def scrape_text(url: str):
         else:
             return f"Failed to retrieve the webpage: Status code {response.status_code}"
     except Exception as e:
-        print(e)
+        print(e)  # noqa: T201
         return f"Failed to retrieve the webpage: {e}"
 
 

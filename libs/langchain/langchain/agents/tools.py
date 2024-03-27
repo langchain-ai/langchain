@@ -1,12 +1,11 @@
 """Interface for tools."""
 from typing import List, Optional
 
-from langchain_core.tools import BaseTool, Tool, tool
-
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain_core.tools import BaseTool, Tool, tool
 
 
 class InvalidTool(BaseTool):
