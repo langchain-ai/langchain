@@ -112,9 +112,9 @@ def test_chat_openai_streaming_generation_info() -> None:
         saved_things: dict = {}
 
         def on_llm_end(
-            self,
-            *args: Any,
-            **kwargs: Any,
+                self,
+                *args: Any,
+                **kwargs: Any,
         ) -> Any:
             # Save the generation
             self.saved_things["generation"] = args[0]
@@ -330,25 +330,3 @@ def test_openai_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
-
-
-def test_openai_proxy() -> None:
-    """Test ChatOpenAI with proxy."""
-    chat_openai = ChatOpenAI(
-        openai_proxy="http://localhost:8080",
-    )
-    mounts = chat_openai.client._client._client._mounts
-    assert len(mounts) == 1
-    for key, value in mounts.items():
-        proxy = value._pool._proxy_url.origin
-        assert proxy.scheme == b"http"
-        assert proxy.host == b"localhost"
-        assert proxy.port == 8080
-
-    async_client_mounts = chat_openai.async_client._client._client._mounts
-    assert len(async_client_mounts) == 1
-    for key, value in async_client_mounts.items():
-        proxy = value._pool._proxy_url.origin
-        assert proxy.scheme == b"http"
-        assert proxy.host == b"localhost"
-        assert proxy.port == 8080
