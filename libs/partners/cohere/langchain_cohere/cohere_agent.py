@@ -30,7 +30,7 @@ def create_cohere_tools_agent(
             input=lambda x: prompt.format_messages(
                 input=x["input"], agent_scratchpad=[]
             ),
-            tools=lambda x: format_to_cohere_tools(tools, x["intermediate_steps"]),
+            tools=lambda x: format_to_cohere_tools(tools),
             tool_results=lambda x: format_to_cohere_tools_messages(
                 x["intermediate_steps"]
             ),
@@ -41,15 +41,7 @@ def create_cohere_tools_agent(
     return agent
 
 
-def format_to_cohere_tools(
-    tools: Sequence[BaseTool],
-    intermediate_steps: Sequence[Tuple[AgentAction, str]],
-) -> List[Dict[str, Any]]:
-    if (
-        len(intermediate_steps) == 1
-        and intermediate_steps[0][0].tool == "directly_answer"
-    ):
-        return []
+def format_to_cohere_tools(tools: Sequence[BaseTool]) -> List[Dict[str, Any]]:
     return [convert_to_cohere_tool(tool) for tool in tools]
 
 
@@ -61,8 +53,6 @@ def format_to_cohere_tools_messages(
         return []
     tool_results = []
     for agent_action, observation in intermediate_steps:
-        if agent_action.tool == "directly_answer":
-            continue
         tool_results.append(
             {
                 "call": {
@@ -79,7 +69,7 @@ def format_to_cohere_tools_messages(
 def convert_to_cohere_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> Dict[str, Any]:
-    """Convert a raw function/class to a Cohere tool."""
+    """Convert BaseTool or JSON schema dict to a Cohere tool."""
     if isinstance(tool, BaseTool):
         return Tool(
             name=tool.name,
@@ -95,7 +85,10 @@ def convert_to_cohere_tool(
         ).dict()
     elif isinstance(tool, dict):
         if not all(k in tool for k in ("title", "description", "properties")):
-            raise ValueError()
+            raise ValueError(
+                "Unsupported dict type. "
+                "Tools must be passed in as BaseTool or a JSON schema dict."
+            )
         return Tool(
             name=tool.get("name"),
             description=tool.get("description"),
