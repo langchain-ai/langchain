@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import tempfile
 import time
 from abc import ABC
@@ -79,14 +80,14 @@ class BasePDFLoader(BaseLoader, ABC):
         clean up the temporary file after completion.
     """
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
+    def __init__(self, file_path: Union[str, Path], *, headers: Optional[Dict] = None):
         """Initialize with a file path.
 
         Args:
             file_path: Either a local, S3 or web path to a PDF file.
             headers: Headers to use for GET request to download a file from a web path.
         """
-        self.file_path = file_path
+        self.file_path = str(file_path)
         self.web_path = None
         self.headers = headers
         if "~" in self.file_path:
@@ -96,6 +97,8 @@ class BasePDFLoader(BaseLoader, ABC):
         if not os.path.isfile(self.file_path) and self._is_valid_url(self.file_path):
             self.temp_dir = tempfile.TemporaryDirectory()
             _, suffix = os.path.splitext(self.file_path)
+            if self._is_s3_presigned_url(self.file_path):
+                suffix = urlparse(self.file_path).path.split("/")[-1]
             temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
             self.web_path = self.file_path
             if not self._is_s3_url(self.file_path):
@@ -130,6 +133,15 @@ class BasePDFLoader(BaseLoader, ABC):
             if result.scheme == "s3" and result.netloc:
                 return True
             return False
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _is_s3_presigned_url(url: str) -> bool:
+        """Check if the url is a presigned S3 url."""
+        try:
+            result = urlparse(url)
+            return bool(re.search(r"\.s3\.amazonaws\.com$", result.netloc))
         except ValueError:
             return False
 
@@ -214,7 +226,7 @@ class PyPDFDirectoryLoader(BaseLoader):
 
     def __init__(
         self,
-        path: str,
+        path: Union[str, Path],
         glob: str = "**/[!.]*.pdf",
         silent_errors: bool = False,
         load_hidden: bool = False,
@@ -768,3 +780,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         """Lazy load given path as pages."""
         blob = Blob.from_path(self.file_path)
         yield from self.parser.parse(blob)
+
+
+# Legacy: only for backwards compatibility. Use PyPDFLoader instead
+PagedPDFSplitter = PyPDFLoader
