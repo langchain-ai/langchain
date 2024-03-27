@@ -91,16 +91,14 @@ class TestUpstageDocumentLoader(unittest.TestCase):
 
         for i, document in enumerate(documents):
             self.assertEqual(
-                document.page_content,
-                list(self.mock_response_json["elements"])[i]["text"],
+                document.page_content, self.mock_response_json["elements"][i]["text"]
             )
             self.assertEqual(
                 document.metadata["page"],
-                list(self.mock_response_json["elements"])[i]["page"],
+                self.mock_response_json["elements"][i]["page"],
             )
             self.assertEqual(
-                document.metadata["id"],
-                list(self.mock_response_json["elements"])[i]["id"],
+                document.metadata["id"], self.mock_response_json["elements"][i]["id"]
             )
             self.assertEqual(document.metadata["type"], OutputType.TEXT.value)
             self.assertEqual(document.metadata["split"], SplitType.ELEMENT.value)
@@ -126,7 +124,7 @@ class TestUpstageDocumentLoader(unittest.TestCase):
         for i, document in enumerate(documents):
             self.assertEqual(
                 document.metadata["page"],
-                list(self.mock_response_json["elements"])[i]["page"],
+                self.mock_response_json["elements"][i]["page"],
             )
             self.assertEqual(document.metadata["type"], OutputType.TEXT.value)
             self.assertEqual(document.metadata["split"], SplitType.PAGE.value)
@@ -173,16 +171,14 @@ class TestUpstageDocumentLoader(unittest.TestCase):
 
         for i, document in enumerate(documents):
             self.assertEqual(
-                document.page_content,
-                list(self.mock_response_json["elements"])[i]["html"],
+                document.page_content, self.mock_response_json["elements"][i]["html"]
             )
             self.assertEqual(
                 document.metadata["page"],
-                list(self.mock_response_json["elements"])[i]["page"],
+                self.mock_response_json["elements"][i]["page"],
             )
             self.assertEqual(
-                document.metadata["id"],
-                list(self.mock_response_json["elements"])[i]["id"],
+                document.metadata["id"], self.mock_response_json["elements"][i]["id"]
             )
             self.assertEqual(document.metadata["type"], OutputType.HTML.value)
             self.assertEqual(document.metadata["split"], SplitType.ELEMENT.value)
@@ -208,7 +204,7 @@ class TestUpstageDocumentLoader(unittest.TestCase):
         for i, document in enumerate(documents):
             self.assertEqual(
                 document.metadata["page"],
-                list(self.mock_response_json["elements"])[i]["page"],
+                self.mock_response_json["elements"][i]["page"],
             )
             self.assertEqual(document.metadata["type"], OutputType.HTML.value)
             self.assertEqual(document.metadata["split"], SplitType.PAGE.value)
