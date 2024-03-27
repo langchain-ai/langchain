@@ -330,7 +330,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         llm_run.outputs = response.dict()
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
-                output_generation = llm_run.outputs["generations"][i][j]
+                output_generation = llm_run.outputs["generations"][i][j]  # type: ignore[index]
                 if "message" in output_generation:
                     output_generation["message"] = dumpd(
                         cast(ChatGeneration, generation).message

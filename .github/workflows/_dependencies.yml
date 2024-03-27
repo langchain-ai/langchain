@@ -1,3 +1,12 @@
+# The dependencies action runs unit tests with different versions of the package
+# dependencies.
+# This is our current solution for setting up a test matrix primarily for
+# testing compatibility with different versions of pydantic.
+# This code has some duplication with the _test action due to the need to
+# do extra logic if pydantic version 2 is installed; i.e., maybe run
+# with LC_PYDANTIC_V2_EXPERIMENTAL=True
+# The extra logic may not be worth refactoring as it'll be deleted once
+# migration to pydantic v2 proper is complete.
 name: dependencies
 
 on:
@@ -103,7 +112,27 @@ jobs:
         if: ${{ !startsWith(inputs.working-directory, 'libs/partners/airbyte') }}
         shell: bash
         run: make test
-
+      - name: Maybe run unit tests with LC_PYDANTIC_V2_EXPERIMENTAL=True
+        # This step will run unit tests if pydantic>=2.0.0 is installed
+        # It will run unit tests with the environment variable LC_PYDANTIC_V2_EXPERIMENTAL=True
+        # libraries that support the flag, will attempt to run unit tests
+        # using pydantic proper rather than via the pydantic.v1 namespace.
+        # TODO: Refactor how code is tested with LC_PYDANTIC_V2_EXPERIMENTAL=True
+        # We should probably have a JSON file that lists which code paths
+        # that support the flag
+        if: ${{ !startsWith(inputs.working-directory, 'libs/core/') }}
+        shell: bash
+        run: |
+          # Determine the major part of pydantic version
+          REGULAR_VERSION=$(poetry run python -c "import pydantic; print(pydantic.__version__)" | cut -d. -f1)
+          # If version 2 then we run tests with LC_PYDANTIC_V2_EXPERIMENTAL=True
+          # Otherwise echo that there's nothing to do since the version is 1
+          if [[ "$REGULAR_VERSION" == "2" ]]; then
+            LC_PYDANTIC_V2_EXPERIMENTAL=True make test 
+            echo "Finished running unit tests with LC_PYDANTIC_V2_EXPERIMENTAL=True"
+          else
+            echo "No running tests with LC_PYDANTIC_V2_EXPERIMENTAL=True since pydantic version is 1"
+          fi
       - name: Ensure the tests did not create any additional files
         shell: bash
         run: |

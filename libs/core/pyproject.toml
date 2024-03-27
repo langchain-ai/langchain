@@ -81,6 +81,11 @@ select = [
 disallow_untyped_defs = "True"
 exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
 
+[[tool.mypy.overrides]]
+module = "langchain_core.pydantic_v1"
+follow_imports = "skip"
+ignore_errors = true
+
 [tool.coverage.run]
 omit = ["tests/*"]
 

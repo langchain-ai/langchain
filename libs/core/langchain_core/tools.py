@@ -35,10 +35,9 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.load.serializable import Serializable
+from langchain_core.pydantic import BaseModel, Field
 from langchain_core.pydantic_v1 import (
-    BaseModel,
     Extra,
-    Field,
     ValidationError,
     create_model,
     root_validator,
@@ -63,7 +62,7 @@ def _create_subset_model(
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
     for field_name in field_names:
-        field = model.__fields__[field_name]
+        field = model.__fields__[field_name]  # type: ignore[index]
         t = (
             # this isn't perfect but should work for most functions
             field.outer_type_
@@ -275,7 +274,7 @@ class ChildTool(BaseTool):
         input_args = self.args_schema
         if isinstance(tool_input, str):
             if input_args is not None:
-                key_ = next(iter(input_args.__fields__.keys()))
+                key_ = next(iter(input_args.__fields__.keys()))  # type: ignore[attr-defined]
                 input_args.validate({key_: tool_input})
             return tool_input
         else:

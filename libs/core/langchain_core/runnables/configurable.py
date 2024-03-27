@@ -237,7 +237,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                     id=spec.id,
                     name=spec.name,
                     description=spec.description
-                    or self.default.__fields__[field_name].field_info.description,
+                    or self.default.__fields__[field_name].field_info.description,  # type: ignore[attr-defined]
                     annotation=spec.annotation
                     or self.default.__fields__[field_name].annotation,
                     default=getattr(self.default, field_name),
@@ -245,7 +245,8 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 )
                 if isinstance(spec, ConfigurableField)
                 else make_options_spec(
-                    spec, self.default.__fields__[field_name].field_info.description
+                    spec,
+                    self.default.__fields__[field_name].field_info.description,  # type: ignore[attr-defined]
                 )
                 for field_name, spec in self.fields.items()
             ]

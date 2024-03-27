@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal
+from typing import Any, List, Literal
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts
 
 
@@ -12,21 +11,19 @@ class ChatGeneration(Generation):
     """A single chat generation output."""
 
     text: str = ""
-    """*SHOULD NOT BE SET DIRECTLY* The text contents of the output message."""
+    # """*SHOULD NOT BE SET DIRECTLY* The text contents of the output message."""
     message: BaseMessage
     """The message output by the chat model."""
     # Override type to be ChatGeneration, ignore mypy error as this is intentional
     type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    @root_validator
-    def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Set the text attribute to be the contents of the message."""
-        try:
-            values["text"] = values["message"].content
-        except (KeyError, AttributeError) as e:
-            raise ValueError("Error while initializing ChatGeneration") from e
-        return values
+    def __init__(self, *, message: BaseMessage, **kwargs: Any) -> None:
+        """Initialize a ChatGeneration object."""
+        # Backwards compatibility delete text if it provided.
+        # This would arise primarily from de-serialization of old objects.
+        kwargs["text"] = message.content
+        super().__init__(message=message, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

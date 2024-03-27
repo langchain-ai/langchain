@@ -12,7 +12,7 @@ from typing import (
 
 from typing_extensions import NotRequired
 
-from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
+from langchain_core.pydantic import BaseModel, PrivateAttr
 
 
 class BaseSerialized(TypedDict):
@@ -163,7 +163,7 @@ class Serializable(BaseModel, ABC):
             for key in list(secrets):
                 value = secrets[key]
                 if key in this.__fields__:
-                    secrets[this.__fields__[key].alias] = value
+                    secrets[this.__fields__[key].alias] = value  # type: ignore[index]
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
