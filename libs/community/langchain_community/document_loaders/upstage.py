@@ -3,8 +3,9 @@ from enum import Enum
 from typing import List
 
 import requests
-from langchain_community.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
+
+from langchain_community.document_loaders.base import BaseLoader
 
 LAYOUT_ANALYZER_URL = "https://api.upstage.ai/v1/document-ai/layout-analyzer"
 
