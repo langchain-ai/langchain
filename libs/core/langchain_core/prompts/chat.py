@@ -96,12 +96,67 @@ class BaseMessagePromptTemplate(Serializable, ABC):
 
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
-    """Prompt template that assumes variable is already list of messages."""
+    """Prompt template that assumes variable is already list of messages.
+
+    A placeholder which can be used to pass in a list of messages.
+
+    Direct usage:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import MessagesPlaceholder
+
+            prompt = MessagesPlaceholder("history")
+            prompt.format_messages() # raises KeyError
+
+            prompt = MessagesPlaceholder("history", optional=True)
+            prompt.format_messages() # returns empty list []
+
+            prompt.format_messages(
+                history=[
+                    ("system", "You are an AI assistant."),
+                    ("human", "Hello!"),
+                ]
+            )
+            # -> [
+            #     SystemMessage(content="You are an AI assistant."),
+            #     HumanMessage(content="Hello!"),
+            # ]
+
+    Building a prompt with chat history:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are a helpful assistant."),
+                    MessagesPlaceholder("history"),
+                    ("human", "{question}")
+                ]
+            )
+            prompt.invoke(
+               {
+                   "history": [("human", "what's 5 + 2"), ("ai", "5 + 2 is 7")],
+                   "question": "now multiply that by 4"
+               }
+            )
+            # -> ChatPromptValue(messages=[
+            #     SystemMessage(content="You are a helpful assistant."),
+            #     HumanMessage(content="what's 5 + 2"),
+            #     AIMessage(content="5 + 2 is 7"),
+            #     HumanMessage(content="now multiply that by 4"),
+            # ])
+    """
 
     variable_name: str
     """Name of variable to use as messages."""
 
     optional: bool = False
+    """If True format_messages can be called with no arguments and will return an empty 
+        list. If False then a named argument with name `variable_name` must be passed 
+        in, even if the value is an empty list."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
