@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import List, Sequence, Union
+from typing import Dict, List, Sequence, Tuple, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
@@ -56,7 +56,7 @@ class CohereToolsMultiHopAgentOutputParser(
 
     def parse_jsonified_tool_use_generation(
         self, tool_use_generation: str, tool_use_prefix: str
-    ) -> List[dict]:
+    ) -> List[Dict]:
         """Parses model-generated jsonified actions.
 
         Expects input of the form
@@ -85,15 +85,15 @@ class CohereToolsMultiHopAgentOutputParser(
 
         if len(actions):
             if any(
-                not isinstance(action, dict) or "tool_name" not in action
+                not isinstance(action, Dict) or "tool_name" not in action
                 for action in actions
             ):
                 raise ValueError(f"Action Parsing Failed: {tool_use_generation}")
         return actions
 
     def parse_answer_with_prefixes(
-        self, completion: str, prefixes: dict[str, str]
-    ) -> dict[str, str]:
+        self, completion: str, prefixes: Dict[str, str]
+    ) -> Dict[str, str]:
         """parses string into key-value pairs,
            according to patterns supplied in prefixes. Also strips.
 
@@ -126,7 +126,7 @@ class CohereToolsMultiHopAgentOutputParser(
                     parsed[reverse_prefix_map[prefix]] = value.strip()
         return parsed
 
-    def parse_actions(self, generation: str) -> tuple[str, str, List[dict]]:
+    def parse_actions(self, generation: str) -> Tuple[str, str, List[Dict]]:
         """Parse action selections from model output."""
         plan = ""
         actions = generation
@@ -253,7 +253,7 @@ def render_tool_description(tool: BaseTool) -> str:
 
 
 def format_cohere_log_to_str(
-    intermediate_steps: List[tuple[AgentAction, str]],
+    intermediate_steps: List[Tuple[AgentAction, str]],
     observation_prefix: str = "<|END_OF_TURN_TOKEN|>\n<|START_OF_TURN_TOKEN|>"
     + "<|SYSTEM_TOKEN|><results>\n",
     llm_prefix: str = "</results><|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|>"
