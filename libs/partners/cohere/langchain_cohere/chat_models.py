@@ -146,6 +146,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+
         if hasattr(self.client, "chat_stream"):  # detect and support sdk v5
             stream = self.client.chat_stream(**request)
         else:
