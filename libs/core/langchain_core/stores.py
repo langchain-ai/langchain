@@ -1,3 +1,10 @@
+"""**Store** implements the key-value stores and storage helpers.
+
+Module provides implementations of various key-value stores that conform
+to a simple key-value interface.
+
+The primary goal of these storages is to support implementation of caching.
+"""
 from abc import ABC, abstractmethod
 from typing import (
     AsyncIterator,
@@ -112,7 +119,7 @@ class BaseStore(Generic[K, V], ABC):
             item = await run_in_executor(None, lambda it: next(it, done), iterator)
             if item is done:
                 break
-            yield item
+            yield item  # type: ignore[misc]
 
 
 ByteStore = BaseStore[str, bytes]

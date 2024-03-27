@@ -1,4 +1,5 @@
 import sys
+import uuid
 from functools import partial
 from operator import itemgetter
 from typing import (
@@ -28,6 +29,11 @@ from langchain_core.callbacks.manager import (
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
+from langchain_core.language_models import (
+    FakeListChatModel,
+    FakeListLLM,
+    FakeStreamingListLLM,
+)
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -70,6 +76,7 @@ from langchain_core.runnables import (
     chain,
 )
 from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
     BaseTracer,
@@ -79,8 +86,6 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.fake.chat_model import FakeListChatModel
-from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
 
 
 class FakeTracer(BaseTracer):
@@ -116,9 +121,9 @@ class FakeTracer(BaseTracer):
         return run.copy(
             update={
                 "id": self._replace_uuid(run.id),
-                "parent_run_id": self.uuids_map[run.parent_run_id]
-                if run.parent_run_id
-                else None,
+                "parent_run_id": (
+                    self.uuids_map[run.parent_run_id] if run.parent_run_id else None
+                ),
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
                 "execution_order": None,
                 "child_execution_order": None,
@@ -131,6 +136,22 @@ class FakeTracer(BaseTracer):
         """Persist a run."""
 
         self.runs.append(self._copy_run(run))
+
+    def flattened_runs(self) -> List[Run]:
+        q = [] + self.runs
+        result = []
+        while q:
+            parent = q.pop()
+            result.append(parent)
+            if parent.child_runs:
+                q.extend(parent.child_runs)
+        return result
+
+    @property
+    def run_ids(self) -> List[Optional[uuid.UUID]]:
+        runs = self.flattened_runs()
+        uuids_map = {v: k for k, v in self.uuids_map.items()}
+        return [uuids_map.get(r.id) for r in runs]
 
 
 class FakeRunnable(Runnable[str, int]):
@@ -339,12 +360,18 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "ai",
                         "enum": ["ai"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
+                    "name": {"title": "Name", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
@@ -374,12 +401,18 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "human",
                         "enum": ["human"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
+                    "name": {"title": "Name", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
@@ -390,7 +423,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ChatMessage": {
                 "title": "ChatMessage",
-                "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa
+                "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -407,6 +440,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -415,13 +452,15 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["chat"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
+                    "name": {"title": "Name", "type": "string"},
                     "role": {"title": "Role", "type": "string"},
                 },
                 "required": ["content", "role"],
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa
+                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -438,6 +477,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -446,12 +489,14 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["system"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
+                    "name": {"title": "Name", "type": "string"},
                 },
                 "required": ["content"],
             },
             "FunctionMessage": {
                 "title": "FunctionMessage",
-                "description": "Message for passing the result of executing a function back to a model.",  # noqa
+                "description": "Message for passing the result of executing a function back to a model.",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -468,6 +513,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     },
                     "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object",
+                    },
+                    "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object",
                     },
                     "type": {
@@ -476,13 +525,14 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["function"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
                 },
                 "required": ["content", "name"],
             },
             "ToolMessage": {
                 "title": "ToolMessage",
-                "description": "Message for passing the result of executing a tool back to a model.",  # noqa
+                "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -501,12 +551,18 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "title": "Additional Kwargs",
                         "type": "object",
                     },
+                    "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object",
+                    },
                     "type": {
                         "title": "Type",
                         "default": "tool",
                         "enum": ["tool"],
                         "type": "string",
                     },
+                    "id": {"title": "Id", "type": "string"},
+                    "name": {"title": "Name", "type": "string"},
                     "tool_call_id": {"title": "Tool Call Id", "type": "string"},
                 },
                 "required": ["content", "tool_call_id"],
@@ -658,14 +714,11 @@ def test_lambda_schemas() -> None:
     }
 
     second_lambda = lambda x, y: (x["hello"], x["bye"], y["bah"])  # noqa: E731
-    assert (
-        RunnableLambda(second_lambda).input_schema.schema()  # type: ignore[arg-type]
-        == {
-            "title": "RunnableLambdaInput",
-            "type": "object",
-            "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
-        }
-    )
+    assert RunnableLambda(second_lambda).input_schema.schema() == {  # type: ignore[arg-type]
+        "title": "RunnableLambdaInput",
+        "type": "object",
+        "properties": {"hello": {"title": "Hello"}, "bye": {"title": "Bye"}},
+    }
 
     def get_value(input):  # type: ignore[no-untyped-def]
         return input["variable_name"]
@@ -721,7 +774,9 @@ def test_lambda_schemas() -> None:
         }
 
     assert (
-        RunnableLambda(aget_values_typed).input_schema.schema()  # type: ignore[arg-type]
+        RunnableLambda(
+            aget_values_typed  # type: ignore[arg-type]
+        ).input_schema.schema()
         == {
             "title": "aget_values_typed_input",
             "$ref": "#/definitions/InputType",
@@ -1268,9 +1323,6 @@ def test_configurable_fields_example() -> None:
         },
     }
 
-    with pytest.raises(ValueError):
-        chain_configurable.with_config(configurable={"llm123": "chat"})
-
     assert (
         chain_configurable.with_config(configurable={"llm": "chat"}).invoke(
             {"name": "John"}
@@ -1332,6 +1384,7 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             recursion_limit=25,
             configurable={"hello": "there"},
             metadata={"hello": "there", "bye": "now"},
+            run_id=None,
         ),
     )
     spy.reset_mock()
@@ -1396,6 +1449,30 @@ async def test_with_config(mocker: MockerFixture) -> None:
 
     spy.reset_mock()
 
+    assert sorted(
+        c
+        for c in fake.with_config(recursion_limit=5).batch_as_completed(
+            ["hello", "wooorld"],
+            [dict(tags=["a-tag"]), dict(metadata={"key": "value"})],
+        )
+    ) == [(0, 5), (1, 7)]
+
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(
+        sorted(spy.call_args_list, key=lambda x: 0 if x.args[0] == "hello" else 1)
+    ):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        if i == 0:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == ["a-tag"]
+            assert call.args[1].get("metadata") == {}
+        else:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == []
+            assert call.args[1].get("metadata") == {"key": "value"}
+
+    spy.reset_mock()
+
     assert fake.with_config(metadata={"a": "b"}).batch(
         ["hello", "wooorld"], dict(tags=["a-tag"])
     ) == [5, 7]
@@ -1404,6 +1481,15 @@ async def test_with_config(mocker: MockerFixture) -> None:
         assert call.args[0] == ("hello" if i == 0 else "wooorld")
         assert call.args[1].get("tags") == ["a-tag"]
         assert call.args[1].get("metadata") == {"a": "b"}
+    spy.reset_mock()
+
+    assert sorted(
+        c for c in fake.batch_as_completed(["hello", "wooorld"], dict(tags=["a-tag"]))
+    ) == [(0, 5), (1, 7)]
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(spy.call_args_list):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        assert call.args[1].get("tags") == ["a-tag"]
     spy.reset_mock()
 
     handler = ConsoleCallbackHandler()
@@ -1440,6 +1526,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                run_id=None,
             ),
         ),
         mocker.call(
@@ -1449,9 +1536,46 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                run_id=None,
             ),
         ),
     ]
+    spy.reset_mock()
+
+    assert sorted(
+        [
+            c
+            async for c in fake.with_config(
+                recursion_limit=5, tags=["c"]
+            ).abatch_as_completed(["hello", "wooorld"], dict(metadata={"key": "value"}))
+        ]
+    ) == [
+        (0, 5),
+        (1, 7),
+    ]
+    assert len(spy.call_args_list) == 2
+    first_call = next(call for call in spy.call_args_list if call.args[0] == "hello")
+    assert first_call == mocker.call(
+        "hello",
+        dict(
+            metadata={"key": "value"},
+            tags=["c"],
+            callbacks=None,
+            recursion_limit=5,
+            run_id=None,
+        ),
+    )
+    second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
+    assert second_call == mocker.call(
+        "wooorld",
+        dict(
+            metadata={"key": "value"},
+            tags=["c"],
+            callbacks=None,
+            recursion_limit=5,
+            run_id=None,
+        ),
+    )
 
 
 async def test_default_method_implementations(mocker: MockerFixture) -> None:
@@ -1518,6 +1642,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 recursion_limit=25,
+                run_id=None,
             ),
         ),
         mocker.call(
@@ -1527,6 +1652,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 recursion_limit=25,
+                run_id=None,
             ),
         ),
     ]
@@ -3420,6 +3546,26 @@ def test_bind_bind() -> None:
     ) == dumpd(llm.bind(stop=["Observation:"], one="two", hello="world"))
 
 
+def test_bind_with_lambda() -> None:
+    def my_function(*args: Any, **kwargs: Any) -> int:
+        return 3 + kwargs.get("n", 0)
+
+    runnable = RunnableLambda(my_function).bind(n=1)
+    assert 4 == runnable.invoke({})
+    chunks = list(runnable.stream({}))
+    assert [4] == chunks
+
+
+async def test_bind_with_lambda_async() -> None:
+    def my_function(*args: Any, **kwargs: Any) -> int:
+        return 3 + kwargs.get("n", 0)
+
+    runnable = RunnableLambda(my_function).bind(n=1)
+    assert 4 == await runnable.ainvoke({})
+    chunks = [item async for item in runnable.astream({})]
+    assert [4] == chunks
+
+
 def test_deep_stream() -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -4700,27 +4846,45 @@ async def test_runnable_gen_context_config() -> None:
     }
 
     tracer = FakeTracer()
-    assert runnable.invoke(None, {"callbacks": [tracer]}) == 6
+    run_id = uuid.uuid4()
+    assert runnable.invoke(None, {"callbacks": [tracer], "run_id": run_id}) == 6
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
 
     assert list(runnable.stream(None)) == [1, 2, 3]
     assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
 
     tracer = FakeTracer()
-    assert list(runnable.stream(None, {"callbacks": [tracer]})) == [1, 2, 3]
+    run_id = uuid.uuid4()
+    assert list(runnable.stream(None, {"callbacks": [tracer], "run_id": run_id})) == [
+        1,
+        2,
+        3,
+    ]
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
+    tracer.runs.clear()
 
     tracer = FakeTracer()
-    assert runnable.batch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    run_id = uuid.uuid4()
+
+    with pytest.warns(RuntimeWarning):
+        assert runnable.batch(
+            [None, None], {"callbacks": [tracer], "run_id": run_id}
+        ) == [6, 6]
     assert len(tracer.runs) == 2
     assert tracer.runs[0].outputs == {"output": 6}
     assert tracer.runs[1].outputs == {"output": 6}
@@ -4743,19 +4907,30 @@ async def test_runnable_gen_context_config() -> None:
     arunnable = RunnableGenerator(agen)
 
     tracer = FakeTracer()
-    assert await arunnable.ainvoke(None, {"callbacks": [tracer]}) == 6
+
+    run_id = uuid.uuid4()
+    assert await arunnable.ainvoke(None, {"callbacks": [tracer], "run_id": run_id}) == 6
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
 
     assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
     assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
 
     tracer = FakeTracer()
-    assert [p async for p in arunnable.astream(None, {"callbacks": [tracer]})] == [
+    run_id = uuid.uuid4()
+    assert [
+        p
+        async for p in arunnable.astream(
+            None, {"callbacks": [tracer], "run_id": run_id}
+        )
+    ] == [
         1,
         2,
         3,
@@ -4765,9 +4940,16 @@ async def test_runnable_gen_context_config() -> None:
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
 
     tracer = FakeTracer()
-    assert await arunnable.abatch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    run_id = uuid.uuid4()
+    with pytest.warns(RuntimeWarning):
+        assert await arunnable.abatch(
+            [None, None], {"callbacks": [tracer], "run_id": run_id}
+        ) == [6, 6]
     assert len(tracer.runs) == 2
     assert tracer.runs[0].outputs == {"output": 6}
     assert tracer.runs[1].outputs == {"output": 6}
@@ -5156,3 +5338,89 @@ async def test_astream_log_deep_copies() -> None:
         "name": "add_one",
         "type": "chain",
     }
+
+
+def test_transform_of_runnable_lambda_with_dicts() -> None:
+    """Test transform of runnable lamdbda."""
+    runnable = RunnableLambda(lambda x: x)
+    chunks = iter(
+        [
+            {"foo": "a"},
+            {"foo": "n"},
+        ]
+    )
+    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+
+
+async def test_atransform_of_runnable_lambda_with_dicts() -> None:
+    async def identity(x: Dict[str, str]) -> Dict[str, str]:
+        """Return x."""
+        return x
+
+    runnable = RunnableLambda[Dict[str, str], Dict[str, str]](identity)
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "an"}]
+
+
+def test_default_transform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+
+    class CustomRunnable(RunnableSerializable[Input, Output]):
+        def invoke(
+            self, input: Input, config: Optional[RunnableConfig] = None
+        ) -> Output:
+            return cast(Output, input)  # type: ignore
+
+    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
+    chunks = iter(
+        [
+            {"foo": "a"},
+            {"foo": "n"},
+        ]
+    )
+
+    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+
+
+async def test_default_atransform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+
+    class CustomRunnable(RunnableSerializable[Input, Output]):
+        def invoke(
+            self, input: Input, config: Optional[RunnableConfig] = None
+        ) -> Output:
+            return cast(Output, input)
+
+    runnable = CustomRunnable[Dict[str, str], Dict[str, str]]()
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+
+    assert chunks == [{"foo": "an"}]
+
+
+def test_passthrough_transform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+    runnable = RunnablePassthrough(lambda x: x)
+    chunks = [chunk for chunk in runnable.transform(iter([{"foo": "a"}, {"foo": "n"}]))]
+    assert chunks == [{"foo": "a"}, {"foo": "n"}]
+
+
+async def test_passthrough_atransform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+    runnable = RunnablePassthrough(lambda x: x)
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "a"}, {"foo": "n"}]
