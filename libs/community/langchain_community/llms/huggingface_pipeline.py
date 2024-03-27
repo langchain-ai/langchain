@@ -100,68 +100,32 @@ class HuggingFacePipeline(BaseLLM):
         _model_kwargs = model_kwargs or {}
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
-        try:
-            if task == "text-generation":
-                if backend == "openvino":
-                    try:
-                        from optimum.intel.openvino import OVModelForCausalLM
+        task_to_model = {
+            "text-generation": AutoModelForCausalLM,
+            "text2text-generation": AutoModelForSeq2SeqLM,
+            "summarization": AutoModelForSeq2SeqLM,
+            "translation": AutoModelForSeq2SeqLM,
+        }
 
-                    except ImportError:
-                        raise ValueError(
-                            "Could not import optimum-intel python package. "
-                            "Please install it with: "
-                            "pip install 'optimum[openvino,nncf]' "
-                        )
-                    try:
-                        # use local model
-                        model = OVModelForCausalLM.from_pretrained(
-                            model_id, **_model_kwargs
-                        )
-
-                    except Exception:
-                        # use remote model
-                        model = OVModelForCausalLM.from_pretrained(
-                            model_id, export=True, **_model_kwargs
-                        )
-                else:
-                    model = AutoModelForCausalLM.from_pretrained(
-                        model_id, **_model_kwargs
-                    )
-            elif task in ("text2text-generation", "summarization", "translation"):
-                if backend == "openvino":
-                    try:
-                        from optimum.intel.openvino import OVModelForSeq2SeqLM
-
-                    except ImportError:
-                        raise ValueError(
-                            "Could not import optimum-intel python package. "
-                            "Please install it with: "
-                            "pip install 'optimum[openvino,nncf]' "
-                        )
-                    try:
-                        # use local model
-                        model = OVModelForSeq2SeqLM.from_pretrained(
-                            model_id, **_model_kwargs
-                        )
-
-                    except Exception:
-                        # use remote model
-                        model = OVModelForSeq2SeqLM.from_pretrained(
-                            model_id, export=True, **_model_kwargs
-                        )
-                else:
-                    model = AutoModelForSeq2SeqLM.from_pretrained(
-                        model_id, **_model_kwargs
-                    )
-            else:
-                raise ValueError(
-                    f"Got invalid task {task}, "
-                    f"currently only {VALID_TASKS} are supported"
+        if backend == "openvino":
+            try:
+                from optimum.intel.openvino import (
+                    OVModelForCausalLM,
+                    OVModelForSeq2SeqLM,
                 )
-        except ImportError as e:
-            raise ValueError(
-                f"Could not load the {task} model due to missing dependencies."
-            ) from e
+            except ImportError:
+                raise ValueError(
+                    "Could not import optimum-intel package. " +
+                    "Please install with pip install 'optimum[openvino,nncf]'"
+                )
+            task_to_model = {
+                "text-generation": OVModelForCausalLM,
+                "text2text-generation": OVModelForSeq2SeqLM,
+                "summarization": OVModelForSeq2SeqLM,
+                "translation": OVModelForSeq2SeqLM,
+            }
+
+        model = task_to_model[task].from_pretrained(model_id, **_model_kwargs)
 
         if tokenizer.pad_token is None:
             tokenizer.pad_token_id = model.config.eos_token_id
