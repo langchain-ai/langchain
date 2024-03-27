@@ -1,9 +1,8 @@
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 from langchain_community.document_loaders.upstage import (
-    Document,
     OutputType,
     SplitType,
     UpstageDocumentLoader,
@@ -43,7 +42,8 @@ class TestUpstageDocumentLoader(unittest.TestCase):
                     "text": "LayoutParser Toolkit",
                 },
             ],
-            "html": "<header id='0'>arXiv:2103.15348v2</header><p id='1'>LayoutParser Toolkit</p>",
+            "html": "<header id='0'>arXiv:2103.15348v2</header>"
+            + "<p id='1'>LayoutParser Toolkit</p>",
             "mimetype": "multipart/form-data",
             "model": "layout-analyzer-0.1.0",
             "text": "arXiv:2103.15348v2\nLayoutParser Toolkit",
