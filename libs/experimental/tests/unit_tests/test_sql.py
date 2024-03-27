@@ -1,7 +1,7 @@
 from langchain.memory import ConversationBufferMemory
 from langchain.output_parsers.list import CommaSeparatedListOutputParser
-from langchain.prompts import PromptTemplate
 from langchain.sql_database import SQLDatabase
+from langchain_core.prompts import PromptTemplate
 
 from langchain_experimental.sql.base import SQLDatabaseChain, SQLDatabaseSequentialChain
 from tests.unit_tests.fake_llm import FakeLLM
