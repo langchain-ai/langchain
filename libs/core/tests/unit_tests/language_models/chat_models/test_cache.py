@@ -36,6 +36,20 @@ class InMemoryCache(BaseCache):
 
 def test_local_cache_generate_sync() -> None:
     global_cache = InMemoryCache()
+    try:
+        set_llm_cache(global_cache)
+        llm = FakeListLLM(cache=False, responses=["foo", "bar"])
+        output = llm.generate(["foo"])
+        assert output.generations[0][0].text == "foo"
+        output = llm.generate(["foo"])
+        assert output.generations[0][0].text == "bar"
+        assert global_cache._cache == {}
+    finally:
+        set_llm_cache(None)
+
+
+def test_no_cache_generate_sync() -> None:
+    global_cache = InMemoryCache()
     local_cache = InMemoryCache()
     try:
         set_llm_cache(global_cache)
@@ -93,6 +107,20 @@ async def test_local_cache_generate_async() -> None:
         assert output.generations[0][0].text == "foo"
         assert global_cache._cache == {}
         assert len(local_cache._cache) == 1
+    finally:
+        set_llm_cache(None)
+
+
+async def test_no_cache_generate_async() -> None:
+    global_cache = InMemoryCache()
+    try:
+        set_llm_cache(global_cache)
+        llm = FakeListLLM(cache=False, responses=["foo", "bar"])
+        output = await llm.agenerate(["foo"])
+        assert output.generations[0][0].text == "foo"
+        output = await llm.agenerate(["foo"])
+        assert output.generations[0][0].text == "bar"
+        assert global_cache._cache == {}
     finally:
         set_llm_cache(None)
 
