@@ -201,7 +201,10 @@ class AzureChatOpenAI(ChatOpenAI):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**self._default_params}
+        return {
+            **{"azure_deployment": self.deployment_name},
+            **super()._identifying_params,
+        }
 
     @property
     def _llm_type(self) -> str:
