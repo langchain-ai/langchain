@@ -28,7 +28,6 @@ from typing import (
 
 import openai
 import tiktoken
-
 from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -178,7 +177,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 def _convert_delta_to_message_chunk(
-        _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     id_ = _dict.get("id")
     role = cast(str, _dict.get("role"))
@@ -353,9 +352,9 @@ class ChatOpenAI(BaseChatModel):
         )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (
-                values["openai_organization"]
-                or os.getenv("OPENAI_ORG_ID")
-                or os.getenv("OPENAI_ORGANIZATION")
+            values["openai_organization"]
+            or os.getenv("OPENAI_ORG_ID")
+            or os.getenv("OPENAI_ORGANIZATION")
         )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
@@ -451,11 +450,11 @@ class ChatOpenAI(BaseChatModel):
         return combined
 
     def _stream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
@@ -485,12 +484,12 @@ class ChatOpenAI(BaseChatModel):
             yield chunk
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            stream: Optional[bool] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
@@ -508,7 +507,7 @@ class ChatOpenAI(BaseChatModel):
         return self._create_chat_result(response)
 
     def _create_message_dicts(
-            self, messages: List[BaseMessage], stop: Optional[List[str]]
+        self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
@@ -519,7 +518,7 @@ class ChatOpenAI(BaseChatModel):
         return message_dicts, params
 
     def _create_chat_result(
-            self, response: Union[dict, openai.BaseModel]
+        self, response: Union[dict, openai.BaseModel]
     ) -> ChatResult:
         generations = []
         if not isinstance(response, dict):
@@ -543,18 +542,18 @@ class ChatOpenAI(BaseChatModel):
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
         async for chunk in await self.async_client.create(
-                messages=message_dicts, **params
+            messages=message_dicts, **params
         ):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -581,12 +580,12 @@ class ChatOpenAI(BaseChatModel):
             yield chunk
 
     async def _agenerate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            stream: Optional[bool] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
@@ -610,7 +609,7 @@ class ChatOpenAI(BaseChatModel):
         return {"model_name": self.model_name, **self._default_params}
 
     def _get_invocation_params(
-            self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
         return {
@@ -683,12 +682,12 @@ class ChatOpenAI(BaseChatModel):
         return num_tokens
 
     def bind_functions(
-            self,
-            functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-            function_call: Optional[
-                Union[_FunctionCall, str, Literal["auto", "none"]]
-            ] = None,
-            **kwargs: Any,
+        self,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        function_call: Optional[
+            Union[_FunctionCall, str, Literal["auto", "none"]]
+        ] = None,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind functions (and other objects) to this chat model.
 
@@ -716,7 +715,7 @@ class ChatOpenAI(BaseChatModel):
             function_call = (
                 {"name": function_call}
                 if isinstance(function_call, str)
-                   and function_call not in ("auto", "none")
+                and function_call not in ("auto", "none")
                 else function_call
             )
             if isinstance(function_call, dict) and len(formatted_functions) != 1:
@@ -725,8 +724,8 @@ class ChatOpenAI(BaseChatModel):
                     "function."
                 )
             if (
-                    isinstance(function_call, dict)
-                    and formatted_functions[0]["name"] != function_call["name"]
+                isinstance(function_call, dict)
+                and formatted_functions[0]["name"] != function_call["name"]
             ):
                 raise ValueError(
                     f"Function call {function_call} was specified, but the only "
@@ -739,11 +738,11 @@ class ChatOpenAI(BaseChatModel):
         )
 
     def bind_tools(
-            self,
-            tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-            *,
-            tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
-            **kwargs: Any,
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
 
@@ -780,8 +779,8 @@ class ChatOpenAI(BaseChatModel):
                 tool_choice = formatted_tools[0]
             elif isinstance(tool_choice, dict):
                 if (
-                        formatted_tools[0]["function"]["name"]
-                        != tool_choice["function"]["name"]
+                    formatted_tools[0]["function"]["name"]
+                    != tool_choice["function"]["name"]
                 ):
                     raise ValueError(
                         f"Tool choice {tool_choice} was specified, but the only "
@@ -797,34 +796,34 @@ class ChatOpenAI(BaseChatModel):
 
     @overload
     def with_structured_output(
-            self,
-            schema: Optional[_DictOrPydanticClass] = None,
-            *,
-            method: Literal["function_calling", "json_mode"] = "function_calling",
-            include_raw: Literal[True] = True,
-            **kwargs: Any,
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        include_raw: Literal[True] = True,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _AllReturnType]:
         ...
 
     @overload
     def with_structured_output(
-            self,
-            schema: Optional[_DictOrPydanticClass] = None,
-            *,
-            method: Literal["function_calling", "json_mode"] = "function_calling",
-            include_raw: Literal[False] = False,
-            **kwargs: Any,
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        include_raw: Literal[False] = False,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
     @beta()
     def with_structured_output(
-            self,
-            schema: Optional[_DictOrPydanticClass] = None,
-            *,
-            method: Literal["function_calling", "json_mode"] = "function_calling",
-            include_raw: bool = False,
-            **kwargs: Any,
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        include_raw: bool = False,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
