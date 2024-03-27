@@ -1038,36 +1038,71 @@ class CassandraCache(BaseCache):
     """
     Cache that uses Cassandra / Astra DB as a backend.
 
+    Example:
+
+        .. code-block:: python
+
+            import cassio
+
+            from langchain_community.cache import CassandraCache
+            from langchain_core.globals import set_llm_cache
+
+            cassio.init(auto=True)  # Requires env. variables, see CassIO docs
+
+            set_llm_cache(CassandraCache())
+
     It uses a single Cassandra table.
     The lookup keys (which get to form the primary key) are:
         - prompt, a string
         - llm_string, a deterministic str representation of the model parameters.
-          (needed to prevent collisions same-prompt-different-model collisions)
+          (needed to prevent same-prompt-different-model collisions)
+
+    Args:
+        table_name: name of the Cassandra table to use as cache
+        session: an open Cassandra session.
+            Leave unspecified to use the global cassio init (see below)
+        keyspace: the keyspace to use for storing the cache.
+            Leave unspecified to use the global cassio init (see below)
+        ttl_seconds: time-to-live for cache entries
+            (default: None, i.e. forever)
+        skip_provisioning: you can pass True if the Cassandra
+            table is guaranteed to exist already for a faster initialization.
+
+    Note:
+        The session and keyspace parameters, when left out (or passed as None),
+        fall back to the globally-available cassio settings if are available.
+        In other words, if a previously-run 'cassio.init(...)' has been
+        executed previously anywhere in the code, Cassandra-based objects
+        need not specify the connection parameters at all.
     """
 
     def __init__(
         self,
+        table_name: str = CASSANDRA_CACHE_DEFAULT_TABLE_NAME,
+        *,
         session: Optional[CassandraSession] = None,
         keyspace: Optional[str] = None,
-        table_name: str = CASSANDRA_CACHE_DEFAULT_TABLE_NAME,
         ttl_seconds: Optional[int] = CASSANDRA_CACHE_DEFAULT_TTL_SECONDS,
         skip_provisioning: bool = False,
     ):
-        """
-        Initialize with a ready session and a keyspace name.
-        Args:
-            session (cassandra.cluster.Session): an open Cassandra session
-            keyspace (str): the keyspace to use for storing the cache
-            table_name (str): name of the Cassandra table to use as cache
-            ttl_seconds (optional int): time-to-live for cache entries
-                (default: None, i.e. forever)
-        """
         try:
             from cassio.table import ElasticCassandraTable
         except (ImportError, ModuleNotFoundError):
             raise ValueError(
                 "Could not import cassio python package. "
-                "Please install it with `pip install cassio`."
+                "Please install it with `pip install -U cassio`."
+            )
+        # if the above succeeded, this will as well:
+        from cassandra.cluster import Session as CassandraSession
+
+        # Detect if called with the previous constructor signature
+        # and kindly give an actionable error if so:
+        if table_name is None or isinstance(table_name, CassandraSession):
+            raise ValueError(
+                "It looks like you are creating a 'CassandraCache' with the "
+                "legacy constructor pattern 'session, keyspace, table_name...'"
+                ". Please revise your initialization code according to the "
+                "newer __init__ signature."
             )
 
         self.session = session
@@ -1135,7 +1170,7 @@ class CassandraCache(BaseCache):
         self.kv_cache.clear()
 
 
-CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC = "dot"
+CASSANDRA_SEMANTIC_CACHE_DEFAULT_SIMILARITY = "dot"
 CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD = 0.85
 CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME = "langchain_llm_semantic_cache"
 CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS = None
@@ -1147,55 +1182,108 @@ class CassandraSemanticCache(BaseCache):
     Cache that uses Cassandra as a vector-store backend for semantic
     (i.e. similarity-based) lookup.
 
+    Example:
+
+        .. code-block:: python
+
+            import cassio
+
+            from langchain_community.cache import CassandraSemanticCache
+            from langchain_core.globals import set_llm_cache
+
+            cassio.init(auto=True)  # Requires env. variables, see CassIO docs
+
+            my_embedding = ...
+
+            set_llm_cache(CassandraSemanticCache(
+                embedding=my_embedding,
+                table_name="my_semantic_cache",
+            ))
+
     It uses a single (vector) Cassandra table and stores, in principle,
     cached values from several LLMs, so the LLM's llm_string is part
     of the rows' primary keys.
 
-    The similarity is based on one of several distance metrics (default: "dot").
-    If choosing another metric, the default threshold is to be re-tuned accordingly.
+    One can choose a similarity measure (default: "dot" for dot-product).
+    Choosing another one ("cos", "l2") almost certain requires threshold tuning.
+    (which may be required nevertheless even if sticking to "dot").
+
+    Args:
+        embedding: Embedding provider for semantic
+            encoding and search.
+        table_name: name of the Cassandra (vector) table
+            to use as cache. There is a default for "simple" usage, but
+            remember to explicitly specify different tables if several embedding
+            models coexist in your app (they cannot share one cache table).
+        session: an open Cassandra session.
+            Leave unspecified to use the global cassio init (see below)
+        keyspace: the keyspace to use for storing the cache.
+            Leave unspecified to use the global cassio init (see below)
+        similarity_measure: which measure to adopt for
+            similarity searches
+        score_threshold: numeric value to use as
+            cutoff for the similarity searches
+        ttl_seconds: time-to-live for cache entries
+            (default: None, i.e. forever)
+        skip_provisioning: you can pass True if the Cassandra
+            table is guaranteed to exist already for a faster initialization.
+
+    Note:
+        The session and keyspace parameters, when left out (or passed as None),
+        fall back to the globally-available cassio settings if are available.
+        In other words, if a previously-run 'cassio.init(...)' has been
+        executed previously anywhere in the code, Cassandra-based objects
+        need not specify the connection parameters at all.
     """
 
     def __init__(
         self,
-        session: Optional[CassandraSession],
-        keyspace: Optional[str],
         embedding: Embeddings,
         table_name: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME,
-        distance_metric: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC,
+        *,
+        session: Optional[CassandraSession] = None,
+        keyspace: Optional[str] = None,
+        distance_metric: Optional[str] = None,
+        similarity_measure: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SIMILARITY,
         score_threshold: float = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD,
         ttl_seconds: Optional[int] = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS,
         skip_provisioning: bool = False,
     ):
-        """
-        Initialize the cache with all relevant parameters.
-        Args:
-            session (cassandra.cluster.Session): an open Cassandra session
-            keyspace (str): the keyspace to use for storing the cache
-            embedding (Embedding): Embedding provider for semantic
-                encoding and search.
-            table_name (str): name of the Cassandra (vector) table
-                to use as cache
-            distance_metric (str, 'dot'): which measure to adopt for
-                similarity searches
-            score_threshold (optional float): numeric value to use as
-                cutoff for the similarity searches
-            ttl_seconds (optional int): time-to-live for cache entries
-                (default: None, i.e. forever)
-        The default score threshold is tuned to the default metric.
-        Tune it carefully yourself if switching to another distance metric.
-        """
         try:
             from cassio.table import MetadataVectorCassandraTable
         except (ImportError, ModuleNotFoundError):
             raise ValueError(
                 "Could not import cassio python package. "
-                "Please install it with `pip install cassio`."
+                "Please install it with `pip install -U cassio`."
             )
+        # if the above succeeded, this will as well:
+        from cassandra.cluster import Session as CassandraSession
+
+        # Detect if called with the previous constructor signature
+        # and kindly give an actionable error if so:
+        if embedding is None or isinstance(embedding, CassandraSession):
+            raise ValueError(
+                "It seems you are creating a 'CassandraSemanticCache' with the "
+                "legacy constructor pattern 'session, keyspace, embedding...'"
+                ". Please revise your initialization code according to the "
+                "newer __init__ signature."
+            )
+        # detect if legacy 'distance_metric' parameter used
+        if distance_metric is not None:
+            # if passed, takes precedence over 'similarity_measure',
+            # but we issue a warning.
+            warnings.warn(
+                "Argument 'distance_metric' to CassandraSemanticCache "
+                "should be renamed to 'similarity_measure'. "
+                "Please update your code accordingly."
+            )
+            similarity_measure = distance_metric
+
         self.session = session
         self.keyspace = keyspace
         self.embedding = embedding
         self.table_name = table_name
-        self.distance_metric = distance_metric
+        self.similarity_measure = similarity_measure
         self.score_threshold = score_threshold
         self.ttl_seconds = ttl_seconds
 
@@ -1264,7 +1352,7 @@ class CassandraSemanticCache(BaseCache):
                 vector=prompt_embedding,
                 metadata={"_llm_string_hash": _hash(llm_string)},
                 n=1,
-                metric=self.distance_metric,
+                metric=self.similarity_measure,
                 metric_threshold=self.score_threshold,
             )
         )
