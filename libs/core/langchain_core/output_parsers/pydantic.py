@@ -1,5 +1,5 @@
 import json
-from typing import Generic, List, Type, TypeVar, Union
+from typing import List, Type, TypeVar, Union
 
 import pydantic  # pydantic: ignore
 
@@ -60,12 +60,7 @@ class PydanticOutputParser(BaseCumulativeTransformOutputParser[TBaseModel]):
     ) -> TBaseModel:
         json_parser = JsonOutputParser()
         json_object = json_parser.parse_result(result)
-        try:
-            return self._parse_obj(json_object)
-        except ValidationError as e:
-            name = self.pydantic_object.__name__
-            msg = f"Failed to parse {name} from completion {json_object}. Got: {e}"
-            raise OutputParserException(msg, llm_output=json.dumps(json_object))
+        return self._parse_obj(json_object)
 
     def parse(self, text: str) -> TBaseModel:
         return self.parse_result([Generation(text=text)])
