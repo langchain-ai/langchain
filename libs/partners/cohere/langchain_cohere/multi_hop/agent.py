@@ -115,10 +115,10 @@ class CohereToolsMultiHopAgentOutputParser(
         # sort out prefixes
         re_pat = "(" + "|".join([re.escape(p) for p in prefixes.values()]) + ")"
         reverse_prefix_map = {v: k for k, v in prefixes.items()}
-        splitted = re.split(re_pat, completion)
-        splitted = splitted[1:]
+        split = re.split(re_pat, completion)
+        split = split[1:]
         parsed = {}
-        for prefix, value in zip(splitted[::2], splitted[1::2]):
+        for prefix, value in zip(split[::2], split[1::2]):
             if prefix in reverse_prefix_map:  # if the prefix is a match
                 if (
                     reverse_prefix_map[prefix] not in parsed
