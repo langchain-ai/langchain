@@ -115,8 +115,8 @@ def create_simple_model(
         source_node_id: str = Field(
             description="Name or human-readable unique identifier of source node"
         )
-        source_node_type: str = Field(
-            description="Mandatory type of the source node of the relationship."
+        source_node_type: str = optional_enum_field(
+            node_labels, description="The type or label of the source node."
         )
         target_node_id: str = Field(
             description="Name or human-readable unique identifier of target node"
