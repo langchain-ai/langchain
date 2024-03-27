@@ -89,5 +89,6 @@ def test_compatible_vectorstore_documentation() -> None:
         "ZepVectorStore",
         "Zilliz",
         "Lantern",
+        "LanceDB",
     }
     assert compatible == documented
