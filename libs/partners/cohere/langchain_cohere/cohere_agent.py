@@ -31,24 +31,24 @@ def create_cohere_tools_agent(
             input=lambda x: prompt.format_messages(
                 input=x["input"], agent_scratchpad=[]
             ),
-            tools=lambda x: format_to_cohere_tools(tools),
-            tool_results=lambda x: format_to_cohere_tools_messages(
+            tools=lambda x: _format_to_cohere_tools(tools),
+            tool_results=lambda x: _format_to_cohere_tools_messages(
                 x["intermediate_steps"]
             ),
         )
         | llm_with_tools
-        | CohereToolsAgentOutputParser()
+        | _CohereToolsAgentOutputParser()
     )
     return agent
 
 
-def format_to_cohere_tools(
+def _format_to_cohere_tools(
     tools: Sequence[Union[Dict[str, Any], BaseTool]],
 ) -> List[Dict[str, Any]]:
-    return [convert_to_cohere_tool(tool) for tool in tools]
+    return [_convert_to_cohere_tool(tool) for tool in tools]
 
 
-def format_to_cohere_tools_messages(
+def _format_to_cohere_tools_messages(
     intermediate_steps: Sequence[Tuple[AgentAction, str]],
 ) -> list:
     """Convert (AgentAction, tool output) tuples into tool messages."""
@@ -69,7 +69,7 @@ def format_to_cohere_tools_messages(
     return tool_results
 
 
-def convert_to_cohere_tool(tool: Union[Dict[str, Any], BaseTool]) -> Dict[str, Any]:
+def _convert_to_cohere_tool(tool: Union[Dict[str, Any], BaseTool]) -> Dict[str, Any]:
     """Convert BaseTool or JSON schema dict to a Cohere tool."""
     if isinstance(tool, BaseTool):
         return Tool(
@@ -109,7 +109,7 @@ def convert_to_cohere_tool(tool: Union[Dict[str, Any], BaseTool]) -> Dict[str, A
         )
 
 
-class CohereToolsAgentOutputParser(
+class _CohereToolsAgentOutputParser(
     BaseOutputParser[Union[List[AgentAction], AgentFinish]]
 ):
     """Parses a message into agent actions/finish."""

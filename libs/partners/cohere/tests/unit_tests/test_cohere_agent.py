@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Sequence, Type, Union
 import pytest
 from langchain_core.tools import BaseModel, BaseTool, Field
 
-from langchain_cohere.cohere_agent import format_to_cohere_tools
+from langchain_cohere.cohere_agent import _format_to_cohere_tools
 
 
 class _TestToolSchema(BaseModel):
@@ -56,6 +56,6 @@ class _TestTool(BaseTool):
 def test_format_to_cohere_tools(
     tools: Sequence[Union[Dict[str, Any], BaseTool]], expected: List[Dict[str, Any]]
 ) -> None:
-    actual = format_to_cohere_tools(tools)
+    actual = _format_to_cohere_tools(tools)
 
     assert expected == actual
