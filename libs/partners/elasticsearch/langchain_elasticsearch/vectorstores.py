@@ -397,7 +397,7 @@ class SparseRetrievalStrategy(BaseRetrievalStrategy):
 class BM25RetrievalStrategy(BaseRetrievalStrategy):
     """Retrieval strategy using the native BM25 algorithm of Elasticsearch."""
 
-    def __init__(self, k1: Union[float, None], b: Union[float, None]):
+    def __init__(self, k1: Union[float, None] = None, b: Union[float, None] = None):
         self.k1 = k1
         self.b = b
 
