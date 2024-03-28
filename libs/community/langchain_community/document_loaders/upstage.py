@@ -146,9 +146,14 @@ class UpstageDocumentLoader(BaseLoader):
                         or an invalid split type is provided.
         """
 
-        headers = {"Authorization": f"Bearer {self.api_key}"}
-        files = {"document": open(self.file_path, "rb")}
-        response = requests.post(self.url, headers=headers, files=files)
+        try:
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            files = {"document": open(self.file_path, "rb")}
+            response = requests.post(self.url, headers=headers, files=files)
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"API call error: {e}")
+        finally:
+            files["document"].close()
 
         if response.status_code != 200:
             raise ValueError(f"API call error: {response.status_code}")
