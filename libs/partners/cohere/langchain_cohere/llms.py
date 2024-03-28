@@ -31,7 +31,7 @@ def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
-        return llm.client.generate(**kwargs)
+        return llm.get_client().generate(**kwargs)
 
     return _completion_with_retry(**kwargs)
 
@@ -42,7 +42,7 @@ def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        return await llm.async_client.generate(**kwargs)
+        return await llm.get_async_client().generate(**kwargs)
 
     return _completion_with_retry(**kwargs)
 
@@ -50,8 +50,10 @@ def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 class BaseCohere(Serializable):
     """Base class for Cohere models."""
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Optional[cohere.Client]  #: :meta private:
+    """Cohere client."""
+    async_client: Optional[cohere.AsyncClient]  #: :meta private:
+    """Cohere async client."""
     model: Optional[str] = Field(default=None)
     """Model name to use."""
 
@@ -68,6 +70,18 @@ class BaseCohere(Serializable):
 
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
+
+    def get_client(self) -> cohere.Client:
+        """Get the Cohere client."""
+        if self.client is None:
+            raise ValueError("Cohere client has not been initialised.")
+        return self.client
+
+    def get_async_client(self) -> cohere.AsyncClient:
+        """Get the Cohere async client."""
+        if self.async_client is None:
+            raise ValueError("Cohere async client has not been initialised.")
+        return self.async_client
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

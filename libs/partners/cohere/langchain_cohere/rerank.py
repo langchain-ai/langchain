@@ -13,8 +13,8 @@ from langchain_core.utils import get_from_dict_or_env
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
 
-    client: Any = None
-    """Cohere client to use for compressing documents."""
+    client: Optional[cohere.Client]  #: :meta private:
+    """Cohere client."""
     top_n: Optional[int] = 3
     """Number of documents to return."""
     model: str = "rerank-english-v2.0"
@@ -30,6 +30,12 @@ class CohereRerank(BaseDocumentCompressor):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    def _get_client(self) -> cohere.Client:
+        """Get the Cohere client."""
+        if self.client is None:
+            raise ValueError("Cohere client has not been initialised.")
+        return self.client
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -68,9 +74,11 @@ class CohereRerank(BaseDocumentCompressor):
         ]
         model = model or self.model
         top_n = top_n if (top_n is None or top_n > 0) else self.top_n
-        results = self.client.rerank(
+        results = self._get_client().rerank(
             query=query,
-            documents=docs,
+            # Ignoring type here because the api allows you to send arbitrary objects
+            # This is not fully supported by sdk definitions right now
+            documents=docs,  # type: ignore
             model=model,
             top_n=top_n,
             max_chunks_per_doc=max_chunks_per_doc,
