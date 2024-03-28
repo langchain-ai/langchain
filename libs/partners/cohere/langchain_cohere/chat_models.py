@@ -81,14 +81,9 @@ def get_cohere_chat_request(
     additional_kwargs = messages[-1].additional_kwargs
 
     # cohere SDK will fail loudly if both connectors and documents are provided
-    if (
-        len(additional_kwargs.get("documents", [])) > 0
-        and documents
-        and len(documents) > 0
-    ):
+    if additional_kwargs.get("documents", []) and documents and len(documents) > 0:
         raise ValueError(
-            "Received documents both as a keyword argument and as an prompt additional"
-            "keywword argument. Please choose only one option."
+            "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."  # noqa: E501
         )
 
     formatted_docs = [
