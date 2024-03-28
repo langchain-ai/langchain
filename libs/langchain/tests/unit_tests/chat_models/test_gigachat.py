@@ -10,6 +10,7 @@ from gigachat.models import (
     Choices,
     ChoicesChunk,
     Messages,
+    MessagesRole,
     MessagesChunk,
     Usage,
 )
@@ -34,7 +35,7 @@ from ..callbacks.fake_callback_handler import (
 
 
 def test__convert_dict_to_message_system() -> None:
-    message = Messages(role="system", content="foo")
+    message = Messages(role=MessagesRole.SYSTEM, content="foo")
     expected = SystemMessage(content="foo")
 
     actual = _convert_dict_to_message(message)
@@ -43,7 +44,7 @@ def test__convert_dict_to_message_system() -> None:
 
 
 def test__convert_dict_to_message_human() -> None:
-    message = Messages(role="user", content="foo")
+    message = Messages(role=MessagesRole.USER, content="foo")
     expected = HumanMessage(content="foo")
 
     actual = _convert_dict_to_message(message)
@@ -52,7 +53,7 @@ def test__convert_dict_to_message_human() -> None:
 
 
 def test__convert_dict_to_message_ai() -> None:
-    message = Messages(role="assistant", content="foo")
+    message = Messages(role=MessagesRole.ASSISTANT, content="foo")
     expected = AIMessage(content="foo")
 
     actual = _convert_dict_to_message(message)
@@ -62,7 +63,7 @@ def test__convert_dict_to_message_ai() -> None:
 
 def test__convert_message_to_dict_system() -> None:
     message = SystemMessage(content="foo")
-    expected = Messages(role="system", content="foo")
+    expected = Messages(role=MessagesRole.SYSTEM, content="foo")
 
     actual = _convert_message_to_dict(message)
 
@@ -71,7 +72,7 @@ def test__convert_message_to_dict_system() -> None:
 
 def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
-    expected = Messages(role="user", content="foo")
+    expected = Messages(role=MessagesRole.USER, content="foo")
 
     actual = _convert_message_to_dict(message)
 
@@ -80,15 +81,17 @@ def test__convert_message_to_dict_human() -> None:
 
 def test__convert_message_to_dict_ai() -> None:
     message = AIMessage(content="foo")
-    expected = Messages(role="assistant", content="foo")
+    expected = Messages(role=MessagesRole.ASSISTANT, content="foo")
 
     actual = _convert_message_to_dict(message)
 
     assert actual == expected
 
 
-@pytest.mark.parametrize("role", ("system", "user", "assistant"))
-def test__convert_message_to_dict_chat(role: str) -> None:
+@pytest.mark.parametrize(
+    "role", (MessagesRole.SYSTEM, MessagesRole.USER, MessagesRole.ASSISTANT)
+)
+def test__convert_message_to_dict_chat(role: MessagesRole) -> None:
     message = ChatMessage(role=role, content="foo")
     expected = Messages(role=role, content="foo")
 
@@ -109,7 +112,7 @@ def chat_completion() -> ChatCompletion:
         choices=[
             Choices(
                 message=Messages(
-                    role="assistant",
+                    role=MessagesRole.ASSISTANT,
                     content="Bar Baz",
                 ),
                 index=0,
@@ -239,7 +242,10 @@ async def test_gigachat_apredict_stream(patch_gigachat_astream: None) -> None:
 
 
 def test_gigachat_stream(patch_gigachat: None) -> None:
-    expected = [AIMessageChunk(content="Bar Baz"), AIMessageChunk(content=" Stream")]
+    expected = [
+        AIMessageChunk(content="Bar Baz"),
+        AIMessageChunk(content=" Stream", response_metadata={"finish_reason": "stop"}),
+    ]
 
     llm = GigaChat()
     actual = [chunk for chunk in llm.stream("bar")]
@@ -249,7 +255,10 @@ def test_gigachat_stream(patch_gigachat: None) -> None:
 
 @pytest.mark.asyncio()
 async def test_gigachat_astream(patch_gigachat_astream: None) -> None:
-    expected = [AIMessageChunk(content="Bar Baz"), AIMessageChunk(content=" Stream")]
+    expected = [
+        AIMessageChunk(content="Bar Baz"),
+        AIMessageChunk(content=" Stream", response_metadata={"finish_reason": "stop"}),
+    ]
 
     llm = GigaChat()
     actual = [chunk async for chunk in llm.astream("bar")]

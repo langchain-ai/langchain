@@ -11,6 +11,7 @@ _EXPECTED = [
     "AwaDB",
     "AzureSearch",
     "Bagel",
+    "BaiduVectorDB",
     "BESVectorStore",
     "BigQueryVectorSearch",
     "Cassandra",
@@ -27,6 +28,7 @@ _EXPECTED = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "DocumentDBVectorSearch",
+    "DuckDB",
     "ElasticKnnSearch",
     "ElasticVectorSearch",
     "ElasticsearchStore",
@@ -35,6 +37,7 @@ _EXPECTED = [
     "HanaDB",
     "Hologres",
     "InfinispanVS",
+    "InMemoryVectorStore",
     "KDBAI",
     "Kinetica",
     "KineticaSettings",
@@ -84,6 +87,7 @@ _EXPECTED = [
     "VectorStore",
     "Yellowbrick",
     "NeuralDBVectorStore",
+    "CouchbaseVectorStore",
 ]
 
 

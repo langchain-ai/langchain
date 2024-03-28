@@ -1,6 +1,7 @@
 from langchain_community.cache import (
     AstraDBCache,
     AstraDBSemanticCache,
+    AzureCosmosDBSemanticCache,
     CassandraCache,
     CassandraSemanticCache,
     FullLLMCache,
@@ -32,4 +33,5 @@ __all__ = [
     "SQLAlchemyMd5Cache",
     "AstraDBCache",
     "AstraDBSemanticCache",
+    "AzureCosmosDBSemanticCache",
 ]

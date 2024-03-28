@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-cli"
-version = "0.0.21"
+version = "0.0.22rc0"
 description = "CLI for interacting with GigaChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
@@ -16,9 +16,9 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-typer = {extras = ["all"], version = "^0.9.0"}
+typer = { extras = ["all"], version = "^0.9.0" }
 gitpython = "^3.1.40"
-gigaserve = {extras = ["all"], version = ">=0.0.16"}
+gigaserve = { extras = ["all"], version = ">=0.0.51" }
 uvicorn = "^0.23.2"
 tomlkit = "^0.12.2"
 certifi = "^2023.7.22"
@@ -48,9 +48,9 @@ serve = []
 
 [tool.ruff.lint]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
   "T201", # print
 ]
 
@@ -66,7 +66,7 @@ _bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"
 _bump_2.uses = { version = "version" }
 
 _bump_1 = "poetry version patch"
-_check_formatting = "poetry run ruff format . --check"
+_check_formatting = "poetry run ruff format . --diff"
 _lint = "poetry run ruff ."
 _format = "poetry run ruff format ."
 _lint_fix = "poetry run ruff . --fix"
