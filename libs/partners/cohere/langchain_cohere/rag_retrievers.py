@@ -20,6 +20,7 @@ def _get_docs(response: Any) -> List[Document]:
     docs = (
         []
         if "documents" not in response.generation_info
+        or len(response.generation_info["documents"]) == 0
         else [
             Document(page_content=doc["snippet"], metadata=doc)
             for doc in response.generation_info["documents"]
