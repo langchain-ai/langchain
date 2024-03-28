@@ -133,7 +133,10 @@ class TitanTakeoffEmbed(Embeddings):
         )
         for model in models:
             self.client.create_reader(model)
-            self.embed_consumer_groups.add(model["consumer_group"])
+            if isinstance(model, dict):
+                self.embed_consumer_groups.add(model.get("consumer_group"))
+            else:
+                self.embed_consumer_groups.add(model.consumer_group)
         super(TitanTakeoffEmbed, self).__init__()
 
     def _embed(
