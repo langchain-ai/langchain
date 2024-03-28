@@ -39,7 +39,7 @@ codespell = "^2.2.0"
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
-langchain-openai = ">=0.0.3,<0.1"
+gigachain-openai = ">=0.0.3,<0.1"
 
 [tool.poetry.group.lint]
 optional = true

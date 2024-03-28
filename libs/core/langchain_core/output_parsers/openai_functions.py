@@ -15,10 +15,11 @@ from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 def _get_arguments_from_function_call(function_call):
-    """ Supports both type of function_call - dict and objects (for giga) """
-    if hasattr(function_call, 'arguments'):
+    """Supports both type of function_call - dict and objects (for giga)"""
+    if hasattr(function_call, "arguments"):
         return json.dumps(function_call.arguments, ensure_ascii=False)
     return function_call["arguments"]
+
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     """Parse an output that is one of sets of values."""
@@ -87,13 +88,15 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                 try:
                     if self.args_only:
                         return parse_partial_json(
-                            _get_arguments_from_function_call(function_call), strict=self.strict
+                            _get_arguments_from_function_call(function_call),
+                            strict=self.strict,
                         )
                     else:
                         return {
                             **function_call,
                             "arguments": parse_partial_json(
-                                _get_arguments_from_function_call(function_call), strict=self.strict
+                                _get_arguments_from_function_call(function_call),
+                                strict=self.strict,
                             ),
                         }
                 except json.JSONDecodeError:
@@ -102,7 +105,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                 if self.args_only:
                     try:
                         return json.loads(
-                            _get_arguments_from_function_call(function_call), strict=self.strict
+                            _get_arguments_from_function_call(function_call),
+                            strict=self.strict,
                         )
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
@@ -113,7 +117,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                         return {
                             **function_call,
                             "arguments": json.loads(
-                                _get_arguments_from_function_call(function_call), strict=self.strict
+                                _get_arguments_from_function_call(function_call),
+                                strict=self.strict,
                             ),
                         }
                     except (json.JSONDecodeError, TypeError) as exc:

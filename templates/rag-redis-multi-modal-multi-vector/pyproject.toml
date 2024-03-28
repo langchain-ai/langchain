@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 gigachain-core = ">=0.1.5"
-langchain-openai = ">=0.0.1"
+gigachain-openai = ">=0.0.1"
 redis = "^5.0.1"
 openai = "<=2.0.0"
 pypdfium2 = "^4.27.0"
