@@ -1,12 +1,59 @@
-import asyncio
+import itertools
 import json
-import os
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.runnables.config import run_in_executor
+
+
+class EmbeddingInputOutputAdapter:
+    """
+    Adapter class to prepare the inputs from Langchain to a format
+    that Embedding model expects.
+
+    It also provides helper function to extract
+    the embeddings from the generated response.
+    """
+
+    @classmethod
+    def prepare_inputs(
+        cls,
+        provider: str,
+        texts: List[str],
+        model_kwargs: Dict[str, Any],
+        input_type: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        input_body = {**model_kwargs}
+        if provider == "cohere":
+            if input_type is not None:
+                input_body["input_type"] = input_type
+            elif "input_type" not in input_body.keys():
+                input_body["input_type"] = "search_document"
+            input_body["texts"] = [texts] if isinstance(texts, str) else texts
+            return [input_body]
+        elif provider == "amazon":
+            # amazon does not support native batching
+            return [{**input_body, "inputText": text} for text in texts]
+        else:
+            msg = f"Provider {provider} not supported"
+            raise NotImplementedError(msg)
+
+    @classmethod
+    def prepare_outputs(cls, provider: str, response: Any) -> List[List[float]]:
+        response_body = json.loads(response.get("body").read())
+        if provider == "cohere":
+            return response_body.get("embeddings")
+        elif provider == "amazon":
+            return [response_body.get("embedding")]
+        else:
+            msg = f"Provider {provider} not supported"
+            raise NotImplementedError(msg)
+
+    @classmethod
+    def prepare_output(cls, provider: str, response: Any) -> List[float]:
+        return EmbeddingInputOutputAdapter.prepare_outputs(provider, response)[0]
 
 
 class BedrockEmbeddings(BaseModel, Embeddings):
@@ -112,40 +159,37 @@ class BedrockEmbeddings(BaseModel, Embeddings):
 
         return values
 
-    def _embedding_func(self, text: str) -> List[float]:
+    def _embedding_func(
+        self, texts: List[str], input_type: Optional[str] = None
+    ) -> List[List[float]]:
         """Call out to Bedrock embedding endpoint."""
         # replace newlines, which can negatively affect performance.
-        text = text.replace(os.linesep, " ")
+        texts = [text.replace("\n", " ") for text in texts]
 
         # format input body for provider
         provider = self.model_id.split(".")[0]
         _model_kwargs = self.model_kwargs or {}
-        input_body = {**_model_kwargs}
-        if provider == "cohere":
-            if "input_type" not in input_body.keys():
-                input_body["input_type"] = "search_document"
-            input_body["texts"] = [text]
-        else:
-            # includes common provider == "amazon"
-            input_body["inputText"] = text
-        body = json.dumps(input_body)
+        input_bodies = EmbeddingInputOutputAdapter.prepare_inputs(
+            provider, texts, _model_kwargs, input_type
+        )
 
         try:
             # invoke bedrock API
-            response = self.client.invoke_model(
-                body=body,
-                modelId=self.model_id,
-                accept="application/json",
-                contentType="application/json",
-            )
+            responses = [
+                self.client.invoke_model(
+                    body=json.dumps(input_body),
+                    modelId=self.model_id,
+                    accept="application/json",
+                    contentType="application/json",
+                )
+                for input_body in input_bodies
+            ]
 
-            # format output based on provider
-            response_body = json.loads(response.get("body").read())
-            if provider == "cohere":
-                return response_body.get("embeddings")[0]
-            else:
-                # includes common provider == "amazon"
-                return response_body.get("embedding")
+            response_bodies = [
+                EmbeddingInputOutputAdapter.prepare_outputs(provider, response)
+                for response in responses
+            ]
+            return [*itertools.chain(*response_bodies)]
         except Exception as e:
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
@@ -164,16 +208,10 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        results = []
-        for text in texts:
-            response = self._embedding_func(text)
-
-            if self.normalize:
-                response = self._normalize_vector(response)
-
-            results.append(response)
-
-        return results
+        embeddings = self._embedding_func(texts, input_type="search_document")
+        if self.normalize:
+            embeddings = [self._normalize_vector(embedding) for embedding in embeddings]
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a Bedrock model.
@@ -184,7 +222,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = self._embedding_func(text)
+        embedding = self._embedding_func([text], input_type="search_query")[0]
 
         if self.normalize:
             return self._normalize_vector(embedding)
@@ -213,6 +251,4 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
 
-        result = await asyncio.gather(*[self.aembed_query(text) for text in texts])
-
-        return list(result)
+        return await run_in_executor(None, self.embed_documents, texts)
