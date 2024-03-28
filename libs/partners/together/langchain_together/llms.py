@@ -1,5 +1,6 @@
 """Wrapper around Together AI's Completion API."""
 import logging
+import warnings
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -81,6 +82,21 @@ class Together(LLM):
         values["together_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "together_api_key", "TOGETHER_API_KEY")
         )
+        return values
+
+    @root_validator()
+    def validate_max_tokens(cls, values: Dict) -> Dict:
+        """
+        The v1 completions endpoint, has max_tokens as required parameter.
+        Set a default value and warn if the parameter is missing.
+        """
+        if values.get("max_tokens") is None:
+            warnings.warn(
+                "The completions endpoint, has 'max_tokens' as required argument. "
+                "The default value is being set to 128 "
+                "Consider setting this value, when initializing LLM"
+            )
+            values["max_tokens"] = 128  # Default Value
         return values
 
     @property
