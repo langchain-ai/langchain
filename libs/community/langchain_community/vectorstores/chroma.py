@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     import chromadb.config
     from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
 
+
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
 
@@ -80,6 +81,7 @@ class Chroma(VectorStore):
         try:
             import chromadb
             import chromadb.config
+            from chromadb.utils import embedding_functions
         except ImportError:
             raise ImportError(
                 "Could not import chromadb python package. "
@@ -122,10 +124,12 @@ class Chroma(VectorStore):
                 _client_settings.persist_directory or persist_directory
             )
 
-        self._embedding_function = embedding_function
+        self._embedding_function = (
+            embedding_function or embedding_functions.DefaultEmbeddingFunction()
+        )
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=None,
+            embedding_function=self._embedding_function,
             metadata=collection_metadata,
         )
         self.override_relevance_score_fn = relevance_score_fn
@@ -795,3 +799,7 @@ class Chroma(VectorStore):
             ids: List of ids to delete.
         """
         self._collection.delete(ids=ids)
+
+    def __len__(self) -> int:
+        """Count the number of documents in the collection."""
+        return self._collection.count()
