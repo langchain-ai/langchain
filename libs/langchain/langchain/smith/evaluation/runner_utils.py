@@ -9,7 +9,6 @@ import inspect
 import logging
 import uuid
 from datetime import datetime, timezone
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -281,7 +280,11 @@ def _get_prompt(inputs: Dict[str, Any]) -> str:
         )
 
 
-def _get_messages(inputs: Dict[str, Any]) -> List[BaseMessage]:
+class ChatModelInput(TypedDict):
+    messages: List[BaseMessage]
+
+
+def _get_messages(inputs: Dict[str, Any]) -> dict:
     """Get Chat Messages from inputs.
 
     Args:
@@ -294,35 +297,29 @@ def _get_messages(inputs: Dict[str, Any]) -> List[BaseMessage]:
     """
     if not inputs:
         raise InputFormatError("Inputs should not be empty.")
-
+    input_copy = inputs.copy()
     if "messages" in inputs:
-        single_input = inputs["messages"]
+        input_copy["input"] = input_copy.pop("messages")
     elif len(inputs) == 1:
-        single_input = next(iter(inputs.values()))
-    else:
-        raise InputFormatError(
-            f"Chat Run expects 'messages' in inputs when example has multiple"
-            f" input keys. Got {inputs}"
-        )
-    if isinstance(single_input, list) and all(
-        isinstance(i, dict) for i in single_input
-    ):
-        raw_messages = [single_input]
-    elif isinstance(single_input, list) and all(
-        isinstance(i, list) for i in single_input
-    ):
-        raw_messages = single_input
-    else:
-        raise InputFormatError(
-            f"Chat Run expects List[dict] or List[List[dict]] values for"
-            f" 'messages' key input. Got {inputs}"
-        )
-    if len(raw_messages) == 1:
-        return messages_from_dict(raw_messages[0])
+        input_copy["input"] = next(iter(inputs.values()))
+    if "input" in input_copy:
+        raw_messages = input_copy["input"]
+        if isinstance(raw_messages, list) and all(
+            isinstance(i, dict) for i in raw_messages
+        ):
+            raw_messages = [raw_messages]
+        if len(raw_messages) == 1:
+            input_copy["input"] = messages_from_dict(raw_messages[0])
+        else:
+            raise InputFormatError(
+                "Batch messages not supported. Please provide a"
+                " single list of messages."
+            )
+        return input_copy
     else:
         raise InputFormatError(
             f"Chat Run expects single List[dict] or List[List[dict]] 'messages'"
-            f" input. Got {len(raw_messages)} messages from inputs {inputs}"
+            f" input. Got {inputs}"
         )
 
 
@@ -430,13 +427,6 @@ def _setup_evaluation(
             run_type = "llm"
         else:
             run_type = "chain"
-            if data_type in (DataType.chat, DataType.llm):
-                val = data_type.value if isinstance(data_type, Enum) else data_type
-                raise ValueError(
-                    "Cannot evaluate a chain on dataset with "
-                    f"data_type={val}. "
-                    "Please specify a dataset with the default 'kv' data type."
-                )
             chain = llm_or_chain_factory()
             run_inputs = chain.input_keys if isinstance(chain, Chain) else None
             run_outputs = chain.output_keys if isinstance(chain, Chain) else None
@@ -719,9 +709,9 @@ async def _arun_llm(
                 ),
             )
         except InputFormatError:
-            messages = _get_messages(inputs)
+            llm_inputs = _get_messages(inputs)
             llm_output = await llm.ainvoke(
-                messages,
+                **llm_inputs,
                 config=RunnableConfig(
                     callbacks=callbacks, tags=tags or [], metadata=metadata or {}
                 ),
@@ -872,9 +862,9 @@ def _run_llm(
                 ),
             )
         except InputFormatError:
-            llm_messages = _get_messages(inputs)
+            llm_inputs = _get_messages(inputs)
             llm_output = llm.invoke(
-                llm_messages,
+                **llm_inputs,
                 config=RunnableConfig(callbacks=callbacks, metadata=metadata or {}),
             )
     return llm_output
@@ -979,20 +969,15 @@ def _prepare_eval_run(
 ) -> Tuple[MCF, TracerSession, Dataset, List[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
-    as_of = dataset_version if isinstance(dataset_version, datetime) else None
-    if isinstance(dataset_version, str):
-        raise NotImplementedError(
-            "Selecting dataset_version by tag is not yet supported."
-            " Please use a datetime object."
-        )
-    examples = list(client.list_examples(dataset_id=dataset.id, as_of=as_of))
+
+    examples = list(client.list_examples(dataset_id=dataset.id, as_of=dataset_version))
     if not examples:
         raise ValueError(f"Dataset {dataset_name} has no example rows.")
     modified_at = [ex.modified_at for ex in examples if ex.modified_at]
     # Should always be defined in practice when fetched,
     # but the typing permits None
     max_modified_at = max(modified_at) if modified_at else None
-    dataset_version = max_modified_at.isoformat() if max_modified_at else None
+    inferred_version = max_modified_at.isoformat() if max_modified_at else None
 
     try:
         project_metadata = project_metadata or {}
@@ -1003,7 +988,7 @@ def _prepare_eval_run(
                 "git": git_info,
             }
 
-        project_metadata["dataset_version"] = dataset_version
+        project_metadata["dataset_version"] = inferred_version
         project = client.create_project(
             project_name,
             reference_dataset_id=dataset.id,
@@ -1303,6 +1288,7 @@ async def arun_on_dataset(
             "0.1.9",
             message="The tags argument is deprecated and will be"
             " removed in a future release. Please specify project_metadata instead.",
+            pending=True,
         )
 
     if kwargs:
@@ -1365,6 +1351,7 @@ def run_on_dataset(
             "0.1.9",
             message="The tags argument is deprecated and will be"
             " removed in a future release. Please specify project_metadata instead.",
+            pending=True,
         )
     if revision_id is None:
         revision_id = get_langchain_env_var_metadata().get("revision_id")
