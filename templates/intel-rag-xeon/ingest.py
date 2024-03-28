@@ -28,7 +28,8 @@ def ingest_documents():
 
     # Create vectorstore
     embedder = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2")
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
 
     documents = []
     for chunk in chunks:
@@ -40,7 +41,7 @@ def ingest_documents():
         documents=documents,
         collection_name="xeon-rag",
         embedding=embedder,
-        persist_directory='/tmp/xeon_rag_db'
+        persist_directory="/tmp/xeon_rag_db",
     )
 
 
