@@ -60,6 +60,12 @@ jobs:
       working-directory: ${{ matrix.working-directory }}
     secrets: inherit
 
+  test_doc_imports:
+    needs: [ build ]
+    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
+    uses: ./.github/workflows/_test_doc_imports.yml
+    secrets: inherit
+
   compile-integration-tests:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
