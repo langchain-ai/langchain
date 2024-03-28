@@ -30,9 +30,7 @@ def create_cohere_tools_agent(
         RunnablePassthrough.assign(
             # Intermediate steps are in tool results.
             # Edit below to change the prompt parameters.
-            input=lambda x: prompt.format_messages(
-                input=x["input"], agent_scratchpad=[]
-            ),
+            input=lambda x: prompt.format_messages(**x,agent_scratchpad=[]),
             tools=lambda x: _format_to_cohere_tools(tools),
             tool_results=lambda x: _format_to_cohere_tools_messages(
                 x["intermediate_steps"]
@@ -143,7 +141,7 @@ class _CohereToolsAgentOutputParser(
     ) -> Union[List[AgentAction], AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             raise ValueError(f"Expected ChatGeneration, got {type(result)}")
-        if result[0].message.additional_kwargs["tool_calls"]:
+        if "tool_calls" in result[0].message.additional_kwargs:
             actions = []
             for tool in result[0].message.additional_kwargs["tool_calls"]:
                 function = tool.get("function", {})
