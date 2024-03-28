@@ -37,12 +37,14 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 
-from langchain_cohere.cohere_agent import _format_to_cohere_tools
+from langchain_cohere.cohere_agent import (
+    _convert_to_cohere_tool,
+    _format_to_cohere_tools,
+)
 from langchain_cohere.llms import BaseCohere
 
 
@@ -198,7 +200,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
                 tools=[schema], first_tool_only=True
             )
         else:
-            key_name = convert_to_cohere_tool(schema)["name"]
+            key_name = _convert_to_cohere_tool(schema)["name"]
             output_parser = JsonOutputKeyToolsParser(
                 key_name=key_name, first_tool_only=True
             )
