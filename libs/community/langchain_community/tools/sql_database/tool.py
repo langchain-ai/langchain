@@ -87,7 +87,7 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for getting tables names."""
 
     name: str = "sql_db_list_tables"
-    description: str = "Input is an empty string, output is a comma separated list of tables in the database."
+    description: str = "Input is an empty string, output is a comma-separated list of tables in the database."
     args_schema: Type[BaseModel] = _ListSQLDataBaseToolInput
 
     def _run(
@@ -95,7 +95,7 @@ class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
         tool_input: str = "",
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        """Get the schema for a specific table."""
+        """Get a comma-separated list of table names."""
         return ", ".join(self.db.get_usable_table_names())
 
 

@@ -22,6 +22,7 @@ def test_chroma() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
+    assert len(docsearch) == 3
 
 
 async def test_chroma_async() -> None:

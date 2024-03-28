@@ -29,6 +29,8 @@ _EXPECTED = [
     "DocArrayHnswSearch",
     "DocArrayInMemorySearch",
     "DocumentDBVectorSearch",
+    "DuckDB",
+    "EcloudESVectorStore",
     "ElasticKnnSearch",
     "ElasticVectorSearch",
     "ElasticsearchStore",
@@ -37,6 +39,7 @@ _EXPECTED = [
     "HanaDB",
     "Hologres",
     "InfinispanVS",
+    "InMemoryVectorStore",
     "KDBAI",
     "Kinetica",
     "KineticaSettings",
@@ -75,6 +78,7 @@ _EXPECTED = [
     "Typesense",
     "USearch",
     "Vald",
+    "VDMS",
     "Vearch",
     "Vectara",
     "VespaStore",
@@ -86,6 +90,7 @@ _EXPECTED = [
     "VectorStore",
     "Yellowbrick",
     "NeuralDBVectorStore",
+    "CouchbaseVectorStore",
 ]
 
 

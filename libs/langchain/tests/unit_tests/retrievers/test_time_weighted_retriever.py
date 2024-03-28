@@ -36,44 +36,12 @@ class MockVectorStore(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
-
-        Args:
-            texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
-            kwargs: vectorstore specific parameters
-
-        Returns:
-            List of ids from adding the texts into the vectorstore.
-        """
         return list(texts)
-
-    async def aadd_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        """Run more texts through the embeddings and add to the vectorstore."""
-        raise NotImplementedError
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        """Return docs most similar to query."""
         return []
-
-    @classmethod
-    def from_documents(
-        cls: Type["MockVectorStore"],
-        documents: List[Document],
-        embedding: Embeddings,
-        **kwargs: Any,
-    ) -> "MockVectorStore":
-        """Return VectorStore initialized from documents and embeddings."""
-        texts = [d.page_content for d in documents]
-        metadatas = [d.metadata for d in documents]
-        return cls.from_texts(texts, embedding, metadatas=metadatas, **kwargs)
 
     @classmethod
     def from_texts(
@@ -83,7 +51,6 @@ class MockVectorStore(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "MockVectorStore":
-        """Return VectorStore initialized from texts and embeddings."""
         return cls()
 
     def _similarity_search_with_relevance_scores(
@@ -92,11 +59,15 @@ class MockVectorStore(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """Return docs and similarity scores, normalized on a scale from 0 to 1.
-
-        0 is dissimilar, 1 is most similar.
-        """
         return [(doc, 0.5) for doc in _get_example_memories()]
+
+    async def _asimilarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        return self._similarity_search_with_relevance_scores(query, k, **kwargs)
 
 
 @pytest.fixture
@@ -146,6 +117,18 @@ def test_get_salient_docs(
         assert doc in want
 
 
+async def test_aget_salient_docs(
+    time_weighted_retriever: TimeWeightedVectorStoreRetriever,
+) -> None:
+    query = "Test query"
+    docs_and_scores = await time_weighted_retriever.aget_salient_docs(query)
+    want = [(doc, 0.5) for doc in _get_example_memories()]
+    assert isinstance(docs_and_scores, dict)
+    assert len(docs_and_scores) == len(want)
+    for k, doc in docs_and_scores.items():
+        assert doc in want
+
+
 def test_get_relevant_documents(
     time_weighted_retriever: TimeWeightedVectorStoreRetriever,
 ) -> None:
@@ -164,11 +147,42 @@ def test_get_relevant_documents(
         assert now - timedelta(hours=1) < d.metadata["last_accessed_at"] <= now
 
 
+async def test_aget_relevant_documents(
+    time_weighted_retriever: TimeWeightedVectorStoreRetriever,
+) -> None:
+    query = "Test query"
+    relevant_documents = await time_weighted_retriever.aget_relevant_documents(query)
+    want = [(doc, 0.5) for doc in _get_example_memories()]
+    assert isinstance(relevant_documents, list)
+    assert len(relevant_documents) == len(want)
+    now = datetime.now()
+    for doc in relevant_documents:
+        # assert that the last_accessed_at is close to now.
+        assert now - timedelta(hours=1) < doc.metadata["last_accessed_at"] <= now
+
+    # assert that the last_accessed_at in the memory stream is updated.
+    for d in time_weighted_retriever.memory_stream:
+        assert now - timedelta(hours=1) < d.metadata["last_accessed_at"] <= now
+
+
 def test_add_documents(
     time_weighted_retriever: TimeWeightedVectorStoreRetriever,
 ) -> None:
     documents = [Document(page_content="test_add_documents document")]
     added_documents = time_weighted_retriever.add_documents(documents)
+    assert isinstance(added_documents, list)
+    assert len(added_documents) == 1
+    assert (
+        time_weighted_retriever.memory_stream[-1].page_content
+        == documents[0].page_content
+    )
+
+
+async def test_aadd_documents(
+    time_weighted_retriever: TimeWeightedVectorStoreRetriever,
+) -> None:
+    documents = [Document(page_content="test_add_documents document")]
+    added_documents = await time_weighted_retriever.aadd_documents(documents)
     assert isinstance(added_documents, list)
     assert len(added_documents) == 1
     assert (
