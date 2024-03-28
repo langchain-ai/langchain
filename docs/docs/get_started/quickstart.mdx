@@ -423,7 +423,7 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 document_chain = create_stuff_documents_chain(llm, prompt)
 
-retrieval_chain = create_retrieval_chain(retriever_chain, document_chain)
+retrieval_chain = create_retrieval_chain(retrieval_chain, document_chain)
 ```
 
 We can now test this out end-to-end:
