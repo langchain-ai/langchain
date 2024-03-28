@@ -7,6 +7,7 @@ from langchain_cli.namespaces import app as app_namespace
 from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
+from langchain_cli.utils.serve_to_cloud import deploy_to_azure_ai
 
 __version__ = "0.0.22rc0"
 
@@ -51,22 +52,27 @@ def serve(
     host: Annotated[
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
+    cloud: Annotated[
+        Optional[str], typer.Option(help="Specify the cloud provider for deployment")
+    ] = None,
 ) -> None:
     """
     Start the LangServe app, whether it's a template or an app.
     """
-
-    # see if is a template
-    try:
-        project_dir = get_package_root()
-        pyproject = project_dir / "pyproject.toml"
-        get_langserve_export(pyproject)
-    except KeyError:
-        # not a template
-        app_namespace.serve(port=port, host=host)
+    if cloud == 'azureai':
+        deploy_to_azure_ai()
     else:
-        # is a template
-        template_namespace.serve(port=port, host=host)
+        # see if is a template
+        try:
+            project_dir = get_package_root()
+            pyproject = project_dir / "pyproject.toml"
+            get_langserve_export(pyproject)
+        except KeyError:
+            # not a template
+            app_namespace.serve(port=port, host=host)
+        else:
+            # is a template
+            template_namespace.serve(port=port, host=host)
 
 
 if __name__ == "__main__":
