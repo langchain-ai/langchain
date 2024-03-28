@@ -38,6 +38,7 @@ _module_lookup = {
     "GPT4AllEmbeddings": "langchain_community.embeddings.gpt4all",
     "GooglePalmEmbeddings": "langchain_community.embeddings.google_palm",
     "GradientEmbeddings": "langchain_community.embeddings.gradient_ai",
+    "GigaChatEmbeddings": "langchain_community.embeddings.gigachat",
     "HuggingFaceBgeEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceHubEmbeddings": "langchain_community.embeddings.huggingface_hub",
@@ -66,6 +67,7 @@ _module_lookup = {
     "OllamaEmbeddings": "langchain_community.embeddings.ollama",
     "OpenAIEmbeddings": "langchain_community.embeddings.openai",
     "QianfanEmbeddingsEndpoint": "langchain_community.embeddings.baidu_qianfan_endpoint",  # noqa: E501
+    "QuantizedBgeEmbeddings": "langchain_community.embeddings.itrex",
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
@@ -79,6 +81,8 @@ _module_lookup = {
     "VolcanoEmbeddings": "langchain_community.embeddings.volcengine",
     "VoyageEmbeddings": "langchain_community.embeddings.voyageai",
     "XinferenceEmbeddings": "langchain_community.embeddings.xinference",
+    "PremAIEmbeddings": "langchain_community.embeddings.premai",
+    "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
 }
 
 
