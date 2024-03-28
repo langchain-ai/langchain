@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, TypeAlias, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, cast
 
 import numpy as np
 from langchain_core.documents import Document
@@ -17,8 +17,6 @@ from langchain_community.embeddings import DeterministicFakeEmbedding, FakeEmbed
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
-tvdb_enum = guard_import("tcvectordb.model.enum")
-FieldType: TypeAlias = tvdb_enum.FieldType
 
 
 class ConnectionParams:
@@ -72,7 +70,7 @@ class MetaField(BaseModel):
 
     name: str
     description: Optional[str]
-    data_type: FieldType
+    data_type: "tcvectordb.model.enum.FieldType"
     index: bool = False
 
 
