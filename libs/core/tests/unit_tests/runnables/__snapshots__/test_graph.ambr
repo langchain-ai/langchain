@@ -32,7 +32,7 @@
 # ---
 # name: test_graph_sequence[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear', 'defaultRenderer': 'elk'}}}%%
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
   graph TD;
   	PromptInput[PromptInput]:::startclass;
   	PromptTemplate([PromptTemplate]):::otherclass;
@@ -100,7 +100,7 @@
 # ---
 # name: test_graph_sequence_map[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear', 'defaultRenderer': 'elk'}}}%%
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
   graph TD;
   	PromptInput[PromptInput]:::startclass;
   	PromptTemplate([PromptTemplate]):::otherclass;
@@ -150,7 +150,7 @@
 # ---
 # name: test_graph_single_runnable[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear', 'defaultRenderer': 'elk'}}}%%
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
   graph TD;
   	StrOutputParserInput[StrOutputParserInput]:::startclass;
   	StrOutputParser([StrOutputParser]):::otherclass;
