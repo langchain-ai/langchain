@@ -7,17 +7,18 @@ from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_ID = "gpt2"
 
+
 logger = logging.getLogger(__name__)
 
 
-class BigdlLLM(LLM):
-    """Wrapper around the BigDL-LLM Transformer-INT4 model
+class IpexLLM(LLM):
+    """Wrapper around the IpexLLM model
 
     Example:
         .. code-block:: python
 
-            from langchain.llms import TransformersLLM
-            llm = TransformersLLM.from_model_id(model_id="THUDM/chatglm-6b")
+            from langchain_community.llms import IpexLLM
+            llm = IpexLLM.from_model_id(model_id="THUDM/chatglm-6b")
     """
 
     model_id: str = DEFAULT_MODEL_ID
@@ -25,7 +26,7 @@ class BigdlLLM(LLM):
     model_kwargs: Optional[dict] = None
     """Keyword arguments passed to the model."""
     model: Any  #: :meta private:
-    """BigDL-LLM Transformers-INT4 model."""
+    """IpexLLM model."""
     tokenizer: Any  #: :meta private:
     """Huggingface tokenizer model."""
     streaming: bool = True
@@ -53,10 +54,10 @@ class BigdlLLM(LLM):
             kwargs: Extra arguments to pass to the model and tokenizer.
 
         Returns:
-            An object of TransformersLLM.
+            An object of IpexLLM.
         """
         try:
-            from bigdl.llm.transformers import (
+            from ipex_llm.transformers import (
                 AutoModel,
                 AutoModelForCausalLM,
             )
@@ -64,8 +65,8 @@ class BigdlLLM(LLM):
 
         except ImportError:
             raise ValueError(
-                "Could not import bigdl-llm or transformers. "
-                "Please install it with `pip install --pre --upgrade bigdl-llm[all]`."
+                "Could not import ipex-llm or transformers. "
+                "Please install it with `pip install --pre --upgrade ipex-llm[all]`."
             )
 
         _model_kwargs = model_kwargs or {}
@@ -109,15 +110,15 @@ class BigdlLLM(LLM):
 
         Args:
 
-            model_id: Path for the bigdl transformers low-bit model checkpoint folder.
+            model_id: Path for the ipex-llm transformers low-bit model folder.
             model_kwargs: Keyword arguments to pass to the model and tokenizer.
             kwargs: Extra arguments to pass to the model and tokenizer.
 
         Returns:
-            An object of TransformersLLM.
+            An object of IpexLLM.
         """
         try:
-            from bigdl.llm.transformers import (
+            from ipex_llm.transformers import (
                 AutoModel,
                 AutoModelForCausalLM,
             )
@@ -125,8 +126,8 @@ class BigdlLLM(LLM):
 
         except ImportError:
             raise ValueError(
-                "Could not import bigdl-llm or transformers. "
-                "Please install it with `pip install --pre --upgrade bigdl-llm[all]`"
+                "Could not import ipex-llm or transformers. "
+                "Please install it with `pip install --pre --upgrade ipex-llm[all]`."
             )
 
         _model_kwargs = model_kwargs or {}
@@ -163,7 +164,7 @@ class BigdlLLM(LLM):
 
     @property
     def _llm_type(self) -> str:
-        return "BigDL-llm"
+        return "ipex-llm"
 
     def _call(
         self,
