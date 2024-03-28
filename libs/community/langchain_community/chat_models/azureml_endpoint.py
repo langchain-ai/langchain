@@ -108,7 +108,7 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
         ]
         if api_type in [
             AzureMLEndpointApiType.dedicated,
-            AzureMLEndpointApiType.realtime
+            AzureMLEndpointApiType.realtime,
         ]:
             request_payload = json.dumps(
                 {
@@ -134,7 +134,7 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
         """Formats response"""
         if api_type in [
             AzureMLEndpointApiType.dedicated,
-            AzureMLEndpointApiType.realtime
+            AzureMLEndpointApiType.realtime,
         ]:
             try:
                 choice = json.loads(output)["output"]
@@ -182,6 +182,44 @@ class LlamaChatContentFormatter(CustomOpenAIChatContentFormatter):
                 Please use `CustomOpenAIChatContentFormatter` instead.  
             """
         )
+
+
+class MistralChatContentFormatter(LlamaChatContentFormatter):
+    """Content formatter for `Mistral`."""
+
+    def format_messages_request_payload(
+        self,
+        messages: List[BaseMessage],
+        model_kwargs: Dict,
+        api_type: AzureMLEndpointApiType,
+    ) -> bytes:
+        """Formats the request according to the chosen api"""
+        chat_messages = [self._convert_message_to_dict(message) for message in messages]
+
+        if chat_messages and chat_messages[0]["role"] == "system":
+            # Mistral OSS models do not explicitly support system prompts, so we have to
+            # stash in the first user prompt
+            chat_messages[1]["content"] = (
+                chat_messages[0]["content"] + "\n\n" + chat_messages[1]["content"]
+            )
+            del chat_messages[0]
+
+        if api_type == AzureMLEndpointApiType.realtime:
+            request_payload = json.dumps(
+                {
+                    "input_data": {
+                        "input_string": chat_messages,
+                        "parameters": model_kwargs,
+                    }
+                }
+            )
+        elif api_type == AzureMLEndpointApiType.serverless:
+            request_payload = json.dumps({"messages": chat_messages, **model_kwargs})
+        else:
+            raise ValueError(
+                f"`api_type` {api_type} is not supported by this formatter"
+            )
+        return str.encode(request_payload)
 
 
 class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
@@ -242,7 +280,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
             response_payload, self.endpoint_api_type
         )
         return ChatResult(generations=[generations])
-    
+
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -254,19 +292,20 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         timeout = None if "timeout" not in kwargs else kwargs["timeout"]
 
         import openai
+
         params = {}
         client_params = {
             "api_key": self.endpoint_api_key.get_secret_value(),
             "base_url": self.endpoint_url,
-            "timeout": timeout ,
+            "timeout": timeout,
             "default_headers": None,
             "default_query": None,
             "http_client": None,
         }
-        
+
         client = openai.OpenAI(**client_params)
         message_dicts = [
-            CustomOpenAIChatContentFormatter._convert_message_to_dict(m) 
+            CustomOpenAIChatContentFormatter._convert_message_to_dict(m)
             for m in messages
         ]
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
@@ -306,27 +345,27 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
         timeout = None if "timeout" not in kwargs else kwargs["timeout"]
 
         import openai
+
         params = {}
         client_params = {
             "api_key": self.endpoint_api_key.get_secret_value(),
             "base_url": self.endpoint_url,
-            "timeout": timeout ,
+            "timeout": timeout,
             "default_headers": None,
             "default_query": None,
             "http_client": None,
         }
-        
+
         async_client = openai.AsyncOpenAI(**client_params)
         message_dicts = [
-            CustomOpenAIChatContentFormatter._convert_message_to_dict(m) 
+            CustomOpenAIChatContentFormatter._convert_message_to_dict(m)
             for m in messages
         ]
         params = {"stream": True, "stop": stop, "model": None, **kwargs}
 
         default_chunk_class = AIMessageChunk
         async for chunk in await async_client.chat.completions.create(
-            messages=message_dicts,
-            **params
+            messages=message_dicts, **params
         ):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
@@ -351,6 +390,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
                     token=chunk.text, chunk=chunk, logprobs=logprobs
                 )
             yield chunk
+
 
 def _convert_delta_to_message_chunk(
     _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
