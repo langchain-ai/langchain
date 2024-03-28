@@ -1,4 +1,5 @@
 """Module that contains tests for runnable.astream_events API."""
+import sys
 from itertools import cycle
 from typing import Any, AsyncIterator, Dict, List, Sequence, cast
 
@@ -372,8 +373,11 @@ async def test_astream_events_from_model() -> None:
     ]
 
     @RunnableLambda
-    def i_dont_stream(input):
-        return model.invoke(input)
+    def i_dont_stream(input, config) -> Any:
+        if sys.version_info >= (3, 11):
+            return model.invoke(input)
+        else:
+            return model.invoke(input, config)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v1"))
     assert events == [
@@ -460,8 +464,11 @@ async def test_astream_events_from_model() -> None:
     ]
 
     @RunnableLambda
-    async def ai_dont_stream(input):
-        return await model.ainvoke(input)
+    async def ai_dont_stream(input, config) -> Any:
+        if sys.version_info >= (3, 11):
+            return await model.ainvoke(input)
+        else:
+            return await model.ainvoke(input, config)
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v1"))
     assert events == [
