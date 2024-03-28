@@ -90,6 +90,15 @@ JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON = """```json
 }
 ```"""
 
+JSON_WITH_COMMONS = """```json
+{
+    "action": "Final Answer", // this is a comment
+    /* this is action field */
+    "action_input": "{"foo": "bar", "bar": "foo"}"
+}
+```"""
+
+
 NO_TICKS = """{
     "foo": "bar"
 }"""
@@ -202,6 +211,7 @@ def test_parse_json_with_code_blocks_and_newlines() -> None:
 
 TEST_CASES_ESCAPED_QUOTES = [
     JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON,
+    JSON_WITH_COMMONS,
 ]
 
 

@@ -33,6 +33,8 @@ def _custom_parser(multiline_string: str) -> str:
     """
     if isinstance(multiline_string, (bytes, bytearray)):
         multiline_string = multiline_string.decode()
+    # remove comments
+    multiline_string = re.sub(r'//.*?\n|/\*.*?\*/', '', multiline_string, flags=re.S)
 
     multiline_string = re.sub(
         r'("action_input"\:\s*")(.*?)(")',
