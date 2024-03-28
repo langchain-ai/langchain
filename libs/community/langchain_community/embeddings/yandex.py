@@ -48,12 +48,12 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     api_key: SecretStr = ""  # type: ignore[assignment]
     """Yandex Cloud Api Key for service account
     with the `ai.languageModels.user` role"""
-    model_uri: str = ""
-    """Model uri to use."""
     folder_id: str = ""
     """Yandex Cloud folder ID"""
-    model_name: str = "text-search-query"
-    """Model name to use."""
+    doc_model_name: str = "text-search-query"
+    """Doc model name to use."""
+    query_model_name: str = "text-search-query"
+    """Query model name to use."""
     model_version: str = "latest"
     """Model version to use."""
     url: str = "llm.api.cloud.yandex.net:443"
@@ -89,12 +89,11 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
             values["_grpc_metadata"] = (
                 ("authorization", f"Api-Key {values['api_key'].get_secret_value()}"),
             )
-        if values["model_uri"] == "" and values["folder_id"] == "":
-            raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
-        if not values["model_uri"]:
-            values[
-                "model_uri"
-            ] = f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+        if values["folder_id"] == "":
+            raise ValueError("'folder_id' must be provided.")
+
+        values['doc_model_uri'] = f"emb://{values['folder_id']}/{values['doc_model_name']}/{values['model_version']}"
+        values['query_model_uri'] = f"emb://{values['folder_id']}/{values['query_model_name']}/{values['model_version']}"
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -118,7 +117,7 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return _embed_with_retry(self, texts=[text])[0]
+        return _embed_with_retry(self, texts=[text], embed_query=True)[0]
 
 
 def _create_retry_decorator(llm: YandexGPTEmbeddings) -> Callable[[Any], Any]:
@@ -146,7 +145,7 @@ def _embed_with_retry(llm: YandexGPTEmbeddings, **kwargs: Any) -> Any:
     return _completion_with_retry(**kwargs)
 
 
-def _make_request(self: YandexGPTEmbeddings, texts: List[str]):  # type: ignore[no-untyped-def]
+def _make_request(self: YandexGPTEmbeddings, texts: List[str], **kwargs):  # type: ignore[no-untyped-def]
     try:
         import grpc
 
@@ -172,9 +171,10 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str]):  # type: ignore[
     result = []
     channel_credentials = grpc.ssl_channel_credentials()
     channel = grpc.secure_channel(self.url, channel_credentials)
-
+    # Use the query model if embed_query is True
+    model_uri = self.query_model_uri if kwargs.get('embed_query') else self.doc_model_uri
     for text in texts:
-        request = TextEmbeddingRequest(model_uri=self.model_uri, text=text)
+        request = TextEmbeddingRequest(model_uri=model_uri, text=text)
         stub = EmbeddingsServiceStub(channel)
         res = stub.TextEmbedding(request, metadata=self._grpc_metadata)  # type: ignore[attr-defined]
         result.append(list(res.embedding))
