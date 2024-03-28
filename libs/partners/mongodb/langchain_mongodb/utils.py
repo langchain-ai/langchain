@@ -38,9 +38,9 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
         Z = 1 - simd.cdist(X, Y, metric="cosine")
         if isinstance(Z, float):
             return np.array([Z])
-        return Z
+        return np.array(Z)
     except ImportError:
-        logger.info(
+        logger.debug(
             "Unable to import simsimd, defaulting to NumPy implementation. If you want "
             "to use simsimd please install with `pip install simsimd`."
         )
