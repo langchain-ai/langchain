@@ -2058,20 +2058,18 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         from langchain_anthropic import ChatAnthropic
         from langchain_core.runnables.utils import ConfigurableField
 
-        llm = ChatAnthropic(model_name="claude-3-sonnet-20240229")
+        model = ChatAnthropic(model_name="claude-3-sonnet-20240229")
                 .configurable_alternatives(
                     ConfigurableField(id="llm"),
                     default_key="anthropic",
                     openai=ChatOpenAI()
                 )
 
-        chain = llm
-
         # use the default model ChatAnthropic()
-        print(chain.invoke("which organization created you?").content)
+        print(model.invoke("which organization created you?").content)
 
         # use ChatOpenaAI()
-        print(chain.with_config(configurable={"llm": "openai"}).invoke(
+        print(model.with_config(configurable={"llm": "openai"}).invoke(
             "which organization created you?").content)
         """
         from langchain_core.runnables.configurable import (
