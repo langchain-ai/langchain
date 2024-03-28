@@ -2047,10 +2047,10 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         )
 
         # max_tokens = 20
-        print("max_tokens_1: ", model.invoke("tell me something about chess").content)
+        print("max_tokens_20: ", model.invoke("tell me something about chess").content)
 
         # max_tokens = 200
-        print("max_tokens_2: ", model.with_config(
+        print("max_tokens_200: ", model.with_config(
             configurable={"output_token_number": 200}
             ).invoke("tell me something about chess").content
         )
