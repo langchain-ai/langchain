@@ -322,7 +322,8 @@ class ChildTool(BaseTool):
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
-        args, kwargs = (), {}
+        args: Tuple[Any] = ()
+        kwargs: Dict = {}
         if isinstance(tool_input, str):
             args = (tool_input,)
         else:
