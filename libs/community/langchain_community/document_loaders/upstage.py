@@ -118,6 +118,7 @@ class UpstageDocumentLoader(BaseLoader):
         output_type: str = OutputType.TEXT.value,
         split: str = SplitType.NONE.value,
         api_key: str = "",
+        url: str = LAYOUT_ANALYZER_URL,
     ):
         """Initialize with the file path."""
         self.file_path = file_path
@@ -125,6 +126,7 @@ class UpstageDocumentLoader(BaseLoader):
         self.split = split
         self.api_key = api_key
         self.file_name = os.path.basename(file_path)
+        self.url = url
 
         validate_file_path(self.file_path)
         validate_api_key(self.api_key)
@@ -144,10 +146,9 @@ class UpstageDocumentLoader(BaseLoader):
                         or an invalid split type is provided.
         """
 
-        url = LAYOUT_ANALYZER_URL
         headers = {"Authorization": f"Bearer {self.api_key}"}
         files = {"document": open(self.file_path, "rb")}
-        response = requests.post(url, headers=headers, files=files)
+        response = requests.post(self.url, headers=headers, files=files)
 
         if response.status_code != 200:
             raise ValueError(f"API call error: {response.status_code}")
