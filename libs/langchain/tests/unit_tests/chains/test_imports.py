@@ -38,6 +38,7 @@ EXPECTED_ALL = [
     "OpenAPIEndpointChain",
     "QAGenerationChain",
     "QAWithSourcesChain",
+    "PebbloRetrievalQA",
     "ReduceDocumentsChain",
     "RefineDocumentsChain",
     "RetrievalQA",
