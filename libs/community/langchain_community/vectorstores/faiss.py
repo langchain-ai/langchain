@@ -334,6 +334,7 @@ class FAISS(VectorStore):
                 for doc, similarity in docs
                 if cmp(similarity, score_threshold)
             ]
+        docs = sorted(docs, key=lambda x: x[1], reverse=True)
         return docs[:k]
 
     async def asimilarity_search_with_score_by_vector(

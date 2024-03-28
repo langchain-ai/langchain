@@ -181,6 +181,9 @@ optional = true
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 langchain-core = {path = "../core", develop = true}
+langchain = {path = "../langchain", develop = true}
+langchain-openai = { path = "../partners/openai", develop = true }
+faiss-cpu = "^1.8.0"
 
 [tool.poetry.extras]
 cli = ["typer"]
