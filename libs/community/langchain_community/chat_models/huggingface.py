@@ -1,19 +1,26 @@
 """Hugging Face Chat Wrapper."""
-
-from typing import Any, List, Optional
+from typing import Any, AsyncIterator, Iterator, List, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+)
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+    LLMResult,
+)
 from langchain_core.pydantic_v1 import root_validator
 
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
@@ -70,6 +77,37 @@ class ChatHuggingFace(BaseChatModel):
                 f"HuggingFaceEndpoint, HuggingFaceHub, received {type(values['llm'])}"
             )
         return values
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        request = self._to_chat_prompt(messages)
+
+        for data in self.llm._stream(request, **kwargs):
+            delta = data.text
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+            if run_manager:
+                run_manager.on_llm_new_token(delta, chunk=chunk)
+            yield chunk
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        request = self._to_chat_prompt(messages)
+        async for data in self.llm._astream(request, **kwargs):
+            delta = data.text
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
+            if run_manager:
+                await run_manager.on_llm_new_token(delta, chunk=chunk)
+            yield chunk
 
     def _generate(
         self,
