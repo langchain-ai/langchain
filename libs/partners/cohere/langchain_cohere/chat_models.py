@@ -11,7 +11,7 @@ from typing import (
     Union,
 )
 
-from cohere.types import ToolCall
+from cohere.types import NonStreamedChatResponse, ToolCall
 from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -37,10 +37,12 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable
-from langchain_core.tools import BaseModel, BaseTool
 
-from langchain_cohere.cohere_agent import convert_to_cohere_tool, format_to_cohere_tools
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+
+from langchain_cohere.cohere_agent import _format_to_cohere_tools
 from langchain_cohere.llms import BaseCohere
 
 
@@ -86,25 +88,22 @@ def get_cohere_chat_request(
     additional_kwargs = messages[-1].additional_kwargs
 
     # cohere SDK will fail loudly if both connectors and documents are provided
-    if (
-        len(additional_kwargs.get("documents", [])) > 0
-        and documents
-        and len(documents) > 0
-    ):
+    if additional_kwargs.get("documents", []) and documents and len(documents) > 0:
         raise ValueError(
-            "Received documents both as a keyword argument and as an prompt additional"
-            "keywword argument. Please choose only one option."
+            "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."  # noqa: E501
         )
 
-    formatted_docs = [
-        {
-            "text": doc.page_content,
-            "id": doc.metadata.get("id") or f"doc-{str(i)}",
-        }
-        for i, doc in enumerate(additional_kwargs.get("documents", []))
-    ] or documents
-    if not formatted_docs:
-        formatted_docs = None
+    formatted_docs: Optional[List[Dict[str, Any]]] = None
+    if additional_kwargs.get("documents"):
+        formatted_docs = [
+            {
+                "text": doc.page_content,
+                "id": doc.metadata.get("id") or f"doc-{str(i)}",
+            }
+            for i, doc in enumerate(additional_kwargs.get("documents", []))
+        ]
+    elif documents:
+        formatted_docs = documents
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
@@ -167,10 +166,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], BaseTool]],
+        tools: Sequence[Union[Dict[str, Any], BaseTool, Type[BaseModel]]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        formatted_tools = format_to_cohere_tools(tools)
+        formatted_tools = _format_to_cohere_tools(tools)
         return super().bind(tools=formatted_tools, **kwargs)
 
     @beta()
@@ -271,7 +270,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
                     generation_info=generation_info,
                 )
 
-    def _get_generation_info(self, response: Any) -> Dict[str, Any]:
+    def _get_generation_info(self, response: NonStreamedChatResponse) -> Dict[str, Any]:
         """Get the generation info from cohere API response."""
         generation_info = {
             "documents": response.documents,
@@ -280,12 +279,15 @@ class ChatCohere(BaseChatModel, BaseCohere):
             "search_queries": response.search_queries,
             "is_search_required": response.is_search_required,
             "generation_id": response.generation_id,
-            "tool_calls": _format_cohere_tool_calls(
-                response.generation_id, response.tool_calls
-            ),
         }
+        if response.tool_calls:
+            # Only populate tool_calls when 1) present on the response and
+            #  2) has one or more calls.
+            generation_info["tool_calls"] = _format_cohere_tool_calls(
+                response.generation_id or "", response.tool_calls
+            )
         if hasattr(response, "token_count"):
-            generation_info["token_count"] = response.tool_calls
+            generation_info["token_count"] = response.token_count
         return generation_info
 
     def _generate(
@@ -338,7 +340,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
-        return len(self.client.tokenize(text).tokens)
+        return len(self.client.tokenize(text=text).tokens)
 
 
 def _format_cohere_tool_calls(

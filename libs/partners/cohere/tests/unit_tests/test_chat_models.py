@@ -69,8 +69,40 @@ def test_default_params(chat_cohere: ChatCohere, expected: typing.Dict) -> None:
                     },
                 ],
             },
-            id="with tool calls",
-        )
+            id="tools should be called",
+        ),
+        pytest.param(
+            NonStreamedChatResponse(
+                generation_id="foo",
+                text="",
+                tool_calls=[],
+            ),
+            {
+                "documents": None,
+                "citations": None,
+                "search_results": None,
+                "search_queries": None,
+                "is_search_required": None,
+                "generation_id": "foo",
+            },
+            id="no tools should be called",
+        ),
+        pytest.param(
+            NonStreamedChatResponse(
+                generation_id="foo",
+                text="bar",
+                tool_calls=[],
+            ),
+            {
+                "documents": None,
+                "citations": None,
+                "search_results": None,
+                "search_queries": None,
+                "is_search_required": None,
+                "generation_id": "foo",
+            },
+            id="chat response without tools/documents/citations/tools etc",
+        ),
     ],
 )
 def test_get_generation_info(
