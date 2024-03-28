@@ -322,10 +322,8 @@ class ChildTool(BaseTool):
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
-        args: Tuple[Any] = ()
-        kwargs: Dict = {}
         if isinstance(tool_input, str):
-            args = (tool_input,)
+            return (tool_input,), {}
         else:
             # for tool defined with `*args` parameters
             # the args_schema has a field named `args`
@@ -334,12 +332,14 @@ class ChildTool(BaseTool):
             #       .test_named_tool_decorator_return_direct
             #       .search_api
             if "args" in tool_input:
-                args_ = tool_input["args"]
-                if args_ is None or isinstance(args_, tuple):
-                    args = args_ or ()
+                args = tool_input["args"]
+                if args is None:
                     tool_input.pop("args")
-            kwargs = tool_input
-        return args, kwargs
+                    return (), tool_input
+                elif isinstance(args, tuple):
+                    tool_input.pop("args")
+                    return args, tool_input
+            return (), tool_input
 
     def run(
         self,
