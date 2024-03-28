@@ -2034,6 +2034,27 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
+        """
+        from langchain_core.runnables import ConfigurableField
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(max_tokens=20).configurable_fields(
+            max_tokens=ConfigurableField(
+                id="output_token_number",
+                name="Max tokens in the output",
+                description="The maximum number of tokens in the output",
+            )
+        )
+
+        # max_tokens = 20
+        print("max_tokens_1: ", model.invoke("tell me something about chess").content)
+
+        # max_tokens = 200
+        print("max_tokens_2: ", model.with_config(
+            configurable={"output_token_number": 200}
+            ).invoke("tell me something about chess").content
+        )
+        """
         from langchain_core.runnables.configurable import RunnableConfigurableFields
 
         for key in kwargs:
