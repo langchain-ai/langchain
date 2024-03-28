@@ -32,7 +32,7 @@ _module_lookup = {
     "AIPluginTool": "langchain_community.tools.plugin",
     "APIOperation": "langchain_community.tools.openapi.utils.api_models",
     "ArxivQueryRun": "langchain_community.tools.arxiv.tool",
-    "AzureAiServicesDocumentIntelligenceTool": "langchain_community.tools.azure_ai_services",
+    "AzureAiServicesDocumentIntelligenceTool": "langchain_community.tools.azure_ai_services",  # noqa: E501
     "AzureAiServicesImageAnalysisTool": "langchain_community.tools.azure_ai_services",
     "AzureAiServicesSpeechToTextTool": "langchain_community.tools.azure_ai_services",
     "AzureAiServicesTextToSpeechTool": "langchain_community.tools.azure_ai_services",
