@@ -38,7 +38,6 @@ from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.runnables import run_in_executor
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 
@@ -76,7 +75,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             List of BaseMessages.
         """
-        return await run_in_executor(None, self.format_messages, **kwargs)
+        return self.format_messages(**kwargs)
 
     @property
     @abstractmethod
@@ -608,7 +607,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
     async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages."""
-        return await run_in_executor(None, self.format_messages, **kwargs)
+        return self.format_messages(**kwargs)
 
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation."""
