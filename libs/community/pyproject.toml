@@ -98,6 +98,7 @@ nvidia-riva-client = {version = "^2.14.0", optional = true}
 tidb-vector = {version = ">=0.0.3,<1.0.0", optional = true}
 friendli-client = {version = "^1.2.4", optional = true}
 premai = {version = "^0.3.25", optional = true}
+vdms = {version = "^0.0.20", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -156,6 +157,7 @@ tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
+vdms = "^0.0.20"
 
 [tool.poetry.group.lint]
 optional = true
@@ -269,7 +271,8 @@ extended_testing = [
  "tidb-vector",
  "cloudpickle",
  "friendli-client",
- "premai"
+ "premai",
+ "vdms"
 ]
 
 [tool.ruff]
