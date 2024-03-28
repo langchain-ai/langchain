@@ -3,6 +3,7 @@
 import json
 from typing import Any
 
+import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -121,6 +122,9 @@ def test_streaming_tool_call() -> None:
     }
 
 
+@pytest.mark.xfail(
+    reason="Cohere models return empty output when a tool is passed in but not called."
+)
 def test_streaming_tool_call_no_tool_calls() -> None:
     llm = ChatCohere(temperature=0)
 
