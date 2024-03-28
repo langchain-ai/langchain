@@ -1,6 +1,12 @@
+import json
 from typing import Any, Dict, List, Sequence, Tuple, Type, Union
 
-from cohere.types import Tool, ToolParameterDefinitionsValue
+from cohere.types import (
+    ChatRequestToolResultsItem,
+    Tool,
+    ToolCall,
+    ToolParameterDefinitionsValue,
+)
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
@@ -50,20 +56,35 @@ def _format_to_cohere_tools(
 
 def _format_to_cohere_tools_messages(
     intermediate_steps: Sequence[Tuple[AgentAction, str]],
-) -> list:
+) -> List[Dict[str, Any]]:
     """Convert (AgentAction, tool output) tuples into tool messages."""
     if len(intermediate_steps) == 0:
         return []
     tool_results = []
     for agent_action, observation in intermediate_steps:
+        # agent_action.tool_input can be a dict, serialised dict, or string.
+        # Cohere API only accepts a dict.
+        tool_call_parameters: Dict[str, Any]
+        if isinstance(agent_action.tool_input, dict):
+            # tool_input is a dict, use as-is.
+            tool_call_parameters = agent_action.tool_input
+        else:
+            try:
+                # tool_input is serialised dict.
+                tool_call_parameters = json.loads(agent_action.tool_input)
+                if not isinstance(tool_call_parameters, dict):
+                    raise ValueError()
+            except ValueError:
+                # tool_input is a string, last ditch attempt at having something useful.
+                tool_call_parameters = {"input": agent_action.tool_input}
         tool_results.append(
-            {
-                "call": {
-                    "name": agent_action.tool,
-                    "parameters": agent_action.tool_input,
-                },
-                "outputs": [{"answer": observation}],
-            }
+            ChatRequestToolResultsItem(
+                call=ToolCall(
+                    name=agent_action.tool,
+                    parameters=tool_call_parameters,
+                ),
+                outputs=[{"answer": observation}],
+            ).dict()
         )
 
     return tool_results
