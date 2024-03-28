@@ -5,7 +5,11 @@ from typing import Dict, List, Sequence, Tuple, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages.ai import AIMessage
+from langchain_core.messages.base import BaseMessage
+from langchain_core.messages.system import SystemMessage
 from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
@@ -24,22 +28,21 @@ def create_cohere_multi_hop_agent(
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
 ) -> Runnable:
-    multi_hop_prompt = multi_hop_prompt_template.partial(
-        tools="\n".join([render_tool_description(t) for t in tools]),
-    )
-    llm_with_tools = llm.bind(stop=["\nObservation:"], raw_prompting=True)
+    def multi_hop_prompt(x: Dict) -> BasePromptTemplate:
+        return multi_hop_prompt_template.partial(
+            tools="\n".join([render_tool_description(t) for t in tools]),
+            input=prompt.invoke(x).to_string(),
+            steps=format_cohere_log_to_str(x["intermediate_steps"]),
+            history=render_chat_history(x.get("chat_history", [])),
+        )
 
     agent = (
         RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: format_cohere_log_to_str(
-                x["intermediate_steps"],
-            ),
-            input=lambda x: prompt.format(
-                input=x["input"], agent_scratchpad=x["intermediate_steps"]
-            ),
+            # Handled in the multi_hop_prompt
+            agent_scratchpad=lambda _: [],
         )
         | multi_hop_prompt
-        | llm_with_tools
+        | llm.bind(stop=["\nObservation:"], raw_prompting=True)
         | CohereToolsMultiHopAgentOutputParser()
     )
     return agent
@@ -177,7 +180,7 @@ class CohereToolsMultiHopAgentOutputParser(
         elif any([x in text for x in ["Plan: ", "Reflection: ", "Action: "]]):
             completion, plan, actions = self.parse_actions(text)
             return [
-                AgentAction(action["tool_name"], action["parameters"]["query"], text)
+                AgentAction(action["tool_name"], action["parameters"], text)
                 for action in actions
             ]
         else:
@@ -218,6 +221,25 @@ def get_tool_args(tool: BaseTool) -> str:
         description = parameter_definition.get("description")
         rendered_args.append(f"{parameter_name} ({type_}): {description}")
     return "\n             ".join(rendered_args)
+
+
+def render_chat_history(chat_history: List[BaseMessage]) -> str:
+    """Render chat history."""
+    return "".join(
+        [
+            f"<|START_OF_TURN_TOKEN|>{get_role(message)}{message.content}<|END_OF_TURN_TOKEN|>"
+            for message in chat_history
+        ]
+    )
+
+
+def get_role(message: BaseMessage) -> str:
+    if isinstance(message, AIMessage):
+        return "<|CHATBOT_TOKEN|>"
+    elif isinstance(message, SystemMessage):
+        return "<|SYSTEM_TOKEN|>"
+    else:
+        return "<|USER_TOKEN|>"
 
 
 def render_tool_description(tool: BaseTool) -> str:

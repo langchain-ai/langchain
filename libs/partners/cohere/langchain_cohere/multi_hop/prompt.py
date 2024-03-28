@@ -69,8 +69,8 @@ multi_hop_prompt_template = PromptTemplate.from_template(
 ### Available Tools
 Here is a list of tools that you have available to you:
 
-{tools}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|USER_TOKEN|>{input}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>{multi_hop_instruction}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>
-{agent_scratchpad}
+{tools}<|END_OF_TURN_TOKEN|>{history}<|START_OF_TURN_TOKEN|><|USER_TOKEN|>{input}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>{multi_hop_instruction}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>
+{steps}
 """
 ).partial(
     multi_hop_instruction=multi_hop_instruction,

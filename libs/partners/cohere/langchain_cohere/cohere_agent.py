@@ -83,7 +83,9 @@ def _convert_to_cohere_tool(
             description=tool.description,
             parameter_definitions={
                 param_name: ToolParameterDefinitionsValue(
-                    description=param_definition.get("description"),
+                    description=param_definition.get("description")
+                    if "description" in param_definition
+                    else "",
                     type=param_definition.get("type"),
                     required="default" not in param_definition,
                 )
