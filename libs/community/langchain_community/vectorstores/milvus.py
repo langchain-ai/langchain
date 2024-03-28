@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -613,6 +615,144 @@ class Milvus(VectorStore):
                 raise e
         return pks
 
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        timeout: Optional[float] = None,
+        batch_size: int = 1000,
+        *,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Insert text data into Milvus asynchronously.
+
+        Inserting data when the collection has not be made yet will result
+        in creating a new Collection. The data of the first entity decides
+        the schema of the new collection, the dim is extracted from the first
+        embedding and the columns are decided by the first metadata dict.
+        Metadata keys will need to be present for all inserted values. At
+        the moment there is no None equivalent in Milvus.
+
+        Args:
+            texts (Iterable[str]): The texts to embed, it is assumed
+                that they all fit in memory.
+            metadatas (Optional[List[dict]]): Metadata dicts attached to each of
+                the texts. Defaults to None.
+            should be less than 65535 bytes. Required and work when auto_id is False.
+            timeout (Optional[float]): Timeout for each batch insert. Defaults
+                to None.
+            batch_size (int, optional): Batch size to use for insertion.
+                Defaults to 1000.
+            ids (Optional[List[str]]): List of text ids. The length of each item
+
+        Raises:
+            MilvusException: Failure to add texts
+
+        Returns:
+            List[str]: The resulting keys for each inserted element.
+        """
+        from pymilvus import Collection, MilvusException
+
+        texts = list(texts)
+        if not self.auto_id:
+            assert isinstance(
+                ids, list
+            ), "A list of valid ids are required when auto_id is False."
+            assert len(set(ids)) == len(
+                texts
+            ), "Different lengths of texts and unique ids are provided."
+            assert all(
+                len(x.encode()) <= 65_535 for x in ids
+            ), "Each id should be a string less than 65535 bytes."
+
+        try:
+            embeddings = self.embedding_func.embed_documents(texts)
+        except NotImplementedError:
+            embeddings = [self.embedding_func.embed_query(x) for x in texts]
+
+        if len(embeddings) == 0:
+            logger.debug("Nothing to insert, skipping.")
+            return []
+
+        # If the collection hasn't been initialized yet, perform all steps to do so
+        if not isinstance(self.col, Collection):
+            kwargs = {"embeddings": embeddings, "metadatas": metadatas}
+            if self.partition_names:
+                kwargs["partition_names"] = self.partition_names
+            if self.replica_number:
+                kwargs["replica_number"] = self.replica_number
+            if self.timeout:
+                kwargs["timeout"] = self.timeout
+            self._init(**kwargs)
+
+        # Dict to hold all insert columns
+        insert_dict: dict[str, list] = {
+            self._text_field: texts,
+            self._vector_field: embeddings,
+        }
+
+        if not self.auto_id:
+            insert_dict[self._primary_field] = ids  # type: ignore[assignment]
+
+        if self._metadata_field is not None:
+            for d in metadatas:  # type: ignore[union-attr]
+                insert_dict.setdefault(self._metadata_field, []).append(d)
+        else:
+            # Collect the metadata into the insert dict.
+            if metadatas is not None:
+                for d in metadatas:
+                    for key, value in d.items():
+                        keys = (
+                            [x for x in self.fields if x != self._primary_field]
+                            if self.auto_id
+                            else [x for x in self.fields]
+                        )
+                        if key in keys:
+                            insert_dict.setdefault(key, []).append(value)
+
+        # Total insert count
+        vectors: list = insert_dict[self._vector_field]
+        total_count = len(vectors)
+
+        # Initialize asynchronous loop and executor
+        loop = asyncio.get_running_loop()
+
+        pks: list[str] = []
+
+        async def fetch_mutation_result(mutation_future):
+            loop = asyncio.get_running_loop()
+            # Run the blocking operation in a separate thread and await its completion.
+            result = await loop.run_in_executor(None, mutation_future.result)
+            return result
+
+        assert isinstance(self.col, Collection)
+        for i in range(0, total_count, batch_size):
+            # Grab end index
+            end = min(i + batch_size, total_count)
+            # Convert dict to list of lists batch for insertion
+            insert_list = [
+                insert_dict[x][i:end] for x in self.fields if x in insert_dict
+            ]
+            # Insert into the collection.
+            try:
+                timeout = self.timeout or timeout
+                mutation_future = await loop.run_in_executor(
+                    None,
+                    lambda: self.col.insert(insert_list, timeout=timeout, **kwargs)
+                )
+                # Now wait for the MutationFuture to complete and get the actual result.
+                res = await fetch_mutation_result(mutation_future)
+                # Assuming `result` now holds an instance of MutationResult, access its attributes.
+                pks.extend(res.primary_keys)
+            except MilvusException as e:
+                logger.error(
+                    "Failed to insert batch starting at entity: %s/%s", i, total_count
+                )
+                raise e
+        self.col.flush()
+        return pks
+
     def similarity_search(
         self,
         query: str,
@@ -779,6 +919,74 @@ class Milvus(VectorStore):
 
         return ret
 
+    async def asimilarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        timeout: Optional[float] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Perform an async search on a query string and return results with score.
+
+        For more information about the search parameters, take a look at the pymilvus
+        documentation found here:
+        https://milvus.io/api-reference/pymilvus/v2.2.6/Collection/search().md
+
+        Args:
+            embedding (List[float]): The embedding vector being searched.
+            k (int, optional): The amount of results to return. Defaults to 4.
+            param (dict): The search params for the specified index.
+                Defaults to None.
+            expr (str, optional): Filtering expression. Defaults to None.
+            timeout (float, optional): How long to wait before timeout error.
+                Defaults to None.
+            kwargs: Collection.search() keyword arguments.
+
+        Returns:
+            List[Tuple[Document, float]]: Result doc and score.
+        """
+        if self.col is None:
+            logger.debug("No existing collection to search.")
+            return []
+
+        if param is None:
+            param = self.search_params
+
+        # Determine result metadata fields with PK.
+        output_fields = self.fields[:]
+        output_fields.remove(self._vector_field)
+        timeout = self.timeout or timeout
+
+        def get_search_result():
+            search_future = self.col.search(
+                data=[embedding],
+                anns_field=self._vector_field,
+                param=param,
+                limit=k,
+                expr=expr,
+                output_fields=output_fields,
+                timeout=timeout,
+                _async=True,
+                **kwargs,
+            )
+            return search_future.result()
+
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as pool:
+            res = await loop.run_in_executor(pool, get_search_result)
+
+        # Organize results.
+        ret = []
+        for result in res[0]:
+            data = {x: result.entity.get(x) for x in output_fields}
+            doc = self._parse_document(data)
+            pair = (doc, result.score)
+            ret.append(pair)
+
+        return ret
+
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -883,6 +1091,104 @@ class Milvus(VectorStore):
             timeout=timeout,
             **kwargs,
         )
+        # Organize results.
+        ids = []
+        documents = []
+        scores = []
+        for result in res[0]:
+            data = {x: result.entity.get(x) for x in output_fields}
+            doc = self._parse_document(data)
+            documents.append(doc)
+            scores.append(result.score)
+            ids.append(result.id)
+
+        vectors = self.col.query(
+            expr=f"{self._primary_field} in {ids}",
+            output_fields=[self._primary_field, self._vector_field],
+            timeout=timeout,
+        )
+        # Reorganize the results from query to match search order.
+        vectors = {x[self._primary_field]: x[self._vector_field] for x in vectors}
+
+        ordered_result_embeddings = [vectors[x] for x in ids]
+
+        # Get the new order of results.
+        new_ordering = maximal_marginal_relevance(
+            np.array(embedding), ordered_result_embeddings, k=k, lambda_mult=lambda_mult
+        )
+
+        # Reorder the values and return.
+        ret = []
+        for x in new_ordering:
+            # Function can return -1 index
+            if x == -1:
+                break
+            else:
+                ret.append(documents[x])
+        return ret
+
+    async def amax_marginal_relevance_search_by_vector(
+            self,
+            embedding: list[float],
+            k: int = 4,
+            fetch_k: int = 20,
+            lambda_mult: float = 0.5,
+            param: Optional[dict] = None,
+            expr: Optional[str] = None,
+            timeout: Optional[float] = None,
+            **kwargs: Any,
+    ) -> List[Document]:
+        """Perform an async search and return results that are reordered by MMR.
+
+        Args:
+            embedding (str): The embedding vector being searched.
+            k (int, optional): How many results to give. Defaults to 4.
+            fetch_k (int, optional): Total results to select k from.
+                Defaults to 20.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5
+            param (dict, optional): The search params for the specified index.
+                Defaults to None.
+            expr (str, optional): Filtering expression. Defaults to None.
+            timeout (float, optional): How long to wait before timeout error.
+                Defaults to None.
+            kwargs: Collection.search() keyword arguments.
+
+        Returns:
+            List[Document]: Document results for search.
+        """
+        if self.col is None:
+            logger.debug("No existing collection to search.")
+            return []
+
+        if param is None:
+            param = self.search_params
+
+        # Determine result metadata fields.
+        output_fields = self.fields[:]
+        output_fields.remove(self._vector_field)
+        timeout = self.timeout or timeout
+
+        def get_search_result():
+            search_future = self.col.search(
+                data=[embedding],
+                anns_field=self._vector_field,
+                param=param,
+                limit=fetch_k,
+                expr=expr,
+                output_fields=output_fields,
+                timeout=timeout,
+                _async=True,
+                **kwargs,
+            )
+            return search_future.result()
+
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as pool:
+            res = await loop.run_in_executor(pool, get_search_result)
+
         # Organize results.
         ids = []
         documents = []
