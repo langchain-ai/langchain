@@ -319,7 +319,6 @@ class VectorStore(ABC):
             List of Tuples of (doc, similarity_score)
         """
         score_threshold = kwargs.pop("score_threshold", None)
-
         docs_and_similarities = self._similarity_search_with_relevance_scores(
             query, k=k, **kwargs
         )
@@ -365,32 +364,13 @@ class VectorStore(ABC):
         Returns:
             List of Tuples of (doc, similarity_score)
         """
-        score_threshold = kwargs.pop("score_threshold", None)
-
-        docs_and_similarities = await self._asimilarity_search_with_relevance_scores(
-            query, k=k, **kwargs
+        # This is a temporary workaround to make the similarity search with 
+        # relevance scores asynchronous. The proper solution is to make the 
+        # similarity search asynchronous in the vector store implementations.
+        return await run_in_executor(
+            None, self.similarity_search_with_relevance_scores, query, k=k, **kwargs
         )
-        if any(
-            similarity < 0.0 or similarity > 1.0
-            for _, similarity in docs_and_similarities
-        ):
-            warnings.warn(
-                "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_similarities}"
-            )
 
-        if score_threshold is not None:
-            docs_and_similarities = [
-                (doc, similarity)
-                for doc, similarity in docs_and_similarities
-                if similarity >= score_threshold
-            ]
-            if len(docs_and_similarities) == 0:
-                warnings.warn(
-                    "No relevant docs were retrieved using the relevance score"
-                    f" threshold {score_threshold}"
-                )
-        return docs_and_similarities
 
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
