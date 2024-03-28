@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, cast
+from enum import Enum
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 from langchain_core.documents import Document
@@ -17,6 +18,19 @@ from langchain_community.embeddings import DeterministicFakeEmbedding, FakeEmbed
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
+
+
+META_FIELD_TYPE_UINT64 = "uint64"
+META_FIELD_TYPE_STRING = "string"
+META_FIELD_TYPE_ARRAY = "array"
+META_FIELD_TYPE_VECTOR = "vector"
+
+META_FIELD_TYPES = [
+    META_FIELD_TYPE_UINT64,
+    META_FIELD_TYPE_STRING,
+    META_FIELD_TYPE_ARRAY,
+    META_FIELD_TYPE_VECTOR,
+]
 
 
 class ConnectionParams:
@@ -70,11 +84,29 @@ class MetaField(BaseModel):
 
     name: str
     description: Optional[str]
-    data_type: "tcvectordb.model.enum.FieldType"
+    data_type: Union[str, Enum]
     index: bool = False
 
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        enum = guard_import("tcvectordb.model.enum")
+        if isinstance(self.data_type, str):
+            if self.data_type not in META_FIELD_TYPES:
+                raise ValueError(f"unsupported data_type {self.data_type}")
+            target = [
+                fe
+                for fe in enum.FieldType
+                if fe.value.lower() == self.data_type.lower()
+            ]
+            if target:
+                self.data_type = target[0]
+            else:
+                raise ValueError(f"unsupported data_type {self.data_type}")
+        else:
+            if self.data_type not in enum.FieldType:
+                raise ValueError(f"unsupported data_type {self.data_type}")
 
-# 判断是否有效的Embeddings类，无值或为FakeEmbeddings类则无效
+
 def is_valid_embedding(embedding: Embeddings) -> bool:
     return embedding is not None and not isinstance(
         embedding, (FakeEmbeddings, DeterministicFakeEmbedding)
