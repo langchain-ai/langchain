@@ -42,7 +42,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
-    tokenizer: Tokenizer = Field(default=None)
+    _tokenizer: Optional[Tokenizer] = Field(default=None)
 
     model: str = "mistral-embed"
 
@@ -80,11 +80,13 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             },
             timeout=values["timeout"],
         )
-        if values["tokenizer"] is None:
-            values["tokenizer"] = Tokenizer.from_pretrained(
-                "mistralai/Mixtral-8x7B-v0.1"
-            )
         return values
+
+    @property
+    def tokenizer(self) -> Tokenizer:
+        if self._tokenizer is None:
+            self._tokenizer = Tokenizer.from_pretrained("mistralai/Mixtral-8x7B-v0.1")
+        return self._tokenizer
 
     def _get_batches(self, texts: List[str]) -> Iterable[List[str]]:
         """Split a list of texts into batches of less than 16k tokens
