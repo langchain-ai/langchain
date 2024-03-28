@@ -1,0 +1,38 @@
+# Dataherald
+
+>[Dataherald](https://www.dataherald.com) is a natural language-to-SQL.
+
+This page covers how to use the `Dataherald API` within LangChain.
+
+## Installation and Setup
+- Install requirements with 
+```bash
+pip install dataherald
+```
+- Go to dataherald and sign up [here](https://www.dataherald.com)
+- Create an app and get your `API KEY`
+- Set your `API KEY` as an environment variable `DATAHERALD_API_KEY`
+
+
+## Wrappers
+
+### Utility
+
+There exists a DataheraldAPIWrapper utility which wraps this API. To import this utility:
+
+```python
+from langchain_community.utilities.dataherald import DataheraldAPIWrapper
+```
+
+For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/dataherald).
+
+### Tool
+
+You can also easily load this wrapper as a Tool (to use with an Agent).
+You can do this with:
+```python
+from langchain.agents import load_tools
+tools = load_tools(["dataherald"])
+```
+
+For more information on tools, see [this page](/docs/modules/agents/tools/).
