@@ -1,10 +1,11 @@
 import json
-from typing import Generic, List, Type, TypeVar, Union
+from typing import List, Type, TypeVar, Union
 
 import pydantic  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers.json import JsonOutputParser
+from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
@@ -20,7 +21,7 @@ else:
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 
-class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
+class PydanticOutputParser(BaseCumulativeTransformOutputParser[TBaseModel]):
     """Parse an output using a pydantic model."""
 
     pydantic_object: Type[TBaseModel]  # type: ignore
@@ -57,11 +58,12 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
     ) -> TBaseModel:
-        json_object = super().parse_result(result)
+        json_parser = JsonOutputParser()
+        json_object = json_parser.parse_result(result)
         return self._parse_obj(json_object)
 
     def parse(self, text: str) -> TBaseModel:
-        return super().parse(text)
+        return self.parse_result([Generation(text=text)])
 
     def get_format_instructions(self) -> str:
         # Copy schema to avoid altering original Pydantic schema.
