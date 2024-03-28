@@ -39,8 +39,8 @@ def draw_mermaid(
     """
     # Initialize Mermaid graph configuration
     mermaid_graph = (
-        f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}', "
-        f"'defaultRenderer': 'elk'}}}}}}%%\ngraph TD;\n"
+        f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}'"
+        f"}}}}}}%%\ngraph TD;\n"
     )
 
     # Node formatting templates
@@ -152,22 +152,24 @@ def _generate_mermaid_graph_styles(node_colors: NodeColors) -> str:
 
 def draw_mermaid_png(
     mermaid_syntax: str,
-    output_file_path: str = "graph.png",
+    output_file_path: Optional[str] = None,
     draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
-    background_color: str = "white",
+    background_color: Optional[str] = "white",
     padding: int = 10,
-) -> None:
+) -> bytes:
     """Draws a Mermaid graph as PNG using provided syntax."""
     if draw_method == MermaidDrawMethod.PYPPETEER:
         import asyncio
 
-        asyncio.run(
+        img_bytes = asyncio.run(
             _render_mermaid_using_pyppeteer(
                 mermaid_syntax, output_file_path, background_color, padding
             )
         )
     elif draw_method == MermaidDrawMethod.API:
-        _render_mermaid_using_api(mermaid_syntax, output_file_path, background_color)
+        img_bytes = _render_mermaid_using_api(
+            mermaid_syntax, output_file_path, background_color
+        )
     else:
         supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
         raise ValueError(
@@ -175,13 +177,15 @@ def draw_mermaid_png(
             f"Supported draw methods are: {supported_methods}"
         )
 
+    return img_bytes
+
 
 async def _render_mermaid_using_pyppeteer(
     mermaid_syntax: str,
-    output_file_path: str,
-    background_color: str = "white",
+    output_file_path: Optional[str] = None,
+    background_color: Optional[str] = "white",
     padding: int = 10,
-) -> None:
+) -> bytes:
     """Renders Mermaid graph using Pyppeteer."""
     try:
         from pyppeteer import launch  # type: ignore[import]
@@ -234,13 +238,22 @@ async def _render_mermaid_using_pyppeteer(
             "height": int(dimensions["height"] + padding),
         }
     )
-    await page.screenshot({"path": output_file_path, "fullPage": False})
+
+    img_bytes = await page.screenshot({"fullPage": False})
     await browser.close()
+
+    if output_file_path is not None:
+        with open(output_file_path, "wb") as file:
+            file.write(img_bytes)
+
+    return img_bytes
 
 
 def _render_mermaid_using_api(
-    mermaid_syntax: str, output_file_path: str, background_color: str = "white"
-) -> None:
+    mermaid_syntax: str,
+    output_file_path: Optional[str] = None,
+    background_color: Optional[str] = "white",
+) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
     try:
         import requests  # type: ignore[import]
@@ -256,17 +269,22 @@ def _render_mermaid_using_api(
     )
 
     # Check if the background color is a hexadecimal color code using regex
-    hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
-    if not hex_color_pattern.match(background_color):
-        background_color = f"!{background_color}"
+    if background_color is not None:
+        hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
+        if not hex_color_pattern.match(background_color):
+            background_color = f"!{background_color}"
 
     image_url = (
         f"https://mermaid.ink/img/{mermaid_syntax_encoded}?bgColor={background_color}"
     )
     response = requests.get(image_url)
     if response.status_code == 200:
-        with open(output_file_path, "wb") as file:
-            file.write(response.content)
+        img_bytes = response.content
+        if output_file_path is not None:
+            with open(output_file_path, "wb") as file:
+                file.write(response.content)
+
+        return img_bytes
     else:
         raise ValueError(
             f"Failed to render the graph using the Mermaid.INK API. "
