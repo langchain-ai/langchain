@@ -8,7 +8,7 @@ from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
-__version__ = "0.0.20"
+__version__ = "0.0.22rc0"
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
