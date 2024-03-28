@@ -45,8 +45,7 @@ class CohereRerank(BaseDocumentCompressor):
                 values, "cohere_api_key", "COHERE_API_KEY"
             )
             client_name = values.get("user_agent", "langchain")
-            values["client"] = cohere.Client(
-                cohere_api_key, client_name=client_name)
+            values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
         return values
 
     def rerank(
@@ -111,8 +110,7 @@ class CohereRerank(BaseDocumentCompressor):
         compressed = []
         for res in self.rerank(documents, query):
             doc = documents[res["index"]]
-            doc_copy = Document(
-                doc.page_content, metadata=deepcopy(doc.metadata))
+            doc_copy = Document(doc.page_content, metadata=deepcopy(doc.metadata))
             doc_copy.metadata["relevance_score"] = res["relevance_score"]
             compressed.append(doc_copy)
         return compressed
