@@ -47,17 +47,27 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(embeddings.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
+    if is_openai_v1():
+        retry_ = (
             retry_if_exception_type(openai.Timeout)
             | retry_if_exception_type(openai.APIError)
             | retry_if_exception_type(openai.APIConnectionError)
             | retry_if_exception_type(openai.RateLimitError)
             | retry_if_exception_type(openai.InternalServerError)
-        ),
+        )
+    else:
+        retry_ = (
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+        )
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(embeddings.max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=retry_,
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -69,17 +79,27 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    async_retrying = AsyncRetrying(
-        reraise=True,
-        stop=stop_after_attempt(embeddings.max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
+    if is_openai_v1():
+        retry_ = (
             retry_if_exception_type(openai.Timeout)
             | retry_if_exception_type(openai.APIError)
             | retry_if_exception_type(openai.APIConnectionError)
             | retry_if_exception_type(openai.RateLimitError)
             | retry_if_exception_type(openai.InternalServerError)
-        ),
+        )
+    else:
+        retry_ = (
+            retry_if_exception_type(openai.error.Timeout)
+            | retry_if_exception_type(openai.error.APIError)
+            | retry_if_exception_type(openai.error.APIConnectionError)
+            | retry_if_exception_type(openai.error.RateLimitError)
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+        )
+    async_retrying = AsyncRetrying(
+        reraise=True,
+        stop=stop_after_attempt(embeddings.max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=retry_,
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -99,7 +119,11 @@ def _check_response(response: Response) -> Response:
     if any(len(d.embedding) == 1 for d in response.data):
         import openai
 
-        raise openai.APIError("LocalAI API returned an empty embedding")
+        if is_openai_v1():
+            error_cls = openai.APIError
+        else:
+            error_cls = openai.error.APIError
+        raise error_cls("LocalAI API returned an empty embedding")
     return response
 
 
@@ -269,12 +293,24 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
 
     @property
     def _invocation_params(self) -> Dict:
-        openai_args = {
-            "model": self.model,
-            "timeout": self.request_timeout,
-            "extra_headers": self.headers,
-            **self.model_kwargs,
-        }
+        if is_openai_v1():
+            openai_args = {
+                "model": self.model,
+                "timeout": self.request_timeout,
+                "extra_headers": self.headers,
+                **self.model_kwargs,
+            }
+        else:
+            openai_args = {
+                "model": self.model,
+                "request_timeout": self.request_timeout,
+                "headers": self.headers,
+                "api_key": self.openai_api_key,
+                "organization": self.openai_organization,
+                "api_base": self.openai_api_base,
+                "api_version": self.openai_api_version,
+                **self.model_kwargs,
+            }
         if self.openai_proxy:
             import openai
 
