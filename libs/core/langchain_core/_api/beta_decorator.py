@@ -9,11 +9,12 @@ https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecati
     This module is for internal use only.  Do not use it in your own code.
     We may change the API at any time with no warning.
 """
+
 import contextlib
 import functools
 import inspect
 import warnings
-from typing import Any, Callable, Generator, Type, TypeVar
+from typing import Any, Callable, Generator, Type, TypeVar, Union, cast
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -25,7 +26,7 @@ class LangChainBetaWarning(DeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", Type, Callable)
+T = TypeVar("T", bound=Union[Callable[..., Any], Type])
 
 
 def beta(
@@ -143,7 +144,7 @@ def beta(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return obj
+                return cast(T, obj)
 
         elif isinstance(obj, property):
             if not _obj_type:
@@ -202,7 +203,7 @@ def beta(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
-                return wrapper
+                return cast(T, wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
@@ -225,9 +226,10 @@ def beta(
         )
 
         if inspect.iscoroutinefunction(obj):
-            return finalize(awarning_emitting_wrapper, new_doc)
+            finalized = finalize(awarning_emitting_wrapper, new_doc)
         else:
-            return finalize(warning_emitting_wrapper, new_doc)
+            finalized = finalize(warning_emitting_wrapper, new_doc)
+        return cast(T, finalized)
 
     return beta
 

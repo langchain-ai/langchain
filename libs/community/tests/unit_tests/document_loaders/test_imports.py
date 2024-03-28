@@ -20,6 +20,7 @@ EXPECTED_ALL = [
     "ApifyDatasetLoader",
     "ArcGISLoader",
     "ArxivLoader",
+    "AssemblyAIAudioLoaderById",
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
@@ -106,6 +107,7 @@ EXPECTED_ALL = [
     "OneDriveLoader",
     "OnlinePDFLoader",
     "OpenCityDataLoader",
+    "OracleAutonomousDatabaseLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
@@ -180,6 +182,7 @@ EXPECTED_ALL = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "YuqueLoader",
 ]
 
 
