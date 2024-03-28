@@ -1336,6 +1336,37 @@ class Runnable(Generic[Input, Output], ABC):
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """
         Bind arguments to a Runnable, returning a new Runnable.
+
+        Useful when a runnable in a chain requires an argument that is not
+        in the output of the previous runnable or included in the user input.
+
+        Example:
+
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatOllama
+            from langchain_core.output_parsers import StrOutputParser
+
+            llm = ChatOllama(model='llama2')
+
+            # Without bind.
+            chain = (
+                llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two three four five.'
+
+            # With bind.
+            chain = (
+                llm.bind(stop=["three"])
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two'
+
         """
         return RunnableBinding(bound=self, kwargs=kwargs, config={})
 
@@ -1374,6 +1405,26 @@ class Runnable(Generic[Input, Output], ABC):
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
+
+        Example:
+
+        .. code-block:: python
+            from langchain_core.runnables import RunnableLambda
+            import time
+
+            def test_runnable(time_to_sleep : int):
+                time.sleep(time_to_sleep)
+
+            def fn_start(run_obj : Runnable):
+                print("start_time:", run_obj.start_time)
+
+            def fn_end(run_obj : Runnable):
+                print("end_time:", run_obj.end_time)
+
+            RunnableLambda(test_runnable).with_listeners(
+                on_start=fn_start,
+                on_end=fn_end
+                ).invoke(2)
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
@@ -1471,6 +1522,18 @@ class Runnable(Generic[Input, Output], ABC):
         """
         Return a new Runnable that maps a list of inputs to a list of outputs,
         by calling invoke() with each input.
+
+        Example:
+
+            .. code-block:: python
+
+                    from langchain_core.runnables import RunnableLambda
+
+                    def _lambda(x: int) -> int:
+                        return x + 1
+
+                    runnable = RunnableLambda(_lambda)
+                    print(runnable.map().invoke([1, 2, 3])) # [2, 3, 4]
         """
         return RunnableEach(bound=self)
 

@@ -1,25 +1,71 @@
-# Intel® Extension for Transformers
+# Intel
 
->[Intel® Extension for Transformers](https://github.com/intel/intel-extension-for-transformers)
->(ITREX) is an innovative toolkit to accelerate Transformer-based models on Intel platforms, in particular, effective on 4th Intel Xeon Scalable processor Sapphire Rapids (codenamed Sapphire Rapids)..
-> 
->Here, we will introduce Weight-only quantization for Transformers large language models with ITREX. Weight-only quantization is a technique used in deep learning to reduce the memory and computational requirements of neural networks. In the context of deep neural networks, the model parameters, also known as weights, are typically represented using floating-point numbers, which can consume a significant amount of memory and require intensive computational resources.
+>[Optimum Intel](https://github.com/huggingface/optimum-intel?tab=readme-ov-file#optimum-intel) is the interface between the 🤗 Transformers and Diffusers libraries and the different tools and libraries provided by Intel to accelerate end-to-end pipelines on Intel architectures.
+
+>[Intel® Extension for Transformers](https://github.com/intel/intel-extension-for-transformers?tab=readme-ov-file#intel-extension-for-transformers) (ITREX) is an innovative toolkit designed to accelerate GenAI/LLM everywhere with the optimal performance of Transformer-based models on various Intel platforms, including Intel Gaudi2, Intel CPU, and Intel GPU.
+
+This page covers how to use optimum-intel and ITREX with LangChain.
+
+## Optimum-intel
+
+All functionality related to the [optimum-intel](https://github.com/huggingface/optimum-intel.git) and [IPEX](https://github.com/intel/intel-extension-for-pytorch).
+
+### Installation
+
+Install using optimum-intel and ipex using:
+
+```bash
+pip install optimum[neural-compressor]
+pip install intel_extension_for_pytorch
+```
+
+Please follow the installation instructions as specified below:
+
+* Install optimum-intel as shown [here](https://github.com/huggingface/optimum-intel).
+* Install IPEX as shown [here](https://intel.github.io/intel-extension-for-pytorch/index.html#installation?platform=cpu&version=v2.2.0%2Bcpu).
+
+### Embedding Models
+
+See a [usage example](/docs/integrations/text_embedding/optimum_intel).
+We also offer a full tutorial notebook "rag_with_quantized_embeddings.ipynb" for using the embedder in a RAG pipeline in the cookbook dir.
+
+```python
+from langchain_community.embeddings import QuantizedBiEncoderEmbeddings
+```
+
+## Intel® Extension for Transformers (ITREX)
+(ITREX) is an innovative toolkit to accelerate Transformer-based models on Intel platforms, in particular, effective on 4th Intel Xeon Scalable processor Sapphire Rapids (codenamed Sapphire Rapids).
 
 Quantization is a process that involves reducing the precision of these weights by representing them using a smaller number of bits. Weight-only quantization specifically focuses on quantizing the weights of the neural network while keeping other components, such as activations, in their original precision.
 
-## Introduction
-
 As large language models (LLMs) become more prevalent, there is a growing need for new and improved quantization methods that can meet the computational demands of these modern architectures while maintaining the accuracy. Compared to [normal quantization](https://github.com/intel/intel-extension-for-transformers/blob/main/docs/quantization.md) like W8A8, weight only quantization is probably a better trade-off to balance the performance and the accuracy, since we will see below that the bottleneck of deploying LLMs is the memory bandwidth and normally weight only quantization could lead to better accuracy.
 
-## Installation and Setup
+Here, we will introduce Embedding Models and Weight-only quantization for Transformers large language models with ITREX. Weight-only quantization is a technique used in deep learning to reduce the memory and computational requirements of neural networks. In the context of deep neural networks, the model parameters, also known as weights, are typically represented using floating-point numbers, which can consume a significant amount of memory and require intensive computational resources.
 
-We need to install `intel-extension-for-transformers` python package.
+All functionality related to the [intel-extension-for-transformers](https://github.com/intel/intel-extension-for-transformers).
+
+### Installation
+
+Install intel-extension-for-transformers. For system requirements and other installation tips, please refer to [Installation Guide](https://github.com/intel/intel-extension-for-transformers/blob/main/docs/installation.md)
 
 ```bash
 pip install intel-extension-for-transformers
 ```
+Install other required packages.
 
-## Examples
+```bash
+pip install -U torch onnx accelerate datasets
+```
+
+### Embedding Models
+
+See a [usage example](/docs/integrations/text_embedding/itrex).
+
+```python
+from langchain_community.embeddings import QuantizedBgeEmbeddings
+```
+
+### Weight-Only Quantization with ITREX
 
 See a [usage example](../docs/integrations/llms/weight_only_quantization.ipynb).
 

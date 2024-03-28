@@ -35,7 +35,7 @@ html2text = {version="^2020.1.16", optional=true}
 numexpr = {version="^2.8.6", optional=true}
 jq = {version = "^1.4.1", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
-lxml = {version = "^4.9.2", optional = true}
+lxml = {version = ">=4.9.3,<6.0", optional = true}
 pymupdf = {version = "^1.22.3", optional = true}
 rapidocr-onnxruntime = {version = "^1.3.2", optional = true, python = ">=3.8.1,<3.12"}
 pypdfium2 = {version = "^4.10.0", optional = true}
@@ -98,6 +98,8 @@ nvidia-riva-client = {version = "^2.14.0", optional = true}
 intel-extension-for-transformers = {version = ">=1.3.2", optional = true}
 tidb-vector = {version = ">=0.0.3,<1.0.0", optional = true}
 friendli-client = {version = "^1.2.4", optional = true}
+premai = {version = "^0.3.25", optional = true}
+vdms = {version = "^0.0.20", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -156,6 +158,7 @@ tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
+vdms = "^0.0.20"
 
 [tool.poetry.group.lint]
 optional = true
@@ -269,7 +272,9 @@ extended_testing = [
  "intel-extension-for-transformers",
  "tidb-vector",
  "cloudpickle",
- "friendli-client"
+ "friendli-client",
+ "premai",
+ "vdms"
 ]
 
 [tool.ruff]
