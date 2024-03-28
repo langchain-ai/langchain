@@ -120,8 +120,18 @@ def test_streaming_tool_call() -> None:
         "age": 27,
     }
 
+
+def test_streaming_tool_call_no_tool_calls() -> None:
+    llm = ChatCohere(temperature=0)
+
+    class Person(BaseModel):
+        name: str
+        age: int
+
+    tool_llm = llm.bind_tools([Person])
+
     # where it doesn't call the tool
-    strm = llm.stream("What is 2+2?")
+    strm = tool_llm.stream("What is 2+2?")
     acc: Any = None
     for chunk in strm:
         assert isinstance(chunk, AIMessageChunk)
