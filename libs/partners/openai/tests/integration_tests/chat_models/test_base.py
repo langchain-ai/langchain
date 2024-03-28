@@ -501,3 +501,25 @@ def test_openai_structured_output() -> None:
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
     assert result.age == 27
+
+
+def test_openai_proxy() -> None:
+    """Test ChatOpenAI with proxy."""
+    chat_openai = ChatOpenAI(
+        openai_proxy="http://localhost:8080",
+    )
+    mounts = chat_openai.client._client._client._mounts
+    assert len(mounts) == 1
+    for key, value in mounts.items():
+        proxy = value._pool._proxy_url.origin
+        assert proxy.scheme == b"http"
+        assert proxy.host == b"localhost"
+        assert proxy.port == 8080
+
+    async_client_mounts = chat_openai.async_client._client._client._mounts
+    assert len(async_client_mounts) == 1
+    for key, value in async_client_mounts.items():
+        proxy = value._pool._proxy_url.origin
+        assert proxy.scheme == b"http"
+        assert proxy.host == b"localhost"
+        assert proxy.port == 8080

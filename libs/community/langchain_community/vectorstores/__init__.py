@@ -102,6 +102,7 @@ _module_lookup = {
     "Typesense": "langchain_community.vectorstores.typesense",
     "USearch": "langchain_community.vectorstores.usearch",
     "Vald": "langchain_community.vectorstores.vald",
+    "VDMS": "langchain_community.vectorstores.vdms",
     "Vearch": "langchain_community.vectorstores.vearch",
     "Vectara": "langchain_community.vectorstores.vectara",
     "VectorStore": "langchain_core.vectorstores",
