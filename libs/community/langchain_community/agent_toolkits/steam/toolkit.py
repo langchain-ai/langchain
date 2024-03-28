@@ -1,7 +1,8 @@
 """Steam Toolkit."""
 from typing import List
 
-from langchain_community.agent_toolkits.base import BaseToolkit
+from langchain_core.tools import BaseToolkit
+
 from langchain_community.tools import BaseTool
 from langchain_community.tools.steam.prompt import (
     STEAM_GET_GAMES_DETAILS,
