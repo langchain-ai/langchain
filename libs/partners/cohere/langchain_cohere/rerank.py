@@ -76,7 +76,7 @@ class CohereRerank(BaseDocumentCompressor):
         top_n = top_n if (top_n is None or top_n > 0) else self.top_n
         results = self._get_client().rerank(
             query=query,
-            # Ignoring type here becuase the api allows you to send arbitrary objects
+            # Ignoring type here because the api allows you to send arbitrary objects
             # This is not fully supported by sdk definitions right now
             documents=docs,  # type: ignore
             model=model,
