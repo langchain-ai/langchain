@@ -114,6 +114,12 @@ def _import_bedrock() -> Type[BaseLLM]:
     return Bedrock
 
 
+def _import_bigdlllm() -> Type[BaseLLM]:
+    from langchain_community.llms.bigdl_llm import BigdlLLM
+
+    return BigdlLLM
+
+
 def _import_bittensor() -> Type[BaseLLM]:
     from langchain_community.llms.bittensor import NIBittensorLLM
 
@@ -276,6 +282,12 @@ def _import_human() -> Type[BaseLLM]:
     from langchain_community.llms.human import HumanInputLLM
 
     return HumanInputLLM
+
+
+def _import_ipex_llm() -> Type[BaseLLM]:
+    from langchain_community.llms.ipex_llm import IpexLLM
+
+    return IpexLLM
 
 
 def _import_javelin_ai_gateway() -> Type[BaseLLM]:
@@ -651,6 +663,8 @@ def __getattr__(name: str) -> Any:
         return _import_beam()
     elif name == "Bedrock":
         return _import_bedrock()
+    elif name == "BigdlLLM":
+        return _import_bigdlllm()
     elif name == "NIBittensorLLM":
         return _import_bittensor()
     elif name == "CerebriumAI":
@@ -701,6 +715,8 @@ def __getattr__(name: str) -> Any:
         return _import_huggingface_text_gen_inference()
     elif name == "HumanInputLLM":
         return _import_human()
+    elif name == "IpexLLM":
+        return _import_ipex_llm()
     elif name == "JavelinAIGateway":
         return _import_javelin_ai_gateway()
     elif name == "KoboldApiLLM":
@@ -859,6 +875,7 @@ __all__ = [
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
+    "IpexLLM",
     "JavelinAIGateway",
     "KoboldApiLLM",
     "Konko",
