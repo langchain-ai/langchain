@@ -1534,7 +1534,7 @@ def _check_descriptor_exists_by_id(
 
 def embedding2bytes(embedding: Union[List[float], None]) -> Union[bytes, None]:
     blob = None
-    if embedding:
+    if embedding is not None:
         emb = np.array(embedding, dtype="float32")
         blob = emb.tobytes()
     return blob
