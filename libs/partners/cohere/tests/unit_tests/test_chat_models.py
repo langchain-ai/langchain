@@ -102,7 +102,7 @@ def test_default_params(chat_cohere: ChatCohere, expected: typing.Dict) -> None:
                 "generation_id": "foo",
             },
             id="chat response without tools/documents/citations/tools etc",
-        )
+        ),
     ],
 )
 def test_get_generation_info(

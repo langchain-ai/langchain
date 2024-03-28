@@ -244,7 +244,8 @@ class ChatCohere(BaseChatModel, BaseCohere):
             "generation_id": response.generation_id,
         }
         if response.tool_calls:
-            # Only populate tool_calls when 1) present on the response and 2) has one or more calls.
+            # Only populate tool_calls when 1) present on the response and
+            #  2) has one or more calls.
             generation_info["tool_calls"] = _format_cohere_tool_calls(
                 response.generation_id or "", response.tool_calls
             )
