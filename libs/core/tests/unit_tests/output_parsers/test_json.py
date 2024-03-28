@@ -595,3 +595,13 @@ def test_base_model_schema_consistency() -> None:
 
     assert initial_joke_schema == retrieved_joke_schema
     assert openai_func.get("name", None) is not None
+
+
+def test_json_parser_just_schema() -> None:
+    class Joke(BaseModel):
+        setup: str
+        punchline: str
+
+    schema = {k: v for k, v in Joke.schema().items()}
+    parser = SimpleJsonOutputParser(json_schema=schema)
+    assert parser.json_schema == schema

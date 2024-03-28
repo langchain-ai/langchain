@@ -2,16 +2,30 @@ from __future__ import annotations
 
 import json
 import re
+import warnings
 from json import JSONDecodeError
-from typing import Any, Callable, List, Optional, Type
+from typing import Any, Callable, List, Optional, Type, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
+import pydantic  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import validator
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
+
+if PYDANTIC_MAJOR_VERSION < 2:
+    PydanticBaseModel = pydantic.BaseModel
+
+else:
+    from pydantic.v1 import BaseModel  # pydantic: ignore
+
+    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
+
+TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
@@ -194,10 +208,32 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Optional[Type[BaseModel]] = None
+    pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
+    json_schema: Optional[dict[str, Any]] = None
+
+    @validator("json_schema", always=True)
+    def _validate_json_schema(
+        cls, v: Optional[dict[str, Any]], values: dict
+    ) -> Optional[dict[str, Any]]:
+        try:
+            if v is None and values.get("pydantic_object") is not None:
+                return cls._get_schema(values["pydantic_object"])
+            return v
+        except Exception as e:
+            warnings.warn(f"Failed to get schema: {e}")
+            return None
 
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
+
+    @classmethod
+    def _get_schema(cls, pydantic_object: Type[TBaseModel]) -> dict[str, Any]:
+        if PYDANTIC_MAJOR_VERSION == 2:
+            if issubclass(pydantic_object, pydantic.BaseModel):
+                return pydantic_object.model_json_schema()
+            elif issubclass(pydantic_object, pydantic.v1.BaseModel):
+                return pydantic_object.schema()
+        return pydantic_object.schema()
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         text = result[0].text
@@ -218,11 +254,11 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         return self.parse_result([Generation(text=text)])
 
     def get_format_instructions(self) -> str:
-        if self.pydantic_object is None:
+        if self.json_schema is None:
             return "Return a JSON object."
         else:
             # Copy schema to avoid altering original Pydantic schema.
-            schema = {k: v for k, v in self.pydantic_object.schema().items()}
+            schema = {k: v for k, v in self.json_schema.items()}
 
             # Remove extraneous fields.
             reduced_schema = schema
