@@ -39,7 +39,7 @@ def test_unnamed_decorator() -> None:
     assert isinstance(search_api, BaseTool)
     assert search_api.name == "search_api"
     assert not search_api.return_direct
-    assert search_api("test") == ["API result"] * 3
+    assert search_api.invoke({"query": "test"}) == ["API result"] * 3
 
 
 class _MockSchema(BaseModel):
