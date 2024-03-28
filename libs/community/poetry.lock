@@ -4690,18 +4690,18 @@ files = [
 
 [[package]]
 name = "neural-compressor"
-version = "2.4.1"
+version = "2.5"
 description = "Repository of Intel® Neural Compressor"
 optional = true
 python-versions = ">=3.7.0"
 files = [
-    {file = "neural_compressor-2.4.1-py3-none-any.whl", hash = "sha256:24a9c74aa2049810c26dac092945a6dfcf1837a5956299fcaf5b038947685788"},
-    {file = "neural_compressor-2.4.1.tar.gz", hash = "sha256:2d6e98755644b33a8c623bcfa368cc2aacf733b12387db9e9e4a2684c8c11618"},
+    {file = "neural_compressor-2.5-py3-none-any.whl", hash = "sha256:16b541d5c4ee3c14f06474c01f9aadcc245f68db3cae103c5c395866a867e86e"},
+    {file = "neural_compressor-2.5.tar.gz", hash = "sha256:4c1bc65f2a8615673a1bd0500c4d50c858486c43a3c0f0674227149c58c8126c"},
 ]
 
 [package.dependencies]
 deprecated = ">=1.2.13"
-numpy = "*"
+numpy = "<2.0"
 opencv-python-headless = "*"
 pandas = "*"
 Pillow = "*"
@@ -4716,9 +4716,9 @@ schema = "*"
 scikit-learn = "*"
 
 [package.extras]
-ort = ["neural-compressor-3x-ort (==2.4.1)"]
-pt = ["neural-compressor-3x-pt (==2.4.1)"]
-tf = ["neural-compressor-3x-tf (==2.4.1)"]
+ort = ["neural-compressor-3x-ort (==2.5)"]
+pt = ["neural-compressor-3x-pt (==2.5)"]
+tf = ["neural-compressor-3x-tf (==2.5)"]
 
 [[package]]
 name = "newspaper3k"
@@ -8642,13 +8642,13 @@ test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,
 
 [[package]]
 name = "transformers"
-version = "4.38.2"
+version = "4.39.1"
 description = "State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow"
 optional = true
 python-versions = ">=3.8.0"
 files = [
-    {file = "transformers-4.38.2-py3-none-any.whl", hash = "sha256:c4029cb9f01b3dd335e52f364c52d2b37c65b4c78e02e6a08b1919c5c928573e"},
-    {file = "transformers-4.38.2.tar.gz", hash = "sha256:c5fc7ad682b8a50a48b2a4c05d4ea2de5567adb1bdd00053619dbe5960857dd5"},
+    {file = "transformers-4.39.1-py3-none-any.whl", hash = "sha256:df167e08b27ab254044a38bb7c439461cd3916332205416e9b6b1592b517a1a5"},
+    {file = "transformers-4.39.1.tar.gz", hash = "sha256:ab9c1e1912843b9976e6cc62b27cd5434284fc0dab465e1b660333acfa81c6bc"},
 ]
 
 [package.dependencies]
