@@ -141,14 +141,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     message_dict: Dict[str, Any] = {
         "content": message.content,
     }
-    if message.name is not None:
-        message_dict["name"] = message.name
-    elif (
-        "name" in message.additional_kwargs
-        and message.additional_kwargs["name"] is not None
-    ):
-        # fall back on additional kwargs for backwards compatibility
-        message_dict["name"] = message.additional_kwargs["name"]
+    if (name := message.name or message.additional_kwargs.get("name")) is not None:
+        message_dict["name"] = name
 
     # populate role and additional message data
     if isinstance(message, ChatMessage):
@@ -175,9 +169,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
 
-        # tool message doesn't have name: https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages
-        if message_dict["name"] is None:
-            del message_dict["name"]
+        supported_props = {"content", "role", "tool_call_id"}
+        message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
         raise TypeError(f"Got unknown type {message}")
     return message_dict
@@ -387,12 +380,31 @@ class ChatOpenAI(BaseChatModel):
             "default_query": values["default_query"],
         }
 
+        openai_proxy = values["openai_proxy"]
         if not values.get("client"):
+            if openai_proxy and not values["http_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_client"] = httpx.Client(proxy=openai_proxy)
             sync_specific = {"http_client": values["http_client"]}
             values["client"] = openai.OpenAI(
                 **client_params, **sync_specific
             ).chat.completions
         if not values.get("async_client"):
+            if openai_proxy and not values["http_async_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_async_client"] = httpx.AsyncClient(proxy=openai_proxy)
             async_specific = {"http_client": values["http_async_client"]}
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific
@@ -451,6 +463,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
@@ -545,6 +559,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )

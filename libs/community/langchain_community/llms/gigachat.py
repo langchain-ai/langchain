@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from functools import cached_property
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Iterator, List, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -12,6 +12,10 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import root_validator
+
+if TYPE_CHECKING:
+    import gigachat
+    import gigachat.models as gm
 
 logger = logging.getLogger(__name__)
 
@@ -48,13 +52,25 @@ class _BaseGigaChat(Serializable):
     # Support for connection to GigaChat through SSL certificates
 
     profanity: bool = True
+    """ DEPRECATED: Check for profanity """
+    profanity_check: Optional[bool] = None
     """ Check for profanity """
     streaming: bool = False
     """ Whether to stream the results or not. """
     temperature: Optional[float] = None
-    """What sampling temperature to use."""
+    """ What sampling temperature to use. """
     max_tokens: Optional[int] = None
     """ Maximum number of tokens to generate """
+    use_api_for_tokens: bool = False
+    """ Use GigaChat API for tokens count """
+    verbose: bool = False
+    """ Verbose logging """
+    top_p: Optional[float] = None
+    """ top_p value to use for nucleus sampling. Must be between 0.0 and 1.0 """
+    repetition_penalty: Optional[float] = None
+    """ The penalty applied to repeated tokens """
+    update_interval: Optional[float] = None
+    """ Minimum interval in seconds that elapses between sending tokens """
 
     @property
     def _llm_type(self) -> str:
@@ -74,7 +90,7 @@ class _BaseGigaChat(Serializable):
         return True
 
     @cached_property
-    def _client(self) -> Any:
+    def _client(self) -> gigachat.GigaChat:
         """Returns GigaChat API client"""
         import gigachat
 
@@ -85,6 +101,7 @@ class _BaseGigaChat(Serializable):
             scope=self.scope,
             access_token=self.access_token,
             model=self.model,
+            profanity_check=self.profanity_check,
             user=self.user,
             password=self.password,
             timeout=self.timeout,
@@ -93,6 +110,7 @@ class _BaseGigaChat(Serializable):
             cert_file=self.cert_file,
             key_file=self.key_file,
             key_file_password=self.key_file_password,
+            verbose=self.verbose,
         )
 
     @root_validator()
@@ -105,6 +123,16 @@ class _BaseGigaChat(Serializable):
                 "Could not import gigachat python package. "
                 "Please install it with `pip install gigachat`."
             )
+        fields = set(cls.__fields__.keys())
+        diff = set(values.keys()) - fields
+        if diff:
+            logger.warning(f"Extra fields {diff} in GigaChat class")
+        if "profanity" in fields and values.get("profanity") is False:
+            logger.warning(
+                "'profanity' field is deprecated. Use 'profanity_check' instead."
+            )
+            if values.get("profanity_check") is None:
+                values["profanity_check"] = values.get("profanity")
         return values
 
     @property
@@ -113,10 +141,47 @@ class _BaseGigaChat(Serializable):
         return {
             "temperature": self.temperature,
             "model": self.model,
-            "profanity": self.profanity,
+            "profanity": self.profanity_check,
             "streaming": self.streaming,
             "max_tokens": self.max_tokens,
+            "top_p": self.top_p,
+            "repetition_penalty": self.repetition_penalty,
         }
+
+    def tokens_count(
+        self, input_: List[str], model: Optional[str] = None
+    ) -> List[gm.TokensCount]:
+        """Get tokens of string list"""
+        return self._client.tokens_count(input_, model)
+
+    async def atokens_count(
+        self, input_: List[str], model: Optional[str] = None
+    ) -> List[gm.TokensCount]:
+        """Get tokens of strings list (async)"""
+        return await self._client.atokens_count(input_, model)
+
+    def get_models(self) -> gm.Models:
+        """Get available models of Gigachat"""
+        return self._client.get_models()
+
+    async def aget_models(self) -> gm.Models:
+        """Get available models of Gigachat (async)"""
+        return await self._client.aget_models()
+
+    def get_model(self, model: str) -> gm.Model:
+        """Get info about model"""
+        return self._client.get_model(model)
+
+    async def aget_model(self, model: str) -> gm.Model:
+        """Get info about model (async)"""
+        return await self._client.aget_model(model)
+
+    def get_num_tokens(self, text: str) -> int:
+        """Count approximate number of tokens"""
+        if self.use_api_for_tokens:
+            return self.tokens_count([text])[0].tokens  # type: ignore
+        else:
+            return round(len(text) / 4.6)
 
 
 class GigaChat(_BaseGigaChat, BaseLLM):
@@ -128,20 +193,29 @@ class GigaChat(_BaseGigaChat, BaseLLM):
         .. code-block:: python
 
             from langchain_community.llms import GigaChat
-            giga = GigaChat(credentials=..., verify_ssl_certs=False)
+            giga = GigaChat(credentials=..., scope=..., verify_ssl_certs=False)
     """
+
+    payload_role: str = "user"
 
     def _build_payload(self, messages: List[str]) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
-            "messages": [{"role": "user", "content": m} for m in messages],
-            "profanity_check": self.profanity,
+            "messages": [{"role": self.payload_role, "content": m} for m in messages],
         }
-        if self.temperature is not None:
-            payload["temperature"] = self.temperature
-        if self.max_tokens is not None:
-            payload["max_tokens"] = self.max_tokens
         if self.model:
             payload["model"] = self.model
+        if self.profanity_check is not None:
+            payload["profanity_check"] = self.profanity_check
+        if self.temperature is not None:
+            payload["temperature"] = self.temperature
+        if self.top_p is not None:
+            payload["top_p"] = self.top_p
+        if self.max_tokens is not None:
+            payload["max_tokens"] = self.max_tokens
+        if self.repetition_penalty is not None:
+            payload["repetition_penalty"] = self.repetition_penalty
+        if self.update_interval is not None:
+            payload["update_interval"] = self.update_interval
 
         if self.verbose:
             logger.info("Giga request: %s", payload)
@@ -164,6 +238,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
                 )
             if self.verbose:
                 logger.info("Giga response: %s", res.message.content)
+
         token_usage = response.usage
         llm_output = {"token_usage": token_usage, "model_name": response.model}
         return LLMResult(generations=generations, llm_output=llm_output)
@@ -254,6 +329,5 @@ class GigaChat(_BaseGigaChat, BaseLLM):
                 if run_manager:
                     await run_manager.on_llm_new_token(content)
 
-    def get_num_tokens(self, text: str) -> int:
-        """Count approximate number of tokens"""
-        return round(len(text) / 4.6)
+    class Config:
+        extra = "allow"

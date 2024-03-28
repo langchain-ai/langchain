@@ -1,5 +1,5 @@
 """Test ChatOpenAI chat model."""
-from typing import Any, Optional, cast
+from typing import Any, List, Optional, cast
 
 import pytest
 from langchain_core.callbacks import CallbackManager
@@ -9,6 +9,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
 )
 from langchain_core.outputs import (
     ChatGeneration,
@@ -467,3 +468,58 @@ async def test_async_response_metadata_streaming() -> None:
         )
     )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
+
+
+class GenerateUsername(BaseModel):
+    "Get a username based on someone's name and hair color."
+
+    name: str
+    hair_color: str
+
+
+def test_tool_use() -> None:
+    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
+    msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
+    ai_msg = llm_with_tool.invoke(msgs)
+    tool_msg = ToolMessage(
+        "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
+    )
+    msgs.extend([ai_msg, tool_msg])
+    llm_with_tool.invoke(msgs)
+
+
+def test_openai_structured_output() -> None:
+    class MyModel(BaseModel):
+        """A Person"""
+
+        name: str
+        age: int
+
+    llm = ChatOpenAI().with_structured_output(MyModel)
+    result = llm.invoke("I'm a 27 year old named Erick")
+    assert isinstance(result, MyModel)
+    assert result.name == "Erick"
+    assert result.age == 27
+
+
+def test_openai_proxy() -> None:
+    """Test ChatOpenAI with proxy."""
+    chat_openai = ChatOpenAI(
+        openai_proxy="http://localhost:8080",
+    )
+    mounts = chat_openai.client._client._client._mounts
+    assert len(mounts) == 1
+    for key, value in mounts.items():
+        proxy = value._pool._proxy_url.origin
+        assert proxy.scheme == b"http"
+        assert proxy.host == b"localhost"
+        assert proxy.port == 8080
+
+    async_client_mounts = chat_openai.async_client._client._client._mounts
+    assert len(async_client_mounts) == 1
+    for key, value in async_client_mounts.items():
+        proxy = value._pool._proxy_url.origin
+        assert proxy.scheme == b"http"
+        assert proxy.host == b"localhost"
+        assert proxy.port == 8080
