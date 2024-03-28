@@ -210,7 +210,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
     json_schema: Optional[dict[str, Any]] = None
 
-    @validator("json_schema", always=True)
+    @validator("json_schema", always=True, allow_reuse=True)
     def _validate_json_schema(
         cls, v: Optional[dict[str, Any]], values: dict
     ) -> Optional[dict[str, Any]]:
