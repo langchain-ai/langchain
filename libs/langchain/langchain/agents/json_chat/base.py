@@ -161,7 +161,9 @@ def create_json_chat_agent(
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
     if "{observation}" not in template_tool_response:
-        raise ValueError("Template tool response missing required variable 'observation'")
+        raise ValueError(
+            "Template tool response missing required variable 'observation'"
+        )
 
     prompt = prompt.partial(
         tools=tools_renderer(list(tools)),
