@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Type
 
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.tools import BaseToolkit
 
-from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools import BaseTool
 from langchain_community.tools.file_management.copy import CopyFileTool
 from langchain_community.tools.file_management.delete import DeleteFileTool

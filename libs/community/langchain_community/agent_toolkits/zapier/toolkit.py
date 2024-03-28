@@ -2,8 +2,8 @@
 from typing import List
 
 from langchain_core._api import warn_deprecated
+from langchain_core.tools import BaseToolkit
 
-from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools import BaseTool
 from langchain_community.tools.zapier.tool import ZapierNLARunAction
 from langchain_community.utilities.zapier import ZapierNLAWrapper
