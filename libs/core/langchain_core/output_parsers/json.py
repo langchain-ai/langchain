@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from json import JSONDecodeError
-from typing import Any, Callable, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
 import pydantic  # pydantic: ignore
@@ -208,7 +208,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """
 
     pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
-    json_schema: Optional[dict[str, Any]] = None
+    json_schema: Optional[Dict[str, Any]] = None
 
     @validator("json_schema", always=True, allow_reuse=True)
     def _validate_json_schema(
