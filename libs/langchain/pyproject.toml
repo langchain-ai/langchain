@@ -305,7 +305,7 @@ extended_testing = [
  "couchbase",
  "dgml-utils",
  "cohere",
- "langchain-openai",
+ "gigachain-openai",
  "rdflib",
 ]
 
