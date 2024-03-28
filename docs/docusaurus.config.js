@@ -156,12 +156,6 @@ const config = {
           {
             type: "docSidebar",
             position: "left",
-            sidebarId: "use_cases",
-            label: "Use cases",
-          },
-          {
-            type: "docSidebar",
-            position: "left",
             sidebarId: "integrations",
             label: "Integrations",
           },
@@ -173,7 +167,7 @@ const config = {
           },
           {
             href: "https://api.python.langchain.com",
-            label: "API",
+            label: "API Reference",
             position: "left",
           },
           {
@@ -188,11 +182,6 @@ const config = {
               {
                 to: "/docs/packages",
                 label: "Versioning",
-              },
-              {
-                type: "docSidebar",
-                sidebarId: "changelog",
-                label: "Changelog",
               },
               {
                 to: "/docs/contributing",
