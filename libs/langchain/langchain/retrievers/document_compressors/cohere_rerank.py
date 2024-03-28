@@ -87,8 +87,10 @@ class CohereRerank(BaseDocumentCompressor):
             top_n=top_n,
             max_chunks_per_doc=max_chunks_per_doc,
         )
+        if hasattr(results, "results"):
+            results = getattr(results, "results")
         result_dicts = []
-        for res in results.results:
+        for res in results:
             result_dicts.append(
                 {"index": res.index, "relevance_score": res.relevance_score}
             )
