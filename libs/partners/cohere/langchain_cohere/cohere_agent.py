@@ -30,7 +30,7 @@ def create_cohere_tools_agent(
         RunnablePassthrough.assign(
             # Intermediate steps are in tool results.
             # Edit below to change the prompt parameters.
-            input=lambda x: prompt.format_messages(**x,agent_scratchpad=[]),
+            input=lambda x: prompt.format_messages(**x, agent_scratchpad=[]),
             tools=lambda x: _format_to_cohere_tools(tools),
             tool_results=lambda x: _format_to_cohere_tools_messages(
                 x["intermediate_steps"]
