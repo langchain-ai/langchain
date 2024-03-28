@@ -281,11 +281,7 @@ class ChildTool(BaseTool):
         else:
             if input_args is not None:
                 result = input_args.parse_obj(tool_input)
-                return {
-                    k: getattr(result, k)
-                    for k, v in result.dict().items()
-                    if k in tool_input
-                }
+                return result.dict()
         return tool_input
 
     @root_validator()
@@ -329,6 +325,20 @@ class ChildTool(BaseTool):
         if isinstance(tool_input, str):
             return (tool_input,), {}
         else:
+            # for tool defined with `*args` parameters
+            # the args_schema has a field named `args`
+            # it should be expanded to actual *args
+            # e.g.: test_tools
+            #       .test_named_tool_decorator_return_direct
+            #       .search_api
+            if "args" in tool_input:
+                args = tool_input["args"]
+                if args is None:
+                    tool_input.pop("args")
+                    return (), tool_input
+                elif isinstance(args, tuple):
+                    tool_input.pop("args")
+                    return args, tool_input
             return (), tool_input
 
     def run(
