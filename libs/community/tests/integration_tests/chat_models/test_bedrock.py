@@ -50,6 +50,7 @@ def test_chat_bedrock_generate_with_token_usage(chat: BedrockChat) -> None:
     usage = response.llm_output["usage"]
     assert usage["prompt_tokens"] == 20
     assert usage["completion_tokens"] > 0
+    assert usage["total_tokens"] > 0
 
 
 @pytest.mark.scheduled

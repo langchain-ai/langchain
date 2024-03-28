@@ -14,6 +14,11 @@ from typing import (
     Tuple,
 )
 
+from langchain_community.llms.utils import enforce_stop_tokens
+from langchain_community.utilities.anthropic import (
+    get_num_tokens_anthropic,
+    get_token_ids_anthropic,
+)
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -22,12 +27,6 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
-
-from langchain_community.llms.utils import enforce_stop_tokens
-from langchain_community.utilities.anthropic import (
-    get_num_tokens_anthropic,
-    get_token_ids_anthropic,
-)
 
 AMAZON_BEDROCK_TRACE_KEY = "amazon-bedrock-trace"
 GUARDRAILS_BODY_KEY = "amazon-bedrock-guardrailAssessment"
@@ -61,12 +60,12 @@ def _human_assistant_format(input_text: str) -> str:
     count = 0
     # track alternation
     for i in range(len(input_text)):
-        if input_text[i : i + len(HUMAN_PROMPT)] == HUMAN_PROMPT:
+        if input_text[i: i + len(HUMAN_PROMPT)] == HUMAN_PROMPT:
             if count % 2 == 0:
                 count += 1
             else:
                 warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
-        if input_text[i : i + len(ASSISTANT_PROMPT)] == ASSISTANT_PROMPT:
+        if input_text[i: i + len(ASSISTANT_PROMPT)] == ASSISTANT_PROMPT:
             if count % 2 == 1:
                 count += 1
             else:
@@ -142,6 +141,7 @@ class LLMInputOutputAdapter:
 
     @classmethod
     def prepare_output(cls, provider: str, response: Any) -> dict:
+        text = ""
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
             if "completion" in response_body:
@@ -164,17 +164,15 @@ class LLMInputOutputAdapter:
                 text = response_body.get("results")[0].get("outputText")
 
         headers = response.get("ResponseMetadata", {}).get("HTTPHeaders", {})
-
+        prompt_tokens = int(headers.get("x-amzn-bedrock-input-token-count", 0))
+        completion_tokens = int(headers.get("x-amzn-bedrock-output-token-count", 0))
         return {
             "text": text,
             "body": response_body,
             "usage": {
-                "prompt_tokens": int(
-                    headers.get("x-amzn-bedrock-input-token-count", 0)
-                ),
-                "completion_tokens": int(
-                    headers.get("x-amzn-bedrock-output-token-count", 0)
-                ),
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens
             },
         }
 

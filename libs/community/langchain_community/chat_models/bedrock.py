@@ -307,7 +307,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
         usage: Dict[str, int] = defaultdict(int)
         for llm_out in llm_outputs:
             llm_usage = llm_out.get("usage", {}) if llm_out is not None else {}
-            for key in ["prompt_tokens", "completion_tokens"]:
+            for key in ["prompt_tokens", "completion_tokens", "total_tokens"]:
                 if key in llm_usage:
                     usage[key] += llm_usage[key]
 
