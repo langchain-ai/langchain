@@ -3,8 +3,6 @@ from typing import Any, Dict, List
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 
-DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
-DEFAULT_BGE_MODEL = "BAAI/bge-large-en"
 DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
 )
@@ -38,7 +36,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
     """OpenVINO model object."""
     tokenizer: Any
     """Tokenizer for embedding model."""
-    model_name_or_path: str = DEFAULT_MODEL_NAME
+    model_name_or_path: str
     """HuggingFace model id."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
@@ -253,7 +251,7 @@ class OpenVINOBgeEmbeddings(OpenVINOEmbeddings):
             )
     """
 
-    model_name_or_path: str = DEFAULT_BGE_MODEL
+    model_name_or_path: str
     """HuggingFace model id."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
