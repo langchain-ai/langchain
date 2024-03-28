@@ -314,9 +314,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
 
 async def test_astream_events_from_model() -> None:
     """Test the output of a model."""
-    infinite_cycle = cycle(
-        [AIMessage(content="hello world!"), AIMessage(content="goodbye world!")]
-    )
+    infinite_cycle = cycle([AIMessage(content="hello world!")])
     # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
     model = (
         GenericFakeChatModel(messages=infinite_cycle)
@@ -370,6 +368,182 @@ async def test_astream_events_from_model() -> None:
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
+        },
+    ]
+
+    @RunnableLambda
+    def i_dont_stream(input):
+        return model.invoke(input)
+
+    events = await _collect_events(i_dont_stream.astream_events("hello", version="v1"))
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "i_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+            "event": "on_chat_model_start",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="hello")},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content=" ")},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!")},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {
+                "input": {"messages": [[HumanMessage(content="hello")]]},
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessage(content="hello world!"),
+                                "text": "hello world!",
+                                "type": "ChatGeneration",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            "event": "on_chat_model_end",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessage(content="hello world!")},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "i_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": AIMessage(content="hello world!")},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "i_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+    ]
+
+    @RunnableLambda
+    async def ai_dont_stream(input):
+        return await model.ainvoke(input)
+
+    events = await _collect_events(ai_dont_stream.astream_events("hello", version="v1"))
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "ai_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+            "event": "on_chat_model_start",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="hello")},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content=" ")},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!")},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {
+                "input": {"messages": [[HumanMessage(content="hello")]]},
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessage(content="hello world!"),
+                                "text": "hello world!",
+                                "type": "ChatGeneration",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            "event": "on_chat_model_end",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessage(content="hello world!")},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "ai_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": AIMessage(content="hello world!")},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "ai_dont_stream",
+            "run_id": "",
+            "tags": [],
         },
     ]
 
