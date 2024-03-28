@@ -10,7 +10,7 @@ python = ">=3.8.1,<4.0"
 langchain = "^0.1"
 openai = "<2"
 anthropic = "^0.6.0"
-cohere = "^4.34"
+cohere = "^5"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
