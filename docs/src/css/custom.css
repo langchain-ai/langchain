@@ -13,9 +13,14 @@
  * work well for content-centric websites.
  */
  
- @font-face {
+@font-face {
   font-family: 'Manrope';
   src: url('/fonts/Manrope-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Public Sans';
+  src: url('/fonts/PublicSans-VariableFont_wght.ttf') format('truetype');
 }
 
 /* You can override the default Infima variables here. */
@@ -28,7 +33,7 @@
   --ifm-color-primary-lighter: #359962;
   --ifm-color-primary-lightest: #3cad6e;
   --ifm-code-font-size: 95%;
-  --ifm-font-family-base: 'Manrope';
+  --ifm-font-family-base: 'Public Sans';
   --ifm-menu-link-padding-horizontal: 0.5rem;
   --ifm-menu-link-padding-vertical: 0.375rem;
 }
@@ -42,6 +47,10 @@
   --ifm-color-primary-light: #29d5b0;
   --ifm-color-primary-lighter: #32d8b4;
   --ifm-color-primary-lightest: #4fddbf;
+}
+
+nav, h1, h2, h3, h4 {
+  font-family: 'Manrope';
 }
 
 .footer__links {
