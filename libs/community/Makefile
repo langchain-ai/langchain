@@ -5,11 +5,17 @@ all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+integration_tests: TEST_FILE = tests/integration_tests/
 
-test:
-	poetry run pytest $(TEST_FILE)
+# Run unit tests and generate a coverage report.
+coverage:
+	poetry run pytest --cov \
+		--cov-config=.coveragerc \
+		--cov-report xml \
+		--cov-report term-missing:skip-covered \
+		$(TEST_FILE)
 
-tests:
+test tests integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
@@ -30,7 +36,7 @@ extended_tests:
 PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
-lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/community -name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/community --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 lint_package: PYTHON_FILES=langchain_community
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test

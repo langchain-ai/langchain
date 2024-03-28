@@ -9,14 +9,14 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 langchain = "^0.1"
 arxiv = "^2.0.0"
-langchain-community = "^0.0.17"
+langchain-community = ">=0.0.17,<0.2"
 langchainhub = "^0.1.14"
 fireworks-ai = "^0.11.2"
 
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.20"
-fastapi = "^0.104.0"
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
