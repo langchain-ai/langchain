@@ -304,17 +304,16 @@ class BedrockChat(BaseChatModel, BedrockBase):
         )
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
-        usage: Dict[str, int] = defaultdict(int)
-        for llm_out in llm_outputs:
-            llm_usage = llm_out.get("usage", {}) if llm_out is not None else {}
-            for key in ["prompt_tokens", "completion_tokens", "total_tokens"]:
-                if key in llm_usage:
-                    usage[key] += llm_usage[key]
-
-        return {
-            "model_name": self.model_id,
-            "usage": usage,
-        }
+        final_usage: Dict[str, int] = defaultdict(int)
+        final_output = {}
+        for output in llm_outputs:
+            output = output or {}
+            usage = output.pop("usage", {})
+            for token_type, token_count in usage.items():
+                final_usage[token_type] += token_count
+            final_output.update(output)
+        final_output["usage"] = final_usage
+        return final_output
 
     def get_num_tokens(self, text: str) -> int:
         if self._model_is_anthropic:

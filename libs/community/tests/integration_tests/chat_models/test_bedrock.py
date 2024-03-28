@@ -101,8 +101,11 @@ def test_chat_bedrock_streaming_generation_info() -> None:
 def test_bedrock_streaming(chat: BedrockChat) -> None:
     """Test streaming tokens from OpenAI."""
 
+    full = None
     for token in chat.stream("I'm Pickle Rick"):
+        full = token if full is None else full + token
         assert isinstance(token.content, str)
+    assert isinstance(full.content, str)
 
 
 @pytest.mark.scheduled
@@ -151,3 +154,5 @@ def test_bedrock_invoke(chat: BedrockChat) -> None:
     """Test invoke tokens from BedrockChat."""
     result = chat.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+    assert all([k in result.response_metadata for k in ("usage", "model_name")])
+    assert result.response_metadata["usage"]["prompt_tokens"] == 13
