@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import tempfile
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from langchain_community.document_loaders.unstructured import UnstructuredBaseLoader
 
@@ -27,6 +27,9 @@ class S3FileLoader(UnstructuredBaseLoader):
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
         boto_config: Optional[botocore.client.Config] = None,
+        mode: str = "single",
+        post_processors: Optional[List[Callable]] = None,
+        **unstructured_kwargs: Any,
     ):
         """Initialize with bucket and key name.
 
@@ -82,8 +85,14 @@ class S3FileLoader(UnstructuredBaseLoader):
             object is set on the session, the config object used when creating
             the client will be the result of calling ``merge()`` on the
             default config with the config provided to this call.
+        :param mode: Mode in which to read the file. Valid options are: single,
+            paged and elements.
+        :param post_processors: Post processing functions to be applied to
+            extracted elements.
+        :param **unstructured_kwargs: Arbitrary additional kwargs to pass in when
+            calling `partition`
         """
-        super().__init__()
+        super().__init__(mode, post_processors, **unstructured_kwargs)
         self.bucket = bucket
         self.key = key
         self.region_name = region_name
@@ -123,7 +132,7 @@ class S3FileLoader(UnstructuredBaseLoader):
             file_path = f"{temp_dir}/{self.key}"
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             s3.download_file(self.bucket, self.key, file_path)
-            return partition(filename=file_path)
+            return partition(filename=file_path, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
         return {"source": f"s3://{self.bucket}/{self.key}"}
