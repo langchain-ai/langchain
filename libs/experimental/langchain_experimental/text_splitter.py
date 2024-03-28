@@ -1,7 +1,18 @@
 """Experimental **text splitter** based on semantic similarity."""
 import copy
 import re
-from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import numpy as np
 from langchain_community.utils.math import (
@@ -84,6 +95,71 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
     return distances, sentences
 
 
+def split_string(input_str: str, limit: int, sep: str = " ") -> List[str]:
+    # Split the input string into words
+    words = input_str.split()
+
+    # Check if any single word exceeds the limit, which is not allowed
+    if max(map(len, words)) > limit:
+        raise ValueError(
+            "A single word exceeds the limit, making splitting impossible."
+        )
+
+    # Create the result list, the current part being constructed, and remaining words
+    res = []  # List to store the final result of split parts
+    part = words[0]  # Start the first part with the first word
+    others = words[1:]  # Remaining words to process
+
+    # Iterate through the remaining words
+    for word in others:
+        # Check if adding the next word exceeds the limit for the current part
+        if len(sep) + len(word) > limit - len(part):
+            # If it does, add the current part to the result list and start a new part
+            res.append(part)
+            part = word
+        else:
+            # Otherwise, add the word to the current part
+            part += sep + word
+
+    # After the loop, add the last part to the result list if it's not empty
+    if part:
+        res.append(part)
+
+    return res
+
+
+def add_chunk(
+    sentences: List[dict],
+    start_index: int,
+    end_index: int,
+    chunks: List[str],
+    max_chunk_size: Optional[int] = None,
+):
+    """Adds sentences as a chunk if total length does not exceed max_chunk_size."""
+    if not max_chunk_size:
+        combined_text = " ".join(
+            [d["sentence"] for d in sentences[start_index:end_index]]
+        )
+        chunks.append(combined_text)
+    else:
+        group = []
+        chunk_size = 0
+        for i in range(start_index, end_index):
+            sentence_length = len(sentences[i]["sentence"])
+            if chunk_size + sentence_length > max_chunk_size:
+                if group:  # Ensures that the group is not empty
+                    chunks.append(" ".join([d["sentence"] for d in group]))
+                group = [sentences[i]]  # Start a new group with the current sentence
+                chunk_size = sentence_length  # Resets chunk size
+            else:
+                group.append(sentences[i])
+                chunk_size += sentence_length
+
+        # Adds the last group if it is not empty
+        if group:
+            chunks.append(" ".join([d["sentence"] for d in group]))
+
+
 BreakpointThresholdType = Literal["percentile", "standard_deviation", "interquartile"]
 BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
     "percentile": 95,
@@ -112,9 +188,11 @@ class SemanticChunker(BaseDocumentTransformer):
         breakpoint_threshold_type: BreakpointThresholdType = "percentile",
         breakpoint_threshold_amount: Optional[float] = None,
         number_of_chunks: Optional[int] = None,
+        max_chunk_size: Optional[int] = None,
     ):
         self._add_start_index = add_start_index
         self.embeddings = embeddings
+        self.max_chunk_size = max_chunk_size
         self.buffer_size = buffer_size
         self.breakpoint_threshold_type = breakpoint_threshold_type
         self.number_of_chunks = number_of_chunks
@@ -173,6 +251,24 @@ class SemanticChunker(BaseDocumentTransformer):
     ) -> Tuple[List[float], List[dict]]:
         """Split text into multiple components."""
 
+        if self.max_chunk_size:
+            # Preparing a new list to store the results
+            new_single_sentences_list = []
+
+            for sentence in single_sentences_list:
+                # Check whether the sentence exceeds the maximum authorised size
+                if len(sentence) >= self.max_chunk_size:
+                    # Dividing the sentence into sub-parts
+                    sentences = split_string(sentence, self.max_chunk_size, " ")
+                    # Extension of the new list by sub-parts
+                    new_single_sentences_list.extend(sentences)
+                else:
+                    # Add the original sentence if it does not exceed the maximum size
+                    new_single_sentences_list.append(sentence)
+
+            # Replacing the original list with the new one
+            single_sentences_list = new_single_sentences_list
+
         _sentences = [
             {"sentence": x, "index": i} for i, x in enumerate(single_sentences_list)
         ]
@@ -208,7 +304,7 @@ class SemanticChunker(BaseDocumentTransformer):
             i for i, x in enumerate(distances) if x > breakpoint_distance_threshold
         ]
 
-        chunks = []
+        chunks: List[str] = []
         start_index = 0
 
         # Iterate through the breakpoints to slice the sentences
@@ -217,17 +313,19 @@ class SemanticChunker(BaseDocumentTransformer):
             end_index = index
 
             # Slice the sentence_dicts from the current start index to the end index
-            group = sentences[start_index : end_index + 1]
-            combined_text = " ".join([d["sentence"] for d in group])
-            chunks.append(combined_text)
+            add_chunk(
+                sentences, start_index, end_index + 1, chunks, self.max_chunk_size
+            )
 
             # Update the start index for the next group
             start_index = index + 1
 
         # The last group, if any sentences remain
         if start_index < len(sentences):
-            combined_text = " ".join([d["sentence"] for d in sentences[start_index:]])
-            chunks.append(combined_text)
+            add_chunk(
+                sentences, start_index, len(sentences), chunks, self.max_chunk_size
+            )
+
         return chunks
 
     def create_documents(
