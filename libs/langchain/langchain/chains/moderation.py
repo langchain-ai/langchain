@@ -1,7 +1,11 @@
 """Pass input through a moderation endpoint."""
+
 from typing import Any, Dict, List, Optional
 
-from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -25,6 +29,7 @@ class OpenAIModerationChain(Chain):
     """
 
     client: Any  #: :meta private:
+    async_client: Any  #: :meta private:
     model_name: Optional[str] = None
     """Moderation model name to use."""
     error: bool = False
@@ -52,7 +57,8 @@ class OpenAIModerationChain(Chain):
             openai.api_key = openai_api_key
             if openai_organization:
                 openai.organization = openai_organization
-            values["client"] = openai.Moderation  # type: ignore
+            values["client"] = openai.OpenAI()
+            values["async_client"] = openai.AsyncOpenAI()
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -76,8 +82,8 @@ class OpenAIModerationChain(Chain):
         """
         return [self.output_key]
 
-    def _moderate(self, text: str, results: dict) -> str:
-        if results["flagged"]:
+    def _moderate(self, text: str, results: Any) -> str:
+        if results.flagged:
             error_str = "Text was found that violates OpenAI's content policy."
             if self.error:
                 raise ValueError(error_str)
@@ -87,10 +93,20 @@ class OpenAIModerationChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         text = inputs[self.input_key]
-        results = self.client.create(text)
-        output = self._moderate(text, results["results"][0])
+        results = self.client.moderations.create(input=text)
+        output = self._moderate(text, results.results[0])
+        return {self.output_key: output}
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        text = inputs[self.input_key]
+        results = await self.async_client.moderations.create(input=text)
+        output = self._moderate(text, results.results[0])
         return {self.output_key: output}
