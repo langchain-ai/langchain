@@ -17,7 +17,9 @@ class SolarChat(SolarCommon, ChatOpenAI):
     Referenced from https://console.upstage.ai/services/solar
     Example:
         .. code-block:: python
+
             from langchain_community.chat_models.solar import SolarChat
+
             solar = SolarChat(model="solar-1-mini-chat")
     """
 

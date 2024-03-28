@@ -43,6 +43,8 @@ class SolarCommon(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        extra = "ignore"
 
     @property
     def lc_secrets(self) -> dict:
@@ -94,6 +96,9 @@ class Solar(SolarCommon, LLM):
     ``SOLAR_API_KEY`` set with your API key.
     Referenced from https://console.upstage.ai/services/solar
     """
+
+    class Config:
+        allow_population_by_field_name = True
 
     def _call(
         self,
