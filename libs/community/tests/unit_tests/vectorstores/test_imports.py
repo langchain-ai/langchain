@@ -10,6 +10,7 @@ def test_all_imports() -> None:
             "AlibabaCloudOpenSearchSettings",
             "ClickhouseSettings",
             "MyScaleSettings",
+            "PathwayVectorClient",
             "DistanceStrategy",
             "KineticaSettings",
         ]:
