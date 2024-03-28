@@ -50,7 +50,7 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
     with the `ai.languageModels.user` role"""
     folder_id: str = ""
     """Yandex Cloud folder ID"""
-    doc_model_name: str = "text-search-query"
+    doc_model_name: str = "text-search-doc"
     """Doc model name to use."""
     query_model_name: str = "text-search-query"
     """Query model name to use."""
