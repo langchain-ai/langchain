@@ -23,6 +23,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     ConfigurableField,
     Runnable,
+    RunnableConfig,
     RunnableLambda,
 )
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -373,7 +374,7 @@ async def test_astream_events_from_model() -> None:
     ]
 
     @RunnableLambda
-    def i_dont_stream(input, config) -> Any:
+    def i_dont_stream(input: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
             return model.invoke(input)
         else:
@@ -464,7 +465,7 @@ async def test_astream_events_from_model() -> None:
     ]
 
     @RunnableLambda
-    async def ai_dont_stream(input, config) -> Any:
+    async def ai_dont_stream(input: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
             return await model.ainvoke(input)
         else:
