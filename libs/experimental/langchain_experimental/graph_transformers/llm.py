@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Type, cast
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
@@ -93,9 +93,14 @@ def optional_enum_field(
         return Field(..., description=description + additional_info, **field_kwargs)
 
 
+class _Graph(BaseModel):
+    nodes: Optional[List]
+    relationships: Optional[List]
+
+
 def create_simple_model(
     node_labels: Optional[List[str]] = None, rel_types: Optional[List[str]] = None
-) -> Any:
+) -> Type[_Graph]:
     """
     Simple model allows to limit node and/or relationship types.
     Doesn't have any node or relationship properties.
@@ -128,7 +133,7 @@ def create_simple_model(
             rel_types, description="The type of the relationship.", is_rel=True
         )
 
-    class DynamicGraph(BaseModel):
+    class DynamicGraph(_Graph):
         """Represents a graph document consisting of nodes and relationships."""
 
         nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")
@@ -194,7 +199,7 @@ class LLMGraphTransformer:
         llm: BaseLanguageModel,
         allowed_nodes: List[str] = [],
         allowed_relationships: List[str] = [],
-        prompt: Optional[ChatPromptTemplate] = default_prompt,
+        prompt: ChatPromptTemplate = default_prompt,
         strict_mode: bool = True,
     ) -> None:
         if not hasattr(llm, "with_structured_output"):
@@ -217,7 +222,7 @@ class LLMGraphTransformer:
         an LLM based on the model's schema and constraints.
         """
         text = document.page_content
-        raw_schema = self.chain.invoke({"input": text})
+        raw_schema = cast(_Graph, self.chain.invoke({"input": text}))
         nodes = (
             [map_to_base_node(node) for node in raw_schema.nodes]
             if raw_schema.nodes
@@ -268,7 +273,7 @@ class LLMGraphTransformer:
         graph document.
         """
         text = document.page_content
-        raw_schema = await self.chain.ainvoke({"input": text})
+        raw_schema = cast(_Graph, await self.chain.ainvoke({"input": text}))
 
         nodes = (
             [map_to_base_node(node) for node in raw_schema.nodes]
