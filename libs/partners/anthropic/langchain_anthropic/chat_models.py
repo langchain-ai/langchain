@@ -8,7 +8,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -174,6 +178,9 @@ class ChatAnthropic(BaseChatModel):
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
+    streaming: bool = False
+    """Whether to use streaming or not."""
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -194,11 +201,16 @@ class ChatAnthropic(BaseChatModel):
             values.get("anthropic_api_key") or os.environ.get("ANTHROPIC_API_KEY") or ""
         )
         values["anthropic_api_key"] = anthropic_api_key
-        values["_client"] = anthropic.Client(
-            api_key=anthropic_api_key.get_secret_value()
+        api_key = anthropic_api_key.get_secret_value()
+        api_url = (
+            values.get("anthropic_api_url")
+            or os.environ.get("ANTHROPIC_API_URL")
+            or "https://api.anthropic.com"
         )
+        values["anthropic_api_url"] = api_url
+        values["_client"] = anthropic.Client(api_key=api_key, base_url=api_url)
         values["_async_client"] = anthropic.AsyncClient(
-            api_key=anthropic_api_key.get_secret_value()
+            api_key=api_key, base_url=api_url
         )
         return values
 
@@ -256,12 +268,15 @@ class ChatAnthropic(BaseChatModel):
                     await run_manager.on_llm_new_token(text, chunk=chunk)
                 yield chunk
 
-    def _format_output(self, data: Any) -> ChatResult:
+    def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+        data_dict = data.model_dump()
+        content = data_dict["content"]
+        llm_output = {
+            k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
+        }
         return ChatResult(
-            generations=[
-                ChatGeneration(message=AIMessage(content=data.content[0].text))
-            ],
-            llm_output=data,
+            generations=[ChatGeneration(message=AIMessage(content=content[0]["text"]))],
+            llm_output=llm_output,
         )
 
     def _generate(
@@ -271,6 +286,11 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = self._client.messages.create(**params)
         return self._format_output(data, **kwargs)
@@ -282,6 +302,11 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         data = await self._async_client.messages.create(**params)
         return self._format_output(data, **kwargs)
