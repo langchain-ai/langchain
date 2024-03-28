@@ -61,7 +61,7 @@ if __name__ == "__main__":
                     found = True
                 if found:
                     dirs_to_run["extended-test"].add(dir_)
-            if dir_ == "libs/core":
+            if file.startswith("libs/core"):
                 dirs_to_run["test"].update(PARTNER_DIRS)
         elif file.startswith("libs/cli"):
             # todo: add cli makefile
