@@ -11,20 +11,6 @@ LANGCHAIN_DIRS = [
     "libs/experimental",
 ]
 
-
-def _is_not_partner_tombstone(dir_):
-    return os.path.isdir(dir_) and [
-        filename for filename in os.listdir(dir_) if not filename.startswith(".")
-    ] != ["README.md"]
-
-
-PARTNER_DIRS = [
-    f"libs/partners/{d}"
-    for d in os.listdir("libs/partners")
-    if _is_not_partner_tombstone(f"libs/partners/{d}")
-]
-
-
 if __name__ == "__main__":
     files = sys.argv[1:]
 
@@ -61,16 +47,17 @@ if __name__ == "__main__":
                     found = True
                 if found:
                     dirs_to_run["extended-test"].add(dir_)
-            if file.startswith("libs/core"):
-                dirs_to_run["test"].update(PARTNER_DIRS)
         elif file.startswith("libs/cli"):
             # todo: add cli makefile
             pass
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
-            partner_path = f"libs/partners/{partner_dir}"
-            if _is_not_partner_tombstone(partner_path):
-                dirs_to_run["test"].add(partner_path)
+            if os.path.isdir(f"libs/partners/{partner_dir}") and [
+                filename
+                for filename in os.listdir(f"libs/partners/{partner_dir}")
+                if not filename.startswith(".")
+            ] != ["README.md"]:
+                dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file.startswith("libs/"):
             raise ValueError(
