@@ -182,6 +182,23 @@ class BasePromptTemplate(
             prompt.format(variable1="foo")
         """
 
+    async def aformat(self, **kwargs: Any) -> FormatOutputType:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+
+        Example:
+
+        .. code-block:: python
+
+            await prompt.aformat(variable1="foo")
+        """
+        return self.format(**kwargs)
+
     @property
     def _prompt_type(self) -> str:
         """Return the prompt type key."""

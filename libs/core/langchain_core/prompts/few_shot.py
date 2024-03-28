@@ -72,6 +72,24 @@ class _FewShotPromptTemplateMixin(BaseModel):
                 "One of 'examples' and 'example_selector' should be provided"
             )
 
+    async def _aget_examples(self, **kwargs: Any) -> List[dict]:
+        """Get the examples to use for formatting the prompt.
+
+        Args:
+            **kwargs: Keyword arguments to be passed to the example selector.
+
+        Returns:
+            List of examples.
+        """
+        if self.examples is not None:
+            return self.examples
+        elif self.example_selector is not None:
+            return await self.example_selector.aselect_examples(kwargs)
+        else:
+            raise ValueError(
+                "One of 'examples' and 'example_selector' should be provided"
+            )
+
 
 class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     """Prompt template that contains few shot examples."""
@@ -128,20 +146,6 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         arbitrary_types_allowed = True
 
     def format(self, **kwargs: Any) -> str:
-        """Format the prompt with the inputs.
-
-        Args:
-            **kwargs: Any arguments to be passed to the prompt template.
-
-        Returns:
-            A formatted string.
-
-        Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-        """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
         examples = self._get_examples(**kwargs)
@@ -151,6 +155,24 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         # Format the examples.
         example_strings = [
             self.example_prompt.format(**example) for example in examples
+        ]
+        # Create the overall template.
+        pieces = [self.prefix, *example_strings, self.suffix]
+        template = self.example_separator.join([piece for piece in pieces if piece])
+
+        # Format the template with the input variables.
+        return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
+
+    async def aformat(self, **kwargs: Any) -> str:
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
+        # Get the examples to use.
+        examples = await self._aget_examples(**kwargs)
+        examples = [
+            {k: e[k] for k in self.example_prompt.input_variables} for e in examples
+        ]
+        # Format the examples.
+        example_strings = [
+            await self.example_prompt.aformat(**example) for example in examples
         ]
         # Create the overall template.
         pieces = [self.prefix, *example_strings, self.suffix]
