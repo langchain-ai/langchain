@@ -69,7 +69,9 @@ JSON_WITH_MARKDOWN_CODE_BLOCK = """```json
 }
 ```"""
 
-JSON_WITH_PART_MARKDOWN_CODE_BLOCK = """{\"valid_json\": "hey ```print(hello world!)``` hey"}"""
+JSON_WITH_PART_MARKDOWN_CODE_BLOCK = """
+{\"valid_json\": "hey ```print(hello world!)``` hey"}
+"""
 
 JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES = """```json
 {
@@ -195,7 +197,8 @@ def test_parse_json_with_code_blocks() -> None:
 
 def test_parse_json_with_part_code_blocks() -> None:
     parsed = parse_json_markdown(JSON_WITH_PART_MARKDOWN_CODE_BLOCK)
-    assert parsed == {'valid_json': 'hey ```print(hello world!)``` hey'}
+    assert parsed == {"valid_json": "hey ```print(hello world!)``` hey"}
+
 
 def test_parse_json_with_code_blocks_and_newlines() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES)

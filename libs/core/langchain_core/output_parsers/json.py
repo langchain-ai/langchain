@@ -152,7 +152,9 @@ def parse_json_markdown(
     return _parse_json(json_str, parser=parser)
 
 
-def _parse_json(json_str: str, *, parser: Callable[[str], Any] = parse_partial_json) -> dict:
+def _parse_json(
+    json_str: str, *, parser: Callable[[str], Any] = parse_partial_json
+) -> dict:
     # Strip whitespace and newlines from the start and end
     json_str = json_str.strip().strip("`")
 
