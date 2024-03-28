@@ -8,17 +8,15 @@ from langchain.agents.output_parsers import ReActJsonSingleInputOutputParser
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.tools.render import render_text_description
 from langchain.tools.retriever import create_retriever_tool
-from langchain_fireworks.chat_models import ChatFireworks
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.agents import AgentFinish
-
-from langgraph.prebuilt.tool_executor import ToolExecutor
+from langchain_fireworks.chat_models import ChatFireworks
 from langgraph.graph import END, StateGraph
+from langgraph.prebuilt.tool_executor import ToolExecutor
 
 MODEL_ID = "accounts/fireworks/models/mixtral-8x7b-instruct"
 
@@ -155,8 +153,6 @@ def should_continue(data):
     else:
         return "continue"
 
-
-from langgraph.graph import END, StateGraph
 
 # Define a new graph
 workflow = StateGraph(AgentState)
