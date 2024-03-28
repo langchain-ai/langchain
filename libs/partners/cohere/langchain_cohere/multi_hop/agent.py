@@ -53,10 +53,6 @@ class CohereToolsMultiHopAgentOutputParser(
 ):
     """Parses a message into agent actions/finish."""
 
-    @property
-    def _type(self) -> str:
-        return "cohere-tools-agent-output-parser"
-
     def parse_jsonified_tool_use_generation(
         self, tool_use_generation: str, tool_use_prefix: str
     ) -> List[Dict]:
