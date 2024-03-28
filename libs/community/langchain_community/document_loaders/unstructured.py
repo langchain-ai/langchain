@@ -156,7 +156,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, List[str], Path, List[Path]],
+        file_path: Union[str, List[str], Path, List[Path], None],
         mode: str = "single",
         **unstructured_kwargs: Any,
     ):
@@ -255,7 +255,7 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
 
     def __init__(
         self,
-        file_path: Union[str, List[str]] = "",
+        file_path: Union[str, List[str], None] = "",
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
