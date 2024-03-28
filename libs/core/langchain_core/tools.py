@@ -326,9 +326,12 @@ class ChildTool(BaseTool):
         if isinstance(tool_input, str):
             args = (tool_input,)
         else:
-            # tool defined with `*args` parameters, the args_schema has a field named `args`
+            # for tool defined with `*args` parameters
+            # the args_schema has a field named `args`
             # it should be expanded to actual *args
-            # e.g.: test_tools.test_named_tool_decorator_return_direct.search_api
+            # e.g.: test_tools
+            #       .test_named_tool_decorator_return_direct
+            #       .search_api
             if "args" in tool_input:
                 args_ = tool_input["args"]
                 if args_ is None or isinstance(args_, tuple):
