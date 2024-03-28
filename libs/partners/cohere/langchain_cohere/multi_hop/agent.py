@@ -31,7 +31,7 @@ def create_cohere_multi_hop_agent(
     def multi_hop_prompt(x: Dict) -> BasePromptTemplate:
         return multi_hop_prompt_template.partial(
             tools="\n".join([render_tool_description(t) for t in tools]),
-            input=prompt.invoke(x).to_string(),
+            user_prompt=prompt.invoke(x).to_string(),
             steps=format_cohere_log_to_str(x["intermediate_steps"]),
             history=render_chat_history(x.get("chat_history", [])),
         )
