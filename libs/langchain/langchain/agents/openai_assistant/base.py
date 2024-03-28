@@ -525,7 +525,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 msg_content for msg in new_messages for msg_content in msg.content
             ]
             if all(
-                isinstance(content, openai.types.beta.threads.MessageContentText)
+                (
+                    isinstance(content, openai.types.beta.threads.TextContentBlock)
+                    if openai.version.VERSION.startswith("1.14")
+                    else isinstance(
+                        content, openai.types.beta.threads.MessageContentText
+                    )
+                )
                 for content in answer
             ):
                 answer = "\n".join(content.text.value for content in answer)
@@ -641,7 +647,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 msg_content for msg in new_messages for msg_content in msg.content
             ]
             if all(
-                isinstance(content, openai.types.beta.threads.MessageContentText)
+                (
+                    isinstance(content, openai.types.beta.threads.TextContentBlock)
+                    if openai.version.VERSION.startswith("1.14")
+                    else isinstance(
+                        content, openai.types.beta.threads.MessageContentText
+                    )
+                )
                 for content in answer
             ):
                 answer = "\n".join(content.text.value for content in answer)
