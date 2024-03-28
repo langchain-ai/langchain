@@ -14,7 +14,7 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
-from langchain_cohere.multi_hop.prompt import multi_hop_prompt_template
+from langchain_cohere.react_multi_hop.prompt import multi_hop_prompt_template
 
 """
     Cohere multi-hop tool allows you to use multiple tools in parallel or 
@@ -23,7 +23,7 @@ from langchain_cohere.multi_hop.prompt import multi_hop_prompt_template
 """
 
 
-def create_cohere_multi_hop_agent(
+def create_cohere_react_agent(
     llm: BaseLanguageModel,
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
@@ -43,12 +43,12 @@ def create_cohere_multi_hop_agent(
         )
         | multi_hop_prompt
         | llm.bind(stop=["\nObservation:"], raw_prompting=True)
-        | CohereToolsMultiHopAgentOutputParser()
+        | CohereToolsReactAgentOutputParser()
     )
     return agent
 
 
-class CohereToolsMultiHopAgentOutputParser(
+class CohereToolsReactAgentOutputParser(
     BaseOutputParser[Union[List[AgentAction], AgentFinish]]
 ):
     """Parses a message into agent actions/finish."""
