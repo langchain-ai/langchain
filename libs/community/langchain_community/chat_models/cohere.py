@@ -1,5 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -94,6 +95,9 @@ def get_cohere_chat_request(
     return {k: v for k, v in req.items() if v is not None}
 
 
+@deprecated(
+    since="0.0.30", removal="0.2.0", alternative_import="langchain_cohere.ChatCohere"
+)
 class ChatCohere(BaseChatModel, BaseCohere):
     """`Cohere` chat large language models.
 
@@ -168,9 +172,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
 
         if hasattr(self.async_client, "chat_stream"):  # detect and support sdk v5
-            stream = self.async_client.chat_stream(**request)
+            stream = await self.async_client.chat_stream(**request)
         else:
-            stream = self.async_client.chat(**request, stream=True)
+            stream = await self.async_client.chat(**request, stream=True)
 
         async for data in stream:
             if data.event_type == "text-generation":
@@ -244,4 +248,4 @@ class ChatCohere(BaseChatModel, BaseCohere):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
-        return len(self.client.tokenize(text).tokens)
+        return len(self.client.tokenize(text=text).tokens)
