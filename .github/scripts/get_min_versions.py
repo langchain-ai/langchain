@@ -4,7 +4,12 @@ import tomllib
 from packaging.version import parse as parse_version
 import re
 
-MIN_VERSION_LIBS = ["langchain-core", "langchain-community", "langchain", "langchain-text-splitters"]
+MIN_VERSION_LIBS = [
+    "langchain-core",
+    "langchain-community",
+    "langchain",
+    "langchain-text-splitters",
+]
 
 
 def get_min_version(version: str) -> str:
@@ -56,12 +61,13 @@ def get_min_version_from_toml(toml_path: str):
     return min_versions
 
 
-# Get the TOML file path from the command line argument
-toml_file = sys.argv[1]
+if __name__ == "__main__":
+    # Get the TOML file path from the command line argument
+    toml_file = sys.argv[1]
 
-# Call the function to get the minimum versions
-min_versions = get_min_version_from_toml(toml_file)
+    # Call the function to get the minimum versions
+    min_versions = get_min_version_from_toml(toml_file)
 
-print(
-    " ".join([f"{lib}=={version}" for lib, version in min_versions.items()])
-)  # noqa: T201
+    print(
+        " ".join([f"{lib}=={version}" for lib, version in min_versions.items()])
+    )  # noqa: T201
