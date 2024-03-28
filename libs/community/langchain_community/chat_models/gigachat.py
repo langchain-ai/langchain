@@ -93,7 +93,7 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
 
-def _convert_message_to_dict(message: gm.BaseMessage) -> gm.Messages:
+def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     from gigachat.models import Messages, MessagesRole
 
     if isinstance(message, SystemMessage):
@@ -294,15 +294,18 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         payload = self._build_payload(messages, **kwargs)
 
-        for chunk in self._client.stream(payload):
-            if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+        for chunk_d in self._client.stream(payload):
+            chunk = {}
+            if not isinstance(chunk_d, dict):
+                chunk = chunk_d.dict()
+            else:
+                chunk = chunk_d
             if len(chunk["choices"]) == 0:
                 continue
 
             choice = chunk["choices"][0]
             content = choice.get("delta", {}).get("content", {})
-            chunk = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
+            chunk_m = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
 
             finish_reason = choice.get("finish_reason")
 
@@ -313,7 +316,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             if run_manager:
                 run_manager.on_llm_new_token(content)
 
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield ChatGenerationChunk(message=chunk_m, generation_info=generation_info)
 
     async def _astream(
         self,
@@ -324,15 +327,18 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         payload = self._build_payload(messages, **kwargs)
 
-        async for chunk in self._client.astream(payload):
-            if not isinstance(chunk, dict):
-                chunk = chunk.dict()
+        async for chunk_d in self._client.astream(payload):
+            chunk = {}
+            if not isinstance(chunk_d, dict):
+                chunk = chunk_d.dict()
+            else:
+                chunk = chunk_d
             if len(chunk["choices"]) == 0:
                 continue
 
             choice = chunk["choices"][0]
             content = choice.get("delta", {}).get("content", {})
-            chunk = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
+            chunk_m = _convert_delta_to_message_chunk(choice["delta"], AIMessageChunk)
 
             finish_reason = choice.get("finish_reason")
 
@@ -340,7 +346,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
 
-            yield ChatGenerationChunk(message=chunk, generation_info=generation_info)
+            yield ChatGenerationChunk(message=chunk_m, generation_info=generation_info)
             if run_manager:
                 await run_manager.on_llm_new_token(content)
 
