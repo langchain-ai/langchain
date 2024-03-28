@@ -83,20 +83,20 @@ class GrobidParser(BaseBlobParser):
                                 "pages": (fpage, lpage),
                             }
                             chunks.append(sentence_dict)
-                    if segment_sentences is not True:
-                        fpage, lpage = (
-                            chunk_bboxes[0][0]["page"],
-                            chunk_bboxes[-1][-1]["page"],
-                        )
-                        paragraph_dict = {
-                            "text": "".join(paragraph_text),
-                            "para": str(i),
-                            "bboxes": chunk_bboxes,
-                            "section_title": sect.text,
-                            "section_number": sect.get("n"),
-                            "pages": (fpage, lpage),
-                        }
-                        chunks.append(paragraph_dict)
+                        if segment_sentences is not True:
+                            fpage, lpage = (
+                                chunk_bboxes[0][0]["page"],
+                                chunk_bboxes[-1][-1]["page"],
+                            )
+                            paragraph_dict = {
+                                "text": "".join(paragraph_text),
+                                "para": str(i),
+                                "bboxes": chunk_bboxes,
+                                "section_title": sect.text,
+                                "section_number": sect.get("n"),
+                                "pages": (fpage, lpage),
+                            }
+                            chunks.append(paragraph_dict)
 
         yield from [
             Document(
