@@ -27,7 +27,7 @@ from langchain_core.prompt_values import (
 )
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
-from langchain_core.runnables.config import ensure_config, run_in_executor
+from langchain_core.runnables.config import ensure_config
 from langchain_core.runnables.utils import create_model
 
 if TYPE_CHECKING:
@@ -197,7 +197,7 @@ class BasePromptTemplate(
 
             await prompt.aformat(variable1="foo")
         """
-        return await run_in_executor(None, self.format, **kwargs)
+        return self.format(**kwargs)
 
     @property
     def _prompt_type(self) -> str:
