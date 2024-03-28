@@ -11,7 +11,12 @@ from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
-VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
+VALID_TASKS = (
+    "text2text-generation",
+    "text-generation",
+    "summarization",
+    "translation",
+)
 DEFAULT_BATCH_SIZE = 4
 
 logger = logging.getLogger(__name__)
@@ -22,7 +27,8 @@ class HuggingFacePipeline(BaseLLM):
 
     To use, you should have the ``transformers`` python package installed.
 
-    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
+    Only supports `text-generation`, `text2text-generation`, `summarization` and
+    `translation`  for now.
 
     Example using from_model_id:
         .. code-block:: python
@@ -121,7 +127,7 @@ class HuggingFacePipeline(BaseLLM):
                     model = AutoModelForCausalLM.from_pretrained(
                         model_id, **_model_kwargs
                     )
-            elif task in ("text2text-generation", "summarization"):
+            elif task in ("text2text-generation", "summarization", "translation"):
                 if backend == "openvino":
                     try:
                         from optimum.intel.openvino import OVModelForSeq2SeqLM
@@ -260,8 +266,6 @@ class HuggingFacePipeline(BaseLLM):
             # Process batch of prompts
             responses = self.pipeline(
                 batch_prompts,
-                stop_sequence=stop,
-                return_full_text=False,
                 **pipeline_kwargs,
             )
 
@@ -277,6 +281,8 @@ class HuggingFacePipeline(BaseLLM):
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
                     text = response["summary_text"]
+                elif self.pipeline.task in "translation":
+                    text = response["translation_text"]
                 else:
                     raise ValueError(
                         f"Got invalid task {self.pipeline.task}, "
