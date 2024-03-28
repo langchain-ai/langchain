@@ -107,6 +107,7 @@ EXPECTED_ALL = [
     "OneDriveLoader",
     "OnlinePDFLoader",
     "OpenCityDataLoader",
+    "OracleAutonomousDatabaseLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
