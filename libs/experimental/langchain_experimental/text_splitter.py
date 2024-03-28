@@ -1,12 +1,21 @@
 """Experimental **text splitter** based on semantic similarity."""
 import copy
 import re
-from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 
 import numpy as np
-from langchain_community.utils.math import (
-    cosine_similarity,
-)
+from langchain_community.utils.math import cosine_similarity
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
 
@@ -84,6 +93,19 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
     return distances, sentences
 
 
+def default_split_sentences_func(text: str) -> List[str]:
+    """Default function to split text into sentences.
+
+    Args:
+        text: Text to split into sentences.
+
+    Returns:
+        List of sentences.
+    """
+
+    return re.split(r"(?<=[.?!])\s+", text)  # Splitting the essay on '.', '?', and '!'
+
+
 BreakpointThresholdType = Literal["percentile", "standard_deviation", "interquartile"]
 BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
     "percentile": 95,
@@ -112,6 +134,7 @@ class SemanticChunker(BaseDocumentTransformer):
         breakpoint_threshold_type: BreakpointThresholdType = "percentile",
         breakpoint_threshold_amount: Optional[float] = None,
         number_of_chunks: Optional[int] = None,
+        split_sentences_func: Optional[Callable[[str], List[str]]] = None,
     ):
         self._add_start_index = add_start_index
         self.embeddings = embeddings
@@ -124,6 +147,11 @@ class SemanticChunker(BaseDocumentTransformer):
             ]
         else:
             self.breakpoint_threshold_amount = breakpoint_threshold_amount
+        self.split_sentences_func = (
+            split_sentences_func
+            if split_sentences_func
+            else default_split_sentences_func
+        )
 
     def _calculate_breakpoint_threshold(self, distances: List[float]) -> float:
         if self.breakpoint_threshold_type == "percentile":
@@ -189,8 +217,7 @@ class SemanticChunker(BaseDocumentTransformer):
         self,
         text: str,
     ) -> List[str]:
-        # Splitting the essay on '.', '?', and '!'
-        single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
+        single_sentences_list = self.split_sentences_func(text)
 
         # having len(single_sentences_list) == 1 would cause the following
         # np.percentile to fail.
