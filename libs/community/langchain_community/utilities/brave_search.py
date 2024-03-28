@@ -30,7 +30,9 @@ class BraveSearchWrapper(BaseModel):
             {
                 "title": item.get("title"),
                 "link": item.get("url"),
-                "snippet": item.get("description"),
+                "age": item.get("age"),
+                "description": item.get("description"),
+                "snippets": item.get("extra_snippets")
             }
             for item in web_search_results
         ]
@@ -48,8 +50,8 @@ class BraveSearchWrapper(BaseModel):
         results = self._search_request(query)
         return [
             Document(
-                page_content=item.get("description"),  # type: ignore[arg-type]
-                metadata={"title": item.get("title"), "link": item.get("url")},
+                page_content=item.get("extra_snippets"),  # type: ignore[arg-type]
+                metadata={"title": item.get("title"), "link": item.get("url"), "description": item.get("description")},
             )
             for item in results
         ]
@@ -60,7 +62,7 @@ class BraveSearchWrapper(BaseModel):
             "Accept": "application/json",
         }
         req = requests.PreparedRequest()
-        params = {**self.search_kwargs, **{"q": query}}
+        params = {**self.search_kwargs, **{"q": query,"extra_snippets": True}}
         req.prepare_url(self.base_url, params)
         if req.url is None:
             raise ValueError("prepared url is None, this should not happen")
