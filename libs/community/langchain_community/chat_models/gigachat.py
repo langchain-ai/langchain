@@ -65,6 +65,7 @@ from langchain_community.chat_models.gigachat_tools import (
     PydanticToolsParser,
 )
 from langchain_community.llms.gigachat import _BaseGigaChat
+from langchain_core.tools import BaseTool
 
 if TYPE_CHECKING:
     import gigachat.models as gm
@@ -612,6 +613,33 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
+
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any), or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+
+        formatted_tools = [convert_to_gigachat_tool(tool) for tool in tools]
+        return super().bind(tools=formatted_tools, **kwargs)
 
 
 def _is_pydantic_class(obj: Any) -> bool:
