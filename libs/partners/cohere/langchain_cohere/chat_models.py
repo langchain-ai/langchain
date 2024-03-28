@@ -1,9 +1,22 @@
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+import json
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
+from cohere.types import NonStreamedChatResponse, ToolCall
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -18,7 +31,11 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 
+from langchain_cohere.cohere_agent import _format_to_cohere_tools
 from langchain_cohere.llms import BaseCohere
 
 
@@ -143,6 +160,14 @@ class ChatCohere(BaseChatModel, BaseCohere):
         }
         return {k: v for k, v in base_params.items() if v is not None}
 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], BaseTool, Type[BaseModel]]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = _format_to_cohere_tools(tools)
+        return super().bind(tools=formatted_tools, **kwargs)
+
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
@@ -169,6 +194,14 @@ class ChatCohere(BaseChatModel, BaseCohere):
                 if run_manager:
                     run_manager.on_llm_new_token(delta, chunk=chunk)
                 yield chunk
+            elif data.event_type == "stream-end":
+                generation_info = self._get_generation_info(data.response)
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content="", additional_kwargs=generation_info
+                    ),
+                    generation_info=generation_info,
+                )
 
     async def _astream(
         self,
@@ -191,16 +224,34 @@ class ChatCohere(BaseChatModel, BaseCohere):
                 if run_manager:
                     await run_manager.on_llm_new_token(delta, chunk=chunk)
                 yield chunk
+            elif data.event_type == "stream-end":
+                generation_info = self._get_generation_info(data.response)
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content="", additional_kwargs=generation_info
+                    ),
+                    generation_info=generation_info,
+                )
 
-    def _get_generation_info(self, response: Any) -> Dict[str, Any]:
+    def _get_generation_info(self, response: NonStreamedChatResponse) -> Dict[str, Any]:
         """Get the generation info from cohere API response."""
-        return {
+        generation_info = {
             "documents": response.documents,
             "citations": response.citations,
             "search_results": response.search_results,
             "search_queries": response.search_queries,
-            "token_count": response.token_count,
+            "is_search_required": response.is_search_required,
+            "generation_id": response.generation_id,
         }
+        if response.tool_calls:
+            # Only populate tool_calls when 1) present on the response and
+            #  2) has one or more calls.
+            generation_info["tool_calls"] = _format_cohere_tool_calls(
+                response.generation_id or "", response.tool_calls
+            )
+        if hasattr(response, "token_count"):
+            generation_info["token_count"] = response.token_count
+        return generation_info
 
     def _generate(
         self,
@@ -218,10 +269,8 @@ class ChatCohere(BaseChatModel, BaseCohere):
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request)
 
-        message = AIMessage(content=response.text)
-        generation_info = None
-        if hasattr(response, "documents"):
-            generation_info = self._get_generation_info(response)
+        generation_info = self._get_generation_info(response)
+        message = AIMessage(content=response.text, additional_kwargs=generation_info)
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)
@@ -244,10 +293,8 @@ class ChatCohere(BaseChatModel, BaseCohere):
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
         response = self.client.chat(**request)
 
-        message = AIMessage(content=response.text)
-        generation_info = None
-        if hasattr(response, "documents"):
-            generation_info = self._get_generation_info(response)
+        generation_info = self._get_generation_info(response)
+        message = AIMessage(content=response.text, additional_kwargs=generation_info)
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)
@@ -257,3 +304,27 @@ class ChatCohere(BaseChatModel, BaseCohere):
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
         return len(self.client.tokenize(text).tokens)
+
+
+def _format_cohere_tool_calls(
+    generation_id: str, tool_calls: Optional[List[ToolCall]] = None
+) -> List[Dict]:
+    """
+    Formats a Cohere API response into the tool call format used elsewhere in Langchain.
+    """
+    if not tool_calls:
+        return []
+
+    formatted_tool_calls = []
+    for tool_call in tool_calls:
+        formatted_tool_calls.append(
+            {
+                "id": generation_id,
+                "function": {
+                    "name": tool_call.name,
+                    "arguments": json.dumps(tool_call.parameters),
+                },
+                "type": "function",
+            }
+        )
+    return formatted_tool_calls
