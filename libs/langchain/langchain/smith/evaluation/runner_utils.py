@@ -319,7 +319,7 @@ def _get_messages(inputs: Dict[str, Any]) -> dict:
     else:
         raise InputFormatError(
             f"Chat Run expects single List[dict] or List[List[dict]] 'messages'"
-            f" input. Got {len(raw_messages)} messages from inputs {inputs}"
+            f" input. Got {inputs}"
         )
 
 
