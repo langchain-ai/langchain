@@ -777,6 +777,67 @@ class TestElasticsearch:
         )
         assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
+    def test_similarity_search_bm25_search(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test end to end using the BM25 retrieval strategy."""
+        texts = ["foo", "bar", "baz"]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            None,
+            **elasticsearch_connection,
+            index_name=index_name,
+            strategy=ElasticsearchStore.BM25RetrievalStrategy(),
+        )
+
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "query": {
+                    "bool": {
+                        "must": [{"match": {"text": {"query": "foo"}}}],
+                        "filter": [],
+                    }
+                }
+            }
+            return query_body
+
+        output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
+        assert output == [Document(page_content="foo")]
+
+    def test_similarity_search_bm25_search_with_filter(
+        self, elasticsearch_connection: dict, index_name: str
+    ) -> None:
+        """Test end to using the BM25 retrieval strategy with metadata."""
+        texts = ["foo", "foo", "foo"]
+        metadatas = [{"page": i} for i in range(len(texts))]
+        docsearch = ElasticsearchStore.from_texts(
+            texts,
+            None,
+            **elasticsearch_connection,
+            index_name=index_name,
+            metadatas=metadatas,
+            strategy=ElasticsearchStore.BM25RetrievalStrategy(),
+        )
+
+        def assert_query(query_body: dict, query: str) -> dict:
+            assert query_body == {
+                "query": {
+                    "bool": {
+                        "must": [{"match": {"text": {"query": "foo"}}}],
+                        "filter": [{"term": {"metadata.page": 1}}],
+                    }
+                }
+            }
+            return query_body
+
+        output = docsearch.similarity_search(
+            "foo",
+            k=3,
+            custom_query=assert_query,
+            filter=[{"term": {"metadata.page": 1}}],
+        )
+        assert output == [Document(page_content="foo", metadata={"page": 1})]
+
     def test_elasticsearch_with_relevance_threshold(
         self, elasticsearch_connection: dict, index_name: str
     ) -> None:
