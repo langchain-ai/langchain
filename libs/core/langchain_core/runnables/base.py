@@ -2053,6 +2053,32 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         prefix_keys: bool = False,
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
+        """Configure alternatives for runnables that can be set at runtime.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.runnables.utils import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatAnthropic(
+                model_name="claude-3-sonnet-20240229"
+            ).configurable_alternatives(
+                ConfigurableField(id="llm"),
+                default_key="anthropic",
+                openai=ChatOpenAI()
+            )
+
+            # uses the default model ChatAnthropic
+            print(model.invoke("which organization created you?").content)
+
+            # uses ChatOpenaAI
+            print(
+                model.with_config(
+                    configurable={"llm": "openai"}
+                ).invoke("which organization created you?").content
+            )
+        """
         from langchain_core.runnables.configurable import (
             RunnableConfigurableAlternatives,
         )
