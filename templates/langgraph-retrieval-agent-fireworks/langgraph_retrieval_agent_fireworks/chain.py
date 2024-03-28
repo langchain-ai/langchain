@@ -3,6 +3,7 @@ import sys
 from typing import Annotated, List, TypedDict, Union
 
 from langchain import hub
+from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActJsonSingleInputOutputParser
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.tools.render import render_text_description
@@ -80,7 +81,7 @@ llm = ChatFireworks(
 )
 
 # Setup ReAct style prompt
-prompt = hub.pull("hwchase17/react-json")
+prompt = hub.pull("tjaffri/react-json")
 
 # This prompt requires:
 # - tools (names and descriptions)
@@ -98,7 +99,15 @@ prompt = prompt.partial(
 # Ref: https://github.com/langchain-ai/langgraph/blob/main/examples/agent_executor/base.ipynb
 
 llm_with_stop = llm.bind(stop=["\nObservation"])
-agent_runnable = prompt | llm_with_stop | ReActJsonSingleInputOutputParser()
+agent_runnable = (
+    {
+        "input": lambda x: x["input"],
+        "agent_scratchpad": lambda x: format_log_to_str(x["agent_scratchpad"]),
+    }
+    | prompt
+    | llm_with_stop
+    | ReActJsonSingleInputOutputParser()
+)
 
 
 class AgentState(TypedDict):
@@ -201,5 +210,7 @@ agent_executor = app.with_types(input_type=InputType)
 if __name__ == "__main__":
     if sys.gettrace():
         # This code will only run if a debugger is attached
-        output = agent_executor.invoke({"input": "When was the attention is all you need paper published?"})
+        output = agent_executor.invoke(
+            {"input": "When was the attention is all you need paper published?"}
+        )
         print(output)
