@@ -14,10 +14,7 @@ from langchain_core.outputs import ChatGeneration, Generation
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from langchain.cache import (
-    InMemoryCache,
-    SQLAlchemyCache,
-)
+from langchain.cache import InMemoryCache, SQLAlchemyCache
 from langchain.globals import get_llm_cache, set_llm_cache
 
 
@@ -67,7 +64,7 @@ async def test_llm_caching() -> None:
             llm_string=create_llm_string(llm),
             return_val=[Generation(text=cached_response)],
         )
-        assert llm(prompt) == cached_response
+        assert llm.invoke(prompt) == cached_response
         # async test
         await llm_cache.aupdate(
             prompt=prompt,
