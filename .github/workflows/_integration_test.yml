@@ -47,20 +47,7 @@ jobs:
         id: 'auth'
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '{
-  "type": "service_account",
-  "project_id": "dazzling-pillar-417702",
-  "private_key_id": "f568710e9f865e24e241ee3956cb98a742d0b0d5",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDR55w26SvqAKih\nEmmIBXaPC1UIxlQ99Lbcow5zBUTbPvHcQuSUbd9erFOF/tcMDdRQzh6LUp8HLk/F\n/Lj36ODCoLVLOoDm5W183khi/eiVCerBo4xdl6Pl46DJ+hU9w4MGjR4viW3dbXyH\nLn0i18xEPpEzjmtYkskgZscNccUZZl0ZS6tBCU0fLEt7383Ovwt/1edrSVtpREm/\nh9W9WuOGKBZjnojfBO8CfigHyhO5PLXUohDoyrjC4Pey+NL6OQe3WldjAs3tPBhJ\nFlXQhWp0+TBxKFQW6nXxcFYCM7hma/FFB7Zux1KNvA1zqWgPpIAfuAfxz1u6c+WO\n3+aHwDw7AgMBAAECggEAP+X4XZTs297YdrQisRgsp84E1Fd/xJ6O3iq7FtOnSvDl\n8q3gZLjv0yO1h2h1MYOyOukMTlBX/fkgqr5M1pcreMQwfFayb9eu1WDbe1sdJuWu\nc8UkUUd8ytpZE7NQLQ2sAN4Lrt/wtIQEcSh7SpST58B+NkooLn38wSLYfKTCIgFE\nfw3dLzaYTbTyYuJ9y5TUo1Hbf24rhftOD4yr7RJm+F+eedizSbd4gKB2KlAHaIHo\nCf/fa1NM5N7hBicbCdoZ+0BrFJSkiKV+6tUXHLQaEjfDSZTn6SfbXxMg+2ivvvHP\nPI+14VTzHyuvwcj5v82MppQcS8GrrZheFn/w3xr5DQKBgQD1flXaacr80qOgLQZD\n5hVxYVUtjqn/K4exelT2wP43+/m2f1MIY9e1OIC4Zp+Y3C1++H6rjVNKU8uZ+8QI\ntqyySNehMbtqt+h2bRrZFXhXOR5QoD7Bs9EE09ZIjNw7EvaC/2lfTfKDVmVtUfdI\nzhXzEh7Z8LHxua73dMu/dc1kBQKBgQDa41vZ0nDVA5NgRsYTuJLppF0iEJhrPvbe\npDvxgwBdQY8E1oseuTVe//ec9Ef6MU1j1iCyJXsCNWuipb83dnGMr+cLnRARf5Vt\nISBPBSohDlEzyF0sWSHQcZKilQi2oYbDnh0JFBq3qxicTTzE0HQx9XVeLS35a4+c\nnZC84VtTPwKBgQDDEvHLzhcz0XmeNUjuOW2+m7ZgriXdk0yPNgM/1NntyLeEUia7\n2wK0iUKXxUx63jL02ydk0Ldnr7BxGsOKnQYb4ZAfEfK4eY0qVcZozAvFW6kALmXP\n7EBikqaLHgt+kbH7JFQqHDliLgwI04Ipg0Gj1jlXu1DbIU6sak3hRQ3BtQKBgHsq\nhguqY30pVutMx7ZfHKPFrfY2Gl32fxlGlshOK41OD3jsdDnkg4iiRaWWu02oImD0\nI0+60V2ry5Yo59EAn+JHNJ4PUfRWszFF+5UbVdpl4QFfVDZZLTLKRXWgoNeLSnaW\naMYr/uCssNt6hqBEn61g7hsBFyaLBLNe4gu2TxonAoGBAJv9FFBQQERHjWfN8M3W\n5t5fdvelRRBscGpXtx5Tw8OS6Xf9AV1DHLqKZ5LF7q7kBFn2SOyY4EXD0fGh/+kP\nXFR8KRdiXunMAkHne7HF0begPDClHv36k36fh5kgRx2PHGVptypDy+iMDaD/FmKE\nKJHCrJswpFqrd65smRF19AII\n-----END PRIVATE KEY-----\n",
-  "client_email": "ligang-super-langchain@dazzling-pillar-417702.iam.gserviceaccount.com",
-  "client_id": "116759949305310663798",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/ligang-super-langchain%40dazzling-pillar-417702.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-}
-'
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
       - name: Run integration tests
         shell: bash
