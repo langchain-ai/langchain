@@ -238,7 +238,6 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 
     _client: SearchServiceClient
     _serving_config: str
-    _attribution_tokens: List[Optional[Tuple[str, str]]] = []
 
     class Config:
         """Configuration for this pydantic object."""
@@ -346,13 +345,17 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant for a query."""
+        return self.get_relevant_documents_with_response(query)[0]
+
+    def get_relevant_documents_with_response(
+        self, query: str
+    ) -> Tuple[List[Document], Any]:
         from google.api_core.exceptions import InvalidArgument
 
         search_request = self._create_search_request(query)
 
         try:
             response = self._client.search(search_request)
-            self._attribution_tokens.append((query, response.attribution_token))
         except InvalidArgument as exc:
             raise type(exc)(
                 exc.message
@@ -384,7 +387,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
                 + f" Got {self.engine_data_type}"
             )
 
-        return documents
+        return documents, response
 
 
 class GoogleVertexAIMultiTurnSearchRetriever(
