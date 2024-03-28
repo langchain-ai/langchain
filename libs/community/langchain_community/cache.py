@@ -403,7 +403,7 @@ class _RedisCacheBase(BaseCache, ABC):
         if results:
             for _, text in results.items():
                 try:
-                    generations.append(loads(text))
+                    generations.append(loads(cast(str, text)))
                 except Exception:
                     logger.warning(
                         "Retrieving a cache value that could not be deserialized "

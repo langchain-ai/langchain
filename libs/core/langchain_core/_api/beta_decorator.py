@@ -226,9 +226,10 @@ def beta(
         )
 
         if inspect.iscoroutinefunction(obj):
-            return finalize(awarning_emitting_wrapper, new_doc)
+            finalized = finalize(awarning_emitting_wrapper, new_doc)
         else:
-            return finalize(warning_emitting_wrapper, new_doc)
+            finalized = finalize(warning_emitting_wrapper, new_doc)
+        return cast(T, finalized)
 
     return beta
 
