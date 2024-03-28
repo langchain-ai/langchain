@@ -746,7 +746,8 @@ class VDMS(VectorStore):
     ) -> Tuple[List[Dict[str, Any]], List]:
         all_blobs: List[Any] = []
         blob = embedding2bytes(query_embedding)
-        all_blobs.append(blob)
+        if blob is not None:
+            all_blobs.append(blob)
 
         if constraints is None:
             # K results returned
