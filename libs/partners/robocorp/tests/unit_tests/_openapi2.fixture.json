@@ -303,7 +303,7 @@
                 "schema": {
                   "type": "string",
                   "title": "Response Send Email Via Gmail",
-                  "description": "Information if the send was successfull or not"
+                  "description": "Information if the send was successful or not"
                 }
               }
             }
