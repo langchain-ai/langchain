@@ -99,6 +99,41 @@ def test_convert_to_openai_function(
         assert actual == expected
 
 
+def test_convert_lax_jsonschema_to_openai_function() -> None:
+    expected = {
+        "name": "extract",
+        "description": "",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {"description": "foo", "type": "integer"},
+                "arg2": {
+                    "description": "one of 'bar', 'baz'",
+                    "enum": ["bar", "baz"],
+                    "type": "string",
+                },
+            },
+        },
+    }
+
+    assert (
+        convert_to_openai_function(
+            {
+                "type": "object",
+                "properties": {
+                    "arg1": {"description": "foo", "type": "integer"},
+                    "arg2": {
+                        "description": "one of 'bar', 'baz'",
+                        "enum": ["bar", "baz"],
+                        "type": "string",
+                    },
+                },
+            }
+        )
+        == expected
+    )
+
+
 @pytest.mark.xfail(reason="Pydantic converts Optional[str] to str in .schema()")
 def test_function_optional_param() -> None:
     @tool

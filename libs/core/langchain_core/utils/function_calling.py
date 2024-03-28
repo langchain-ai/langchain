@@ -295,14 +295,12 @@ def convert_to_openai_function(
         k in function for k in ("name", "description", "parameters")
     ):
         return function
-    # a JSON schema with title and description
-    elif isinstance(function, dict) and all(
-        k in function for k in ("title", "description", "properties")
-    ):
+    # a JSON schema
+    elif isinstance(function, dict) and "properties" in function:
         function = function.copy()
         return {
-            "name": function.pop("title"),
-            "description": function.pop("description"),
+            "name": function.pop("title", "extract"),
+            "description": function.pop("description", ""),
             "parameters": function,
         }
     elif isinstance(function, type) and issubclass(function, BaseModel):
@@ -315,8 +313,7 @@ def convert_to_openai_function(
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
             " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
-            " either be in OpenAI function format or valid JSON schema with top-level"
-            " 'title' and 'description' keys."
+            " either be in OpenAI function format or valid JSON schema"
         )
 
 
