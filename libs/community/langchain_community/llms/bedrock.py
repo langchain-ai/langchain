@@ -61,12 +61,12 @@ def _human_assistant_format(input_text: str) -> str:
     count = 0
     # track alternation
     for i in range(len(input_text)):
-        if input_text[i: i + len(HUMAN_PROMPT)] == HUMAN_PROMPT:
+        if input_text[i : i + len(HUMAN_PROMPT)] == HUMAN_PROMPT:
             if count % 2 == 0:
                 count += 1
             else:
                 warnings.warn(ALTERNATION_ERROR + f" Received {input_text}")
-        if input_text[i: i + len(ASSISTANT_PROMPT)] == ASSISTANT_PROMPT:
+        if input_text[i : i + len(ASSISTANT_PROMPT)] == ASSISTANT_PROMPT:
             if count % 2 == 1:
                 count += 1
             else:
@@ -173,7 +173,7 @@ class LLMInputOutputAdapter:
             "usage": {
                 "prompt_tokens": prompt_tokens,
                 "completion_tokens": completion_tokens,
-                "total_tokens": prompt_tokens + completion_tokens
+                "total_tokens": prompt_tokens + completion_tokens,
             },
         }
 
