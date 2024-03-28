@@ -6,6 +6,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     NamedTuple,
@@ -50,6 +51,13 @@ class Node(NamedTuple):
 
     id: str
     data: Union[Type[BaseModel], RunnableType]
+
+
+class Branch(NamedTuple):
+    """Branch in a graph."""
+
+    condition: Callable[..., str]
+    ends: Optional[dict[str, str]]
 
 
 class CurveStyle(Enum):
@@ -146,6 +154,7 @@ class Graph:
 
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
+    branches: Optional[Dict[str, List[Branch]]] = field(default_factory=dict)
 
     def to_json(self) -> Dict[str, List[Dict[str, Any]]]:
         """Convert the graph to a JSON-serializable format."""
@@ -333,6 +342,7 @@ class Graph:
         return draw_mermaid(
             nodes=nodes,
             edges=self.edges,
+            branches=self.branches,
             first_node_label=first_label,
             last_node_label=last_label,
             curve_style=curve_style,
