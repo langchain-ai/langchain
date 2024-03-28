@@ -1,9 +1,14 @@
 """Test Bedrock chat model."""
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain_community.chat_models import BedrockChat
@@ -105,7 +110,7 @@ def test_bedrock_streaming(chat: BedrockChat) -> None:
     for token in chat.stream("I'm Pickle Rick"):
         full = token if full is None else full + token
         assert isinstance(token.content, str)
-    assert isinstance(full.content, str)
+    assert isinstance(cast(AIMessageChunk, full).content, str)
 
 
 @pytest.mark.scheduled
