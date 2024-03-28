@@ -382,13 +382,13 @@ class VertexAI(_VertexAICommon, BaseLLM):
             **params,
         ):
             chunk = self._response_to_generation(stream_resp)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
                     chunk=chunk,
                     verbose=self.verbose,
                 )
+            yield chunk
 
 
 @deprecated(
