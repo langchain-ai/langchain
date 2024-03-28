@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-import warnings
 from json import JSONDecodeError
 from typing import Any, Callable, List, Optional, Type, TypeVar, Union
 
@@ -215,13 +214,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def _validate_json_schema(
         cls, v: Optional[dict[str, Any]], values: dict
     ) -> Optional[dict[str, Any]]:
-        try:
-            if v is None and values.get("pydantic_object") is not None:
-                return cls._get_schema(values["pydantic_object"])
-            return v
-        except Exception as e:
-            warnings.warn(f"Failed to get schema: {e}")
-            return None
+        if v is None and values.get("pydantic_object") is not None:
+            return cls._get_schema(values["pydantic_object"])
+        return v
 
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
