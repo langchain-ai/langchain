@@ -87,6 +87,7 @@ EXPECT_ALL = [
     "VertexAIModelGarden",
     "VLLM",
     "VLLMOpenAI",
+    "WeightOnlyQuantPipeline",
     "Writer",
     "OctoAIEndpoint",
     "Xinference",

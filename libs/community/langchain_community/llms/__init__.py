@@ -590,6 +590,14 @@ def _import_watsonxllm() -> Type[BaseLLM]:
     return WatsonxLLM
 
 
+def _import_weight_only_quantization() -> Any:
+    from langchain_community.llms.weight_only_quantization import (
+        WeightOnlyQuantPipeline,
+    )
+
+    return WeightOnlyQuantPipeline
+
+
 def _import_writer() -> Type[BaseLLM]:
     from langchain_community.llms.writer import Writer
 
@@ -805,6 +813,8 @@ def __getattr__(name: str) -> Any:
         return _import_vllm_openai()
     elif name == "WatsonxLLM":
         return _import_watsonxllm()
+    elif name == "WeightOnlyQuantPipeline":
+        return _import_weight_only_quantization()
     elif name == "Writer":
         return _import_writer()
     elif name == "Xinference":
@@ -918,6 +928,7 @@ __all__ = [
     "VertexAIModelGarden",
     "VolcEngineMaasLLM",
     "WatsonxLLM",
+    "WeightOnlyQuantPipeline",
     "Writer",
     "Xinference",
     "YandexGPT",
@@ -1007,6 +1018,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
         "watsonxllm": _import_watsonxllm,
+        "weight_only_quantization": _import_weight_only_quantization,
         "writer": _import_writer,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
