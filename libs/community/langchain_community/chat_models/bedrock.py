@@ -265,7 +265,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
         **kwargs: Any,
     ) -> ChatResult:
         completion = ""
-        llm_output: Dict[str, Any] = {"model_name": self.model_id}
+        llm_output: Dict[str, Any] = {"model_id": self.model_id}
 
         if self.streaming:
             for chunk in self._stream(messages, stop, run_manager, **kwargs):

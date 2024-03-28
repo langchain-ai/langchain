@@ -154,5 +154,5 @@ def test_bedrock_invoke(chat: BedrockChat) -> None:
     """Test invoke tokens from BedrockChat."""
     result = chat.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
-    assert all([k in result.response_metadata for k in ("usage", "model_name")])
+    assert all([k in result.response_metadata for k in ("usage", "model_id")])
     assert result.response_metadata["usage"]["prompt_tokens"] == 13
