@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Dict, List
 
 from langchain_core.embeddings import Embeddings
@@ -55,17 +56,62 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 "Could not import optimum-intel python package. "
                 "Please install it with: "
-                "pip install 'optimum[openvino,nncf]' "
+                "pip install -U 'optimum[openvino,nncf]'"
             ) from e
+
         try:
-            # use local model
-            self.ov_model = OVModelForFeatureExtraction.from_pretrained(
-                self.model_name_or_path, **self.model_kwargs
-            )
-        except Exception:
+            from huggingface_hub import HfApi
+        except ImportError as e:
+            raise ValueError(
+                "Could not import huggingface_hub python package. "
+                "Please install it with: "
+                "`pip install -U huggingface_hub`."
+            ) from e
+
+        def require_model_export(
+            model_id: str, revision: Any = None, subfolder: Any = None
+        ) -> bool:
+            model_dir = Path(model_id)
+            if subfolder is not None:
+                model_dir = model_dir / subfolder
+            if model_dir.is_dir():
+                return (
+                    not (model_dir / "openvino_model.xml").exists()
+                    or not (model_dir / "openvino_model.bin").exists()
+                )
+            hf_api = HfApi()
+            try:
+                model_info = hf_api.model_info(model_id, revision=revision or "main")
+                normalized_subfolder = (
+                    None if subfolder is None else Path(subfolder).as_posix()
+                )
+                model_files = [
+                    file.rfilename
+                    for file in model_info.siblings
+                    if normalized_subfolder is None
+                    or file.rfilename.startswith(normalized_subfolder)
+                ]
+                ov_model_path = (
+                    "openvino_model.xml"
+                    if subfolder is None
+                    else f"{normalized_subfolder}/openvino_model.xml"
+                )
+                return (
+                    ov_model_path not in model_files
+                    or ov_model_path.replace(".xml", ".bin") not in model_files
+                )
+            except Exception:
+                return True
+
+        if require_model_export(self.model_name_or_path):
             # use remote model
             self.ov_model = OVModelForFeatureExtraction.from_pretrained(
                 self.model_name_or_path, export=True, **self.model_kwargs
+            )
+        else:
+            # use local model
+            self.ov_model = OVModelForFeatureExtraction.from_pretrained(
+                self.model_name_or_path, **self.model_kwargs
             )
 
         try:
@@ -125,7 +171,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
                 "Unable to import numpy, please install with " "`pip install -U numpy`."
             ) from e
         try:
-            from tqdm.autonotebook import trange
+            from tqdm import trange
         except ImportError as e:
             raise ImportError(
                 "Unable to import tqdm, please install with " "`pip install -U tqdm`."
