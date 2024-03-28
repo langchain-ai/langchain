@@ -1,12 +1,13 @@
 """Test toolkit integration."""
+import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 from langchain_robocorp.toolkits import ActionServerToolkit
 
 from ._fixtures import FakeChatLLMT
-import json
-from langchain_core.utils.function_calling import convert_to_openai_function
 
 
 def test_initialization() -> None:
@@ -40,10 +41,11 @@ def test_get_tools_success() -> None:
 
         tool = tools[2]
         assert tool.name == "add_sheet_rows"
-        assert (
-            tool.description
-            == """Action to add multiple rows to the Google sheet. Get the sheets with get_google_spreadsheet_schema if you don't know
-the names or data structure.  Make sure the values are in correct columns (needs to be ordered the same as in the sample).
+        assert tool.description == (
+            "Action to add multiple rows to the Google sheet. "
+            "Get the sheets with get_google_spreadsheet_schema if you don't know"
+            "\nthe names or data structure.  Make sure the values are in correct"
+            """ columns (needs to be ordered the same as in the sample).
 Strictly adhere to the schema."""
         )
 
@@ -84,7 +86,8 @@ Strictly adhere to the schema."""
 
         assert set(params["properties"].keys()) == {"sheet", "rows_to_add"}
 
-        assert params["properties"]["rows_to_add"] == {
+        desc = "The columns that make up the row"
+        expected = {
             "description": "the rows to be added to the sheet",
             "allOf": [
                 {
@@ -101,7 +104,7 @@ Strictly adhere to the schema."""
                                 "properties": {
                                     "columns": {
                                         "title": "Columns",
-                                        "description": "The columns that make up the row",
+                                        "description": desc,
                                         "type": "array",
                                         "items": {"type": "string"},
                                     }
@@ -114,3 +117,4 @@ Strictly adhere to the schema."""
                 }
             ],
         }
+        assert params["properties"]["rows_to_add"] == expected

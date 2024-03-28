@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import List, Tuple, Type, Union, Dict, Any
+from typing import Any, Dict, List, Tuple, Union
 
+from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.utils.json_schema import dereference_refs
-from langchain_core.pydantic_v1 import Field, create_model, BaseModel
 
 
 @dataclass(frozen=True)
@@ -93,7 +93,7 @@ def get_schema(endpoint_spec: dict) -> dict:
     )
 
 
-def create_field(schema: dict, required: bool) -> Tuple[Type, Field]:
+def create_field(schema: dict, required: bool) -> Tuple[Any, Any]:
     """
     Creates a Pydantic field based on the schema definition.
     """
@@ -107,13 +107,13 @@ def create_field(schema: dict, required: bool) -> Tuple[Type, Field]:
             for k, v in schema.get("properties", {}).items()
         }
         model_name = schema.get("title", "NestedModel")
-        nested_model = create_model(model_name, **nested_fields)
+        nested_model = create_model(model_name, **nested_fields)  # type: ignore
         return nested_model, Field(... if required else None, description=description)
 
     # Handle arrays
     elif schema["type"] == "array":
         item_type, _ = create_field(schema["items"], required=True)
-        return List[item_type], Field(
+        return List[item_type], Field(  # type: ignore
             ... if required else None, description=description
         )
 
@@ -137,8 +137,8 @@ def get_param_fields(endpoint_spec: dict) -> dict:
 
 
 def model_to_dict(
-    item: Union[BaseModel, List, Dict[str, Any]]
-) -> Union[Dict[str, Any], List, Any]:
+    item: Union[BaseModel, List, Dict[str, Any]],
+) -> Any:
     if isinstance(item, BaseModel):
         return item.dict()
     elif isinstance(item, dict):

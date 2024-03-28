@@ -20,8 +20,8 @@ from langsmith import Client
 
 from langchain_robocorp._common import (
     get_param_fields,
-    reduce_openapi_spec,
     model_to_dict,
+    reduce_openapi_spec,
 )
 from langchain_robocorp._prompts import (
     API_CONTROLLER_PROMPT,
