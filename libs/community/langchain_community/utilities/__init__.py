@@ -6,6 +6,7 @@ and packages.
 import importlib
 from typing import Any
 
+
 _module_lookup = {
     "AlphaVantageAPIWrapper": "langchain_community.utilities.alpha_vantage",
     "ApifyWrapper": "langchain_community.utilities.apify",
@@ -16,6 +17,7 @@ _module_lookup = {
     "BingSearchAPIWrapper": "langchain_community.utilities.bing_search",
     "BraveSearchWrapper": "langchain_community.utilities.brave_search",
     "DuckDuckGoSearchAPIWrapper": "langchain_community.utilities.duckduckgo_search",
+    "DriaAPIWrapper": "langchain_community.utilities.dria_index",
     "GoldenQueryAPIWrapper": "langchain_community.utilities.golden_query",
     "GoogleFinanceAPIWrapper": "langchain_community.utilities.google_finance",
     "GoogleJobsAPIWrapper": "langchain_community.utilities.google_jobs",

@@ -33,6 +33,7 @@ _module_lookup = {
     "ChatGPTPluginRetriever": "langchain_community.retrievers.chatgpt_plugin_retriever",
     "CohereRagRetriever": "langchain_community.retrievers.cohere_rag_retriever",
     "DocArrayRetriever": "langchain_community.retrievers.docarray",
+    "DriaRetriever": "langchain_community.retrievers.dria_index",
     "ElasticSearchBM25Retriever": "langchain_community.retrievers.elastic_search_bm25",
     "EmbedchainRetriever": "langchain_community.retrievers.embedchain",
     "GoogleCloudEnterpriseSearchRetriever": "langchain_community.retrievers.google_vertex_ai_search",  # noqa: E501
