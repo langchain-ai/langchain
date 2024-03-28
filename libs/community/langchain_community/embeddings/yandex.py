@@ -33,13 +33,12 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
 
     To use the default model specify the folder ID in a parameter `folder_id`
     or in an environment variable `YC_FOLDER_ID`.
-    Or specify the model URI in a constructor parameter `model_uri`
 
     Example:
         .. code-block:: python
 
             from langchain_community.embeddings.yandex import YandexGPTEmbeddings
-            embeddings = YandexGPTEmbeddings(iam_token="t1.9eu...", model_uri="emb://<folder-id>/text-search-query/latest")
+            embeddings = YandexGPTEmbeddings(iam_token="t1.9eu...", folder_id=<folder-id>)
     """
 
     iam_token: SecretStr = ""  # type: ignore[assignment]
@@ -172,7 +171,11 @@ def _make_request(self: YandexGPTEmbeddings, texts: List[str], **kwargs):  # typ
     channel_credentials = grpc.ssl_channel_credentials()
     channel = grpc.secure_channel(self.url, channel_credentials)
     # Use the query model if embed_query is True
-    model_uri = self.query_model_uri if kwargs.get('embed_query') else self.doc_model_uri
+    if kwargs.get('embed_query'):
+        model_uri = self.query_model_uri
+    else:
+        model_uri = self.doc_model_uri
+        
     for text in texts:
         request = TextEmbeddingRequest(model_uri=model_uri, text=text)
         stub = EmbeddingsServiceStub(channel)
