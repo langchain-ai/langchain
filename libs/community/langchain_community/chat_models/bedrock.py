@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union, cast
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -335,9 +335,13 @@ class BedrockChat(BaseChatModel, BedrockBase):
             self._model_is_anthropic
             and not isinstance(input, str)
             and isinstance(input, Sequence)
+            and input
+            and isinstance(input[0], BaseMessage)
         ):
             return StringPromptValue(
-                text=get_buffer_string(input, ai_prefix="Assistant")
+                text=get_buffer_string(
+                    cast(Sequence[BaseMessage], input), ai_prefix="Assistant"
+                )
             )
         else:
             return super()._convert_input(input)
