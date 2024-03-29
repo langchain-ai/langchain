@@ -66,13 +66,13 @@ def _get_bad_imports(import_statements: List[Tuple[str, str]]) -> List[Tuple[str
                     try:
                         imported_module = importlib.import_module(module)
                         getattr(imported_module, item)
-                    except Exception as e:
+                    except AttributeError:
                         offending_imports.append((module, item))
-                except Exception as e:
+                except Exception:
                     offending_imports.append((module, item))
             else:
                 importlib.import_module(module)
-        except Exception as e:
+        except Exception:
             offending_imports.append((module, item))
 
     return offending_imports
@@ -106,7 +106,7 @@ def check_notebooks(directory: str) -> list:
     bad_files = []
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith(".ipynb"):
+            if file.endswith(".ipynb") and not file.endswith("-checkpoint.ipynb"):
                 notebook_path = os.path.join(root, file)
                 import_statements = [
                     (module, item)
@@ -117,7 +117,7 @@ def check_notebooks(directory: str) -> list:
                 if bad_imports:
                     bad_files.append(
                         (
-                            file,
+                            os.path.join(root, file),
                             bad_imports,
                         )
                     )
@@ -127,4 +127,4 @@ def check_notebooks(directory: str) -> list:
 if __name__ == "__main__":
     bad_files = check_notebooks(DOCS_DIR)
     if bad_files:
-        warnings.warn("Found bad imports:\n" f"{_serialize_bad_imports(bad_files)}")
+        raise ImportError("Found bad imports:\n" f"{_serialize_bad_imports(bad_files)}")
