@@ -234,11 +234,12 @@ class SurrealDBStore(VectorStore):
 
         if len(results) == 0:
             return []
-        
+
         result = results[0]
 
         if result["status"] != "OK":
             from surrealdb.ws import SurrealException
+
             err = result.get("result", "Unknown Error")
             raise SurrealException(err)
 
