@@ -2,7 +2,12 @@ from typing import Any, List, Literal, Optional
 
 from langchain_core.load import Serializable
 from langchain_core.messages.ai import AIMessage
-from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
+from langchain_core.messages.base import (
+    BaseMessage,
+    BaseMessageChunk,
+    merge_content,
+)
+from langchain_core.utils._merge import merge_dicts
 
 
 class ToolCall(Serializable):
@@ -53,8 +58,11 @@ class ToolOutputMessageChunk(ToolOutputMessage, BaseMessageChunk):
             return self.__class__(
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
+                additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
+                ),
+                response_metadata=merge_dicts(
+                    self.response_metadata, other.response_metadata
                 ),
             )
 

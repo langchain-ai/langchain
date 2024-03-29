@@ -1,6 +1,10 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/providers/optimum_intel",
+      "destination": "/docs/integrations/providers/intel"
+    },
+    {
       "source": "/docs/integrations/providers/facebook_chat",
       "destination": "/docs/integrations/providers/facebook"
     },
@@ -87,6 +91,10 @@
     {
       "source": "/docs/integrations/llms/huggingface_hub",
       "destination": "/docs/integrations/llms/huggingface_endpoint"
+    },
+    {
+      "source": "/docs/integrations/llms/bigdl",
+      "destination": "/docs/integrations/llms/ipex_llm"
     },
     {
       "source": "/docs/integrations/llms/watsonxllm",
