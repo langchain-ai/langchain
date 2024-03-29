@@ -43,6 +43,8 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             table. DynamoDB handles deletion of expired items without consuming
             write throughput. To enable this feature on the table, follow the
             [AWS DynamoDB documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-how-to.html)
+        history_size: Maximum number of messages to store. If None then there is no
+            limit. If not None then only the latest `history_size` messages are stored.
     """
 
     def __init__(
