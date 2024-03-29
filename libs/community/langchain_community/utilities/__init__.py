@@ -6,7 +6,6 @@ and packages.
 import importlib
 from typing import Any
 
-
 _module_lookup = {
     "AlphaVantageAPIWrapper": "langchain_community.utilities.alpha_vantage",
     "ApifyWrapper": "langchain_community.utilities.apify",
