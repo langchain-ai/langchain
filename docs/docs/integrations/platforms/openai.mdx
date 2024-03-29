@@ -36,7 +36,6 @@ from langchain_openai import AzureOpenAI
 ```
 For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/llms/azure_openai)
 
-
 ## Chat model
 
 See a [usage example](/docs/integrations/chat/openai).
@@ -51,27 +50,13 @@ from langchain_openai import AzureChatOpenAI
 ```
 For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/chat/azure_chat_openai)
 
-
-## Text Embedding Model
+## Embedding Model
 
 See a [usage example](/docs/integrations/text_embedding/openai)
 
 ```python
 from langchain_openai import OpenAIEmbeddings
 ```
-
-
-## Tokenizer
-
-There are several places you can use the `tiktoken` tokenizer. By default, it is used to count tokens
-for OpenAI LLMs.
-
-You can also use it to count tokens when splitting documents with 
-```python
-from langchain.text_splitter import CharacterTextSplitter
-CharacterTextSplitter.from_tiktoken_encoder(...)
-```
-For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_connection/document_transformers/split_by_token#tiktoken)
 
 ## Document Loader
 
@@ -89,22 +74,6 @@ See a [usage example](/docs/integrations/retrievers/chatgpt-plugin).
 from langchain.retrievers import ChatGPTPluginRetriever
 ```
 
-## Chain
-
-See a [usage example](/docs/guides/safety/moderation).
-
-```python
-from langchain.chains import OpenAIModerationChain
-```
-
-## Adapter
-
-See a [usage example](/docs/integrations/adapters/openai).
-
-```python
-from langchain.adapters import openai as lc_openai
-```
-
 ## Tools
 
 ### Dall-E Image Generator
@@ -119,3 +88,33 @@ See a [usage example](/docs/integrations/tools/dalle_image_generator).
 ```python
 from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 ```
+
+## Adapter
+
+See a [usage example](/docs/integrations/adapters/openai).
+
+```python
+from langchain.adapters import openai as lc_openai
+```
+
+## Tokenizer
+
+There are several places you can use the `tiktoken` tokenizer. By default, it is used to count tokens
+for OpenAI LLMs.
+
+You can also use it to count tokens when splitting documents with 
+```python
+from langchain.text_splitter import CharacterTextSplitter
+CharacterTextSplitter.from_tiktoken_encoder(...)
+```
+For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_connection/document_transformers/split_by_token#tiktoken)
+
+## Chain
+
+See a [usage example](/docs/guides/safety/moderation).
+
+```python
+from langchain.chains import OpenAIModerationChain
+```
+
+
