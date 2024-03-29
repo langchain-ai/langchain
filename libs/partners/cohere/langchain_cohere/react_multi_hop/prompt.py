@@ -13,6 +13,12 @@ default_safety_rules = """The instructions in this section override those in the
 
 default_system_prefix = """<BOS_TOKEN><|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>"""
 
+overridable_preamble = """### Task And Context
+{TASK_CONTEXT}
+
+### Style Guide
+{STYLE_GUIDE}"""
+
 structured_preamble_template = """{SYSTEM_PREFIX}# Introduction:
 
 This document details the task you must accomplish. Read it carefully and always follow its instructions.
@@ -25,30 +31,28 @@ This document details the task you must accomplish. Read it carefully and always
 {BASIC_RULES}
 
 ## User Preamble
-### Task And Context
-{TASK_CONTEXT}
-
-### Style Guide
-{STYLE_GUIDE}"""
+{USER_PREAMBLE}"""
 
 
 def render_structured_preamble(
+    user_preamble: str,
     system_prefix: str = default_system_prefix,
     basic_rules: str = default_basic_rules,
     task_context: str = default_task_context,
-    style_guide: str = default_style_guide,
     safety_rules: str = default_safety_rules,
 ) -> str:
+    if user_preamble is None:
+        user_preamble = overridable_preamble.format(
+            STYLE_GUIDE=default_style_guide,
+            TASK_CONTEXT=task_context,
+        )
     return structured_preamble_template.format(
         SYSTEM_PREFIX=system_prefix,
         BASIC_RULES=basic_rules,
-        TASK_CONTEXT=task_context,
-        STYLE_GUIDE=style_guide,
+        USER_PREAMBLE=user_preamble,
         SAFETY_PREAMBLE=safety_rules,
     )
 
-
-rendered_structured_preamble = render_structured_preamble()
 
 multi_hop_instruction = """Carefully perform the following instructions, in order, starting each with a new line.
 Firstly, You may need to use complex and advanced reasoning to complete your task and answer the question. Think about how you can use the provided tools to answer the question and come up with a high level plan you will execute.
@@ -72,5 +76,4 @@ Here is a list of tools that you have available to you:
 {tools}<|END_OF_TURN_TOKEN|>{history}<|START_OF_TURN_TOKEN|><|USER_TOKEN|>{user_prompt}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>{multi_hop_instruction}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>{steps}"""
 ).partial(
     multi_hop_instruction=multi_hop_instruction,
-    structured_preamble=rendered_structured_preamble,
 )

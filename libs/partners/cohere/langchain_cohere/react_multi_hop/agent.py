@@ -14,7 +14,10 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
-from langchain_cohere.react_multi_hop.prompt import multi_hop_prompt_template
+from langchain_cohere.react_multi_hop.prompt import (
+    multi_hop_prompt_template,
+    render_structured_preamble,
+)
 
 """
     Cohere multi-hop tool allows you to use multiple tools in parallel or 
@@ -30,6 +33,9 @@ def create_cohere_react_agent(
 ) -> Runnable:
     def multi_hop_prompt(x: Dict) -> BasePromptTemplate:
         return multi_hop_prompt_template.partial(
+            structured_preamble=render_structured_preamble(
+                user_preamble=x.get("preamble", None)
+            ),
             tools="\n".join([render_tool_description(t) for t in tools]),
             user_prompt=prompt.invoke(x).to_string(),
             steps=format_cohere_log_to_str(x["intermediate_steps"]),
