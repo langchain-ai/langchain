@@ -304,7 +304,7 @@ def format_cohere_log_to_str(
         last_log = action.log
         if step_i > 0:
             thoughts += "\n"
-        observation_str = f"Document {result_idx}\n{observation}"
+        observation_str = f"Document: {result_idx}\n{observation}"
         result_idx += 1
         thoughts += f"{observation_prefix}{observation_str}{llm_prefix}"
 
