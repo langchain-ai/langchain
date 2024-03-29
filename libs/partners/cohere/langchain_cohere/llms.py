@@ -69,7 +69,7 @@ class BaseCohere(Serializable):
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
 
-    cohere_api_url: Optional[str] = None
+    base_url: Optional[str] = None
     """Override the default Cohere API URL."""
 
     @root_validator()
@@ -82,12 +82,12 @@ class BaseCohere(Serializable):
         values["client"] = cohere.Client(
             api_key=values["cohere_api_key"].get_secret_value(),
             client_name=client_name,
-            base_url=values["cohere_api_url"],
+            base_url=values["base_url"],
         )
         values["async_client"] = cohere.AsyncClient(
             api_key=values["cohere_api_key"].get_secret_value(),
             client_name=client_name,
-            base_url=values["cohere_api_url"],
+            base_url=values["base_url"],
         )
         return values
 
