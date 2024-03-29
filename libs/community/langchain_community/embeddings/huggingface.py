@@ -339,15 +339,16 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
 
         if isinstance(text, dict):  # {key: value} case
             return len(next(iter(text.values())))
-        elif not hasattr(text, '__len__'):  # Object has no len() method
+        elif not hasattr(text, "__len__"):  # Object has no len() method
             return 1
         elif len(text) == 0 or isinstance(text[0], int):  # Empty string or list of ints
             return len(text)
         else:
             return sum([len(t) for t in text])
 
-    def embed_documents(self, texts: List[str], batch_size: int = 32,
-                        show_progress_bar: bool = True) -> List[List[float]]:
+    def embed_documents(
+        self, texts: List[str], batch_size: int = 32, show_progress_bar: bool = True
+    ) -> List[List[float]]:
         """Get the embeddings for a list of texts.
 
         Args:
@@ -373,7 +374,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
         length_sorted_idx = np.argsort([-self._text_length(sen) for sen in texts])
 
         for start_index in range(0, len(texts), batch_size):
-            sentences_batch = texts[start_index:start_index + batch_size]
+            sentences_batch = texts[start_index : start_index + batch_size]
 
             response = requests.post(
                 self._api_url,
@@ -386,7 +387,8 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
             if response.status_code != 200:
                 raise ValueError(
                     f"Error in embed_document with:{sentences_batch} "
-                    f"{response.status_code} {response.text}")
+                    f"{response.status_code} {response.text}"
+                )
             embeddings = response.json()
             all_embeddings.extend(embeddings)
 
