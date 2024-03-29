@@ -151,9 +151,9 @@ class TitanTakeoff(LLM):
         for text in response.iter_content(chunk_size=1, decode_unicode=True):
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(token=chunk.text)
+                yield chunk
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

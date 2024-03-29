@@ -162,3 +162,35 @@ def test_run_with_callback() -> None:
     assert handler.starts == 1
     assert handler.ends == 1
     assert handler.errors == 0
+
+
+def test_run_with_callback_and_input_error() -> None:
+    """Test callback manager catches run validation input error."""
+    handler = FakeCallbackHandler()
+    chain = FakeChain(
+        the_input_keys=["foo", "bar"],
+        callbacks=[handler],
+    )
+
+    with pytest.raises(ValueError):
+        chain({"bar": "foo"})
+
+    assert handler.starts == 1
+    assert handler.ends == 0
+    assert handler.errors == 1
+
+
+def test_run_with_callback_and_output_error() -> None:
+    """Test callback manager catches run validation output error."""
+    handler = FakeCallbackHandler()
+    chain = FakeChain(
+        the_output_keys=["foo", "bar"],
+        callbacks=[handler],
+    )
+
+    with pytest.raises(ValueError):
+        chain("foo")
+
+    assert handler.starts == 1
+    assert handler.ends == 0
+    assert handler.errors == 1

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-nomic"
-version = "0.0.1"
+version = "0.0.2"
 description = "An integration package connecting Nomic and LangChain"
 authors = []
 readme = "README.md"
@@ -12,8 +12,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.12"
-nomic = "^3.0.7"
+langchain-core = "^0.1"
+nomic = "^3.0.12"
 
 [tool.poetry.group.test]
 optional = true
