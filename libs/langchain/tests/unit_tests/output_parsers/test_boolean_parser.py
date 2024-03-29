@@ -37,3 +37,8 @@ def test_boolean_output_parser_parse() -> None:
         assert False, "Should have raised ValueError"
     except ValueError:
         pass
+
+
+def test_boolean_output_parser_output_type() -> None:
+    """Test the output type of the boolean output parser is a boolean."""
+    assert BooleanOutputParser().OutputType == bool

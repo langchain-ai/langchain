@@ -1,12 +1,12 @@
 from enum import Enum
-from typing import Any, Dict, List, Type
+from typing import Dict, List, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.pydantic_v1 import root_validator
 
 
-class EnumOutputParser(BaseOutputParser):
+class EnumOutputParser(BaseOutputParser[Enum]):
     """Parse an output that is one of a set of values."""
 
     enum: Type[Enum]
@@ -23,7 +23,7 @@ class EnumOutputParser(BaseOutputParser):
     def _valid_values(self) -> List[str]:
         return [e.value for e in self.enum]
 
-    def parse(self, response: str) -> Any:
+    def parse(self, response: str) -> Enum:
         try:
             return self.enum(response.strip())
         except ValueError:
@@ -34,3 +34,7 @@ class EnumOutputParser(BaseOutputParser):
 
     def get_format_instructions(self) -> str:
         return f"Select one of the following options: {', '.join(self._valid_values)}"
+
+    @property
+    def OutputType(self) -> Type[Enum]:
+        return self.enum

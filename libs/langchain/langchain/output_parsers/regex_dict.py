@@ -6,7 +6,7 @@ from typing import Dict, Optional
 from langchain_core.output_parsers import BaseOutputParser
 
 
-class RegexDictParser(BaseOutputParser):
+class RegexDictParser(BaseOutputParser[Dict[str, str]]):
     """Parse the output of an LLM call into a Dictionary using a regex."""
 
     regex_pattern: str = r"{}:\s?([^.'\n']*)\.?"  # : :meta private:
