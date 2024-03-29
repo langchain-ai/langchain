@@ -102,6 +102,7 @@ _module_lookup = {
     "JoplinLoader": "langchain_community.document_loaders.joplin",
     "LakeFSLoader": "langchain_community.document_loaders.lakefs",
     "LarkSuiteDocLoader": "langchain_community.document_loaders.larksuite",
+    "LLMSherpaFileLoader": "langchain_community.document_loaders.llmsherpa",
     "MHTMLLoader": "langchain_community.document_loaders.mhtml",
     "MWDumpLoader": "langchain_community.document_loaders.mediawikidump",
     "MastodonTootsLoader": "langchain_community.document_loaders.mastodon",
