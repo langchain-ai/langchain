@@ -34,7 +34,11 @@ class OpenAIWhisperParser(BaseBlobParser):
     ):
         self.api_key = api_key
         self.chunk_duration_threshold = chunk_duration_threshold
-        self.base_url = base_url
+        self.base_url = (
+            base_url
+            if base_url is not None
+            else os.environ.get("OPENAI_API_BASE", None)
+        )
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -57,7 +61,6 @@ class OpenAIWhisperParser(BaseBlobParser):
 
         if is_openai_v1():
             # api_key optional, defaults to `os.environ['OPENAI_API_KEY']`
-            self.base_url = os.environ.get("OPENAI_API_BASE")
             client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
         else:
             # Set the API key if provided
