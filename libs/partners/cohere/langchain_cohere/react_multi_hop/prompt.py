@@ -1,5 +1,7 @@
 # flake8: noqa
 from datetime import datetime
+from typing import Optional
+
 from langchain_core.prompts import PromptTemplate
 
 default_basic_rules = "You are a powerful language agent trained by Cohere to help people. You are capable of complex reasoning and augmented with a number of tools. Your job is to plan and reason about how you will use and consume the output of these tools to best help the user. You will see a conversation history between yourself and a user, ending with an utterance from the user. You will then see an instruction informing you what kind of response to generate. You will construct a plan and then perform a number of reasoning and action steps to solve the problem. When you have determined the answer to the user's request, you will cite your sources in your answers, according the instructions."
@@ -31,11 +33,11 @@ structured_preamble_template = """{SYSTEM_PREFIX}# Safety Preamble
 
 
 def render_structured_preamble(
-    user_preamble: str,
-    system_prefix: str = default_system_prefix,
-    basic_rules: str = default_basic_rules,
-    task_context: str = default_task_context,
-    safety_rules: str = default_safety_rules,
+    user_preamble: Optional[str] = None,
+    system_prefix: Optional[str] = default_system_prefix,
+    basic_rules: Optional[str] = default_basic_rules,
+    task_context: Optional[str] = default_task_context,
+    safety_rules: Optional[str] = default_safety_rules,
 ) -> str:
     if user_preamble is None:
         user_preamble = overridable_preamble.format(
