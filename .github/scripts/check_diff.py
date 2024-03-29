@@ -47,11 +47,16 @@ if __name__ == "__main__":
                     found = True
                 if found:
                     dirs_to_run["extended-test"].add(dir_)
+        elif file.startswith("libs/cli"):
+            # todo: add cli makefile
+            pass
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
-            if os.path.isdir(f"libs/partners/{partner_dir}") and os.listdir(
-                f"libs/partners/{partner_dir}"
-            ) != ["README.md"]:
+            if os.path.isdir(f"libs/partners/{partner_dir}") and [
+                filename
+                for filename in os.listdir(f"libs/partners/{partner_dir}")
+                if not filename.startswith(".")
+            ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file.startswith("libs/"):

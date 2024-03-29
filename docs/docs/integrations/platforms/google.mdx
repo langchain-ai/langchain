@@ -20,25 +20,9 @@ See a [usage example](/docs/integrations/llms/google_ai).
 from langchain_google_genai import GoogleGenerativeAI
 ```
 
-### Vertex AI
+### Vertex AI Model Garden
 
-Access to `Gemini` and `PaLM` LLMs (like `text-bison` and `code-bison`) via `Vertex AI` on Google Cloud.
-
-We need to install `langchain-google-vertexai` python package.
-
-```bash
-pip install langchain-google-vertexai
-```
-
-See a [usage example](/docs/integrations/llms/google_vertex_ai_palm).
-
-```python
-from langchain_google_vertexai import VertexAI
-```
-
-### Model Garden
-
-Access PaLM and hundreds of OSS models via `Vertex AI Model Garden` on Google Cloud.
+Access `PaLM` and hundreds of OSS models via `Vertex AI Model Garden` service.
 
 We need to install `langchain-google-vertexai` python package.
 
@@ -51,6 +35,7 @@ See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model
 ```python
 from langchain_google_vertexai import VertexAIModelGarden
 ```
+
 
 ## Chat models
 
@@ -117,6 +102,40 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 
 ```python
 from langchain_google_vertexai import ChatVertexAI
+```
+
+## Embedding models
+
+### Google Generative AI Embeddings
+
+See a [usage example](/docs/integrations/text_embedding/google_generative_ai).
+
+```bash
+pip install -U langchain-google-genai
+```
+
+Configure your API key.
+
+```bash
+export GOOGLE_API_KEY=your-api-key
+```
+
+```python
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+```
+
+### Vertex AI
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/text_embedding/google_vertex_ai_palm).
+
+```python
+from langchain_google_vertexai import VertexAIEmbeddings
 ```
 
 ## Document Loaders
@@ -236,6 +255,22 @@ See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_f
 from langchain_community.document_loaders import GCSFileLoader
 ```
 
+### El Carro for Oracle Workloads
+
+> Google [El Carro Oracle Operator](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
+offers a way to run Oracle databases in Kubernetes as a portable, open source,
+community driven, no vendor lock-in container orchestration system.
+
+```bash
+pip install langchain-google-el-carro
+```
+
+See [usage example](/docs/integrations/document_loaders/google_el_carro).
+
+```python
+from langchain_google_el_carro import ElCarroLoader
+```
+
 ### Google Drive
 
 >[Google Drive](https://en.wikipedia.org/wiki/Google_Drive) is a file storage and synchronization service developed by Google.
@@ -313,22 +348,6 @@ See [usage example](/docs/integrations/document_loaders/google_spanner).
 
 ```python
 from langchain_google_spanner import SpannerLoader
-```
-
-## El Carro Oracle Operator
-
-> Google [El Carro Oracle Operator](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
-offers a way to run Oracle databases in Kubernetes as a portable, open source,
-community driven, no vendor lock-in container orchestration system.
-
-```bash
-pip install langchain-google-el-carro
-```
-
-See [usage example](/docs/integrations/document_loaders/google_el_carro).
-
-```python
-from langchain_google_el_carro import ElCarroLoader
 ```
 
 ### Speech-to-Text
@@ -476,7 +495,7 @@ Install the python package:
 pip install langchain-google-cloud-sql-pg
 ```
 
-See [usage example](/docs/integrations/vectorstores/google_sql_pg).
+See [usage example](/docs/integrations/vectorstores/google_cloud_sql_pg).
 
 ```python
 from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgresVectorStore
@@ -484,21 +503,21 @@ from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgresVectorStore
 
 ### Vertex AI Vector Search
 
-> [Google Cloud Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/matching-engine/overview) from Google Cloud,
+> [Google Cloud Vertex AI Vector Search](https://cloud.google.com/vertex-ai/docs/vector-search/overview) from Google Cloud,
 > formerly known as `Vertex AI Matching Engine`, provides the industry's leading high-scale
 > low latency vector database. These vector databases are commonly
 > referred to as vector similarity-matching or an approximate nearest neighbor (ANN) service.
 
-We need to install several python packages.
+Install the python package:
 
 ```bash
-pip install tensorflow langchain-google-vertexai tensorflow-hub tensorflow-text
+pip install langchain-google-vertexai
 ```
 
 See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_search).
 
 ```python
-from langchain_community.vectorstores import MatchingEngine
+from langchain_google_vertexai import VectorSearchVectorStore
 ```
 
 ### ScaNN
@@ -737,7 +756,7 @@ from langchain_community.agent_toolkits import GmailToolkit
 
 ### AlloyDB for PostgreSQL
 
-> [AlloyDB](https://cloud.google.com/alloydb) is a fully managed relational database service that offers high performance, seamless integration, and impressive scalability on Google Cloud. AlloyDB is 100% compatible with PostgreSQL.
+> [AlloyDB for PostgreSQL](https://cloud.google.com/alloydb) is a fully managed relational database service that offers high performance, seamless integration, and impressive scalability on Google Cloud. AlloyDB is 100% compatible with PostgreSQL.
 
 Install the python package:
 
@@ -760,7 +779,7 @@ Install the python package:
 pip install langchain-google-cloud-sql-pg
 ```
 
-See [usage example](/docs/integrations/memory/google_cloud_sql_pg).
+See [usage example](/docs/integrations/memory/google_sql_pg).
 
 
 ```python
@@ -776,7 +795,7 @@ Install the python package:
 pip install langchain-google-cloud-sql-mysql
 ```
 
-See [usage example](/docs/integrations/memory/google_cloud_sql_mysql).
+See [usage example](/docs/integrations/memory/google_sql_mysql).
 
 ```python
 from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLChatMessageHistory
@@ -791,7 +810,7 @@ Install the python package:
 pip install langchain-google-cloud-sql-mssql
 ```
 
-See [usage example](/docs/integrations/memory/google_cloud_sql_mssql).
+See [usage example](/docs/integrations/memory/google_sql_mssql).
 
 ```python
 from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLChatMessageHistory
@@ -867,16 +886,16 @@ Install the python package:
 pip install langchain-google-datastore
 ```
 
-See [usage example](/docs/integrations/memory/google_datastore).
+See [usage example](/docs/integrations/memory/google_firestore_datastore).
 
 ```python
 from langchain_google_datastore import DatastoreChatMessageHistory
 ```
 
-## El Carro Oracle Operator
+### El Carro: The Oracle Operator for Kubernetes
 
-> Google [El Carro Oracle Operator](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
-offers a way to run Oracle databases in Kubernetes as a portable, open source,
+> Google [El Carro Oracle Operator for Kubernetes](https://github.com/GoogleCloudPlatform/elcarro-oracle-operator)
+offers a way to run `Oracle` databases in `Kubernetes` as a portable, open source,
 community driven, no vendor lock-in container orchestration system.
 
 ```bash

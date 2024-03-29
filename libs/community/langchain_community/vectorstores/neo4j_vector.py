@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import logging
 import os
-import uuid
+from hashlib import md5
 from typing import (
     Any,
     Callable,
@@ -17,7 +17,7 @@ from typing import (
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_env
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import DistanceStrategy
@@ -108,6 +108,31 @@ def remove_lucene_chars(text: str) -> str:
     return text.strip()
 
 
+def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
+    """
+    Converts a dictionary to a YAML-like string without using external libraries.
+
+    Parameters:
+    - input_dict (dict): The dictionary to convert.
+    - indent (int): The current indentation level.
+
+    Returns:
+    - str: The YAML-like string representation of the input dictionary.
+    """
+    yaml_str = ""
+    for key, value in input_dict.items():
+        padding = "  " * indent
+        if isinstance(value, dict):
+            yaml_str += f"{padding}{key}:\n{dict_to_yaml_str(value, indent + 1)}"
+        elif isinstance(value, list):
+            yaml_str += f"{padding}{key}:\n"
+            for item in value:
+                yaml_str += f"{padding}- {item}\n"
+        else:
+            yaml_str += f"{padding}{key}: {value}\n"
+    return yaml_str
+
+
 class Neo4jVector(VectorStore):
     """`Neo4j` vector index.
 
@@ -155,7 +180,7 @@ class Neo4jVector(VectorStore):
         password: Optional[str] = None,
         url: Optional[str] = None,
         keyword_index_name: Optional[str] = "keyword",
-        database: str = "neo4j",
+        database: Optional[str] = None,
         index_name: str = "vector",
         node_label: str = "Chunk",
         embedding_node_property: str = "embedding",
@@ -186,11 +211,19 @@ class Neo4jVector(VectorStore):
         # Handle if the credentials are environment variables
 
         # Support URL for backwards compatibility
-        url = os.environ.get("NEO4J_URL", url)
-        url = get_from_env("url", "NEO4J_URI", url)
-        username = get_from_env("username", "NEO4J_USERNAME", username)
-        password = get_from_env("password", "NEO4J_PASSWORD", password)
-        database = get_from_env("database", "NEO4J_DATABASE", database)
+        if not url:
+            url = os.environ.get("NEO4J_URL")
+
+        url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+        username = get_from_dict_or_env(
+            {"username": username}, "username", "NEO4J_USERNAME"
+        )
+        password = get_from_dict_or_env(
+            {"password": password}, "password", "NEO4J_PASSWORD"
+        )
+        database = get_from_dict_or_env(
+            {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+        )
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
@@ -426,7 +459,7 @@ class Neo4jVector(VectorStore):
         **kwargs: Any,
     ) -> Neo4jVector:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -493,7 +526,7 @@ class Neo4jVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -638,7 +671,9 @@ class Neo4jVector(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result["text"],
+                    page_content=dict_to_yaml_str(result["text"])
+                    if isinstance(result["text"], dict)
+                    else result["text"],
                     metadata={
                         k: v for k, v in result["metadata"].items() if v is not None
                     },

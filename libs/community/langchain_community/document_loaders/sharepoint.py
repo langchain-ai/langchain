@@ -10,6 +10,7 @@ from langchain_community.document_loaders.base_o365 import (
     O365BaseLoader,
     _FileType,
 )
+from langchain_community.document_loaders.parsers.registry import get_parser
 
 
 class SharePointLoader(O365BaseLoader):
@@ -21,20 +22,11 @@ class SharePointLoader(O365BaseLoader):
     """ The path to the folder to load data from."""
     object_ids: Optional[List[str]] = None
     """ The IDs of the objects to load data from."""
-    recursive: bool = False
-    """ configure whether to recursively fetch files from sub-folders."""
 
     @property
     def _file_types(self) -> Sequence[_FileType]:
         """Return supported file types."""
-        return (
-            _FileType.DOC,
-            _FileType.DOCX,
-            _FileType.PDF,
-            _FileType.PPTX,
-            _FileType.TXT,
-            _FileType.XLSX,
-        )
+        return _FileType.DOC, _FileType.DOCX, _FileType.PDF
 
     @property
     def _scopes(self) -> List[str]:
@@ -52,19 +44,13 @@ class SharePointLoader(O365BaseLoader):
         drive = self._auth().storage().get_drive(self.document_library_id)
         if not isinstance(drive, Drive):
             raise ValueError(f"There isn't a Drive with id {self.document_library_id}.")
+        blob_parser = get_parser("default")
         if self.folder_path:
             target_folder = drive.get_item_by_path(self.folder_path)
             if not isinstance(target_folder, Folder):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
-            yield from self._load_from_folder(target_folder, self.recursive)
+            for blob in self._load_from_folder(target_folder):
+                yield from blob_parser.lazy_parse(blob)
         if self.object_ids:
-            yield from self._load_from_object_ids(drive, self.object_ids)
-        if not self.folder_path and not self.object_ids:
-            target_folder = drive.get_root_folder()
-            if not isinstance(target_folder, Folder):
-                raise ValueError("There isn't a root folder in this Drive.")
-            yield from self._load_from_folder(target_folder, self.recursive)
-
-    def load(self) -> List[Document]:
-        """Load all documents."""
-        return list(self.lazy_load())
+            for blob in self._load_from_object_ids(drive, self.object_ids):
+                yield from blob_parser.lazy_parse(blob)

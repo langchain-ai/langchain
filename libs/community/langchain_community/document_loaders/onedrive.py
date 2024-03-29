@@ -11,6 +11,7 @@ from langchain_community.document_loaders.base_o365 import (
     O365BaseLoader,
     _FileType,
 )
+from langchain_community.document_loaders.parsers.registry import get_parser
 
 if TYPE_CHECKING:
     from O365.drive import Drive, Folder
@@ -82,12 +83,11 @@ class OneDriveLoader(O365BaseLoader):
         drive = self._auth().storage().get_drive(self.drive_id)
         if not isinstance(drive, Drive):
             raise ValueError(f"There isn't a Drive with id {self.drive_id}.")
+        blob_parser = get_parser("default")
         if self.folder_path:
             folder = self._get_folder_from_path(drive)
-            yield from self._load_from_folder(folder)
+            for blob in self._load_from_folder(folder):
+                yield from blob_parser.lazy_parse(blob)
         if self.object_ids:
-            yield from self._load_from_object_ids(drive, self.object_ids)
-
-    def load(self) -> List[Document]:
-        """Load all documents."""
-        return list(self.lazy_load())
+            for blob in self._load_from_object_ids(drive, self.object_ids):
+                yield from blob_parser.lazy_parse(blob)
