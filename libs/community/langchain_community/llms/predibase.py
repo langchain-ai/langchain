@@ -54,10 +54,11 @@ class Predibase(LLM):
             # TODO: <Alex>ALEX</Alex>
 
             # TODO: <Alex>ALEX</Alex>
-            session: Session = get_session(token=self.predibase_api_key.get_secret_value(), gateway="https://api.staging.predibase.com/v1", serving_endpoint="serving.staging.predibase.com")
+            # session: Session = get_session(token=self.predibase_api_key.get_secret_value(), gateway="https://api.staging.predibase.com/v1", serving_endpoint="serving.staging.predibase.com")
+            session: Session = get_session(token=self.predibase_api_key.get_secret_value(), gateway="https://api.app.predibase.com/v1", serving_endpoint="serving.app.predibase.com")
             # TODO: <Alex>ALEX</Alex>
             # TODO: <Alex>ALEX</Alex>
-            # pc = PredibaseClient(token=self.predibase_api_key.get_secret_value())
+            # pc: PredibaseClient = PredibaseClient(token=self.predibase_api_key.get_secret_value())
             # TODO: <Alex>ALEX</Alex>
             # TODO: <Alex>ALEX</Alex>
             pc: PredibaseClient = PredibaseClient(session=session)

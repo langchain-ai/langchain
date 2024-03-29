@@ -5,7 +5,7 @@ from langchain_community.llms.predibase import Predibase
 
 
 def test_api_key_is_string() -> None:
-    llm = Predibase(model="llama-2-7b", predibase_api_key="secret-api-key")
+    llm = Predibase(model="my_llm", predibase_api_key="secret-api-key")
     print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::TEST_PREDIBASE.test_api_key_is_string()] LLM:\n{llm} ; TYPE: {str(type(llm))}')
     assert isinstance(llm.predibase_api_key, SecretStr)
 
@@ -15,7 +15,7 @@ def test_api_key_masked_when_passed_via_constructor(
     # capsys: CaptureFixture,
     # TODO: <Alex>ALEX</Alex>
 ) -> None:
-    llm = Predibase(model="llama-2-7b", predibase_api_key="secret-api-key")
+    llm = Predibase(model="my_llm", predibase_api_key="secret-api-key")
     print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::TEST_PREDIBASE.test_api_key_masked_when_passed_via_constructor()] LLM:\n{llm} ; TYPE: {str(type(llm))}')
     print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::TEST_PREDIBASE.test_api_key_masked_when_passed_via_constructor()] LLM.PREDIBASE_API_KEY:\n{llm.predibase_api_key} ; TYPE: {str(type(llm))}')
     # print(llm.predibase_api_key, end="")  # noqa: T201
