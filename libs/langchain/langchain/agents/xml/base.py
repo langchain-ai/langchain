@@ -14,7 +14,7 @@ from langchain.agents.format_scratchpad import format_xml
 from langchain.agents.output_parsers import XMLAgentOutputParser
 from langchain.agents.xml.prompt import agent_instructions
 from langchain.chains.llm import LLMChain
-from langchain.tools.render import render_text_description
+from langchain.tools.render import ToolsRenderer, render_text_description
 
 
 @deprecated("0.1.0", alternative="create_xml_agent", removal="0.2.0")
@@ -108,7 +108,12 @@ class XMLAgent(BaseSingleActionAgent):
 
 
 def create_xml_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: BasePromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: BasePromptTemplate,
+    tools_renderer: ToolsRenderer = render_text_description,
+    *,
+    stop_sequence: Union[bool, List[str]] = True,
 ) -> Runnable:
     """Create an agent that uses XML to format its logic.
 
@@ -118,6 +123,15 @@ def create_xml_agent(
         prompt: The prompt to use, must have input keys
             `tools`: contains descriptions for each tool.
             `agent_scratchpad`: contains previous agent actions and tool outputs.
+        tools_renderer: This controls how the tools are converted into a string and
+            then passed into the LLM. Default is `render_text_description`.
+        stop_sequence: bool or list of str.
+            If True, adds a stop token of "</tool_input>" to avoid hallucinates.
+            If False, does not add a stop token.
+            If a list of str, uses the provided list as the stop tokens.
+
+            Default is True. You may to set this to False if the LLM you are using
+            does not support stop sequences.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -194,9 +208,14 @@ def create_xml_agent(
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
     prompt = prompt.partial(
-        tools=render_text_description(list(tools)),
+        tools=tools_renderer(list(tools)),
     )
-    llm_with_stop = llm.bind(stop=["</tool_input>"])
+
+    if stop_sequence:
+        stop = ["</tool_input>"] if stop_sequence is True else stop_sequence
+        llm_with_stop = llm.bind(stop=stop)
+    else:
+        llm_with_stop = llm
 
     agent = (
         RunnablePassthrough.assign(
