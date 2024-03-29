@@ -7,7 +7,7 @@ EXPECTED_ALL = [
     "CohereRagRetriever",
     "CohereRerank",
     "create_cohere_tools_agent",
-    "create_cohere_multi_hop_agent",
+    "create_cohere_react_agent",
 ]
 
 
