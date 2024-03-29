@@ -35,13 +35,17 @@ class Predibase(LLM):
         **kwargs,
     ) -> str:
         try:
-            from predibase.pql import get_session
-            from predibase.pql.api import Session
             from predibase import PredibaseClient
+            from predibase.pql.api import Session
+            from predibase.pql import get_session
             from predibase.resource.llm.interface import LLMDeployment
             from predibase.resource.llm.response import GeneratedResponse
 
-            session: Session = get_session(token=self.predibase_api_key.get_secret_value(), gateway="https://api.app.predibase.com/v1", serving_endpoint="serving.app.predibase.com")
+            session: Session = get_session(
+                token=self.predibase_api_key.get_secret_value(),
+                gateway="https://api.app.predibase.com/v1",
+                serving_endpoint="serving.app.predibase.com",
+            )
             pc: PredibaseClient = PredibaseClient(session=session)
         except ImportError as e:
             raise ImportError(
