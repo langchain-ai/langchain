@@ -18,6 +18,7 @@ from typing import Any
 _module_lookup = {
     "AlephAlphaAsymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
     "AlephAlphaSymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
+    "AnyscaleEmbeddings": "langchain_community.embeddings.anyscale",
     "AwaEmbeddings": "langchain_community.embeddings.awa",
     "AzureOpenAIEmbeddings": "langchain_community.embeddings.azure_openai",
     "BaichuanTextEmbeddings": "langchain_community.embeddings.baichuan",
