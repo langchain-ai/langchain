@@ -1,10 +1,9 @@
-"""Implements Program-Aided Language Models.
+"""**PAL Chain** implements **Program-Aided Language** Models.
 
-As in https://arxiv.org/pdf/2211.10435.pdf.
+See the paper: https://arxiv.org/pdf/2211.10435.pdf.
 
-This is vulnerable to arbitrary code execution:
-https://github.com/langchain-ai/langchain/issues/5872
-"""
+This chain is vulnerable to [arbitrary code execution](https://github.com/langchain-ai/langchain/issues/5872).
+"""  # noqa: E501
 from langchain_experimental.pal_chain.base import PALChain
 
 __all__ = ["PALChain"]

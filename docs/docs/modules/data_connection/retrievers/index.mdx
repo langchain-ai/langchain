@@ -49,7 +49,7 @@ Since retrievers are `Runnable`'s, we can easily compose them with other `Runnab
 ```python
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.schema import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 template = """Answer the question based only on the following context:

@@ -2,7 +2,7 @@
 Test of Cassandra document loader class `CassandraLoader`
 """
 import os
-from typing import Any
+from typing import Any, Iterator
 
 import pytest
 from langchain_core.documents import Document
@@ -14,7 +14,7 @@ CASSANDRA_TABLE = "docloader_test_table"
 
 
 @pytest.fixture(autouse=True, scope="session")
-def keyspace() -> str:  # type: ignore[misc]
+def keyspace() -> Iterator[str]:
     import cassio
     from cassandra.cluster import Cluster
     from cassio.config import check_resolve_session, resolve_keyspace

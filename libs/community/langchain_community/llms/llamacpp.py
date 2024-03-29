@@ -333,7 +333,7 @@ class LlamaCpp(LLM):
                 for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
                         stop=["'","\n"]):
                     result = chunk["choices"][0]
-                    print(result["text"], end='', flush=True)
+                    print(result["text"], end='', flush=True)  # noqa: T201
 
         """
         params = {**self._get_parameters(stop), **kwargs}
@@ -344,11 +344,11 @@ class LlamaCpp(LLM):
                 text=part["choices"][0]["text"],
                 generation_info={"logprobs": logprobs},
             )
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
                     token=chunk.text, verbose=self.verbose, log_probs=logprobs
                 )
+            yield chunk
 
     def get_num_tokens(self, text: str) -> int:
         tokenized_text = self.client.tokenize(text.encode("utf-8"))

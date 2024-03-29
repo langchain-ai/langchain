@@ -80,7 +80,7 @@ class OctoAIEmbeddings(BaseModel, Embeddings):
                     json_data = resp_json["data"]
                     for item in json_data:
                         if "embedding" in item:
-                            embedding.append(item["embedding"])
+                            embedding = item["embedding"]
 
             except Exception as e:
                 raise ValueError(f"Error raised by the inference endpoint: {e}") from e
