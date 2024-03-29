@@ -14,7 +14,7 @@ The purpose of this notebook is to demonstrate the integration of a `FlyteCallba
 
 ## Flyte Tasks
 
-A Flyte [task](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/flyte_basics/task.html) serves as the foundational building block of Flyte.
+A Flyte [task](https://docs.flyte.org/en/latest/user_guide/basics/tasks.html) serves as the foundational building block of Flyte.
 To execute LangChain experiments, you need to write Flyte tasks that define the specific steps and operations involved.
 
 NOTE: The [getting started guide](https://docs.flyte.org/projects/cookbook/en/latest/index.html) offers detailed, step-by-step instructions on installing Flyte locally and running your initial Flyte pipeline.
@@ -46,9 +46,9 @@ os.environ["SERPAPI_API_KEY"] = "<your_serp_api_key>"
 Replace `<your_openai_api_key>` and `<your_serp_api_key>` with your respective API keys obtained from OpenAI and Serp API.
 
 To guarantee reproducibility of your pipelines, Flyte tasks are containerized.
-Each Flyte task must be associated with an image, which can either be shared across the entire Flyte [workflow](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/flyte_basics/basic_workflow.html) or provided separately for each task.
+Each Flyte task must be associated with an image, which can either be shared across the entire Flyte [workflow](https://docs.flyte.org/en/latest/user_guide/basics/workflows.html) or provided separately for each task.
 
-To streamline the process of supplying the required dependencies for each Flyte task, you can initialize an [`ImageSpec`](https://docs.flyte.org/projects/cookbook/en/latest/auto/core/image_spec/image_spec.html) object.
+To streamline the process of supplying the required dependencies for each Flyte task, you can initialize an [`ImageSpec`](https://docs.flyte.org/en/latest/user_guide/customizing_dependencies/imagespec.html) object.
 This approach automatically triggers a Docker build, alleviating the need for users to manually create a Docker image.
 
 ```python
