@@ -134,16 +134,15 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
 class ChatAnthropic(BaseChatModel):
     """Anthropic chat model.
 
-    To use, you should have the packages ``anthropic`` and ``langchain-anthropic``
-    installed, and the environment variable ANTHROPIC_API_KEY set with your API key,
-    or pass it as a named parameter to the constructor.
+    To use, you should have the environment variable ``ANTHROPIC_API_KEY``
+    set with your API key, or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic()
+            model = ChatAnthropic(model='claude-3-opus-20240229')
     """
 
     class Config:
@@ -268,16 +267,15 @@ class ChatAnthropic(BaseChatModel):
                     await run_manager.on_llm_new_token(text, chunk=chunk)
                 yield chunk
 
-    def _format_output(
-        self,
-        data: Any,
-        **kwargs: Any,
-    ) -> ChatResult:
+    def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+        data_dict = data.model_dump()
+        content = data_dict["content"]
+        llm_output = {
+            k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
+        }
         return ChatResult(
-            generations=[
-                ChatGeneration(message=AIMessage(content=data.content[0].text))
-            ],
-            llm_output=data,
+            generations=[ChatGeneration(message=AIMessage(content=content[0]["text"]))],
+            llm_output=llm_output,
         )
 
     def _generate(

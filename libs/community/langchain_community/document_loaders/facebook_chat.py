@@ -1,7 +1,7 @@
 import datetime
 import json
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Union
 
 from langchain_core.documents import Document
 
@@ -25,7 +25,7 @@ def concatenate_rows(row: dict) -> str:
 class FacebookChatLoader(BaseLoader):
     """Load `Facebook Chat` messages directory dump."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: Union[str, Path]):
         """Initialize with a path."""
         self.file_path = path
 
