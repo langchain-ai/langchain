@@ -336,7 +336,8 @@ class Redis(VectorStore):
                 dicts to add to the vectorstore. Defaults to None.
             index_name (Optional[str], optional): Optional name of the index to
                 create or add to. Defaults to None.
-            index_schema (Optional[Union[Dict[str, ListOfDict], str, os.PathLike]], optional):
+            index_schema (Optional[Union[Dict[str, ListOfDict], str, os.PathLike]],
+                optional):
                 Optional fields to index within the metadata. Overrides generated
                 schema. Defaults to None.
             vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional
@@ -472,7 +473,8 @@ class Redis(VectorStore):
                 to add to the vectorstore. Defaults to None.
             index_name (Optional[str], optional): Optional name of the index to create
                 or add to. Defaults to None.
-            index_schema (Optional[Union[Dict[str, ListOfDict], str, os.PathLike]], optional):
+            index_schema (Optional[Union[Dict[str, ListOfDict], str, os.PathLike]],
+                optional):
                 Optional fields to index within the metadata. Overrides generated
                 schema. Defaults to None.
             vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional
@@ -529,8 +531,9 @@ class Redis(VectorStore):
             embedding (Embeddings): Embedding model class (i.e. OpenAIEmbeddings)
                 for embedding queries.
             index_name (str): Name of the index to connect to.
-            schema (Union[Dict[str, str], str, os.PathLike, Dict[str, ListOfDict]]): Schema of the index
-                and the vector schema. Can be a dict, or path to yaml file.
+            schema (Union[Dict[str, str], str, os.PathLike, Dict[str, ListOfDict]]):
+                Schema of the index and the vector schema. Can be a dict, or path to
+                yaml file.
             key_prefix (Optional[str]): Prefix to use for all keys in Redis associated
                 with this index.
             **kwargs (Any): Additional keyword arguments to pass to the Redis client.
