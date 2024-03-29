@@ -1,7 +1,7 @@
 """LLM Chains for evaluating question answering."""
-
 from __future__ import annotations
 
+import re
 import string
 from typing import Any, List, Optional, Sequence, Tuple
 
@@ -19,34 +19,25 @@ from langchain.schema import RUN_KEY
 def _get_score(text: str) -> Optional[Tuple[str, int]]:
     text = text.strip()
     words = text.split()
-    try:
-        first_word = (
-            words[0].translate(str.maketrans("", "", string.punctuation)).upper()
-        )
-        last_word = (
-            words[-1].translate(str.maketrans("", "", string.punctuation)).upper()
-        )
-    except IndexError:
-        return None
-
-    if "GRADE:" in text.upper():
-        pos = text.upper().index("GRADE:") + 6
-        sub_text = (
-            text[pos:]
-            .strip()
-            .split()[0]
-            .translate(str.maketrans("", "", string.punctuation))
-            .upper()
-        )
-        if sub_text == "CORRECT":
+    match = re.search(r"grade:\s*(correct|incorrect)", text, re.IGNORECASE)
+    if match:
+        if match.group(1).upper() == "CORRECT":
             return "CORRECT", 1
-        elif sub_text == "INCORRECT":
+        elif match.group(1).upper() == "INCORRECT":
             return "INCORRECT", 0
-    elif first_word == "CORRECT" or last_word == "CORRECT":
-        return "CORRECT", 1
-    elif first_word == "INCORRECT" or last_word == "INCORRECT":
-        return "INCORRECT", 0
-
+    try:
+        first_word = words[0].translate(str.maketrans("", "", string.punctuation))
+        if first_word.upper() == "CORRECT":
+            return "CORRECT", 1
+        elif first_word.upper() == "INCORRECT":
+            return "INCORRECT", 0
+        last_word = words[-1].translate(str.maketrans("", "", string.punctuation))
+        if last_word.upper() == "CORRECT":
+            return "CORRECT", 1
+        elif last_word.upper() == "INCORRECT":
+            return "INCORRECT", 0
+    except IndexError:
+        pass
     return None
 
 
@@ -61,9 +52,10 @@ def _parse_string_eval_output(text: str) -> dict:
     """
     reasoning = text.strip()
     parsed_scores = _get_score(reasoning)
-
-    value, score = parsed_scores if parsed_scores is not None else (None, None)
-
+    if parsed_scores is None:
+        value, score = None, None
+    else:
+        value, score = parsed_scores
     return {
         "reasoning": reasoning,
         "value": value,
