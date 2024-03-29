@@ -13,22 +13,26 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceTextToSpeechModelInference(BaseTool):
-    """
-    HuggingFace Text-to-Speech Model Inference.
+    """HuggingFace Text-to-Speech Model Inference.
 
     Requirements:
-
         - Environment variable ``HUGGINGFACE_API_KEY`` must be set,
           or passed as a named parameter to the constructor.
     """
 
     name: str = "openai_text_to_speech"
+    """Name of the tool."""
     description: str = "A wrapper around OpenAI Text-to-Speech API. "
+    """Description of the tool."""
 
     model: str
+    """Model name."""
     file_extension: str
+    """File extension of the output audio file."""
     destination_dir: str
+    """Directory to save the output audio file."""
     file_namer: Callable[[], str]
+    """Function to generate unique file names."""
 
     api_url: str
     huggingface_api_key: SecretStr
@@ -63,6 +67,10 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
             file_namer = lambda: str(uuid.uuid4())  # noqa: E731
         elif file_naming_func == "timestamp":
             file_namer = lambda: str(int(datetime.now().timestamp()))  # noqa: E731
+        else:
+            raise ValueError(
+                f"Invalid value for 'file_naming_func': {file_naming_func}"
+            )
 
         super().__init__(
             model=model,
@@ -101,10 +109,8 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
         try:
             with open(output_file, mode="xb") as f:
                 f.write(audio_bytes)
-
         except FileExistsError:
             raise ValueError("Output name must be unique")
-
         except Exception as e:
             logger.error(f"Error occurred while creating file: {e}")
             raise
