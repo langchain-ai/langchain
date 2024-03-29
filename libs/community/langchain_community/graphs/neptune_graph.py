@@ -250,7 +250,7 @@ class NeptuneAnalyticsGraph(BaseNeptuneGraph):
         except Exception as e:
             raise NeptuneQueryException(
                 {
-                    "message": ("Summary API error ocurred on Neptune Analytics"),
+                    "message": ("Summary API error occurred on Neptune Analytics"),
                     "details": str(e),
                 }
             )
