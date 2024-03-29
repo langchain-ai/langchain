@@ -167,7 +167,10 @@ class DirectoryLoader(BaseLoader):
                 for i in items:
                     futures.append(
                         executor.submit(
-                            self._to_non_generator(self._lazy_load_file), i, p, pbar
+                            self._lazy_load_file_to_non_generator(self._lazy_load_file),
+                            i,
+                            p,
+                            pbar,
                         )
                     )
                 for future in concurrent.futures.as_completed(futures):
@@ -179,9 +182,9 @@ class DirectoryLoader(BaseLoader):
         if pbar:
             pbar.close()
 
-    def _to_non_generator(self, func) -> Callable:
-        def non_generator(*args, **kwargs) -> List:
-            return [x for x in func(*args, **kwargs)]
+    def _lazy_load_file_to_non_generator(self, func: Callable) -> Callable:
+        def non_generator(item: Path, path: Path, pbar: Optional[Any]) -> List:
+            return [x for x in func(item, path, pbar)]
 
         return non_generator
 
