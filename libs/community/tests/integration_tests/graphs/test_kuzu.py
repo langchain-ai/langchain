@@ -4,8 +4,7 @@ import unittest
 
 from langchain_community.graphs import KuzuGraph
 
-EXPECTED_SCHEMA = """
-Node properties: [{'properties': [('name', 'STRING')], 'label': 'Movie'}, {'properties': [('name', 'STRING'), ('birthDate', 'STRING')], 'label': 'Person'}]
+EXPECTED_SCHEMA = """Node properties: [{'properties': [('name', 'STRING')], 'label': 'Movie'}, {'properties': [('name', 'STRING'), ('birthDate', 'STRING')], 'label': 'Person'}]
 Relationships properties: [{'properties': [], 'label': 'ActedIn'}]
 Relationships: ['(:Person)-[:ActedIn]->(:Movie)']
 """  # noqa: E501
@@ -36,12 +35,22 @@ class TestKuzu(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def test_query(self) -> None:
+    def test_query_no_params(self) -> None:
         result = self.kuzu_graph.query("MATCH (n:Movie) RETURN n.name ORDER BY n.name")
         excepted_result = [
             {"n.name": "The Godfather"},
             {"n.name": "The Godfather Coda: The Death of Michael Corleone"},
             {"n.name": "The Godfather: Part II"},
+        ]
+        self.assertEqual(result, excepted_result)
+
+    def test_query_params(self) -> None:
+        result = self.kuzu_graph.query(
+            query="MATCH (n:Movie) WHERE n.name = $name RETURN n.name",
+            params={"name": "The Godfather"},
+        )
+        excepted_result = [
+            {"n.name": "The Godfather"},
         ]
         self.assertEqual(result, excepted_result)
 

@@ -24,31 +24,30 @@ Elastic Cloud is a managed Elasticsearch service. Signup for a [free trial](http
 
 ```bash
 pip install elasticsearch
+pip install langchain-elasticsearch
 ```
 
-## Vector Store
+## Embedding models
 
-The vector store is a simple wrapper around Elasticsearch. It provides a simple interface to store and retrieve vectors.
+See a [usage example](/docs/integrations/text_embedding/elasticsearch).
 
 ```python
-from langchain_community.vectorstores import ElasticsearchStore
+from langchain_elasticsearch.embeddings import ElasticsearchEmbeddings
+```
 
-from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import CharacterTextSplitter
+## Vector store
 
-loader = TextLoader("./state_of_the_union.txt")
-documents = loader.load()
-text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
-docs = text_splitter.split_documents(documents)
+See a [usage example](/docs/integrations/vectorstores/elasticsearch).
 
-embeddings = OpenAIEmbeddings()
+```python
+from langchain_elasticsearch.vectorstores import ElasticsearchStore
+```
 
-db = ElasticsearchStore.from_documents(
-    docs, embeddings, es_url="http://localhost:9200", index_name="test-basic",
-)
 
-db.client.indices.refresh(index="test-basic")
+## Memory
 
-query = "What did the president say about Ketanji Brown Jackson"
-results = db.similarity_search(query)
+See a [usage example](/docs/integrations/memory/elasticsearch_chat_message_history).
+
+```python
+from langchain_elasticsearch.chat_history import ElasticsearchChatMessageHistory
 ```
