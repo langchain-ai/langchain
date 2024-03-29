@@ -101,17 +101,15 @@ def test_chat_mistralai_llm_output_contains_token_usage() -> None:
     assert "total_tokens" in token_usage
 
 
-def test_chat_mistralai_streaming_llm_output_contains_token_usage() -> None:
-    """Test llm_output contains model_name."""
+def test_chat_mistralai_streaming_llm_output_not_contain_token_usage() -> None:
+    """Mistral currently doesn't return token usage when streaming."""
     chat = ChatMistralAI(max_tokens=10, streaming=True)
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
     assert "token_usage" in llm_result.llm_output
     token_usage = llm_result.llm_output["token_usage"]
-    assert "prompt_tokens" in token_usage
-    assert "completion_tokens" in token_usage
-    assert "total_tokens" in token_usage
+    assert not token_usage
 
 
 def test_structured_output() -> None:
