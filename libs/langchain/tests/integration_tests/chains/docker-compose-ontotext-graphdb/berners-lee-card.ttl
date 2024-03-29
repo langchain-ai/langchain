@@ -1,0 +1,114 @@
+@prefix : <http://xmlns.com/foaf/0.1/> .
+@prefix Be: <https://www.w3.org/People/Berners-Lee/> .
+@prefix Pub: <https://timbl.com/timbl/Public/> .
+@prefix blog: <http://dig.csail.mit.edu/breadcrumbs/blog/> .
+@prefix card: <https://www.w3.org/People/Berners-Lee/card#> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix cert: <http://www.w3.org/ns/auth/cert#> .
+@prefix con: <http://www.w3.org/2000/10/swap/pim/contact#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix geo1: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+@prefix s: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema1: <http://schema.org/> .
+@prefix sioc: <http://rdfs.org/sioc/ns#> .
+@prefix solid: <http://www.w3.org/ns/solid/terms#> .
+@prefix space: <http://www.w3.org/ns/pim/space#> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix w3c: <http://www.w3.org/data#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://dig.csail.mit.edu/2005/ajar/ajaw/data#Tabulator> doap:developer card:i .
+
+<http://dig.csail.mit.edu/2007/01/camp/data#course> :maker card:i .
+
+<http://dig.csail.mit.edu/data#DIG> :member card:i .
+
+<http://wiki.ontoworld.org/index.php/_IRW2006> dc:title "Identity, Reference and the Web workshop 2006" ;
+    con:participant card:i .
+
+<http://www.ecs.soton.ac.uk/~dt2/dlstuff/www2006_data#panel-panelk01> s:label "The Next Wave of the Web (Plenary Panel)" ;
+    con:participant card:i .
+
+<http://www.w3.org/2000/10/swap/data#Cwm> doap:developer card:i .
+
+<http://www.w3.org/2011/Talks/0331-hyderabad-tbl/data#talk> dct:title "Designing the Web for an Open Society" ;
+    :maker card:i .
+
+w3c:W3C :member card:i .
+
+<https://www.w3.org/DesignIssues/Overview.html> dc:title "Design Issues for the World Wide Web" ;
+    :maker card:i .
+
+Be:card a :PersonalProfileDocument ;
+    cc:license <http://creativecommons.org/licenses/by-nc/3.0/> ;
+    dc:title "Tim Berners-Lee's FOAF file" ;
+    :maker card:i ;
+    :primaryTopic card:i .
+
+blog:4 dc:title "timbl's blog on DIG" ;
+    s:seeAlso <http://dig.csail.mit.edu/breadcrumbs/blog/feed/4> ;
+    :maker card:i .
+
+Pub:friends.ttl a :PersonalProfileDocument ;
+    cc:license <http://creativecommons.org/licenses/by-nc/3.0/> ;
+    dc:title "Tim Berners-Lee's editable profile" ;
+    :maker card:i ;
+    :primaryTopic card:i .
+
+card:i a con:Male,
+        :Person ;
+    s:label "Tim Berners-Lee" ;
+    sioc:avatar <https://www.w3.org/People/Berners-Lee/images/timbl-image-by-Coz-cropped.jpg> ;
+    schema1:owns <https://timblbot.inrupt.net/profile/card#me> ;
+    s:seeAlso Pub:friends.ttl ;
+    con:assistant card:amy ;
+    con:homePage Be: ;
+    con:office [ con:address [ con:city "Cambridge" ;
+                    con:country "USA" ;
+                    con:postalCode "02139" ;
+                    con:street "32 Vassar Street" ;
+                    con:street2 "MIT CSAIL Building 32" ] ;
+            geo1:location [ geo1:lat "42.361860" ;
+                    geo1:long "-71.091840" ] ] ;
+    con:preferredURI "https://www.w3.org/People/Berners-Lee/card#i" ;
+    con:publicHomePage Be: ;
+    vcard:fn "Tim Berners-Lee" ;
+    vcard:hasAddress [ a vcard:Work ;
+            vcard:locality "Cambridge" ;
+            vcard:postal-code "02139" ;
+            vcard:region "MA" ;
+            vcard:street-address "32 Vassar Street" ] ;
+    cert:key [ a cert:RSAPublicKey ;
+            cert:exponent 65537 ;
+            cert:modulus "ebe99c737bd3670239600547e5e2eb1d1497da39947b6576c3c44ffeca32cf0f2f7cbee3c47001278a90fc7fc5bcf292f741eb1fcd6bbe7f90650afb519cf13e81b2bffc6e02063ee5a55781d420b1dfaf61c15758480e66d47fb0dcb5fa7b9f7f1052e5ccbd01beee9553c3b6b51f4daf1fce991294cd09a3d1d636bc6c7656e4455d0aff06daec740ed0084aa6866fcae1359de61cc12dbe37c8fa42e977c6e727a8258bb9a3f265b27e3766fe0697f6aa0bcc81c3f026e387bd7bbc81580dc1853af2daa099186a9f59da526474ef6ec0a3d84cf400be3261b6b649dea1f78184862d34d685d2d587f09acc14cd8e578fdd2283387821296f0af39b8d8845"^^xsd:hexBinary ] ;
+    ldp:inbox Pub:Inbox ;
+    space:preferencesFile <https://timbl.com/timbl/Data/preferences.n3> ;
+    space:storage Pub:,
+        <https://timbl.inrupt.net/>,
+        <https://timbl.solid.community/> ;
+    solid:editableProfile Pub:friends.ttl ;
+    solid:oidcIssuer <https://timbl.com> ;
+    solid:profileBackgroundColor "#ffffff" ;
+    solid:profileHighlightColor "#00467E" ;
+    solid:publicTypeIndex Pub:PublicTypeIndex.ttl ;
+    :account <http://en.wikipedia.org/wiki/User:Timbl>,
+        <http://twitter.com/timberners_lee>,
+        <http://www.reddit.com/user/timbl/> ;
+    :based_near [ geo1:lat "42.361860" ;
+            geo1:long "-71.091840" ] ;
+    :family_name "Berners-Lee" ;
+    :givenname "Timothy" ;
+    :homepage Be: ;
+    :img <https://www.w3.org/Press/Stock/Berners-Lee/2001-europaeum-eighth.jpg> ;
+    :mbox <mailto:timbl@w3.org> ;
+    :mbox_sha1sum "965c47c5a70db7407210cef6e4e6f5374a525c5c" ;
+    :name "Timothy Berners-Lee" ;
+    :nick "TimBL",
+        "timbl" ;
+    :openid Be: ;
+    :title "Sir" ;
+    :weblog blog:4 ;
+    :workplaceHomepage <https://www.w3.org/> .
