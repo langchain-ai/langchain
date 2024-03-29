@@ -18,12 +18,13 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.beta_decorator import beta
 from langchain_core.runnables.base import (
     Runnable,
     RunnableSerializable,
     coerce_to_runnable,
 )
-from langchain_core.runnables.config import RunnableConfig, patch_config
+from langchain_core.runnables.config import RunnableConfig, ensure_config, patch_config
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 
 T = TypeVar("T")
@@ -109,8 +110,6 @@ def _config_with_context(
                 raise ValueError(
                     f"Deadlock detected between context keys {key} and {dep}"
                 )
-        if len(getters) < 1:
-            raise ValueError(f"Expected at least one getter for context key {key}")
         if len(setters) != 1:
             raise ValueError(f"Expected exactly one setter for context key {key}")
         setter_idx = setters[0][1]
@@ -119,7 +118,8 @@ def _config_with_context(
                 f"Context setter for key {key} must be defined after all getters."
             )
 
-        context_funcs[getters[0][0].id] = partial(getter, events[key], values)
+        if getters:
+            context_funcs[getters[0][0].id] = partial(getter, events[key], values)
         context_funcs[setters[0][0].id] = partial(setter, events[key], values)
 
     return patch_config(config, configurable=context_funcs)
@@ -157,6 +157,7 @@ def config_with_context(
     return _config_with_context(config, steps, _setter, _getter, threading.Event)
 
 
+@beta()
 class ContextGet(RunnableSerializable):
     """Get a context value."""
 
@@ -187,7 +188,7 @@ class ContextGet(RunnableSerializable):
         ]
 
     def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             return {key: configurable[id_]() for key, id_ in zip(self.key, self.ids)}
@@ -197,7 +198,7 @@ class ContextGet(RunnableSerializable):
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
@@ -220,6 +221,7 @@ def _coerce_set_value(value: SetValue) -> Runnable[Input, Output]:
     return coerce_to_runnable(value)
 
 
+@beta()
 class ContextSet(RunnableSerializable):
     """Set a context value."""
 
@@ -239,7 +241,7 @@ class ContextSet(RunnableSerializable):
     ):
         if key is not None:
             kwargs[key] = value
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             keys={
                 k: _coerce_set_value(v) if v is not None else None
                 for k, v in kwargs.items()
@@ -282,7 +284,7 @@ class ContextSet(RunnableSerializable):
         ]
 
     def invoke(self, input: Any, config: Optional[RunnableConfig] = None) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         for id_, mapper in zip(self.ids, self.keys.values()):
             if mapper is not None:
@@ -294,7 +296,7 @@ class ContextSet(RunnableSerializable):
     async def ainvoke(
         self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Any:
-        config = config or {}
+        config = ensure_config(config)
         configurable = config.get("configurable", {})
         for id_, mapper in zip(self.ids, self.keys.values()):
             if mapper is not None:
@@ -305,7 +307,46 @@ class ContextSet(RunnableSerializable):
 
 
 class Context:
-    """Context for a runnable."""
+    """
+    Context for a runnable.
+
+    The `Context` class provides methods for creating context scopes,
+    getters, and setters within a runnable. It allows for managing
+    and accessing contextual information throughout the execution
+    of a program.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.beta.runnables.context import Context
+            from langchain_core.runnables.passthrough import RunnablePassthrough
+            from langchain_core.prompts.prompt import PromptTemplate
+            from langchain_core.output_parsers.string import StrOutputParser
+            from tests.unit_tests.fake.llm import FakeListLLM
+
+            chain = (
+                Context.setter("input")
+                | {
+                    "context": RunnablePassthrough()
+                            | Context.setter("context"),
+                    "question": RunnablePassthrough(),
+                }
+                | PromptTemplate.from_template("{context} {question}")
+                | FakeListLLM(responses=["hello"])
+                | StrOutputParser()
+                | {
+                    "result": RunnablePassthrough(),
+                    "context": Context.getter("context"),
+                    "input": Context.getter("input"),
+                }
+            )
+
+            # Use the chain
+            output = chain.invoke("What's your name?")
+            print(output["result"])  # Output: "hello"
+            print(output["context"])  # Output: "What's your name?"
+            print(output["input"])  # Output: "What's your name?
+    """
 
     @staticmethod
     def create_scope(scope: str, /) -> "PrefixContext":

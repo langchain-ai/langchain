@@ -1,10 +1,10 @@
 import os
 
-from langchain.embeddings import VertexAIEmbeddings
-from langchain.llms import VertexAI
-from langchain.prompts import PromptTemplate
-from langchain.vectorstores import MatchingEngine
+from langchain_community.embeddings import VertexAIEmbeddings
+from langchain_community.llms import VertexAI
+from langchain_community.vectorstores import MatchingEngine
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 

@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from langchain.chat_models import ChatOllama
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.utilities import SQLDatabase
+from langchain_community.chat_models import ChatOllama
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 

@@ -63,11 +63,6 @@ class DoctranPropertyExtractor(BaseDocumentTransformer):
             "openai_api_model", "OPENAI_API_MODEL"
         )
 
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        raise NotImplementedError
-
     async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
@@ -85,7 +80,32 @@ class DoctranPropertyExtractor(BaseDocumentTransformer):
         properties = [ExtractProperty(**property) for property in self.properties]
         for d in documents:
             doctran_doc = (
-                await doctran.parse(content=d.page_content)
+                doctran.parse(content=d.page_content)
+                .extract(properties=properties)
+                .execute()
+            )
+
+            d.metadata["extracted_properties"] = doctran_doc.extracted_properties
+        return documents
+
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Extracts properties from text documents using doctran."""
+        try:
+            from doctran import Doctran, ExtractProperty
+
+            doctran = Doctran(
+                openai_api_key=self.openai_api_key, openai_model=self.openai_api_model
+            )
+        except ImportError:
+            raise ImportError(
+                "Install doctran to use this parser. (pip install doctran)"
+            )
+        properties = [ExtractProperty(**property) for property in self.properties]
+        for d in documents:
+            doctran_doc = (
+                doctran.parse(content=d.page_content)
                 .extract(properties=properties)
                 .execute()
             )

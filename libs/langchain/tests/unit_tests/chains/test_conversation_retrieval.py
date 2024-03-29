@@ -1,20 +1,20 @@
 """Test conversation chain and memory."""
-import pytest
+from langchain_community.llms.fake import FakeListLLM
 from langchain_core.documents import Document
 
-from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
-from langchain.llms.fake import FakeListLLM
+from langchain.chains.conversational_retrieval.base import (
+    ConversationalRetrievalChain,
+)
 from langchain.memory.buffer import ConversationBufferMemory
 from tests.unit_tests.retrievers.sequential_retriever import SequentialRetriever
 
 
-@pytest.mark.asyncio
-async def atest_simple() -> None:
+async def test_simplea() -> None:
     fixed_resp = "I don't know"
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(sequential_responses=[[]])
-    memory = ConversationBufferMemory(
+    memory = ConversationBufferMemory(  # type: ignore[call-arg]
         k=1, output_key="answer", memory_key="chat_history", return_messages=True
     )
     qa_chain = ConversationalRetrievalChain.from_llm(
@@ -31,15 +31,14 @@ async def atest_simple() -> None:
     assert got["answer"] == fixed_resp
 
 
-@pytest.mark.asyncio
-async def atest_fixed_message_response_when_docs_found() -> None:
+async def test_fixed_message_response_when_docs_founda() -> None:
     fixed_resp = "I don't know"
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(
         sequential_responses=[[Document(page_content=answer)]]
     )
-    memory = ConversationBufferMemory(
+    memory = ConversationBufferMemory(  # type: ignore[call-arg]
         k=1, output_key="answer", memory_key="chat_history", return_messages=True
     )
     qa_chain = ConversationalRetrievalChain.from_llm(
@@ -61,7 +60,7 @@ def test_fixed_message_response_when_no_docs_found() -> None:
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(sequential_responses=[[]])
-    memory = ConversationBufferMemory(
+    memory = ConversationBufferMemory(  # type: ignore[call-arg]
         k=1, output_key="answer", memory_key="chat_history", return_messages=True
     )
     qa_chain = ConversationalRetrievalChain.from_llm(
@@ -85,7 +84,7 @@ def test_fixed_message_response_when_docs_found() -> None:
     retriever = SequentialRetriever(
         sequential_responses=[[Document(page_content=answer)]]
     )
-    memory = ConversationBufferMemory(
+    memory = ConversationBufferMemory(  # type: ignore[call-arg]
         k=1, output_key="answer", memory_key="chat_history", return_messages=True
     )
     qa_chain = ConversationalRetrievalChain.from_llm(

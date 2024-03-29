@@ -1,3 +1,3 @@
-from langchain.llms import Cohere
+from langchain_community.llms import Cohere
 
 chat = Cohere()

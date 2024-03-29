@@ -1,16 +1,20 @@
 [tool.poetry]
 name = "langchain-cli"
-version = "0.0.20"
+version = "0.0.22rc1"
 description = "CLI for interacting with LangChain"
 authors = ["Erick Friis <erick@langchain.dev>"]
-license = "MIT"
 readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain"
+license = "MIT"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/cli"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-typer = {extras = ["all"], version = "^0.9.0"}
+typer = { extras = ["all"], version = "^0.9.0" }
 gitpython = "^3.1.40"
-langserve = {extras = ["all"], version = ">=0.0.16"}
+langserve = { extras = ["all"], version = ">=0.0.51" }
 uvicorn = "^0.23.2"
 tomlkit = "^0.12.2"
 
@@ -36,11 +40,12 @@ ruff = "^0.1.5"
 # For langserve
 serve = []
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
+  "T201", # print
 ]
 
 [tool.poe.tasks]

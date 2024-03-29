@@ -135,7 +135,7 @@ class Jaguar(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         return self._embedding
 
-    def add_texts(
+    def add_texts(  # type: ignore[override]
         self,
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
@@ -158,12 +158,19 @@ class Jaguar(VectorStore):
         """
         vcol = self._vector_index
         filecol = kwargs.get("file_column", "")
+        text_tag = kwargs.get("text_tag", "")
         podstorevcol = self._pod + "." + self._store + "." + vcol
         q = "textcol " + podstorevcol
         js = self.run(q)
         if js == "":
             return []
         textcol = js["data"]
+
+        if text_tag != "":
+            tag_texts = []
+            for t in texts:
+                tag_texts.append(text_tag + " " + t)
+            texts = tag_texts
 
         embeddings = self._embedding.embed_documents(list(texts))
         ids = []
@@ -176,7 +183,8 @@ class Jaguar(VectorStore):
                 podstore = self._pod + "." + self._store
                 q = "insert into " + podstore + " ("
                 q += vcol + "," + textcol + ") values ('" + values_comma
-                q += "','" + texts[i] + "')"
+                txt = texts[i].replace("'", "\\'")
+                q += "','" + txt + "')"
                 js = self.run(q, False)
                 ids.append(js["zid"])
                 i += 1
@@ -199,7 +207,8 @@ class Jaguar(VectorStore):
                 podstore = self._pod + "." + self._store
                 q = "insert into " + podstore + " ("
                 q += names_comma + "," + textcol + ") values (" + values_comma
-                q += ",'" + texts[i] + "')"
+                txt = texts[i].replace("'", "\\'")
+                q += ",'" + txt + "')"
                 if filecol != "":
                     js = self.run(q, True)
                 else:
@@ -215,7 +224,7 @@ class Jaguar(VectorStore):
         k: int = 3,
         fetch_k: int = -1,
         where: Optional[str] = None,
-        score_threshold: Optional[float] = -1.0,
+        args: Optional[str] = None,
         metadatas: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -227,9 +236,7 @@ class Jaguar(VectorStore):
             lambda_val: lexical match parameter for hybrid search.
             where: the where clause in select similarity. For example a
                 where can be "rating > 3.0 and (state = 'NV' or state = 'CA')"
-            score_threshold: minimal score threshold for the result.
-                If defined, results with score less than this value will be
-                filtered out.
+            args: extra options passed to select similarity
             kwargs:  vector_index=vcol, vector_type=cosine_fraction_float
         Returns:
             List of Documents most similar to the query and score for each.
@@ -254,7 +261,9 @@ class Jaguar(VectorStore):
             + ",type="
             + vtype
         )
-        q += ",with_score=yes,with_text=yes,score_threshold=" + str(score_threshold)
+        q += ",with_score=yes,with_text=yes"
+        if args is not None:
+            q += "," + args
 
         if metadatas is not None:
             meta = "&".join(metadatas)
@@ -342,7 +351,7 @@ class Jaguar(VectorStore):
         return False
 
     @classmethod
-    def from_texts(
+    def from_texts(  # type: ignore[override]
         cls,
         texts: List[str],
         embedding: Embeddings,
@@ -374,7 +383,7 @@ class Jaguar(VectorStore):
         q = "truncate store " + podstore
         self.run(q)
 
-    def delete(self, zids: List[str], **kwargs: Any) -> None:
+    def delete(self, zids: List[str], **kwargs: Any) -> None:  # type: ignore[override]
         """
         Delete records in jaguardb by a list of zero-ids
         Args:
@@ -422,7 +431,7 @@ class Jaguar(VectorStore):
 
     def prt(self, msg: str) -> None:
         with open("/tmp/debugjaguar.log", "a") as file:
-            print(f"msg={msg}", file=file, flush=True)
+            print(f"msg={msg}", file=file, flush=True)  # noqa: T201
 
     def _parseMeta(self, nvmap: dict, filecol: str) -> Tuple[List[str], List[str], str]:
         filepath = ""
@@ -442,4 +451,5 @@ class Jaguar(VectorStore):
                     nvec.append(k)
                     vvec.append(v)
 
-        return nvec, vvec, filepath
+        vvec_s = [str(e) for e in vvec]
+        return nvec, vvec_s, filepath

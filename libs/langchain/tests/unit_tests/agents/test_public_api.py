@@ -35,6 +35,13 @@ _EXPECTED = [
     "load_huggingface_tool",
     "load_tools",
     "tool",
+    "create_openai_functions_agent",
+    "create_xml_agent",
+    "create_react_agent",
+    "create_openai_tools_agent",
+    "create_self_ask_with_search_agent",
+    "create_json_chat_agent",
+    "create_structured_chat_agent",
 ]
 
 

@@ -4,10 +4,10 @@ import uuid
 from typing import Generator, Union
 
 import pytest
+from langchain_community.chat_message_histories import ElasticsearchChatMessageHistory
 from langchain_core.messages import message_to_dict
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import ElasticsearchChatMessageHistory
 
 """
 cd tests/integration_tests/memory/docker-compose
@@ -23,7 +23,7 @@ To run against Elastic Cloud, set the following environment variables:
 
 class TestElasticsearch:
     @pytest.fixture(scope="class", autouse=True)
-    def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:
+    def elasticsearch_connection(self) -> Union[dict, Generator[dict, None, None]]:  # type: ignore[return]
         # Run this integration test against Elasticsearch on localhost,
         # or an Elastic Cloud instance
         from elasticsearch import Elasticsearch

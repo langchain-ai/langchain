@@ -45,20 +45,27 @@ def embed_with_retry(embeddings: DashScopeEmbeddings, **kwargs: Any) -> Any:
 
     @retry_decorator
     def _embed_with_retry(**kwargs: Any) -> Any:
-        resp = embeddings.client.call(**kwargs)
-        if resp.status_code == 200:
-            return resp.output["embeddings"]
-        elif resp.status_code in [400, 401]:
-            raise ValueError(
-                f"status_code: {resp.status_code} \n "
-                f"code: {resp.code} \n message: {resp.message}"
-            )
-        else:
-            raise HTTPError(
-                f"HTTP error occurred: status_code: {resp.status_code} \n "
-                f"code: {resp.code} \n message: {resp.message}",
-                response=resp,
-            )
+        result = []
+        i = 0
+        input_data = kwargs["input"]
+        while i < len(input_data):
+            kwargs["input"] = input_data[i : i + 25]
+            resp = embeddings.client.call(**kwargs)
+            if resp.status_code == 200:
+                result += resp.output["embeddings"]
+            elif resp.status_code in [400, 401]:
+                raise ValueError(
+                    f"status_code: {resp.status_code} \n "
+                    f"code: {resp.code} \n message: {resp.message}"
+                )
+            else:
+                raise HTTPError(
+                    f"HTTP error occurred: status_code: {resp.status_code} \n "
+                    f"code: {resp.code} \n message: {resp.message}",
+                    response=resp,
+                )
+            i += 25
+        return result
 
     return _embed_with_retry(**kwargs)
 

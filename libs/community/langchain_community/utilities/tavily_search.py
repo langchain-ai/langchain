@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import aiohttp
 import requests
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 TAVILY_API_URL = "https://api.tavily.com"
@@ -16,7 +16,7 @@ TAVILY_API_URL = "https://api.tavily.com"
 class TavilySearchAPIWrapper(BaseModel):
     """Wrapper for Tavily Search API."""
 
-    tavily_api_key: str
+    tavily_api_key: SecretStr
 
     class Config:
         """Configuration for this pydantic object."""
@@ -45,7 +45,7 @@ class TavilySearchAPIWrapper(BaseModel):
         include_images: Optional[bool] = False,
     ) -> Dict:
         params = {
-            "api_key": self.tavily_api_key,
+            "api_key": self.tavily_api_key.get_secret_value(),
             "query": query,
             "max_results": max_results,
             "search_depth": search_depth,
@@ -126,7 +126,7 @@ class TavilySearchAPIWrapper(BaseModel):
         # Function to perform the API call
         async def fetch() -> str:
             params = {
-                "api_key": self.tavily_api_key,
+                "api_key": self.tavily_api_key.get_secret_value(),
                 "query": query,
                 "max_results": max_results,
                 "search_depth": search_depth,

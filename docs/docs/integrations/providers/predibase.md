@@ -15,7 +15,7 @@ Predibase integrates with LangChain by implementing LLM module. You can see a sh
 import os
 os.environ["PREDIBASE_API_TOKEN"] = "{PREDIBASE_API_TOKEN}"
 
-from langchain.llms import Predibase
+from langchain_community.llms import Predibase
 
 model =  Predibase(model = 'vicuna-13b', predibase_api_key=os.environ.get('PREDIBASE_API_TOKEN'))
 

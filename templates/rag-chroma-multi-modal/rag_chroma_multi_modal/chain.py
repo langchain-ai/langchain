@@ -2,8 +2,8 @@ import base64
 import io
 from pathlib import Path
 
-from langchain.chat_models import ChatOpenAI
-from langchain.vectorstores import Chroma
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser

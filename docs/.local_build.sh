@@ -16,8 +16,9 @@ cp ../cookbook/README.md src/pages/cookbook.mdx
 mkdir -p docs/templates
 cp ../templates/docs/INDEX.md docs/templates/index.md
 poetry run python scripts/copy_templates.py
-wget https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
+wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
+wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O docs/langgraph.md
 
 yarn
 
-quarto preview docs
+poetry run quarto preview docs

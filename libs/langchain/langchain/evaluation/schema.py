@@ -1,16 +1,15 @@
 """Interfaces to be implemented by general evaluators."""
 from __future__ import annotations
 
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from functools import partial
 from typing import Any, Optional, Sequence, Tuple, Union
 from warnings import warn
 
 from langchain_core.agents import AgentAction
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.runnables.config import run_in_executor
 
 from langchain.chains.base import Chain
 
@@ -189,15 +188,13 @@ class StringEvaluator(_EvalArgsMixin, ABC):
                      - value: the string value of the evaluation, if applicable.
                      - reasoning: the reasoning for the evaluation, if applicable.
         """  # noqa: E501
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None,
-            partial(
-                self._evaluate_strings,
-                prediction=prediction,
-                reference=reference,
-                input=input,
-                **kwargs,
-            ),
+            self._evaluate_strings,
+            prediction=prediction,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
     def evaluate_strings(
@@ -292,16 +289,14 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: A dictionary containing the preference, scores, and/or other information.
         """  # noqa: E501
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None,
-            partial(
-                self._evaluate_string_pairs,
-                prediction=prediction,
-                prediction_b=prediction_b,
-                reference=reference,
-                input=input,
-                **kwargs,
-            ),
+            self._evaluate_string_pairs,
+            prediction=prediction,
+            prediction_b=prediction_b,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
     def evaluate_string_pairs(
@@ -415,16 +410,14 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: The evaluation result.
         """
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None,
-            partial(
-                self._evaluate_agent_trajectory,
-                prediction=prediction,
-                agent_trajectory=agent_trajectory,
-                reference=reference,
-                input=input,
-                **kwargs,
-            ),
+            self._evaluate_agent_trajectory,
+            prediction=prediction,
+            agent_trajectory=agent_trajectory,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
     def evaluate_agent_trajectory(

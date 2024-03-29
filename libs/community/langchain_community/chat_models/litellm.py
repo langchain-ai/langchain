@@ -223,6 +223,7 @@ class ChatLiteLLM(BaseChatModel):
         creds: Dict[str, Any] = {
             "model": set_model_value,
             "force_timeout": self.request_timeout,
+            "api_base": self.api_base,
         }
         return {**self._default_params, **creds}
 
@@ -245,8 +246,8 @@ class ChatLiteLLM(BaseChatModel):
             import litellm
         except ImportError:
             raise ChatLiteLLMException(
-                "Could not import google.generativeai python package. "
-                "Please install it with `pip install google-generativeai`"
+                "Could not import litellm python package. "
+                "Please install it with `pip install litellm`"
             )
 
         values["openai_api_key"] = get_from_dict_or_env(
@@ -354,9 +355,10 @@ class ChatLiteLLM(BaseChatModel):
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
+            yield cg_chunk
 
     async def _astream(
         self,
@@ -377,9 +379,10 @@ class ChatLiteLLM(BaseChatModel):
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                await run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
+            yield cg_chunk
 
     async def _agenerate(
         self,

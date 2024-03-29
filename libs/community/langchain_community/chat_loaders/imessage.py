@@ -91,8 +91,38 @@ class IMessageChatLoader(BaseChatLoader):
             length, start = int.from_bytes(content[1:3], "little"), 3
         return content[start : start + length].decode("utf-8", errors="ignore")
 
+    def _get_session_query(self, use_chat_handle_table: bool) -> str:
+        # Messages sent pre OSX 12 require a join through the chat_handle_join table
+        # However, the table doesn't exist if database created with OSX 12 or above.
+
+        joins_w_chat_handle = """
+            JOIN chat_handle_join ON
+                 chat_message_join.chat_id = chat_handle_join.chat_id
+            JOIN handle ON
+                 handle.ROWID = chat_handle_join.handle_id"""
+
+        joins_no_chat_handle = """
+            JOIN handle ON message.handle_id = handle.ROWID
+        """
+
+        joins = joins_w_chat_handle if use_chat_handle_table else joins_no_chat_handle
+
+        return f"""
+            SELECT  message.date,
+                    handle.id,
+                    message.text,
+                    message.is_from_me,
+                    message.attributedBody
+            FROM message
+            JOIN chat_message_join ON
+                 message.ROWID = chat_message_join.message_id
+            {joins}
+            WHERE chat_message_join.chat_id = ?
+            ORDER BY message.date ASC;
+        """
+
     def _load_single_chat_session(
-        self, cursor: "sqlite3.Cursor", chat_id: int
+        self, cursor: "sqlite3.Cursor", use_chat_handle_table: bool, chat_id: int
     ) -> ChatSession:
         """
         Load a single chat session from the iMessage chat.db.
@@ -106,14 +136,7 @@ class IMessageChatLoader(BaseChatLoader):
         """
         results: List[HumanMessage] = []
 
-        query = """
-        SELECT message.date, handle.id, message.text, message.is_from_me, message.attributedBody
-        FROM message
-        JOIN chat_message_join ON message.ROWID = chat_message_join.message_id
-        JOIN handle ON message.handle_id = handle.ROWID
-        WHERE chat_message_join.chat_id = ?
-        ORDER BY message.date ASC;
-        """  # noqa: E501
+        query = self._get_session_query(use_chat_handle_table)
         cursor.execute(query, (chat_id,))
         messages = cursor.fetchall()
 
@@ -165,6 +188,13 @@ class IMessageChatLoader(BaseChatLoader):
             ) from e
         cursor = conn.cursor()
 
+        # See if chat_handle_join table exists:
+        query = """SELECT name FROM sqlite_master
+                   WHERE type='table' AND name='chat_handle_join';"""
+
+        cursor.execute(query)
+        is_chat_handle_join_exists = cursor.fetchone()
+
         # Fetch the list of chat IDs sorted by time (most recent first)
         query = """SELECT chat_id
         FROM message
@@ -175,6 +205,8 @@ class IMessageChatLoader(BaseChatLoader):
         chat_ids = [row[0] for row in cursor.fetchall()]
 
         for chat_id in chat_ids:
-            yield self._load_single_chat_session(cursor, chat_id)
+            yield self._load_single_chat_session(
+                cursor, is_chat_handle_join_exists, chat_id
+            )
 
         conn.close()

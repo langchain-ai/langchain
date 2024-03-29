@@ -19,7 +19,7 @@ pip install pypdf
 
 
 ```python
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 
 loader = PyPDFLoader("example_data/layout-parser-paper.pdf")
 pages = loader.load_and_split()
@@ -60,8 +60,8 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 
 
 ```python
-from langchain.vectorstores import FAISS
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
 
 faiss_index = FAISS.from_documents(pages, OpenAIEmbeddings())
 docs = faiss_index.similarity_search("How will the community be engaged?", k=2)
@@ -114,7 +114,7 @@ Inspired by Daniel Gross's [https://gist.github.com/danielgross/3ab4104e14faccc1
 
 
 ```python
-from langchain.document_loaders import MathpixPDFLoader
+from langchain_community.document_loaders import MathpixPDFLoader
 ```
 
 
@@ -131,7 +131,7 @@ data = loader.load()
 
 
 ```python
-from langchain.document_loaders import UnstructuredPDFLoader
+from langchain_community.document_loaders import UnstructuredPDFLoader
 ```
 
 
@@ -180,7 +180,7 @@ Note: all other PDF loaders can also be used to fetch remote PDFs, but `OnlinePD
 
 
 ```python
-from langchain.document_loaders import OnlinePDFLoader
+from langchain_community.document_loaders import OnlinePDFLoader
 ```
 
 
@@ -210,7 +210,7 @@ print(data)
 
 
 ```python
-from langchain.document_loaders import PyPDFium2Loader
+from langchain_community.document_loaders import PyPDFium2Loader
 ```
 
 
@@ -227,7 +227,7 @@ data = loader.load()
 
 
 ```python
-from langchain.document_loaders import PDFMinerLoader
+from langchain_community.document_loaders import PDFMinerLoader
 ```
 
 
@@ -246,7 +246,7 @@ This can be helpful for chunking texts semantically into sections as the output 
 
 
 ```python
-from langchain.document_loaders import PDFMinerPDFasHTMLLoader
+from langchain_community.document_loaders import PDFMinerPDFasHTMLLoader
 ```
 
 
@@ -345,7 +345,7 @@ This is the fastest of the PDF parsing options, and contains detailed metadata a
 
 
 ```python
-from langchain.document_loaders import PyMuPDFLoader
+from langchain_community.document_loaders import PyMuPDFLoader
 ```
 
 
@@ -379,7 +379,7 @@ Load PDFs from directory
 
 
 ```python
-from langchain.document_loaders import PyPDFDirectoryLoader
+from langchain_community.document_loaders import PyPDFDirectoryLoader
 ```
 
 
@@ -398,7 +398,7 @@ Like PyMuPDF, the output Documents contain detailed metadata about the PDF and i
 
 
 ```python
-from langchain.document_loaders import PDFPlumberLoader
+from langchain_community.document_loaders import PDFPlumberLoader
 ```
 
 
@@ -433,7 +433,34 @@ For the call to be successful an AWS account is required, similar to the [AWS CL
 Besides the AWS configuration, it is very similar to the other PDF loaders, while also supporting JPEG, PNG and TIFF and non-native PDF formats.
 
 ```python
-from langchain.document_loaders import AmazonTextractPDFLoader
+from langchain_community.document_loaders import AmazonTextractPDFLoader
 loader = AmazonTextractPDFLoader("example_data/alejandro_rosalez_sample-small.jpeg")
+documents = loader.load()
+```
+
+## Using AzureAIDocumentIntelligenceLoader
+
+[Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known as `Azure Form Recognizer`) is machine-learning 
+based service that extracts texts (including handwriting), tables, document structures (e.g., titles, section headings, etc.) and key-value-pairs from
+digital or scanned PDFs, images, Office and HTML files. Document Intelligence supports `PDF`, `JPEG/JPG`, `PNG`, `BMP`, `TIFF`, `HEIF`, `DOCX`, `XLSX`, `PPTX` and `HTML`.
+
+This [current implementation](https://aka.ms/di-langchain) of a loader using `Document Intelligence` can incorporate content page-wise and turn it into LangChain documents. The default output format is markdown, which can be easily chained with `MarkdownHeaderTextSplitter` for semantic document chunking. You can also use `mode="single"` or `mode="page"` to return pure texts in a single page or document split by page.
+
+### Prerequisite
+
+An Azure AI Document Intelligence resource in one of the 3 preview regions: **East US**, **West US2**, **West Europe** - follow [this document](https://learn.microsoft.com/azure/ai-services/document-intelligence/create-document-intelligence-resource?view=doc-intel-4.0.0) to create one if you don't have. You will be passing `<endpoint>` and `<key>` as parameters to the loader.
+
+```python
+%pip install --upgrade --quiet  langchain langchain-community azure-ai-documentintelligence
+
+from langchain_community.document_loaders import AzureAIDocumentIntelligenceLoader
+
+file_path = "<filepath>"
+endpoint = "<endpoint>"
+key = "<key>"
+loader = AzureAIDocumentIntelligenceLoader(
+    api_endpoint=endpoint, api_key=key, file_path=file_path, api_model="prebuilt-layout"
+)
+
 documents = loader.load()
 ```

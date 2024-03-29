@@ -35,10 +35,19 @@ FROM langchain-dev-base AS langchain-dev-dependencies
 ARG PYTHON_VIRTUALENV_HOME
 
 # Copy only the dependency files for installation
-COPY libs/langchain/pyproject.toml libs/langchain/poetry.toml ./
+COPY libs/langchain/pyproject.toml libs/langchain/poetry.toml libs/langchain/poetry.lock ./
 
 # Copy the langchain library for installation
 COPY libs/langchain/ libs/langchain/
+
+# Copy the core library for installation
+COPY libs/core ../core
+
+# Copy the community library for installation
+COPY libs/community/ ../community/
+
+# Copy the text-splitters library for installation
+COPY libs/text-splitters/ ../text-splitters/
 
 # Install the Poetry dependencies (this layer will be cached as long as the dependencies don't change)
 RUN poetry install --no-interaction --no-ansi --with dev,test,docs

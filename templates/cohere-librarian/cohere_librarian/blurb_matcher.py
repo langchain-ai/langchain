@@ -1,9 +1,9 @@
 import csv
 
 from langchain.chains.question_answering import load_qa_chain
-from langchain.embeddings import CohereEmbeddings
-from langchain.prompts import PromptTemplate
-from langchain.vectorstores import Chroma
+from langchain_community.embeddings import CohereEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_core.prompts import PromptTemplate
 
 from .chat import chat
 

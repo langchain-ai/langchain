@@ -34,7 +34,7 @@ There are two ways to set up parameters for myscale index.
 
 
     ```python
-    from langchain.vectorstores import MyScale, MyScaleSettings
+    from langchain_community.vectorstores import MyScale, MyScaleSettings
     config = MyScaleSetting(host="<your-backend-url>", port=8443, ...)
     index = MyScale(embedding_function, config)
     index.add_documents(...)
@@ -60,7 +60,7 @@ whether for semantic search or similar example retrieval.
 
 To import this vectorstore:
 ```python
-from langchain.vectorstores import MyScale
+from langchain_community.vectorstores import MyScale
 ```
 
 For a more detailed walkthrough of the MyScale wrapper, see [this notebook](/docs/integrations/vectorstores/myscale)

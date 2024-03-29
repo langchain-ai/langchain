@@ -1,11 +1,11 @@
 """Integration test for embedding-based relevant doc filtering."""
 import numpy as np
-from langchain_core.documents import Document
-
-from langchain.document_transformers.embeddings_redundant_filter import (
+from langchain_community.document_transformers.embeddings_redundant_filter import (
     _DocumentWithState,
 )
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_core.documents import Document
+
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 
 
@@ -35,7 +35,7 @@ def test_embeddings_filter_with_state() -> None:
     state = {"embedded_doc": np.zeros(len(embedded_query))}
     docs = [_DocumentWithState(page_content=t, state=state) for t in texts]
     docs[-1].state = {"embedded_doc": embedded_query}
-    relevant_filter = EmbeddingsFilter(
+    relevant_filter = EmbeddingsFilter(  # type: ignore[call-arg]
         embeddings=embeddings, similarity_threshold=0.75, return_similarity_scores=True
     )
     actual = relevant_filter.compress_documents(docs, query)

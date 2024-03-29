@@ -1,4 +1,5 @@
 """Test PydanticOutputParser"""
+
 from enum import Enum
 from typing import Optional
 
@@ -53,26 +54,51 @@ DEF_EXPECTED_RESULT = TestModel(
 def test_pydantic_output_parser() -> None:
     """Test PydanticOutputParser."""
 
-    pydantic_parser: PydanticOutputParser[TestModel] = PydanticOutputParser(
+    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 
     result = pydantic_parser.parse(DEF_RESULT)
-    print("parse_result:", result)
+    print("parse_result:", result)  # noqa: T201
     assert DEF_EXPECTED_RESULT == result
 
 
 def test_pydantic_output_parser_fail() -> None:
     """Test PydanticOutputParser where completion result fails schema validation."""
 
-    pydantic_parser: PydanticOutputParser[TestModel] = PydanticOutputParser(
+    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 
     try:
         pydantic_parser.parse(DEF_RESULT_FAIL)
     except OutputParserException as e:
-        print("parse_result:", e)
+        print("parse_result:", e)  # noqa: T201
         assert "Failed to parse TestModel from completion" in str(e)
     else:
         assert False, "Expected OutputParserException"
+
+
+def test_pydantic_output_parser_type_inference() -> None:
+    """Test pydantic output parser type inference."""
+
+    class SampleModel(BaseModel):
+        foo: int
+        bar: str
+
+    # Ignoring mypy error that appears in python 3.8, but not 3.11.
+    # This seems to be functionally correct, so we'll ignore the error.
+    pydantic_parser = PydanticOutputParser(
+        pydantic_object=SampleModel  # type: ignore[var-annotated]
+    )
+    schema = pydantic_parser.get_output_schema().schema()
+
+    assert schema == {
+        "properties": {
+            "bar": {"title": "Bar", "type": "string"},
+            "foo": {"title": "Foo", "type": "integer"},
+        },
+        "required": ["foo", "bar"],
+        "title": "SampleModel",
+        "type": "object",
+    }
