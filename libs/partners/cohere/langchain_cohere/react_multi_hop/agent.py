@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Callable, Dict, List, Sequence, Tuple, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
@@ -32,23 +32,12 @@ def create_cohere_react_agent(
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
 ) -> Runnable:
-    def multi_hop_prompt(x: Dict) -> BasePromptTemplate:
-        return multi_hop_prompt_template.partial(
-            structured_preamble=render_structured_preamble(
-                user_preamble=x.get("preamble", None)
-            ),
-            tools="\n".join([render_tool_description(t) for t in tools]),
-            user_prompt=prompt.invoke(x).to_string(),
-            steps=format_cohere_log_to_str(x["intermediate_steps"]),
-            history=render_chat_history(x.get("chat_history", [])),
-        )
-
     agent = (
         RunnablePassthrough.assign(
             # Handled in the multi_hop_prompt
             agent_scratchpad=lambda _: [],
         )
-        | multi_hop_prompt
+        | _multi_hop_prompt(tools=tools, prompt=prompt)
         | llm.bind(stop=["\nObservation:"], raw_prompting=True)
         | CohereToolsReactAgentOutputParser()
     )
@@ -309,3 +298,20 @@ def format_cohere_log_to_str(
         thoughts += f"{observation_prefix}{observation_str}{llm_prefix}"
 
     return thoughts
+
+
+def _multi_hop_prompt(
+    tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+) -> Callable:
+    def inner(x: Dict) -> BasePromptTemplate:
+        return multi_hop_prompt_template.partial(
+            structured_preamble=render_structured_preamble(
+                user_preamble=x.get("preamble", None)
+            ),
+            tools="\n".join([render_tool_description(t) for t in tools]),
+            user_prompt=prompt.invoke(x).to_string(),
+            steps=format_cohere_log_to_str(x["intermediate_steps"]),
+            history=render_chat_history(x.get("chat_history", [])),
+        )
+
+    return inner
