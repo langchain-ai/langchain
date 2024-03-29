@@ -6,4 +6,4 @@ if __name__ == "__main__":
         "First do background research on the sender and topics to make sure you"
         " understand the context, then write the draft."
     )
-    print(agent_executor.invoke({"input": question, "chat_history": []}))
+    print(agent_executor.invoke({"input": question, "chat_history": []}))  # noqa: T201

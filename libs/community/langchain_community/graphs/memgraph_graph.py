@@ -1,12 +1,6 @@
 from langchain_community.graphs.neo4j_graph import Neo4jGraph
 
 SCHEMA_QUERY = """
-CALL llm_util.schema("prompt_ready")
-YIELD *
-RETURN *
-"""
-
-RAW_SCHEMA_QUERY = """
 CALL llm_util.schema("raw")
 YIELD *
 RETURN *
@@ -39,10 +33,39 @@ class MemgraphGraph(Neo4jGraph):
         Refreshes the Memgraph graph schema information.
         """
 
-        db_schema = self.query(SCHEMA_QUERY)[0].get("schema")
-        assert db_schema is not None
-        self.schema = db_schema
-
-        db_structured_schema = self.query(RAW_SCHEMA_QUERY)[0].get("schema")
+        db_structured_schema = self.query(SCHEMA_QUERY)[0].get("schema")
         assert db_structured_schema is not None
         self.structured_schema = db_structured_schema
+
+        # Format node properties
+        formatted_node_props = []
+
+        for node_name, properties in db_structured_schema["node_props"].items():
+            formatted_node_props.append(
+                f"Node name: '{node_name}', Node properties: {properties}"
+            )
+
+        # Format relationship properties
+        formatted_rel_props = []
+        for rel_name, properties in db_structured_schema["rel_props"].items():
+            formatted_rel_props.append(
+                f"Relationship name: '{rel_name}', "
+                f"Relationship properties: {properties}"
+            )
+
+        # Format relationships
+        formatted_rels = [
+            f"(:{rel['start']})-[:{rel['type']}]->(:{rel['end']})"
+            for rel in db_structured_schema["relationships"]
+        ]
+
+        self.schema = "\n".join(
+            [
+                "Node properties are the following:",
+                *formatted_node_props,
+                "Relationship properties are the following:",
+                *formatted_rel_props,
+                "The relationships are the following:",
+                *formatted_rels,
+            ]
+        )

@@ -30,6 +30,8 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
 
     # Instance context
     instance: Dict[str, Any] = {}  #: :meta private:
+    show_progress_bar: bool = False
+    """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -302,7 +304,20 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
         # In such case, batches have texts that were not processed yet.
         embeddings.extend(first_batch_result)
         tasks = []
-        for batch in batches:
+        if self.show_progress_bar:
+            try:
+                from tqdm import tqdm
+
+                iter_ = tqdm(batches, desc="VertexAIEmbeddings")
+            except ImportError:
+                logger.warning(
+                    "Unable to show progress bar because tqdm could not be imported. "
+                    "Please install with `pip install tqdm`."
+                )
+                iter_ = batches
+        else:
+            iter_ = batches
+        for batch in iter_:
             tasks.append(
                 self.instance["task_executor"].submit(
                     self._get_embeddings_with_retry,

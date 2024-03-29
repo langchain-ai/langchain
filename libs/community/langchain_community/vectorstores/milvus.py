@@ -56,6 +56,9 @@ class Milvus(VectorStore):
             default of index.
         drop_old (Optional[bool]): Whether to drop the current collection. Defaults
             to False.
+        auto_id (bool): Whether to enable auto id for primary key. Defaults to False.
+            If False, you needs to provide text ids (string less than 65535 bytes).
+            If True, Milvus will generate unique integers as primary keys.
         primary_field (str): Name of the primary key field. Defaults to "pk".
         text_field (str): Name of the text field. Defaults to "text".
         vector_field (str): Name of the vector field. Defaults to "vector".
@@ -102,6 +105,7 @@ class Milvus(VectorStore):
             embedding_function = Embeddings,
             collection_name = "LangChainCollection",
             drop_old = True,
+            auto_id = True
         )
 
     Raises:
@@ -119,6 +123,7 @@ class Milvus(VectorStore):
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: Optional[bool] = False,
+        auto_id: bool = False,
         *,
         primary_field: str = "pk",
         text_field: str = "text",
@@ -149,7 +154,20 @@ class Milvus(VectorStore):
             "RHNSW_PQ": {"metric_type": "L2", "params": {"ef": 10}},
             "IVF_HNSW": {"metric_type": "L2", "params": {"nprobe": 10, "ef": 10}},
             "ANNOY": {"metric_type": "L2", "params": {"search_k": 10}},
+            "SCANN": {"metric_type": "L2", "params": {"search_k": 10}},
             "AUTOINDEX": {"metric_type": "L2", "params": {}},
+            "GPU_CAGRA": {
+                "metric_type": "L2",
+                "params": {
+                    "itopk_size": 128,
+                    "search_width": 4,
+                    "min_iterations": 0,
+                    "max_iterations": 0,
+                    "team_size": 0,
+                },
+            },
+            "GPU_IVF_FLAT": {"metric_type": "L2", "params": {"nprobe": 10}},
+            "GPU_IVF_PQ": {"metric_type": "L2", "params": {"nprobe": 10}},
         }
 
         self.embedding_func = embedding_function
@@ -159,8 +177,9 @@ class Milvus(VectorStore):
         self.index_params = index_params
         self.search_params = search_params
         self.consistency_level = consistency_level
+        self.auto_id = auto_id
 
-        # In order for a collection to be compatible, pk needs to be auto'id and int
+        # In order for a collection to be compatible, pk needs to be varchar
         self._primary_field = primary_field
         # In order for compatibility, the text field will need to be called "text"
         self._text_field = text_field
@@ -327,11 +346,22 @@ class Milvus(VectorStore):
             FieldSchema(self._text_field, DataType.VARCHAR, max_length=65_535)
         )
         # Create the primary key field
-        fields.append(
-            FieldSchema(
-                self._primary_field, DataType.INT64, is_primary=True, auto_id=True
+        if self.auto_id:
+            fields.append(
+                FieldSchema(
+                    self._primary_field, DataType.INT64, is_primary=True, auto_id=True
+                )
             )
-        )
+        else:
+            fields.append(
+                FieldSchema(
+                    self._primary_field,
+                    DataType.VARCHAR,
+                    is_primary=True,
+                    auto_id=False,
+                    max_length=65_535,
+                )
+            )
         # Create the vector field, supports binary or float vectors
         fields.append(
             FieldSchema(self._vector_field, infer_dtype_bydata(embeddings[0]), dim=dim)
@@ -369,8 +399,6 @@ class Milvus(VectorStore):
             schema = self.col.schema
             for x in schema.fields:
                 self.fields.append(x.name)
-            # Since primary field is auto-id, no need to track it
-            self.fields.remove(self._primary_field)
 
     def _get_index(self) -> Optional[dict[str, Any]]:
         """Return the vector index information if it exists"""
@@ -446,9 +474,16 @@ class Milvus(VectorStore):
         timeout: Optional[float] = None,
     ) -> None:
         """Load the collection if available."""
-        from pymilvus import Collection
+        from pymilvus import Collection, utility
+        from pymilvus.client.types import LoadState
 
-        if isinstance(self.col, Collection) and self._get_index() is not None:
+        timeout = self.timeout or timeout
+        if (
+            isinstance(self.col, Collection)
+            and self._get_index() is not None
+            and utility.load_state(self.collection_name, using=self.alias)
+            == LoadState.NotLoad
+        ):
             self.col.load(
                 partition_names=partition_names,
                 replica_number=replica_number,
@@ -459,8 +494,10 @@ class Milvus(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         batch_size: int = 1000,
+        *,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Insert text data into Milvus.
@@ -477,10 +514,12 @@ class Milvus(VectorStore):
                 that they all fit in memory.
             metadatas (Optional[List[dict]]): Metadata dicts attached to each of
                 the texts. Defaults to None.
-            timeout (Optional[int]): Timeout for each batch insert. Defaults
+            should be less than 65535 bytes. Required and work when auto_id is False.
+            timeout (Optional[float]): Timeout for each batch insert. Defaults
                 to None.
             batch_size (int, optional): Batch size to use for insertion.
                 Defaults to 1000.
+            ids (Optional[List[str]]): List of text ids. The length of each item
 
         Raises:
             MilvusException: Failure to add texts
@@ -491,6 +530,16 @@ class Milvus(VectorStore):
         from pymilvus import Collection, MilvusException
 
         texts = list(texts)
+        if not self.auto_id:
+            assert isinstance(
+                ids, list
+            ), "A list of valid ids are required when auto_id is False."
+            assert len(set(ids)) == len(
+                texts
+            ), "Different lengths of texts and unique ids are provided."
+            assert all(
+                len(x.encode()) <= 65_535 for x in ids
+            ), "Each id should be a string less than 65535 bytes."
 
         try:
             embeddings = self.embedding_func.embed_documents(texts)
@@ -518,15 +567,23 @@ class Milvus(VectorStore):
             self._vector_field: embeddings,
         }
 
+        if not self.auto_id:
+            insert_dict[self._primary_field] = ids  # type: ignore[assignment]
+
         if self._metadata_field is not None:
-            for d in metadatas:
+            for d in metadatas:  # type: ignore[union-attr]
                 insert_dict.setdefault(self._metadata_field, []).append(d)
         else:
             # Collect the metadata into the insert dict.
             if metadatas is not None:
                 for d in metadatas:
                     for key, value in d.items():
-                        if key in self.fields:
+                        keys = (
+                            [x for x in self.fields if x != self._primary_field]
+                            if self.auto_id
+                            else [x for x in self.fields]
+                        )
+                        if key in keys:
                             insert_dict.setdefault(key, []).append(value)
 
         # Total insert count
@@ -540,10 +597,13 @@ class Milvus(VectorStore):
             # Grab end index
             end = min(i + batch_size, total_count)
             # Convert dict to list of lists batch for insertion
-            insert_list = [insert_dict[x][i:end] for x in self.fields]
+            insert_list = [
+                insert_dict[x][i:end] for x in self.fields if x in insert_dict
+            ]
             # Insert into the collection.
             try:
                 res: Collection
+                timeout = self.timeout or timeout
                 res = self.col.insert(insert_list, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
             except MilvusException as e:
@@ -551,7 +611,6 @@ class Milvus(VectorStore):
                     "Failed to insert batch starting at entity: %s/%s", i, total_count
                 )
                 raise e
-        self.col.flush()
         return pks
 
     def similarity_search(
@@ -560,7 +619,7 @@ class Milvus(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search against the query string.
@@ -581,6 +640,7 @@ class Milvus(VectorStore):
         if self.col is None:
             logger.debug("No existing collection to search.")
             return []
+        timeout = self.timeout or timeout
         res = self.similarity_search_with_score(
             query=query, k=k, param=param, expr=expr, timeout=timeout, **kwargs
         )
@@ -592,7 +652,7 @@ class Milvus(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search against the query string.
@@ -613,6 +673,7 @@ class Milvus(VectorStore):
         if self.col is None:
             logger.debug("No existing collection to search.")
             return []
+        timeout = self.timeout or timeout
         res = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, param=param, expr=expr, timeout=timeout, **kwargs
         )
@@ -624,7 +685,7 @@ class Milvus(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score.
@@ -639,7 +700,7 @@ class Milvus(VectorStore):
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
-            timeout (int, optional): How long to wait before timeout error.
+            timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
             kwargs: Collection.search() keyword arguments.
 
@@ -652,7 +713,7 @@ class Milvus(VectorStore):
 
         # Embed the query text.
         embedding = self.embedding_func.embed_query(query)
-
+        timeout = self.timeout or timeout
         res = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, param=param, expr=expr, timeout=timeout, **kwargs
         )
@@ -664,7 +725,7 @@ class Milvus(VectorStore):
         k: int = 4,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score.
@@ -679,7 +740,7 @@ class Milvus(VectorStore):
             param (dict): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
-            timeout (int, optional): How long to wait before timeout error.
+            timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
             kwargs: Collection.search() keyword arguments.
 
@@ -693,10 +754,10 @@ class Milvus(VectorStore):
         if param is None:
             param = self.search_params
 
-        # Determine result metadata fields.
+        # Determine result metadata fields with PK.
         output_fields = self.fields[:]
         output_fields.remove(self._vector_field)
-
+        timeout = self.timeout or timeout
         # Perform the search.
         res = self.col.search(
             data=[embedding],
@@ -726,7 +787,7 @@ class Milvus(VectorStore):
         lambda_mult: float = 0.5,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a search and return results that are reordered by MMR.
@@ -743,7 +804,7 @@ class Milvus(VectorStore):
             param (dict, optional): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
-            timeout (int, optional): How long to wait before timeout error.
+            timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
             kwargs: Collection.search() keyword arguments.
 
@@ -756,7 +817,7 @@ class Milvus(VectorStore):
             return []
 
         embedding = self.embedding_func.embed_query(query)
-
+        timeout = self.timeout or timeout
         return self.max_marginal_relevance_search_by_vector(
             embedding=embedding,
             k=k,
@@ -776,7 +837,7 @@ class Milvus(VectorStore):
         lambda_mult: float = 0.5,
         param: Optional[dict] = None,
         expr: Optional[str] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a search and return results that are reordered by MMR.
@@ -793,7 +854,7 @@ class Milvus(VectorStore):
             param (dict, optional): The search params for the specified index.
                 Defaults to None.
             expr (str, optional): Filtering expression. Defaults to None.
-            timeout (int, optional): How long to wait before timeout error.
+            timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
             kwargs: Collection.search() keyword arguments.
 
@@ -810,7 +871,7 @@ class Milvus(VectorStore):
         # Determine result metadata fields.
         output_fields = self.fields[:]
         output_fields.remove(self._vector_field)
-
+        timeout = self.timeout or timeout
         # Perform the search.
         res = self.col.search(
             data=[embedding],
@@ -858,6 +919,30 @@ class Milvus(VectorStore):
                 ret.append(documents[x])
         return ret
 
+    def delete(  # type: ignore[no-untyped-def]
+        self, ids: Optional[List[str]] = None, expr: Optional[str] = None, **kwargs: str
+    ):
+        """Delete by vector ID or boolean expression.
+        Refer to [Milvus documentation](https://milvus.io/docs/delete_data.md)
+        for notes and examples of expressions.
+
+        Args:
+            ids: List of ids to delete.
+            expr: Boolean expression that specifies the entities to delete.
+            kwargs: Other parameters in Milvus delete api.
+        """
+        if isinstance(ids, list) and len(ids) > 0:
+            if expr is not None:
+                logger.warning(
+                    "Both ids and expr are provided. " "Ignore expr and delete by ids."
+                )
+            expr = f"{self._primary_field} in {ids}"
+        else:
+            assert isinstance(
+                expr, str
+            ), "Either ids list or expr string must be provided."
+        return self.col.delete(expr=expr, **kwargs)  # type: ignore[union-attr]
+
     @classmethod
     def from_texts(
         cls,
@@ -870,6 +955,8 @@ class Milvus(VectorStore):
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: bool = False,
+        *,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Milvus:
         """Create a Milvus collection, indexes it with HNSW, and insert data.
@@ -891,10 +978,16 @@ class Milvus(VectorStore):
                 Defaults to None.
             drop_old (Optional[bool], optional): Whether to drop the collection with
                 that name if it exists. Defaults to False.
+            ids (Optional[List[str]]): List of text ids. Defaults to None.
 
         Returns:
             Milvus: Milvus Vector Store
         """
+        if isinstance(ids, list) and len(ids) > 0:
+            auto_id = False
+        else:
+            auto_id = True
+
         vector_db = cls(
             embedding_function=embedding,
             collection_name=collection_name,
@@ -903,9 +996,10 @@ class Milvus(VectorStore):
             index_params=index_params,
             search_params=search_params,
             drop_old=drop_old,
+            auto_id=auto_id,
             **kwargs,
         )
-        vector_db.add_texts(texts=texts, metadatas=metadatas)
+        vector_db.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return vector_db
 
     def _parse_document(self, data: dict) -> Document:
@@ -913,3 +1007,64 @@ class Milvus(VectorStore):
             page_content=data.pop(self._text_field),
             metadata=data.pop(self._metadata_field) if self._metadata_field else data,
         )
+
+    def get_pks(self, expr: str, **kwargs: Any) -> List[int] | None:
+        """Get primary keys with expression
+
+        Args:
+            expr: Expression - E.g: "id in [1, 2]", or "title LIKE 'Abc%'"
+
+        Returns:
+            List[int]: List of IDs (Primary Keys)
+        """
+
+        from pymilvus import MilvusException
+
+        if self.col is None:
+            logger.debug("No existing collection to get pk.")
+            return None
+
+        try:
+            query_result = self.col.query(
+                expr=expr, output_fields=[self._primary_field]
+            )
+        except MilvusException as exc:
+            logger.error("Failed to get ids: %s error: %s", self.collection_name, exc)
+            raise exc
+        pks = [item.get(self._primary_field) for item in query_result]
+        return pks
+
+    def upsert(
+        self,
+        ids: Optional[List[str]] = None,
+        documents: List[Document] | None = None,
+        **kwargs: Any,
+    ) -> List[str] | None:
+        """Update/Insert documents to the vectorstore.
+
+        Args:
+            ids: IDs to update - Let's call get_pks to get ids with expression \n
+            documents (List[Document]): Documents to add to the vectorstore.
+
+        Returns:
+            List[str]: IDs of the added texts.
+        """
+
+        from pymilvus import MilvusException
+
+        if documents is None or len(documents) == 0:
+            logger.debug("No documents to upsert.")
+            return None
+
+        if ids is not None and len(ids):
+            try:
+                self.delete(ids=ids)
+            except MilvusException:
+                pass
+        try:
+            return self.add_documents(documents=documents, **kwargs)
+        except MilvusException as exc:
+            logger.error(
+                "Failed to upsert entities: %s error: %s", self.collection_name, exc
+            )
+            raise exc

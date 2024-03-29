@@ -236,6 +236,12 @@ class SQLiteEntityStore(BaseEntityStore):
 
     session_id: str = "default"
     table_name: str = "memory_store"
+    conn: Any = None
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     def __init__(
         self,

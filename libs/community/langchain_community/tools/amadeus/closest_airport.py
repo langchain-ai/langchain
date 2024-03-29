@@ -58,4 +58,4 @@ class AmadeusClosestAirport(AmadeusBaseTool):
             ' Location Identifier" '
         )
 
-        return self.llm.predict(content)
+        return self.llm.invoke(content)  # type: ignore[union-attr]

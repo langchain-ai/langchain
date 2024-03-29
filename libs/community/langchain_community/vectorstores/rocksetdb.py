@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
@@ -125,7 +127,7 @@ class Rockset(VectorStore):
                 batch = []
             doc = {}
             if metadatas and len(metadatas) > i:
-                doc = metadatas[i]
+                doc = deepcopy(metadatas[i])
             if ids and len(ids) > i:
                 doc["_id"] = ids[i]
             doc[self._text_key] = text
@@ -301,10 +303,11 @@ class Rockset(VectorStore):
         query: str,
         k: int = 4,
         fetch_k: int = 20,
-        where_str: Optional[str] = None,
         lambda_mult: float = 0.5,
+        *,
+        where_str: Optional[str] = None,
         **kwargs: Any,
-    ):
+    ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -316,11 +319,11 @@ class Rockset(VectorStore):
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             distance_func (DistanceFunction): how to compute distance between two
                 vectors in Rockset.
-            where_str: where clause for the sql query
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            where_str: where clause for the sql query
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -397,3 +400,19 @@ LIMIT {str(k)}
             data=[DeleteDocumentsRequestData(id=i) for i in ids],
             workspace=self._workspace,
         )
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        try:
+            if ids is None:
+                ids = []
+            self.delete_texts(ids)
+        except Exception as e:
+            logger.error("Exception when deleting docs from Rockset: %s\n", e)
+            return False
+
+        return True
+
+    async def adelete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Optional[bool]:
+        return await run_in_executor(None, self.delete, ids, **kwargs)

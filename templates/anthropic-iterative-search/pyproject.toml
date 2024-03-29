@@ -12,7 +12,7 @@ anthropic = "^0.5.0"
 wikipedia = "^1.4.0"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = {extras = ["serve"], version = "^0.0.13"}
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "anthropic_iterative_search"
