@@ -173,7 +173,7 @@ class HTMLSectionSplitter:
     def __init__(
         self,
         headers_to_split_on: List[Tuple[str, str]],
-        xslt_path: str = "document_transformers/xsl/converting_to_header.xslt",
+        xslt_path: str = "xsl/converting_to_header.xslt",
         **kwargs: Any,
     ) -> None:
         """Create a new HTMLSectionSplitter.
@@ -242,19 +242,15 @@ class HTMLSectionSplitter:
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
         sections: Dict[str, Dict[str, Optional[str]]] = {}
-        section_content: List[str] = []
-        current_header: str = ""
-        current_header_tag = None
 
         headers = soup.find_all(["body"] + headers)
-        current_header = headers[0]
 
         for i, header in enumerate(headers):
             header_element: PageElement = header
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"
-                section_content = []
+                section_content: List = []
             else:
                 current_header = header_element.text.strip()
                 current_header_tag = header_element.name

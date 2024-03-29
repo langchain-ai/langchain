@@ -1334,7 +1334,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.34"
+version = "0.1.36"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3772,9 +3772,9 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy (>=0.9.1)", "pytest-ruff"]
 
 [extras]
-extended-testing = ["lxml"]
+extended-testing = ["beautifulsoup4", "lxml"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "fe806285e128aea892ae5bad012f7fe7ecb7dc85ba2261c2eb5788d3c529ce2e"
+content-hash = "859cbee6d81c50d2c7dfc5367e76a45659324171f87512667df314825e12f843"
