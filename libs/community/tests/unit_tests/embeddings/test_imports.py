@@ -71,6 +71,7 @@ EXPECTED_ALL = [
     "YandexGPTEmbeddings",
     "OpenVINOEmbeddings",
     "OpenVINOBgeEmbeddings",
+    "SolarEmbeddings",
 ]
 
 
