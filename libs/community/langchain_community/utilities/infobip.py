@@ -5,7 +5,6 @@ import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from requests.adapters import HTTPAdapter
-from requests_toolbelt import MultipartEncoder
 from urllib3.util import Retry
 
 
@@ -96,6 +95,14 @@ class InfobipAPIWrapper(BaseModel):
         self, from_email: str, to_email: str, subject: str, body: str
     ) -> str:
         """Send an email message."""
+
+        try:
+            from requests_toolbelt import MultipartEncoder
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import requests_toolbelt, please install it with "
+                "`pip install -U requests-toolbelt`."
+            ) from e
         form_data: Dict = {
             "from": from_email,
             "to": to_email,

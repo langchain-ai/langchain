@@ -66,6 +66,17 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             List of BaseMessages.
         """
 
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """Format messages from kwargs. Should return a list of BaseMessages.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            List of BaseMessages.
+        """
+        return self.format_messages(**kwargs)
+
     @property
     @abstractmethod
     def input_variables(self) -> List[str]:
@@ -91,17 +102,72 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             Combined prompt template.
         """
-        prompt = ChatPromptTemplate(messages=[self])
+        prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
         return prompt + other
 
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
-    """Prompt template that assumes variable is already list of messages."""
+    """Prompt template that assumes variable is already list of messages.
+
+    A placeholder which can be used to pass in a list of messages.
+
+    Direct usage:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import MessagesPlaceholder
+
+            prompt = MessagesPlaceholder("history")
+            prompt.format_messages() # raises KeyError
+
+            prompt = MessagesPlaceholder("history", optional=True)
+            prompt.format_messages() # returns empty list []
+
+            prompt.format_messages(
+                history=[
+                    ("system", "You are an AI assistant."),
+                    ("human", "Hello!"),
+                ]
+            )
+            # -> [
+            #     SystemMessage(content="You are an AI assistant."),
+            #     HumanMessage(content="Hello!"),
+            # ]
+
+    Building a prompt with chat history:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are a helpful assistant."),
+                    MessagesPlaceholder("history"),
+                    ("human", "{question}")
+                ]
+            )
+            prompt.invoke(
+               {
+                   "history": [("human", "what's 5 + 2"), ("ai", "5 + 2 is 7")],
+                   "question": "now multiply that by 4"
+               }
+            )
+            # -> ChatPromptValue(messages=[
+            #     SystemMessage(content="You are a helpful assistant."),
+            #     HumanMessage(content="what's 5 + 2"),
+            #     AIMessage(content="5 + 2 is 7"),
+            #     HumanMessage(content="now multiply that by 4"),
+            # ])
+    """
 
     variable_name: str
     """Name of variable to use as messages."""
 
     optional: bool = False
+    """If True format_messages can be called with no arguments and will return an empty 
+        list. If False then a named argument with name `variable_name` must be passed 
+        in, even if the value is an empty list."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -539,6 +605,10 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages."""
 
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """Format kwargs into a list of messages."""
+        return self.format_messages(**kwargs)
+
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation."""
         raise NotImplementedError
@@ -551,7 +621,10 @@ MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTempla
 
 MessageLikeRepresentation = Union[
     MessageLike,
-    Tuple[Union[str, Type], Union[str, List[dict], List[object]]],
+    Tuple[
+        Union[str, Type],
+        Union[str, List[dict], List[object]],
+    ],
     str,
 ]
 
@@ -574,11 +647,90 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 ("human", "{user_input}"),
             ])
 
-            messages = template.format_messages(
-                name="Bob",
-                user_input="What is your name?"
+            prompt_value = template.invoke(
+                {
+                    "name": "Bob",
+                    "user_input": "What is your name?"
+                }
             )
-    """
+            # Output:
+            # ChatPromptValue(
+            #    messages=[
+            #        SystemMessage(content='You are a helpful AI bot. Your name is Bob.'),
+            #        HumanMessage(content='Hello, how are you doing?'),
+            #        AIMessage(content="I'm doing well, thanks!"),
+            #        HumanMessage(content='What is your name?')
+            #    ]
+            #)
+
+    Messages Placeholder:
+
+        .. code-block:: python
+
+            # In addition to Human/AI/Tool/Function messages,
+            # you can initialize the template with a MessagesPlaceholder
+            # either using the class directly or with the shorthand tuple syntax:
+
+            template = ChatPromptTemplate.from_messages([
+                ("system", "You are a helpful AI bot."),
+                # Means the template will receive an optional list of messages under
+                # the "conversation" key
+                ("placeholder", "{conversation}")
+                # Equivalently:
+                # MessagesPlaceholder(variable_name="conversation", optional=True)
+            ])
+
+            prompt_value = template.invoke(
+                {
+                    "conversation": [
+                        ("human", "Hi!"),
+                        ("ai", "How can I assist you today?"),
+                        ("human", "Can you make me an ice cream sundae?"),
+                        ("ai", "No.")
+                    ]
+                }
+            )
+
+            # Output:
+            # ChatPromptValue(
+            #    messages=[
+            #        SystemMessage(content='You are a helpful AI bot.'),
+            #        HumanMessage(content='Hi!'),
+            #        AIMessage(content='How can I assist you today?'),
+            #        HumanMessage(content='Can you make me an ice cream sundae?'),
+            #        AIMessage(content='No.'),
+            #    ]
+            #)
+
+    Single-variable template:
+
+        If your prompt has only a single input variable (i.e., 1 instance of "{variable_nams}"),
+        and you invoke the template with a non-dict object, the prompt template will
+        inject the provided argument into that variable location.
+
+
+        .. code-block:: python
+
+            from langchain_core.prompts import ChatPromptTemplate
+
+            template = ChatPromptTemplate.from_messages([
+                ("system", "You are a helpful AI bot. Your name is Carl."),
+                ("human", "{user_input}"),
+            ])
+
+            prompt_value = template.invoke("Hello, there!")
+            # Equivalent to
+            # prompt_value = template.invoke({"user_input": "Hello, there!"})
+
+            # Output:
+            #  ChatPromptValue(
+            #     messages=[
+            #         SystemMessage(content='You are a helpful AI bot. Your name is Carl.'),
+            #         HumanMessage(content='Hello, there!'),
+            #     ]
+            # )
+
+    """  # noqa: E501
 
     input_variables: List[str]
     """List of input variables in template messages. Used for validation."""
@@ -603,17 +755,17 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         # Allow for easy combining
         if isinstance(other, ChatPromptTemplate):
-            return ChatPromptTemplate(messages=self.messages + other.messages)
+            return ChatPromptTemplate(messages=self.messages + other.messages)  # type: ignore[call-arg]
         elif isinstance(
             other, (BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate)
         ):
-            return ChatPromptTemplate(messages=self.messages + [other])
+            return ChatPromptTemplate(messages=self.messages + [other])  # type: ignore[call-arg]
         elif isinstance(other, (list, tuple)):
             _other = ChatPromptTemplate.from_messages(other)
-            return ChatPromptTemplate(messages=self.messages + _other.messages)
+            return ChatPromptTemplate(messages=self.messages + _other.messages)  # type: ignore[call-arg]
         elif isinstance(other, str):
             prompt = HumanMessagePromptTemplate.from_template(other)
-            return ChatPromptTemplate(messages=self.messages + [prompt])
+            return ChatPromptTemplate(messages=self.messages + [prompt])  # type: ignore[call-arg]
         else:
             raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
 
@@ -672,7 +824,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         return cls.from_messages([message])
 
     @classmethod
-    @deprecated("0.0.260", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
     def from_role_strings(
         cls, string_messages: List[Tuple[str, str]]
     ) -> ChatPromptTemplate:
@@ -684,7 +836,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             a chat prompt template
         """
-        return cls(
+        return cls(  # type: ignore[call-arg]
             messages=[
                 ChatMessagePromptTemplate.from_template(template, role=role)
                 for role, template in string_messages
@@ -692,7 +844,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         )
 
     @classmethod
-    @deprecated("0.0.260", alternative="from_messages classmethod", pending=True)
+    @deprecated("0.0.1", alternative="from_messages classmethod", pending=True)
     def from_strings(
         cls, string_messages: List[Tuple[Type[BaseMessagePromptTemplate], str]]
     ) -> ChatPromptTemplate:
@@ -764,18 +916,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             partial_variables=partial_vars,
         )
 
-    def format(self, **kwargs: Any) -> str:
-        """Format the chat template into a string.
-
-        Args:
-            **kwargs: keyword arguments to use for filling in template variables
-                      in all the template messages in this chat template.
-
-        Returns:
-            formatted string
-        """
-        return self.format_prompt(**kwargs).to_string()
-
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format the chat template into a list of finalized messages.
 
@@ -795,6 +935,30 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
             ):
                 message = message_template.format_messages(**kwargs)
+                result.extend(message)
+            else:
+                raise ValueError(f"Unexpected input: {message_template}")
+        return result
+
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """Format the chat template into a list of finalized messages.
+
+        Args:
+            **kwargs: keyword arguments to use for filling in template variables
+                      in all the template messages in this chat template.
+
+        Returns:
+            list of formatted messages
+        """
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
+        result = []
+        for message_template in self.messages:
+            if isinstance(message_template, BaseMessage):
+                result.extend([message_template])
+            elif isinstance(
+                message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
+            ):
+                message = await message_template.aformat_messages(**kwargs)
                 result.extend(message)
             else:
                 raise ValueError(f"Unexpected input: {message_template}")
@@ -909,6 +1073,36 @@ def _create_template_from_message_type(
         message = AIMessagePromptTemplate.from_template(cast(str, template))
     elif message_type == "system":
         message = SystemMessagePromptTemplate.from_template(cast(str, template))
+    elif message_type == "placeholder":
+        if isinstance(template, str):
+            if template[0] != "{" or template[-1] != "}":
+                raise ValueError(
+                    f"Invalid placeholder template: {template}."
+                    " Expected a variable name surrounded by curly braces."
+                )
+            var_name = template[1:-1]
+            message = MessagesPlaceholder(variable_name=var_name, optional=True)
+        elif len(template) == 2 and isinstance(template[1], bool):
+            var_name_wrapped, is_optional = template
+            if not isinstance(var_name_wrapped, str):
+                raise ValueError(
+                    "Expected variable name to be a string." f" Got: {var_name_wrapped}"
+                )
+            if var_name_wrapped[0] != "{" or var_name_wrapped[-1] != "}":
+                raise ValueError(
+                    f"Invalid placeholder template: {var_name_wrapped}."
+                    " Expected a variable name surrounded by curly braces."
+                )
+            var_name = var_name_wrapped[1:-1]
+
+            message = MessagesPlaceholder(variable_name=var_name, optional=is_optional)
+        else:
+            raise ValueError(
+                "Unexpected arguments for placeholder message type."
+                " Expected either a single string variable name"
+                " or a list of [variable_name: str, is_optional: bool]."
+                f" Got: {template}"
+            )
     else:
         raise ValueError(
             f"Unexpected message type: {message_type}. Use one of 'human',"

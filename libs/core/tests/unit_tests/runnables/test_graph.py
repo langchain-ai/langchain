@@ -1,11 +1,11 @@
 from syrupy import SnapshotAssertion
 
+from langchain_core.language_models import FakeListLLM
 from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables.base import Runnable
-from tests.unit_tests.fake.llm import FakeListLLM
 
 
 def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
@@ -54,7 +54,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                 "id": 2,
                 "type": "runnable",
                 "data": {
-                    "id": ["tests", "unit_tests", "fake", "llm", "FakeListLLM"],
+                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
             },
@@ -136,7 +136,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                 "id": 2,
                 "type": "runnable",
                 "data": {
-                    "id": ["tests", "unit_tests", "fake", "llm", "FakeListLLM"],
+                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
                     "name": "FakeListLLM",
                 },
             },
@@ -179,12 +179,17 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Additional Kwargs",
                                     "type": "object",
                                 },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
+                                    "type": "object",
+                                },
                                 "type": {
                                     "title": "Type",
                                     "default": "ai",
                                     "enum": ["ai"],
                                     "type": "string",
                                 },
+                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
                                 "example": {
                                     "title": "Example",
@@ -218,12 +223,17 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Additional Kwargs",
                                     "type": "object",
                                 },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
+                                    "type": "object",
+                                },
                                 "type": {
                                     "title": "Type",
                                     "default": "human",
                                     "enum": ["human"],
                                     "type": "string",
                                 },
+                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
                                 "example": {
                                     "title": "Example",
@@ -257,12 +267,17 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Additional Kwargs",
                                     "type": "object",
                                 },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
+                                    "type": "object",
+                                },
                                 "type": {
                                     "title": "Type",
                                     "default": "chat",
                                     "enum": ["chat"],
                                     "type": "string",
                                 },
+                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
                                 "role": {"title": "Role", "type": "string"},
                             },
@@ -292,12 +307,17 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Additional Kwargs",
                                     "type": "object",
                                 },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
+                                    "type": "object",
+                                },
                                 "type": {
                                     "title": "Type",
                                     "default": "system",
                                     "enum": ["system"],
                                     "type": "string",
                                 },
+                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
                             },
                             "required": ["content"],
@@ -326,12 +346,17 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Additional Kwargs",
                                     "type": "object",
                                 },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
+                                    "type": "object",
+                                },
                                 "type": {
                                     "title": "Type",
                                     "default": "function",
                                     "enum": ["function"],
                                     "type": "string",
                                 },
+                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
                             },
                             "required": ["content", "name"],
@@ -360,12 +385,17 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Additional Kwargs",
                                     "type": "object",
                                 },
+                                "response_metadata": {
+                                    "title": "Response Metadata",
+                                    "type": "object",
+                                },
                                 "type": {
                                     "title": "Type",
                                     "default": "tool",
                                     "enum": ["tool"],
                                     "type": "string",
                                 },
+                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
                                 "tool_call_id": {
                                     "title": "Tool Call Id",
