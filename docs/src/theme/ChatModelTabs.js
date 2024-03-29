@@ -67,7 +67,7 @@ export default function ChatModelTabs(props) {
   const googleParamsOrDefault = googleParams ?? `model="gemini-pro"`;
   const togetherParamsOrDefault =
     togetherParams ??
-    `    base_url="https://api.together.xyz/v1",\n    api_key=os.environ["TOGETHER_API_KEY"],\n    model="mistralai/Mixtral-8x7B-Instruct-v0.1",`;
+    `\n    base_url="https://api.together.xyz/v1",\n    api_key=os.environ["TOGETHER_API_KEY"],\n    model="mistralai/Mixtral-8x7B-Instruct-v0.1",`;
 
   const llmVarName = customVarName ?? "model";
 
