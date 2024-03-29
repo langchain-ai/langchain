@@ -149,8 +149,8 @@ const config = {
         logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
           {
-            to: "/docs/get_started/introduction",
-            label: "Docs",
+            to: "/docs/modules",
+            label: "Components",
             position: "left",
           },
           {
