@@ -45,6 +45,7 @@ _module_lookup = {
     "LlamaIndexRetriever": "langchain_community.retrievers.llama_index",
     "MetalRetriever": "langchain_community.retrievers.metal",
     "MilvusRetriever": "langchain_community.retrievers.milvus",
+    "OpenVINOReranker": "langchain_community.retrievers.openvino_rerank",
     "OutlineRetriever": "langchain_community.retrievers.outline",
     "PineconeHybridSearchRetriever": "langchain_community.retrievers.pinecone_hybrid_search",  # noqa: E501
     "PubMedRetriever": "langchain_community.retrievers.pubmed",

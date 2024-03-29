@@ -10,6 +10,7 @@ from langchain.retrievers.document_compressors.embeddings_filter import (
     EmbeddingsFilter,
 )
 from langchain.retrievers.document_compressors.flashrank_rerank import FlashrankRerank
+from langchain.retrievers.document_compressors.openvino_rerank import OpenVINOReranker
 
 __all__ = [
     "DocumentCompressorPipeline",
@@ -18,4 +19,5 @@ __all__ = [
     "LLMChainFilter",
     "CohereRerank",
     "FlashrankRerank",
+    "OpenVINOReranker",
 ]

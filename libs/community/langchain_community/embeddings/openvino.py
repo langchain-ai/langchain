@@ -16,8 +16,6 @@ DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索�
 class OpenVINOEmbeddings(BaseModel, Embeddings):
     """OpenVINO embedding models.
 
-    To use, you should have the ``sentence_transformers`` python package installed.
-
     Example:
         .. code-block:: python
 
