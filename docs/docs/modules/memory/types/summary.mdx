@@ -6,7 +6,7 @@ Let's first explore the basic functionality of this type of memory.
 
 ```python
 from langchain.memory import ConversationSummaryMemory, ChatMessageHistory
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 ```
 
 
@@ -115,7 +115,7 @@ Let's walk through an example of using this in a chain, again setting `verbose=T
 
 
 ```python
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.chains import ConversationChain
 llm = OpenAI(temperature=0)
 conversation_with_summary = ConversationChain(

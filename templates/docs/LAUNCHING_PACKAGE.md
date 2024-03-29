@@ -38,4 +38,4 @@ langchain template serve
 This will spin up endpoints, documentation, and playground for this chain.
 For example, you can access the playground at [http://127.0.0.1:8000/playground/](http://127.0.0.1:8000/playground/)
 
-![playground.png](playground.png)
+![Screenshot of the LangServe Playground web interface with input and output fields.](playground.png "LangServe Playground Interface")

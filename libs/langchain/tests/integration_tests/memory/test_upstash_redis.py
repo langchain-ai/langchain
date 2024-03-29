@@ -1,12 +1,12 @@
 import json
 
 import pytest
+from langchain_community.chat_message_histories.upstash_redis import (
+    UpstashRedisChatMessageHistory,
+)
 from langchain_core.messages import message_to_dict
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories.upstash_redis import (
-    UpstashRedisChatMessageHistory,
-)
 
 URL = "<UPSTASH_REDIS_REST_URL>"
 TOKEN = "<UPSTASH_REDIS_REST_TOKEN>"

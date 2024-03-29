@@ -13,42 +13,16 @@ whether permissions of the given toolkit are appropriate for the application.
 
 See [Security](https://python.langchain.com/docs/security) for more information.
 """
+import warnings
 from pathlib import Path
 from typing import Any
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core._api.path import as_import_path
 
-from langchain.agents.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
-from langchain.agents.agent_toolkits.amadeus.toolkit import AmadeusToolkit
-from langchain.agents.agent_toolkits.azure_cognitive_services import (
-    AzureCognitiveServicesToolkit,
-)
 from langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (
     create_conversational_retrieval_agent,
 )
-from langchain.agents.agent_toolkits.file_management.toolkit import (
-    FileManagementToolkit,
-)
-from langchain.agents.agent_toolkits.gmail.toolkit import GmailToolkit
-from langchain.agents.agent_toolkits.jira.toolkit import JiraToolkit
-from langchain.agents.agent_toolkits.json.base import create_json_agent
-from langchain.agents.agent_toolkits.json.toolkit import JsonToolkit
-from langchain.agents.agent_toolkits.multion.toolkit import MultionToolkit
-from langchain.agents.agent_toolkits.nasa.toolkit import NasaToolkit
-from langchain.agents.agent_toolkits.nla.toolkit import NLAToolkit
-from langchain.agents.agent_toolkits.office365.toolkit import O365Toolkit
-from langchain.agents.agent_toolkits.openapi.base import create_openapi_agent
-from langchain.agents.agent_toolkits.openapi.toolkit import OpenAPIToolkit
-from langchain.agents.agent_toolkits.playwright.toolkit import PlayWrightBrowserToolkit
-from langchain.agents.agent_toolkits.powerbi.base import create_pbi_agent
-from langchain.agents.agent_toolkits.powerbi.chat_base import create_pbi_chat_agent
-from langchain.agents.agent_toolkits.powerbi.toolkit import PowerBIToolkit
-from langchain.agents.agent_toolkits.slack.toolkit import SlackToolkit
-from langchain.agents.agent_toolkits.spark_sql.base import create_spark_sql_agent
-from langchain.agents.agent_toolkits.spark_sql.toolkit import SparkSQLToolkit
-from langchain.agents.agent_toolkits.sql.base import create_sql_agent
-from langchain.agents.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
-from langchain.agents.agent_toolkits.steam.toolkit import SteamToolkit
 from langchain.agents.agent_toolkits.vectorstore.base import (
     create_vectorstore_agent,
     create_vectorstore_router_agent,
@@ -58,8 +32,8 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreRouterToolkit,
     VectorStoreToolkit,
 )
-from langchain.agents.agent_toolkits.zapier.toolkit import ZapierToolkit
 from langchain.tools.retriever import create_retriever_tool
+from langchain.utils.interactive_env import is_interactive_env
 
 DEPRECATED_AGENTS = [
     "create_csv_agent",
@@ -82,7 +56,21 @@ def __getattr__(name: str) -> Any:
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."
         )
-    raise AttributeError(f"{name} does not exist")
+
+    from langchain_community import agent_toolkits
+
+    # If not in interactive env, raise warning.
+    if not is_interactive_env():
+        warnings.warn(
+            "Importing this agent toolkit from langchain is deprecated. Importing it "
+            "from langchain will no longer be supported as of langchain==0.2.0. "
+            "Please import from langchain-community instead:\n\n"
+            f"`from langchain_community.agent_toolkits import {name}`.\n\n"
+            "To install langchain-community run `pip install -U langchain-community`.",
+            category=LangChainDeprecationWarning,
+        )
+
+    return getattr(agent_toolkits, name)
 
 
 __all__ = [

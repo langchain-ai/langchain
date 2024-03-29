@@ -115,13 +115,11 @@ celerybeat.pid
 # Environments
 .env
 .envrc
-.venv
-.venvs
+.venv*
+venv*
 env/
-venv/
 ENV/
 env.bak/
-venv.bak/
 
 # Spyder project settings
 .spyderproject
@@ -167,8 +165,7 @@ docs/node_modules/
 docs/.docusaurus/
 docs/.cache-loader/
 docs/_dist
-docs/api_reference/api_reference.rst
-docs/api_reference/experimental_api_reference.rst
+docs/api_reference/*api_reference.rst
 docs/api_reference/_build
 docs/api_reference/*/
 !docs/api_reference/_static/
@@ -179,3 +176,5 @@ docs/docs/node_modules
 docs/docs/yarn.lock
 _dist
 docs/docs/templates
+
+prof

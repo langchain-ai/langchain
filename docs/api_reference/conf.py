@@ -1,4 +1,5 @@
 """Configuration file for the Sphinx documentation builder."""
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -49,7 +50,7 @@ class ExampleLinksDirective(SphinxDirective):
         class_or_func_name = self.arguments[0]
         links = imported_classes.get(class_or_func_name, {})
         list_node = nodes.bullet_list()
-        for doc_name, link in links.items():
+        for doc_name, link in sorted(links.items()):
             item_node = nodes.list_item()
             para_node = nodes.paragraph()
             link_node = nodes.reference()
@@ -72,8 +73,8 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, Harrison Chase"
-author = "Harrison Chase"
+copyright = "2023, LangChain, Inc."
+author = "LangChain, Inc."
 
 version = data["tool"]["poetry"]["version"]
 release = version
@@ -114,8 +115,8 @@ autodoc_pydantic_field_signature_prefix = "param"
 autodoc_member_order = "groupwise"
 autoclass_content = "both"
 autodoc_typehints_format = "short"
+autodoc_typehints = "both"
 
-# autodoc_typehints = "description"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["templates"]
 
@@ -136,18 +137,26 @@ html_theme_path = ["themes"]
 # redirects dictionary maps from old links to new links
 html_additional_pages = {}
 redirects = {
-    "index": "api_reference",
+    "index": "langchain_api_reference",
 }
 for old_link in redirects:
     html_additional_pages[old_link] = "redirects.html"
 
+partners_dir = Path(__file__).parent.parent.parent / "libs/partners"
+partners = [
+    (p.name, p.name.replace("-", "_") + "_api_reference")
+    for p in partners_dir.iterdir()
+]
+partners = sorted(partners)
+
 html_context = {
     "display_github": True,  # Integrate GitHub
-    "github_user": "hwchase17",  # Username
+    "github_user": "langchain-ai",  # Username
     "github_repo": "langchain",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/api_reference",  # Path in the checkout to the docs root
     "redirects": redirects,
+    "partners": partners,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -166,3 +175,6 @@ myst_enable_extensions = ["colon_fence"]
 
 # generate autosummary even if no references
 autosummary_generate = True
+
+html_copy_source = False
+html_show_sourcelink = False

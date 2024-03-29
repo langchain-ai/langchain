@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence, Tuple
 
+from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import BaseOutputParser
@@ -15,6 +17,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseTool
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.conversational_chat.output_parser import ConvoOutputParser
@@ -24,11 +27,10 @@ from langchain.agents.conversational_chat.prompt import (
     TEMPLATE_TOOL_RESPONSE,
 )
 from langchain.agents.utils import validate_tools_single_input
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.tools.base import BaseTool
 
 
+@deprecated("0.1.0", alternative="create_json_chat_agent", removal="0.2.0")
 class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
@@ -86,7 +88,7 @@ class ConversationalChatAgent(Agent):
             HumanMessagePromptTemplate.from_template(final_prompt),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)  # type: ignore[arg-type]
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]

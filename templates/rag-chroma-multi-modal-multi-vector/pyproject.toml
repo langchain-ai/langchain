@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "rag-chroma-multi-modal-multi-vector"
+version = "0.1.0"
+description = "Multi-modal RAG using Chroma and multi-vector retriever"
+authors = [
+    "Lance Martin <lance@langchain.dev>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = ">=0.0.353,<0.2"
+openai = "<2"
+tiktoken = ">=0.5.1"
+chromadb = ">=0.4.14"
+pypdfium2 = ">=4.20.0"
+langchain-experimental = ">=0.0.43"
+upstash-redis = ">=1.0.0"
+pillow = ">=10.1.0"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "rag_chroma_multi_modal_multi_vector"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI", "Chroma"]
+tags = ["vectordbs"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

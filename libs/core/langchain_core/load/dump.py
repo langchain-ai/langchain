@@ -17,11 +17,17 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
     """Return a json string representation of an object."""
     if "default" in kwargs:
         raise ValueError("`default` should not be passed to dumps")
-    if pretty:
-        indent = kwargs.pop("indent", 2)
-        return json.dumps(obj, default=default, indent=indent, **kwargs)
-    else:
-        return json.dumps(obj, default=default, **kwargs)
+    try:
+        if pretty:
+            indent = kwargs.pop("indent", 2)
+            return json.dumps(obj, default=default, indent=indent, **kwargs)
+        else:
+            return json.dumps(obj, default=default, **kwargs)
+    except TypeError:
+        if pretty:
+            return json.dumps(to_json_not_implemented(obj), indent=indent, **kwargs)
+        else:
+            return json.dumps(to_json_not_implemented(obj), **kwargs)
 
 
 def dumpd(obj: Any) -> Dict[str, Any]:

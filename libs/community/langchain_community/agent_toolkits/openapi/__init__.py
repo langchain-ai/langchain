@@ -1,0 +1,1 @@
+"""OpenAPI spec agent."""

@@ -4,9 +4,9 @@ from typing import Any, Callable, List, cast
 from langchain.prompts.chat import (
     BaseChatPromptTemplate,
 )
-from langchain.schema.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain.schema.vectorstore import VectorStoreRetriever
 from langchain.tools.base import BaseTool
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.vectorstores import VectorStoreRetriever
 
 from langchain_experimental.autonomous_agents.autogpt.prompt_generator import get_prompt
 from langchain_experimental.pydantic_v1 import BaseModel
@@ -101,3 +101,6 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
         messages += historical_messages
         messages.append(input_message)
         return messages
+
+    def pretty_repr(self, html: bool = False) -> str:
+        raise NotImplementedError
