@@ -488,7 +488,7 @@ Install langchain hub first
 ```bash
 pip install langchainhub
 ```
-Insall the langchain-openai package 
+Install the langchain-openai package
 To interact with OpenAI we need to use langchain-openai which connects with OpenAI SDK[https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai].  
 ```bash
 pip install langchain-openai
@@ -503,7 +503,9 @@ from langchain.agents import create_openai_functions_agent
 from langchain.agents import AgentExecutor
 
 # Get the prompt to use - you can modify this!
-# you need to set OPENAI_API_KEY envirnment variable to use this or pass it as argument as follows *openai_api_key=sk-...*
+prompt = hub.pull("hwchase17/openai-functions-agent")
+
+# You need to set OPENAI_API_KEY environment variable or pass it as argument `openai_api_key`.
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 agent = create_openai_functions_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
