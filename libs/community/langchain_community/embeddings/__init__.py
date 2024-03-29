@@ -18,6 +18,7 @@ from typing import Any
 _module_lookup = {
     "AlephAlphaAsymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
     "AlephAlphaSymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
+    "AnyscaleEmbeddings": "langchain_community.embeddings.anyscale",
     "AwaEmbeddings": "langchain_community.embeddings.awa",
     "AzureOpenAIEmbeddings": "langchain_community.embeddings.azure_openai",
     "BaichuanTextEmbeddings": "langchain_community.embeddings.baichuan",
@@ -67,6 +68,7 @@ _module_lookup = {
     "OllamaEmbeddings": "langchain_community.embeddings.ollama",
     "OpenAIEmbeddings": "langchain_community.embeddings.openai",
     "QianfanEmbeddingsEndpoint": "langchain_community.embeddings.baidu_qianfan_endpoint",  # noqa: E501
+    "QuantizedBgeEmbeddings": "langchain_community.embeddings.itrex",
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
