@@ -77,6 +77,7 @@ _module_lookup = {
     "SelfHostedHuggingFaceEmbeddings": "langchain_community.embeddings.self_hosted_hugging_face",  # noqa: E501
     "SelfHostedHuggingFaceInstructEmbeddings": "langchain_community.embeddings.self_hosted_hugging_face",  # noqa: E501
     "SentenceTransformerEmbeddings": "langchain_community.embeddings.sentence_transformer",  # noqa: E501
+    "SolarEmbeddings": "langchain_community.embeddings.solar",
     "SpacyEmbeddings": "langchain_community.embeddings.spacy_embeddings",
     "SparkLLMTextEmbeddings": "langchain_community.embeddings.sparkllm",
     "TensorflowHubEmbeddings": "langchain_community.embeddings.tensorflow_hub",

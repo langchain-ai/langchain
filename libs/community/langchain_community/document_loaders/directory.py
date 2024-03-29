@@ -2,17 +2,18 @@ import concurrent
 import logging
 import random
 from pathlib import Path
-from typing import Any, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Iterator, List, Optional, Sequence, Type, Union
 
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_community.document_loaders.html_bs import BSHTMLLoader
 from langchain_community.document_loaders.text import TextLoader
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 
 FILE_LOADER_TYPE = Union[
-    Type[UnstructuredFileLoader], Type[TextLoader], Type[BSHTMLLoader]
+    Type[UnstructuredFileLoader], Type[TextLoader], Type[BSHTMLLoader], Type[CSVLoader]
 ]
 logger = logging.getLogger(__name__)
 
@@ -111,43 +112,17 @@ class DirectoryLoader(BaseLoader):
         self.randomize_sample = randomize_sample
         self.sample_seed = sample_seed
 
-    def load_file(
-        self, item: Path, path: Path, docs: List[Document], pbar: Optional[Any]
-    ) -> None:
-        """Load a file.
-
-        Args:
-            item: File path.
-            path: Directory path.
-            docs: List of documents to append to.
-            pbar: Progress bar. Defaults to None.
-
-        """
-        if item.is_file():
-            if _is_visible(item.relative_to(path)) or self.load_hidden:
-                try:
-                    logger.debug(f"Processing file: {str(item)}")
-                    sub_docs = self.loader_cls(str(item), **self.loader_kwargs).load()
-                    docs.extend(sub_docs)
-                except Exception as e:
-                    if self.silent_errors:
-                        logger.warning(f"Error loading file {str(item)}: {e}")
-                    else:
-                        logger.error(f"Error loading file {str(item)}")
-                        raise e
-                finally:
-                    if pbar:
-                        pbar.update(1)
-
     def load(self) -> List[Document]:
         """Load documents."""
+        return list(self.lazy_load())
+
+    def lazy_load(self) -> Iterator[Document]:
+        """Load documents lazily."""
         p = Path(self.path)
         if not p.exists():
             raise FileNotFoundError(f"Directory not found: '{self.path}'")
         if not p.is_dir():
             raise ValueError(f"Expected directory, got file: '{self.path}'")
-
-        docs: List[Document] = []
 
         paths = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
         items = [
@@ -185,15 +160,62 @@ class DirectoryLoader(BaseLoader):
                     )
 
         if self.use_multithreading:
+            futures = []
             with concurrent.futures.ThreadPoolExecutor(
                 max_workers=self.max_concurrency
             ) as executor:
-                executor.map(lambda i: self.load_file(i, p, docs, pbar), items)
+                for i in items:
+                    futures.append(
+                        executor.submit(
+                            self._lazy_load_file_to_non_generator(self._lazy_load_file),
+                            i,
+                            p,
+                            pbar,
+                        )
+                    )
+                for future in concurrent.futures.as_completed(futures):
+                    yield future.result()
         else:
             for i in items:
-                self.load_file(i, p, docs, pbar)
+                yield from self._lazy_load_file(i, p, pbar)
 
         if pbar:
             pbar.close()
 
-        return docs
+    def _lazy_load_file_to_non_generator(self, func: Callable) -> Callable:
+        def non_generator(item: Path, path: Path, pbar: Optional[Any]) -> List:
+            return [x for x in func(item, path, pbar)]
+
+        return non_generator
+
+    def _lazy_load_file(
+        self, item: Path, path: Path, pbar: Optional[Any]
+    ) -> Iterator[Document]:
+        """Load a file.
+
+        Args:
+            item: File path.
+            path: Directory path.
+            pbar: Progress bar. Defaults to None.
+
+        """
+        if item.is_file():
+            if _is_visible(item.relative_to(path)) or self.load_hidden:
+                try:
+                    logger.debug(f"Processing file: {str(item)}")
+                    loader = self.loader_cls(str(item), **self.loader_kwargs)
+                    try:
+                        for subdoc in loader.lazy_load():
+                            yield subdoc
+                    except NotImplementedError:
+                        for subdoc in loader.load():
+                            yield subdoc
+                except Exception as e:
+                    if self.silent_errors:
+                        logger.warning(f"Error loading file {str(item)}: {e}")
+                    else:
+                        logger.error(f"Error loading file {str(item)}")
+                        raise e
+                finally:
+                    if pbar:
+                        pbar.update(1)
