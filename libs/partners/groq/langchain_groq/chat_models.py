@@ -64,8 +64,9 @@ class ChatGroq(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatGroq
-            groq = ChatGroq(model_name="mixtral-8x7b-32768")
+            from langchain_groq import ChatGroq
+
+            model = ChatGroq(model_name="mixtral-8x7b-32768")
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -274,9 +275,10 @@ class ChatGroq(BaseChatModel):
             chunk = ChatGenerationChunk(
                 message=chunk, generation_info=generation_info or None
             )
-            yield chunk
+
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
+            yield chunk
 
     async def _astream(
         self,
@@ -310,11 +312,12 @@ class ChatGroq(BaseChatModel):
             chunk = ChatGenerationChunk(
                 message=chunk, generation_info=generation_info or None
             )
-            yield chunk
+
             if run_manager:
                 await run_manager.on_llm_new_token(
                     token=chunk.text, chunk=chunk, logprobs=logprobs
                 )
+            yield chunk
 
     #
     # Internal methods

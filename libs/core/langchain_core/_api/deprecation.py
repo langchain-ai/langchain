@@ -14,7 +14,7 @@ import contextlib
 import functools
 import inspect
 import warnings
-from typing import Any, Callable, Generator, Type, TypeVar
+from typing import Any, Callable, Generator, Type, TypeVar, Union, cast
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -30,7 +30,7 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", Type, Callable)
+T = TypeVar("T", bound=Union[Type, Callable[..., Any]])
 
 
 def deprecated(
@@ -182,7 +182,7 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return obj
+                return cast(T, obj)
 
         elif isinstance(obj, property):
             if not _obj_type:
@@ -241,7 +241,7 @@ def deprecated(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
-                return wrapper
+                return cast(T, wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
@@ -257,17 +257,20 @@ def deprecated(
             addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
+        package = _name.split(".")[0].replace("_", "-") if "." in _name else None
+        since_str = f"{package}=={since}" if package else since
         new_doc = (
             f"[*Deprecated*] {old_doc}\n"
             f"{notes_header if notes_header not in old_doc else ''}\n"
-            f".. deprecated:: {since}\n"
+            f".. deprecated:: {since_str}\n"
             f"   {details}"
         )
 
         if inspect.iscoroutinefunction(obj):
-            return finalize(awarning_emitting_wrapper, new_doc)
+            finalized = finalize(awarning_emitting_wrapper, new_doc)
         else:
-            return finalize(warning_emitting_wrapper, new_doc)
+            finalized = finalize(warning_emitting_wrapper, new_doc)
+        return cast(T, finalized)
 
     return deprecate
 
