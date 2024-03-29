@@ -214,7 +214,7 @@ def get_tool_signature(tool: BaseTool) -> str:
         )
         args.append(f"{parameter_name}: {type_}")
     signature = ", ".join(args)
-    return f"def {tool.name}({signature}) -> List[Dict]"
+    return f"def {tool.name}({signature}) -> List[Dict]:"
 
 
 def get_tool_args(tool: BaseTool) -> str:
@@ -228,7 +228,8 @@ def get_tool_args(tool: BaseTool) -> str:
         )
         description = parameter_definition.get("description")
         rendered_args.append(f"{parameter_name} ({type_}): {description}")
-    return "\n             ".join(rendered_args)
+    indent = " " * 12
+    return "\n\n" + f"\n{indent}".join(rendered_args)
 
 
 def render_chat_history(chat_history: List[BaseMessage]) -> str:
@@ -258,6 +259,7 @@ def render_tool_description(tool: BaseTool) -> str:
         def calculator_calc(expression: str) -> List[Dict]:
             \"\"\"This is a powerful multi-purpose calculator.
             It is capable of a wide array of math calculation and a range of features.
+
             Args:
                 expression (str): The expression for the calculator to evaluate.
 

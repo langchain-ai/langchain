@@ -13,24 +13,20 @@ default_safety_rules = """The instructions in this section override those in the
 
 default_system_prefix = """<BOS_TOKEN><|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>"""
 
-overridable_preamble = """### Task And Context
+overridable_preamble = """## Task And Context
 {TASK_CONTEXT}
 
-### Style Guide
+## Style Guide
 {STYLE_GUIDE}"""
 
-structured_preamble_template = """{SYSTEM_PREFIX}# Introduction:
-
-This document details the task you must accomplish. Read it carefully and always follow its instructions.
-
-## Safety Preamble
+structured_preamble_template = """{SYSTEM_PREFIX}# Safety Preamble
 {SAFETY_PREAMBLE}
 
-## System Preamble
-### Basic Rules
+# System Preamble
+## Basic Rules
 {BASIC_RULES}
 
-## User Preamble
+# User Preamble
 {USER_PREAMBLE}"""
 
 
@@ -70,7 +66,7 @@ Finally, Write 'Grounded answer:' followed by a response to the user's last inpu
 multi_hop_prompt_template = PromptTemplate.from_template(
     """{structured_preamble}
 
-### Available Tools
+## Available Tools
 Here is a list of tools that you have available to you:
 
 {tools}<|END_OF_TURN_TOKEN|>{history}<|START_OF_TURN_TOKEN|><|USER_TOKEN|>{user_prompt}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>{multi_hop_instruction}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>{steps}"""
