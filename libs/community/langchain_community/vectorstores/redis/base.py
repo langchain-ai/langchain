@@ -504,7 +504,7 @@ class Redis(VectorStore):
         cls,
         embedding: Embeddings,
         index_name: str,
-        schema: Union[Dict[str, str], str, os.PathLike, Dict[str, ListOfDict]],
+        schema: Union[Dict[str, ListOfDict], str, os.PathLike, Dict[str, ListOfDict]],
         key_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> Redis:
