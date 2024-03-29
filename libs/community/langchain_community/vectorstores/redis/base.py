@@ -45,7 +45,7 @@ from langchain_community.vectorstores.redis.constants import (
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
-ListOfDict = list[Dict[str, str]]
+ListOfDict = List[Dict[str, str]]
 
 if TYPE_CHECKING:
     from redis.client import Redis as RedisType
