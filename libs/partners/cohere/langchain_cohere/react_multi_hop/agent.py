@@ -72,7 +72,7 @@ class CohereToolsReactAgentOutputParser(
         """
 
         def _extract_codeblocks_from_md(text: str) -> List[str]:
-            return re.findall(r"```([^`]*)```", text)
+            return re.findall(r"`{3}([^`]*)`{0,3}", text)
 
         raw_generation = re.sub(f"^{tool_use_prefix} ", "", tool_use_generation)
         code_block_sections = _extract_codeblocks_from_md(raw_generation)
