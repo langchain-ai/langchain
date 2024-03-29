@@ -25,9 +25,10 @@ from langchain_core.prompt_values import (
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, create_model, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
+from langchain_core.runnables.utils import create_model
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -88,10 +89,15 @@ class BasePromptTemplate(
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
         if not isinstance(inner_input, dict):
-            raise TypeError(
-                f"Expected mapping type as input to {self.__class__.__name__}. "
-                f"Received {type(inner_input)}."
-            )
+            if len(self.input_variables) == 1:
+                var_name = self.input_variables[0]
+                inner_input = {var_name: inner_input}
+
+            else:
+                raise TypeError(
+                    f"Expected mapping type as input to {self.__class__.__name__}. "
+                    f"Received {type(inner_input)}."
+                )
         missing = set(self.input_variables).difference(inner_input)
         if missing:
             raise KeyError(
@@ -221,7 +227,7 @@ class BasePromptTemplate(
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(prompt_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
