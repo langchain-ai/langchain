@@ -1,4 +1,7 @@
-name: test
+name: test_doc_imports
+
+on:
+  workflow_call:
 
 env:
   POETRY_VERSION: "1.7.1"
@@ -27,12 +30,12 @@ jobs:
 
       - name: Install langchain editable
         run: |
-          poetry run pip install -e libs/langchain libs/community libs/experimental
+          poetry run pip install -e libs/core libs/langchain libs/community libs/experimental
 
       - name: Check doc imports
         shell: bash
         run: |
-          python docs/scripts/check_imports.py
+          poetry run python docs/scripts/check_imports.py
 
       - name: Ensure the test did not create any additional files
         shell: bash
