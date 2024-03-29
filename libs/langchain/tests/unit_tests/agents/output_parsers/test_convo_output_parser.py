@@ -21,14 +21,14 @@ Thought: Do I need to use a tool? Yes
 Action: evaluate_code
 Action Input: Evaluate Code with the following Python content:
 ```python
-print("Hello fifty shades of gray mans!"[::-1])
+print("Hello fifty shades of gray mans!"[::-1])  # noqa: T201
 ```
 """,
         "evaluate_code",
         """
 Evaluate Code with the following Python content:
 ```python
-print("Hello fifty shades of gray mans!"[::-1])
+print("Hello fifty shades of gray mans!"[::-1])  # noqa: T201
 ```""".lstrip(),
     )
 

@@ -1,5 +1,5 @@
 """Test Milvus functionality."""
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from langchain_core.documents import Document
 
@@ -23,6 +23,10 @@ def _milvus_from_texts(
         connection_args={"host": "127.0.0.1", "port": "19530"},
         drop_old=drop,
     )
+
+
+def _get_pks(expr: str, docsearch: Milvus) -> List[Any]:
+    return docsearch.get_pks(expr)
 
 
 def test_milvus() -> None:
@@ -107,6 +111,42 @@ def test_milvus_no_drop() -> None:
 
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6
+
+
+def test_milvus_get_pks() -> None:
+    """Test end to end construction and get pks with expr"""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i} for i in range(len(texts))]
+    docsearch = _milvus_from_texts(metadatas=metadatas)
+    expr = "id in [1,2]"
+    output = _get_pks(expr, docsearch)
+    assert len(output) == 2
+
+
+def test_milvus_delete_entities() -> None:
+    """Test end to end construction and delete entities"""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i} for i in range(len(texts))]
+    docsearch = _milvus_from_texts(metadatas=metadatas)
+    expr = "id in [1,2]"
+    pks = _get_pks(expr, docsearch)
+    result = docsearch.delete(pks)
+    assert result is True
+
+
+def test_milvus_upsert_entities() -> None:
+    """Test end to end construction and upsert entities"""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"id": i} for i in range(len(texts))]
+    docsearch = _milvus_from_texts(metadatas=metadatas)
+    expr = "id in [1,2]"
+    pks = _get_pks(expr, docsearch)
+    documents = [
+        Document(page_content="test_1", metadata={"id": 1}),
+        Document(page_content="test_2", metadata={"id": 3}),
+    ]
+    ids = docsearch.upsert(pks, documents)
+    assert len(ids) == 2
 
 
 # if __name__ == "__main__":

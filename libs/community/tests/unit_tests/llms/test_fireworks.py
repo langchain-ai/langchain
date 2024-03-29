@@ -1,4 +1,5 @@
 """Test Fireworks chat model"""
+
 import sys
 
 import pytest
@@ -22,7 +23,7 @@ def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     llm = Fireworks(fireworks_api_key="secret-api-key")
-    print(llm.fireworks_api_key, end="")
+    print(llm.fireworks_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

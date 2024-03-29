@@ -2,7 +2,17 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
@@ -140,17 +150,18 @@ def create_sql_agent(
             prompt = prompt.partial(top_k=str(top_k))
         if "dialect" in prompt.input_variables:
             prompt = prompt.partial(dialect=toolkit.dialect)
-        db_context = toolkit.get_context()
-        if "table_info" in prompt.input_variables:
-            prompt = prompt.partial(table_info=db_context["table_info"])
-            tools = [
-                tool for tool in tools if not isinstance(tool, InfoSQLDatabaseTool)
-            ]
-        if "table_names" in prompt.input_variables:
-            prompt = prompt.partial(table_names=db_context["table_names"])
-            tools = [
-                tool for tool in tools if not isinstance(tool, ListSQLDatabaseTool)
-            ]
+        if any(key in prompt.input_variables for key in ["table_info", "table_names"]):
+            db_context = toolkit.get_context()
+            if "table_info" in prompt.input_variables:
+                prompt = prompt.partial(table_info=db_context["table_info"])
+                tools = [
+                    tool for tool in tools if not isinstance(tool, InfoSQLDatabaseTool)
+                ]
+            if "table_names" in prompt.input_variables:
+                prompt = prompt.partial(table_names=db_context["table_names"])
+                tools = [
+                    tool for tool in tools if not isinstance(tool, ListSQLDatabaseTool)
+                ]
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         if prompt is None:
@@ -176,8 +187,8 @@ def create_sql_agent(
 
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
         if prompt is None:
-            messages = [
-                SystemMessage(content=prefix),
+            messages: List = [
+                SystemMessage(content=cast(str, prefix)),
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -191,7 +202,7 @@ def create_sql_agent(
     elif agent_type == "openai-tools":
         if prompt is None:
             messages = [
-                SystemMessage(content=prefix),
+                SystemMessage(content=cast(str, prefix)),
                 HumanMessagePromptTemplate.from_template("{input}"),
                 AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),

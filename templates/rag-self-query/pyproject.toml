@@ -8,16 +8,17 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = "^0.1"
+langchain-elasticsearch = "^0.1.0"
 openai = "<2"
-elasticsearch = "^8.10.0"
 sentence-transformers = "^2.2.2"
 jq = "^1.6.0"
 tiktoken = "^0.5.1"
 lark = "^1.1.8"
 pydantic = "^2.4.2"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_self_query"

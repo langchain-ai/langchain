@@ -110,7 +110,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
 
         # HTTP headers for authorization
         headers = {
-            "Authorization": f"Bearer {self.minimax_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self.minimax_api_key.get_secret_value()}",  # type: ignore[union-attr]
             "Content-Type": "application/json",
         }
 
