@@ -69,6 +69,8 @@ EXPECTED_ALL = [
     "QuantizedBgeEmbeddings",
     "PremAIEmbeddings",
     "YandexGPTEmbeddings",
+    "OpenVINOEmbeddings",
+    "OpenVINOBgeEmbeddings",
 ]
 
 
