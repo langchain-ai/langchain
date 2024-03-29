@@ -6,6 +6,7 @@ EXPECTED_ALL = [
     "CohereEmbeddings",
     "CohereRagRetriever",
     "CohereRerank",
+    "create_cohere_tools_agent",
 ]
 
 
