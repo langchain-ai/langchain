@@ -1,19 +1,26 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import List, Optional, Sequence, Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
+from langchain.agents import AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.output_parsers import ReActSingleInputOutputParser
-from langchain.tools.render import render_text_description
+from langchain.tools.render import ToolsRenderer, render_text_description
 
 
 def create_react_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: BasePromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: BasePromptTemplate,
+    output_parser: Optional[AgentOutputParser] = None,
+    tools_renderer: ToolsRenderer = render_text_description,
+    *,
+    stop_sequence: Union[bool, List[str]] = True,
 ) -> Runnable:
     """Create an agent that uses ReAct prompting.
 
@@ -21,6 +28,16 @@ def create_react_agent(
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more.
+        output_parser: AgentOutputParser for parse the LLM output.
+        tools_renderer: This controls how the tools are converted into a string and
+            then passed into the LLM. Default is `render_text_description`.
+        stop_sequence: bool or list of str.
+            If True, adds a stop token of "Observation:" to avoid hallucinates.
+            If False, does not add a stop token.
+            If a list of str, uses the provided list as the stop tokens.
+
+            Default is True. You may to set this to False if the LLM you are using
+            does not support stop sequences.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -97,16 +114,21 @@ def create_react_agent(
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
     prompt = prompt.partial(
-        tools=render_text_description(list(tools)),
+        tools=tools_renderer(list(tools)),
         tool_names=", ".join([t.name for t in tools]),
     )
-    llm_with_stop = llm.bind(stop=["\nObservation"])
+    if stop_sequence:
+        stop = ["\nObservation"] if stop_sequence is True else stop_sequence
+        llm_with_stop = llm.bind(stop=stop)
+    else:
+        llm_with_stop = llm
+    output_parser = output_parser or ReActSingleInputOutputParser()
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
         )
         | prompt
         | llm_with_stop
-        | ReActSingleInputOutputParser()
+        | output_parser
     )
     return agent

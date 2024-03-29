@@ -29,11 +29,28 @@ file_loader = [
     "AmazonTextractPDFLoader",
     "CSVLoader",
     "UnstructuredExcelLoader",
+    "UnstructuredEmailLoader",
 ]
-dir_loader = ["DirectoryLoader", "S3DirLoader", "PyPDFDirectoryLoader"]
-in_memory = ["DataFrameLoader"]
+dir_loader = [
+    "DirectoryLoader",
+    "S3DirLoader",
+    "SlackDirectoryLoader",
+    "PyPDFDirectoryLoader",
+    "NotionDirectoryLoader",
+]
 
-LOADER_TYPE_MAPPING = {"file": file_loader, "dir": dir_loader, "in-memory": in_memory}
+in_memory = ["DataFrameLoader"]
+remote_db = [
+    "NotionDBLoader",
+    "GoogleDriveLoader",
+]
+
+LOADER_TYPE_MAPPING = {
+    "file": file_loader,
+    "dir": dir_loader,
+    "in-memory": in_memory,
+    "remote_db": remote_db,
+}
 
 SUPPORTED_LOADERS = (*file_loader, *dir_loader, *in_memory)
 
@@ -159,7 +176,7 @@ def get_loader_type(loader: str) -> str:
     for loader_type, loaders in LOADER_TYPE_MAPPING.items():
         if loader in loaders:
             return loader_type
-    return "unknown"
+    return "unsupported"
 
 
 def get_loader_full_path(loader: BaseLoader) -> str:
@@ -172,6 +189,7 @@ def get_loader_full_path(loader: BaseLoader) -> str:
     from langchain_community.document_loaders import (
         DataFrameLoader,
         GCSFileLoader,
+        NotionDBLoader,
         S3FileLoader,
     )
 
@@ -188,15 +206,25 @@ def get_loader_full_path(loader: BaseLoader) -> str:
                 location = f"gc://{loader.bucket}/{loader.blob}"
             elif isinstance(loader, S3FileLoader):
                 location = f"s3://{loader.bucket}/{loader.key}"
+        elif "source" in loader_dict:
+            location = loader_dict["source"]
+            if location and "channel" in loader_dict:
+                channel = loader_dict["channel"]
+                if channel:
+                    location = f"{location}/{channel}"
         elif "path" in loader_dict:
             location = loader_dict["path"]
         elif "file_path" in loader_dict:
             location = loader_dict["file_path"]
         elif "web_paths" in loader_dict:
-            location = loader_dict["web_paths"][0]
+            web_paths = loader_dict["web_paths"]
+            if web_paths and isinstance(web_paths, list) and len(web_paths) > 0:
+                location = web_paths[0]
         # For in-memory types:
         elif isinstance(loader, DataFrameLoader):
             location = "in-memory"
+        elif isinstance(loader, NotionDBLoader):
+            location = f"notiondb://{loader.database_id}"
     except Exception:
         pass
     return get_full_path(str(location))
