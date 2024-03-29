@@ -119,6 +119,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         connection_string: str,
         namespace: str,
         embedding: Embeddings,
+        application_name: str = "LANGCHAIN_PYTHON",
         **kwargs: Any,
     ) -> AzureCosmosDBVectorSearch:
         """Creates an Instance of AzureCosmosDBVectorSearch from a Connection String
@@ -140,7 +141,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
                 "Could not import pymongo, please install it with "
                 "`pip install pymongo`."
             )
-        client: MongoClient = MongoClient(connection_string)
+        appname = application_name
+        client: MongoClient = MongoClient(connection_string, appname=appname)
         db_name, collection_name = namespace.split(".")
         collection = client[db_name][collection_name]
         return cls(collection, embedding, **kwargs)
