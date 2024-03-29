@@ -71,7 +71,10 @@ class MoonshotCommon(BaseModel):
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Build extra parameters. override the superclass method, prevent the model parameter from being overridden."""
+        """Build extra parameters.
+        Override the superclass method, prevent the model parameter from being
+        overridden.
+        """
         return values
 
     @root_validator()
@@ -98,8 +101,8 @@ class MoonshotCommon(BaseModel):
 class Moonshot(MoonshotCommon, LLM):
     """Moonshot large language models.
 
-    To use, you should have the environment variable ``MOONSHOT_API_KEY`` set with your API key.
-    Referenced from https://platform.moonshot.cn/docs
+    To use, you should have the environment variable ``MOONSHOT_API_KEY`` set with your
+    API key. Referenced from https://platform.moonshot.cn/docs
 
     Example:
         .. code-block:: python
@@ -108,6 +111,11 @@ class Moonshot(MoonshotCommon, LLM):
 
             moonshot = Moonshot(model="moonshot-v1-8k")
     """
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     def _call(
         self,
