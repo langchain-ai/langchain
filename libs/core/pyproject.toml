@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-core"
-version = "0.1.17"
+version = "0.1.36"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -11,14 +11,13 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pydantic = ">=1,<3"
-langsmith = ">=0.0.83,<0.1"
+langsmith = "^0.1.0"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
-anyio = ">=3,<5"
 PyYAML = ">=5.3"
 requests = "^2"
 packaging = "^23.2"
-jinja2 = {version = "^3", optional = true}
+jinja2 = { version = "^3", optional = true }
 
 [tool.poetry.group.lint]
 optional = true
@@ -30,10 +29,11 @@ ruff = "^0.1.5"
 optional = true
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
+langchain-text-splitters = { path = "../text-splitters", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
@@ -52,11 +52,14 @@ optional = true
 # Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
 freezegun = "^1.2.2"
-pytest-mock  = "^3.10.0"
+pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
+pytest-profiling = "^1.7.0"
+responses = "^0.25.0"
+numpy = "^1.24.0"
 
 
 [tool.poetry.group.test_integration]
@@ -66,11 +69,12 @@ dependencies = {}
 [tool.poetry.extras]
 extended_testing = ["jinja2"]
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
+  "T201", # print
 ]
 
 [tool.mypy]
@@ -78,9 +82,7 @@ disallow_untyped_defs = "True"
 exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
 
 [tool.coverage.run]
-omit = [
-    "tests/*",
-]
+omit = ["tests/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

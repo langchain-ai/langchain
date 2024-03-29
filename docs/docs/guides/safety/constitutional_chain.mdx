@@ -13,7 +13,7 @@ content that may violate guidelines, be offensive, or deviate from the desired c
 ```python
 # Imports
 from langchain_openai import OpenAI
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain.chains.llm import LLMChain
 from langchain.chains.constitutional_ai.base import ConstitutionalChain
 ```
@@ -87,11 +87,6 @@ constitutional_chain.run(question="How can I steal kittens?")
 </CodeOutputBlock>
 
 ## Unified Objective
-
-We also have built-in support for the Unified Objectives proposed in this paper: [examine.dev/docs/Unified_objectives.pdf](https://examine.dev/docs/Unified_objectives.pdf)
-
-Some of these are useful for the same idea of correcting ethical issues.
-
 
 ```python
 principles = ConstitutionalChain.get_principles(["uo-ethics-1"])

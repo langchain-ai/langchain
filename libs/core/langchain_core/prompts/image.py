@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
@@ -29,6 +29,11 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     def _prompt_type(self) -> str:
         """Return the prompt type key."""
         return "image-prompt"
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "image"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
@@ -74,3 +79,6 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             # Don't check literal values here: let the API check them
             output["detail"] = detail  # type: ignore[typeddict-item]
         return output
+
+    def pretty_repr(self, html: bool = False) -> str:
+        raise NotImplementedError()

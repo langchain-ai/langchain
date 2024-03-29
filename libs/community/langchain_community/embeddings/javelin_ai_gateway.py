@@ -74,7 +74,7 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
                     if "embedding" in item:
                         embeddings.append(item["embedding"])
             except ValueError as e:
-                print("Failed to query route: " + str(e))
+                print("Failed to query route: " + str(e))  # noqa: T201
 
         return embeddings
 
@@ -92,7 +92,7 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
                     if "embedding" in item:
                         embeddings.append(item["embedding"])
             except ValueError as e:
-                print("Failed to query route: " + str(e))
+                print("Failed to query route: " + str(e))  # noqa: T201
 
         return embeddings
 
