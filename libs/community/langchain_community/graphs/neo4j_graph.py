@@ -149,6 +149,8 @@ class Neo4jGraph(GraphStore):
     sanitize (bool): A flag to indicate whether to remove lists with
             more than 128 elements from results. Useful for removing
             embedding-like properties from database responses. Default is False.
+    refresh_schema (bool): A flag whether to refresh schema information
+            at initialization. Default is True.
 
     *Security note*: Make sure that the database connection uses credentials
         that are narrowly-scoped to only include necessary permissions.
@@ -170,6 +172,7 @@ class Neo4jGraph(GraphStore):
         database: Optional[str] = None,
         timeout: Optional[float] = None,
         sanitize: bool = False,
+        refresh_schema: bool = True,
     ) -> None:
         """Create a new Neo4j graph wrapper instance."""
         try:
@@ -211,16 +214,17 @@ class Neo4jGraph(GraphStore):
                 "Please ensure that the username and password are correct"
             )
         # Set schema
-        try:
-            self.refresh_schema()
-        except neo4j.exceptions.ClientError as e:
-            if e.code == "Neo.ClientError.Procedure.ProcedureNotFound":
-                raise ValueError(
-                    "Could not use APOC procedures. "
-                    "Please ensure the APOC plugin is installed in Neo4j and that "
-                    "'apoc.meta.data()' is allowed in Neo4j configuration "
-                )
-            raise e
+        if refresh_schema:
+            try:
+                self.refresh_schema()
+            except neo4j.exceptions.ClientError as e:
+                if e.code == "Neo.ClientError.Procedure.ProcedureNotFound":
+                    raise ValueError(
+                        "Could not use APOC procedures. "
+                        "Please ensure the APOC plugin is installed in Neo4j and that "
+                        "'apoc.meta.data()' is allowed in Neo4j configuration "
+                    )
+                raise e
 
     @property
     def get_schema(self) -> str:
