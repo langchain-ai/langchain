@@ -26,6 +26,7 @@ _module_lookup = {
     "GoogleSerperAPIWrapper": "langchain_community.utilities.google_serper",
     "GoogleTrendsAPIWrapper": "langchain_community.utilities.google_trends",
     "GraphQLAPIWrapper": "langchain_community.utilities.graphql",
+    "InfobipAPIWrapper": "langchain_community.utilities.infobip",
     "JiraAPIWrapper": "langchain_community.utilities.jira",
     "LambdaWrapper": "langchain_community.utilities.awslambda",
     "MaxComputeAPIWrapper": "langchain_community.utilities.max_compute",

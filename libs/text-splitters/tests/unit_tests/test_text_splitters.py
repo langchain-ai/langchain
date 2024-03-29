@@ -1248,6 +1248,38 @@ def test_solidity_code_splitter() -> None:
     ]
 
 
+def test_haskell_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.HASKELL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+        main :: IO ()
+        main = do
+          putStrLn "Hello, World!"
+
+        -- Some sample functions
+        add :: Int -> Int -> Int
+        add x y = x + y
+    """
+    # Adjusted expected chunks to account for indentation and newlines
+    expected_chunks = [
+        "main ::",
+        "IO ()",
+        "main = do",
+        "putStrLn",
+        '"Hello, World!"',
+        "--",
+        "Some sample",
+        "functions",
+        "add :: Int ->",
+        "Int -> Int",
+        "add x y = x",
+        "+ y",
+    ]
+    chunks = splitter.split_text(code)
+    assert chunks == expected_chunks
+
+
 @pytest.mark.requires("lxml")
 def test_html_header_text_splitter(tmp_path: Path) -> None:
     splitter = HTMLHeaderTextSplitter(
