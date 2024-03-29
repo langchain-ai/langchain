@@ -743,7 +743,7 @@ def test_retrieval_params() -> None:
     ]
 
 
-def test_retrieval_params() -> None:
+def test_retrieval_dictionary() -> None:
     """Test if we use parameters in retrieval query"""
     docsearch = Neo4jVector.from_texts(
         texts=texts,
