@@ -27,7 +27,7 @@ from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
-from langchain_core.messages.tool import ToolMessage, ToolMessageChunk
+from langchain_core.messages.tool import ToolCallsMessage, ToolMessage, ToolMessageChunk
 from langchain_core.messages.utils import (
     AnyMessage,
     MessageLikeRepresentation,
@@ -53,6 +53,7 @@ __all__ = [
     "MessageLikeRepresentation",
     "SystemMessage",
     "SystemMessageChunk",
+    "ToolCallsMessage",
     "ToolMessage",
     "ToolMessageChunk",
     "_message_from_dict",
