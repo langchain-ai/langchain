@@ -26,7 +26,7 @@ from langchain_experimental.pydantic_v1 import ValidationError
 
 
 class AutoGPT:
-    """Agent class for interacting with Auto-GPT."""
+    """Agent for interacting with AutoGPT."""
 
     def __init__(
         self,
