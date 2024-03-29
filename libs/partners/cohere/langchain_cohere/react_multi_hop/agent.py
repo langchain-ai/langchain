@@ -14,6 +14,7 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
+from langchain_cohere.cohere_agent import JSON_TO_PYTHON_TYPES
 from langchain_cohere.react_multi_hop.prompt import (
     multi_hop_prompt_template,
     render_structured_preamble,
@@ -197,10 +198,11 @@ class CohereToolsReactAgentOutputParser(
 
 
 def get_type(type_: str, is_optional: bool) -> str:
+    python_type = JSON_TO_PYTHON_TYPES.get(type_, type_)
     if is_optional:
-        return f"Optional[{type_}]"
+        return f"Optional[{python_type}]"
     else:
-        return type_
+        return python_type
 
 
 def get_tool_signature(tool: BaseTool) -> str:
