@@ -66,6 +66,7 @@ def get_cohere_chat_request(
     *,
     documents: Optional[List[Dict[str, str]]] = None,
     connectors: Optional[List[Dict[str, str]]] = None,
+    stop_sequences: Optional[List[str]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Get the request for the Cohere chat API.
@@ -115,6 +116,7 @@ def get_cohere_chat_request(
         "documents": formatted_docs,
         "connectors": connectors,
         "prompt_truncation": prompt_truncation,
+        "stop_sequences": stop_sequences,
         **kwargs,
     }
 
@@ -180,7 +182,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, stop_sequences=stop, **self._default_params, **kwargs
+        )
 
         if hasattr(self.client, "chat_stream"):  # detect and support sdk v5
             stream = self.client.chat_stream(**request)
@@ -210,7 +214,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, stop_sequences=stop, **self._default_params, **kwargs
+        )
 
         if hasattr(self.async_client, "chat_stream"):  # detect and support sdk v5
             stream = self.async_client.chat_stream(**request)
@@ -266,7 +272,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return generate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, stop_sequences=stop, **self._default_params, **kwargs
+        )
         response = self.client.chat(**request)
 
         generation_info = self._get_generation_info(response)
@@ -290,7 +298,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return await agenerate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, stop_sequences=stop, **self._default_params, **kwargs
+        )
         response = self.client.chat(**request)
 
         generation_info = self._get_generation_info(response)
