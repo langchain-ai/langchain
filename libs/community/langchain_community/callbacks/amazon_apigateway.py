@@ -14,14 +14,14 @@ class StreamingAmazonAPIGatewayWebSocketCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
-        boto3_session,
+        boto3_session: Any,
         endpoint_url: str,
         connection_id: str,
         *,
         on_token: Callable[[str], str] | None = None,
         on_end: Callable[[], str] | None = None,
         on_err: Callable[[BaseException], str] | None = None,
-    ):
+    ) -> None:
         """
         Initialize callback handler
         with boto3 session and api gateway websocket event.
