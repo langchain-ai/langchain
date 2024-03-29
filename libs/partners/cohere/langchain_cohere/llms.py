@@ -69,6 +69,8 @@ class BaseCohere(Serializable):
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
 
+    timeout_seconds: Optional[float] = 300
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -76,12 +78,15 @@ class BaseCohere(Serializable):
             get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
         )
         client_name = values["user_agent"]
+        timeout_seconds = values.get("timeout_seconds")
         values["client"] = cohere.Client(
             api_key=values["cohere_api_key"].get_secret_value(),
+            timeout=timeout_seconds,
             client_name=client_name,
         )
         values["async_client"] = cohere.AsyncClient(
             api_key=values["cohere_api_key"].get_secret_value(),
+            timeout=timeout_seconds,
             client_name=client_name,
         )
         return values
