@@ -45,7 +45,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
 
-    cohere_api_url: str = None
+    cohere_api_url: Optional[str] = None
     """Override the default Cohere API URL."""
 
     class Config:
