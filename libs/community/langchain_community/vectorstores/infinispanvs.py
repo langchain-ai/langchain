@@ -5,14 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import (
-    Any,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-)
+from typing import Any, Iterable, List, Optional, Tuple, Type, cast
 
 import requests
 from langchain_core.documents import Document
@@ -25,29 +18,44 @@ logger = logging.getLogger(__name__)
 class InfinispanVS(VectorStore):
     """`Infinispan` VectorStore interface.
 
-    This class exposes the method to present Infinispan as a
-    VectorStore. It relies on the Infinispan class (below) which takes care
-    of the REST interface with the server.
+        This class exposes the method to present Infinispan as a
+        VectorStore. It relies on the Infinispan class (below) which takes care
+        of the REST interface with the server.
 
     Example:
-        .. code-block:: python
-
+        ... code-block:: python
             from langchain_community.vectorstores import InfinispanVS
             from mymodels import RGBEmbeddings
-
+            ...
             vectorDb = InfinispanVS.from_documents(docs,
                             embedding=RGBEmbeddings(),
                             output_fields=["texture", "color"],
                             lambda_key=lambda text,meta: str(meta["_key"]),
                             lambda_content=lambda item: item["color"])
 
+        or an empty InfinispanVS instance can be created if preliminary setup
+        is required before populating the store
+
+        ... code-block:: python
+            from langchain_community.vectorstores import InfinispanVS
+            from mymodels import RGBEmbeddings
+            ...
+            ispnVS = InfinispanVS()
+            # configure Infinispan here
+            # i.e. create cache and schema
+
+            # then populate the store
+            vectorDb = InfinispanVS.from_documents(docs,
+                            embedding=RGBEmbeddings(),
+                            output_fields: ["texture", "color"],
+                            lambda_key: lambda text,meta: str(meta["_key"]),
+                            lambda_content: lambda item: item["color"]})
     """
 
     def __init__(
         self,
         embedding: Optional[Embeddings] = None,
         ids: Optional[List[str]] = None,
-        clear_old: Optional[bool] = True,
         **kwargs: Any,
     ):
         self.ispn = Infinispan(**kwargs)
@@ -65,8 +73,6 @@ class InfinispanVS(VectorStore):
         )
         self._output_fields = self._configuration.get("output_fields")
         self._ids = ids
-        if clear_old:
-            self.ispn.cache_clear(self._cache_name)
 
     def _default_metadata(self, item: dict) -> dict:
         meta = dict(item)
@@ -77,6 +83,43 @@ class InfinispanVS(VectorStore):
 
     def _default_content(self, item: dict[str, Any]) -> Any:
         return item.get(self._textfield)
+
+    def schema_builder(self, templ: dict, dimension: int) -> str:
+        metadata_proto_tpl = """
+/**
+* @Indexed
+*/
+message %s {
+/**
+* @Vector(dimension=%d)
+*/
+repeated float %s = 1;
+"""
+        metadata_proto = metadata_proto_tpl % (
+            self._entity_name,
+            dimension,
+            self._vectorfield,
+        )
+        idx = 2
+        for f, v in templ.items():
+            if isinstance(v, str):
+                metadata_proto += "optional string " + f + " = " + str(idx) + ";\n"
+            elif isinstance(v, int):
+                metadata_proto += "optional int64 " + f + " = " + str(idx) + ";\n"
+            elif isinstance(v, float):
+                metadata_proto += "optional double " + f + " = " + str(idx) + ";\n"
+            elif isinstance(v, bytes):
+                metadata_proto += "optional bytes " + f + " = " + str(idx) + ";\n"
+            elif isinstance(v, bool):
+                metadata_proto += "optional bool " + f + " = " + str(idx) + ";\n"
+            else:
+                raise Exception(
+                    "Unable to build proto schema for metadata. "
+                    "Unhandled type for field: " + f
+                )
+            idx += 1
+        metadata_proto += "}\n"
+        return metadata_proto
 
     def schema_create(self, proto: str) -> requests.Response:
         """Deploy the schema for the vector db
@@ -143,6 +186,13 @@ class InfinispanVS(VectorStore):
         """
         return self.ispn.cache_clear(self._cache_name)
 
+    def cache_exists(self) -> bool:
+        """Checks if the cache exists
+        Returns:
+            true if exists
+        """
+        return self.ispn.cache_exists(self._cache_name)
+
     def cache_index_clear(self) -> requests.Response:
         """Clear the index for the vector db
         Returns:
@@ -161,10 +211,16 @@ class InfinispanVS(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        last_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> List[str]:
         result = []
-        embeds = self._embedding.embed_documents(list(texts))  # type: ignore
+        texts_l = list(texts)
+        if last_vector:
+            texts_l.pop()
+        embeds = self._embedding.embed_documents(texts_l)  # type: ignore
+        if last_vector:
+            embeds.append(last_vector)
         if not metadatas:
             metadatas = [{} for _ in texts]
         ids = self._ids or [str(uuid.uuid4()) for _ in texts]
@@ -266,6 +322,23 @@ class InfinispanVS(VectorStore):
             documents.append((doc, hit["score()"]))
         return documents
 
+    def configure(self, metadata: dict, dimension: int) -> None:
+        schema = self.schema_builder(metadata, dimension)
+        output = self.schema_create(schema)
+        assert output.ok, "Unable to create schema. Already exists? "
+        "Consider using clear_old=True"
+        assert json.loads(output.text)["error"] is None
+        if not self.cache_exists():
+            output = self.cache_create()
+            assert output.ok, "Unable to create cache. Already exists? "
+            "Consider using clear_old=True"
+            # Ensure index is clean
+            self.cache_index_clear()
+
+    def config_clear(self) -> None:
+        self.schema_delete()
+        self.cache_delete()
+
     @classmethod
     def from_texts(
         cls: Type[InfinispanVS],
@@ -273,13 +346,24 @@ class InfinispanVS(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        clear_old: Optional[bool] = None,
+        clear_old: Optional[bool] = True,
+        auto_config: Optional[bool] = True,
         **kwargs: Any,
     ) -> InfinispanVS:
         """Return VectorStore initialized from texts and embeddings."""
-        infinispanvs = cls(embedding=embedding, ids=ids, clear_old=clear_old, **kwargs)
+        infinispanvs = cls(embedding=embedding, ids=ids, **kwargs)
+        if auto_config and len(metadatas or []) > 0:
+            if clear_old:
+                infinispanvs.config_clear()
+            vec = embedding.embed_query(texts[len(texts) - 1])
+            metadatas = cast(List[dict], metadatas)
+            infinispanvs.configure(metadatas[0], len(vec))
+        else:
+            if clear_old:
+                infinispanvs.cache_clear()
+            vec = embedding.embed_query(texts[len(texts) - 1])
         if texts:
-            infinispanvs.add_texts(texts, metadatas)
+            infinispanvs.add_texts(texts, metadatas, vector=vec)
         return infinispanvs
 
 
@@ -293,7 +377,8 @@ class Infinispan:
     create and set up a vector db.
 
     You need a running Infinispan (15+) server without authentication.
-    You can easily start one, see: https://github.com/rigazilla/infinispan-vector#run-infinispan
+    You can easily start one, see:
+    https://github.com/rigazilla/infinispan-vector#run-infinispan
     """
 
     def __init__(self, **kwargs: Any):
@@ -472,6 +557,29 @@ class Infinispan:
         )
         response = requests.post(api_url, timeout=REST_TIMEOUT)
         return response
+
+    def cache_exists(self, cache_name: str) -> bool:
+        """Check if a cache exists
+        Args:
+            cache_name(str): name of the cache.
+        Returns:
+            True if cache exists
+        """
+        api_url = (
+            self._default_node + self._cache_url + "/" + cache_name + "?action=clear"
+        )
+        return self.resource_exists(api_url)
+
+    @staticmethod
+    def resource_exists(api_url: str) -> bool:
+        """Check if a resource exists
+        Args:
+            api_url(str): url of the resource.
+        Returns:
+            true if resource exists
+        """
+        response = requests.head(api_url, timeout=REST_TIMEOUT)
+        return response.ok
 
     def index_clear(self, cache_name: str) -> requests.Response:
         """Clear an index on a cache
