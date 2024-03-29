@@ -160,10 +160,9 @@ const config = {
             label: "Integrations",
           },
           {
-            type: "docSidebar",
-            position: "left",
-            sidebarId: "guides",
+            to: "/docs/guides",
             label: "Guides",
+            position: "left",
           },
           {
             href: "https://api.python.langchain.com",
