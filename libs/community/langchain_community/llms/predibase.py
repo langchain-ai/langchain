@@ -54,7 +54,9 @@ class Predibase(LLM):
             ) from e
         except ValueError as e:
             raise ValueError("Your API key is not correct. Please try again") from e
-        options: Dict[str, Union[str, float]] = kwargs or self.default_options_for_generation
+        options: Dict[str, Union[str, float]] = (
+            kwargs or self.default_options_for_generation
+        )
         base_llm_deployment: LLMDeployment = pc.LLM(uri=f"pb://deployments/{self.model}")
         result: GeneratedResponse = base_llm_deployment.generate(
             prompt=prompt,
