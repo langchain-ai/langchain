@@ -11,7 +11,7 @@ from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 class OpenAIDALLEImageGenerationTool(BaseTool):
     """Tool that generates an image using OpenAI DALLE."""
 
-    name: str = "OpenAI DALLE"
+    name: str = "openai_dalle"
     description: str = (
         "A wrapper around OpenAI DALLE Image Generation. "
         "Useful for when you need to generate an image of"
