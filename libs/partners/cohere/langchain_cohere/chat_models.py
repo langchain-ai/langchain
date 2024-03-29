@@ -96,7 +96,7 @@ def get_cohere_chat_request(
             "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."  # noqa: E501
         )
 
-    parsed_docs: Optional[List[Dict[str, Any]]] = None
+    parsed_docs: Optional[List[Document]] = None
     if "documents" in additional_kwargs:
         parsed_docs = (
             additional_kwargs["documents"]
