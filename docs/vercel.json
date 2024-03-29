@@ -980,6 +980,30 @@
     {
       "source": "/docs/expression_language/how_to/fallbacks(/?)",
       "destination": "/docs/guides/productionization/fallbacks"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/retrieval",
+      "destination": "/docs/use_cases/question_answering/chat_history"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/agent",
+      "destination": "/docs/modules/agents/agent_types/xml_agent"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/message_prompts",
+      "destination": "/docs/modules/model_io/prompts/quick_start#message-prompts"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/pipeline",
+      "destination": "/docs/modules/model_io/prompts/composition#using-pipelineprompt"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/memory",
+      "destination": "/docs/modules/memory"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/tools",
+      "destination": "/docs/use_cases/tool_use/quickstart"
     }
   ]
 }
