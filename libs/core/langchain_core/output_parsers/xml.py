@@ -213,7 +213,7 @@ class XMLOutputParser(BaseTransformOutputParser):
             # If root text contains any non-whitespace character it
             # returns {root.tag: root.text}
             return {root.tag: root.text}
-        result: Dict[str, List[Any]] = {root.tag: []}
+        result: Dict = {root.tag: []}
         for child in root:
             if len(child) == 0:
                 result[root.tag].append({child.tag: child.text})
