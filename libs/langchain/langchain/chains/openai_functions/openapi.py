@@ -13,6 +13,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
+from openapi_pydantic import Reference
 from requests import Response
 
 from langchain.chains.base import Chain
@@ -135,7 +136,11 @@ def openapi_spec_to_openai_fn(
                 media_types = {}
                 for media_type, media_type_object in request_body.content.items():
                     if media_type_object.media_type_schema:
-                        schema = spec.get_schema(media_type_object.media_type_schema)
+                        if isinstance(media_type_object.media_type_schema, Reference):
+                            schema = spec._get_root_referenced_schema(media_type_object.media_type_schema)
+                        else:    
+                            schema = spec.get_schema(media_type_object.media_type_schema)
+                            
                         media_types[media_type] = json.loads(
                             schema.json(exclude_none=True)
                         )
