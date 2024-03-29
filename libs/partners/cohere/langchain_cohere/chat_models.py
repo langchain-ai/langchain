@@ -97,7 +97,11 @@ def get_cohere_chat_request(
 
     parsed_docs: Optional[List[Dict[str, Any]]] = None
     if "documents" in additional_kwargs:
-        parsed_docs = additional_kwargs["documents"] if len(additional_kwargs["documents"]) > 0 else None
+        parsed_docs = (
+            additional_kwargs["documents"]
+            if len(additional_kwargs["documents"]) > 0
+            else None
+        )
     elif documents is not None and len(documents) > 0:
         parsed_docs = documents
 
