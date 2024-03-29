@@ -4,9 +4,9 @@ yum -y update
 yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip -y
 
 # install quarto
-wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
-tar -xzf quarto-1.3.450-linux-amd64.tar.gz
-export PATH=$PATH:$(pwd)/quarto-1.3.450/bin/
+wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.552/quarto-1.4.552-linux-amd64.tar.gz
+tar -xzf quarto-1.4.552-linux-amd64.tar.gz
+export PATH=$PATH:$(pwd)/quarto-1.4.552/bin/
 
 
 # setup python env
