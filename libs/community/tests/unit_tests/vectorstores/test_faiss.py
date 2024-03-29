@@ -438,8 +438,9 @@ def test_faiss_with_metadatas_and_filter() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = docsearch.similarity_search("foo", k=1, filter={"page": 1})
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
-    assert output != [Document(page_content="bar", metadata={"page": 1})]
+    # make sure it returns the result that matches the filter.
+    # Not the one who's text matches better.
+    assert output == [Document(page_content="bar", metadata={"page": 1})]
     assert output == docsearch.similarity_search(
         "foo", k=1, filter=lambda di: di["page"] == 1
     )
@@ -465,8 +466,9 @@ async def test_faiss_async_with_metadatas_and_filter() -> None:
     )
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     output = await docsearch.asimilarity_search("foo", k=1, filter={"page": 1})
-    assert output == [Document(page_content="foo", metadata={"page": 0})]
-    assert output != [Document(page_content="bar", metadata={"page": 1})]
+    # make sure it returns the result that matches the filter.
+    # Not the one who's text matches better.
+    assert output == [Document(page_content="bar", metadata={"page": 1})]
     assert output == await docsearch.asimilarity_search(
         "foo", k=1, filter=lambda di: di["page"] == 1
     )
@@ -606,7 +608,9 @@ def test_faiss_local_save_load() -> None:
     temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
         docsearch.save_local(temp_folder)
-        new_docsearch = FAISS.load_local(temp_folder, FakeEmbeddings())
+        new_docsearch = FAISS.load_local(
+            temp_folder, FakeEmbeddings(), allow_dangerous_deserialization=True
+        )
     assert new_docsearch.index is not None
 
 
@@ -618,7 +622,9 @@ async def test_faiss_async_local_save_load() -> None:
     temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
         docsearch.save_local(temp_folder)
-        new_docsearch = FAISS.load_local(temp_folder, FakeEmbeddings())
+        new_docsearch = FAISS.load_local(
+            temp_folder, FakeEmbeddings(), allow_dangerous_deserialization=True
+        )
     assert new_docsearch.index is not None
 
 
@@ -774,3 +780,15 @@ async def test_async_delete() -> None:
     result = await docsearch.asimilarity_search("bar", k=2)
     assert sorted([d.page_content for d in result]) == ["baz", "foo"]
     assert docsearch.index_to_docstore_id == {0: ids[0], 1: ids[2]}
+
+
+@pytest.mark.requires("faiss")
+def test_faiss_with_duplicate_ids() -> None:
+    """Test whether FAISS raises an exception for duplicate ids."""
+    texts = ["foo", "bar", "baz"]
+    duplicate_ids = ["id1", "id1", "id2"]
+
+    with pytest.raises(ValueError) as exc_info:
+        FAISS.from_texts(texts, FakeEmbeddings(), ids=duplicate_ids)
+
+    assert "Duplicate ids found in the ids list." in str(exc_info.value)

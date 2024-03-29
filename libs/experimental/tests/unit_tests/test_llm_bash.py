@@ -1,4 +1,5 @@
 """Test LLM Bash functionality."""
+
 import sys
 
 import pytest
@@ -85,7 +86,7 @@ ls && pwd && ls
 ```
 
 ```python
-print("hello")
+print("hello")  # noqa: T201
 ```
 
 ```bash

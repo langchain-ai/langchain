@@ -19,7 +19,7 @@ langchain-experimental = ">=0.0.43"
 langchain-community = ">=0.0.4"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_multi_modal_local"

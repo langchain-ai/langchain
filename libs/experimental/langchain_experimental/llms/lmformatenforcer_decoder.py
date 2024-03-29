@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def import_lmformatenforcer() -> lmformatenforcer:
-    """Lazily import lmformatenforcer."""
+    """Lazily import of the lmformatenforcer package."""
     try:
         import lmformatenforcer
     except ImportError:

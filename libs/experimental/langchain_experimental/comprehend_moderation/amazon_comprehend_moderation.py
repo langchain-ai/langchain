@@ -14,7 +14,10 @@ from langchain_experimental.pydantic_v1 import root_validator
 
 
 class AmazonComprehendModerationChain(Chain):
-    """A subclass of Chain, designed to apply moderation to LLMs."""
+    """Moderation Chain, based on `Amazon Comprehend` service.
+
+    See more at https://aws.amazon.com/comprehend/
+    """
 
     output_key: str = "output"  #: :meta private:
     """Key used to fetch/store the output in data containers. Defaults to `output`"""
@@ -54,7 +57,7 @@ class AmazonComprehendModerationChain(Chain):
     @root_validator(pre=True)
     def create_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Creates an Amazon Comprehend client
+        Creates an Amazon Comprehend client.
 
         Args:
             values (Dict[str, Any]): A dictionary containing configuration values.

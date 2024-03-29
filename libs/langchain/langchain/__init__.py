@@ -233,27 +233,29 @@ def __getattr__(name: str) -> Any:
     elif name == "FewShotPromptTemplate":
         from langchain_core.prompts import FewShotPromptTemplate
 
-        _warn_on_import(name, replacement="langchain.prompts.FewShotPromptTemplate")
+        _warn_on_import(
+            name, replacement="langchain_core.prompts.FewShotPromptTemplate"
+        )
 
         return FewShotPromptTemplate
     elif name == "Prompt":
-        from langchain.prompts import Prompt
+        from langchain_core.prompts import PromptTemplate
 
-        _warn_on_import(name, replacement="langchain.prompts.Prompt")
+        _warn_on_import(name, replacement="langchain_core.prompts.PromptTemplate")
 
-        return Prompt
+        # it's renamed as prompt template anyways
+        # this is just for backwards compat
+        return PromptTemplate
     elif name == "PromptTemplate":
         from langchain_core.prompts import PromptTemplate
 
-        _warn_on_import(name, replacement="langchain.prompts.PromptTemplate")
+        _warn_on_import(name, replacement="langchain_core.prompts.PromptTemplate")
 
         return PromptTemplate
     elif name == "BasePromptTemplate":
         from langchain_core.prompts import BasePromptTemplate
 
-        _warn_on_import(
-            name, replacement="langchain.schema.prompt_template.BasePromptTemplate"
-        )
+        _warn_on_import(name, replacement="langchain_core.prompts.BasePromptTemplate")
 
         return BasePromptTemplate
     elif name == "ArxivAPIWrapper":

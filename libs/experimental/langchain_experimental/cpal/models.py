@@ -17,7 +17,7 @@ from langchain_experimental.pydantic_v1 import (
 
 class NarrativeModel(BaseModel):
     """
-    Represent the narrative input as three story elements.
+    Narrative input as three story elements.
     """
 
     story_outcome_question: str
@@ -33,6 +33,8 @@ class NarrativeModel(BaseModel):
 
 
 class EntityModel(BaseModel):
+    """Entity in the story."""
+
     name: str = Field(description="entity name")
     code: str = Field(description="entity actions")
     value: float = Field(description="entity initial value")
@@ -51,6 +53,8 @@ class EntityModel(BaseModel):
 
 
 class CausalModel(BaseModel):
+    """Casual data."""
+
     attribute: str = Field(description="name of the attribute to be calculated")
     entities: List[EntityModel] = Field(description="entities in the story")
 
@@ -58,7 +62,8 @@ class CausalModel(BaseModel):
 
 
 class EntitySettingModel(BaseModel):
-    """
+    """Entity initial conditions.
+
     Initial conditions for an entity
 
     {"name": "bud", "attribute": "pet_count", "value": 12}
@@ -75,7 +80,8 @@ class EntitySettingModel(BaseModel):
 
 
 class SystemSettingModel(BaseModel):
-    """
+    """System initial conditions.
+
     Initial global conditions for the system.
 
     {"parameter": "interest_rate", "value": .05}
@@ -86,8 +92,7 @@ class SystemSettingModel(BaseModel):
 
 
 class InterventionModel(BaseModel):
-    """
-    aka initial conditions
+    """Intervention data of the story aka initial conditions.
 
     >>> intervention.dict()
     {
@@ -110,7 +115,9 @@ class InterventionModel(BaseModel):
 
 
 class QueryModel(BaseModel):
-    """translate a question about the story outcome into a programmatic expression"""
+    """Query data of the story.
+
+    translate a question about the story outcome into a programmatic expression"""
 
     question: str = Field(alias=Constant.narrative_input.value)  # input
     expression: str  # output, part of llm completion
@@ -119,11 +126,15 @@ class QueryModel(BaseModel):
 
 
 class ResultModel(BaseModel):
+    """Result of the story query."""
+
     question: str = Field(alias=Constant.narrative_input.value)  # input
     _result_table: str = PrivateAttr()  # result of the executed query
 
 
 class StoryModel(BaseModel):
+    """Story data."""
+
     causal_operations: Any = Field(required=True)
     intervention: Any = Field(required=True)
     query: Any = Field(required=True)
