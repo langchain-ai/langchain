@@ -15,6 +15,8 @@ _module_lookup = {
     "BaseNeptuneGraph": "langchain_community.graphs.neptune_graph",
     "NeptuneAnalyticsGraph": "langchain_community.graphs.neptune_graph",
     "NeptuneGraph": "langchain_community.graphs.neptune_graph",
+    "BaseNeptuneGraph": "langchain_community.graphs.neptune_graph",
+    "NeptuneAnalyticsGraph": "langchain_community.graphs.neptune_graph",
     "NeptuneRdfGraph": "langchain_community.graphs.neptune_rdf_graph",
     "NetworkxEntityGraph": "langchain_community.graphs.networkx_graph",
     "OntotextGraphDBGraph": "langchain_community.graphs.ontotext_graphdb_graph",
