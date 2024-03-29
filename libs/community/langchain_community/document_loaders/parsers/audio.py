@@ -1,6 +1,6 @@
 import logging
-import time
 import os
+import time
 from typing import Dict, Iterator, Optional, Tuple
 
 from langchain_core.documents import Document
@@ -26,13 +26,15 @@ class OpenAIWhisperParser(BaseBlobParser):
     """
 
     def __init__(
-        self, api_key: Optional[str] = None, *, chunk_duration_threshold: float = 0.1,\
-		base_url: Optional[str] = None
+        self,
+        api_key: Optional[str] = None,
+        *,
+        chunk_duration_threshold: float = 0.1,
+        base_url: Optional[str] = None,
     ):
         self.api_key = api_key
         self.chunk_duration_threshold = chunk_duration_threshold
-		self.base_url= base_url
-
+        self.base_url = base_url
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
