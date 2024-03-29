@@ -63,6 +63,7 @@ class SolarEmbeddings(BaseModel, Embeddings):
             document_result = embeddings.embed_documents([document_text])
 
     """
+
     endpoint_url: str = "https://api.upstage.ai/v1/solar/embeddings"
     """Endpoint URL to use."""
     model: str = "solar-1-mini-embedding-query"
@@ -81,7 +82,7 @@ class SolarEmbeddings(BaseModel, Embeddings):
         solar_api_key = convert_to_secret_str(
             get_from_dict_or_env(values, "solar_api_key", "SOLAR_API_KEY")
         )
-        values["solar_api_key"] = solar_api_key 
+        values["solar_api_key"] = solar_api_key
         return values
 
     def embed(
@@ -99,13 +100,8 @@ class SolarEmbeddings(BaseModel, Embeddings):
             "Content-Type": "application/json",
         }
 
-        params = {
-        }
-
         # send request
-        response = requests.post(
-            self.endpoint_url, params=params, headers=headers, json=payload
-        )
+        response = requests.post(self.endpoint_url, headers=headers, json=payload)
         parsed_response = response.json()
 
         # check for errors
@@ -139,7 +135,5 @@ class SolarEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        embedding = embed_with_retry(
-            self, text=text
-        )
+        embedding = embed_with_retry(self, text=text)
         return embedding
