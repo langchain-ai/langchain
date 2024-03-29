@@ -1,4 +1,5 @@
 """Unit tests for agents."""
+
 import json
 from itertools import cycle
 from typing import Any, Dict, List, Optional, Union, cast
@@ -51,8 +52,8 @@ class FakeListLLM(LLM):
     ) -> str:
         """Increment counter, and then return response in that index."""
         self.i += 1
-        print(f"=== Mock Response #{self.i} ===")
-        print(self.responses[self.i])
+        print(f"=== Mock Response #{self.i} ===")  # noqa: T201
+        print(self.responses[self.i])  # noqa: T201
         return self.responses[self.i]
 
     def get_num_tokens(self, text: str) -> int:
@@ -456,7 +457,7 @@ async def test_runnable_agent() -> None:
         return AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message")
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[])
+    executor = AgentExecutor(agent=agent, tools=[])  # type: ignore[arg-type]
 
     # Invoke
     result = executor.invoke({"question": "hello"})
@@ -572,7 +573,7 @@ async def test_runnable_agent_with_function_calls() -> None:
         return "Spying from under the bed."
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[find_pet])
+    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
     result = executor.invoke({"question": "hello"})
@@ -684,7 +685,7 @@ async def test_runnable_with_multi_action_per_step() -> None:
         return "purrrr"
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[find_pet])
+    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
     result = executor.invoke({"question": "hello"})
@@ -818,7 +819,7 @@ async def test_openai_agent_with_streaming() -> None:
         [find_pet],  # type: ignore[list-item]
         template,
     )
-    executor = AgentExecutor(agent=agent, tools=[find_pet])
+    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
     result = executor.invoke({"question": "hello"})
@@ -993,7 +994,7 @@ async def test_openai_agent_tools_agent() -> None:
         [find_pet],  # type: ignore[list-item]
         template,
     )
-    executor = AgentExecutor(agent=agent, tools=[find_pet])
+    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
     result = executor.invoke({"question": "hello"})

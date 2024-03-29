@@ -25,7 +25,7 @@ def concatenate_rows(row: dict) -> str:
 class TelegramChatFileLoader(BaseLoader):
     """Load from `Telegram chat` dump."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: Union[str, Path]):
         """Initialize with a path."""
         self.file_path = path
 
@@ -48,7 +48,13 @@ class TelegramChatFileLoader(BaseLoader):
 
 def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
     """Convert a string or list of strings to a list of Documents with metadata."""
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=800,
+        separators=["\n\n", "\n", ".", "!", "?", ",", " ", ""],
+        chunk_overlap=20,
+    )
 
     if isinstance(text, str):
         # Take a single string as one page
@@ -63,11 +69,6 @@ def text_to_docs(text: Union[str, List[str]]) -> List[Document]:
     doc_chunks = []
 
     for doc in page_docs:
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=800,
-            separators=["\n\n", "\n", ".", "!", "?", ",", " ", ""],
-            chunk_overlap=20,
-        )
         chunks = text_splitter.split_text(doc.page_content)
         for i, chunk in enumerate(chunks):
             doc = Document(
@@ -261,3 +262,7 @@ class TelegramChatApiLoader(BaseLoader):
         combined_texts = self._combine_message_texts(message_threads, df)
 
         return text_to_docs(combined_texts)
+
+
+# For backwards compatibility
+TelegramChatLoader = TelegramChatFileLoader

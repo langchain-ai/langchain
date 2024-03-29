@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseMessageConverter(ABC):
-    """The class responsible for converting BaseMessage to your SQLAlchemy model."""
+    """Class that converts BaseMessage to the SQLAlchemy model."""
 
     @abstractmethod
     def from_sql_model(self, sql_message: Any) -> BaseMessage:

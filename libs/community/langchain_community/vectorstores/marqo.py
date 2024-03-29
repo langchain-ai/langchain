@@ -437,10 +437,10 @@ class Marqo(VectorStore):
         try:
             client.create_index(index_name, settings_dict=index_settings or {})
             if verbose:
-                print(f"Created {index_name} successfully.")
+                print(f"Created {index_name} successfully.")  # noqa: T201
         except Exception:
             if verbose:
-                print(f"Index {index_name} exists.")
+                print(f"Index {index_name} exists.")  # noqa: T201
 
         instance: Marqo = cls(
             client,

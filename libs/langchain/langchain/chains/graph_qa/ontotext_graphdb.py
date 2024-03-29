@@ -1,7 +1,10 @@
 """Question answering over a graph."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    import rdflib
 
 from langchain_community.graphs import OntotextGraphDBGraph
 from langchain_core.callbacks.manager import CallbackManager
@@ -97,10 +100,10 @@ class OntotextGraphDBQAChain(Chain):
             self.sparql_generation_chain.output_key
         ]
 
-        generated_sparql = self._get_valid_sparql_query(
+        generated_sparql = self._get_prepared_sparql_query(
             _run_manager, callbacks, generated_sparql, ontology_schema
         )
-        query_results = self.graph.query(generated_sparql)
+        query_results = self._execute_query(generated_sparql)
 
         qa_chain_result = self.qa_chain.invoke(
             {"prompt": prompt, "context": query_results}, callbacks=callbacks
@@ -108,7 +111,7 @@ class OntotextGraphDBQAChain(Chain):
         result = qa_chain_result[self.qa_chain.output_key]
         return {self.output_key: result}
 
-    def _get_valid_sparql_query(
+    def _get_prepared_sparql_query(
         self,
         _run_manager: CallbackManagerForChainRun,
         callbacks: CallbackManager,
@@ -153,10 +156,10 @@ class OntotextGraphDBQAChain(Chain):
         from rdflib.plugins.sparql import prepareQuery
 
         prepareQuery(generated_sparql)
-        self._log_valid_sparql_query(_run_manager, generated_sparql)
+        self._log_prepared_sparql_query(_run_manager, generated_sparql)
         return generated_sparql
 
-    def _log_valid_sparql_query(
+    def _log_prepared_sparql_query(
         self, _run_manager: CallbackManagerForChainRun, generated_query: str
     ) -> None:
         _run_manager.on_text("Generated SPARQL:", end="\n", verbose=self.verbose)
@@ -180,3 +183,9 @@ class OntotextGraphDBQAChain(Chain):
         _run_manager.on_text(
             error_message, color="red", end="\n\n", verbose=self.verbose
         )
+
+    def _execute_query(self, query: str) -> List[rdflib.query.ResultRow]:
+        try:
+            return self.graph.query(query)
+        except Exception:
+            raise ValueError("Failed to execute the generated SPARQL query.")

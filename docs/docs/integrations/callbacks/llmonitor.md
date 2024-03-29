@@ -19,7 +19,7 @@ export LLMONITOR_APP_ID="..."
 If you'd prefer not to set an environment variable, you can pass the key directly when initializing the callback handler:
 
 ```python
-from langchain.callbacks import LLMonitorCallbackHandler
+from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
 
 handler = LLMonitorCallbackHandler(app_id="...")
 ```
@@ -29,7 +29,6 @@ handler = LLMonitorCallbackHandler(app_id="...")
 ```python
 from langchain_openai import OpenAI
 from langchain_openai import ChatOpenAI
-from langchain.callbacks import LLMonitorCallbackHandler
 
 handler = LLMonitorCallbackHandler()
 
@@ -53,9 +52,9 @@ Example:
 
 ```python
 from langchain_openai import ChatOpenAI
-from langchain.schema import SystemMessage, HumanMessage
+from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.agents import OpenAIFunctionsAgent, AgentExecutor, tool
-from langchain.callbacks import LLMonitorCallbackHandler
 
 llm = ChatOpenAI(temperature=0)
 
@@ -86,7 +85,8 @@ Another example:
 ```python
 from langchain.agents import load_tools, initialize_agent, AgentType
 from langchain_openai import OpenAI
-from langchain.callbacks import LLMonitorCallbackHandler
+from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
+
 
 handler = LLMonitorCallbackHandler()
 
@@ -104,7 +104,7 @@ agent.run(
 User tracking allows you to identify your users, track their cost, conversations and more.
 
 ```python
-from langchain.callbacks.llmonitor_callback import LLMonitorCallbackHandler, identify
+from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler, identify
 
 with identify("user-123"):
     llm("Tell me a joke")
