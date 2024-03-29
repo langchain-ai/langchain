@@ -245,7 +245,8 @@ class NeptuneAnalyticsGraph(BaseNeptuneGraph):
 
         try:
             response = self.client.get_graph_summary(
-                graphIdentifier=self.graph_identifier, mode="detailed"
+                graphIdentifier=self.graph_identifier, 
+                mode="detailed"
             )
         except Exception as e:
             raise NeptuneQueryException(
