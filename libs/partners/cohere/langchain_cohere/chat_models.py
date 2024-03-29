@@ -95,21 +95,25 @@ def get_cohere_chat_request(
             "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."  # noqa: E501
         )
 
-    formatted_docs: Optional[List[Dict[str, Any]]] = None
-    formatted_docs = [
-        {
-            "text": doc.page_content,
-            "id": doc.metadata.get("id") or f"doc-{str(i)}",
-        }
-        for i, doc in enumerate(
-            additional_kwargs.get("documents", []) or documents or []
-        )
-    ]
+    parsed_docs: Optional[List[Dict[str, Any]]] = None
+    if "documents" in additional_kwargs:
+        parsed_docs = additional_kwargs["documents"] if len(additional_kwargs["documents"]) > 0 else None
+    elif documents is not None and len(documents) > 0:
+        parsed_docs = documents
+
+    if parsed_docs is not None:
+        parsed_docs = [
+            {
+                "text": doc.page_content,
+                "id": doc.metadata.get("id") or f"doc-{str(i)}",
+            }
+            for i, doc in enumerate(parsed_docs)
+        ]
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
     prompt_truncation = (
-        "AUTO" if formatted_docs is not None or connectors is not None else None
+        "AUTO" if parsed_docs is not None or connectors is not None else None
     )
 
     req = {
@@ -117,7 +121,7 @@ def get_cohere_chat_request(
         "chat_history": [
             {"role": get_role(x), "message": x.content} for x in messages[:-1]
         ],
-        "documents": formatted_docs,
+        "documents": parsed_docs,
         "connectors": connectors,
         "prompt_truncation": prompt_truncation,
         **kwargs,
