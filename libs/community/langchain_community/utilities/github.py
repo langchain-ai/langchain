@@ -1,4 +1,5 @@
 """Util that calls GitHub."""
+
 from __future__ import annotations
 
 import json
@@ -297,7 +298,7 @@ class GitHubAPIWrapper(BaseModel):
                     new_branch_name = f"{proposed_branch_name}_v{i}"
                 else:
                     # Handle any other exceptions
-                    print(f"Failed to create branch. Error: {e}")
+                    print(f"Failed to create branch. Error: {e}")  # noqa: T201
                     raise Exception(
                         "Unable to create branch name from proposed_branch_name: "
                         f"{proposed_branch_name}"
@@ -427,7 +428,7 @@ class GitHubAPIWrapper(BaseModel):
                             "download_url"
                         ]
                     else:
-                        print(f"Failed to download file: {file.contents_url}, skipping")
+                        print(f"Failed to download file: {file.contents_url}, skipping")  # noqa: T201
                         continue
 
                     file_content_response = requests.get(download_url)
@@ -435,7 +436,7 @@ class GitHubAPIWrapper(BaseModel):
                         # Save the content as a UTF-8 string
                         file_content = file_content_response.text
                     else:
-                        print(
+                        print(  # noqa: T201
                             "Failed downloading file content "
                             f"(Error {file_content_response.status_code}). Skipping"
                         )
@@ -457,7 +458,7 @@ class GitHubAPIWrapper(BaseModel):
                         )
                         total_tokens += file_tokens
                 except Exception as e:
-                    print(f"Error when reading files from a PR on github. {e}")
+                    print(f"Error when reading files from a PR on github. {e}")  # noqa: T201
             page += 1
         return pr_files
 
@@ -734,7 +735,7 @@ class GitHubAPIWrapper(BaseModel):
             str: A string containing the first 5 issues and pull requests
         """
         search_result = self.github.search_issues(query, repo=self.github_repository)
-        max_items = min(5, len(search_result))
+        max_items = min(5, search_result.totalCount)
         results = [f"Top {max_items} results:"]
         for issue in search_result[:max_items]:
             results.append(

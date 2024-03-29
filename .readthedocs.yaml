@@ -4,21 +4,17 @@
 # Required
 version: 2
 
+formats:
+  - pdf
+
 # Set the version of Python and other tools you might need
 build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
   commands:
-      - python -m virtualenv $READTHEDOCS_VIRTUALENV_PATH
-      - python -m pip install --upgrade --no-cache-dir pip setuptools
-      - python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
-      - python -m pip install ./libs/partners/*
-      - python -m pip install --exists-action=w --no-cache-dir -r docs/api_reference/requirements.txt
-      - python docs/api_reference/create_api_rst.py
-      - cat docs/api_reference/conf.py
-      - python -m sphinx -T -E -b html -d _build/doctrees -c docs/api_reference docs/api_reference $READTHEDOCS_OUTPUT/html -j auto
-
+    - mkdir -p $READTHEDOCS_OUTPUT
+    - cp -r api_reference_build/* $READTHEDOCS_OUTPUT
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
    configuration: docs/api_reference/conf.py
