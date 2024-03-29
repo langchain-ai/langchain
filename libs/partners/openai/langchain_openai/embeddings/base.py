@@ -44,23 +44,22 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     environment variable ``OPENAI_API_KEY`` set with your API key or pass it
     as a named parameter to the constructor.
 
+    In order to use the library with Microsoft Azure endpoints, use
+    AzureOpenAIEmbeddings.
+
     Example:
         .. code-block:: python
 
             from langchain_openai import OpenAIEmbeddings
 
-            openai = OpenAIEmbeddings(model=""text-embedding-3-large")
-
-    In order to use the library with Microsoft Azure endpoints, use
-        AzureOpenAIEmbeddings.
-
+            model = OpenAIEmbeddings(model="text-embedding-3-large")
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model: str = "text-embedding-ada-002"
     dimensions: Optional[int] = None
-    """The number of dimensions the resulting output embeddings should have. 
+    """The number of dimensions the resulting output embeddings should have.
 
     Only supported in `text-embedding-3` and later models.
     """
@@ -71,7 +70,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     # to support Azure OpenAI Service custom endpoints
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service 
+    """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     # to support Azure OpenAI Service custom endpoints
     openai_api_type: Optional[str] = None
@@ -92,21 +91,21 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     request_timeout: Optional[Union[float, Tuple[float, float], Any]] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or
         None."""
     headers: Any = None
     tiktoken_enabled: bool = True
     """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
     the `--extensions openai` extension for `text-generation-webui`"""
     tiktoken_model_name: Optional[str] = None
-    """The model name to pass to tiktoken when using this class. 
-    Tiktoken is used to count the number of tokens in documents to constrain 
-    them to be under a certain limit. By default, when set to None, this will 
-    be the same as the embedding model name. However, there are some cases 
-    where you may want to use this Embedding class with a model name not 
-    supported by tiktoken. This can include when using Azure embeddings or 
-    when using one of the many model providers that expose an OpenAI-like 
-    API but with different models. In those cases, in order to avoid erroring 
+    """The model name to pass to tiktoken when using this class.
+    Tiktoken is used to count the number of tokens in documents to constrain
+    them to be under a certain limit. By default, when set to None, this will
+    be the same as the embedding model name. However, there are some cases
+    where you may want to use this Embedding class with a model name not
+    supported by tiktoken. This can include when using Azure embeddings or
+    when using one of the many model providers that expose an OpenAI-like
+    API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding."""
@@ -124,7 +123,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     retry_max_seconds: int = 20
     """Max number of seconds to wait between retries"""
     http_client: Union[Any, None] = None
-    """Optional httpx.Client."""
+    """Optional httpx.Client. Only used for sync invocations. Must specify 
+        http_async_client as well if you'd like a custom client for async invocations.
+    """
+    http_async_client: Union[Any, None] = None
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+        http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -219,12 +223,17 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
         if not values.get("client"):
-            values["client"] = openai.OpenAI(**client_params).embeddings
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.OpenAI(
+                **client_params, **sync_specific
+            ).embeddings
         if not values.get("async_client"):
-            values["async_client"] = openai.AsyncOpenAI(**client_params).embeddings
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncOpenAI(
+                **client_params, **async_specific
+            ).embeddings
         return values
 
     @property

@@ -220,6 +220,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "ai",
@@ -230,6 +234,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               },
                               "example": {
@@ -272,6 +280,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "human",
@@ -282,6 +294,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               },
                               "example": {
@@ -324,6 +340,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "chat",
@@ -334,6 +354,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               },
                               "role": {
@@ -376,6 +400,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "system",
@@ -386,6 +414,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               }
                             },
@@ -423,6 +455,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "function",
@@ -433,6 +469,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               }
                             },
@@ -471,6 +511,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "tool",
@@ -481,6 +525,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               },
                               "tool_call_id": {
@@ -558,10 +606,9 @@
                 "lc": 1,
                 "type": "not_implemented",
                 "id": [
-                  "tests",
-                  "unit_tests",
+                  "langchain_core",
+                  "language_models",
                   "fake",
-                  "llm",
                   "FakeListLLM"
                 ],
                 "repr": "FakeListLLM(responses=['foo'], i=1)",
@@ -662,6 +709,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "ai",
@@ -672,6 +723,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               },
                               "example": {
@@ -714,6 +769,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "human",
@@ -724,6 +783,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               },
                               "example": {
@@ -766,6 +829,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "chat",
@@ -776,6 +843,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               },
                               "role": {
@@ -818,6 +889,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "system",
@@ -828,6 +903,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               }
                             },
@@ -865,6 +944,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "function",
@@ -875,6 +958,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               }
                             },
@@ -913,6 +1000,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "tool",
@@ -923,6 +1014,10 @@
                               },
                               "name": {
                                 "title": "Name",
+                                "type": "string"
+                              },
+                              "id": {
+                                "title": "Id",
                                 "type": "string"
                               },
                               "tool_call_id": {
@@ -987,10 +1082,9 @@
                       "type": "runnable",
                       "data": {
                         "id": [
-                          "tests",
-                          "unit_tests",
+                          "langchain_core",
+                          "language_models",
                           "fake",
-                          "llm",
                           "FakeListLLM"
                         ],
                         "name": "FakeListLLM"
@@ -1054,10 +1148,9 @@
                   "type": "runnable",
                   "data": {
                     "id": [
-                      "tests",
-                      "unit_tests",
+                      "langchain_core",
+                      "language_models",
                       "fake",
-                      "llm",
                       "FakeListLLM"
                     ],
                     "name": "FakeListLLM"
@@ -1212,6 +1305,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "ai",
@@ -1222,6 +1319,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "example": {
@@ -1264,6 +1365,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "human",
@@ -1274,6 +1379,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "example": {
@@ -1316,6 +1425,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "chat",
@@ -1326,6 +1439,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "role": {
@@ -1368,6 +1485,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "system",
@@ -1378,6 +1499,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 }
                               },
@@ -1415,6 +1540,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "function",
@@ -1425,6 +1554,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 }
                               },
@@ -1463,6 +1596,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "tool",
@@ -1473,6 +1610,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "tool_call_id": {
@@ -1550,10 +1691,9 @@
                   "lc": 1,
                   "type": "not_implemented",
                   "id": [
-                    "tests",
-                    "unit_tests",
+                    "langchain_core",
+                    "language_models",
                     "fake",
-                    "llm",
                     "FakeListLLM"
                   ],
                   "repr": "FakeListLLM(responses=['bar'])",
@@ -1654,6 +1794,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "ai",
@@ -1664,6 +1808,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "example": {
@@ -1706,6 +1854,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "human",
@@ -1716,6 +1868,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "example": {
@@ -1758,6 +1914,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "chat",
@@ -1768,6 +1928,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "role": {
@@ -1810,6 +1974,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "system",
@@ -1820,6 +1988,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 }
                               },
@@ -1857,6 +2029,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "function",
@@ -1867,6 +2043,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 }
                               },
@@ -1905,6 +2085,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "tool",
@@ -1915,6 +2099,10 @@
                                 },
                                 "name": {
                                   "title": "Name",
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "title": "Id",
                                   "type": "string"
                                 },
                                 "tool_call_id": {
@@ -1979,10 +2167,9 @@
                         "type": "runnable",
                         "data": {
                           "id": [
-                            "tests",
-                            "unit_tests",
+                            "langchain_core",
+                            "language_models",
                             "fake",
-                            "llm",
                             "FakeListLLM"
                           ],
                           "name": "FakeListLLM"
@@ -2046,10 +2233,9 @@
                     "type": "runnable",
                     "data": {
                       "id": [
-                        "tests",
-                        "unit_tests",
+                        "langchain_core",
+                        "language_models",
                         "fake",
-                        "llm",
                         "FakeListLLM"
                       ],
                       "name": "FakeListLLM"
@@ -2521,10 +2707,9 @@
         "lc": 1,
         "type": "not_implemented",
         "id": [
-          "tests",
-          "unit_tests",
+          "langchain_core",
+          "language_models",
           "fake",
-          "llm",
           "FakeListLLM"
         ],
         "repr": "FakeListLLM(responses=['foo'], i=1)",
@@ -2625,6 +2810,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -2635,6 +2824,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -2677,6 +2870,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "human",
@@ -2687,6 +2884,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -2729,6 +2930,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -2739,6 +2944,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "role": {
@@ -2781,6 +2990,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -2791,6 +3004,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -2828,6 +3045,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "function",
@@ -2838,6 +3059,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -2876,6 +3101,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "tool",
@@ -2886,6 +3115,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -2950,10 +3183,9 @@
               "type": "runnable",
               "data": {
                 "id": [
-                  "tests",
-                  "unit_tests",
+                  "langchain_core",
+                  "language_models",
                   "fake",
-                  "llm",
                   "FakeListLLM"
                 ],
                 "name": "FakeListLLM"
@@ -2985,10 +3217,9 @@
           "lc": 1,
           "type": "not_implemented",
           "id": [
-            "tests",
-            "unit_tests",
+            "langchain_core",
+            "language_models",
             "fake",
-            "llm",
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['bar'])",
@@ -3089,6 +3320,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "ai",
@@ -3099,6 +3334,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "example": {
@@ -3141,6 +3380,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "human",
@@ -3151,6 +3394,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "example": {
@@ -3193,6 +3440,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "chat",
@@ -3203,6 +3454,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "role": {
@@ -3245,6 +3500,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "system",
@@ -3255,6 +3514,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         }
                       },
@@ -3292,6 +3555,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "function",
@@ -3302,6 +3569,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         }
                       },
@@ -3340,6 +3611,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "tool",
@@ -3350,6 +3625,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "tool_call_id": {
@@ -3414,10 +3693,9 @@
                 "type": "runnable",
                 "data": {
                   "id": [
-                    "tests",
-                    "unit_tests",
+                    "langchain_core",
+                    "language_models",
                     "fake",
-                    "llm",
                     "FakeListLLM"
                   ],
                   "name": "FakeListLLM"
@@ -3555,6 +3833,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "ai",
@@ -3565,6 +3847,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "example": {
@@ -3607,6 +3893,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "human",
@@ -3617,6 +3907,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "example": {
@@ -3659,6 +3953,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "chat",
@@ -3669,6 +3967,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "role": {
@@ -3711,6 +4013,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "system",
@@ -3721,6 +4027,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   }
                 },
@@ -3758,6 +4068,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "function",
@@ -3768,6 +4082,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   }
                 },
@@ -3806,6 +4124,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "tool",
@@ -3816,6 +4138,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "tool_call_id": {
@@ -3927,10 +4253,9 @@
         "lc": 1,
         "type": "not_implemented",
         "id": [
-          "tests",
-          "unit_tests",
+          "langchain_core",
+          "language_models",
           "fake",
-          "llm",
           "FakeListLLM"
         ],
         "repr": "FakeListLLM(responses=['foo'], i=1)",
@@ -4031,6 +4356,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -4041,6 +4370,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -4083,6 +4416,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "human",
@@ -4093,6 +4430,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "example": {
@@ -4135,6 +4476,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -4145,6 +4490,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "role": {
@@ -4187,6 +4536,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -4197,6 +4550,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -4234,6 +4591,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "function",
@@ -4244,6 +4605,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       }
                     },
@@ -4282,6 +4647,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "tool",
@@ -4292,6 +4661,10 @@
                       },
                       "name": {
                         "title": "Name",
+                        "type": "string"
+                      },
+                      "id": {
+                        "title": "Id",
                         "type": "string"
                       },
                       "tool_call_id": {
@@ -4356,10 +4729,9 @@
               "type": "runnable",
               "data": {
                 "id": [
-                  "tests",
-                  "unit_tests",
+                  "langchain_core",
+                  "language_models",
                   "fake",
-                  "llm",
                   "FakeListLLM"
                 ],
                 "name": "FakeListLLM"
@@ -4391,10 +4763,9 @@
           "lc": 1,
           "type": "not_implemented",
           "id": [
-            "tests",
-            "unit_tests",
+            "langchain_core",
+            "language_models",
             "fake",
-            "llm",
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['baz'], i=1)",
@@ -4495,6 +4866,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "ai",
@@ -4505,6 +4880,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "example": {
@@ -4547,6 +4926,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "human",
@@ -4557,6 +4940,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "example": {
@@ -4599,6 +4986,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "chat",
@@ -4609,6 +5000,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "role": {
@@ -4651,6 +5046,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "system",
@@ -4661,6 +5060,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         }
                       },
@@ -4698,6 +5101,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "function",
@@ -4708,6 +5115,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         }
                       },
@@ -4746,6 +5157,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "tool",
@@ -4756,6 +5171,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "tool_call_id": {
@@ -4820,10 +5239,9 @@
                 "type": "runnable",
                 "data": {
                   "id": [
-                    "tests",
-                    "unit_tests",
+                    "langchain_core",
+                    "language_models",
                     "fake",
-                    "llm",
                     "FakeListLLM"
                   ],
                   "name": "FakeListLLM"
@@ -4854,10 +5272,9 @@
           "lc": 1,
           "type": "not_implemented",
           "id": [
-            "tests",
-            "unit_tests",
+            "langchain_core",
+            "language_models",
             "fake",
-            "llm",
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['bar'])",
@@ -4958,6 +5375,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "ai",
@@ -4968,6 +5389,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "example": {
@@ -5010,6 +5435,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "human",
@@ -5020,6 +5449,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "example": {
@@ -5062,6 +5495,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "chat",
@@ -5072,6 +5509,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "role": {
@@ -5114,6 +5555,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "system",
@@ -5124,6 +5569,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         }
                       },
@@ -5161,6 +5610,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "function",
@@ -5171,6 +5624,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         }
                       },
@@ -5209,6 +5666,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "tool",
@@ -5219,6 +5680,10 @@
                         },
                         "name": {
                           "title": "Name",
+                          "type": "string"
+                        },
+                        "id": {
+                          "title": "Id",
                           "type": "string"
                         },
                         "tool_call_id": {
@@ -5283,10 +5748,9 @@
                 "type": "runnable",
                 "data": {
                   "id": [
-                    "tests",
-                    "unit_tests",
+                    "langchain_core",
+                    "language_models",
                     "fake",
-                    "llm",
                     "FakeListLLM"
                   ],
                   "name": "FakeListLLM"
@@ -5424,6 +5888,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "ai",
@@ -5434,6 +5902,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "example": {
@@ -5476,6 +5948,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "human",
@@ -5486,6 +5962,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "example": {
@@ -5528,6 +6008,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "chat",
@@ -5538,6 +6022,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "role": {
@@ -5580,6 +6068,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "system",
@@ -5590,6 +6082,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   }
                 },
@@ -5627,6 +6123,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "function",
@@ -5637,6 +6137,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   }
                 },
@@ -5675,6 +6179,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "tool",
@@ -5685,6 +6193,10 @@
                   },
                   "name": {
                     "title": "Name",
+                    "type": "string"
+                  },
+                  "id": {
+                    "title": "Id",
                     "type": "string"
                   },
                   "tool_call_id": {
