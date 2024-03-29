@@ -119,7 +119,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             runnable = coerce_to_runnable(runnable)
             _branches.append((condition, runnable))
 
-        super().__init__(branches=_branches, default=default_)
+        super().__init__(branches=_branches, default=default_)  # type: ignore[call-arg]
 
     class Config:
         arbitrary_types_allowed = True
@@ -183,6 +183,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             dumpd(self),
             input,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
         )
 
         try:
@@ -231,6 +232,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             dumpd(self),
             input,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
         )
         try:
             for idx, branch in enumerate(self.branches):
@@ -282,6 +284,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             dumpd(self),
             input,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
         )
         final_output: Optional[Output] = None
         final_output_supported = True
@@ -356,6 +359,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             dumpd(self),
             input,
             name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
         )
         final_output: Optional[Output] = None
         final_output_supported = True

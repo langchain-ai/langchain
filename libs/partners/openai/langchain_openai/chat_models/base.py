@@ -34,11 +34,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    agenerate_from_stream,
-    generate_from_stream,
-)
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -92,9 +88,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         The LangChain message.
     """
     role = _dict.get("role")
+    name = _dict.get("name")
     id_ = _dict.get("id")
     if role == "user":
-        return HumanMessage(content=_dict.get("content", ""), id=id_)
+        return HumanMessage(content=_dict.get("content", ""), id=id_, name=name)
     elif role == "assistant":
         # Fix for azure
         # Also OpenAI returns None for tool invocations
@@ -104,12 +101,14 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["function_call"] = dict(function_call)
         if tool_calls := _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = tool_calls
-        return AIMessage(content=content, additional_kwargs=additional_kwargs, id=id_)
+        return AIMessage(
+            content=content, additional_kwargs=additional_kwargs, name=name, id=id_
+        )
     elif role == "system":
-        return SystemMessage(content=_dict.get("content", ""), id=id_)
+        return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
     elif role == "function":
         return FunctionMessage(
-            content=_dict.get("content", ""), name=_dict.get("name"), id=id_
+            content=_dict.get("content", ""), name=cast(str, _dict.get("name")), id=id_
         )
     elif role == "tool":
         additional_kwargs = {}
@@ -117,8 +116,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["name"] = _dict["name"]
         return ToolMessage(
             content=_dict.get("content", ""),
-            tool_call_id=_dict.get("tool_call_id"),
+            tool_call_id=cast(str, _dict.get("tool_call_id")),
             additional_kwargs=additional_kwargs,
+            name=name,
             id=id_,
         )
     else:
@@ -134,13 +134,19 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: Dict[str, Any]
+    message_dict: Dict[str, Any] = {
+        "content": message.content,
+    }
+    if (name := message.name or message.additional_kwargs.get("name")) is not None:
+        message_dict["name"] = name
+
+    # populate role and additional message data
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict["role"] = message.role
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict["role"] = "user"
     elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict["role"] = "assistant"
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -152,23 +158,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             if message_dict["content"] == "":
                 message_dict["content"] = None
     elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
+        message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
-        message_dict = {
-            "role": "function",
-            "content": message.content,
-            "name": message.name,
-        }
+        message_dict["role"] = "function"
     elif isinstance(message, ToolMessage):
-        message_dict = {
-            "role": "tool",
-            "content": message.content,
-            "tool_call_id": message.tool_call_id,
-        }
+        message_dict["role"] = "tool"
+        message_dict["tool_call_id"] = message.tool_call_id
+
+        supported_props = {"content", "role", "tool_call_id"}
+        message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
         raise TypeError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
     return message_dict
 
 
@@ -225,8 +225,8 @@ class _AllReturnType(TypedDict):
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.
 
-    To use, you should have the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
+    To use, you should have the environment variable ``OPENAI_API_KEY``
+    set with your API key, or pass it as a named parameter to the constructor.
 
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
@@ -234,8 +234,9 @@ class ChatOpenAI(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatOpenAI
-            openai = ChatOpenAI(model_name="gpt-3.5-turbo")
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(model_name="gpt-3.5-turbo")
     """
 
     @property
@@ -312,7 +313,12 @@ class ChatOpenAI(BaseChatModel):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
-    """Optional httpx.Client."""
+    """Optional httpx.Client. Only used for sync invocations. Must specify 
+        http_async_client as well if you'd like a custom client for async invocations.
+    """
+    http_async_client: Union[Any, None] = None
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+        http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -368,14 +374,36 @@ class ChatOpenAI(BaseChatModel):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
 
+        openai_proxy = values["openai_proxy"]
         if not values.get("client"):
-            values["client"] = openai.OpenAI(**client_params).chat.completions
+            if openai_proxy and not values["http_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_client"] = httpx.Client(proxy=openai_proxy)
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.OpenAI(
+                **client_params, **sync_specific
+            ).chat.completions
         if not values.get("async_client"):
+            if openai_proxy and not values["http_async_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_async_client"] = httpx.AsyncClient(proxy=openai_proxy)
+            async_specific = {"http_client": values["http_async_client"]}
             values["async_client"] = openai.AsyncOpenAI(
-                **client_params
+                **client_params, **async_specific
             ).chat.completions
         return values
 
@@ -431,6 +459,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
@@ -444,8 +474,6 @@ class ChatOpenAI(BaseChatModel):
             chunk = ChatGenerationChunk(
                 message=chunk, generation_info=generation_info or None
             )
-            if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
             yield chunk
 
     def _generate(
@@ -453,19 +481,12 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
-            stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {
             **params,
-            **({"stream": stream} if stream is not None else {}),
+            **({"stream": self.streaming} if self.streaming else {}),
             **kwargs,
         }
         response = self.client.create(messages=message_dicts, **params)
@@ -488,6 +509,14 @@ class ChatOpenAI(BaseChatModel):
         generations = []
         if not isinstance(response, dict):
             response = response.model_dump()
+
+        # Sometimes the AI Model calling will get error, we should raise it.
+        # Otherwise, the next code 'choices.extend(response["choices"])'
+        # will throw a "TypeError: 'NoneType' object is not iterable" error
+        # to mask the true error. Because 'response["choices"]' is None.
+        if response.get("error"):
+            raise ValueError(response.get("error"))
+
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             generation_info = dict(finish_reason=res.get("finish_reason"))
@@ -525,6 +554,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
@@ -538,10 +569,6 @@ class ChatOpenAI(BaseChatModel):
             chunk = ChatGenerationChunk(
                 message=chunk, generation_info=generation_info or None
             )
-            if run_manager:
-                await run_manager.on_llm_new_token(
-                    token=chunk.text, chunk=chunk, logprobs=logprobs
-                )
             yield chunk
 
     async def _agenerate(
@@ -549,20 +576,12 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
-            stream_iter = self._astream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return await agenerate_from_stream(stream_iter)
-
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {
             **params,
-            **({"stream": stream} if stream is not None else {}),
+            **({"stream": self.streaming} if self.streaming else {}),
             **kwargs,
         }
         response = await self.async_client.create(messages=message_dicts, **params)
@@ -798,7 +817,8 @@ class ChatOpenAI(BaseChatModel):
                 the model output will be a dict. With a Pydantic class the returned
                 attributes will be validated, whereas with a dict they will not be. If
                 `method` is "function_calling" and `schema` is a dict, then the dict
-                must match the OpenAI function-calling spec.
+                must match the OpenAI function-calling spec or be a valid JSON schema
+                with top level 'title' and 'description' keys specified.
             method: The method for steering model generation, either "function_calling"
                 or "json_mode". If "function_calling" then the schema will be converted
                 to an OpenAI function and the returned model will make use of the

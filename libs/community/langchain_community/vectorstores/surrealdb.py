@@ -220,26 +220,38 @@ class SurrealDBStore(VectorStore):
             "k": k,
             "score_threshold": kwargs.get("score_threshold", 0),
         }
-        query = """select id, text, metadata,
-        vector::similarity::cosine(embedding,{embedding}) as similarity
-        from {collection}
-        where vector::similarity::cosine(embedding,{embedding}) >= {score_threshold}
-        order by similarity desc LIMIT {k}
-        """.format(**args)
-        results = await self.sdb.query(query)
+        query = f"""
+        select
+            id,
+            text,
+            metadata,
+            vector::similarity::cosine(embedding, $embedding) as similarity
+        from ⟨{args["collection"]}⟩
+        where vector::similarity::cosine(embedding, $embedding) >= $score_threshold
+        order by similarity desc LIMIT $k;
+        """
+        results = await self.sdb.query(query, args)
 
         if len(results) == 0:
             return []
 
+        result = results[0]
+
+        if result["status"] != "OK":
+            from surrealdb.ws import SurrealException
+
+            err = result.get("result", "Unknown Error")
+            raise SurrealException(err)
+
         return [
             (
                 Document(
-                    page_content=result["text"],
-                    metadata={"id": result["id"], **result["metadata"]},
+                    page_content=doc["text"],
+                    metadata={"id": doc["id"], **(doc.get("metadata", None) or {})},
                 ),
-                result["similarity"],
+                doc["similarity"],
             )
-            for result in results[0]["result"]
+            for doc in result["result"]
         ]
 
     async def asimilarity_search_with_relevance_scores(
