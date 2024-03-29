@@ -1,4 +1,4 @@
-from typing import Iterator, List
+from typing import Iterator
 
 from langchain_core.documents import Document
 
@@ -37,8 +37,3 @@ class OpenCityDataLoader(BaseLoader):
                     "source": self.city_id + "_" + self.dataset_id,
                 },
             )
-
-    def load(self) -> List[Document]:
-        """Load records."""
-
-        return list(self.lazy_load())

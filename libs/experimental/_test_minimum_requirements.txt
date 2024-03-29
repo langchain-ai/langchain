@@ -1,2 +1,0 @@
-langchain-core==0.1.16
-langchain==0.1.5

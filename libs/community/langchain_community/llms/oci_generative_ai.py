@@ -15,6 +15,8 @@ VALID_PROVIDERS = ("cohere", "meta")
 
 
 class OCIAuthType(Enum):
+    """OCI authentication types as enumerator."""
+
     API_KEY = 1
     SECURITY_TOKEN = 2
     INSTANCE_PRINCIPAL = 3

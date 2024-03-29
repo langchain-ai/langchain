@@ -1,4 +1,5 @@
 """Test HANA vectorstore functionality."""
+
 import os
 import random
 from typing import List
@@ -230,7 +231,7 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
         )
         exception_occured = False
     except AttributeError as err:
-        print(err)
+        print(err)  # noqa: T201
         exception_occured = True
     assert exception_occured
 
@@ -889,3 +890,37 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
     except ValueError:
         exception_occured = True
     assert exception_occured
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_table_mixed_case_names(texts: List[str]) -> None:
+    table_name = "MyTableName"
+    content_column = "TextColumn"
+    metadata_column = "MetaColumn"
+    vector_column = "VectorColumn"
+
+    vectordb = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        distance_strategy=DistanceStrategy.COSINE,
+        table_name=table_name,
+        content_column=content_column,
+        metadata_column=metadata_column,
+        vector_column=vector_column,
+    )
+
+    vectordb.add_texts(texts=texts)
+
+    # check that embeddings have been created in the table
+    number_of_texts = len(texts)
+    number_of_rows = -1
+    sql_str = f'SELECT COUNT(*) FROM "{table_name}"'
+    cur = test_setup.conn.cursor()
+    cur.execute(sql_str)
+    if cur.has_result_set():
+        rows = cur.fetchall()
+        number_of_rows = rows[0][0]
+    assert number_of_rows == number_of_texts
+
+    # check results of similarity search
+    assert texts[0] == vectordb.similarity_search(texts[0], 1)[0].page_content
