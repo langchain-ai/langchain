@@ -61,6 +61,7 @@ class Predibase(LLM):
             # TODO: <Alex>ALEX</Alex>
             # TODO: <Alex>ALEX</Alex>
             pc: PredibaseClient = PredibaseClient(session=session)
+            # pc: PredibaseClient = PredibaseClient(token=self.predibase_api_key.get_secret_value(), gateway="https://api.staging.predibase.com/v1")
             # a = pc.list_llm_deployments(active_only=False, print_as_table=True)
             # print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::Predibase] LLM_DEPLOYMENTS:\n{a} ; TYPE: {str(type(a))}')
             # b = self.model in a
