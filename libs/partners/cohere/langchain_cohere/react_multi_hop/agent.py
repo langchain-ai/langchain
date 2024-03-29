@@ -183,7 +183,9 @@ class CohereToolsReactAgentOutputParser(
             completion, plan, actions = self.parse_actions(text)
             return [
                 AgentAction(
-                    action["tool_name"], action["parameters"], f"Calling: {action} with plan {plan}"
+                    action["tool_name"],
+                    action["parameters"],
+                    f"Calling: {action} with plan {plan}",
                 )
                 for action in actions
             ]
