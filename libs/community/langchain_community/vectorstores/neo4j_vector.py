@@ -108,7 +108,7 @@ def remove_lucene_chars(text: str) -> str:
     return text.strip()
 
 
-def dict_to_yaml_str(input_dict, indent=0):
+def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
     """
     Converts a dictionary to a YAML-like string without using external libraries.
 
