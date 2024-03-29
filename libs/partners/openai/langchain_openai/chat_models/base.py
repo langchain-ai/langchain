@@ -463,6 +463,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
@@ -520,6 +522,14 @@ class ChatOpenAI(BaseChatModel):
         generations = []
         if not isinstance(response, dict):
             response = response.model_dump()
+
+        # Sometimes the AI Model calling will get error, we should raise it.
+        # Otherwise, the next code 'choices.extend(response["choices"])'
+        # will throw a "TypeError: 'NoneType' object is not iterable" error
+        # to mask the true error. Because 'response["choices"]' is None.
+        if response.get("error"):
+            raise ValueError(response.get("error"))
+
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             generation_info = dict(finish_reason=res.get("finish_reason"))
@@ -557,6 +567,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
