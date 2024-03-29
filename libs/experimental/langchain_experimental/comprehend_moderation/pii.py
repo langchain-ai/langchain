@@ -7,6 +7,8 @@ from langchain_experimental.comprehend_moderation.base_moderation_exceptions imp
 
 
 class ComprehendPII:
+    """Class to handle Personally Identifiable Information (PII) moderation."""
+
     def __init__(
         self,
         client: Any,

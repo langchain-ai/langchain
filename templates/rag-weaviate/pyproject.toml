@@ -13,6 +13,7 @@ langchain = "^0.1"
 openai = "<2"
 tiktoken = "^0.5.1"
 weaviate-client = ">=3.24.2"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"

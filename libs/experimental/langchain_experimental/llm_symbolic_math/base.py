@@ -20,6 +20,10 @@ from langchain_experimental.pydantic_v1 import Extra
 class LLMSymbolicMathChain(Chain):
     """Chain that interprets a prompt and executes python code to do symbolic math.
 
+    It is based on the sympy library and can be used to evaluate
+    mathematical expressions.
+    See https://www.sympy.org/ for more information.
+
     Example:
         .. code-block:: python
 
