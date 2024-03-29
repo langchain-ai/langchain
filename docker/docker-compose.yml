@@ -4,14 +4,14 @@
 # ATTENTION: When adding a service below use a non-standard port
 # increment by one from the preceding port.
 # For credentials always use `langchain` and `langchain` for the
-# username and password. 
+# username and password.
 version: "3"
 name: langchain-tests
 
 services:
   redis:
     image: redis/redis-stack-server:latest
-    # We use non standard ports since 
+    # We use non standard ports since
     # these instances are used for testing
     # and users may already have existing
     # redis instances set up locally
@@ -73,6 +73,11 @@ services:
       retries: 60
     volumes:
       - postgres_data_pgvector:/var/lib/postgresql/data
+  vdms:
+    image: intellabs/vdms:latest
+    container_name: vdms_container
+    ports:
+      - "6025:55555"
 
 volumes:
   postgres_data:
