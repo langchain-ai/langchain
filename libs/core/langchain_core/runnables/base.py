@@ -69,6 +69,7 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_context,
     accepts_run_manager,
+    adapt_first_streaming_chunk,
     create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -437,12 +438,86 @@ class Runnable(Generic[Input, Output], ABC):
         *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
         name: Optional[str] = None,
     ) -> RunnableSerializable[Input, Other]:
-        """Compose this runnable with another object to create a RunnableSequence."""
+        """Compose this Runnable with Runnable-like objects to make a RunnableSequence.
+
+        Equivalent to `RunnableSequence(self, *others)` or `self | others[0] | ...`
+
+        Example:
+            .. code-block:: python
+
+                from langchain_core.runnables import RunnableLambda
+
+                def add_one(x: int) -> int:
+                    return x + 1
+
+                def mul_two(x: int) -> int:
+                    return x * 2
+
+                runnable_1 = RunnableLambda(add_one)
+                runnable_2 = RunnableLambda(mul_two)
+                sequence = runnable_1.pipe(runnable_2)
+                # Or equivalently:
+                # sequence = runnable_1 | runnable_2
+                # sequence = RunnableSequence(first=runnable_1, last=runnable_2)
+                sequence.invoke(1)
+                await sequence.ainvoke(1)
+                # -> 4
+
+                sequence.batch([1, 2, 3])
+                await sequence.abatch([1, 2, 3])
+                # -> [4, 6, 8]
+        """
         return RunnableSequence(self, *others, name=name)
 
     def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the dict output of this runnable.
-        Returns a new runnable."""
+
+        Pick single key:
+            .. code-block:: python
+
+                import json
+
+                from langchain_core.runnables import RunnableLambda, RunnableMap
+
+                as_str = RunnableLambda(str)
+                as_json = RunnableLambda(json.loads)
+                chain = RunnableMap(str=as_str, json=as_json)
+
+                chain.invoke("[1, 2, 3]")
+                # -> {"str": "[1, 2, 3]", "json": [1, 2, 3]}
+
+                json_only_chain = chain.pick("json")
+                json_only_chain.invoke("[1, 2, 3]")
+                # -> [1, 2, 3]
+
+        Pick list of keys:
+            .. code-block:: python
+
+                from typing import Any
+
+                import json
+
+                from langchain_core.runnables import RunnableLambda, RunnableMap
+
+                as_str = RunnableLambda(str)
+                as_json = RunnableLambda(json.loads)
+                def as_bytes(x: Any) -> bytes:
+                    return bytes(x, "utf-8")
+
+                chain = RunnableMap(
+                    str=as_str,
+                    json=as_json,
+                    bytes=RunnableLambda(as_bytes)
+                )
+
+                chain.invoke("[1, 2, 3]")
+                # -> {"str": "[1, 2, 3]", "json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+
+                json_and_bytes_chain = chain.pick(["json", "bytes"])
+                json_and_bytes_chain.invoke("[1, 2, 3]")
+                # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+
+        """  # noqa: E501
         from langchain_core.runnables.passthrough import RunnablePick
 
         return self | RunnablePick(keys)
@@ -459,7 +534,35 @@ class Runnable(Generic[Input, Output], ABC):
         ],
     ) -> RunnableSerializable[Any, Any]:
         """Assigns new fields to the dict output of this runnable.
-        Returns a new runnable."""
+        Returns a new runnable.
+
+        .. code-block:: python
+
+            from langchain_community.llms.fake import FakeStreamingListLLM
+            from langchain_core.output_parsers import StrOutputParser
+            from langchain_core.prompts import SystemMessagePromptTemplate
+            from langchain_core.runnables import Runnable
+            from operator import itemgetter
+
+            prompt = (
+                SystemMessagePromptTemplate.from_template("You are a nice assistant.")
+                + "{question}"
+            )
+            llm = FakeStreamingListLLM(responses=["foo-lish"])
+
+            chain: Runnable = prompt | llm | {"str": StrOutputParser()}
+
+            chain_with_assign = chain.assign(hello=itemgetter("str") | llm)
+
+            print(chain_with_assign.input_schema.schema())
+            # {'title': 'PromptInput', 'type': 'object', 'properties':
+            {'question': {'title': 'Question', 'type': 'string'}}}
+            print(chain_with_assign.output_schema.schema()) #
+            {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
+            {'str': {'title': 'Str',
+            'type': 'string'}, 'hello': {'title': 'Hello', 'type': 'string'}}}
+
+        """
         from langchain_core.runnables.passthrough import RunnableAssign
 
         return self | RunnableAssign(RunnableParallel(kwargs))
@@ -530,6 +633,76 @@ class Runnable(Generic[Input, Output], ABC):
         with get_executor_for_config(configs[0]) as executor:
             return cast(List[Output], list(executor.map(invoke, inputs, configs)))
 
+    @overload
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Iterator[Tuple[int, Output]]:
+        ...
+
+    @overload
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Any,
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+        ...
+
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+        """Run invoke in parallel on a list of inputs,
+        yielding results as they complete."""
+
+        if not inputs:
+            return
+
+        configs = get_config_list(config, len(inputs))
+
+        def invoke(
+            i: int, input: Input, config: RunnableConfig
+        ) -> Tuple[int, Union[Output, Exception]]:
+            if return_exceptions:
+                try:
+                    out: Union[Output, Exception] = self.invoke(input, config, **kwargs)
+                except Exception as e:
+                    out = e
+            else:
+                out = self.invoke(input, config, **kwargs)
+
+            return (i, out)
+
+        if len(inputs) == 1:
+            yield invoke(0, inputs[0], configs[0])
+            return
+
+        with get_executor_for_config(configs[0]) as executor:
+            futures = {
+                executor.submit(invoke, i, input, config)
+                for i, (input, config) in enumerate(zip(inputs, configs))
+            }
+
+            try:
+                while futures:
+                    done, futures = wait(futures, return_when=FIRST_COMPLETED)
+                    while done:
+                        yield done.pop().result()
+            finally:
+                for future in futures:
+                    future.cancel()
+
     async def abatch(
         self,
         inputs: List[Input],
@@ -563,6 +736,64 @@ class Runnable(Generic[Input, Output], ABC):
 
         coros = map(ainvoke, inputs, configs)
         return await gather_with_concurrency(configs[0].get("max_concurrency"), *coros)
+
+    @overload
+    def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Output]]:
+        ...
+
+    @overload
+    def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+        ...
+
+    async def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+        """Run ainvoke in parallel on a list of inputs,
+        yielding results as they complete."""
+
+        if not inputs:
+            return
+
+        configs = get_config_list(config, len(inputs))
+
+        async def ainvoke(
+            i: int, input: Input, config: RunnableConfig
+        ) -> Tuple[int, Union[Output, Exception]]:
+            if return_exceptions:
+                try:
+                    out: Union[Output, Exception] = await self.ainvoke(
+                        input, config, **kwargs
+                    )
+                except Exception as e:
+                    out = e
+            else:
+                out = await self.ainvoke(input, config, **kwargs)
+
+            return (i, out)
+
+        coros = map(ainvoke, range(len(inputs)), inputs, configs)
+
+        for coro in asyncio.as_completed(coros):
+            yield await coro
 
     def stream(
         self,
@@ -687,6 +918,7 @@ class Runnable(Generic[Input, Output], ABC):
             diff=diff,
             stream=stream,
             with_streamed_output_list=with_streamed_output_list,
+            **kwargs,
         ):
             yield item
 
@@ -1050,12 +1282,19 @@ class Runnable(Generic[Input, Output], ABC):
 
         for chunk in input:
             if not got_first_val:
-                final = chunk
+                final = adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
-                final = final + chunk  # type: ignore[operator]
+                try:
+                    final = final + chunk  # type: ignore[operator]
+                except TypeError:
+                    raise TypeError(
+                        f"Failed while trying to add together "
+                        f"type {type(final)} and {type(chunk)}."
+                        f"These types should be addable for transform to work."
+                    )
 
         if got_first_val:
             yield from self.stream(final, config, **kwargs)
@@ -1076,12 +1315,19 @@ class Runnable(Generic[Input, Output], ABC):
 
         async for chunk in input:
             if not got_first_val:
-                final = chunk
+                final = adapt_first_streaming_chunk(chunk)  # type: ignore
                 got_first_val = True
             else:
                 # Make a best effort to gather, for any type that supports `+`
                 # This method should throw an error if gathering fails.
-                final = final + chunk  # type: ignore[operator]
+                try:
+                    final = final + chunk  # type: ignore[operator]
+                except TypeError:
+                    raise TypeError(
+                        f"Failed while trying to add together "
+                        f"type {type(final)} and {type(chunk)}."
+                        f"These types should be addable for atransform to work."
+                    )
 
         if got_first_val:
             async for output in self.astream(final, config, **kwargs):
@@ -1090,6 +1336,37 @@ class Runnable(Generic[Input, Output], ABC):
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """
         Bind arguments to a Runnable, returning a new Runnable.
+
+        Useful when a runnable in a chain requires an argument that is not
+        in the output of the previous runnable or included in the user input.
+
+        Example:
+
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatOllama
+            from langchain_core.output_parsers import StrOutputParser
+
+            llm = ChatOllama(model='llama2')
+
+            # Without bind.
+            chain = (
+                llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two three four five.'
+
+            # With bind.
+            chain = (
+                llm.bind(stop=["three"])
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two'
+
         """
         return RunnableBinding(bound=self, kwargs=kwargs, config={})
 
@@ -1128,6 +1405,26 @@ class Runnable(Generic[Input, Output], ABC):
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
+
+        Example:
+
+        .. code-block:: python
+            from langchain_core.runnables import RunnableLambda
+            import time
+
+            def test_runnable(time_to_sleep : int):
+                time.sleep(time_to_sleep)
+
+            def fn_start(run_obj : Runnable):
+                print("start_time:", run_obj.start_time)
+
+            def fn_end(run_obj : Runnable):
+                print("end_time:", run_obj.end_time)
+
+            RunnableLambda(test_runnable).with_listeners(
+                on_start=fn_start,
+                on_end=fn_end
+                ).invoke(2)
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
@@ -1172,6 +1469,35 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> Runnable[Input, Output]:
         """Create a new Runnable that retries the original runnable on exceptions.
 
+        Example:
+
+        .. code-block:: python
+            from langchain_core.runnables import RunnableLambda
+
+            count = 0
+
+
+            def _lambda(x: int) -> None:
+                global count
+                count = count + 1
+                if x == 1:
+                    raise ValueError("x is 1")
+                else:
+                     pass
+
+
+            runnable = RunnableLambda(_lambda)
+            try:
+                runnable.with_retry(
+                    stop_after_attempt=2,
+                    retry_if_exception_type=(ValueError,),
+                ).invoke(1)
+            except ValueError:
+                pass
+
+            assert (count == 2)
+
+
         Args:
             retry_if_exception_type: A tuple of exception types to retry on
             wait_exponential_jitter: Whether to add jitter to the wait time
@@ -1196,6 +1522,18 @@ class Runnable(Generic[Input, Output], ABC):
         """
         Return a new Runnable that maps a list of inputs to a list of outputs,
         by calling invoke() with each input.
+
+        Example:
+
+            .. code-block:: python
+
+                    from langchain_core.runnables import RunnableLambda
+
+                    def _lambda(x: int) -> int:
+                        return x + 1
+
+                    runnable = RunnableLambda(_lambda)
+                    print(runnable.map().invoke([1, 2, 3])) # [2, 3, 4]
         """
         return RunnableEach(bound=self)
 
@@ -1208,6 +1546,29 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> RunnableWithFallbacksT[Input, Output]:
         """Add fallbacks to a runnable, returning a new Runnable.
 
+        Example:
+
+            .. code-block:: python
+
+                from typing import Iterator
+
+                from langchain_core.runnables import RunnableGenerator
+
+
+                def _generate_immediate_error(input: Iterator) -> Iterator[str]:
+                    raise ValueError()
+                    yield ""
+
+
+                def _generate(input: Iterator) -> Iterator[str]:
+                    yield from "foo bar"
+
+
+                runnable = RunnableGenerator(_generate_immediate_error).with_fallbacks(
+                    [RunnableGenerator(_generate)]
+                    )
+                print(''.join(runnable.stream({}))) #foo bar
+
         Args:
             fallbacks: A sequence of runnables to try if the original runnable fails.
             exceptions_to_handle: A tuple of exception types to handle.
@@ -1219,6 +1580,7 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             A new Runnable that will try the original runnable, and then each
             fallback in order, upon failures.
+
         """
         from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 
@@ -1252,6 +1614,7 @@ class Runnable(Generic[Input, Output], ABC):
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -1260,7 +1623,7 @@ class Runnable(Generic[Input, Output], ABC):
             output = cast(
                 Output,
                 context.run(
-                    call_func_with_variable_args,
+                    call_func_with_variable_args,  # type: ignore[arg-type]
                     func,  # type: ignore[arg-type]
                     input,  # type: ignore[arg-type]
                     config,
@@ -1299,6 +1662,7 @@ class Runnable(Generic[Input, Output], ABC):
             input,
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -1351,6 +1715,7 @@ class Runnable(Generic[Input, Output], ABC):
                 input,
                 run_type=run_type,
                 name=config.get("run_name") or self.get_name(),
+                run_id=config.pop("run_id", None),
             )
             for callback_manager, input, config in zip(
                 callback_managers, input, configs
@@ -1423,6 +1788,7 @@ class Runnable(Generic[Input, Output], ABC):
                     input,
                     run_type=run_type,
                     name=config.get("run_name") or self.get_name(),
+                    run_id=config.pop("run_id", None),
                 )
                 for callback_manager, input, config in zip(
                     callback_managers, input, configs
@@ -1498,6 +1864,7 @@ class Runnable(Generic[Input, Output], ABC):
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -1585,6 +1952,7 @@ class Runnable(Generic[Input, Output], ABC):
             {"input": ""},
             run_type=run_type,
             name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -1666,6 +2034,33 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
+        """Configure particular runnable fields at runtime.
+
+        .. code-block:: python
+
+            from langchain_core.runnables import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(max_tokens=20).configurable_fields(
+                max_tokens=ConfigurableField(
+                    id="output_token_number",
+                    name="Max tokens in the output",
+                    description="The maximum number of tokens in the output",
+                )
+            )
+
+            # max_tokens = 20
+            print(
+                "max_tokens_20: ",
+                model.invoke("tell me something about chess").content
+            )
+
+            # max_tokens = 200
+            print("max_tokens_200: ", model.with_config(
+                configurable={"output_token_number": 200}
+                ).invoke("tell me something about chess").content
+            )
+        """
         from langchain_core.runnables.configurable import RunnableConfigurableFields
 
         for key in kwargs:
@@ -1685,6 +2080,32 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         prefix_keys: bool = False,
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
+        """Configure alternatives for runnables that can be set at runtime.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.runnables.utils import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatAnthropic(
+                model_name="claude-3-sonnet-20240229"
+            ).configurable_alternatives(
+                ConfigurableField(id="llm"),
+                default_key="anthropic",
+                openai=ChatOpenAI()
+            )
+
+            # uses the default model ChatAnthropic
+            print(model.invoke("which organization created you?").content)
+
+            # uses ChatOpenaAI
+            print(
+                model.with_config(
+                    configurable={"llm": "openai"}
+                ).invoke("which organization created you?").content
+            )
+        """
         from langchain_core.runnables.configurable import (
             RunnableConfigurableAlternatives,
         )
@@ -1888,7 +2309,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             raise ValueError(
                 f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
             )
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             first=steps_flat[0],
             middle=list(steps_flat[1:-1]),
             last=steps_flat[-1],
@@ -2066,7 +2487,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
 
         # invoke all steps in sequence
@@ -2100,7 +2524,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
 
         # invoke all steps in sequence
@@ -2158,6 +2585,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 dumpd(self),
                 input,
                 name=config.get("run_name") or self.get_name(),
+                run_id=config.pop("run_id", None),
             )
             for cm, input, config in zip(callback_managers, inputs, configs)
         ]
@@ -2282,6 +2710,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                     dumpd(self),
                     input,
                     name=config.get("run_name") or self.get_name(),
+                    run_id=config.pop("run_id", None),
                 )
                 for cm, input, config in zip(callback_managers, inputs, configs)
             )
@@ -2574,7 +3003,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     ) -> None:
         merged = {**__steps} if __steps is not None else {}
         merged.update(kwargs)
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             steps={key: coerce_to_runnable(r) for key, r in merged.items()}
         )
 
@@ -2689,7 +3118,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         )
         # start the root run
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
 
         # gather results from all steps
@@ -2729,7 +3161,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
+            run_id=config.pop("run_id", None),
         )
 
         # gather results from all steps
@@ -3001,7 +3436,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             func_for_name: Callable = atransform
 
         if inspect.isasyncgenfunction(transform):
-            self._atransform = transform
+            self._atransform = transform  # type: ignore[assignment]
             func_for_name = transform
         elif inspect.isgeneratorfunction(transform):
             self._transform = transform
@@ -3066,7 +3501,10 @@ class RunnableGenerator(Runnable[Input, Output]):
         if not hasattr(self, "_transform"):
             raise NotImplementedError(f"{repr(self)} only supports async methods.")
         return self._transform_stream_with_config(
-            input, self._transform, config, **kwargs
+            input,
+            self._transform,  # type: ignore[arg-type]
+            config,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     def stream(
@@ -3557,7 +3995,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         for ichunk in input:
             if final is None:
-                final = ichunk
+                final = adapt_first_streaming_chunk(ichunk)  # type: ignore
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -3641,7 +4079,7 @@ class RunnableLambda(Runnable[Input, Output]):
         final: Optional[Input] = None
         async for ichunk in input:
             if final is None:
-                final = ichunk
+                final = adapt_first_streaming_chunk(ichunk)
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -3995,7 +4433,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
                 runnable with a custom type.
             **other_kwargs: Unpacked into the base class.
         """
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             bound=bound,
             kwargs=kwargs or {},
             config=config or {},
@@ -4004,6 +4442,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             custom_output_type=custom_output_type,
             **other_kwargs,
         )
+        # if we don't explicitly set config to the TypedDict here,
+        # the pydantic init above will strip out any of the "extra"
+        # fields even though total=False on the typed dict.
+        self.config = config or {}
 
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
@@ -4127,6 +4569,113 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             return_exceptions=return_exceptions,
             **{**self.kwargs, **kwargs},
         )
+
+    @overload
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Iterator[Tuple[int, Output]]:
+        ...
+
+    @overload
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Any,
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+        ...
+
+    def batch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
+        if isinstance(config, list):
+            configs = cast(
+                List[RunnableConfig],
+                [self._merge_configs(conf) for conf in config],
+            )
+        else:
+            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+        # lol mypy
+        if return_exceptions:
+            yield from self.bound.batch_as_completed(
+                inputs,
+                configs,
+                return_exceptions=return_exceptions,
+                **{**self.kwargs, **kwargs},
+            )
+        else:
+            yield from self.bound.batch_as_completed(
+                inputs,
+                configs,
+                return_exceptions=return_exceptions,
+                **{**self.kwargs, **kwargs},
+            )
+
+    @overload
+    def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Output]]:
+        ...
+
+    @overload
+    def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[True],
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+        ...
+
+    async def abatch_as_completed(
+        self,
+        inputs: List[Input],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
+        if isinstance(config, list):
+            configs = cast(
+                List[RunnableConfig],
+                [self._merge_configs(conf) for conf in config],
+            )
+        else:
+            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+        if return_exceptions:
+            async for item in self.bound.abatch_as_completed(
+                inputs,
+                configs,
+                return_exceptions=return_exceptions,
+                **{**self.kwargs, **kwargs},
+            ):
+                yield item
+        else:
+            async for item in self.bound.abatch_as_completed(
+                inputs,
+                configs,
+                return_exceptions=return_exceptions,
+                **{**self.kwargs, **kwargs},
+            ):
+                yield item
 
     def stream(
         self,
