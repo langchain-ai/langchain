@@ -3,7 +3,9 @@ from langchain_community.agent_toolkits import __all__
 EXPECTED_ALL = [
     "AINetworkToolkit",
     "AmadeusToolkit",
+    "AzureAiServicesToolkit",
     "AzureCognitiveServicesToolkit",
+    "ConneryToolkit",
     "FileManagementToolkit",
     "GmailToolkit",
     "JiraToolkit",
@@ -27,6 +29,7 @@ EXPECTED_ALL = [
     "create_pbi_chat_agent",
     "create_spark_sql_agent",
     "create_sql_agent",
+    "CogniswitchToolkit",
 ]
 
 

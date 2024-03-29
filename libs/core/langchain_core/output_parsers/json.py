@@ -35,7 +35,7 @@ def _custom_parser(multiline_string: str) -> str:
         multiline_string = multiline_string.decode()
 
     multiline_string = re.sub(
-        r'("action_input"\:\s*")(.*)(")',
+        r'("action_input"\:\s*")(.*?)(")',
         _replace_new_line,
         multiline_string,
         flags=re.DOTALL,
@@ -44,7 +44,7 @@ def _custom_parser(multiline_string: str) -> str:
     return multiline_string
 
 
-# Adapted from https://github.com/KillianLucas/open-interpreter/blob/main/interpreter/utils/parse_partial_json.py
+# Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
 # MIT License
 def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     """Parse a JSON string that may be missing closing braces.
@@ -137,26 +137,32 @@ def parse_json_markdown(
     Returns:
         The parsed JSON object as a Python dictionary.
     """
-    # Try to find JSON string within triple backticks
-    match = re.search(r"```(json)?(.*)```", json_string, re.DOTALL)
+    try:
+        return _parse_json(json_string, parser=parser)
+    except json.JSONDecodeError:
+        # Try to find JSON string within triple backticks
+        match = re.search(r"```(json)?(.*)", json_string, re.DOTALL)
 
-    # If no match found, assume the entire string is a JSON string
-    if match is None:
-        json_str = json_string
-    else:
-        # If match found, use the content within the backticks
-        json_str = match.group(2)
+        # If no match found, assume the entire string is a JSON string
+        if match is None:
+            json_str = json_string
+        else:
+            # If match found, use the content within the backticks
+            json_str = match.group(2)
+    return _parse_json(json_str, parser=parser)
 
+
+def _parse_json(
+    json_str: str, *, parser: Callable[[str], Any] = parse_partial_json
+) -> dict:
     # Strip whitespace and newlines from the start and end
-    json_str = json_str.strip()
+    json_str = json_str.strip().strip("`")
 
     # handle newlines and other special characters inside the returned value
     json_str = _custom_parser(json_str)
 
     # Parse the JSON string into a Python dictionary
-    parsed = parser(json_str)
-
-    return parsed
+    return parser(json_str)
 
 
 def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
@@ -211,7 +217,8 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             try:
                 return parse_json_markdown(text)
             except JSONDecodeError as e:
-                raise OutputParserException(f"Invalid json output: {text}") from e
+                msg = f"Invalid json output: {text}"
+                raise OutputParserException(msg, llm_output=text) from e
 
     def parse(self, text: str) -> Any:
         return self.parse_result([Generation(text=text)])
@@ -220,7 +227,8 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         if self.pydantic_object is None:
             return "Return a JSON object."
         else:
-            schema = self.pydantic_object.schema()
+            # Copy schema to avoid altering original Pydantic schema.
+            schema = {k: v for k, v in self.pydantic_object.schema().items()}
 
             # Remove extraneous fields.
             reduced_schema = schema

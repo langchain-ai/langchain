@@ -127,19 +127,33 @@ def _make_request(
     try:
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
-            CompletionOptions,
-            Message,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
-            CompletionRequest,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
-            TextGenerationServiceStub,
-        )
+
+        try:
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+                TextGenerationServiceStub,
+            )
+        except ModuleNotFoundError:
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+                TextGenerationServiceStub,
+            )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK" " with `pip install yandexcloud`."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     if not messages:
         raise ValueError("You should provide at least one message to start the chat!")
@@ -165,24 +179,39 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
 
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
-            CompletionOptions,
-            Message,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
-            CompletionRequest,
-            CompletionResponse,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
-            TextGenerationAsyncServiceStub,
-        )
+
+        try:
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+                CompletionResponse,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+                TextGenerationAsyncServiceStub,
+            )
+        except ModuleNotFoundError:
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+                CompletionResponse,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+                TextGenerationAsyncServiceStub,
+            )
         from yandex.cloud.operation.operation_service_pb2 import GetOperationRequest
         from yandex.cloud.operation.operation_service_pb2_grpc import (
             OperationServiceStub,
         )
     except ImportError as e:
         raise ImportError(
-            "Please install YandexCloud SDK" " with `pip install yandexcloud`."
+            "Please install YandexCloud SDK  with `pip install yandexcloud` \
+            or upgrade it to recent version."
         ) from e
     if not messages:
         raise ValueError("You should provide at least one message to start the chat!")
@@ -208,7 +237,8 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
                 await asyncio.sleep(1)
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
-                    operation_request, metadata=self._grpc_metadata
+                    operation_request,
+                    metadata=self._grpc_metadata,
                 )
 
         completion_response = CompletionResponse()
@@ -219,7 +249,7 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
 def _create_retry_decorator(llm: ChatYandexGPT) -> Callable[[Any], Any]:
     from grpc import RpcError
 
-    min_seconds = 1
+    min_seconds = llm.sleep_interval
     max_seconds = 60
     return retry(
         reraise=True,

@@ -1,4 +1,5 @@
 """O365 tool utils."""
+
 from __future__ import annotations
 
 import logging
@@ -66,7 +67,7 @@ def authenticate() -> Account:
                 "https://graph.microsoft.com/MailboxSettings.ReadWrite",
             ]
         ):
-            print("Error: Could not authenticate")
+            print("Error: Could not authenticate")  # noqa: T201
             return None
         else:
             return account

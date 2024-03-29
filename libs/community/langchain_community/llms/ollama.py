@@ -1,5 +1,5 @@
 import json
-from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Union
 
 import aiohttp
 import requests
@@ -64,6 +64,10 @@ class _OllamaCommon(BaseLanguageModel):
     It is recommended to set this value to the number of physical
     CPU cores your system has (as opposed to the logical number of cores)."""
 
+    num_predict: Optional[int] = None
+    """Maximum number of tokens to predict when generating text.
+    (Default: 128, -1 = infinite generation, -2 = fill context)"""
+
     repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent
     repetition. (Default: 64, 0 = disabled, -1 = num_ctx)"""
@@ -107,6 +111,18 @@ class _OllamaCommon(BaseLanguageModel):
     timeout: Optional[int] = None
     """Timeout for the request stream"""
 
+    keep_alive: Optional[Union[int, str]] = None
+    """How long the model will stay loaded into memory.
+
+    The parameter (Default: 5 minutes) can be set to:
+    1. a duration string in Golang (such as "10m" or "24h");
+    2. a number in seconds (such as 3600);
+    3. any negative number which will keep the model loaded \
+        in memory (e.g. -1 or "-1m");
+    4. 0 which will unload the model immediately after generating a response;
+
+    See the [Ollama documents](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-keep-a-model-loaded-in-memory-or-make-it-unload-immediately)"""
+
     headers: Optional[dict] = None
     """Additional headers to pass to endpoint (e.g. Authorization, Referer).
     This is useful when Ollama is hosted on cloud services that require
@@ -126,6 +142,7 @@ class _OllamaCommon(BaseLanguageModel):
                 "num_ctx": self.num_ctx,
                 "num_gpu": self.num_gpu,
                 "num_thread": self.num_thread,
+                "num_predict": self.num_predict,
                 "repeat_last_n": self.repeat_last_n,
                 "repeat_penalty": self.repeat_penalty,
                 "temperature": self.temperature,
@@ -136,6 +153,7 @@ class _OllamaCommon(BaseLanguageModel):
             },
             "system": self.system,
             "template": self.template,
+            "keep_alive": self.keep_alive,
         }
 
     @property
@@ -154,7 +172,7 @@ class _OllamaCommon(BaseLanguageModel):
         yield from self._create_stream(
             payload=payload,
             stop=stop,
-            api_url=f"{self.base_url}/api/generate/",
+            api_url=f"{self.base_url}/api/generate",
             **kwargs,
         )
 
@@ -169,7 +187,7 @@ class _OllamaCommon(BaseLanguageModel):
         async for item in self._acreate_stream(
             payload=payload,
             stop=stop,
-            api_url=f"{self.base_url}/api/generate/",
+            api_url=f"{self.base_url}/api/generate",
             **kwargs,
         ):
             yield item
@@ -231,7 +249,7 @@ class _OllamaCommon(BaseLanguageModel):
                     f"and you should pull the model with `ollama pull {self.model}`."
                 )
             else:
-                optional_detail = response.json().get("error")
+                optional_detail = response.text
                 raise ValueError(
                     f"Ollama call failed with status code {response.status_code}."
                     f" Details: {optional_detail}"
@@ -279,7 +297,10 @@ class _OllamaCommon(BaseLanguageModel):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 url=api_url,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    **(self.headers if isinstance(self.headers, dict) else {}),
+                },
                 json=request_payload,
                 timeout=self.timeout,
             ) as response:
@@ -289,7 +310,7 @@ class _OllamaCommon(BaseLanguageModel):
                             "Ollama call failed with status code 404."
                         )
                     else:
-                        optional_detail = await response.json().get("error")
+                        optional_detail = response.text
                         raise ValueError(
                             f"Ollama call failed with status code {response.status}."
                             f" Details: {optional_detail}"
@@ -372,7 +393,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         """Return type of llm."""
         return "ollama-llm"
 
-    def _generate(
+    def _generate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -408,7 +429,7 @@ class Ollama(BaseLLM, _OllamaCommon):
             generations.append([final_chunk])
         return LLMResult(generations=generations)
 
-    async def _agenerate(
+    async def _agenerate(  # type: ignore[override]
         self,
         prompts: List[str],
         stop: Optional[List[str]] = None,
@@ -437,7 +458,7 @@ class Ollama(BaseLLM, _OllamaCommon):
                 prompt,
                 stop=stop,
                 images=images,
-                run_manager=run_manager,
+                run_manager=run_manager,  # type: ignore[arg-type]
                 verbose=self.verbose,
                 **kwargs,
             )
@@ -454,12 +475,12 @@ class Ollama(BaseLLM, _OllamaCommon):
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(
                         chunk.text,
                         verbose=self.verbose,
                     )
+                yield chunk
 
     async def _astream(
         self,
@@ -471,9 +492,9 @@ class Ollama(BaseLLM, _OllamaCommon):
         async for stream_resp in self._acreate_generate_stream(prompt, stop, **kwargs):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
-                yield chunk
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         chunk.text,
                         verbose=self.verbose,
                     )
+                yield chunk
