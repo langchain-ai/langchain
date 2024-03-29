@@ -10,7 +10,8 @@ from langchain_core.prompts import BasePromptTemplate
 
 
 def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
-    """Unified method for loading a prompt from LangChainHub or local fs."""
+    """Unified method for loading a prompt from LangChainHub or local file system."""
+
     if hub_result := try_load_from_hub(
         path, _load_prompt_from_file, "prompts", {"py", "json", "yaml"}
     ):

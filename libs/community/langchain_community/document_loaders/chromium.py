@@ -78,14 +78,3 @@ class AsyncChromiumLoader(BaseLoader):
             html_content = asyncio.run(self.ascrape_playwright(url))
             metadata = {"source": url}
             yield Document(page_content=html_content, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        """
-        Load and return all Documents from the provided URLs.
-
-        Returns:
-            List[Document]: A list of Document objects
-            containing the scraped content from each URL.
-
-        """
-        return list(self.lazy_load())

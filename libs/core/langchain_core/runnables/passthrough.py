@@ -1,4 +1,5 @@
 """Implementation of the RunnablePassthrough."""
+
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +21,7 @@ from typing import (
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel, create_model
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -36,7 +37,12 @@ from langchain_core.runnables.config import (
     patch_config,
 )
 from langchain_core.runnables.graph import Graph
-from langchain_core.runnables.utils import AddableDict, ConfigurableFieldSpec
+from langchain_core.runnables.utils import (
+    AddableDict,
+    ConfigurableFieldSpec,
+    adapt_first_streaming_chunk,
+    create_model,
+)
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
 
@@ -161,7 +167,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             afunc = func
             func = None
 
-        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)
+        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -243,7 +249,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
                 if final is None:
-                    final = chunk
+                    final = adapt_first_streaming_chunk(chunk)
                 else:
                     final = final + chunk
 
@@ -271,7 +277,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             ):
                 yield chunk
                 if final is None:
-                    final = chunk
+                    final = adapt_first_streaming_chunk(chunk)
                 else:
                     final = final + chunk
 
@@ -311,12 +317,45 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     """
     A runnable that assigns key-value pairs to Dict[str, Any] inputs.
+
+    The `RunnableAssign` class takes input dictionaries and, through a
+    `RunnableParallel` instance, applies transformations, then combines
+    these with the original data, introducing new key-value pairs based
+    on the mapper's logic.
+
+    Examples:
+        .. code-block:: python
+
+            # This is a RunnableAssign
+            from typing import Dict
+            from langchain_core.runnables.passthrough import (
+                RunnableAssign,
+                RunnableParallel,
+            )
+            from langchain_core.runnables.base import RunnableLambda
+
+            def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+                return {"added": x["input"] + 10}
+
+            mapper = RunnableParallel(
+                {"add_step": RunnableLambda(add_ten),}
+            )
+
+            runnable_assign = RunnableAssign(mapper)
+
+            # Synchronous example
+            runnable_assign.invoke({"input": 5})
+            # returns {'input': 5, 'add_step': {'added': 15}}
+
+            # Asynchronous example
+            await runnable_assign.ainvoke({"input": 5})
+            # returns {'input': 5, 'add_step': {'added': 15}}
     """
 
     mapper: RunnableParallel[Dict[str, Any]]
 
     def __init__(self, mapper: RunnableParallel[Dict[str, Any]], **kwargs: Any) -> None:
-        super().__init__(mapper=mapper, **kwargs)
+        super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -571,14 +610,36 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
 
 class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
-    """
-    Runnable that picks keys from Dict[str, Any] inputs.
+    """Runnable that picks keys from Dict[str, Any] inputs.
+
+    RunnablePick class represents a runnable that selectively picks keys from a
+    dictionary input. It allows you to specify one or more keys to extract
+    from the input dictionary. It returns a new dictionary containing only
+    the selected keys.
+
+    Example :
+        .. code-block:: python
+
+            from langchain_core.runnables.passthrough import RunnablePick
+
+            input_data = {
+                'name': 'John',
+                'age': 30,
+                'city': 'New York',
+                'country': 'USA'
+            }
+
+            runnable = RunnablePick(keys=['name', 'age'])
+
+            output_data = runnable.invoke(input_data)
+
+            print(output_data)  # Output: {'name': 'John', 'age': 30}
     """
 
     keys: Union[str, List[str]]
 
     def __init__(self, keys: Union[str, List[str]], **kwargs: Any) -> None:
-        super().__init__(keys=keys, **kwargs)
+        super().__init__(keys=keys, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
