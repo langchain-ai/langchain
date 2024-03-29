@@ -84,7 +84,7 @@ class ShellTool(BaseTool):
     ) -> str:
         """Run commands and return final output."""
 
-        print(f"Executing command:\n {commands}")
+        print(f"Executing command:\n {commands}")  # noqa: T201
 
         try:
             if self.ask_human_input:

@@ -74,7 +74,7 @@ class ParserEmbeddings(Embeddings):
             assert len(vals) == self.dimension
             return vals
         except Exception:
-            print(f'[ParserEmbeddings] Returning a moot vector for "{text}"')
+            print(f'[ParserEmbeddings] Returning a moot vector for "{text}"')  # noqa: T201
             return [0.0] * self.dimension
 
     async def aembed_query(self, text: str) -> List[float]:
@@ -346,7 +346,7 @@ class TestAstraDB:
         res3 = store_someemb.similarity_search_with_score_id(
             query="cc", k=1, filter={"k": "c_new"}
         )
-        print(str(res3))
+        print(str(res3))  # noqa: T201
         doc3, score3, id3 = res3[0]
         assert doc3.page_content == "cc"
         assert doc3.metadata == {"k": "c_new", "ord": 102}
@@ -404,7 +404,7 @@ class TestAstraDB:
         res3 = await store_someemb.asimilarity_search_with_score_id(
             query="cc", k=1, filter={"k": "c_new"}
         )
-        print(str(res3))
+        print(str(res3))  # noqa: T201
         doc3, score3, id3 = res3[0]
         assert doc3.page_content == "cc"
         assert doc3.metadata == {"k": "c_new", "ord": 102}

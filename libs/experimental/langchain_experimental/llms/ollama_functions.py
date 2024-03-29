@@ -42,6 +42,8 @@ DEFAULT_RESPONSE_FUNCTION = {
 
 
 class OllamaFunctions(BaseChatModel):
+    """Function chat model that uses Ollama API."""
+
     llm: ChatOllama
 
     tool_system_prompt_template: str
