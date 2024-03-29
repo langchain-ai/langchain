@@ -36,8 +36,8 @@ class Predibase(LLM):
     ) -> str:
         try:
             from predibase import PredibaseClient
-            from predibase.pql.api import Session
             from predibase.pql import get_session
+            from predibase.pql.api import Session
             from predibase.resource.llm.interface import LLMDeployment
             from predibase.resource.llm.response import GeneratedResponse
 
