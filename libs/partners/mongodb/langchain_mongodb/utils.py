@@ -40,7 +40,7 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
             return np.array([Z])
         return np.array(Z)
     except ImportError:
-        logger.info(
+        logger.debug(
             "Unable to import simsimd, defaulting to NumPy implementation. If you want "
             "to use simsimd please install with `pip install simsimd`."
         )
