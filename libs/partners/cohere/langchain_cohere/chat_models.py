@@ -106,8 +106,9 @@ def get_cohere_chat_request(
     elif documents is not None and len(documents) > 0:
         parsed_docs = documents
 
+    formatted_docs: Optional[List[Dict[str, Any]]] = None
     if parsed_docs is not None:
-        parsed_docs = [
+        formatted_docs = [
             {
                 "text": doc.page_content,
                 "id": doc.metadata.get("id") or f"doc-{str(i)}",
@@ -118,7 +119,7 @@ def get_cohere_chat_request(
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
     prompt_truncation = (
-        "AUTO" if parsed_docs is not None or connectors is not None else None
+        "AUTO" if formatted_docs is not None or connectors is not None else None
     )
 
     req = {
@@ -126,7 +127,7 @@ def get_cohere_chat_request(
         "chat_history": [
             {"role": get_role(x), "message": x.content} for x in messages[:-1]
         ],
-        "documents": parsed_docs,
+        "documents": formatted_docs,
         "connectors": connectors,
         "prompt_truncation": prompt_truncation,
         **kwargs,
