@@ -101,7 +101,8 @@ nav, h1, h2, h3, h4 {
 }
 
 .theme-doc-sidebar-menu > .theme-doc-sidebar-item-category:not(:first-of-type),
-.theme-doc-sidebar-menu > .theme-doc-sidebar-item-link {
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-link,
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-link.theme-doc-sidebar-item-link-level-1 {
   margin-top: 1rem;
 }
 
