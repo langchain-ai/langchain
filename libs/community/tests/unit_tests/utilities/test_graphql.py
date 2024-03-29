@@ -85,6 +85,7 @@ def test_run() -> None:
     graphql_wrapper = GraphQLAPIWrapper(
         graphql_endpoint=TEST_ENDPOINT,
         custom_headers={"Authorization": "Bearer testtoken"},
+        fetch_schema_from_transport=True,
     )
     result = graphql_wrapper.run(query)
 

@@ -52,7 +52,7 @@ def test_deeplake_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
-def test_deeplake_with_persistence(deeplake_datastore) -> None:
+def test_deeplake_with_persistence(deeplake_datastore) -> None:  # type: ignore[no-untyped-def]
     """Test end to end construction and search, with persistence."""
     output = deeplake_datastore.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
@@ -72,7 +72,7 @@ def test_deeplake_with_persistence(deeplake_datastore) -> None:
     # Or on program exit
 
 
-def test_deeplake_overwrite_flag(deeplake_datastore) -> None:
+def test_deeplake_overwrite_flag(deeplake_datastore) -> None:  # type: ignore[no-untyped-def]
     """Test overwrite behavior"""
     dataset_path = deeplake_datastore.vectorstore.dataset_handler.path
 
@@ -108,7 +108,7 @@ def test_deeplake_overwrite_flag(deeplake_datastore) -> None:
         output = docsearch.similarity_search("foo", k=1)
 
 
-def test_similarity_search(deeplake_datastore) -> None:
+def test_similarity_search(deeplake_datastore) -> None:  # type: ignore[no-untyped-def]
     """Test similarity search."""
     distance_metric = "cos"
     output = deeplake_datastore.similarity_search(

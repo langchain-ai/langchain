@@ -44,8 +44,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
 
     doc_embed_type: Literal["default", "passage"] = "default"
     """Type of embedding to use for documents
-    "default": Uses FastEmbed's default embedding method
-    "passage": Prefixes the text with "passage" before embedding.
+    The available options are: "default" and "passage"
     """
 
     _model: Any  # : :meta private:
@@ -58,24 +57,37 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that FastEmbed has been installed."""
-        try:
-            from fastembed.embedding import FlagEmbedding
+        model_name = values.get("model_name")
+        max_length = values.get("max_length")
+        cache_dir = values.get("cache_dir")
+        threads = values.get("threads")
 
-            model_name = values.get("model_name")
-            max_length = values.get("max_length")
-            cache_dir = values.get("cache_dir")
-            threads = values.get("threads")
-            values["_model"] = FlagEmbedding(
+        try:
+            # >= v0.2.0
+            from fastembed import TextEmbedding
+
+            values["_model"] = TextEmbedding(
                 model_name=model_name,
                 max_length=max_length,
                 cache_dir=cache_dir,
                 threads=threads,
             )
         except ImportError as ie:
-            raise ImportError(
-                "Could not import 'fastembed' Python package. "
-                "Please install it with `pip install fastembed`."
-            ) from ie
+            try:
+                # < v0.2.0
+                from fastembed.embedding import FlagEmbedding
+
+                values["_model"] = FlagEmbedding(
+                    model_name=model_name,
+                    max_length=max_length,
+                    cache_dir=cache_dir,
+                    threads=threads,
+                )
+            except ImportError:
+                raise ImportError(
+                    "Could not import 'fastembed' Python package. "
+                    "Please install it with `pip install fastembed`."
+                ) from ie
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

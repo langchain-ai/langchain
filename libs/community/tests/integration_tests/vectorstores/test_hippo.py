@@ -1,4 +1,5 @@
 """Test Hippo functionality."""
+
 from typing import List, Optional
 
 from langchain_core.documents import Document
@@ -32,7 +33,7 @@ def test_hippo_add_extra() -> None:
     docsearch.add_texts(texts, metadatas)
 
     output = docsearch.similarity_search("foo", k=1)
-    print(output)
+    print(output)  # noqa: T201
     assert len(output) == 1
 
 
