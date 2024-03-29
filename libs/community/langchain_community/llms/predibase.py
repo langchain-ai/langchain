@@ -43,10 +43,10 @@ class Predibase(LLM):
             # TODO: <Alex>ALEX</Alex>
             # TODO: <Alex>ALEX</Alex>
             pc: PredibaseClient = PredibaseClient(session=session)
-            a = pc.list_llm_deployments(active_only=False, print_as_table=True)
-            print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::Predibase] LLM_DEPLOYMENTS:\n{a} ; TYPE: {str(type(a))}')
-            b = self.model in a
-            print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::Predibase] MODEL_IN_LLM_DEPLOYMENTS:\n{b} ; TYPE: {str(type(b))}')
+            # a = pc.list_llm_deployments(active_only=False, print_as_table=True)
+            # print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::Predibase] LLM_DEPLOYMENTS:\n{a} ; TYPE: {str(type(a))}')
+            # b = self.model in a
+            # print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::Predibase] MODEL_IN_LLM_DEPLOYMENTS:\n{b} ; TYPE: {str(type(b))}')
             # TODO: <Alex>ALEX</Alex>
         except ImportError as e:
             raise ImportError(
