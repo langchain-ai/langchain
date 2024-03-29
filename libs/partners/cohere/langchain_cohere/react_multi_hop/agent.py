@@ -182,7 +182,9 @@ class CohereToolsReactAgentOutputParser(
         elif any([x in text for x in ["Plan: ", "Reflection: ", "Action: "]]):
             completion, plan, actions = self.parse_actions(text)
             return [
-                AgentAction(action["tool_name"], action["parameters"], text)
+                AgentAction(
+                    action["tool_name"], action["parameters"], f"Calling: {action} with plan {plan}"
+                )
                 for action in actions
             ]
         else:
