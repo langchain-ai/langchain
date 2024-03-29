@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import string
 from typing import Any, List, Optional, Sequence, Tuple
 
