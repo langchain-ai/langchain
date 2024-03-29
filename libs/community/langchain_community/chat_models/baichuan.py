@@ -219,9 +219,9 @@ class ChatBaichuan(BaseChatModel):
                 )
                 default_chunk_class = chunk.__class__
                 cg_chunk = ChatGenerationChunk(message=chunk)
-                yield cg_chunk
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
+                yield cg_chunk
 
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> requests.Response:
         parameters = {**self._default_params, **kwargs}

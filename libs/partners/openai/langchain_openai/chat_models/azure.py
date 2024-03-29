@@ -163,8 +163,8 @@ class AzureChatOpenAI(ChatOpenAI):
                     "If specifying `azure_deployment`/`deployment_name` then use "
                     "`azure_endpoint` instead of `base_url`.\n\n"
                     "For example, you could specify:\n\n"
-                    'azure_deployment="https://xxx.openai.azure.com/", '
-                    'deployment_name="my-deployment"\n\n'
+                    'azure_endpoint="https://xxx.openai.azure.com/", '
+                    'azure_deployment="my-deployment"\n\n'
                     "Or you can equivalently specify:\n\n"
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'  # noqa: E501
                 )
@@ -185,18 +185,26 @@ class AzureChatOpenAI(ChatOpenAI):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
-        values["client"] = openai.AzureOpenAI(**client_params).chat.completions
-        values["async_client"] = openai.AsyncAzureOpenAI(
-            **client_params
-        ).chat.completions
+        if not values.get("client"):
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.AzureOpenAI(
+                **client_params, **sync_specific
+            ).chat.completions
+        if not values.get("async_client"):
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncAzureOpenAI(
+                **client_params, **async_specific
+            ).chat.completions
         return values
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**self._default_params}
+        return {
+            **{"azure_deployment": self.deployment_name},
+            **super()._identifying_params,
+        }
 
     @property
     def _llm_type(self) -> str:
