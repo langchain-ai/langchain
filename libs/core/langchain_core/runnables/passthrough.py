@@ -40,6 +40,7 @@ from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
+    adapt_first_streaming_chunk,
     create_model,
 )
 from langchain_core.utils.aiter import atee, py_anext
@@ -248,7 +249,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
                 if final is None:
-                    final = chunk
+                    final = adapt_first_streaming_chunk(chunk)
                 else:
                     final = final + chunk
 
@@ -276,7 +277,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             ):
                 yield chunk
                 if final is None:
-                    final = chunk
+                    final = adapt_first_streaming_chunk(chunk)
                 else:
                     final = final + chunk
 
@@ -609,8 +610,30 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
 
 class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
-    """
-    Runnable that picks keys from Dict[str, Any] inputs.
+    """Runnable that picks keys from Dict[str, Any] inputs.
+
+    RunnablePick class represents a runnable that selectively picks keys from a
+    dictionary input. It allows you to specify one or more keys to extract
+    from the input dictionary. It returns a new dictionary containing only
+    the selected keys.
+
+    Example :
+        .. code-block:: python
+
+            from langchain_core.runnables.passthrough import RunnablePick
+
+            input_data = {
+                'name': 'John',
+                'age': 30,
+                'city': 'New York',
+                'country': 'USA'
+            }
+
+            runnable = RunnablePick(keys=['name', 'age'])
+
+            output_data = runnable.invoke(input_data)
+
+            print(output_data)  # Output: {'name': 'John', 'age': 30}
     """
 
     keys: Union[str, List[str]]
