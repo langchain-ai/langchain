@@ -39,7 +39,7 @@ class BaseMemory(Serializable, ABC):
                 def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
                     return self.memories
 
-                def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+                def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
                     pass
 
                 def clear(self) -> None:
@@ -65,11 +65,11 @@ class BaseMemory(Serializable, ABC):
         return await run_in_executor(None, self.load_memory_variables, inputs)
 
     @abstractmethod
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
         """Save the context of this chain run to memory."""
 
     async def asave_context(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self, inputs: Dict[str, Any], outputs: Dict[str, Any]
     ) -> None:
         """Save the context of this chain run to memory."""
         await run_in_executor(None, self.save_context, inputs, outputs)

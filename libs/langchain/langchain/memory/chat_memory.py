@@ -24,7 +24,7 @@ class BaseChatMemory(BaseMemory, ABC):
     return_messages: bool = False
 
     def _get_input_output(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self, inputs: Dict[str, Any], outputs: Dict[str, Any]
     ) -> Tuple[str, str]:
         if self.input_key is None:
             prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
@@ -48,9 +48,12 @@ class BaseChatMemory(BaseMemory, ABC):
                 )
         else:
             output_key = self.output_key
-        return inputs[prompt_input_key], outputs[output_key]
+        output_value = outputs[output_key]
+        if not isinstance(output_value, str):
+            output_value = str(output_value)
+        return inputs[prompt_input_key], output_value
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)
         self.chat_memory.add_messages(
@@ -58,7 +61,7 @@ class BaseChatMemory(BaseMemory, ABC):
         )
 
     async def asave_context(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self, inputs: Dict[str, Any], outputs: Dict[str, Any]
     ) -> None:
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)
