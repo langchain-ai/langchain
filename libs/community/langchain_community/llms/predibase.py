@@ -28,9 +28,26 @@ class Predibase(LLM):
         **kwargs: Any,
     ) -> str:
         try:
+            # TODO: <Alex>ALEX</Alex>
+            print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::Predibase] MODEL:\n{self.model} ; TYPE: {str(type(self.model))}')
+            from predibase.pql import get_session
+            from predibase.pql.api import Session
+            # TODO: <Alex>ALEX</Alex>
             from predibase import PredibaseClient
 
-            pc = PredibaseClient(token=self.predibase_api_key.get_secret_value())
+            # TODO: <Alex>ALEX</Alex>
+            session: Session = get_session(token=self.predibase_api_key.get_secret_value(), gateway="https://api.staging.predibase.com/v1", serving_endpoint="serving.staging.predibase.com")
+            # TODO: <Alex>ALEX</Alex>
+            # TODO: <Alex>ALEX</Alex>
+            # pc = PredibaseClient(token=self.predibase_api_key.get_secret_value())
+            # TODO: <Alex>ALEX</Alex>
+            # TODO: <Alex>ALEX</Alex>
+            pc: PredibaseClient = PredibaseClient(session=session)
+            a = pc.list_llm_deployments(active_only=False, print_as_table=True)
+            print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::Predibase] LLM_DEPLOYMENTS:\n{a} ; TYPE: {str(type(a))}')
+            b = self.model in a
+            print(f'\n[ALEX_TEST] [LangChain::Community::LLMs::Predibase] MODEL_IN_LLM_DEPLOYMENTS:\n{b} ; TYPE: {str(type(b))}')
+            # TODO: <Alex>ALEX</Alex>
         except ImportError as e:
             raise ImportError(
                 "Could not import Predibase Python package. "
