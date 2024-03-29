@@ -6,7 +6,17 @@ import asyncio
 from collections import defaultdict
 from collections.abc import Hashable
 from itertools import chain
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    TypeVar,
+    cast,
+)
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
