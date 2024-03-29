@@ -37,7 +37,7 @@ class OpenAIWhisperParser(BaseBlobParser):
         self.base_url = (
             base_url
             if base_url is not None
-            else os.environ.get("OPENAI_API_BASE", None)
+            else os.environ.get("OPENAI_API_BASE", default=None)
         )
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
