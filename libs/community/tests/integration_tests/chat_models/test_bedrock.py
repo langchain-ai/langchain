@@ -1,9 +1,14 @@
 """Test Bedrock chat model."""
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain_community.chat_models import BedrockChat
@@ -37,6 +42,20 @@ def test_chat_bedrock_generate(chat: BedrockChat) -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+@pytest.mark.scheduled
+def test_chat_bedrock_generate_with_token_usage(chat: BedrockChat) -> None:
+    """Test BedrockChat wrapper with generate."""
+    message = HumanMessage(content="Hello")
+    response = chat.generate([[message], [message]])
+    assert isinstance(response, LLMResult)
+    assert isinstance(response.llm_output, dict)
+
+    usage = response.llm_output["usage"]
+    assert usage["prompt_tokens"] == 20
+    assert usage["completion_tokens"] > 0
+    assert usage["total_tokens"] > 0
 
 
 @pytest.mark.scheduled
@@ -80,15 +99,18 @@ def test_chat_bedrock_streaming_generation_info() -> None:
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
-    assert generation.generations[0][0].text == " Hello!"
+    assert generation.generations[0][0].text == "Hello!"
 
 
 @pytest.mark.scheduled
 def test_bedrock_streaming(chat: BedrockChat) -> None:
     """Test streaming tokens from OpenAI."""
 
+    full = None
     for token in chat.stream("I'm Pickle Rick"):
+        full = token if full is None else full + token
         assert isinstance(token.content, str)
+    assert isinstance(cast(AIMessageChunk, full).content, str)
 
 
 @pytest.mark.scheduled
@@ -137,3 +159,5 @@ def test_bedrock_invoke(chat: BedrockChat) -> None:
     """Test invoke tokens from BedrockChat."""
     result = chat.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+    assert all([k in result.response_metadata for k in ("usage", "model_id")])
+    assert result.response_metadata["usage"]["prompt_tokens"] == 13

@@ -25,7 +25,11 @@ def concatenate_cells(
     """
     cell_type = cell["cell_type"]
     source = cell["source"]
-    output = cell["outputs"]
+    if include_outputs:
+        try:
+            output = cell["outputs"]
+        except KeyError:
+            pass
 
     if include_outputs and cell_type == "code" and output:
         if "ename" in output[0].keys():
@@ -58,14 +62,13 @@ def concatenate_cells(
 
 def remove_newlines(x: Any) -> Any:
     """Recursively remove newlines, no matter the data structure they are stored in."""
-    import pandas as pd
 
     if isinstance(x, str):
         return x.replace("\n", "")
     elif isinstance(x, list):
         return [remove_newlines(elem) for elem in x]
-    elif isinstance(x, pd.DataFrame):
-        return x.applymap(remove_newlines)
+    elif isinstance(x, dict):
+        return {k: remove_newlines(v) for (k, v) in x.items()}
     else:
         return x
 
@@ -104,29 +107,29 @@ class NotebookLoader(BaseLoader):
         self,
     ) -> List[Document]:
         """Load documents."""
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ImportError(
-                "pandas is needed for Notebook Loader, "
-                "please install with `pip install pandas`"
-            )
         p = Path(self.file_path)
 
         with open(p, encoding="utf8") as f:
             d = json.load(f)
 
-        data = pd.json_normalize(d["cells"])
-        filtered_data = data[["cell_type", "source", "outputs"]]
-        if self.remove_newline:
-            filtered_data = filtered_data.applymap(remove_newlines)
+        filtered_data = [
+            {k: v for (k, v) in cell.items() if k in ["cell_type", "source", "outputs"]}
+            for cell in d["cells"]
+        ]
 
-        text = filtered_data.apply(
-            lambda x: concatenate_cells(
-                x, self.include_outputs, self.max_output_length, self.traceback
-            ),
-            axis=1,
-        ).str.cat(sep=" ")
+        if self.remove_newline:
+            filtered_data = list(map(remove_newlines, filtered_data))
+
+        text = "".join(
+            list(
+                map(
+                    lambda x: concatenate_cells(
+                        x, self.include_outputs, self.max_output_length, self.traceback
+                    ),
+                    filtered_data,
+                )
+            )
+        )
 
         metadata = {"source": str(p)}
 
