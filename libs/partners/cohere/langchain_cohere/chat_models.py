@@ -96,16 +96,15 @@ def get_cohere_chat_request(
         )
 
     formatted_docs: Optional[List[Dict[str, Any]]] = None
-    if additional_kwargs.get("documents"):
-        formatted_docs = [
-            {
-                "text": doc.page_content,
-                "id": doc.metadata.get("id") or f"doc-{str(i)}",
-            }
-            for i, doc in enumerate(additional_kwargs.get("documents", []))
-        ]
-    elif documents:
-        formatted_docs = documents
+    formatted_docs = [
+        {
+            "text": doc.page_content,
+            "id": doc.metadata.get("id") or f"doc-{str(i)}",
+        }
+        for i, doc in enumerate(
+            additional_kwargs.get("documents", []) or documents or []
+        )
+    ]
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -17,15 +17,16 @@ if TYPE_CHECKING:
 
 
 def _get_docs(response: Any) -> List[Document]:
-    docs = (
-        []
-        if "documents" not in response.generation_info
-        or len(response.generation_info["documents"]) == 0
-        else [
-            Document(page_content=doc["snippet"], metadata=doc)
-            for doc in response.generation_info["documents"]
-        ]
-    )
+    docs = []
+    if (
+        "documents" in response.generation_info
+        and len(response.generation_info["documents"]) > 0
+    ):
+        for doc in response.generation_info["documents"]:
+            content = doc.get("snippet", None) or doc.get("text", None)
+            if content is not None:
+                docs.append(Document(page_content=content, metadata=doc))
+
     docs.append(
         Document(
             page_content=response.message.content,
@@ -63,12 +64,18 @@ class CohereRagRetriever(BaseRetriever):
         """Allow arbitrary types."""
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        documents: Optional[List[Dict[str, str]]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         messages: List[List[BaseMessage]] = [[HumanMessage(content=query)]]
         res = self.llm.generate(
             messages,
-            connectors=self.connectors,
+            connectors=self.connectors if documents is None else None,
+            documents=documents,
             callbacks=run_manager.get_child(),
             **kwargs,
         ).generations[0][0]
@@ -79,13 +86,15 @@ class CohereRagRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
+        documents: Optional[List[Dict[str, str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         messages: List[List[BaseMessage]] = [[HumanMessage(content=query)]]
         res = (
             await self.llm.agenerate(
                 messages,
-                connectors=self.connectors,
+                connectors=self.connectors if documents is None else None,
+                documents=documents,
                 callbacks=run_manager.get_child(),
                 **kwargs,
             )
