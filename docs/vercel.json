@@ -1004,6 +1004,10 @@
     {
       "source": "/docs/expression_language/cookbook/tools",
       "destination": "/docs/use_cases/tool_use/quickstart"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/sql_db",
+      "destination": "/docs/use_cases/sql/quickstart"
     }
   ]
 }
