@@ -185,9 +185,9 @@ class CohereToolsReactAgentOutputParser(
                 AgentAction(
                     action["tool_name"],
                     action["parameters"],
-                    f"Calling: {action} with plan {plan}",
+                    f"\n{action}\n" if i > 0 else f"\n{plan}\n{action}\n",
                 )
-                for action in actions
+                for i, action in enumerate(actions)
             ]
         else:
             raise ValueError(
