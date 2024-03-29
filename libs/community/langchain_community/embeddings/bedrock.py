@@ -107,7 +107,7 @@ class BedrockEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 "Could not load credentials to authenticate with AWS client. "
                 "Please check that credentials in the specified "
-                "profile name are valid."
+                f"profile name are valid. Bedrock error: {e}"
             ) from e
 
         return values

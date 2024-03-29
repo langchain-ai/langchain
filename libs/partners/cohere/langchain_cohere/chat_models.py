@@ -191,10 +191,8 @@ class ChatCohere(BaseChatModel, BaseCohere):
             A Runnable that takes any ChatModel input and returns either a dict or
             Pydantic class as output.
         """
-        if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
-        llm = self.bind_tools([schema])
+        llm = self.bind_tools([schema], **kwargs)
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
