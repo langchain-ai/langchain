@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, List
 
 from langchain_core.vectorstores import VectorStore
-from mip import BINARY, Model, OptimizationStatus, maximize, xsum
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -28,6 +27,12 @@ class VectorStore2(VectorStore):
         Returns:
             List of Document Lists, each of length k
         """
+        try:
+            from mip import BINARY, Model, OptimizationStatus, maximize, xsum
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import mip, please install with `pip install -U mip`"
+            ) from e
         ss_result = {}
         retrieved_k = k * 5
         for query in queries_list:
