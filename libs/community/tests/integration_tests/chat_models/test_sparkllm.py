@@ -22,7 +22,7 @@ def test_chat_spark_llm_with_domain() -> None:
     chat = ChatSparkLLM(spark_llm_domain="generalv3")
     message = HumanMessage(content="Hello")
     response = chat([message])
-    print(response)
+    print(response)  # noqa: T201
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -31,6 +31,6 @@ def test_chat_spark_llm_with_temperature() -> None:
     chat = ChatSparkLLM(temperature=0.9, top_k=2)
     message = HumanMessage(content="Hello")
     response = chat([message])
-    print(response)
+    print(response)  # noqa: T201
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)

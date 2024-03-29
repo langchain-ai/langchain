@@ -15,7 +15,7 @@ langchainhub = ">=0.1.13"
 duckduckgo-search = "^3.8.3"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "xml_agent"
