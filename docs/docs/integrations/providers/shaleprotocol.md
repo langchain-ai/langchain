@@ -33,7 +33,7 @@ template = """Question: {question}
 
 # Answer: Let's think step by step."""
 
-prompt = PromptTemplate(template=template, input_variables=["question"])
+prompt = PromptTemplate.from_template(template)
 
 llm_chain = LLMChain(prompt=prompt, llm=llm)
 

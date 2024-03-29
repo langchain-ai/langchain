@@ -6,7 +6,7 @@ This page covers how to use the [Remembrall](https://remembrall.dev) ecosystem w
 
 Remembrall gives your language model long-term memory, retrieval augmented generation, and complete observability with just a few lines of code.
 
-![Remembrall Dashboard](/img/RemembrallDashboard.png)
+![Screenshot of the Remembrall dashboard showing request statistics and model interactions.](/img/RemembrallDashboard.png "Remembrall Dashboard Interface")
 
 It works as a light-weight proxy on top of your OpenAI calls and simply augments the context of the chat calls at runtime with relevant facts that have been collected.
 
@@ -15,6 +15,12 @@ It works as a light-weight proxy on top of your OpenAI calls and simply augments
 To get started, [sign in with Github on the Remembrall platform](https://remembrall.dev/login) and copy your [API key from the settings page](https://remembrall.dev/dashboard/settings).
 
 Any request that you send with the modified `openai_api_base` (see below) and Remembrall API key will automatically be tracked in the Remembrall dashboard. You **never** have to share your OpenAI key with our platform and this information is **never** stored by the Remembrall systems.
+
+To do this, we need to install the following dependencies:
+
+```bash
+pip install -U langchain-openai
+```
 
 ### Enable Long Term Memory
 

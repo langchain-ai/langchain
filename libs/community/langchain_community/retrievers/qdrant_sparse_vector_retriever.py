@@ -120,7 +120,10 @@ class QdrantSparseVectorRetriever(BaseRetriever):
         )
         return [
             Qdrant._document_from_scored_point(
-                point, self.content_payload_key, self.metadata_payload_key
+                point,
+                self.collection_name,
+                self.content_payload_key,
+                self.metadata_payload_key,
             )
             for point in results
         ]
