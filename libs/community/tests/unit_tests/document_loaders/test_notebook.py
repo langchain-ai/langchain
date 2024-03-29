@@ -46,7 +46,7 @@ def test_load_no_outputs(mocker: MockerFixture) -> None:
 
 
 def test_load_with_outputs(mocker: MockerFixture) -> None:
-    mock_notebook_content = {
+    mock_notebook_content: dict = {
         "cells": [
             {
                 "cell_type": "code",

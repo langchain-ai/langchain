@@ -62,7 +62,6 @@ def concatenate_cells(
 
 def remove_newlines(x: Any) -> Any:
     """Recursively remove newlines, no matter the data structure they are stored in."""
-    import pandas as pd
 
     if isinstance(x, str):
         return x.replace("\n", "")
