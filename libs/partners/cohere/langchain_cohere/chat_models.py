@@ -17,6 +17,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
@@ -73,7 +74,7 @@ def get_role(message: BaseMessage) -> str:
 def get_cohere_chat_request(
     messages: List[BaseMessage],
     *,
-    documents: Optional[List[Dict[str, str]]] = None,
+    documents: Optional[List[Document]] = None,
     connectors: Optional[List[Dict[str, str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
