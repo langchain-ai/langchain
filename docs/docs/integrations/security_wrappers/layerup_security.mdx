@@ -1,0 +1,85 @@
+# Layerup Security
+
+The [Layerup Security](https://uselayerup.com) integration allows you to secure your calls to any LangChain LLM, LLM chain or LLM agent. The LLM object wraps around any existing LLM object, allowing for a secure layer between your users and your LLMs.
+
+While the Layerup Security object is designed as an LLM, it is not actually an LLM itself, it simply wraps around an LLM, allowing it to adapt the same functionality as the underlying LLM.
+
+## Setup
+First, you'll need a Layerup Security account from the Layerup [website](https://uselayerup.com).
+
+Next, create a project via the [dashboard](https://dashboard.uselayerup.com), and copy your API key. We recommend putting your API key in your project's environment.
+
+Install the Layerup Security SDK:
+```bash
+pip install LayerupSecurity
+```
+
+And install LangChain Community:
+```bash
+pip install langchain-community
+```
+
+And now you're ready to start protecting your LLM calls with Layerup Security!
+
+```python
+from langchain_community.llms.layerup_security import LayerupSecurity
+from langchain_openai import OpenAI
+
+# Create an instance of your favorite LLM
+openai = OpenAI(
+    model_name="gpt-3.5-turbo",
+    openai_api_key="OPENAI_API_KEY",
+)
+
+# Configure Layerup Security
+layerup_security = LayerupSecurity(
+    # Specify a LLM that Layerup Security will wrap around
+    llm=openai,
+
+    # Layerup API key, from the Layerup dashboard
+    layerup_api_key="LAYERUP_API_KEY",
+
+    # Custom base URL, if self hosting
+    layerup_api_base_url="https://api.uselayerup.com/v1",
+
+    # List of guardrails to run on prompts before the LLM is invoked
+    prompt_guardrails=[],
+
+    # List of guardrails to run on responses from the LLM
+    response_guardrails=["layerup.hallucination"],
+
+    # Whether or not to mask the prompt for PII & sensitive data before it is sent to the LLM
+    mask=False,
+
+    # Metadata for abuse tracking, customer tracking, and scope tracking.
+    metadata={"customer": "example@uselayerup.com"},
+
+    # Handler for guardrail violations on the prompt guardrails
+    handle_prompt_guardrail_violation=(
+        lambda violation: {
+            "role": "assistant",
+            "content": (
+                "There was sensitive data! I cannot respond. "
+                "Here's a dynamic canned response. Current date: {}"
+            ).format(datetime.now())
+        }
+        if violation["offending_guardrail"] == "layerup.sensitive_data"
+        else None
+    ),
+
+    # Handler for guardrail violations on the response guardrails
+    handle_response_guardrail_violation=(
+        lambda violation: {
+            "role": "assistant",
+            "content": (
+                "Custom canned response with dynamic data! "
+                "The violation rule was {}."
+            ).format(violation["offending_guardrail"])
+        }
+    ),
+)
+
+response = layerup_security.invoke(
+    "Summarize this message: my name is Bob Dylan. My SSN is 123-45-6789."
+)
+```
