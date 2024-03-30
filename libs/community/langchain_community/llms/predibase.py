@@ -32,7 +32,7 @@ class Predibase(LLM):
         prompt: str,
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         try:
             from predibase import PredibaseClient
@@ -57,7 +57,9 @@ class Predibase(LLM):
         options: Dict[str, Union[str, float]] = (
             kwargs or self.default_options_for_generation
         )
-        base_llm_deployment: LLMDeployment = pc.LLM(uri=f"pb://deployments/{self.model}")
+        base_llm_deployment: LLMDeployment = pc.LLM(
+            uri=f"pb://deployments/{self.model}"
+        )
         result: GeneratedResponse = base_llm_deployment.generate(
             prompt=prompt,
             options=options,
