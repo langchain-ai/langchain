@@ -3,7 +3,10 @@ from typing import Any, Dict, Optional, Type, Union
 import pytest
 from langchain_core.tools import BaseModel, BaseTool, Field
 
-from langchain_cohere.cohere_agent import _format_to_cohere_tools
+from langchain_cohere.cohere_agent import (
+    _format_to_cohere_tools,
+    _remove_signature_from_description,
+)
 
 expected_test_tool_definition = {
     "description": "test_tool description",
@@ -80,3 +83,33 @@ def test_format_to_cohere_tools(
     actual = _format_to_cohere_tools([tool])
 
     assert [expected_test_tool_definition] == actual
+
+
+@pytest.mark.parametrize(
+    "name,description,expected",
+    [
+        pytest.param(
+            "foo", "bar baz", "bar baz", id="description doesn't have signature"
+        ),
+        pytest.param("foo", "", "", id="description is empty"),
+        pytest.param("foo", "foo(a: str) - bar baz", "bar baz", id="signature"),
+        pytest.param(
+            "foo", "foo() - bar baz", "bar baz", id="signature with empty args"
+        ),
+        pytest.param(
+            "foo",
+            "foo(a: str) - foo(b: str) - bar",
+            "foo(b: str) - bar",
+            id="signature with edge case",
+        ),
+        pytest.param(
+            "foo", "foo() -> None - bar baz", "bar baz", id="signature with return type"
+        ),
+    ],
+)
+def test_remove_signature_from_description(
+    name: str, description: str, expected: str
+) -> None:
+    actual = _remove_signature_from_description(name=name, description=description)
+
+    assert expected == actual

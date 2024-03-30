@@ -1,3 +1,4 @@
+import re
 from typing import Any, Dict, List, Sequence, Tuple, Type, Union
 
 from cohere.types import Tool, ToolParameterDefinitionsValue
@@ -76,6 +77,14 @@ def _format_to_cohere_tools_messages(
     return tool_results
 
 
+def _remove_signature_from_description(name: str, description: str) -> str:
+    """
+    Removes the `{name}{signature} - ` prefix from tool description.
+    This is usually present for tools created with the @tool decorator.
+    """
+    return re.sub(rf"^{name}\(.*?\) -(?:> \w+? -)? ", "", description)
+
+
 def _convert_to_cohere_tool(
     tool: Union[Dict[str, Any], BaseTool, Type[BaseModel]],
 ) -> Dict[str, Any]:
@@ -85,7 +94,7 @@ def _convert_to_cohere_tool(
     if isinstance(tool, BaseTool):
         return Tool(
             name=tool.name,
-            description=tool.description,
+            description=_remove_signature_from_description(tool.name, tool.description),
             parameter_definitions={
                 param_name: ToolParameterDefinitionsValue(
                     description=param_definition.get("description")
