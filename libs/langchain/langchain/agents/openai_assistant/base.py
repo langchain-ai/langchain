@@ -530,7 +530,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             if all(
                 (
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
-                    if int(openai_major_version) > 1 or int(minor_version >= 14)
+                    if int(openai_major_version) >= 1 and int(minor_version >= 14)
                     else isinstance(
                         content, openai.types.beta.threads.MessageContentText
                     )
@@ -655,7 +655,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             if all(
                 (
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
-                    if int(openai_major_version) > 1 or int(minor_version >= 14)
+                    if int(openai_major_version) >= 1 and int(minor_version >= 14)
                     else isinstance(
                         content, openai.types.beta.threads.MessageContentText
                     )
