@@ -75,7 +75,13 @@ class LLMManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when LLM errors."""
+        """Run when LLM errors.
+        Args:
+            error (BaseException): The error that occurred.
+            kwargs (Any): Additional keyword arguments.
+                - response (LLMResult): The response which was generated before
+                    the error occurred.
+        """
 
 
 class ChainManagerMixin:
@@ -127,7 +133,7 @@ class ToolManagerMixin:
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -160,7 +166,12 @@ class CallbackManagerMixin:
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when LLM starts running."""
+        """Run when LLM starts running.
+
+        **ATTENTION**: This method is called for non-chat models (regular LLMs). If
+            you're implementing a handler for a chat model,
+            you should use on_chat_model_start instead.
+        """
 
     def on_chat_model_start(
         self,
@@ -173,7 +184,13 @@ class CallbackManagerMixin:
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when a chat model starts running."""
+        """Run when a chat model starts running.
+
+        **ATTENTION**: This method is called for chat models. If you're implementing
+            a handler for a non-chat model, you should use on_llm_start instead.
+        """
+        # NotImplementedError is thrown intentionally
+        # Callback handler will fall back to on_llm_start if this is exception is thrown
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         )
@@ -213,6 +230,7 @@ class CallbackManagerMixin:
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
         """Run when tool starts running."""
@@ -301,7 +319,12 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM starts running."""
+        """Run when LLM starts running.
+
+        **ATTENTION**: This method is called for non-chat models (regular LLMs). If
+            you're implementing a handler for a chat model,
+            you should use on_chat_model_start instead.
+        """
 
     async def on_chat_model_start(
         self,
@@ -314,7 +337,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run when a chat model starts running."""
+        """Run when a chat model starts running.
+
+        **ATTENTION**: This method is called for chat models. If you're implementing
+            a handler for a non-chat model, you should use on_llm_start instead.
+        """
+        # NotImplementedError is thrown intentionally
+        # Callback handler will fall back to on_llm_start if this is exception is thrown
         raise NotImplementedError(
             f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         )
@@ -351,7 +380,14 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM errors."""
+        """Run when LLM errors.
+
+        Args:
+            error: The error that occurred.
+            kwargs (Any): Additional keyword arguments.
+                - response (LLMResult): The response which was generated before
+                    the error occurred.
+        """
 
     async def on_chain_start(
         self,
@@ -397,13 +433,14 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        inputs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run when tool starts running."""
 
     async def on_tool_end(
         self,
-        output: str,
+        output: Any,
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,

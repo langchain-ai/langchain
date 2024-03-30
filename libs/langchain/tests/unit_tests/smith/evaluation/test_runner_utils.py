@@ -90,7 +90,7 @@ def test__validate_example_inputs_for_language_model(inputs: Dict[str, Any]) -> 
     _INVALID_PROMPTS,
 )
 def test__validate_example_inputs_for_language_model_invalid(
-    inputs: Dict[str, Any]
+    inputs: Dict[str, Any],
 ) -> None:
     mock_ = mock.MagicMock()
     mock_.inputs = inputs
@@ -172,7 +172,7 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         assert "the right input" in inputs
         return {"output": "2"}
 
-    mock_chain = TransformChain(
+    mock_chain = TransformChain(  # type: ignore[call-arg]
         input_variables=["the right input"],
         output_variables=["output"],
         transform=run_val,
@@ -248,6 +248,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         owner_id="owner",
         created_at=_CREATED_AT,
         tenant_id=_TENANT_ID,
+        _host_url="http://localhost:1984",
     )
     uuids = [
         "0c193153-2309-4704-9a47-17aee4fb25c8",
@@ -344,6 +345,7 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
                 "feedback": [],
                 # No run since we mock the call to the llm above
                 "execution_time": None,
+                "run_id": None,
             }
             for example in examples
         }

@@ -4,9 +4,9 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
+from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
 
 from langchain.output_parsers import PydanticToolsParser
-from langchain.utils.openai_functions import convert_pydantic_to_openai_function
 
 _EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned \
 in the following passage together with their properties.
@@ -19,6 +19,16 @@ def create_extraction_chain_pydantic(
     llm: BaseLanguageModel,
     system_message: str = _EXTRACTION_TEMPLATE,
 ) -> Runnable:
+    """Creates a chain that extracts information from a passage.
+
+    Args:
+        pydantic_schemas: The schema of the entities to extract.
+        llm: The language model to use.
+        system_message: The system message to use for extraction.
+
+    Returns:
+        A runnable that extracts information from a passage.
+    """
     if not isinstance(pydantic_schemas, list):
         pydantic_schemas = [pydantic_schemas]
     prompt = ChatPromptTemplate.from_messages(

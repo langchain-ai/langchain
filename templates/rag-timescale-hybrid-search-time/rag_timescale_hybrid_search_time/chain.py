@@ -4,15 +4,15 @@ import os
 from datetime import timedelta
 
 from langchain.chains.query_constructor.base import AttributeInfo
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import OpenAI
-from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers.self_query.base import SelfQueryRetriever
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
-from langchain.vectorstores.timescalevector import TimescaleVector
-from pydantic import BaseModel
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_community.llms import OpenAI
+from langchain_community.vectorstores.timescalevector import TimescaleVector
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 
 from .load_sample_dataset import load_ts_git_dataset
 

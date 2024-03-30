@@ -4,6 +4,13 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
+from langchain_core.callbacks import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    CallbackManager,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain_core.language_models import (
     BaseLanguageModel,
     LanguageModelInput,
@@ -24,13 +31,6 @@ from langchain_core.runnables import (
 from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    CallbackManager,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
 from langchain.chains.base import Chain
 
 
@@ -41,7 +41,7 @@ class LLMChain(Chain):
         .. code-block:: python
 
             from langchain.chains import LLMChain
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from langchain_core.prompts import PromptTemplate
             prompt_template = "Tell me a {adjective} joke"
             prompt = PromptTemplate(

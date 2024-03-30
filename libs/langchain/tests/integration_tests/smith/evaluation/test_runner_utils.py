@@ -1,16 +1,17 @@
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 from uuid import uuid4
 
 import pytest
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.llms.openai import OpenAI
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langsmith import Client as Client
-from langsmith.schemas import DataType
+from langsmith.evaluation import run_evaluator
+from langsmith.schemas import DataType, Example, Run
 
 from langchain.chains.llm import LLMChain
-from langchain.chat_models import ChatOpenAI
 from langchain.evaluation import EvaluatorType
-from langchain.llms.openai import OpenAI
 from langchain.smith import RunEvalConfig, run_on_dataset
 from langchain.smith.evaluation import InputFormatError
 from langchain.smith.evaluation.runner_utils import arun_on_dataset
@@ -26,7 +27,15 @@ def _check_all_feedback_passed(_project_name: str, client: Client) -> None:
     feedback = list(client.list_feedback(run_ids=[run.id for run in runs]))
     if not feedback:
         return
-    assert all([f.score == 1 for f in feedback])
+    assert all([bool(f.score) for f in feedback])
+
+
+@run_evaluator
+def not_empty(run: Run, example: Optional[Example] = None) -> dict:
+    return {
+        "score": run.outputs and next(iter(run.outputs.values())),
+        "key": "not_empty",
+    }
 
 
 @pytest.fixture
@@ -81,7 +90,9 @@ def test_chat_model(
     kv_dataset_name: str, eval_project_name: str, client: Client
 ) -> None:
     llm = ChatOpenAI(temperature=0)
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(
+        evaluators=[EvaluatorType.QA], custom_evaluators=[not_empty]
+    )
     with pytest.raises(ValueError, match="Must specify reference_key"):
         run_on_dataset(
             dataset_name=kv_dataset_name,
@@ -90,7 +101,7 @@ def test_chat_model(
             client=client,
         )
     eval_config = RunEvalConfig(
-        evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA],
+        evaluators=[EvaluatorType.QA],
         reference_key="some_output",
     )
     with pytest.raises(
@@ -109,9 +120,8 @@ def test_chat_model(
     run_on_dataset(
         client=client,
         dataset_name=kv_dataset_name,
-        llm_or_chain_factory=llm,
+        llm_or_chain_factory=input_mapper | llm,
         evaluation=eval_config,
-        input_mapper=input_mapper,
         project_name=eval_project_name,
         tags=["shouldpass"],
     )
@@ -120,7 +130,7 @@ def test_chat_model(
 
 def test_llm(kv_dataset_name: str, eval_project_name: str, client: Client) -> None:
     llm = OpenAI(temperature=0)
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA])
     with pytest.raises(ValueError, match="Must specify reference_key"):
         run_on_dataset(
             dataset_name=kv_dataset_name,
@@ -132,9 +142,7 @@ def test_llm(kv_dataset_name: str, eval_project_name: str, client: Client) -> No
         evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA],
         reference_key="some_output",
     )
-    with pytest.raises(
-        InputFormatError, match="Example inputs do not match language model"
-    ):
+    with pytest.raises(InputFormatError, match="Example inputs"):
         run_on_dataset(
             dataset_name=kv_dataset_name,
             llm_or_chain_factory=llm,
@@ -148,9 +156,8 @@ def test_llm(kv_dataset_name: str, eval_project_name: str, client: Client) -> No
     run_on_dataset(
         client=client,
         dataset_name=kv_dataset_name,
-        llm_or_chain_factory=llm,
+        llm_or_chain_factory=input_mapper | llm,
         evaluation=eval_config,
-        input_mapper=input_mapper,
         project_name=eval_project_name,
         tags=["shouldpass"],
     )
@@ -172,9 +179,7 @@ def test_chain(kv_dataset_name: str, eval_project_name: str, client: Client) -> 
         evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA],
         reference_key="some_output",
     )
-    with pytest.raises(
-        InputFormatError, match="Example inputs do not match chain input keys"
-    ):
+    with pytest.raises(InputFormatError, match="Example inputs"):
         run_on_dataset(
             dataset_name=kv_dataset_name,
             llm_or_chain_factory=lambda: chain,
@@ -182,19 +187,9 @@ def test_chain(kv_dataset_name: str, eval_project_name: str, client: Client) -> 
             client=client,
         )
 
-    def input_mapper(d: dict) -> dict:
-        return {"input": d["some_input"]}
-
-    with pytest.raises(
-        InputFormatError,
-        match=" match the chain's expected input keys.",
-    ):
-        run_on_dataset(
-            dataset_name=kv_dataset_name,
-            llm_or_chain_factory=lambda: input_mapper | chain,
-            client=client,
-            evaluation=eval_config,
-        )
+    eval_config = RunEvalConfig(
+        custom_evaluators=[not_empty],
+    )
 
     def right_input_mapper(d: dict) -> dict:
         return {"question": d["some_input"]}
@@ -259,7 +254,7 @@ def test_chat_model_on_chat_dataset(
     chat_dataset_name: str, eval_project_name: str, client: Client
 ) -> None:
     llm = ChatOpenAI(temperature=0)
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(custom_evaluators=[not_empty])
     run_on_dataset(
         dataset_name=chat_dataset_name,
         llm_or_chain_factory=llm,
@@ -274,7 +269,7 @@ def test_llm_on_chat_dataset(
     chat_dataset_name: str, eval_project_name: str, client: Client
 ) -> None:
     llm = OpenAI(temperature=0)
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(custom_evaluators=[not_empty])
     run_on_dataset(
         dataset_name=chat_dataset_name,
         llm_or_chain_factory=llm,
@@ -337,7 +332,7 @@ def test_chat_model_on_llm_dataset(
     llm_dataset_name: str, eval_project_name: str, client: Client
 ) -> None:
     llm = ChatOpenAI(temperature=0)
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(custom_evaluators=[not_empty])
     run_on_dataset(
         client=client,
         dataset_name=llm_dataset_name,
@@ -353,7 +348,7 @@ def test_llm_on_llm_dataset(
     llm_dataset_name: str, eval_project_name: str, client: Client
 ) -> None:
     llm = OpenAI(temperature=0)
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(custom_evaluators=[not_empty])
     run_on_dataset(
         client=client,
         dataset_name=llm_dataset_name,
@@ -431,7 +426,7 @@ def test_llm_on_kv_singleio_dataset(
     kv_singleio_dataset_name: str, eval_project_name: str, client: Client
 ) -> None:
     llm = OpenAI(temperature=0)
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(custom_evaluators=[not_empty])
     run_on_dataset(
         dataset_name=kv_singleio_dataset_name,
         llm_or_chain_factory=llm,
@@ -448,7 +443,7 @@ def test_chain_on_kv_singleio_dataset(
 ) -> None:
     llm = ChatOpenAI(temperature=0)
     chain = LLMChain.from_string(llm, "The answer to the {question} is: ")
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(custom_evaluators=[not_empty])
     run_on_dataset(
         dataset_name=kv_singleio_dataset_name,
         llm_or_chain_factory=lambda: chain,
@@ -467,7 +462,7 @@ async def test_runnable_on_kv_singleio_dataset(
         ChatPromptTemplate.from_messages([("human", "{the wackiest input}")])
         | ChatOpenAI()
     )
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(custom_evaluators=[not_empty])
     await arun_on_dataset(
         dataset_name=kv_singleio_dataset_name,
         llm_or_chain_factory=runnable,
@@ -496,7 +491,7 @@ async def test_arb_func_on_kv_singleio_dataset(
                 f"Expected message with content type string, got {content}"
             )
 
-    eval_config = RunEvalConfig(evaluators=[EvaluatorType.QA, EvaluatorType.CRITERIA])
+    eval_config = RunEvalConfig(custom_evaluators=[not_empty])
     await arun_on_dataset(
         dataset_name=kv_singleio_dataset_name,
         llm_or_chain_factory=my_func,

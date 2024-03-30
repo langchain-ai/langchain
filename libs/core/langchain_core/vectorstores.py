@@ -1,11 +1,29 @@
+"""**Vector store** stores embedded data and performs vector search.
+
+One of the most common ways to store and search over unstructured data is to
+embed it and store the resulting embedding vectors, and then query the store
+and retrieve the data that are 'most similar' to the embedded query.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    VectorStore --> <name>  # Examples: Annoy, FAISS, Milvus
+
+    BaseRetriever --> VectorStoreRetriever --> <name>Retriever  # Example: VespaRetriever
+
+**Main helpers:**
+
+.. code-block::
+
+    Embeddings, Document
+"""  # noqa: E501
 from __future__ import annotations
 
-import asyncio
 import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,6 +42,7 @@ from typing import (
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -93,8 +112,7 @@ class VectorStore(ABC):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-
-        raise NotImplementedError("delete method must be implemented by subclass.")
+        return await run_in_executor(None, self.delete, ids, **kwargs)
 
     async def aadd_texts(
         self,
@@ -103,9 +121,7 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.add_texts, **kwargs), texts, metadatas
-        )
+        return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Run more documents through the embeddings and add to the vectorstore.
@@ -224,8 +240,9 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_with_score, *args, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        return await run_in_executor(
+            None, self.similarity_search_with_score, *args, **kwargs
+        )
 
     def _similarity_search_with_relevance_scores(
         self,
@@ -383,8 +400,7 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search, query, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        return await run_in_executor(None, self.similarity_search, query, k=k, **kwargs)
 
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
@@ -408,8 +424,9 @@ class VectorStore(ABC):
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_by_vector, embedding, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
+        return await run_in_executor(
+            None, self.similarity_search_by_vector, embedding, k=k, **kwargs
+        )
 
     def max_marginal_relevance_search(
         self,
@@ -445,12 +462,28 @@ class VectorStore(ABC):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        """Return docs selected using the maximal marginal relevance."""
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
 
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
         # asynchronous in the vector store implementations.
-        func = partial(
+        return await run_in_executor(
+            None,
             self.max_marginal_relevance_search,
             query,
             k=k,
@@ -458,7 +491,6 @@ class VectorStore(ABC):
             lambda_mult=lambda_mult,
             **kwargs,
         )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -495,7 +527,15 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
-        raise NotImplementedError
+        return await run_in_executor(
+            None,
+            self.max_marginal_relevance_search_by_vector,
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            **kwargs,
+        )
 
     @classmethod
     def from_documents(
@@ -541,8 +581,8 @@ class VectorStore(ABC):
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(cls.from_texts, **kwargs), texts, embedding, metadatas
+        return await run_in_executor(
+            None, cls.from_texts, texts, embedding, metadatas, **kwargs
         )
 
     def _get_retriever_tags(self) -> List[str]:
