@@ -382,7 +382,7 @@ def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
 def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
     return GoogleCloudTextToSpeechTool(**kwargs)
 
-def _file_managent_tool(**kwargs: Any) -> BaseTool:
+def _file_management_tool(**kwargs: Any) -> BaseTool:
     return ReadFileTool(**kwargs)
 
 
