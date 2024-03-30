@@ -506,7 +506,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
     "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
-    "read_file": (_get_file_managent_tool, []),
+    "read_file": (_get_file_management_tool, []),
     "reddit_search": (
         _get_reddit_search,
         ["reddit_client_id", "reddit_client_secret", "reddit_user_agent"],
