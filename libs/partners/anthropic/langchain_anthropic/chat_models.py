@@ -185,6 +185,26 @@ class ChatAnthropic(BaseChatModel):
         """Return type of chat model."""
         return "anthropic-chat"
 
+    @property
+    def _default_params(self) -> Mapping[str, Any]:
+        """Get the default parameters for calling Anthropic API."""
+        d = {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+        }
+        if self.temperature is not None:
+            d["temperature"] = self.temperature
+        if self.top_k is not None:
+            d["top_k"] = self.top_k
+        if self.top_p is not None:
+            d["top_p"] = self.top_p
+        return {**d, **self.model_kwargs}
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        return {**{}, **self._default_params}
+    
     @root_validator(pre=True)
     def build_extra(cls, values: Dict) -> Dict:
         extra = values.get("model_kwargs", {})
