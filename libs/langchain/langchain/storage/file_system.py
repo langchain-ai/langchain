@@ -39,6 +39,7 @@ class LocalFileStore(ByteStore):
     def __init__(
             self,
             root_path: Union[str, Path],
+            *,
             chmod_file: Optional[int] = None,
             chmod_dir: Optional[int] = None
         ) -> None:
@@ -48,9 +49,9 @@ class LocalFileStore(ByteStore):
             root_path (Union[str, Path]): The root path of the file store. All keys are
                 interpreted as paths relative to this root.
             chmod_file: (optional, defaults to `None`) If specified, sets permissions
-                for newly created files, overriding the default umask if needed.
+                for newly created files, overriding the current `umask` if needed.
             chmod_dir: (optional, defaults to `None`) If specified, sets permissions
-                for newly created directories, overriding the default umask if needed.
+                for newly created dirs, overriding the current `umask` if needed.
         """
         self.root_path = Path(root_path).absolute()
         self.chmod_file = chmod_file
@@ -79,6 +80,9 @@ class LocalFileStore(ByteStore):
 
     def _mkdir_for_store(self, dir: Path) -> None:
         """Makes a store directory path (including parents) with specified permissions
+
+        This is needed because `Path.mkdir()` is restricted by the current `umask`,
+        whereas the explicit `os.chmod()` used here is not.
 
         Args:
             dir: (Path) The store directory to make
