@@ -106,7 +106,6 @@ from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWra
 from langchain_community.utilities.reddit_search import RedditSearchAPIWrapper
 
 
-
 def _get_tools_requests_get() -> BaseTool:
     # Dangerous requests are allowed here, because there's another flag that the user
     # has to provide in order to actually opt in.
@@ -413,6 +412,7 @@ def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
 
 def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
     return GoogleCloudTextToSpeechTool(**kwargs)
+
 
 def _get_file_management_tool(**kwargs: Any) -> BaseTool:
     return ReadFileTool(**kwargs)
