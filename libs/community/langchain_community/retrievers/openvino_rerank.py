@@ -1,18 +1,15 @@
-import numpy as np
 from pathlib import Path
-from langchain.callbacks.manager import Callbacks
+from typing import Any, Dict, Optional, Sequence
+
+import numpy as np
+from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
+from langchain_core.documents.compressor import BaseDocumentCompressor
 from langchain_core.pydantic_v1 import Field
-from typing import Optional, Dict, Any, Sequence
-import json
-from tokenizers import AddedToken, Tokenizer
-import collections
 
 
 class RerankRequest:
-
-    def __init__(self, query=None, passages=None):
+    def __init__(self, query: Any = None, passages: Any = None):
         self.query = query
         self.passages = passages if passages is not None else []
 
@@ -35,7 +32,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
-        
+
         try:
             from optimum.intel.openvino import OVModelForSequenceClassification
         except ImportError as e:
@@ -53,7 +50,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
                 "Please install it with: "
                 "`pip install -U huggingface_hub`."
             ) from e
-        
+
         def require_model_export(
             model_id: str, revision: Any = None, subfolder: Any = None
         ) -> bool:
@@ -88,7 +85,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
                 )
             except Exception:
                 return True
-        
+
         if require_model_export(self.model_name_or_path):
             # use remote model
             self.ov_model = OVModelForSequenceClassification.from_pretrained(
@@ -99,7 +96,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
             self.ov_model = OVModelForSequenceClassification.from_pretrained(
                 self.model_name_or_path, **self.model_kwargs
             )
-            
+
         try:
             from transformers import AutoTokenizer
         except ImportError as e:
@@ -107,91 +104,18 @@ class OpenVINOReranker(BaseDocumentCompressor):
                 "Unable to import transformers, please install with "
                 "`pip install -U transformers`."
             ) from e
-        
+
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
 
-    def _load_vocab(self, vocab_file):
-
-        vocab = collections.OrderedDict()
-        with open(vocab_file, "r", encoding="utf-8") as reader:
-            tokens = reader.readlines()
-        for index, token in enumerate(tokens):
-            token = token.rstrip("\n")
-            vocab[token] = index
-        return vocab
-
-    def _get_tokenizer(self, max_length=512):
-
-        config_path = Path(self.model_name_or_path) / "config.json"
-        if not config_path.exists():
-          raise FileNotFoundError(f"config.json missing in {self.model_name_or_path}")
-
-        tokenizer_path = Path(self.model_name_or_path) / "tokenizer.json"
-        if not tokenizer_path.exists():
-          raise FileNotFoundError(
-              f"tokenizer.json missingin  {self.model_name_or_path}")
-
-        tokenizer_config_path = Path(self.model_name_or_path) / "tokenizer_config.json"
-        if not tokenizer_config_path.exists():
-          raise FileNotFoundError(
-              f"tokenizer_config.json missing in  {Path(self.model_name_or_path)}")
-
-        tokens_map_path = Path(self.model_name_or_path) / "special_tokens_map.json"
-        if not tokens_map_path.exists():
-          raise FileNotFoundError(
-              f"special_tokens_map.json missing in  {Path(self.model_name_or_path)}")
-
-        with config_path.open() as config_file:
-           config = json.load(config_file)
-        tokenizer_config = json.load(open(str(tokenizer_config_path)))
-        tokens_map = json.load(open(str(tokens_map_path)))
-
-        tokenizer = Tokenizer.from_file(str(tokenizer_path))
-        tokenizer.enable_truncation(max_length=min(
-            tokenizer_config["model_max_length"], max_length))
-        tokenizer.enable_padding(
-            pad_id=config["pad_token_id"], pad_token=tokenizer_config["pad_token"])
-
-        for token in tokens_map.values():
-          if isinstance(token, str):
-              tokenizer.add_special_tokens([token])
-          elif isinstance(token, dict):
-              tokenizer.add_special_tokens([AddedToken(**token)])
-
-        vocab_file = Path(self.model_dir) / "vocab.txt"
-        if vocab_file.exists():
-          tokenizer.vocab = self._load_vocab(vocab_file)
-          tokenizer.ids_to_tokens = [(ids, tok) for tok, ids in tokenizer.vocab.items()]
-
-        return tokenizer
-
-    def rerank(self, request):
+    def rerank(self, request: Any):
         query = request.query
         passages = request.passages
 
-        query_passage_pairs = [[query, passage["text"]]
-                               for passage in passages]
-        input_text = self.tokenizer.encode_batch(query_passage_pairs)
-        input_ids = [e.ids for e in input_text]
-        token_type_ids = [e.type_ids for e in input_text]
-        attention_mask = [e.attention_mask for e in input_text]
+        query_passage_pairs = [[query, passage["text"]] for passage in passages]
+        input_tensors = self.tokenizer(
+            query_passage_pairs, padding=True, truncation=True, return_tensors="pt"
+        )
 
-        use_token_type_ids = token_type_ids is not None and not np.all(
-            token_type_ids == 0)
-
-        if use_token_type_ids:
-            input_tensors = {
-                "input_ids": input_ids,
-                "attention_mask": attention_mask,
-                "token_type_ids": token_type_ids,
-            }
-        else:
-            input_tensors = {
-                "input_ids": input_ids,
-                "attention_mask": attention_mask
-            }
-
-        # input_data = {k: v for k, v in onnx_input.items()}
         outputs = self.ov_model(**input_tensors, return_dict=True)
         if outputs[0].shape[1] > 1:
             scores = outputs[0][:, 1]
