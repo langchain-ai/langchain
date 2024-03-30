@@ -79,6 +79,7 @@ _module_lookup = {
     "Neo4jVector": "langchain_community.vectorstores.neo4j_vector",
     "NeuralDBVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "OpenSearchVectorSearch": "langchain_community.vectorstores.opensearch_vector_search",  # noqa: E501
+    "PathwayVectorClient": "langchain_community.vectorstores.pathway",
     "PGEmbedding": "langchain_community.vectorstores.pgembedding",
     "PGVector": "langchain_community.vectorstores.pgvector",
     "Pinecone": "langchain_community.vectorstores.pinecone",
@@ -102,6 +103,7 @@ _module_lookup = {
     "Typesense": "langchain_community.vectorstores.typesense",
     "USearch": "langchain_community.vectorstores.usearch",
     "Vald": "langchain_community.vectorstores.vald",
+    "VDMS": "langchain_community.vectorstores.vdms",
     "Vearch": "langchain_community.vectorstores.vearch",
     "Vectara": "langchain_community.vectorstores.vectara",
     "VectorStore": "langchain_core.vectorstores",

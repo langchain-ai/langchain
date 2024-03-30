@@ -69,6 +69,7 @@ optional = true
 langchain = {path = "../langchain", develop = true}
 langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
+langchain-openai = {path = "../partners/openai", develop = true}
 
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without

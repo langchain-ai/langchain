@@ -273,19 +273,20 @@ from langchain.retrievers import AzureCognitiveSearchRetriever
 
 ## Toolkits
 
-### Azure Cognitive Services
+### Azure AI Services
 
 We need to install several python packages.
 
 ```bash
-pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision-imageanalysis
 ```
 
-See a [usage example](/docs/integrations/toolkits/azure_cognitive_services).
+See a [usage example](/docs/integrations/toolkits/azure_ai_services).
 
 ```python
-from langchain_community.agent_toolkits import O365Toolkit
+from langchain_community.agent_toolkits import azure_ai_services
 ```
+
 ### Microsoft Office 365 email and calendar
 
 We need to install `O365` python package.

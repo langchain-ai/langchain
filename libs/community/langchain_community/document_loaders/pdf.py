@@ -670,7 +670,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                 raise ValueError(
                     "Could not load credentials to authenticate with AWS client. "
                     "Please check that credentials in the specified "
-                    "profile name are valid."
+                    f"profile name are valid. {e}"
                 ) from e
         self.parser = AmazonTextractPDFParser(
             textract_features=features,
