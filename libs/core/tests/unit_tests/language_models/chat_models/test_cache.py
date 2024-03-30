@@ -1,8 +1,9 @@
 """Module tests interaction of chat model with caching abstraction.."""
+from typing import Any, Dict, Optional, Tuple
 
 import pytest
-from langchain_community.cache import InMemoryCache
 
+from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
@@ -10,6 +11,26 @@ from langchain_core.language_models.fake_chat_models import (
 )
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
+
+
+class InMemoryCache(BaseCache):
+    """In-memory cache used for testing purposes."""
+
+    def __init__(self) -> None:
+        """Initialize with empty cache."""
+        self._cache: Dict[Tuple[str, str], RETURN_VAL_TYPE] = {}
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        return self._cache.get((prompt, llm_string), None)
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        self._cache[(prompt, llm_string)] = return_val
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache."""
+        self._cache = {}
 
 
 def test_local_cache_sync() -> None:

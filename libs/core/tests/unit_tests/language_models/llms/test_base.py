@@ -1,7 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple
 
 import pytest
-from langchain_community.cache import InMemoryCache
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.callbacks import (
@@ -17,6 +16,26 @@ from tests.unit_tests.fake.callbacks import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
+
+
+class InMemoryCache(BaseCache):
+    """In-memory cache used for testing purposes."""
+
+    def __init__(self) -> None:
+        """Initialize with empty cache."""
+        self._cache: Dict[Tuple[str, str], RETURN_VAL_TYPE] = {}
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        return self._cache.get((prompt, llm_string), None)
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        self._cache[(prompt, llm_string)] = return_val
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache."""
+        self._cache = {}
 
 
 def test_batch() -> None:
