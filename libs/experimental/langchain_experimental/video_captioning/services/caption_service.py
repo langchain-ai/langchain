@@ -259,7 +259,7 @@ class CaptionProcessor:
 
         # Merge any overlapping clusters into one big cluster
         def _merge_overlapping_clusters(
-            array: List[Tuple[int, int]]
+            array: List[Tuple[int, int]],
         ) -> List[Tuple[int, int]]:
             if len(array) <= 1:
                 return array

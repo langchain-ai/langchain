@@ -1,16 +1,10 @@
 from typing import List, Optional
 
 import numpy as np
+from langchain_community.document_loaders import ImageCaptionLoader
+from langchain_core.callbacks import CallbackManagerForChainRun
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains.video_captioning.models import VideoModel
-from langchain.document_loaders import ImageCaptionLoader
-
-try:
-    import cv2
-    from cv2.typing import MatLike
-except ImportError as e:
-    print("The cv2 module is required for ImageProcessor.: %s" % e)
+from langchain_experimental.video_captioning.models import VideoModel
 
 
 class ImageProcessor:
@@ -28,6 +22,14 @@ class ImageProcessor:
         return self._extract_frames(video_file_path)
 
     def _extract_frames(self, video_file_path: str) -> list:
+        try:
+            import cv2
+            from cv2.typing import MatLike
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import cv2, please install it with "
+                "`pip install -U opencv-python`"
+            ) from e
         video_models: List[VideoModel] = []
 
         def _add_model(start_time: int, end_time: int) -> None:

@@ -1,6 +1,7 @@
 """Integration test for video captioning."""
-from langchain.chains.video_captioning.base import VideoCaptioningChain
-from langchain.chat_models.openai import ChatOpenAI
+from langchain_openai import ChatOpenAI
+
+from langchain_experimental.video_captioning.base import VideoCaptioningChain
 
 
 def test_video_captioning_hard() -> None:

@@ -1,15 +1,24 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
-from langchain.chains.video_captioning.services.audio_service import AudioProcessor
-from langchain.chains.video_captioning.services.caption_service import CaptionProcessor
-from langchain.chains.video_captioning.services.combine_service import CombineProcessor
-from langchain.chains.video_captioning.services.image_service import ImageProcessor
-from langchain.chains.video_captioning.services.srt_service import SRTProcessor
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import Extra
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import Extra
+
+from langchain_experimental.video_captioning.services.audio_service import (
+    AudioProcessor,
+)
+from langchain_experimental.video_captioning.services.caption_service import (
+    CaptionProcessor,
+)
+from langchain_experimental.video_captioning.services.combine_service import (
+    CombineProcessor,
+)
+from langchain_experimental.video_captioning.services.image_service import (
+    ImageProcessor,
+)
+from langchain_experimental.video_captioning.services.srt_service import SRTProcessor
 
 
 class VideoCaptioningChain(Chain):

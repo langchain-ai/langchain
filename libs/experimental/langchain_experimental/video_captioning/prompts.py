@@ -1,9 +1,9 @@
 # flake8: noqa
-from langchain.prompts import (
+from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain.schema import SystemMessage
+from langchain_core.messages import SystemMessage
 
 JOIN_SIMILAR_VIDEO_MODELS_TEMPLATE = """
 I will provide you with several descriptions depicting events in one scene.
