@@ -8,7 +8,7 @@ import pytest
 
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
-from langchain_core.prompts.loading import load_prompt, _load_chat_prompt
+from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.prompt import PromptTemplate
 
 EXAMPLE_DIR = (Path(__file__).parent.parent / "examples").absolute()
