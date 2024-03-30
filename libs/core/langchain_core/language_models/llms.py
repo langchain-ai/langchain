@@ -151,7 +151,7 @@ def get_prompts(
     else:
         llm_cache = get_llm_cache()
     for i, prompt in enumerate(prompts):
-        if llm_cache is not None:
+        if llm_cache is not None and cache is not False:
             cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
@@ -176,7 +176,7 @@ async def aget_prompts(
     else:
         llm_cache = get_llm_cache()
     for i, prompt in enumerate(prompts):
-        if llm_cache:
+        if llm_cache is not None and cache is not False:
             cache_val = await llm_cache.alookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
