@@ -107,7 +107,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
 
-    def rerank(self, request: Any):
+    def rerank(self, request: Any) -> Any:
         query = request.query
         passages = request.passages
 
