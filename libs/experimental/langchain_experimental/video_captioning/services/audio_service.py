@@ -3,10 +3,11 @@ from pathlib import Path
 from typing import List, Optional
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.chains.video_captioning.models import AudioModel, BaseModel
-from langchain.document_loaders import AssemblyAIAudioTranscriptLoader
-from langchain.document_loaders.assemblyai import TranscriptFormat
 from langchain.schema import Document
+from langchain_community.document_loaders import AssemblyAIAudioTranscriptLoader
+from langchain_community.document_loaders.assemblyai import TranscriptFormat
+
+from langchain_experimental.video_captioning.models import AudioModel, BaseModel
 
 
 class AudioProcessor:

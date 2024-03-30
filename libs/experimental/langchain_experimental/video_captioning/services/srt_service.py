@@ -1,6 +1,6 @@
 from typing import List
 
-from langchain.chains.video_captioning.models import CaptionModel
+from langchain_experimental.video_captioning.models import CaptionModel
 
 
 class SRTProcessor:

@@ -2,12 +2,13 @@ from typing import Dict, List, Optional, Tuple
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
-from langchain.chains.video_captioning.models import VideoModel
-from langchain.chains.video_captioning.prompts import (
+from langchain_core.language_models import BaseLanguageModel
+
+from langchain_experimental.video_captioning.models import VideoModel
+from langchain_experimental.video_captioning.prompts import (
     JOIN_SIMILAR_VIDEO_MODELS_PROMPT,
     REMOVE_VIDEO_MODEL_DESCRIPTION_PROMPT,
 )
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class CaptionProcessor:

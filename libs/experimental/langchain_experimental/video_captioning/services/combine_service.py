@@ -2,15 +2,16 @@ from typing import Dict, List, Optional, Tuple
 
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
-from langchain.chains.video_captioning.models import (
+from langchain.schema.language_model import BaseLanguageModel
+
+from langchain_experimental.video_captioning.models import (
     AudioModel,
     CaptionModel,
     VideoModel,
 )
-from langchain.chains.video_captioning.prompts import (
+from langchain_experimental.video_captioning.prompts import (
     VALIDATE_AND_ADJUST_DESCRIPTION_PROMPT,
 )
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class CombineProcessor:
