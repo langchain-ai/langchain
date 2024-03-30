@@ -5,34 +5,30 @@ import logging
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import yaml
+from langchain_core._api import deprecated
+from langchain_core.callbacks import (
+    AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    BaseCallbackManager,
+    CallbackManager,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain_core.load.dump import dumpd
 from langchain_core.memory import BaseMemory
 from langchain_core.outputs import RunInfo
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Field,
-    create_model,
-    root_validator,
-    validator,
-)
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, validator
 from langchain_core.runnables import (
     RunnableConfig,
     RunnableSerializable,
     ensure_config,
     run_in_executor,
 )
+from langchain_core.runnables.utils import create_model
 
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import (
-    AsyncCallbackManager,
-    AsyncCallbackManagerForChainRun,
-    CallbackManager,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
 from langchain.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)
@@ -67,6 +63,43 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             chains and cannot return as rich of an output as `__call__`.
     """
 
+    memory: Optional[BaseMemory] = None
+    """Optional memory object. Defaults to None.
+    Memory is a class that gets called at the start
+    and at the end of every chain. At the start, memory loads variables and passes
+    them along in the chain. At the end, it saves any returned variables.
+    There are many different types of memory - please see memory docs
+    for the full catalog."""
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    """Optional list of callback handlers (or callback manager). Defaults to None.
+    Callback handlers are called throughout the lifecycle of a call to a chain,
+    starting with on_chain_start, ending with on_chain_end or on_chain_error.
+    Each custom chain can optionally call additional callback methods, see Callback docs
+    for full details."""
+    verbose: bool = Field(default_factory=_get_verbosity)
+    """Whether or not run in verbose mode. In verbose mode, some intermediate logs
+    will be printed to the console. Defaults to the global `verbose` value,
+    accessible via `langchain.globals.get_verbose()`."""
+    tags: Optional[List[str]] = None
+    """Optional list of tags associated with the chain. Defaults to None.
+    These tags will be associated with each call to this chain,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a chain with its use case.
+    """
+    metadata: Optional[Dict[str, Any]] = None
+    """Optional metadata associated with the chain. Defaults to None.
+    This metadata will be associated with each call to this chain,
+    and passed as arguments to the handlers defined in `callbacks`.
+    You can use these to eg identify a specific instance of a chain with its use case.
+    """
+    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    """[DEPRECATED] Use `callbacks` instead."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
@@ -90,14 +123,49 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         config = ensure_config(config)
-        return self(
-            input,
-            callbacks=config.get("callbacks"),
-            tags=config.get("tags"),
-            metadata=config.get("metadata"),
-            run_name=config.get("run_name"),
-            **kwargs,
+        callbacks = config.get("callbacks")
+        tags = config.get("tags")
+        metadata = config.get("metadata")
+        run_name = config.get("run_name") or self.get_name()
+        include_run_info = kwargs.get("include_run_info", False)
+        return_only_outputs = kwargs.get("return_only_outputs", False)
+
+        inputs = self.prep_inputs(input)
+        callback_manager = CallbackManager.configure(
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
         )
+        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
+
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
+            inputs,
+            name=run_name,
+        )
+        try:
+            self._validate_inputs(inputs)
+            outputs = (
+                self._call(inputs, run_manager=run_manager)
+                if new_arg_supported
+                else self._call(inputs)
+            )
+
+            final_outputs: Dict[str, Any] = self.prep_outputs(
+                inputs, outputs, return_only_outputs
+            )
+        except BaseException as e:
+            run_manager.on_chain_error(e)
+            raise e
+        run_manager.on_chain_end(outputs)
+
+        if include_run_info:
+            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
+        return final_outputs
 
     async def ainvoke(
         self,
@@ -106,51 +174,47 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         config = ensure_config(config)
-        return await self.acall(
-            input,
-            callbacks=config.get("callbacks"),
-            tags=config.get("tags"),
-            metadata=config.get("metadata"),
-            run_name=config.get("run_name"),
-            **kwargs,
+        callbacks = config.get("callbacks")
+        tags = config.get("tags")
+        metadata = config.get("metadata")
+        run_name = config.get("run_name") or self.get_name()
+        include_run_info = kwargs.get("include_run_info", False)
+        return_only_outputs = kwargs.get("return_only_outputs", False)
+
+        inputs = await self.aprep_inputs(input)
+        callback_manager = AsyncCallbackManager.configure(
+            callbacks,
+            self.callbacks,
+            self.verbose,
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
         )
+        new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
+        run_manager = await callback_manager.on_chain_start(
+            dumpd(self),
+            inputs,
+            name=run_name,
+        )
+        try:
+            self._validate_inputs(inputs)
+            outputs = (
+                await self._acall(inputs, run_manager=run_manager)
+                if new_arg_supported
+                else await self._acall(inputs)
+            )
+            final_outputs: Dict[str, Any] = self.prep_outputs(
+                inputs, outputs, return_only_outputs
+            )
+        except BaseException as e:
+            await run_manager.on_chain_error(e)
+            raise e
+        await run_manager.on_chain_end(outputs)
 
-    memory: Optional[BaseMemory] = None
-    """Optional memory object. Defaults to None.
-    Memory is a class that gets called at the start
-    and at the end of every chain. At the start, memory loads variables and passes
-    them along in the chain. At the end, it saves any returned variables.
-    There are many different types of memory - please see memory docs
-    for the full catalog."""
-    callbacks: Callbacks = Field(default=None, exclude=True)
-    """Optional list of callback handlers (or callback manager). Defaults to None.
-    Callback handlers are called throughout the lifecycle of a call to a chain,
-    starting with on_chain_start, ending with on_chain_end or on_chain_error.
-    Each custom chain can optionally call additional callback methods, see Callback docs
-    for full details."""
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    """Deprecated, use `callbacks` instead."""
-    verbose: bool = Field(default_factory=_get_verbosity)
-    """Whether or not run in verbose mode. In verbose mode, some intermediate logs
-    will be printed to the console. Defaults to the global `verbose` value,
-    accessible via `langchain.globals.get_verbose()`."""
-    tags: Optional[List[str]] = None
-    """Optional list of tags associated with the chain. Defaults to None.
-    These tags will be associated with each call to this chain,
-    and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a chain with its use case.
-    """
-    metadata: Optional[Dict[str, Any]] = None
-    """Optional metadata associated with the chain. Defaults to None.
-    This metadata will be associated with each call to this chain,
-    and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a chain with its use case.
-    """
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+        if include_run_info:
+            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
+        return final_outputs
 
     @property
     def _chain_type(self) -> str:
@@ -196,6 +260,20 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
 
     def _validate_inputs(self, inputs: Dict[str, Any]) -> None:
         """Check that all inputs are present."""
+        if not isinstance(inputs, dict):
+            _input_keys = set(self.input_keys)
+            if self.memory is not None:
+                # If there are multiple input keys, but some get set by memory so that
+                # only one is not set, we can still figure out which key it is.
+                _input_keys = _input_keys.difference(self.memory.memory_variables)
+            if len(_input_keys) != 1:
+                raise ValueError(
+                    f"A single string input was passed in, but this chain expects "
+                    f"multiple inputs ({_input_keys}). When a chain expects "
+                    f"multiple inputs, please call it by passing in a dictionary, "
+                    "eg `chain({'foo': 1, 'bar': 2})`"
+                )
+
         missing_keys = set(self.input_keys).difference(inputs)
         if missing_keys:
             raise ValueError(f"Missing some input keys: {missing_keys}")
@@ -253,6 +331,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             None, self._call, inputs, run_manager.get_sync() if run_manager else None
         )
 
+    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
     def __call__(
         self,
         inputs: Union[Dict[str, Any], Any],
@@ -289,39 +368,21 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        inputs = self.prep_inputs(inputs)
-        callback_manager = CallbackManager.configure(
-            callbacks,
-            self.callbacks,
-            self.verbose,
-            tags,
-            self.tags,
-            metadata,
-            self.metadata,
-        )
-        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
-        run_manager = callback_manager.on_chain_start(
-            dumpd(self),
-            inputs,
-            name=run_name,
-        )
-        try:
-            outputs = (
-                self._call(inputs, run_manager=run_manager)
-                if new_arg_supported
-                else self._call(inputs)
-            )
-        except BaseException as e:
-            run_manager.on_chain_error(e)
-            raise e
-        run_manager.on_chain_end(outputs)
-        final_outputs: Dict[str, Any] = self.prep_outputs(
-            inputs, outputs, return_only_outputs
-        )
-        if include_run_info:
-            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
-        return final_outputs
+        config = {
+            "callbacks": callbacks,
+            "tags": tags,
+            "metadata": metadata,
+            "run_name": run_name,
+        }
 
+        return self.invoke(
+            inputs,
+            cast(RunnableConfig, {k: v for k, v in config.items() if v is not None}),
+            return_only_outputs=return_only_outputs,
+            include_run_info=include_run_info,
+        )
+
+    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
     async def acall(
         self,
         inputs: Union[Dict[str, Any], Any],
@@ -358,38 +419,18 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             A dict of named outputs. Should contain all outputs specified in
                 `Chain.output_keys`.
         """
-        inputs = self.prep_inputs(inputs)
-        callback_manager = AsyncCallbackManager.configure(
-            callbacks,
-            self.callbacks,
-            self.verbose,
-            tags,
-            self.tags,
-            metadata,
-            self.metadata,
-        )
-        new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
-        run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+        config = {
+            "callbacks": callbacks,
+            "tags": tags,
+            "metadata": metadata,
+            "run_name": run_name,
+        }
+        return await self.ainvoke(
             inputs,
-            name=run_name,
+            cast(RunnableConfig, {k: v for k, v in config.items() if k is not None}),
+            return_only_outputs=return_only_outputs,
+            include_run_info=include_run_info,
         )
-        try:
-            outputs = (
-                await self._acall(inputs, run_manager=run_manager)
-                if new_arg_supported
-                else await self._acall(inputs)
-            )
-        except BaseException as e:
-            await run_manager.on_chain_error(e)
-            raise e
-        await run_manager.on_chain_end(outputs)
-        final_outputs: Dict[str, Any] = self.prep_outputs(
-            inputs, outputs, return_only_outputs
-        )
-        if include_run_info:
-            final_outputs[RUN_KEY] = RunInfo(run_id=run_manager.run_id)
-        return final_outputs
 
     def prep_outputs(
         self,
@@ -418,7 +459,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             return {**inputs, **outputs}
 
     def prep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
-        """Validate and prepare chain inputs, including adding inputs from memory.
+        """Prepare chain inputs, including adding inputs from memory.
 
         Args:
             inputs: Dictionary of raw inputs, or single input if chain expects
@@ -435,18 +476,34 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 # If there are multiple input keys, but some get set by memory so that
                 # only one is not set, we can still figure out which key it is.
                 _input_keys = _input_keys.difference(self.memory.memory_variables)
-            if len(_input_keys) != 1:
-                raise ValueError(
-                    f"A single string input was passed in, but this chain expects "
-                    f"multiple inputs ({_input_keys}). When a chain expects "
-                    f"multiple inputs, please call it by passing in a dictionary, "
-                    "eg `chain({'foo': 1, 'bar': 2})`"
-                )
             inputs = {list(_input_keys)[0]: inputs}
         if self.memory is not None:
             external_context = self.memory.load_memory_variables(inputs)
             inputs = dict(inputs, **external_context)
-        self._validate_inputs(inputs)
+        return inputs
+
+    async def aprep_inputs(self, inputs: Union[Dict[str, Any], Any]) -> Dict[str, str]:
+        """Prepare chain inputs, including adding inputs from memory.
+
+        Args:
+            inputs: Dictionary of raw inputs, or single input if chain expects
+                only one param. Should contain all inputs specified in
+                `Chain.input_keys` except for inputs that will be set by the chain's
+                memory.
+
+        Returns:
+            A dictionary of all inputs, including those added by the chain's memory.
+        """
+        if not isinstance(inputs, dict):
+            _input_keys = set(self.input_keys)
+            if self.memory is not None:
+                # If there are multiple input keys, but some get set by memory so that
+                # only one is not set, we can still figure out which key it is.
+                _input_keys = _input_keys.difference(self.memory.memory_variables)
+            inputs = {list(_input_keys)[0]: inputs}
+        if self.memory is not None:
+            external_context = await self.memory.aload_memory_variables(inputs)
+            inputs = dict(inputs, **external_context)
         return inputs
 
     @property
@@ -458,6 +515,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             )
         return self.output_keys[0]
 
+    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
     def run(
         self,
         *args: Any,
@@ -528,6 +586,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 f" but not both. Got args: {args} and kwargs: {kwargs}."
             )
 
+    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
     async def arun(
         self,
         *args: Any,
@@ -659,12 +718,13 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(chain_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(chain_dict, f, default_flow_style=False)
         else:
             raise ValueError(f"{save_path} must be json or yaml")
 
+    @deprecated("0.1.0", alternative="batch", removal="0.2.0")
     def apply(
         self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> List[Dict[str, str]]:

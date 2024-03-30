@@ -13,15 +13,13 @@ All functionality related to OpenAI
 >[ChatGPT](https://chat.openai.com) is the Artificial Intelligence (AI) chatbot developed by `OpenAI`.
 
 ## Installation and Setup
-- Install the Python SDK with
+
+Install the integration package with
 ```bash
-pip install openai
+pip install langchain-openai
 ```
-- Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
-- If you want to use OpenAI's tokenizer (only available for Python 3.9+), install it
-```bash
-pip install tiktoken
-```
+
+Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
 
 
 ## LLM
@@ -29,51 +27,36 @@ pip install tiktoken
 See a [usage example](/docs/integrations/llms/openai).
 
 ```python
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 ```
 
 If you are using a model hosted on `Azure`, you should use different wrapper for that:
 ```python
-from langchain_community.llms import AzureOpenAI
+from langchain_openai import AzureOpenAI
 ```
-For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/llms/azure_openai_example)
-
+For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/llms/azure_openai)
 
 ## Chat model
 
 See a [usage example](/docs/integrations/chat/openai).
 
 ```python
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 ```
 
 If you are using a model hosted on `Azure`, you should use different wrapper for that:
 ```python
-from langchain_community.llms import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI
 ```
 For a more detailed walkthrough of the `Azure` wrapper, see [here](/docs/integrations/chat/azure_chat_openai)
 
-
-## Text Embedding Model
+## Embedding Model
 
 See a [usage example](/docs/integrations/text_embedding/openai)
 
 ```python
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 ```
-
-
-## Tokenizer
-
-There are several places you can use the `tiktoken` tokenizer. By default, it is used to count tokens
-for OpenAI LLMs.
-
-You can also use it to count tokens when splitting documents with 
-```python
-from langchain.text_splitter import CharacterTextSplitter
-CharacterTextSplitter.from_tiktoken_encoder(...)
-```
-For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_connection/document_transformers/text_splitters/split_by_token#tiktoken)
 
 ## Document Loader
 
@@ -91,22 +74,6 @@ See a [usage example](/docs/integrations/retrievers/chatgpt-plugin).
 from langchain.retrievers import ChatGPTPluginRetriever
 ```
 
-## Chain
-
-See a [usage example](/docs/guides/safety/moderation).
-
-```python
-from langchain.chains import OpenAIModerationChain
-```
-
-## Adapter
-
-See a [usage example](/docs/integrations/adapters/openai).
-
-```python
-from langchain.adapters import openai as lc_openai
-```
-
 ## Tools
 
 ### Dall-E Image Generator
@@ -119,5 +86,35 @@ from langchain.adapters import openai as lc_openai
 See a [usage example](/docs/integrations/tools/dalle_image_generator).
 
 ```python
-from langchain.utilities.dalle_image_generator import DallEAPIWrapper
+from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 ```
+
+## Adapter
+
+See a [usage example](/docs/integrations/adapters/openai).
+
+```python
+from langchain.adapters import openai as lc_openai
+```
+
+## Tokenizer
+
+There are several places you can use the `tiktoken` tokenizer. By default, it is used to count tokens
+for OpenAI LLMs.
+
+You can also use it to count tokens when splitting documents with 
+```python
+from langchain.text_splitter import CharacterTextSplitter
+CharacterTextSplitter.from_tiktoken_encoder(...)
+```
+For a more detailed walkthrough of this, see [this notebook](/docs/modules/data_connection/document_transformers/split_by_token#tiktoken)
+
+## Chain
+
+See a [usage example](/docs/guides/safety/moderation).
+
+```python
+from langchain.chains import OpenAIModerationChain
+```
+
+

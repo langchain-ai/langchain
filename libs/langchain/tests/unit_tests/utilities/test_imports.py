@@ -1,4 +1,5 @@
-from langchain.utilities import __all__
+from langchain import utilities
+from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "AlphaVantageAPIWrapper",
@@ -51,4 +52,5 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(utilities.__all__) == set(EXPECTED_ALL)
+    assert_all_importable(utilities)

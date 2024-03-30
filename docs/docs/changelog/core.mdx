@@ -1,0 +1,27 @@
+# langchain-core
+
+## 0.1.7 (Jan 5, 2024)
+
+#### Deleted
+
+No deletions.
+
+#### Deprecated
+
+- `BaseChatModel` methods `__call__`, `call_as_llm`, `predict`, `predict_messages`. Will be removed in 0.2.0. Use `BaseChatModel.invoke` instead.
+- `BaseChatModel` methods `apredict`, `apredict_messages`. Will be removed in 0.2.0. Use `BaseChatModel.ainvoke` instead.
+- `BaseLLM` methods `__call__, `predict`, `predict_messages`. Will be removed in 0.2.0. Use `BaseLLM.invoke` instead.
+- `BaseLLM` methods `apredict`, `apredict_messages`. Will be removed in 0.2.0. Use `BaseLLM.ainvoke` instead.
+
+#### Fixed
+
+- Restrict recursive URL scraping: [#15559](https://github.com/langchain-ai/langchain/pull/15559)
+
+#### Added
+
+No additions.
+
+#### Beta
+
+- Marked `langchain_core.load.load` and `langchain_core.load.loads` as beta.
+- Marked `langchain_core.beta.runnables.context.ContextGet` and `langchain_core.beta.runnables.context.ContextSet` as beta.

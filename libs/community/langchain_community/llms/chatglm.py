@@ -125,5 +125,5 @@ class ChatGLM(LLM):
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
         if self.with_history:
-            self.history = self.history + [[None, parsed_response["response"]]]
+            self.history = parsed_response["history"]
         return text

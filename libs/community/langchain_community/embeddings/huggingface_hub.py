@@ -29,6 +29,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
+    async_client: Any  #: :meta private:
     model: Optional[str] = None
     """Model name to use."""
     repo_id: Optional[str] = None
@@ -53,7 +54,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         )
 
         try:
-            from huggingface_hub import InferenceClient
+            from huggingface_hub import AsyncInferenceClient, InferenceClient
 
             if values["model"]:
                 values["repo_id"] = values["model"]
@@ -67,12 +68,20 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
                 model=values["model"],
                 token=huggingfacehub_api_token,
             )
+
+            async_client = AsyncInferenceClient(
+                model=values["model"],
+                token=huggingfacehub_api_token,
+            )
+
             if values["task"] not in VALID_TASKS:
                 raise ValueError(
                     f"Got invalid task {values['task']}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
             values["client"] = client
+            values["async_client"] = async_client
+
         except ImportError:
             raise ImportError(
                 "Could not import huggingface_hub python package. "
@@ -97,6 +106,23 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         )
         return json.loads(responses.decode())
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Async Call to HuggingFaceHub's embedding endpoint for embedding search docs.
+
+        Args:
+            texts: The list of texts to embed.
+
+        Returns:
+            List of embeddings, one for each text.
+        """
+        # replace newlines, which can negatively affect performance.
+        texts = [text.replace("\n", " ") for text in texts]
+        _model_kwargs = self.model_kwargs or {}
+        responses = await self.async_client.post(
+            json={"inputs": texts, "parameters": _model_kwargs}, task=self.task
+        )
+        return json.loads(responses.decode())
+
     def embed_query(self, text: str) -> List[float]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding query text.
 
@@ -107,4 +133,16 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         response = self.embed_documents([text])[0]
+        return response
+
+    async def aembed_query(self, text: str) -> List[float]:
+        """Async Call to HuggingFaceHub's embedding endpoint for embedding query text.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embeddings for the text.
+        """
+        response = (await self.aembed_documents([text]))[0]
         return response

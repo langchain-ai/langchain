@@ -2,6 +2,24 @@
 
 All functionality related to `Microsoft Azure` and other `Microsoft` products.
 
+## LLMs
+
+### Azure ML
+
+See a [usage example](/docs/integrations/llms/azure_ml).
+
+```python
+from langchain_community.llms.azureml_endpoint import AzureMLOnlineEndpoint
+```
+
+### Azure OpenAI
+
+See a [usage example](/docs/integrations/llms/azure_openai).
+
+```python
+from langchain_openai import AzureOpenAI
+```
+
 ## Chat Models
 ### Azure OpenAI
 
@@ -10,7 +28,7 @@ All functionality related to `Microsoft Azure` and other `Microsoft` products.
 >[Azure OpenAI](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/) is an `Azure` service with powerful language models from `OpenAI` including the `GPT-3`, `Codex` and `Embeddings model` series for content generation, summarization, semantic search, and natural language to code translation.
 
 ```bash
-pip install openai tiktoken
+pip install langchain-openai
 ```
 
 Set the environment variables to get access to the `Azure OpenAI` service.
@@ -26,25 +44,16 @@ See a [usage example](/docs/integrations/chat/azure_chat_openai)
 
 
 ```python
-from langchain_community.chat_models import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI
 ```
 
-## Text Embedding Models
+## Embedding Models
 ### Azure OpenAI
 
 See a [usage example](/docs/integrations/text_embedding/azureopenai)
 
 ```python
-from langchain_community.embeddings import AzureOpenAIEmbeddings
-```
-
-## LLMs
-### Azure OpenAI
-
-See a [usage example](/docs/integrations/llms/azure_openai_example).
-
-```python
-from langchain_community.llms import AzureOpenAI
+from langchain_openai import AzureOpenAIEmbeddings
 ```
 
 ## Document loaders
@@ -75,10 +84,11 @@ from langchain.document_loaders import AzureAIDataLoader
 
 >[Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known
 > as `Azure Form Recognizer`) is machine-learning
-> based service that extracts text (including handwriting), tables or key-value-pairs
-> from scanned documents or images.
+> based service that extracts texts (including handwriting), tables, document structures, 
+> and key-value-pairs
+> from digital or scanned PDFs, images, Office and HTML files.
 >
->Document Intelligence supports `PDF`, `JPEG`, `PNG`, `BMP`, or `TIFF`.
+> Document Intelligence supports `PDF`, `JPEG/JPG`, `PNG`, `BMP`, `TIFF`, `HEIF`, `DOCX`, `XLSX`, `PPTX` and `HTML`.
 
 First, you need to install a python package.
 
@@ -165,7 +175,7 @@ The `UnstructuredExcelLoader` is used to load `Microsoft Excel` files. The loade
 The page content will be the raw text of the Excel file. If you use the loader in `"elements"` mode, an HTML 
 representation of the Excel file will be available in the document metadata under the `text_as_html` key.
 
-See a [usage example](/docs/integrations/document_loaders/excel).
+See a [usage example](/docs/integrations/document_loaders/microsoft_excel).
 
 ```python
 from langchain_community.document_loaders import UnstructuredExcelLoader
@@ -203,12 +213,11 @@ First, let's install dependencies:
 pip install bs4 msal
 ```
 
-See a [usage example](/docs/integrations/document_loaders/onenote).
+See a [usage example](/docs/integrations/document_loaders/microsoft_onenote).
 
 ```python
 from langchain_community.document_loaders.onenote import OneNoteLoader
 ```
-
 
 ## Vector stores
 
@@ -262,34 +271,22 @@ See a [usage example](/docs/integrations/retrievers/azure_cognitive_search).
 from langchain.retrievers import AzureCognitiveSearchRetriever
 ```
 
-## Utilities
-
-### Bing Search API
-
->[Microsoft Bing](https://www.bing.com/), commonly referred to as `Bing` or `Bing Search`, 
-> is a web search engine owned and operated by `Microsoft`.
-
-See a [usage example](/docs/integrations/tools/bing_search).
-
-```python
-from langchain.utilities import BingSearchAPIWrapper
-```
-
 ## Toolkits
 
-### Azure Cognitive Services
+### Azure AI Services
 
 We need to install several python packages.
 
 ```bash
-pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision-imageanalysis
 ```
 
-See a [usage example](/docs/integrations/toolkits/azure_cognitive_services).
+See a [usage example](/docs/integrations/toolkits/azure_ai_services).
 
 ```python
-from langchain_community.agent_toolkits import O365Toolkit
+from langchain_community.agent_toolkits import azure_ai_services
 ```
+
 ### Microsoft Office 365 email and calendar
 
 We need to install `O365` python package.
@@ -317,7 +314,20 @@ See a [usage example](/docs/integrations/toolkits/powerbi).
 
 ```python
 from langchain_community.agent_toolkits import PowerBIToolkit
-from langchain.utilities.powerbi import PowerBIDataset
+from langchain_community.utilities.powerbi import PowerBIDataset
+```
+
+## Utilities
+
+### Bing Search API
+
+>[Microsoft Bing](https://www.bing.com/), commonly referred to as `Bing` or `Bing Search`, 
+> is a web search engine owned and operated by `Microsoft`.
+
+See a [usage example](/docs/integrations/tools/bing_search).
+
+```python
+from langchain_community.utilities import BingSearchAPIWrapper
 ```
 
 ## More

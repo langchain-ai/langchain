@@ -356,7 +356,7 @@ class AlibabaCloudOpenSearch(VectorStore):
                 "fields" not in item
                 or self.config.field_name_mapping["document"] not in item["fields"]
             ):
-                query_result_list.append(Document())
+                query_result_list.append(Document())  # type: ignore[call-arg]
             else:
                 fields = item["fields"]
                 query_result_list.append(

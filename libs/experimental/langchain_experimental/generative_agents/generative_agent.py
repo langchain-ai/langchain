@@ -3,15 +3,15 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import PromptTemplate
 
 from langchain_experimental.generative_agents.memory import GenerativeAgentMemory
 from langchain_experimental.pydantic_v1 import BaseModel, Field
 
 
 class GenerativeAgent(BaseModel):
-    """An Agent as a character with memory and innate characteristics."""
+    """Agent as a character with memory and innate characteristics."""
 
     name: str
     """The character's name."""
@@ -48,6 +48,8 @@ class GenerativeAgent(BaseModel):
         return [re.sub(r"^\s*\d+\.\s*", "", line).strip() for line in lines]
 
     def chain(self, prompt: PromptTemplate) -> LLMChain:
+        """Create a chain with the same settings as the agent."""
+
         return LLMChain(
             llm=self.llm, prompt=prompt, verbose=self.verbose, memory=self.memory
         )
