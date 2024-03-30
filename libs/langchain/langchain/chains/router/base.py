@@ -4,13 +4,13 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
-from langchain_core.pydantic_v1 import Extra
-
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain_core.pydantic_v1 import Extra
+
 from langchain.chains.base import Chain
 
 

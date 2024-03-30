@@ -1,0 +1,94 @@
+{
+   "openapi": "3.1.0",
+   "info": {
+      "title": "Wolfram",
+      "version": "v0.1"
+   },
+   "servers": [
+      {
+         "url": "https://www.wolframalpha.com",
+         "description": "Wolfram Server for ChatGPT"
+      }
+   ],
+   "paths": {
+      "/api/v1/cloud-plugin": {
+         "get": {
+            "operationId": "getWolframCloudResults",
+            "externalDocs": "https://reference.wolfram.com/language/",
+            "summary": "Evaluate Wolfram Language code",
+            "responses": {
+               "200": {
+                  "description": "The result of the Wolfram Language evaluation",
+                  "content": {
+                     "text/plain": {}
+                  }
+               },
+               "500": {
+                  "description": "Wolfram Cloud was unable to generate a result"
+               },
+               "400": {
+                  "description": "The request is missing the 'input' parameter"
+               },
+               "403": {
+                  "description": "Unauthorized"
+               },
+               "503": {
+                  "description": "Service temporarily unavailable. This may be the result of too many requests."
+               }
+            },
+            "parameters": [
+               {
+                  "name": "input",
+                  "in": "query",
+                  "description": "the input expression",
+                  "required": true,
+                  "schema": {
+                     "type": "string"
+                  }
+               }
+            ]
+         }
+      },
+      "/api/v1/llm-api": {
+         "get": {
+            "operationId": "getWolframAlphaResults",
+            "externalDocs": "https://products.wolframalpha.com/api",
+            "summary": "Get Wolfram|Alpha results",
+            "responses": {
+               "200": {
+                  "description": "The result of the Wolfram|Alpha query",
+                  "content": {
+                     "text/plain": {}
+                  }
+               },
+               "400": {
+                  "description": "The request is missing the 'input' parameter"
+               },
+               "403": {
+                  "description": "Unauthorized"
+               },
+               "500": {
+                  "description": "Wolfram|Alpha was unable to generate a result"
+               },
+               "501": {
+                  "description": "Wolfram|Alpha was unable to generate a result"
+               },
+               "503": {
+                  "description": "Service temporarily unavailable. This may be the result of too many requests."
+               }
+            },
+            "parameters": [
+               {
+                  "name": "input",
+                  "in": "query",
+                  "description": "the input",
+                  "required": true,
+                  "schema": {
+                     "type": "string"
+                  }
+               }
+            ]
+         }
+      }
+   }
+}

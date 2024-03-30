@@ -1,52 +1,41 @@
 ---
-sidebar_position: 0
+sidebar_position: 2
 ---
 
 # Agent Types
 
-Agents use an LLM to determine which actions to take and in what order.
-An action can either be using a tool and observing its output, or returning a response to the user.
-Here are the agents available in LangChain.
+This categorizes all the available agents along a few dimensions.
 
-## [Zero-shot ReAct](/docs/modules/agents/agent_types/react)
+**Intended Model Type**
 
-This agent uses the [ReAct](https://arxiv.org/pdf/2210.03629) framework to determine which tool to use
-based solely on the tool's description. Any number of tools can be provided.
-This agent requires that a description is provided for each tool.
+Whether this agent is intended for Chat Models (takes in messages, outputs message) or LLMs (takes in string, outputs string). The main thing this affects is the prompting strategy used. You can use an agent with a different type of model than it is intended for, but it likely won't produce results of the same quality.
 
-**Note**: This is the most general purpose action agent.
+**Supports Chat History**
 
-## [Structured input ReAct](/docs/modules/agents/agent_types/structured_chat)
+Whether or not these agent types support chat history. If it does, that means it can be used as a chatbot. If it does not, then that means it's more suited for single tasks. Supporting chat history generally requires better models, so earlier agent types aimed at worse models may not support it.
 
-The structured tool chat agent is capable of using multi-input tools.
-Older agents are configured to specify an action input as a single string, but this agent can use a tools' argument
-schema to create a structured action input. This is useful for more complex tool usage, like precisely
-navigating around a browser.
+**Supports Multi-Input Tools**
 
-## [OpenAI Functions](/docs/modules/agents/agent_types/openai_functions_agent)
+Whether or not these agent types support tools with multiple inputs. If a tool only requires a single input, it is generally easier for an LLM to know how to invoke it. Therefore, several earlier agent types aimed at worse models may not support them.
 
-Certain OpenAI models (like gpt-3.5-turbo-0613 and gpt-4-0613) have been explicitly fine-tuned to detect when a
-function should be called and respond with the inputs that should be passed to the function.
-The OpenAI Functions Agent is designed to work with these models.
+**Supports Parallel Function Calling**
 
-## [Conversational](/docs/modules/agents/agent_types/chat_conversation_agent)
+Having an LLM call multiple tools at the same time can greatly speed up agents whether there are tasks that are assisted by doing so. However, it is much more challenging for LLMs to do this, so some agent types do not support this.
 
-This agent is designed to be used in conversational settings.
-The prompt is designed to make the agent helpful and conversational.
-It uses the ReAct framework to decide which tool to use, and uses memory to remember the previous conversation interactions.
+**Required Model Params**
 
-## [Self-ask with search](/docs/modules/agents/agent_types/self_ask_with_search)
+Whether this agent requires the model to support any additional parameters. Some agent types take advantage of things like OpenAI function calling, which require other model parameters. If none are required, then that means that everything is done via prompting
 
-This agent utilizes a single tool that should be named `Intermediate Answer`.
-This tool should be able to look up factual answers to questions. This agent
-is equivalent to the original [self-ask with search paper](https://ofir.io/self-ask.pdf),
-where a Google search API was provided as the tool.
+**When to Use**
 
-## [ReAct document store](/docs/modules/agents/agent_types/react_docstore)
+Our commentary on when you should consider using this agent type.
 
-This agent uses the ReAct framework to interact with a docstore. Two tools must
-be provided: a `Search` tool and a `Lookup` tool (they must be named exactly as so).
-The `Search` tool should search for a document, while the `Lookup` tool should look up
-a term in the most recently found document.
-This agent is equivalent to the
-original [ReAct paper](https://arxiv.org/pdf/2210.03629.pdf), specifically the Wikipedia example.
+| Agent Type | Intended Model Type | Supports Chat History | Supports Multi-Input Tools | Supports Parallel Function Calling | Required Model Params | When to Use | API |
+|--------------------------------------------|---------------------|-----------------------|----------------------------|-------------------------------------|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------|
+| [OpenAI Tools](./openai_tools)             | Chat                | ✅                    | ✅                         | ✅                                   | `tools`              | If you are using a recent OpenAI model (`1106` onwards) | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.openai_tools.base.create_openai_tools_agent.html) |
+| [OpenAI Functions](./openai_functions_agent)| Chat                | ✅                    | ✅                         |                                     | `functions`          | If you are using an OpenAI model, or an open-source model that has been finetuned for function calling and exposes the same `functions` parameters as OpenAI | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.openai_functions_agent.base.create_openai_functions_agent.html) |
+| [XML](./xml_agent)                         | LLM                 | ✅                    |                            |                                     |                      | If you are using Anthropic models, or other models good at XML | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.xml.base.create_xml_agent.html)                                                                                               |
+| [Structured Chat](./structured_chat)       | Chat                | ✅                    | ✅                         |                                     |                      | If you need to support tools with multiple inputs | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.structured_chat.base.create_structured_chat_agent.html) |
+| [JSON Chat](./json_agent)                  | Chat                | ✅                    |                            |                                     |                      | If you are using a model good at JSON | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.json_chat.base.create_json_chat_agent.html) |
+| [ReAct](./react)                           | LLM                 | ✅                    |                            |                                     |                      | If you are using a simple model | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.react.agent.create_react_agent.html) |
+| [Self Ask With Search](./self_ask_with_search)| LLM              |                       |                            |                                     |                      | If you are using a simple model and only have one search tool | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.self_ask_with_search.base.create_self_ask_with_search_agent.html) |

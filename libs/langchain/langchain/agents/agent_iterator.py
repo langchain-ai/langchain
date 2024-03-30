@@ -20,20 +20,20 @@ from langchain_core.agents import (
     AgentFinish,
     AgentStep,
 )
-from langchain_core.load.dump import dumpd
-from langchain_core.outputs import RunInfo
-from langchain_core.runnables.utils import AddableDict
-from langchain_core.utils.input import get_color_mapping
-
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
     CallbackManager,
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain_core.load.dump import dumpd
+from langchain_core.outputs import RunInfo
+from langchain_core.runnables.utils import AddableDict
+from langchain_core.tools import BaseTool
+from langchain_core.utils.input import get_color_mapping
+
 from langchain.schema import RUN_KEY
-from langchain.tools import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 
 if TYPE_CHECKING:
@@ -210,7 +210,7 @@ class AgentExecutorIterator:
 
     async def __aiter__(self) -> AsyncIterator[AddableDict]:
         """
-        N.B. __aiter__ must be a normal method, so need to initialise async run manager
+        N.B. __aiter__ must be a normal method, so need to initialize async run manager
         on first __anext__ call where we can await it
         """
         logger.debug("Initialising AgentExecutorIterator (async)")

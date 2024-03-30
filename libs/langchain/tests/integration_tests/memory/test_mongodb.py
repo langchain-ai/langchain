@@ -1,10 +1,10 @@
 import json
 import os
 
+from langchain_community.chat_message_histories import MongoDBChatMessageHistory
 from langchain_core.messages import message_to_dict
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import MongoDBChatMessageHistory
 
 # Replace these with your mongodb connection string
 connection_string = os.environ.get("MONGODB_CONNECTION_STRING", "")

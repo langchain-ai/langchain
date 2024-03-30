@@ -3,7 +3,7 @@ from typing import Callable, Optional
 
 from langchain_core.documents import Document
 from langchain_core.load import Serializable, dumps, loads
-from langchain_core.stores import BaseStore
+from langchain_core.stores import BaseStore, ByteStore
 
 from langchain.storage.encoder_backed import EncoderBackedStore
 
@@ -42,7 +42,7 @@ def _identity(x: str) -> str:
 
 
 def create_lc_store(
-    store: BaseStore[str, bytes],
+    store: ByteStore,
     *,
     key_encoder: Optional[Callable[[str], str]] = None,
 ) -> BaseStore[str, Serializable]:
@@ -64,7 +64,7 @@ def create_lc_store(
 
 
 def create_kv_docstore(
-    store: BaseStore[str, bytes],
+    store: ByteStore,
     *,
     key_encoder: Optional[Callable[[str], str]] = None,
 ) -> BaseStore[str, Document]:

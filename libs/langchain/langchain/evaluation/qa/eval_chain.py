@@ -77,6 +77,10 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
         extra = Extra.ignore
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @property
     def evaluation_name(self) -> str:
         return "correctness"
@@ -204,6 +208,10 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain for evaluating QA w/o GT based on context"""
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
+
     @property
     def requires_reference(self) -> bool:
         """Whether the chain requires a reference string."""
@@ -327,6 +335,10 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
 class CotQAEvalChain(ContextQAEvalChain):
     """LLM Chain for evaluating QA using chain of thought reasoning."""
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @property
     def evaluation_name(self) -> str:

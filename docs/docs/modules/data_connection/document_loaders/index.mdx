@@ -19,7 +19,7 @@ implement a "lazy load" as well for lazily loading data into memory.
 The simplest loader reads in a file as text and places it all into one document.
 
 ```python
-from langchain.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader
 
 loader = TextLoader("./index.md")
 loader.load()

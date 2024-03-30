@@ -23,20 +23,20 @@ pip install -U langchain-cli
 To create a new LangChain project and install this as the only package, you can do:
 
 ```shell
-langchain app new my-app --package rag-vectara
+langchain app new my-app --package rag-vectara-multiquery
 ```
 
 If you want to add this to an existing project, you can just run:
 
 ```shell
-langchain app add rag-vectara
+langchain app add rag-vectara-multiquery
 ```
 
 And add the following code to your `server.py` file:
 ```python
 from rag_vectara import chain as rag_vectara_chain
 
-add_routes(app, rag_vectara_chain, path="/rag-vectara")
+add_routes(app, rag_vectara_chain, path="/rag-vectara-multiquery")
 ```
 
 (Optional) Let's now configure LangSmith. 
@@ -61,12 +61,12 @@ This will start the FastAPI app with a server is running locally at
 [http://localhost:8000](http://localhost:8000)
 
 We can see all templates at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-We can access the playground at [http://127.0.0.1:8000/rag-vectara/playground](http://127.0.0.1:8000/rag-vectara/playground)  
+We can access the playground at [http://127.0.0.1:8000/rag-vectara-multiquery/playground](http://127.0.0.1:8000/rag-vectara-multiquery/playground)  
 
 We can access the template from code with:
 
 ```python
 from langserve.client import RemoteRunnable
 
-runnable = RemoteRunnable("http://localhost:8000/rag-vectara")
+runnable = RemoteRunnable("http://localhost:8000/rag-vectara-multiquery")
 ```
