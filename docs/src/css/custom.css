@@ -13,7 +13,7 @@
  * work well for content-centric websites.
  */
  
-@font-face {
+ @font-face {
   font-family: 'Manrope';
   src: url('/fonts/Manrope-VariableFont_wght.ttf') format('truetype');
 }
@@ -36,6 +36,7 @@
   --ifm-font-family-base: 'Public Sans';
   --ifm-menu-link-padding-horizontal: 0.5rem;
   --ifm-menu-link-padding-vertical: 0.375rem;
+  --doc-sidebar-width: 275px !important;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -129,7 +130,7 @@ nav, h1, h2, h3, h4 {
 
 .theme-doc-sidebar-item-category button:before {
   height: 1rem;
-  width: 1rem;
+  width: 1.25rem;
 }
 
 .theme-doc-sidebar-item-link, .theme-doc-sidebar-item-category .theme-doc-sidebar-item-category {
