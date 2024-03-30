@@ -18,7 +18,7 @@ def test_api_key_masked_when_passed_from_env(
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("BANANA_API_KEY", "secret-api-key")
     llm = Banana()
-    print(llm.banana_api_key, end="")
+    print(llm.banana_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -29,7 +29,7 @@ def test_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = Banana(banana_api_key="secret-api-key")
-    print(llm.banana_api_key, end="")
+    print(llm.banana_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
