@@ -41,7 +41,7 @@ def test_api_key_masked_when_passed_via_constructor(
         arcee_api_url="https://localhost",
         arcee_api_version="version",
     )
-    print(arcee_without_env_var.arcee_api_key, end="")
+    print(arcee_without_env_var.arcee_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert "**********" == captured.out
@@ -64,7 +64,7 @@ def test_api_key_masked_when_passed_from_env(
         arcee_api_url="https://localhost",
         arcee_api_version="version",
     )
-    print(arcee_with_env_var.arcee_api_key, end="")
+    print(arcee_with_env_var.arcee_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert "**********" == captured.out

@@ -1,4 +1,5 @@
 """Test GPTRouter API wrapper."""
+
 from typing import List
 
 import pytest
@@ -29,7 +30,7 @@ def test_api_key_masked_when_passed_via_constructor(
         gpt_router_api_base="https://example.com",
         gpt_router_api_key="secret-api-key",
     )
-    print(gpt_router.gpt_router_api_key, end="")
+    print(gpt_router.gpt_router_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

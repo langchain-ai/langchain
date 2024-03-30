@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import openai
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_openai.chat_models.base import ChatOpenAI
 
@@ -34,6 +34,8 @@ class AzureChatOpenAI(ChatOpenAI):
     `35-turbo-dev`, the constructor should look like:
 
     .. code-block:: python
+
+        from langchain_openai import AzureChatOpenAI
 
         AzureChatOpenAI(
             azure_deployment="35-turbo-dev",
@@ -69,9 +71,9 @@ class AzureChatOpenAI(ChatOpenAI):
     """
     openai_api_version: str = Field(default="", alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
-    openai_api_key: Union[str, None] = Field(default=None, alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
-    azure_ad_token: Union[str, None] = None
+    azure_ad_token: Optional[SecretStr] = None
     """Your Azure Active Directory token.
     
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
@@ -109,10 +111,13 @@ class AzureChatOpenAI(ChatOpenAI):
         # Check OPENAI_KEY for backwards compatibility.
         # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
         # other forms of azure credentials.
-        values["openai_api_key"] = (
+        openai_api_key = (
             values["openai_api_key"]
             or os.getenv("AZURE_OPENAI_API_KEY")
             or os.getenv("OPENAI_API_KEY")
+        )
+        values["openai_api_key"] = (
+            convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
         values["openai_api_base"] = values["openai_api_base"] or os.getenv(
             "OPENAI_API_BASE"
@@ -129,8 +134,9 @@ class AzureChatOpenAI(ChatOpenAI):
         values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
             "AZURE_OPENAI_ENDPOINT"
         )
-        values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
-            "AZURE_OPENAI_AD_TOKEN"
+        azure_ad_token = values["azure_ad_token"] or os.getenv("AZURE_OPENAI_AD_TOKEN")
+        values["azure_ad_token"] = (
+            convert_to_secret_str(azure_ad_token) if azure_ad_token else None
         )
 
         values["openai_api_type"] = get_from_dict_or_env(
@@ -151,18 +157,27 @@ class AzureChatOpenAI(ChatOpenAI):
                 )
             if values["deployment_name"]:
                 raise ValueError(
-                    "As of openai>=1.0.0, if `deployment_name` (or alias "
-                    "`azure_deployment`) is specified then "
-                    "`openai_api_base` (or alias `base_url`) should not be. "
-                    "Instead use `deployment_name` (or alias `azure_deployment`) "
-                    "and `azure_endpoint`."
+                    "As of openai>=1.0.0, if `azure_deployment` (or alias "
+                    "`deployment_name`) is specified then "
+                    "`base_url` (or alias `openai_api_base`) should not be. "
+                    "If specifying `azure_deployment`/`deployment_name` then use "
+                    "`azure_endpoint` instead of `base_url`.\n\n"
+                    "For example, you could specify:\n\n"
+                    'azure_endpoint="https://xxx.openai.azure.com/", '
+                    'azure_deployment="my-deployment"\n\n'
+                    "Or you can equivalently specify:\n\n"
+                    'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'  # noqa: E501
                 )
         client_params = {
             "api_version": values["openai_api_version"],
             "azure_endpoint": values["azure_endpoint"],
             "azure_deployment": values["deployment_name"],
-            "api_key": values["openai_api_key"],
-            "azure_ad_token": values["azure_ad_token"],
+            "api_key": values["openai_api_key"].get_secret_value()
+            if values["openai_api_key"]
+            else None,
+            "azure_ad_token": values["azure_ad_token"].get_secret_value()
+            if values["azure_ad_token"]
+            else None,
             "azure_ad_token_provider": values["azure_ad_token_provider"],
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
@@ -170,18 +185,26 @@ class AzureChatOpenAI(ChatOpenAI):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
-        values["client"] = openai.AzureOpenAI(**client_params).chat.completions
-        values["async_client"] = openai.AsyncAzureOpenAI(
-            **client_params
-        ).chat.completions
+        if not values.get("client"):
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.AzureOpenAI(
+                **client_params, **sync_specific
+            ).chat.completions
+        if not values.get("async_client"):
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncAzureOpenAI(
+                **client_params, **async_specific
+            ).chat.completions
         return values
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**self._default_params}
+        return {
+            **{"azure_deployment": self.deployment_name},
+            **super()._identifying_params,
+        }
 
     @property
     def _llm_type(self) -> str:
@@ -194,9 +217,11 @@ class AzureChatOpenAI(ChatOpenAI):
             "openai_api_version": self.openai_api_version,
         }
 
-    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
+    def _create_chat_result(
+        self, response: Union[dict, openai.BaseModel]
+    ) -> ChatResult:
         if not isinstance(response, dict):
-            response = response.dict()
+            response = response.model_dump()
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 raise ValueError(
@@ -210,9 +235,19 @@ class AzureChatOpenAI(ChatOpenAI):
             if self.model_version:
                 model = f"{model}-{self.model_version}"
 
-            if chat_result.llm_output is not None and isinstance(
-                chat_result.llm_output, dict
-            ):
-                chat_result.llm_output["model_name"] = model
+            chat_result.llm_output = chat_result.llm_output or {}
+            chat_result.llm_output["model_name"] = model
+        if "prompt_filter_results" in response:
+            chat_result.llm_output = chat_result.llm_output or {}
+            chat_result.llm_output["prompt_filter_results"] = response[
+                "prompt_filter_results"
+            ]
+        for chat_gen, response_choice in zip(
+            chat_result.generations, response["choices"]
+        ):
+            chat_gen.generation_info = chat_gen.generation_info or {}
+            chat_gen.generation_info["content_filter_results"] = response_choice.get(
+                "content_filter_results", {}
+            )
 
         return chat_result

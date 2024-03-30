@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
 from langchain_core._api import deprecated
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import Field
@@ -15,8 +16,8 @@ from langchain.agents.mrkl.output_parser import MRKLOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.agents.tools import Tool
 from langchain.agents.utils import validate_tools_single_input
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
+from langchain.tools.render import render_text_description
 
 
 class ChainConfig(NamedTuple):
@@ -79,13 +80,13 @@ class ZeroShotAgent(Agent):
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
         """
-        tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+        tool_strings = render_text_description(list(tools))
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
-        if input_variables is None:
-            input_variables = ["input", "agent_scratchpad"]
-        return PromptTemplate(template=template, input_variables=input_variables)
+        if input_variables:
+            return PromptTemplate(template=template, input_variables=input_variables)
+        return PromptTemplate.from_template(template)
 
     @classmethod
     def from_llm_and_tools(

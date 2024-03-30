@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Optional, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -11,6 +12,11 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapper
 
 
+@deprecated(
+    since="0.0.15",
+    removal="0.2.0",
+    alternative="langchain_exa.ExaSearchResults",
+)
 class MetaphorSearchResults(BaseTool):
     """Tool that queries the Metaphor Search API and gets back json."""
 

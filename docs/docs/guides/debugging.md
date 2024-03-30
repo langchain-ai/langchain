@@ -12,7 +12,7 @@ Platforms with tracing capabilities like [LangSmith](/docs/langsmith/) and [Wand
 
 For anyone building production-grade LLM applications, we highly recommend using a platform like this.
 
-![LangSmith run](../../static/img/run_details.png)
+![Screenshot of the LangSmith debugging interface showing an AgentExecutor run with input and output details, and a run tree visualization.](../../static/img/run_details.png "LangSmith Debugging Interface")
 
 ## `set_debug` and `set_verbose`
 

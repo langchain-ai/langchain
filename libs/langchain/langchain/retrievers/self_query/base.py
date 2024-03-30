@@ -3,14 +3,17 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_community.vectorstores import (
+    AstraDB,
     Chroma,
     DashVector,
     DeepLake,
+    Dingo,
     ElasticsearchStore,
     Milvus,
     MongoDBAtlasVectorSearch,
     MyScale,
     OpenSearchVectorSearch,
+    PGVector,
     Pinecone,
     Qdrant,
     Redis,
@@ -33,14 +36,17 @@ from langchain.callbacks.manager import (
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
+from langchain.retrievers.self_query.astradb import AstraDBTranslator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
+from langchain.retrievers.self_query.dingo import DingoDBTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
 from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.mongodb_atlas import MongoDBAtlasTranslator
 from langchain.retrievers.self_query.myscale import MyScaleTranslator
 from langchain.retrievers.self_query.opensearch import OpenSearchTranslator
+from langchain.retrievers.self_query.pgvector import PGVectorTranslator
 from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.redis import RedisTranslator
@@ -50,14 +56,18 @@ from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
 
 logger = logging.getLogger(__name__)
+QUERY_CONSTRUCTOR_RUN_NAME = "query_constructor"
 
 
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
+        AstraDB: AstraDBTranslator,
+        PGVector: PGVectorTranslator,
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
+        Dingo: DingoDBTranslator,
         Weaviate: WeaviateTranslator,
         Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
@@ -70,6 +80,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         OpenSearchVectorSearch: OpenSearchTranslator,
         MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
+
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):
@@ -79,6 +90,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     elif vectorstore.__class__ in BUILTIN_TRANSLATORS:
         return BUILTIN_TRANSLATORS[vectorstore.__class__]()
     else:
+        try:
+            from langchain_astradb.vectorstores import AstraDBVectorStore
+
+            if isinstance(vectorstore, AstraDBVectorStore):
+                return AstraDBTranslator()
+        except ImportError:
+            pass
+
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
@@ -229,7 +248,10 @@ class SelfQueryRetriever(BaseRetriever):
             enable_limit=enable_limit,
             **chain_kwargs,
         )
-        return cls(
+        query_constructor = query_constructor.with_config(
+            run_name=QUERY_CONSTRUCTOR_RUN_NAME
+        )
+        return cls(  # type: ignore[call-arg]
             query_constructor=query_constructor,
             vectorstore=vectorstore,
             use_original_query=use_original_query,

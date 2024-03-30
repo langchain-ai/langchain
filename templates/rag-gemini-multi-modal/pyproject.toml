@@ -20,7 +20,7 @@ langchain-experimental = ">=0.0.43"
 langchain-google-genai = ">=0.0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_gemini_multi_modal"

@@ -1,11 +1,10 @@
 """Load question answering chains."""
 from typing import Any, Mapping, Optional, Protocol
 
+from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 
-from langchain.callbacks.base import BaseCallbackManager
-from langchain.callbacks.manager import Callbacks
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChain
@@ -74,7 +73,7 @@ def _load_stuff_chain(
     llm_chain = LLMChain(
         llm=llm,
         prompt=_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -82,7 +81,7 @@ def _load_stuff_chain(
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callback_manager=callback_manager,
         callbacks=callbacks,
         **kwargs,
@@ -113,7 +112,7 @@ def _load_map_reduce_chain(
     map_chain = LLMChain(
         llm=llm,
         prompt=_question_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -121,7 +120,7 @@ def _load_map_reduce_chain(
     reduce_chain = LLMChain(
         llm=_reduce_llm,
         prompt=_combine_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -129,7 +128,7 @@ def _load_map_reduce_chain(
     combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -146,12 +145,12 @@ def _load_map_reduce_chain(
             llm_chain=LLMChain(
                 llm=_collapse_llm,
                 prompt=collapse_prompt,
-                verbose=verbose,
+                verbose=verbose,  # type: ignore[arg-type]
                 callback_manager=callback_manager,
                 callbacks=callbacks,
             ),
             document_variable_name=combine_document_variable_name,
-            verbose=verbose,
+            verbose=verbose,  # type: ignore[arg-type]
             callback_manager=callback_manager,
         )
     reduce_documents_chain = ReduceDocumentsChain(
@@ -164,7 +163,7 @@ def _load_map_reduce_chain(
         llm_chain=map_chain,
         document_variable_name=map_reduce_document_variable_name,
         reduce_documents_chain=reduce_documents_chain,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callback_manager=callback_manager,
         callbacks=callbacks,
         **kwargs,
@@ -192,7 +191,7 @@ def _load_refine_chain(
     initial_chain = LLMChain(
         llm=llm,
         prompt=_question_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -200,7 +199,7 @@ def _load_refine_chain(
     refine_chain = LLMChain(
         llm=_refine_llm,
         prompt=_refine_prompt,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -209,7 +208,7 @@ def _load_refine_chain(
         refine_llm_chain=refine_chain,
         document_variable_name=document_variable_name,
         initial_response_name=initial_response_name,
-        verbose=verbose,
+        verbose=verbose,  # type: ignore[arg-type]
         callback_manager=callback_manager,
         callbacks=callbacks,
         **kwargs,
