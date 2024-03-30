@@ -8,9 +8,9 @@ Here are a few different tools and functionalities to aid in debugging.
 
 ## Tracing
 
-Platforms with tracing capabilities like [LangSmith](/docs/langsmith/) and [WandB](/docs/integrations/providers/wandb_tracing) are the most comprehensive solutions for debugging. These platforms make it easy to not only log and visualize LLM apps, but also to actively debug, test and refine them.
+Platforms with tracing capabilities like [LangSmith](/docs/langsmith/) are the most comprehensive solutions for debugging. These platforms make it easy to not only log and visualize LLM apps, but also to actively debug, test and refine them.
 
-For anyone building production-grade LLM applications, we highly recommend using a platform like this.
+When building production-grade LLM applications, platforms like this are essential.
 
 ![Screenshot of the LangSmith debugging interface showing an AgentExecutor run with input and output details, and a run tree visualization.](../../../static/img/run_details.png "LangSmith Debugging Interface")
 
