@@ -21,8 +21,8 @@ you're ready to go.
 
 You can now use the GrobidParser to produce documents
 ```python
-from langchain.document_loaders.parsers import GrobidParser
-from langchain.document_loaders.generic import GenericLoader
+from langchain_community.document_loaders.parsers import GrobidParser
+from langchain_community.document_loaders.generic import GenericLoader
 
 #Produce chunks from article paragraphs
 loader = GenericLoader.from_filesystem(

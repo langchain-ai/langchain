@@ -24,11 +24,11 @@ from typing import (
     cast,
 )
 
+from langchain_community.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.vectorstores import VectorStore
 
-from langchain.document_loaders.base import BaseLoader
 from langchain.indexes.base import NAMESPACE_UUID, RecordManager
 
 T = TypeVar("T")
@@ -57,6 +57,10 @@ class _HashedDocument(Document):
     """The hash of the document content."""
     metadata_hash: str
     """The hash of the document metadata."""
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @root_validator(pre=True)
     def calculate_hashes(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -105,8 +109,8 @@ class _HashedDocument(Document):
         cls, document: Document, *, uid: Optional[str] = None
     ) -> _HashedDocument:
         """Create a HashedDocument from a Document."""
-        return cls(
-            uid=uid,
+        return cls(  # type: ignore[call-arg]
+            uid=uid,  # type: ignore[arg-type]
             page_content=document.page_content,
             metadata=document.metadata,
         )
@@ -191,6 +195,7 @@ def index(
     cleanup: Literal["incremental", "full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
+    force_update: bool = False,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -229,6 +234,8 @@ def index(
         source_id_key: Optional key that helps identify the original source
             of the document.
         cleanup_batch_size: Batch size to use when cleaning up documents.
+        force_update: Force update documents even if they are present in the
+            record manager. Useful if you are re-indexing with updated embeddings.
 
     Returns:
         Indexing result which contains information about how many documents
@@ -304,10 +311,14 @@ def index(
         uids = []
         docs_to_index = []
         uids_to_refresh = []
+        seen_docs: Set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
-                uids_to_refresh.append(hashed_doc.uid)
-                continue
+                if force_update:
+                    seen_docs.add(hashed_doc.uid)
+                else:
+                    uids_to_refresh.append(hashed_doc.uid)
+                    continue
             uids.append(hashed_doc.uid)
             docs_to_index.append(hashed_doc.to_document())
 
@@ -319,8 +330,9 @@ def index(
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
         if docs_to_index:
-            vector_store.add_documents(docs_to_index, ids=uids)
-            num_added += len(docs_to_index)
+            vector_store.add_documents(docs_to_index, ids=uids, batch_size=batch_size)
+            num_added += len(docs_to_index) - len(seen_docs)
+            num_updated += len(seen_docs)
 
         # And only then update the record store.
         # Update ALL records, even if they already exist since we want to refresh
@@ -379,7 +391,7 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
 
 
 async def aindex(
-    docs_source: Union[Iterable[Document], AsyncIterator[Document]],
+    docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
     vector_store: VectorStore,
     *,
@@ -387,6 +399,7 @@ async def aindex(
     cleanup: Literal["incremental", "full", None] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
+    force_update: bool = False,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -425,6 +438,8 @@ async def aindex(
         source_id_key: Optional key that helps identify the original source
             of the document.
         cleanup_batch_size: Batch size to use when cleaning up documents.
+        force_update: Force update documents even if they are present in the
+            record manager. Useful if you are re-indexing with updated embeddings.
 
     Returns:
         Indexing result which contains information about how many documents
@@ -454,16 +469,22 @@ async def aindex(
         # implementation which just raises a NotImplementedError
         raise ValueError("Vectorstore has not implemented the delete method")
 
-    if isinstance(docs_source, BaseLoader):
-        raise NotImplementedError(
-            "Not supported yet. Please pass an async iterator of documents."
-        )
     async_doc_iterator: AsyncIterator[Document]
-
-    if hasattr(docs_source, "__aiter__"):
-        async_doc_iterator = docs_source  # type: ignore[assignment]
+    if isinstance(docs_source, BaseLoader):
+        try:
+            async_doc_iterator = docs_source.alazy_load()
+        except NotImplementedError:
+            # Exception triggered when neither lazy_load nor alazy_load are implemented.
+            # * The default implementation of alazy_load uses lazy_load.
+            # * The default implementation of lazy_load raises NotImplementedError.
+            # In such a case, we use the load method and convert it to an async
+            # iterator.
+            async_doc_iterator = _to_async_iterator(docs_source.load())
     else:
-        async_doc_iterator = _to_async_iterator(docs_source)
+        if hasattr(docs_source, "__aiter__"):
+            async_doc_iterator = docs_source  # type: ignore[assignment]
+        else:
+            async_doc_iterator = _to_async_iterator(docs_source)
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 
@@ -504,11 +525,14 @@ async def aindex(
         uids: list[str] = []
         docs_to_index: list[Document] = []
         uids_to_refresh = []
-
+        seen_docs: Set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
             if doc_exists:
-                uids_to_refresh.append(hashed_doc.uid)
-                continue
+                if force_update:
+                    seen_docs.add(hashed_doc.uid)
+                else:
+                    uids_to_refresh.append(hashed_doc.uid)
+                    continue
             uids.append(hashed_doc.uid)
             docs_to_index.append(hashed_doc.to_document())
 
@@ -520,8 +544,11 @@ async def aindex(
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
         if docs_to_index:
-            await vector_store.aadd_documents(docs_to_index, ids=uids)
-            num_added += len(docs_to_index)
+            await vector_store.aadd_documents(
+                docs_to_index, ids=uids, batch_size=batch_size
+            )
+            num_added += len(docs_to_index) - len(seen_docs)
+            num_updated += len(seen_docs)
 
         # And only then update the record store.
         # Update ALL records, even if they already exist since we want to refresh

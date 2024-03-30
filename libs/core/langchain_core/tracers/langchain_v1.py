@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional, Union
 
 import requests
 
+from langchain_core._api import deprecated
 from langchain_core.messages import get_buffer_string
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import (
@@ -34,8 +35,9 @@ def _get_endpoint() -> str:
     return os.getenv("LANGCHAIN_ENDPOINT", "http://localhost:8000")
 
 
+@deprecated("0.1.0", alternative="LangChainTracer", removal="0.2.0")
 class LangChainTracerV1(BaseTracer):
-    """An implementation of the SharedTracer that POSTS to the langchain endpoint."""
+    """Implementation of the SharedTracer that POSTS to the langchain endpoint."""
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the LangChain tracer."""
@@ -60,29 +62,29 @@ class LangChainTracerV1(BaseTracer):
             else:
                 raise ValueError("No prompts found in LLM run inputs")
             return LLMRun(
-                uuid=str(run.id) if run.id else None,
+                uuid=str(run.id) if run.id else None,  # type: ignore[arg-type]
                 parent_uuid=str(run.parent_run_id) if run.parent_run_id else None,
                 start_time=run.start_time,
-                end_time=run.end_time,
+                end_time=run.end_time,  # type: ignore[arg-type]
                 extra=run.extra,
                 execution_order=run.execution_order,
                 child_execution_order=run.child_execution_order,
-                serialized=run.serialized,
+                serialized=run.serialized,  # type: ignore[arg-type]
                 session_id=session.id,
                 error=run.error,
                 prompts=prompts,
-                response=run.outputs if run.outputs else None,
+                response=run.outputs if run.outputs else None,  # type: ignore[arg-type]
             )
         if run.run_type == "chain":
             child_runs = [self._convert_to_v1_run(run) for run in run.child_runs]
             return ChainRun(
-                uuid=str(run.id) if run.id else None,
+                uuid=str(run.id) if run.id else None,  # type: ignore[arg-type]
                 parent_uuid=str(run.parent_run_id) if run.parent_run_id else None,
                 start_time=run.start_time,
-                end_time=run.end_time,
+                end_time=run.end_time,  # type: ignore[arg-type]
                 execution_order=run.execution_order,
                 child_execution_order=run.child_execution_order,
-                serialized=run.serialized,
+                serialized=run.serialized,  # type: ignore[arg-type]
                 session_id=session.id,
                 inputs=run.inputs,
                 outputs=run.outputs,
@@ -97,13 +99,13 @@ class LangChainTracerV1(BaseTracer):
         if run.run_type == "tool":
             child_runs = [self._convert_to_v1_run(run) for run in run.child_runs]
             return ToolRun(
-                uuid=str(run.id) if run.id else None,
+                uuid=str(run.id) if run.id else None,  # type: ignore[arg-type]
                 parent_uuid=str(run.parent_run_id) if run.parent_run_id else None,
                 start_time=run.start_time,
-                end_time=run.end_time,
+                end_time=run.end_time,  # type: ignore[arg-type]
                 execution_order=run.execution_order,
                 child_execution_order=run.child_execution_order,
-                serialized=run.serialized,
+                serialized=run.serialized,  # type: ignore[arg-type]
                 session_id=session.id,
                 action=str(run.serialized),
                 tool_input=run.inputs.get("input", ""),

@@ -5,7 +5,6 @@ EXPECTED_ALL = [
     "SimpleChatModel",
     "agenerate_from_stream",
     "generate_from_stream",
-    "_get_verbosity",
 ]
 
 

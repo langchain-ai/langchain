@@ -1,16 +1,17 @@
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
-from presidio_analyzer import RecognizerResult
-from presidio_anonymizer.entities import EngineResult
+if TYPE_CHECKING:
+    from presidio_analyzer import RecognizerResult
+    from presidio_anonymizer.entities import EngineResult
 
 MappingDataType = Dict[str, Dict[str, str]]
 
 
 def format_duplicated_operator(operator_name: str, count: int) -> str:
-    """Format the operator name with the count"""
+    """Format the operator name with the count."""
 
     clean_operator_name = re.sub(r"[<>]", "", operator_name)
     clean_operator_name = re.sub(r"_\d+$", "", clean_operator_name)
@@ -23,17 +24,20 @@ def format_duplicated_operator(operator_name: str, count: int) -> str:
 
 @dataclass
 class DeanonymizerMapping:
+    """Deanonymizer mapping."""
+
     mapping: MappingDataType = field(
         default_factory=lambda: defaultdict(lambda: defaultdict(str))
     )
 
     @property
     def data(self) -> MappingDataType:
-        """Return the deanonymizer mapping"""
+        """Return the deanonymizer mapping."""
         return {k: dict(v) for k, v in self.mapping.items()}
 
     def update(self, new_mapping: MappingDataType) -> None:
-        """Update the deanonymizer mapping with new values
+        """Update the deanonymizer mapping with new values.
+
         Duplicated values will not be added
         If there are multiple entities of the same type, the mapping will
         include a count to differentiate them. For example, if there are
@@ -62,11 +66,12 @@ class DeanonymizerMapping:
 
 def create_anonymizer_mapping(
     original_text: str,
-    analyzer_results: List[RecognizerResult],
-    anonymizer_results: EngineResult,
+    analyzer_results: List["RecognizerResult"],
+    anonymizer_results: "EngineResult",
     is_reversed: bool = False,
 ) -> MappingDataType:
-    """Creates or updates the mapping used to anonymize and/or deanonymize text.
+    """Create or update the mapping used to anonymize and/or
+     deanonymize a text.
 
     This method exploits the results returned by the
     analysis and anonymization processes.

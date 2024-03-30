@@ -20,7 +20,7 @@ The `LangChain` integrations related to [Amazon AWS](https://aws.amazon.com/) pl
 See a [usage example](/docs/integrations/llms/bedrock).
 
 ```python
-from langchain.llms.bedrock import Bedrock
+from langchain_community.llms.bedrock import Bedrock
 ```
 
 ### Amazon API Gateway
@@ -40,7 +40,7 @@ from langchain.llms.bedrock import Bedrock
 See a [usage example](/docs/integrations/llms/amazon_api_gateway).
 
 ```python
-from langchain.llms import AmazonAPIGateway
+from langchain_community.llms import AmazonAPIGateway
 ```
 
 ### SageMaker Endpoint
@@ -53,8 +53,8 @@ We use `SageMaker` to host our model and expose it as the `SageMaker Endpoint`.
 See a [usage example](/docs/integrations/llms/sagemaker).
 
 ```python
-from langchain.llms import SagemakerEndpoint
-from langchain.llms.sagemaker_endpoint import LLMContentHandler
+from langchain_community.llms import SagemakerEndpoint
+from langchain_community.llms.sagemaker_endpoint import LLMContentHandler
 ```
 
 ## Chat models
@@ -64,44 +64,24 @@ from langchain.llms.sagemaker_endpoint import LLMContentHandler
 See a [usage example](/docs/integrations/chat/bedrock).
 
 ```python
-from langchain.chat_models import BedrockChat
+from langchain_community.chat_models import BedrockChat
 ```
 
-## Text Embedding Models
+## Embedding Models
 
 ### Bedrock
 
 See a [usage example](/docs/integrations/text_embedding/bedrock).
 ```python
-from langchain.embeddings import BedrockEmbeddings
+from langchain_community.embeddings import BedrockEmbeddings
 ```
 
 ### SageMaker Endpoint
 
 See a [usage example](/docs/integrations/text_embedding/sagemaker-endpoint).
 ```python
-from langchain.embeddings import SagemakerEndpointEmbeddings
-from langchain.llms.sagemaker_endpoint import ContentHandlerBase
-```
-
-## Chains
-
-### Amazon Comprehend Moderation Chain
-
->[Amazon Comprehend](https://aws.amazon.com/comprehend/) is a natural-language processing (NLP) service that 
-> uses machine learning to uncover valuable insights and connections in text.
-
-
-We need to install the `boto3` and `nltk` libraries.
-
-```bash
-pip install boto3 nltk
-```
-
-See a [usage example](/docs/guides/safety/amazon_comprehend_chain).
-
-```python
-from langchain_experimental.comprehend_moderation import AmazonComprehendModerationChain
+from langchain_community.embeddings import SagemakerEndpointEmbeddings
+from langchain_community.llms.sagemaker_endpoint import ContentHandlerBase
 ```
 
 ## Document loaders
@@ -118,7 +98,7 @@ See a [usage example for S3DirectoryLoader](/docs/integrations/document_loaders/
 See a [usage example for S3FileLoader](/docs/integrations/document_loaders/aws_s3_file).
 
 ```python
-from langchain.document_loaders import S3DirectoryLoader, S3FileLoader
+from langchain_community.document_loaders import S3DirectoryLoader, S3FileLoader
 ```
 
 ### Amazon Textract
@@ -129,28 +109,58 @@ from langchain.document_loaders import S3DirectoryLoader, S3FileLoader
 See a [usage example](/docs/integrations/document_loaders/amazon_textract).
 
 ```python
-from langchain.document_loaders import AmazonTextractPDFLoader
+from langchain_community.document_loaders import AmazonTextractPDFLoader
 ```
 
-## Memory
+## Vector stores
 
-### AWS DynamoDB
+### Amazon OpenSearch Service
 
->[AWS DynamoDB](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/dynamodb/index.html) 
-> is a fully managed `NoSQL` database service that provides fast and predictable performance with seamless scalability.
- 
-We have to configure the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html). 
+> [Amazon OpenSearch Service](https://aws.amazon.com/opensearch-service/) performs 
+> interactive log analytics, real-time application monitoring, website search, and more. `OpenSearch` is 
+> an open source, 
+> distributed search and analytics suite derived from `Elasticsearch`. `Amazon OpenSearch Service` offers the 
+> latest versions of `OpenSearch`, support for many versions of `Elasticsearch`, as well as 
+> visualization capabilities powered by `OpenSearch Dashboards` and `Kibana`.
 
-We need to install the `boto3` library.
+We need to install several python libraries.
 
 ```bash
-pip install boto3
+pip install boto3 requests requests-aws4auth
 ```
 
-See a [usage example](/docs/integrations/memory/aws_dynamodb).
+See a [usage example](/docs/integrations/vectorstores/opensearch#using-aos-amazon-opensearch-service).
 
 ```python
-from langchain.memory import DynamoDBChatMessageHistory
+from langchain_community.vectorstores import OpenSearchVectorSearch
+```
+
+### Amazon DocumentDB Vector Search
+
+>[Amazon DocumentDB (with MongoDB Compatibility)](https://docs.aws.amazon.com/documentdb/) makes it easy to set up, operate, and scale MongoDB-compatible databases in the cloud.
+> With Amazon DocumentDB, you can run the same application code and use the same drivers and tools that you use with MongoDB.
+> Vector search for Amazon DocumentDB combines the flexibility and rich querying capability of a JSON-based document database with the power of vector search.
+
+#### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/documentdb).
+
+We need to install the `pymongo` python package.
+
+```bash
+pip install pymongo
+```
+
+#### Deploy DocumentDB on AWS
+
+[Amazon DocumentDB (with MongoDB Compatibility)](https://docs.aws.amazon.com/documentdb/) is a fast, reliable, and fully managed database service. Amazon DocumentDB makes it easy to set up, operate, and scale MongoDB-compatible databases in the cloud.
+
+AWS offers services for computing, databases, storage, analytics, and other functionality. For an overview of all AWS services, see [Cloud Computing with Amazon Web Services](https://aws.amazon.com/what-is-aws/).
+
+See a [usage example](/docs/integrations/vectorstores/documentdb).
+
+```python
+from langchain.vectorstores import DocumentDBVectorSearch
 ```
 
 ## Retrievers
@@ -191,33 +201,10 @@ We need to install the `boto3` library.
 pip install boto3
 ```
 
-See a [usage example](/docs/integrations/retrievers/amazon_bedrock_knowledge_bases).
+See a [usage example](/docs/integrations/retrievers/bedrock).
 
 ```python
 from langchain.retrievers import AmazonKnowledgeBasesRetriever
-```
-
-## Vector stores
-
-### Amazon OpenSearch Service
-
-> [Amazon OpenSearch Service](https://aws.amazon.com/opensearch-service/) performs 
-> interactive log analytics, real-time application monitoring, website search, and more. `OpenSearch` is 
-> an open source, 
-> distributed search and analytics suite derived from `Elasticsearch`. `Amazon OpenSearch Service` offers the 
-> latest versions of `OpenSearch`, support for many versions of `Elasticsearch`, as well as 
-> visualization capabilities powered by `OpenSearch Dashboards` and `Kibana`.
-
-We need to install several python libraries.
-
-```bash
-pip install boto3 requests requests-aws4auth
-```
-
-See a [usage example](/docs/integrations/vectorstores/opensearch#using-aos-amazon-opensearch-service).
-
-```python
-from langchain.vectorstores import OpenSearchVectorSearch
 ```
 
 ## Tools
@@ -238,6 +225,26 @@ pip install boto3
 
 See a [usage example](/docs/integrations/tools/awslambda).
 
+## Memory
+
+### AWS DynamoDB
+
+>[AWS DynamoDB](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/dynamodb/index.html) 
+> is a fully managed `NoSQL` database service that provides fast and predictable performance with seamless scalability.
+ 
+We have to configure the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html). 
+
+We need to install the `boto3` library.
+
+```bash
+pip install boto3
+```
+
+See a [usage example](/docs/integrations/memory/aws_dynamodb).
+
+```python
+from langchain.memory import DynamoDBChatMessageHistory
+```
 
 ## Callbacks
 
@@ -260,4 +267,24 @@ See a [usage example](/docs/integrations/callbacks/sagemaker_tracking).
 
 ```python
 from langchain.callbacks import SageMakerCallbackHandler
+```
+
+## Chains
+
+### Amazon Comprehend Moderation Chain
+
+>[Amazon Comprehend](https://aws.amazon.com/comprehend/) is a natural-language processing (NLP) service that 
+> uses machine learning to uncover valuable insights and connections in text.
+
+
+We need to install the `boto3` and `nltk` libraries.
+
+```bash
+pip install boto3 nltk
+```
+
+See a [usage example](/docs/guides/safety/amazon_comprehend_chain).
+
+```python
+from langchain_experimental.comprehend_moderation import AmazonComprehendModerationChain
 ```

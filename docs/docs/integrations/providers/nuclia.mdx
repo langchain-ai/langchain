@@ -23,7 +23,7 @@ To use the Nuclia document transformer, we need to instantiate a `NucliaUndersta
 tool with `enable_ml` set to `True`:
 
 ```python
-from langchain.tools.nuclia import NucliaUnderstandingAPI
+from langchain_community.tools.nuclia import NucliaUnderstandingAPI
 
 nua = NucliaUnderstandingAPI(enable_ml=True)
 ```
@@ -33,5 +33,5 @@ nua = NucliaUnderstandingAPI(enable_ml=True)
 See a [usage example](/docs/integrations/document_transformers/nuclia_transformer).
 
 ```python
-from langchain.document_transformers.nuclia_text_transform import NucliaTextTransformer
+from langchain_community.document_transformers.nuclia_text_transform import NucliaTextTransformer
 ```

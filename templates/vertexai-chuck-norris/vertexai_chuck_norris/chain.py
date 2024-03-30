@@ -1,5 +1,5 @@
-from langchain.chat_models import ChatVertexAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_community.chat_models import ChatVertexAI
+from langchain_core.prompts import ChatPromptTemplate
 
 _prompt = ChatPromptTemplate.from_template(
     "Tell me a joke about Chuck Norris and {text}"

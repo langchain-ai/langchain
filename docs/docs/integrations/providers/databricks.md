@@ -13,7 +13,7 @@ Databricks embraces the LangChain ecosystem in various ways:
 Databricks connector for the SQLDatabase Chain
 ----------------------------------------------
 You can connect to [Databricks runtimes](https://docs.databricks.com/runtime/index.html) and [Databricks SQL](https://www.databricks.com/product/databricks-sql) using the SQLDatabase wrapper of LangChain. 
-See the notebook [Connect to Databricks](/docs/use_cases/qa_structured/integrations/databricks) for details.
+
 
 Databricks MLflow integrates with LangChain
 -------------------------------------------
@@ -30,8 +30,8 @@ Databricks External Models
 [Databricks External Models](https://docs.databricks.com/generative-ai/external-models/index.html) is a service that is designed to streamline the usage and management of various large language model (LLM) providers, such as OpenAI and Anthropic, within an organization. It offers a high-level interface that simplifies the interaction with these services by providing a unified endpoint to handle specific LLM related requests. The following example creates an endpoint that serves OpenAI's GPT-4 model and generates a chat response from it:
 
 ```python
-from langchain.chat_models import ChatDatabricks
-from langchain.schema.messages import HumanMessage
+from langchain_community.chat_models import ChatDatabricks
+from langchain_core.messages import HumanMessage
 from mlflow.deployments import get_deploy_client
 
 
@@ -66,7 +66,7 @@ Databricks Foundation Model APIs
 [Databricks Foundation Model APIs](https://docs.databricks.com/machine-learning/foundation-models/index.html) allow you to access and query state-of-the-art open source models from dedicated serving endpoints. With Foundation Model APIs, developers can quickly and easily build applications that leverage a high-quality generative AI model without maintaining their own model deployment. The following example uses the `databricks-bge-large-en` endpoint to generate embeddings from  text:
 
 ```python
-from langchain.llms import DatabricksEmbeddings
+from langchain_community.embeddings import DatabricksEmbeddings
 
 
 embeddings = DatabricksEmbeddings(endpoint="databricks-bge-large-en")
@@ -79,3 +79,9 @@ Databricks as an LLM provider
 
 The notebook [Wrap Databricks endpoints as LLMs](/docs/integrations/llms/databricks#wrapping-a-serving-endpoint-custom-model) demonstrates how to serve a custom model that has been registered by MLflow as a Databricks endpoint.
 It supports two types of endpoints: the serving endpoint, which is recommended for both production and development, and the cluster driver proxy app, which is recommended for interactive development. 
+
+
+Databricks Vector Search
+------------------------
+
+Databricks Vector Search is a serverless similarity search engine that allows you to store a vector representation of your data, including metadata, in a vector database. With Vector Search, you can create auto-updating vector search indexes from Delta tables managed by Unity Catalog and query them with a simple API to return the most similar vectors. See the notebook [Databricks Vector Search](/docs/integrations/vectorstores/databricks_vector_search) for instructions to use it with LangChain.

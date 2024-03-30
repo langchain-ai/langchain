@@ -1,6 +1,8 @@
 from uuid import UUID
 
 import pytest
+from langchain_community.llms import FakeListLLM
+from langchain_core.tools import Tool
 
 from langchain.agents import (
     AgentExecutor,
@@ -8,8 +10,6 @@ from langchain.agents import (
     AgentType,
     initialize_agent,
 )
-from langchain.agents.tools import Tool
-from langchain.llms import FakeListLLM
 from langchain.schema import RUN_KEY
 from tests.unit_tests.agents.test_agent import _get_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -143,7 +143,7 @@ def test_agent_iterator_with_callbacks() -> None:
     assert handler1.starts == 7
     # 1 extra agent end
     assert handler1.ends == 7
-    print("h:", handler1)
+    print("h:", handler1)  # noqa: T201
     assert handler1.errors == 0
     # during LLMChain
     assert handler1.text == 2
@@ -361,7 +361,7 @@ def test_agent_iterator_failing_tool() -> None:
 
     agent_iter = agent.iter(inputs="when was langchain made")
     assert isinstance(agent_iter, AgentExecutorIterator)
-    # initialise iterator
+    # initialize iterator
     iterator = iter(agent_iter)
 
     with pytest.raises(ZeroDivisionError):
