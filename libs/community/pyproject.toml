@@ -158,6 +158,7 @@ anthropic = "^0.3.11"
 langchain-core = { path = "../core", develop = true }
 fireworks-ai = "^0.9.0"
 vdms = "^0.0.20"
+layerupsecurity = "^1.2.0"
 
 [tool.poetry.group.lint]
 optional = true
