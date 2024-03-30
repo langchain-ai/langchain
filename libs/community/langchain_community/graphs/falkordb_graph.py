@@ -71,7 +71,7 @@ class FalkorDBGraph(GraphStore):
             )
         except Exception as e:
             raise ConnectionError(f"Failed to connect to FalkorDB: {e}")
-        
+
         self._graph = self._driver.select_graph(database)
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
