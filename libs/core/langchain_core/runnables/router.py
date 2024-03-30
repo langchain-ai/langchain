@@ -34,7 +34,7 @@ from langchain_core.runnables.utils import (
 
 
 class RouterInput(TypedDict):
-    """A Router input.
+    """Router input.
 
     Attributes:
         key: The key to route on.
@@ -47,8 +47,21 @@ class RouterInput(TypedDict):
 
 class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     """
-    A runnable that routes to a set of runnables based on Input['key'].
-    Returns the output of the selected runnable.
+    Runnable that routes to a set of Runnables based on Input['key'].
+    Returns the output of the selected Runnable.
+
+    For example,
+
+    .. code-block:: python
+
+        from langchain_core.runnables.router import RouterRunnable
+        from langchain_core.runnables import RunnableLambda
+
+        add = RunnableLambda(func=lambda x: x + 1)
+        square = RunnableLambda(func=lambda x: x**2)
+
+        router = RouterRunnable(runnables={"add": add, "square": square})
+        router.invoke({"key": "square", "input": 3})
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
@@ -63,7 +76,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         self,
         runnables: Mapping[str, Union[Runnable[Any, Output], Callable[[Any], Output]]],
     ) -> None:
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
         )
 
@@ -77,7 +90,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        return cls.__module__.split(".")[:-1]
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "runnable"]
 
     def invoke(
         self, input: RouterInput, config: Optional[RunnableConfig] = None

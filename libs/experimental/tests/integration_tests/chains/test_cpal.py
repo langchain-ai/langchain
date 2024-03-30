@@ -6,9 +6,9 @@ from typing import Type
 from unittest import mock
 
 import pytest
-from langchain.llms import OpenAI
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts.prompt import PromptTemplate
+from langchain_community.llms import OpenAI
 
 from langchain_experimental import pydantic_v1 as pydantic
 from langchain_experimental.cpal.base import (
@@ -516,7 +516,7 @@ class TestCPALChain_MathWordProblems(unittest.TestCase):
         llm = OpenAI(temperature=0, max_tokens=512)
         cpal_chain = CPALChain.from_univariate_prompt(llm=llm, verbose=True)
         with pytest.raises(Exception) as e_info:
-            print(e_info)
+            print(e_info)  # noqa: T201
             cpal_chain.run(narrative_input)
 
     def test_causal_mediator(self) -> None:

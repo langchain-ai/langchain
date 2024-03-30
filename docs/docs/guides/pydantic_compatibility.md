@@ -73,7 +73,7 @@ CustomTool(
 **YES**
 
 ```python
-from langchain.tools.base import Tool
+from langchain_core.tools import Tool
 from pydantic.v1 import BaseModel, Field # <-- Uses v1 namespace
 
 class CalculatorInput(BaseModel):
@@ -90,7 +90,7 @@ Tool.from_function( # <-- tool uses v1 namespace
 **NO**
 
 ```python
-from langchain.tools.base import Tool
+from langchain_core.tools import Tool
 from pydantic import BaseModel, Field # <-- Uses v2 namespace
 
 class CalculatorInput(BaseModel):

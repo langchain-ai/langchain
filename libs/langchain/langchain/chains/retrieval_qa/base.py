@@ -6,6 +6,11 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
@@ -13,11 +18,6 @@ from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -68,11 +68,14 @@ class BaseRetrievalQA(Chain):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         callbacks: Callbacks = None,
+        llm_chain_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> BaseRetrievalQA:
         """Initialize from LLM."""
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
-        llm_chain = LLMChain(llm=llm, prompt=_prompt, callbacks=callbacks)
+        llm_chain = LLMChain(
+            llm=llm, prompt=_prompt, callbacks=callbacks, **(llm_chain_kwargs or {})
+        )
         document_prompt = PromptTemplate(
             input_variables=["page_content"], template="Context:\n{page_content}"
         )
@@ -197,9 +200,9 @@ class RetrievalQA(BaseRetrievalQA):
     Example:
         .. code-block:: python
 
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
             from langchain.chains import RetrievalQA
-            from langchain.vectorstores import FAISS
+            from langchain_community.vectorstores import FAISS
             from langchain_core.vectorstores import VectorStoreRetriever
             retriever = VectorStoreRetriever(vectorstore=FAISS(...))
             retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)

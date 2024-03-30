@@ -7,12 +7,14 @@ from langchain_core.tracers.stdout import (
     FunctionCallbackHandler,
 )
 
+from langchain.callbacks.tracers.logging import LoggingCallbackHandler
 from langchain.callbacks.tracers.wandb import WandbTracer
 
 __all__ = [
+    "ConsoleCallbackHandler",
+    "FunctionCallbackHandler",
+    "LoggingCallbackHandler",
     "LangChainTracer",
     "LangChainTracerV1",
-    "FunctionCallbackHandler",
-    "ConsoleCallbackHandler",
     "WandbTracer",
 ]

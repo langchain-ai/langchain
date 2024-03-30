@@ -1,5 +1,16 @@
 from abc import ABC
-from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+)
+
+from typing_extensions import NotRequired
 
 from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
 
@@ -9,6 +20,8 @@ class BaseSerialized(TypedDict):
 
     lc: int
     id: List[str]
+    name: NotRequired[str]
+    graph: NotRequired[Dict[str, Any]]
 
 
 class SerializedConstructor(BaseSerialized):
@@ -32,6 +45,16 @@ class SerializedNotImplemented(BaseSerialized):
 
 
 def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
+    """Try to determine if a value is different from the default.
+
+    Args:
+        value: The value.
+        key: The key.
+        model: The model.
+
+    Returns:
+        Whether the value is different from the default.
+    """
     try:
         return model.__fields__[key].get_default() != value
     except Exception:
@@ -133,6 +156,14 @@ class Serializable(BaseModel, ABC):
             this = cast(Serializable, self if cls is None else super(cls, self))
 
             secrets.update(this.lc_secrets)
+            # Now also add the aliases for the secrets
+            # This ensures known secret aliases are hidden.
+            # Note: this does NOT hide any other extra kwargs
+            # that are not present in the fields.
+            for key in list(secrets):
+                value = secrets[key]
+                if key in this.__fields__:
+                    secrets[this.__fields__[key].alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs

@@ -7,7 +7,9 @@ from langchain_experimental.tot.thought import Thought
 
 class ToTDFSMemory:
     """
-    Memory for the Tree of Thought (ToT) chain. Implemented as a stack of
+    Memory for the Tree of Thought (ToT) chain.
+
+    It is implemented as a stack of
     thoughts. This allows for a depth first search (DFS) of the ToT.
     """
 

@@ -7,20 +7,20 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables.config import RunnableConfig
+from langchain_core.runnables import RunnableConfig
 from langchain_core.vectorstores import VectorStore
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
@@ -58,8 +58,12 @@ def _get_chat_history(chat_history: List[CHAT_TURN_TYPE]) -> str:
 
 
 class InputType(BaseModel):
+    """Input type for ConversationalRetrievalChain."""
+
     question: str
+    """The question to answer."""
     chat_history: List[CHAT_TURN_TYPE] = Field(default_factory=list)
+    """The chat history to use for retrieval."""
 
 
 class BaseConversationalRetrievalChain(Chain):
@@ -259,7 +263,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
                 StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
             )
             from langchain_core.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
 
             combine_docs_chain = StuffDocumentsChain(...)
             vectorstore = ...

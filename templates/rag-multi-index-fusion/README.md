@@ -1,4 +1,4 @@
-# RAG with Mulitple Indexes (Fusion)
+# RAG with Multiple Indexes (Fusion)
 
 A QA application that queries multiple domain-specific retrievers and selects the most relevant documents from across all retrieved results.
 

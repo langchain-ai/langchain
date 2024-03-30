@@ -2,20 +2,24 @@ import os
 from operator import itemgetter
 from typing import List, Tuple
 
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import AIMessage, HumanMessage, format_document
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import (
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    format_document,
+)
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import (
     RunnableBranch,
     RunnableLambda,
-    RunnableMap,
+    RunnableParallel,
     RunnablePassthrough,
 )
-from langchain.vectorstores import Pinecone
-from pydantic import BaseModel, Field
+from langchain_pinecone import PineconeVectorStore
 
 if os.environ.get("PINECONE_API_KEY", None) is None:
     raise Exception("Missing `PINECONE_API_KEY` environment variable.")
@@ -27,22 +31,24 @@ PINECONE_INDEX_NAME = os.environ.get("PINECONE_INDEX", "langchain-test")
 
 ### Ingest code - you may need to run this the first time
 # # Load
-# from langchain.document_loaders import WebBaseLoader
+# from langchain_community.document_loaders import WebBaseLoader
 # loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
 # data = loader.load()
 
 # # Split
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
 # text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 # all_splits = text_splitter.split_documents(data)
 
 # # Add to vectorDB
-# vectorstore = Pinecone.from_documents(
+# vectorstore = PineconeVectorStore.from_documents(
 #     documents=all_splits, embedding=OpenAIEmbeddings(), index_name=PINECONE_INDEX_NAME
 # )
 # retriever = vectorstore.as_retriever()
 
-vectorstore = Pinecone.from_existing_index(PINECONE_INDEX_NAME, OpenAIEmbeddings())
+vectorstore = PineconeVectorStore.from_existing_index(
+    PINECONE_INDEX_NAME, OpenAIEmbeddings()
+)
 retriever = vectorstore.as_retriever()
 
 # Condense a chat history and follow-up question into a standalone question
@@ -108,7 +114,7 @@ _search_query = RunnableBranch(
     RunnableLambda(itemgetter("question")),
 )
 
-_inputs = RunnableMap(
+_inputs = RunnableParallel(
     {
         "question": lambda x: x["question"],
         "chat_history": lambda x: _format_chat_history(x["chat_history"]),

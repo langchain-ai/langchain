@@ -1,4 +1,5 @@
 """BasePrompt schema definition."""
+
 from __future__ import annotations
 
 import warnings
@@ -8,7 +9,9 @@ from typing import Any, Callable, Dict, List, Set
 
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.utils import get_colored_text
 from langchain_core.utils.formatting import formatter
+from langchain_core.utils.interactive_env import is_interactive_env
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -106,20 +109,20 @@ def check_valid_template(
     Raises:
         ValueError: If the template format is not supported.
     """
-    if template_format not in DEFAULT_FORMATTER_MAPPING:
-        valid_formats = list(DEFAULT_FORMATTER_MAPPING)
-        raise ValueError(
-            f"Invalid template format. Got `{template_format}`;"
-            f" should be one of {valid_formats}"
-        )
     try:
         validator_func = DEFAULT_VALIDATOR_MAPPING[template_format]
-        validator_func(template, input_variables)
-    except KeyError as e:
+    except KeyError as exc:
         raise ValueError(
-            "Invalid prompt schema; check for mismatched or missing input parameters. "
-            + str(e)
-        )
+            f"Invalid template format {template_format!r}, should be one of"
+            f" {list(DEFAULT_FORMATTER_MAPPING)}."
+        ) from exc
+    try:
+        validator_func(template, input_variables)
+    except (KeyError, IndexError) as exc:
+        raise ValueError(
+            "Invalid prompt schema; check for mismatched or missing input parameters"
+            f" from {input_variables}."
+        ) from exc
 
 
 def get_template_variables(template: str, template_format: str) -> List[str]:
@@ -151,6 +154,25 @@ def get_template_variables(template: str, template_format: str) -> List[str]:
 class StringPromptTemplate(BasePromptTemplate, ABC):
     """String prompt that exposes the format method, returning a prompt."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "prompts", "base"]
+
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))
+
+    def pretty_repr(self, html: bool = False) -> str:
+        # TODO: handle partials
+        dummy_vars = {
+            input_var: "{" + f"{input_var}" + "}" for input_var in self.input_variables
+        }
+        if html:
+            dummy_vars = {
+                k: get_colored_text(v, "yellow") for k, v in dummy_vars.items()
+            }
+        return self.format(**dummy_vars)
+
+    def pretty_print(self) -> None:
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201

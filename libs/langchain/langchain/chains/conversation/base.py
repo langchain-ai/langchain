@@ -17,7 +17,7 @@ class ConversationChain(LLMChain):
         .. code-block:: python
 
             from langchain.chains import ConversationChain
-            from langchain.llms import OpenAI
+            from langchain_community.llms import OpenAI
 
             conversation = ConversationChain(llm=OpenAI())
     """
@@ -35,6 +35,10 @@ class ConversationChain(LLMChain):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @property
     def input_keys(self) -> List[str]:
