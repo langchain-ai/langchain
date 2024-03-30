@@ -26,7 +26,7 @@ os.environ["${apiKeyName}"] = getpass.getpass()`;
  * @property {string} [fireworksParams] - Parameters for Fireworks chat model. Defaults to `model="accounts/fireworks/models/mixtral-8x7b-instruct"`
  * @property {string} [mistralParams] - Parameters for Mistral chat model. Defaults to `model="mistral-large-latest"`
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
- * @property {string} [togetherParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
+ * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideFireworks] - Whether or not to hide Fireworks chat model.
@@ -120,9 +120,9 @@ export default function ChatModelTabs(props) {
     {
       value: "TogetherAI",
       label: "TogetherAI",
-      text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${togetherParamsOrDefault})`,
+      text: `from langchain_together import Together\n\n${llmVarName} = Together(${togetherParamsOrDefault})`,
       apiKeyName: "TOGETHER_API_KEY",
-      packageName: "langchain-openai",
+      packageName: "langchain-together",
       default: false,
       shouldHide: hideTogether,
     },
