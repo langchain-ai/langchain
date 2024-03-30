@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -15,6 +15,13 @@ class Predibase(LLM):
     model: str
     predibase_api_key: SecretStr
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    default_options_for_generation: dict = Field(
+        {
+            "max_new_tokens": 256,
+            "temperature": 0.1,
+        },
+        const=True,
+    )
 
     @property
     def _llm_type(self) -> str:
@@ -29,8 +36,17 @@ class Predibase(LLM):
     ) -> str:
         try:
             from predibase import PredibaseClient
+            from predibase.pql import get_session
+            from predibase.pql.api import Session
+            from predibase.resource.llm.interface import LLMDeployment
+            from predibase.resource.llm.response import GeneratedResponse
 
-            pc = PredibaseClient(token=self.predibase_api_key.get_secret_value())
+            session: Session = get_session(
+                token=self.predibase_api_key.get_secret_value(),
+                gateway="https://api.app.predibase.com/v1",
+                serving_endpoint="serving.app.predibase.com",
+            )
+            pc: PredibaseClient = PredibaseClient(session=session)
         except ImportError as e:
             raise ImportError(
                 "Could not import Predibase Python package. "
@@ -38,9 +54,17 @@ class Predibase(LLM):
             ) from e
         except ValueError as e:
             raise ValueError("Your API key is not correct. Please try again") from e
-        # load model and version
-        results = pc.prompt(prompt, model_name=self.model)
-        return results[0].response
+        options: Dict[str, Union[str, float]] = (
+            kwargs or self.default_options_for_generation
+        )
+        base_llm_deployment: LLMDeployment = pc.LLM(
+            uri=f"pb://deployments/{self.model}"
+        )
+        result: GeneratedResponse = base_llm_deployment.generate(
+            prompt=prompt,
+            options=options,
+        )
+        return result.response
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
