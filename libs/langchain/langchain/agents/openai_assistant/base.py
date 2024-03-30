@@ -515,6 +515,9 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         if run.status == "completed":
             import openai
 
+            openai_major_version = int(openai.version.VERSION.split(".")[0])
+            minor_version = int(openai.version.VERSION.split(".")[1])
+
             messages = self.client.beta.threads.messages.list(
                 run.thread_id, order="asc"
             )
@@ -527,7 +530,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             if all(
                 (
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
-                    if openai.version.VERSION.startswith("1.14")
+                    if int(openai_major_version) > 1 or int(minor_version >= 14)
                     else isinstance(
                         content, openai.types.beta.threads.MessageContentText
                     )
@@ -637,6 +640,9 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         if run.status == "completed":
             import openai
 
+            openai_major_version = int(openai.version.VERSION.split(".")[0])
+            minor_version = int(openai.version.VERSION.split(".")[1])
+
             messages = await self.async_client.beta.threads.messages.list(
                 run.thread_id, order="asc"
             )
@@ -649,7 +655,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             if all(
                 (
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
-                    if openai.version.VERSION.startswith("1.14")
+                    if int(openai_major_version) > 1 or int(minor_version >= 14)
                     else isinstance(
                         content, openai.types.beta.threads.MessageContentText
                     )
