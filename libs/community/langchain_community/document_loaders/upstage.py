@@ -1,6 +1,7 @@
 import os
 from enum import Enum
-from typing import List
+from typing import List, Union
+from pathlib import Path
 
 import requests
 from langchain_core.documents import Document
@@ -88,39 +89,37 @@ def parse_output(data: dict, output_type: str) -> str:
 
 
 class UpstageDocumentLoader(BaseLoader):
-    """
-    A document loader for Upstage API.
-
-    Args:
-        file_path (str): The path to the file to be loaded.
-        output_type (str, optional): The desired output type.
-                                     Defaults to OutputType.TEXT.value.
-        split (str, optional): The split type for the document.
-                               Defaults to SplitType.NONE.value.
-        api_key (str, optional): The API key for authentication. Defaults to "".
-
-    Attributes:
-        file_path (str): The path to the file to be loaded.
-        output_type (str): The desired output type.
-        split (str): The split type for the document.
-        api_key (str): The API key for authentication.
-        file_name (str): The name of the file.
-
-    Raises:
-        ValueError: If the API call returns a non-200 status code.
-        ValueError: If an invalid split type is provided.
-
-    """
-
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, Path],
         output_type: str = OutputType.TEXT.value,
         split: str = SplitType.NONE.value,
         api_key: str = "",
         url: str = LAYOUT_ANALYZER_URL,
     ):
-        """Initialize with the file path."""
+        """
+        A document loader for Upstage API.
+
+        Args:
+            file_path (str): The path to the file to be loaded.
+            output_type (str, optional): The desired output type.
+                                        Defaults to OutputType.TEXT.value.
+            split (str, optional): The split type for the document.
+                                Defaults to SplitType.NONE.value.
+            api_key (str, optional): The API key for authentication. Defaults to "".
+
+        Attributes:
+            file_path (str): The path to the file to be loaded.
+            output_type (str): The desired output type.
+            split (str): The split type for the document.
+            api_key (str): The API key for authentication.
+            file_name (str): The name of the file.
+
+        Raises:
+            ValueError: If the API call returns a non-200 status code.
+            ValueError: If an invalid split type is provided.
+
+        """
         self.file_path = file_path
         self.output_type = output_type
         self.split = split
