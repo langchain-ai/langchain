@@ -87,7 +87,7 @@ class BasePromptTemplate(
             **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
         )
 
-    def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
+    def _validate_input(self, inner_input: Dict) -> Dict:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -105,7 +105,17 @@ class BasePromptTemplate(
                 f" Expected: {self.input_variables}"
                 f" Received: {list(inner_input.keys())}"
             )
-        return self.format_prompt(**inner_input)
+        return inner_input
+
+    def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
+        _inner_input = self._validate_input(inner_input)
+        return self.format_prompt(**_inner_input)
+
+    async def _aformat_prompt_with_error_handling(
+        self, inner_input: Dict
+    ) -> PromptValue:
+        _inner_input = self._validate_input(inner_input)
+        return await self.aformat_prompt(**_inner_input)
 
     def invoke(
         self, input: Dict, config: Optional[RunnableConfig] = None
@@ -122,9 +132,28 @@ class BasePromptTemplate(
             run_type="prompt",
         )
 
+    async def ainvoke(
+        self, input: Dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> PromptValue:
+        config = ensure_config(config)
+        if self.metadata:
+            config["metadata"].update(self.metadata)
+        if self.tags:
+            config["tags"].extend(self.tags)
+        return await self._acall_with_config(
+            self._aformat_prompt_with_error_handling,
+            input,
+            config,
+            run_type="prompt",
+        )
+
     @abstractmethod
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Prompt Value."""
+
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        """Create Prompt Value."""
+        return self.format_prompt(**kwargs)
 
     @root_validator()
     def validate_variable_names(cls, values: Dict) -> Dict:
