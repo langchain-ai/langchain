@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import List
 
-from langchain.chains.openai_functions import create_structured_output_chain
 from langchain_community.document_loaders import TextLoader
 from langchain_community.graphs import Neo4jGraph
 from langchain_core.prompts import ChatPromptTemplate
