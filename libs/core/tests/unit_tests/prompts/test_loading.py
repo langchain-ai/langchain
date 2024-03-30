@@ -6,8 +6,9 @@ from typing import Iterator
 
 import pytest
 
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
-from langchain_core.prompts.loading import load_prompt
+from langchain_core.prompts.loading import load_prompt, _load_chat_prompt
 from langchain_core.prompts.prompt import PromptTemplate
 
 EXAMPLE_DIR = (Path(__file__).parent.parent / "examples").absolute()
@@ -175,4 +176,18 @@ def test_loading_few_shot_prompt_example_prompt() -> None:
             ],
             suffix="Input: {adjective}\nOutput:",
         )
+        assert prompt == expected_prompt
+
+
+def test_loading_chat_prompt() -> None:
+    """Test loading chat prompt."""
+    with change_directory(EXAMPLE_DIR):
+        prompt = load_prompt("chat_prompt.json") # it will call _load_chat_prompt
+        expected_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are an AI Assistant."),
+                ("human", "{comment}")
+            ]
+        )
+
         assert prompt == expected_prompt

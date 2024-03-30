@@ -1,0 +1,41 @@
+{
+  "_type": "chat",
+  "input_types": {},
+  "input_variables": ["comment"],
+  "messages": [
+    {
+      "additional_kwargs": {},
+      "prompt": {
+        "_type": "prompt",
+        "input_types": {},
+        "input_variables": [],
+        "name": null,
+        "output_parser": null,
+        "partial_variables": {},
+        "template": "You are an AI Assistant.",
+        "template_format": "f-string",
+        "validate_template": false
+      },
+      "type": "system"
+    },
+    {
+      "additional_kwargs": {},
+      "prompt": {
+        "_type": "prompt",
+        "input_types": {},
+        "input_variables": ["comment"],
+        "name": null,
+        "output_parser": null,
+        "partial_variables": {},
+        "template": "{comment}",
+        "template_format": "f-string",
+        "validate_template": false
+      },
+      "type": "human"
+    }
+  ],
+  "name": null,
+  "output_parser": null,
+  "partial_variables": {},
+  "validate_template": false
+}
