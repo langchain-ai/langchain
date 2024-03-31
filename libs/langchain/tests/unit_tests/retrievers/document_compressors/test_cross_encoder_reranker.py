@@ -1,9 +1,10 @@
 """Integration test for CrossEncoderReranker."""
 from typing import List
 
-from langchain.cross_encoders import FakeCrossEncoder
+from langchain_community.cross_encoders import FakeCrossEncoder
+from langchain_core.documents import Document
+
 from langchain.retrievers.document_compressors import CrossEncoderReranker
-from langchain.schema import Document
 
 
 def test_rerank() -> None:
