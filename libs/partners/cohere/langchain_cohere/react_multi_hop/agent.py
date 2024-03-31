@@ -1,5 +1,5 @@
-from collections.abc import Callable, Sequence, Mapping
-from typing import Any, Dict, Iterable, List, Tuple, Union
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, Dict, List, Tuple, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
@@ -195,15 +195,15 @@ def render_tool_description(tool: BaseTool) -> str:
     )
 
 
-def render_observation(
-    observation: Union[List[Union[Mapping[str, str], Mapping[str, str], str]], str],
+def render_observations(
+    observations: Union[List[Mapping[str, str]], List[str], Mapping[str, str], str],
     index: int,
 ) -> Tuple[BaseMessage, int]:
     """Renders the 'output' part of an Agent's intermediate step into prompt content."""
     if (
-        not isinstance(observation, list)
-        and not isinstance(observation, str)
-        and not isinstance(observation, Mapping)
+        not isinstance(observations, list)
+        and not isinstance(observations, str)
+        and not isinstance(observations, Mapping)
     ):
         raise ValueError("observation must be a list, a Mapping, or a string")
 
@@ -211,21 +211,24 @@ def render_observation(
     document_prompt = """Document: {index}
 {fields}"""
 
-    if isinstance(observation, str):
+    if isinstance(observations, str):
         # strings are turned into a key/value pair and a key of 'output' is added.
-        observation = [{"output": observation}]
+        observations = [{"output": observations}]  # type: ignore
 
-    if isinstance(observation, Mapping):
-        observation = [observation]
+    if isinstance(observations, Mapping):
+        observations = [observations]
 
-    if isinstance(observation, list):
-        for doc in observation:
+    if isinstance(observations, list):
+        for doc in observations:
             if isinstance(doc, str):
-                # strings are turned into a key/value pair and a key of 'output' is added.
+                # strings are turned into a key/value pair and a key of 'output'
+                # is added.
                 doc = {"output": doc}
 
             if not isinstance(doc, Mapping):
-                raise ValueError("all observation list items must be a Mapping or a string")
+                raise ValueError(
+                    "all observation list items must be a Mapping or a string"
+                )
 
             fields: List[str] = []
             for k, v in doc.items():
@@ -263,7 +266,7 @@ def render_intermediate_steps(
     i = 0
     for action, observation in intermediate_steps:
         prompt_content += render_messages(action.messages)
-        observation_message, i = render_observation(observation, i)
+        observation_message, i = render_observations(observation, i)
         prompt_content += render_messages([observation_message])
     # Always add an 'open' chatbot turn.
     prompt_content += "<|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>"

@@ -6,7 +6,7 @@ from langchain_core.messages import SystemMessage
 
 from langchain_cohere.react_multi_hop.agent import (
     CohereToolsReactAgentOutputParser,
-    render_observation,
+    render_observations,
 )
 
 COMPLETIONS = [
@@ -85,8 +85,20 @@ document_template = """Document: {index}
         ),
     ],
 )
-def test_render_observation(observation: Any, expected_content: str):
-    actual, _ = render_observation(observation=observation, index=0)
+def test_render_observation_has_correct_content(
+    observation: Any, expected_content: str
+) -> None:
+    actual, _ = render_observations(observations=observation, index=0)
     expected_content = f"<results>\n{expected_content}\n</results>"
 
     assert SystemMessage(content=expected_content) == actual
+
+
+def test_render_observation_has_correct_indexes() -> None:
+    index = 13
+    observations = ["foo", "bar"]
+    expected_index = 15
+
+    _, actual = render_observations(observations=observations, index=index)
+
+    assert expected_index == actual
