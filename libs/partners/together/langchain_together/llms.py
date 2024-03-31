@@ -93,10 +93,10 @@ class Together(LLM):
         if values.get("max_tokens") is None:
             warnings.warn(
                 "The completions endpoint, has 'max_tokens' as required argument. "
-                "The default value is being set to 128 "
+                "The default value is being set to 200 "
                 "Consider setting this value, when initializing LLM"
             )
-            values["max_tokens"] = 128  # Default Value
+            values["max_tokens"] = 200  # Default Value
         return values
 
     @property
