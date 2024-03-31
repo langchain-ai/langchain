@@ -11,11 +11,9 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import BaseTool
 
-from langchain_cohere.react_multi_hop.agent import (
-    multi_hop_prompt,
-)
+from langchain_cohere.react_multi_hop.prompt import multi_hop_prompt
 
-SCENARIO_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
+DATA_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "data")
 
 
 class InternetSearchTool(BaseTool):
@@ -177,7 +175,7 @@ def _read_expected_from_file(scenario_name: str) -> str:
     Returns an expected prompt from a given scenario name.
     Prompts are stored as .txt files to aid readability.
     """
-    with open(os.path.join(SCENARIO_DIR, f"{scenario_name}.txt"), "r") as f:
+    with open(os.path.join(DATA_DIR, "prompts", f"{scenario_name}.txt"), "r") as f:
         content = f.read()
 
     # Remove a single trailing new line, if present, to aid authoring the txt file.
