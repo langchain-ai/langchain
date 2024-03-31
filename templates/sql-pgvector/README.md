@@ -40,7 +40,7 @@ Apart from having `pgvector` extension enabled, you will need to do some setup b
 
 In order to run RAG over your postgreSQL database you will need to generate the embeddings for the specific columns you want. 
 
-This process is covered in the [RAG empowered SQL cookbook](cookbook/retrieval_in_sql.ipynb), but the overall approach consist of:
+This process is covered in the [RAG empowered SQL cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/retrieval_in_sql.ipynb), but the overall approach consist of:
 1. Querying for unique values in the column
 2. Generating embeddings for those values
 3. Store the embeddings in a separate column or in an auxiliary table.

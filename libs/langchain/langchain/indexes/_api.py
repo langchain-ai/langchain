@@ -109,8 +109,8 @@ class _HashedDocument(Document):
         cls, document: Document, *, uid: Optional[str] = None
     ) -> _HashedDocument:
         """Create a HashedDocument from a Document."""
-        return cls(
-            uid=uid,
+        return cls(  # type: ignore[call-arg]
+            uid=uid,  # type: ignore[arg-type]
             page_content=document.page_content,
             metadata=document.metadata,
         )
@@ -330,7 +330,7 @@ def index(
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
         if docs_to_index:
-            vector_store.add_documents(docs_to_index, ids=uids)
+            vector_store.add_documents(docs_to_index, ids=uids, batch_size=batch_size)
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
 
@@ -544,7 +544,9 @@ async def aindex(
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
         if docs_to_index:
-            await vector_store.aadd_documents(docs_to_index, ids=uids)
+            await vector_store.aadd_documents(
+                docs_to_index, ids=uids, batch_size=batch_size
+            )
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
 

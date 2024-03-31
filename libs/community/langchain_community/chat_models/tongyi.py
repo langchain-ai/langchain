@@ -49,7 +49,11 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain_community.llms.tongyi import check_response
+from langchain_community.llms.tongyi import (
+    agenerate_with_last_element_mark,
+    check_response,
+    generate_with_last_element_mark,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +141,7 @@ class ChatTongyi(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import Tongyi
+            from langchain_community.chat_models import ChatTongyi
             Tongyi_chat = ChatTongyi()
     """
 
@@ -338,9 +342,13 @@ class ChatTongyi(BaseChatModel):
         params: Dict[str, Any] = self._invocation_params(
             messages=messages, stop=stop, stream=True, **kwargs
         )
-        for stream_resp in self.stream_completion_with_retry(**params):
+        for stream_resp, is_last_chunk in generate_with_last_element_mark(
+            self.stream_completion_with_retry(**params)
+        ):
             chunk = ChatGenerationChunk(
-                **self._chat_generation_from_qwen_resp(stream_resp, is_chunk=True)
+                **self._chat_generation_from_qwen_resp(
+                    stream_resp, is_chunk=True, is_last_chunk=is_last_chunk
+                )
             )
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
@@ -356,9 +364,13 @@ class ChatTongyi(BaseChatModel):
         params: Dict[str, Any] = self._invocation_params(
             messages=messages, stop=stop, stream=True, **kwargs
         )
-        async for stream_resp in self.astream_completion_with_retry(**params):
+        async for stream_resp, is_last_chunk in agenerate_with_last_element_mark(
+            self.astream_completion_with_retry(**params)
+        ):
             chunk = ChatGenerationChunk(
-                **self._chat_generation_from_qwen_resp(stream_resp, is_chunk=True)
+                **self._chat_generation_from_qwen_resp(
+                    stream_resp, is_chunk=True, is_last_chunk=is_last_chunk
+                )
             )
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
@@ -398,18 +410,28 @@ class ChatTongyi(BaseChatModel):
 
     @staticmethod
     def _chat_generation_from_qwen_resp(
-        resp: Any, is_chunk: bool = False
+        resp: Any, is_chunk: bool = False, is_last_chunk: bool = True
     ) -> Dict[str, Any]:
+        # According to the response from dashscope,
+        # each chunk's `generation_info` overwrites the previous one.
+        # Besides, The `merge_dicts` method,
+        # which is used to concatenate `generation_info` in `GenerationChunk`,
+        # does not support merging of int type values.
+        # Therefore, we adopt the `generation_info` of the last chunk
+        # and discard the `generation_info` of the intermediate chunks.
         choice = resp["output"]["choices"][0]
         message = convert_dict_to_message(choice["message"], is_chunk=is_chunk)
-        return dict(
-            message=message,
-            generation_info=dict(
-                finish_reason=choice["finish_reason"],
-                request_id=resp["request_id"],
-                token_usage=dict(resp["usage"]),
-            ),
-        )
+        if is_last_chunk:
+            return dict(
+                message=message,
+                generation_info=dict(
+                    finish_reason=choice["finish_reason"],
+                    request_id=resp["request_id"],
+                    token_usage=dict(resp["usage"]),
+                ),
+            )
+        else:
+            return dict(message=message)
 
     @staticmethod
     def _chunk_to_generation(chunk: ChatGenerationChunk) -> ChatGeneration:
