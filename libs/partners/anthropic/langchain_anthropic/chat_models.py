@@ -186,7 +186,7 @@ class ChatAnthropic(BaseChatModel):
         return "anthropic-chat"
 
     @property
-    def _default_params(self) -> Mapping[str, Any]:
+    def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Anthropic API."""
         d = {
             "model": self.model,
@@ -201,7 +201,7 @@ class ChatAnthropic(BaseChatModel):
         return {**d, **self.model_kwargs}
 
     @property
-    def _identifying_params(self) -> Mapping[str, Any]:
+    def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {**{}, **self._default_params}
     
