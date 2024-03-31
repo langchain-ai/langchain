@@ -153,10 +153,6 @@
       "destination": "/docs/modules/data_connection/document_transformers/:path*"
     },
     {
-      "source": "/docs/modules/model_io/prompts/example_selectors/:path*",
-      "destination": "/docs/modules/model_io/prompts/example_selector_types/:path*"
-    },
-    {
       "source": "/docs/modules/model_io/prompts/prompt_templates(/?)",
       "destination": "/docs/modules/model_io/prompts/"
     },
@@ -1016,6 +1012,14 @@
     {
       "source": "/docs/expression_language/cookbook/embedding_router(/?)",
       "destination": "/docs/expression_language/how_to/routing"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/example_selector_types/:path*",
+      "destination": "/docs/modules/model_io/prompts/example_selectors/:path*"
+    },
+    {
+      "source": "/docs/modules/agents/tools/:path*",
+      "destination": "/docs/modules/tools/:path*"
     }
   ]
 }
