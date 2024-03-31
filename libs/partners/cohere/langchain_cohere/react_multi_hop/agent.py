@@ -221,7 +221,8 @@ def render_observation(
             )
         )
         index += 1
-    prompt_content = f"<results>\n{"\n\n".join(rendered_documents)}\n</results>"
+
+    prompt_content = "<results>\n" + "\n\n".join(rendered_documents) + "\n</results>"
     return SystemMessage(content=prompt_content), index
 
 
