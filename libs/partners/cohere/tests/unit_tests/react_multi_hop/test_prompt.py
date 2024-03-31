@@ -164,7 +164,7 @@ def test_multihop_prompt(
     chain = RunnablePassthrough.assign(
         agent_scratchpad=lambda _: [],  # Usually provided by create_cohere_react_agent.
         intermediate_steps=lambda _: intermediate_steps,
-    ) | multi_hop_prompt(available_tools=tools, prompt=template)
+    ) | multi_hop_prompt(tools=tools, prompt=template)
 
     actual = chain.invoke(invoke_with)  # type: StringPromptValue  # type: ignore
 

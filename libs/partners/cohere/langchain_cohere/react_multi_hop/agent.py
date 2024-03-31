@@ -35,7 +35,7 @@ from langchain_cohere.react_multi_hop.prompt import (
 
 def create_cohere_react_agent(
     llm: BaseLanguageModel,
-    available_tools: List[BaseTool],
+    tools: List[BaseTool],
     prompt: ChatPromptTemplate,
 ) -> Runnable:
     agent = (
@@ -43,7 +43,7 @@ def create_cohere_react_agent(
             # Handled in the multi_hop_prompt
             agent_scratchpad=lambda _: [],
         )
-        | multi_hop_prompt(available_tools=available_tools, prompt=prompt)
+        | multi_hop_prompt(tools=tools, prompt=prompt)
         | llm.bind(stop=["\nObservation:"], raw_prompting=True)
         | CohereToolsReactAgentOutputParser()
     )
@@ -87,20 +87,20 @@ class CohereToolsReactAgentOutputParser(
 
 
 def multi_hop_prompt(
-    available_tools: List[BaseTool], prompt: ChatPromptTemplate
+    tools: List[BaseTool], prompt: ChatPromptTemplate
 ) -> Callable[[Dict], BasePromptTemplate]:
     """Returns a function which produces a BasePromptTemplate suitable for multi-hop."""
 
     # the directly_answer tool is used internally by the model, but never produces an
     # AgentAction, so we just need to add it to the prompt.
-    available_tools.insert(0, _create_directly_answer_tool())
+    tools.insert(0, _create_directly_answer_tool())
 
     def inner(x: Dict) -> BasePromptTemplate:
         return multi_hop_prompt_partial.partial(
             structured_preamble=render_structured_preamble(
                 preamble=x.get("preamble", None)
             ),
-            tools="\n\n".join([render_tool_description(t) for t in available_tools]),
+            tools="\n\n".join([render_tool_description(t) for t in tools]),
             user_prompt=render_messages(prompt.invoke(x).to_messages()),
             steps=render_intermediate_steps(x["intermediate_steps"]),
             history=render_messages(x.get("chat_history", [])),
