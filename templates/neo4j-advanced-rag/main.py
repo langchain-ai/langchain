@@ -5,6 +5,6 @@ if __name__ == "__main__":
     print(  # noqa: T201
         chain.invoke(
             {"question": original_query},
-            {"configurable": {"strategy": "parent_document"}},
+            {"configurable": {"strategy": "parent_strategy"}},
         )
     )
