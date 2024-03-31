@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Type, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
@@ -9,6 +9,7 @@ from langchain_core.messages.system import SystemMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
@@ -34,7 +35,7 @@ from langchain_cohere.react_multi_hop.prompt import (
 
 def create_cohere_react_agent(
     llm: BaseLanguageModel,
-    tools: Sequence[BaseTool],
+    available_tools: List[BaseTool],
     prompt: ChatPromptTemplate,
 ) -> Runnable:
     agent = (
@@ -42,7 +43,7 @@ def create_cohere_react_agent(
             # Handled in the multi_hop_prompt
             agent_scratchpad=lambda _: [],
         )
-        | multi_hop_prompt(tools=tools, prompt=prompt)
+        | multi_hop_prompt(available_tools=available_tools, prompt=prompt)
         | llm.bind(stop=["\nObservation:"], raw_prompting=True)
         | CohereToolsReactAgentOutputParser()
     )
@@ -86,16 +87,20 @@ class CohereToolsReactAgentOutputParser(
 
 
 def multi_hop_prompt(
-    tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    available_tools: List[BaseTool], prompt: ChatPromptTemplate
 ) -> Callable[[Dict], BasePromptTemplate]:
     """Returns a function which produces a BasePromptTemplate suitable for multi-hop."""
+
+    # the directly_answer tool is used internally by the model, but never produces an
+    # AgentAction, so we just need to add it to the prompt.
+    available_tools.insert(0, _create_directly_answer_tool())
 
     def inner(x: Dict) -> BasePromptTemplate:
         return multi_hop_prompt_partial.partial(
             structured_preamble=render_structured_preamble(
                 preamble=x.get("preamble", None)
             ),
-            tools="\n\n".join([render_tool_description(t) for t in tools]),
+            tools="\n\n".join([render_tool_description(t) for t in available_tools]),
             user_prompt=render_messages(prompt.invoke(x).to_messages()),
             steps=render_intermediate_steps(x["intermediate_steps"]),
             history=render_messages(x.get("chat_history", [])),
@@ -272,3 +277,24 @@ def render_intermediate_steps(
     prompt_content += "<|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>"
 
     return prompt_content
+
+
+def _create_directly_answer_tool() -> BaseTool:
+    """
+    directly_answer is a special tool that's always presented to the model as an
+    available tool. The model only ever invokes this whilst answering and no AgentAction
+    is produced, so it only needs to be added to the prompt.
+    """
+
+    class DirectlyAnswerTool(BaseTool):
+        class InputSchema(BaseModel):
+            pass
+
+        name = "directly_answer"
+        description = "Calls a standard (un-augmented) AI chatbot to generate a response given the conversation history"  # noqa: E501
+        args_schema: Type[InputSchema] = InputSchema
+
+        def _run(self, *args: Any, **kwargs: Any) -> Any:
+            raise NotImplementedError()
+
+    return DirectlyAnswerTool()

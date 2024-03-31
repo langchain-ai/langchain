@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Sequence, Tuple, Type
+from typing import Any, Dict, List, Tuple, Type
 
 import pytest
 from freezegun import freeze_time
@@ -9,21 +9,13 @@ from langchain_core.prompt_values import StringPromptValue
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import BaseTool
 
 from langchain_cohere.react_multi_hop.agent import (
     multi_hop_prompt,
 )
 
 SCENARIO_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
-
-
-@tool
-def directly_answer() -> None:
-    """
-    Calls a standard (un-augmented) AI chatbot to generate a response given the conversation history
-    """  # noqa: E501
-    pass
 
 
 class InternetSearchTool(BaseTool):
@@ -41,7 +33,7 @@ class InternetSearchTool(BaseTool):
         pass
 
 
-TOOLS: List[BaseTool] = [directly_answer, InternetSearchTool()]  # type: ignore
+TOOLS: List[BaseTool] = [InternetSearchTool()]  # type: ignore
 DOCUMENTS = [
     {
         "URL": "https://www.cnbc.com/2015/05/26/19-famous-companies-that-originally-had-different-names.html",
@@ -96,7 +88,7 @@ Action: ```json
     "tools,template,invoke_with,intermediate_steps,scenario_name",
     [
         pytest.param(
-            [TOOLS[0], TOOLS[1]],
+            [TOOLS[0]],
             ChatPromptTemplate.from_template("{input}"),
             {
                 "input": "In what year was the company that was founded as Sound of Music added to the S&P 500?"  # noqa: E501
@@ -106,7 +98,7 @@ Action: ```json
             id="base",
         ),
         pytest.param(
-            [TOOLS[0], TOOLS[1]],
+            [TOOLS[0]],
             ChatPromptTemplate.from_template("{input}"),
             {
                 "input": "In what year was the company that was founded as Sound of Music added to the S&P 500?"  # noqa: E501
@@ -114,7 +106,7 @@ Action: ```json
             [
                 (
                     AgentActionMessageLog(
-                        tool=TOOLS[1].name,
+                        tool=TOOLS[0].name,
                         tool_input={
                             "query": "which company was originally called sound of music"  # noqa: E501
                         },
@@ -128,7 +120,7 @@ Action: ```json
             id="after one hop",
         ),
         pytest.param(
-            [TOOLS[0], TOOLS[1]],
+            [TOOLS[0]],
             ChatPromptTemplate.from_template("{input}"),
             {
                 "input": "In what year was the company that was founded as Sound of Music added to the S&P 500?"  # noqa: E501
@@ -136,7 +128,7 @@ Action: ```json
             [
                 (
                     AgentActionMessageLog(
-                        tool=TOOLS[1].name,
+                        tool=TOOLS[0].name,
                         tool_input={
                             "query": "which company was originally called sound of music"  # noqa: E501
                         },
@@ -147,7 +139,7 @@ Action: ```json
                 ),
                 (
                     AgentActionMessageLog(
-                        tool=TOOLS[1].name,
+                        tool=TOOLS[0].name,
                         tool_input={"query": "when was best buy added to S&P 500"},
                         log="\nI found out that Sound of Music was renamed Best Buy in 1983, now I need to find out when Best Buy was added to the S&P 500.\n{'tool_name': 'internet_search', 'parameters': {'query': 'when was best buy added to S&P 500'}}\n",  # noqa: E501
                         message_log=[AIMessage(content=COMPLETIONS[1])],
@@ -161,7 +153,7 @@ Action: ```json
     ],
 )
 def test_multihop_prompt(
-    tools: Sequence[BaseTool],
+    tools: List[BaseTool],
     template: ChatPromptTemplate,
     invoke_with: Dict[str, Any],
     intermediate_steps: List[Tuple[AgentAction, Any]],
@@ -172,7 +164,7 @@ def test_multihop_prompt(
     chain = RunnablePassthrough.assign(
         agent_scratchpad=lambda _: [],  # Usually provided by create_cohere_react_agent.
         intermediate_steps=lambda _: intermediate_steps,
-    ) | multi_hop_prompt(tools=tools, prompt=template)
+    ) | multi_hop_prompt(available_tools=tools, prompt=template)
 
     actual = chain.invoke(invoke_with)  # type: StringPromptValue  # type: ignore
 
