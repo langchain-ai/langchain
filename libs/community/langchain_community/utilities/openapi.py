@@ -137,7 +137,7 @@ class OpenAPISpec(OpenAPI):
 
     def _get_root_referenced_schema(self, ref: Reference) -> Schema:
         """Get the root reference or err."""
-        from openapi_pydantic import Reference
+        from openapi_pydantic import Reference, Schema
 
         schema = self.get_referenced_schema(ref)
         """If the schema contains items of type Reference,
@@ -146,9 +146,12 @@ class OpenAPISpec(OpenAPI):
         if schema.properties is not None:
             for item in schema.properties.items():
                 attribute_name, attribute_schema = item
-                if(attribute_schema and isinstance(attribute_schema, Schema) 
-                   and isinstance(attribute_schema.items, Reference)):
+                if(attribute_schema and 
+                   isinstance(attribute_schema, Schema) and isinstance(attribute_schema.items, Reference)):
                     ref_schema = self.get_referenced_schema(attribute_schema.items)
+                    schema.properties[attribute_name] = ref_schema
+                elif attribute_schema and isinstance(attribute_schema, Reference):
+                    ref_schema = self.get_referenced_schema(attribute_schema)
                     schema.properties[attribute_name] = ref_schema
         
         while isinstance(schema, Reference):
