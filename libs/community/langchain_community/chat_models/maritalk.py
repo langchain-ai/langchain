@@ -215,9 +215,9 @@ class ChatMaritalk(SimpleChatModel):
                 response.raise_for_status()
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
-                        data = line.replace("data: ", "")
-                        if data:
-                            parsed_data = json.loads(data)
+                        response_data = line.replace("data: ", "")
+                        if response_data:
+                            parsed_data = json.loads(response_data)
                             if "text" in parsed_data:
                                 delta = parsed_data["text"]
                                 chunk = ChatGenerationChunk(
