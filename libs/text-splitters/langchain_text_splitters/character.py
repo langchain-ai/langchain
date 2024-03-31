@@ -610,6 +610,48 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.C:
+            return [
+                # Split along type definition
+                "\ntypedef ",
+                # Split along struct definitions
+                "\nstruct ",
+                "\nenum ",
+                "\nunion ",
+                # Split along function definitions
+                "\nvoid ",
+                "\nint ",
+                "\nfloat ",
+                "\ndouble ",
+                "\nstatic ",
+                "\nchar ",
+                "\nconst ",
+                "\nsigned ",
+                "\nunsigned ",
+                "\nauto ",
+                "\nvolatile ",
+                "\nextern ",
+                "\nregister ",
+                "\nshort ",
+                "\nlong"
+                # Split along control flow statements
+                "\ndo ",
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nswitch ",
+                "\ncase ",
+                "\ndefault:",
+                "\nbreak",
+                "\ngoto ",
+                "\ncontinue",
+                "\nelse ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         else:
             raise ValueError(
                 f"Language {language} is not supported! "
