@@ -1020,6 +1020,10 @@
     {
       "source": "/docs/modules/agents/tools/:path*",
       "destination": "/docs/modules/tools/:path*"
+    },
+    {
+      "source": "/docs/guides/structured_output(/?)",
+      "destination": "/docs/modules/model_io/chat/structured_output"
     }
   ]
 }
