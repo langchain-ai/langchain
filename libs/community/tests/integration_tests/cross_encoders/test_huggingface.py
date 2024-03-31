@@ -6,9 +6,7 @@ from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 def _assert(encoder: HuggingFaceCrossEncoder) -> None:
     query = "I love you"
     texts = ["I love you", "I like you", "I don't like you", "I hate you"]
-
-    pairs = list(map(lambda text: [query, text], texts))
-    output = encoder.score(pairs)
+    output = encoder.score([(query, text) for text in texts])
 
     for i in range(len(texts) - 1):
         assert output[i] > output[i + 1]
