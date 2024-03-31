@@ -12,7 +12,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult
 
 from langchain_community.llms.minimax import MinimaxCommon
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -81,7 +81,8 @@ class MiniMaxChat(MinimaxCommon, BaseChatModel):
         text = self._client.post(payload)
 
         # This is required since the stop are not enforced by the model parameters
-        return text if stop is None else enforce_stop_tokens(text, stop)
+        text = text if stop is None else enforce_stop_tokens(text, stop)
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(text))])
 
     async def _agenerate(
         self,
