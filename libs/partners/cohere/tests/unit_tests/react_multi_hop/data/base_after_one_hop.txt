@@ -34,7 +34,7 @@ def internet_search(query: str) -> List[Dict]:
 Firstly, You may need to use complex and advanced reasoning to complete your task and answer the question. Think about how you can use the provided tools to answer the question and come up with a high level plan you will execute.
 Write 'Plan:' followed by an initial high level plan of how you will solve the problem including the tools and steps required.
 Secondly, Carry out your plan by repeatedly using actions, reasoning over the results, and re-evaluating your plan. Perform Action, Observation, Reflection steps with the following format. Write 'Action:' followed by a json formatted action containing the "tool_name" and "parameters"
-Next you will analyze the 'Observation:', this is the result of the action.
+ Next you will analyze the 'Observation:', this is the result of the action.
 After that you should always think about what to do next. Write 'Reflection:' followed by what you've figured out so far, any changes you need to make to your plan, and what you will do next including if you know the answer to the question.
 ... (this Action/Observation/Reflection can repeat N times)
 Thirdly, Decide which of the retrieved documents are relevant to the user's last input by writing 'Relevant Documents:' followed by comma-separated list of document numbers. If none are relevant, you should instead write 'None'.
