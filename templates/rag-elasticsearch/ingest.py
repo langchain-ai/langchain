@@ -2,7 +2,7 @@ import os
 
 from langchain_community.document_loaders import JSONLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores.elasticsearch import ElasticsearchStore
+from langchain_elasticsearch import ElasticsearchStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 ELASTIC_CLOUD_ID = os.getenv("ELASTIC_CLOUD_ID")

@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Iterator, List, Optional
 from urllib.parse import urljoin, urlparse
 
 from langchain_core.documents import Document
@@ -47,23 +47,23 @@ class GitbookLoader(WebBaseLoader):
         self.load_all_paths = load_all_paths
         self.content_selector = content_selector
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Fetch text from one single GitBook page."""
         if self.load_all_paths:
             soup_info = self.scrape()
             relative_paths = self._get_paths(soup_info)
             urls = [urljoin(self.base_url, path) for path in relative_paths]
             soup_infos = self.scrape_all(urls)
-            _documents = [
-                self._get_document(soup_info, url)
-                for soup_info, url in zip(soup_infos, urls)
-            ]
+            for soup_info, url in zip(soup_infos, urls):
+                doc = self._get_document(soup_info, url)
+                if doc:
+                    yield doc
+
         else:
             soup_info = self.scrape()
-            _documents = [self._get_document(soup_info, self.web_path)]
-        documents = [d for d in _documents if d]
-
-        return documents
+            doc = self._get_document(soup_info, self.web_path)
+            if doc:
+                yield doc
 
     def _get_document(
         self, soup: Any, custom_url: Optional[str] = None

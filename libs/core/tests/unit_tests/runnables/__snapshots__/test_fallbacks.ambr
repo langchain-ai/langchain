@@ -220,6 +220,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "ai",
@@ -274,6 +278,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -332,6 +340,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "chat",
@@ -388,6 +400,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "system",
@@ -437,6 +453,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -489,6 +509,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -582,10 +606,9 @@
                 "lc": 1,
                 "type": "not_implemented",
                 "id": [
-                  "tests",
-                  "unit_tests",
+                  "langchain_core",
+                  "language_models",
                   "fake",
-                  "llm",
                   "FakeListLLM"
                 ],
                 "repr": "FakeListLLM(responses=['foo'], i=1)",
@@ -686,6 +709,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "ai",
@@ -740,6 +767,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -798,6 +829,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "chat",
@@ -854,6 +889,10 @@
                                 "title": "Additional Kwargs",
                                 "type": "object"
                               },
+                              "response_metadata": {
+                                "title": "Response Metadata",
+                                "type": "object"
+                              },
                               "type": {
                                 "title": "Type",
                                 "default": "system",
@@ -903,6 +942,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -955,6 +998,10 @@
                               },
                               "additional_kwargs": {
                                 "title": "Additional Kwargs",
+                                "type": "object"
+                              },
+                              "response_metadata": {
+                                "title": "Response Metadata",
                                 "type": "object"
                               },
                               "type": {
@@ -1035,10 +1082,9 @@
                       "type": "runnable",
                       "data": {
                         "id": [
-                          "tests",
-                          "unit_tests",
+                          "langchain_core",
+                          "language_models",
                           "fake",
-                          "llm",
                           "FakeListLLM"
                         ],
                         "name": "FakeListLLM"
@@ -1102,10 +1148,9 @@
                   "type": "runnable",
                   "data": {
                     "id": [
-                      "tests",
-                      "unit_tests",
+                      "langchain_core",
+                      "language_models",
                       "fake",
-                      "llm",
                       "FakeListLLM"
                     ],
                     "name": "FakeListLLM"
@@ -1260,6 +1305,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "ai",
@@ -1314,6 +1363,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1372,6 +1425,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "chat",
@@ -1428,6 +1485,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "system",
@@ -1477,6 +1538,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1529,6 +1594,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1622,10 +1691,9 @@
                   "lc": 1,
                   "type": "not_implemented",
                   "id": [
-                    "tests",
-                    "unit_tests",
+                    "langchain_core",
+                    "language_models",
                     "fake",
-                    "llm",
                     "FakeListLLM"
                   ],
                   "repr": "FakeListLLM(responses=['bar'])",
@@ -1726,6 +1794,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "ai",
@@ -1780,6 +1852,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1838,6 +1914,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "chat",
@@ -1894,6 +1974,10 @@
                                   "title": "Additional Kwargs",
                                   "type": "object"
                                 },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
+                                  "type": "object"
+                                },
                                 "type": {
                                   "title": "Type",
                                   "default": "system",
@@ -1943,6 +2027,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -1995,6 +2083,10 @@
                                 },
                                 "additional_kwargs": {
                                   "title": "Additional Kwargs",
+                                  "type": "object"
+                                },
+                                "response_metadata": {
+                                  "title": "Response Metadata",
                                   "type": "object"
                                 },
                                 "type": {
@@ -2075,10 +2167,9 @@
                         "type": "runnable",
                         "data": {
                           "id": [
-                            "tests",
-                            "unit_tests",
+                            "langchain_core",
+                            "language_models",
                             "fake",
-                            "llm",
                             "FakeListLLM"
                           ],
                           "name": "FakeListLLM"
@@ -2142,10 +2233,9 @@
                     "type": "runnable",
                     "data": {
                       "id": [
-                        "tests",
-                        "unit_tests",
+                        "langchain_core",
+                        "language_models",
                         "fake",
-                        "llm",
                         "FakeListLLM"
                       ],
                       "name": "FakeListLLM"
@@ -2617,10 +2707,9 @@
         "lc": 1,
         "type": "not_implemented",
         "id": [
-          "tests",
-          "unit_tests",
+          "langchain_core",
+          "language_models",
           "fake",
-          "llm",
           "FakeListLLM"
         ],
         "repr": "FakeListLLM(responses=['foo'], i=1)",
@@ -2721,6 +2810,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -2775,6 +2868,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -2833,6 +2930,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -2889,6 +2990,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -2938,6 +3043,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -2990,6 +3099,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -3070,10 +3183,9 @@
               "type": "runnable",
               "data": {
                 "id": [
-                  "tests",
-                  "unit_tests",
+                  "langchain_core",
+                  "language_models",
                   "fake",
-                  "llm",
                   "FakeListLLM"
                 ],
                 "name": "FakeListLLM"
@@ -3105,10 +3217,9 @@
           "lc": 1,
           "type": "not_implemented",
           "id": [
-            "tests",
-            "unit_tests",
+            "langchain_core",
+            "language_models",
             "fake",
-            "llm",
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['bar'])",
@@ -3209,6 +3320,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "ai",
@@ -3263,6 +3378,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -3321,6 +3440,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "chat",
@@ -3377,6 +3500,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "system",
@@ -3426,6 +3553,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -3478,6 +3609,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -3558,10 +3693,9 @@
                 "type": "runnable",
                 "data": {
                   "id": [
-                    "tests",
-                    "unit_tests",
+                    "langchain_core",
+                    "language_models",
                     "fake",
-                    "llm",
                     "FakeListLLM"
                   ],
                   "name": "FakeListLLM"
@@ -3699,6 +3833,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "ai",
@@ -3753,6 +3891,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -3811,6 +3953,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "chat",
@@ -3867,6 +4013,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "system",
@@ -3916,6 +4066,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -3968,6 +4122,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -4095,10 +4253,9 @@
         "lc": 1,
         "type": "not_implemented",
         "id": [
-          "tests",
-          "unit_tests",
+          "langchain_core",
+          "language_models",
           "fake",
-          "llm",
           "FakeListLLM"
         ],
         "repr": "FakeListLLM(responses=['foo'], i=1)",
@@ -4199,6 +4356,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "ai",
@@ -4253,6 +4414,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -4311,6 +4476,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "chat",
@@ -4367,6 +4536,10 @@
                         "title": "Additional Kwargs",
                         "type": "object"
                       },
+                      "response_metadata": {
+                        "title": "Response Metadata",
+                        "type": "object"
+                      },
                       "type": {
                         "title": "Type",
                         "default": "system",
@@ -4416,6 +4589,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -4468,6 +4645,10 @@
                       },
                       "additional_kwargs": {
                         "title": "Additional Kwargs",
+                        "type": "object"
+                      },
+                      "response_metadata": {
+                        "title": "Response Metadata",
                         "type": "object"
                       },
                       "type": {
@@ -4548,10 +4729,9 @@
               "type": "runnable",
               "data": {
                 "id": [
-                  "tests",
-                  "unit_tests",
+                  "langchain_core",
+                  "language_models",
                   "fake",
-                  "llm",
                   "FakeListLLM"
                 ],
                 "name": "FakeListLLM"
@@ -4583,10 +4763,9 @@
           "lc": 1,
           "type": "not_implemented",
           "id": [
-            "tests",
-            "unit_tests",
+            "langchain_core",
+            "language_models",
             "fake",
-            "llm",
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['baz'], i=1)",
@@ -4687,6 +4866,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "ai",
@@ -4741,6 +4924,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -4799,6 +4986,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "chat",
@@ -4855,6 +5046,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "system",
@@ -4904,6 +5099,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -4956,6 +5155,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -5036,10 +5239,9 @@
                 "type": "runnable",
                 "data": {
                   "id": [
-                    "tests",
-                    "unit_tests",
+                    "langchain_core",
+                    "language_models",
                     "fake",
-                    "llm",
                     "FakeListLLM"
                   ],
                   "name": "FakeListLLM"
@@ -5070,10 +5272,9 @@
           "lc": 1,
           "type": "not_implemented",
           "id": [
-            "tests",
-            "unit_tests",
+            "langchain_core",
+            "language_models",
             "fake",
-            "llm",
             "FakeListLLM"
           ],
           "repr": "FakeListLLM(responses=['bar'])",
@@ -5174,6 +5375,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "ai",
@@ -5228,6 +5433,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -5286,6 +5495,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "chat",
@@ -5342,6 +5555,10 @@
                           "title": "Additional Kwargs",
                           "type": "object"
                         },
+                        "response_metadata": {
+                          "title": "Response Metadata",
+                          "type": "object"
+                        },
                         "type": {
                           "title": "Type",
                           "default": "system",
@@ -5391,6 +5608,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -5443,6 +5664,10 @@
                         },
                         "additional_kwargs": {
                           "title": "Additional Kwargs",
+                          "type": "object"
+                        },
+                        "response_metadata": {
+                          "title": "Response Metadata",
                           "type": "object"
                         },
                         "type": {
@@ -5523,10 +5748,9 @@
                 "type": "runnable",
                 "data": {
                   "id": [
-                    "tests",
-                    "unit_tests",
+                    "langchain_core",
+                    "language_models",
                     "fake",
-                    "llm",
                     "FakeListLLM"
                   ],
                   "name": "FakeListLLM"
@@ -5664,6 +5888,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "ai",
@@ -5718,6 +5946,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -5776,6 +6008,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "chat",
@@ -5832,6 +6068,10 @@
                     "title": "Additional Kwargs",
                     "type": "object"
                   },
+                  "response_metadata": {
+                    "title": "Response Metadata",
+                    "type": "object"
+                  },
                   "type": {
                     "title": "Type",
                     "default": "system",
@@ -5881,6 +6121,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
@@ -5933,6 +6177,10 @@
                   },
                   "additional_kwargs": {
                     "title": "Additional Kwargs",
+                    "type": "object"
+                  },
+                  "response_metadata": {
+                    "title": "Response Metadata",
                     "type": "object"
                   },
                   "type": {
