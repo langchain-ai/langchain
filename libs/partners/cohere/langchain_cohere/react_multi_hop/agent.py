@@ -196,14 +196,14 @@ def render_tool_description(tool: BaseTool) -> str:
 
 
 def render_observation(
-    observation: Union[Iterable[Dict[str, str]], str], index: int
+    observation: Union[Iterable[Union[Dict[str, str], str]], str], index: int
 ) -> Tuple[BaseMessage, int]:
     if not isinstance(observation, Iterable) and not isinstance(observation, str):
         raise ValueError("observation must be a Iterable or string")
     if isinstance(observation, Iterable) and not any(
         isinstance(item, dict) for item in observation
     ):
-        raise ValueError("observation sequences must contain dictionaries")
+        raise ValueError("observation Iterable must only contain dictionaries or strings")
 
     rendered_documents = []
     document_prompt = """Document: {index}
@@ -214,21 +214,28 @@ def render_observation(
             document_prompt.format(index=index, fields=observation)
         )
         index += 1
+
     if isinstance(observation, Iterable):
         for doc in observation:
-            fields: List[str] = []
-            for k, v in doc.items():
-                if k.lower() == "url":
-                    k = "URL"
-                else:
-                    k = k.title()
-                fields.append(f"{k}: {v}")
-            rendered_documents.append(
-                document_prompt.format(
-                    index=index,
-                    fields="\n".join(fields),
+            if isinstance(doc, str):
+                rendered_documents.append(
+                    document_prompt.format(index=index, fields=doc)
                 )
-            )
+            else:
+                fields: List[str] = []
+                for k, v in doc.items():
+                    if k.lower() == "url":
+                        k = "URL"
+                    else:
+                        k = k.title()
+                    fields.append(f"{k}: {v}")
+                rendered_documents.append(
+                    document_prompt.format(
+                        index=index,
+                        fields="\n".join(fields),
+                    )
+                )
+
             index += 1
 
     prompt_content = "<results>\n" + "\n\n".join(rendered_documents) + "\n</results>"
