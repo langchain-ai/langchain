@@ -13,11 +13,10 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import (
-    PYTHON_TO_JSON_TYPES,
     convert_to_openai_function,
 )
 
-JSON_TO_PYTHON_TYPES = {v: k for k, v in PYTHON_TO_JSON_TYPES.items()}
+from langchain_cohere.utils import JSON_TO_PYTHON_TYPES
 
 
 def create_cohere_tools_agent(

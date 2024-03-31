@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Sequence
+from typing import Any, Callable
 
 import cohere
-from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 from tenacity import (
     before_sleep_log,
     retry,
@@ -14,6 +13,15 @@ from tenacity import (
 )
 
 logger = logging.getLogger(__name__)
+
+JSON_TO_PYTHON_TYPES = {
+    "string": "str",
+    "number": "float",
+    "boolean": "bool",
+    "integer": "int",
+    "array": "List",
+    "object": "Dict",
+}
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
@@ -35,23 +43,3 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
         retry=retry_conditions,
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-
-
-def render_messages(messages: Sequence[BaseMessage]) -> str:
-    """Renders one or more BaseMessage implementations into prompt content."""
-    return "".join(
-        [
-            f"<|START_OF_TURN_TOKEN|>{render_role(message)}{message.content}<|END_OF_TURN_TOKEN|>"
-            for message in messages
-        ]
-    )
-
-
-def render_role(message: BaseMessage) -> str:
-    """Renders the role of a message into prompt content."""
-    if isinstance(message, AIMessage):
-        return "<|CHATBOT_TOKEN|>"
-    elif isinstance(message, SystemMessage):
-        return "<|SYSTEM_TOKEN|>"
-    else:
-        return "<|USER_TOKEN|>"
