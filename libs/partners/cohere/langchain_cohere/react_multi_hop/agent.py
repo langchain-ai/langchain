@@ -207,13 +207,17 @@ def render_observation(
     document_prompt = """Document: {index}
 {fields}"""
     for doc in observation:
+        fields: List[str] = []
+        for k, v in doc.items():
+            if k.lower() == "url":
+                k = "URL"
+            else:
+                k = k.title()
+            fields.append(f"{k}: {v}")
         rendered_documents.append(
             document_prompt.format(
                 index=index,
-                fields="\n".join(
-                    f"{"URL" if k.lower() == "url" else k.title()}: {v}"
-                    for k, v in doc.items()
-                ),
+                fields="\n".join(fields),
             )
         )
         index += 1
