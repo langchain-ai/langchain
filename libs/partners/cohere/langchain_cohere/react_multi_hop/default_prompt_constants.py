@@ -19,9 +19,3 @@ Thirdly, Decide which of the retrieved documents are relevant to the user's last
 Fourthly, Decide which of the retrieved documents contain facts that should be cited in a good answer to the user's last input by writing 'Cited Documents:' followed a comma-separated list of document numbers. If you dont want to cite any of them, you should instead write 'None'.
 Fifthly, Write 'Answer:' followed by a response to the user's last input in high quality natural english. Use the retrieved documents to help you. Do not insert any citations or grounding markup.
 Finally, Write 'Grounded answer:' followed by a response to the user's last input in high quality natural english. Use the symbols <co: doc> and </co: doc> to indicate when a fact comes from a document in the search result, e.g <co: 4>my fact</co: 4> for a fact from document 4."""  # noqa: E501
-default_observation_prefix = (
-    "<|END_OF_TURN_TOKEN|>\n<|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|><results>\n"  # noqa: E501
-)
-default_llm_prefix = (
-    "</results><|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>"  # noqa: E501
-)

@@ -52,7 +52,7 @@ multi_hop_prompt_partial = PromptTemplate.from_template(
 ## Available Tools
 Here is a list of tools that you have available to you:
 
-{tools}<|END_OF_TURN_TOKEN|>{history}{user_prompt}<|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>{multi_hop_instruction}<|END_OF_TURN_TOKEN|><|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>{steps}"""
+{tools}<|END_OF_TURN_TOKEN|>{history}{user_prompt}<|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>{multi_hop_instruction}<|END_OF_TURN_TOKEN|>{steps}"""
 ).partial(
     multi_hop_instruction=default_multi_hop_instruction,
 )

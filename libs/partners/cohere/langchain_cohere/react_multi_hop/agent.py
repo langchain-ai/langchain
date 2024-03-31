@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any, Dict, List, Sequence, Tuple, Union
 
-from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages.ai import AIMessage
 from langchain_core.messages.base import BaseMessage
@@ -15,10 +15,6 @@ from langchain_core.tools import BaseTool
 from langchain_cohere.cohere_agent import (
     JSON_TO_PYTHON_TYPES,
     _remove_signature_from_description,
-)
-from langchain_cohere.react_multi_hop.default_prompt_constants import (
-    default_llm_prefix,
-    default_observation_prefix,
 )
 from langchain_cohere.react_multi_hop.parsing import (
     parse_actions,
@@ -71,14 +67,17 @@ class CohereToolsReactAgentOutputParser(
             return AgentFinish({"output": parsed_answer["answer"]}, text)
         elif any([x in text for x in ["Plan: ", "Reflection: ", "Action: "]]):
             completion, plan, actions = parse_actions(text)
-            return [
-                AgentAction(
-                    action["tool_name"],
-                    action["parameters"],
-                    f"\n{action}\n" if i > 0 else f"\n{plan}\n{action}\n",
+            agent_actions: List[AgentAction] = []
+            for i, action in enumerate(actions):
+                agent_action = AgentActionMessageLog(
+                    tool=action["tool_name"],
+                    tool_input=action["parameters"],
+                    log=f"\n{action}\n" if i > 0 else f"\n{plan}\n{action}\n",
+                    message_log=[AIMessage(content=completion)],
                 )
-                for i, action in enumerate(actions)
-            ]
+                agent_actions.append(agent_action)
+
+            return agent_actions
         else:
             raise ValueError(
                 "\nCould not parse generation as it did not contain Plan, Reflection,"
@@ -145,7 +144,7 @@ def get_tool_args(tool: BaseTool) -> str:
     return prompt_content
 
 
-def render_messages(messages: List[BaseMessage]) -> str:
+def render_messages(messages: Sequence[BaseMessage]) -> str:
     """Render chat history."""
     return "".join(
         [
@@ -196,26 +195,49 @@ def render_tool_description(tool: BaseTool) -> str:
     )
 
 
+def render_observation(
+    observation: List[Dict[str, str]], index: int
+) -> Tuple[BaseMessage, int]:
+    if not isinstance(observation, list) or any(
+        not isinstance(item, dict) for item in observation
+    ):
+        raise ValueError("observation is not a list of dictionaries")
+
+    rendered_documents = []
+    document_prompt = """Document: {index}
+{fields}"""
+    for doc in observation:
+        rendered_documents.append(
+            document_prompt.format(
+                index=index,
+                fields="\n".join(
+                    f"{"URL" if k.lower() == "url" else k.title()}: {v}"
+                    for k, v in doc.items()
+                ),
+            )
+        )
+        index += 1
+    prompt_content = f"<results>\n{"\n\n".join(rendered_documents)}\n</results>"
+    return SystemMessage(content=prompt_content), index
+
+
 def render_intermediate_steps(
     intermediate_steps: List[Tuple[AgentAction, Any]],
-    observation_prefix: str = default_observation_prefix,
-    llm_prefix: str = default_llm_prefix,
 ) -> str:
     """Construct the scratchpad that lets the agent continue its thought process."""
-    thoughts = ""
-    last_log = ""
-    # Global result idx to be used for grounded answer citation from any prior action.
+    prompt_content = ""
+    if any(
+        not isinstance(action, AgentActionMessageLog)
+        for action, _ in intermediate_steps
+    ):
+        raise ValueError("action is not AgentActionMessageLog")
 
-    result_idx = 0
-    for step_i, (action, observation) in enumerate(intermediate_steps):
-        # For parallel tool calls, dont add the action call twice, add all the results.
-        if action.log != last_log:
-            thoughts += action.log
-        last_log = action.log
-        if step_i > 0:
-            thoughts += "\n"
-        observation_str = f"Document: {result_idx}\n{observation}"
-        result_idx += 1
-        thoughts += f"{observation_prefix}{observation_str}{llm_prefix}"
+    i = 0
+    for action, observation in intermediate_steps:
+        prompt_content += render_messages(action.messages)
+        observation_message, i = render_observation(observation, i)
+        prompt_content += render_messages([observation_message])
+    # Always add an 'open' chatbot turn.
+    prompt_content += "<|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>"
 
-    return thoughts
+    return prompt_content
