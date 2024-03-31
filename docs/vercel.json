@@ -1024,6 +1024,10 @@
     {
       "source": "/docs/guides/structured_output(/?)",
       "destination": "/docs/modules/model_io/chat/structured_output"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/structured_tools(/?)",
+      "destination": "/docs/modules/tools"
     }
   ]
 }

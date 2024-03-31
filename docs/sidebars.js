@@ -196,7 +196,7 @@
     },
     {
       type: "category",
-      label: "Data connection",
+      label: "Retrieval",
       collapsed: false,
       collapsible: false,
       link: { type: "doc", id: "modules/data_connection/index" },
