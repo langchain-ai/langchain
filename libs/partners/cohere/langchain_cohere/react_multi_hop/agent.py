@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Sequence, Mapping
 from typing import Any, Dict, Iterable, List, Tuple, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
@@ -196,46 +196,53 @@ def render_tool_description(tool: BaseTool) -> str:
 
 
 def render_observation(
-    observation: Union[Iterable[Union[Dict[str, str], str]], str], index: int
+    observation: Union[List[Union[Mapping[str, str], Mapping[str, str], str]], str],
+    index: int,
 ) -> Tuple[BaseMessage, int]:
-    if not isinstance(observation, Iterable) and not isinstance(observation, str):
-        raise ValueError("observation must be a Iterable or string")
-    if isinstance(observation, Iterable) and not any(
-        isinstance(item, dict) for item in observation
+    """Renders the 'output' part of an Agent's intermediate step into prompt content."""
+    if (
+        not isinstance(observation, list)
+        and not isinstance(observation, str)
+        and not isinstance(observation, Mapping)
     ):
-        raise ValueError("observation Iterable must only contain dictionaries or strings")
+        raise ValueError("observation must be a list, a Mapping, or a string")
 
     rendered_documents = []
     document_prompt = """Document: {index}
 {fields}"""
 
     if isinstance(observation, str):
-        rendered_documents.append(
-            document_prompt.format(index=index, fields=observation)
-        )
-        index += 1
+        # strings are turned into a key/value pair and a key of 'output' is added.
+        observation = [{"output": observation}]
 
-    if isinstance(observation, Iterable):
+    if isinstance(observation, Mapping):
+        observation = [observation]
+
+    if isinstance(observation, list):
         for doc in observation:
             if isinstance(doc, str):
-                rendered_documents.append(
-                    document_prompt.format(index=index, fields=doc)
-                )
-            else:
-                fields: List[str] = []
-                for k, v in doc.items():
-                    if k.lower() == "url":
-                        k = "URL"
-                    else:
-                        k = k.title()
-                    fields.append(f"{k}: {v}")
-                rendered_documents.append(
-                    document_prompt.format(
-                        index=index,
-                        fields="\n".join(fields),
-                    )
-                )
+                # strings are turned into a key/value pair and a key of 'output' is added.
+                doc = {"output": doc}
 
+            if not isinstance(doc, Mapping):
+                raise ValueError("all observation list items must be a Mapping or a string")
+
+            fields: List[str] = []
+            for k, v in doc.items():
+                if k.lower() == "url":
+                    # 'url' is a special field which is always upper case.
+                    k = "URL"
+                else:
+                    # keys are otherwise transformed into title case.
+                    k = k.title()
+                fields.append(f"{k}: {v}")
+
+            rendered_documents.append(
+                document_prompt.format(
+                    index=index,
+                    fields="\n".join(fields),
+                )
+            )
             index += 1
 
     prompt_content = "<results>\n" + "\n\n".join(rendered_documents) + "\n</results>"
