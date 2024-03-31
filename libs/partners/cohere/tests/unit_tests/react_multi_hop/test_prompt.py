@@ -11,7 +11,9 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import BaseTool, tool
 
-from langchain_cohere.react_multi_hop.agent import multi_hop_prompt
+from langchain_cohere.react_multi_hop.agent import (
+    multi_hop_prompt,
+)
 
 SCENARIO_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 
@@ -73,7 +75,7 @@ Action: ```json
         }
     }
 ]
-```"""  # noqa: E501,
+```""",  # noqa: E501
     """Reflection: I found out that Sound of Music was renamed Best Buy in 1983, now I need to find out when Best Buy was added to the S&P 500.
 Action: ```json
 [
@@ -84,7 +86,7 @@ Action: ```json
         }
     }
 ]
-```"""  # noqa: E501,
+```""",  # noqa: E501,
 ]
 # MESSAGES = []
 
@@ -154,7 +156,7 @@ Action: ```json
                 ),
             ],
             "base_after_two_hops",
-            id="after_two_hops",
+            id="after two hops",
         ),
     ],
 )
