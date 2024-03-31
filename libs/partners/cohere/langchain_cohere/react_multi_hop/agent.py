@@ -1,5 +1,5 @@
-from collections.abc import Callable
-from typing import Any, Dict, List, Sequence, Tuple, Union
+from collections.abc import Callable, Sequence
+from typing import Any, Dict, Iterable, List, Tuple, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.language_models import BaseLanguageModel
@@ -196,31 +196,40 @@ def render_tool_description(tool: BaseTool) -> str:
 
 
 def render_observation(
-    observation: List[Dict[str, str]], index: int
+    observation: Union[Iterable[Dict[str, str]], str], index: int
 ) -> Tuple[BaseMessage, int]:
-    if not isinstance(observation, list) or any(
-        not isinstance(item, dict) for item in observation
+    if not isinstance(observation, Iterable) and not isinstance(observation, str):
+        raise ValueError("observation must be a Iterable or string")
+    if isinstance(observation, Iterable) and not any(
+        isinstance(item, dict) for item in observation
     ):
-        raise ValueError("observation is not a list of dictionaries")
+        raise ValueError("observation sequences must contain dictionaries")
 
     rendered_documents = []
     document_prompt = """Document: {index}
 {fields}"""
-    for doc in observation:
-        fields: List[str] = []
-        for k, v in doc.items():
-            if k.lower() == "url":
-                k = "URL"
-            else:
-                k = k.title()
-            fields.append(f"{k}: {v}")
+
+    if isinstance(observation, str):
         rendered_documents.append(
-            document_prompt.format(
-                index=index,
-                fields="\n".join(fields),
-            )
+            document_prompt.format(index=index, fields=observation)
         )
         index += 1
+    if isinstance(observation, Iterable):
+        for doc in observation:
+            fields: List[str] = []
+            for k, v in doc.items():
+                if k.lower() == "url":
+                    k = "URL"
+                else:
+                    k = k.title()
+                fields.append(f"{k}: {v}")
+            rendered_documents.append(
+                document_prompt.format(
+                    index=index,
+                    fields="\n".join(fields),
+                )
+            )
+            index += 1
 
     prompt_content = "<results>\n" + "\n\n".join(rendered_documents) + "\n</results>"
     return SystemMessage(content=prompt_content), index
