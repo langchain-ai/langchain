@@ -27,10 +27,8 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         try:
             import redis
         except ImportError:
-            raise ImportError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
+            raise ImportError("Could not import redis python package. "
+                              "Please install it with `pip install redis`.")
 
         try:
             self.redis_client = get_client(redis_url=url)
@@ -53,6 +51,10 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         items = [json.loads(m.decode("utf-8")) for m in _items[::-1]]
         messages = messages_from_dict(items)
         return messages
+
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        """Just for lint, do not use"""
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Redis"""

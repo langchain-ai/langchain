@@ -237,6 +237,10 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict(items)
         return messages
 
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        """Just for lint, do not use"""
+
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in SingleStoreDB"""
         self._create_table_if_not_exists()

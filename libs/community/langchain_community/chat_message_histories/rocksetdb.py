@@ -231,6 +231,10 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
             )
         )
 
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        """Just for lint, do not use"""
+
     def add_message(self, message: BaseMessage) -> None:
         """Add a Message object to the history.
 

@@ -111,6 +111,10 @@ class XataChatMessageHistory(BaseChatMessageHistory):
         )
         return msgs
 
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        """Just for lint, do not use"""
+
     def clear(self) -> None:
         """Delete session from Xata table."""
         while True:

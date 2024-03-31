@@ -77,6 +77,10 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict([el["result"] for el in records])
         return messages
 
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        """Just for lint, do not use"""
+
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Neo4j"""
         query = (
