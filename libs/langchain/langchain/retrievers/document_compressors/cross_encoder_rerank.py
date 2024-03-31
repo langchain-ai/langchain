@@ -3,17 +3,16 @@ from __future__ import annotations
 import operator
 from typing import Optional, Sequence
 
-from langchain.callbacks.manager import Callbacks
-from langchain.pydantic_v1 import Extra
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
-from langchain.schema import Document
-from langchain.schema.cross_encoder import CrossEncoder
+from langchain_community.cross_encoders import BaseCrossEncoder
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import BaseDocumentCompressor, Document
+from langchain_core.pydantic_v1 import Extra
 
 
 class CrossEncoderReranker(BaseDocumentCompressor):
     """Document compressor that uses CrossEncoder for reranking."""
 
-    model: CrossEncoder
+    model: BaseCrossEncoder
     """CrossEncoder model to use for scoring similarity
       between the query and documents."""
     top_n: int = 3
@@ -42,21 +41,7 @@ class CrossEncoderReranker(BaseDocumentCompressor):
         Returns:
             A sequence of compressed documents.
         """
-
-        pairs = list(map(lambda doc: [query, doc.page_content], documents))
-        scores = self.model.score(pairs)
-
+        scores = self.model.score([(query, doc.page_content) for doc in documents])
         docs_with_scores = list(zip(documents, scores))
         result = sorted(docs_with_scores, key=operator.itemgetter(1), reverse=True)
-        reranked_docs = list(map(lambda x: x[0], result))
-        scores = list(map(lambda x: x[1], result))
-
-        final_results = []
-        for index in range(self.top_n):
-            if len(reranked_docs) <= index:
-                break
-            doc = reranked_docs[index]
-            doc.metadata["relevance_score"] = scores[index]
-            final_results.append(doc)
-
-        return final_results
+        return [doc for doc, _ in result[: self.top_n]]

@@ -1,6 +1,6 @@
 """Test huggingface cross encoders."""
 
-from langchain.cross_encoders.huggingface import HuggingFaceCrossEncoder
+from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
 
 def _assert(encoder: HuggingFaceCrossEncoder) -> None:

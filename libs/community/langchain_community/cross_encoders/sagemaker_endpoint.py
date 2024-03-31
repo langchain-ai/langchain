@@ -1,8 +1,9 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from langchain.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain.schema.cross_encoder import CrossEncoder
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+
+from langchain_community.cross_encoders.base import BaseCrossEncoder
 
 
 class CrossEncoderContentHandler:
@@ -11,8 +12,8 @@ class CrossEncoderContentHandler:
     content_type = "application/json"
     accepts = "application/json"
 
-    def transform_input(self, pairs: List[List[str]]) -> bytes:
-        input_str = json.dumps({"pairs": pairs})
+    def transform_input(self, text_pairs: List[Tuple[str, str]]) -> bytes:
+        input_str = json.dumps({"text_pairs": text_pairs})
         return input_str.encode("utf-8")
 
     def transform_output(self, output: Any) -> List[float]:
@@ -21,7 +22,7 @@ class CrossEncoderContentHandler:
         return scores
 
 
-class SagemakerEndpointCrossEncoder(BaseModel, CrossEncoder):
+class SagemakerEndpointCrossEncoder(BaseModel, BaseCrossEncoder):
     """SageMaker Inference CrossEncoder endpoint.
 
     To use, you must supply the endpoint name from your deployed
@@ -127,11 +128,11 @@ class SagemakerEndpointCrossEncoder(BaseModel, CrossEncoder):
             )
         return values
 
-    def score(self, pairs: List[List[str]]) -> List[float]:
+    def score(self, text_pairs: List[Tuple[str, str]]) -> List[float]:
         """Call out to SageMaker Inference CrossEncoder endpoint."""
         _endpoint_kwargs = self.endpoint_kwargs or {}
 
-        body = self.content_handler.transform_input(pairs)
+        body = self.content_handler.transform_input(text_pairs)
         content_type = self.content_handler.content_type
         accepts = self.content_handler.accepts
 

@@ -1,18 +1,19 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
-from langchain.pydantic_v1 import BaseModel, Extra, Field
-from langchain.schema.cross_encoder import CrossEncoder
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field
+
+from langchain_community.cross_encoders.base import BaseCrossEncoder
 
 DEFAULT_MODEL_NAME = "BAAI/bge-reranker-base"
 
 
-class HuggingFaceCrossEncoder(BaseModel, CrossEncoder):
+class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
     """HuggingFace cross encoder models.
 
     Example:
         .. code-block:: python
 
-            from langchain.cross_encoders import HuggingFaceCrossEncoder
+            from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
             model_name = "BAAI/bge-reranker-base"
             model_kwargs = {'device': 'cpu'}
@@ -49,14 +50,14 @@ class HuggingFaceCrossEncoder(BaseModel, CrossEncoder):
 
         extra = Extra.forbid
 
-    def score(self, pairs: List[List[str]]) -> List[float]:
+    def score(self, text_pairs: List[Tuple[str, str]]) -> List[float]:
         """Compute similarity scores using a HuggingFace transformer model.
 
         Args:
-            pairs: The list of text pairs to score the similarity.
+            text_pairs: The list of text text_pairs to score the similarity.
 
         Returns:
             List of scores, one for each pair.
         """
-        scores = self.client.predict(pairs)
+        scores = self.client.predict(text_pairs)
         return scores
