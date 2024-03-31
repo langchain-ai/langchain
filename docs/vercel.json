@@ -1028,6 +1028,10 @@
     {
       "source": "/docs/modules/agents/how_to/structured_tools(/?)",
       "destination": "/docs/modules/tools"
+    },
+    {
+      "source": "/docs/use_cases/csv(/?)",
+      "destination": "/docs/use_cases/sql/csv"
     }
   ]
 }
