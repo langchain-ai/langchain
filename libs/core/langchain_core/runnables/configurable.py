@@ -229,13 +229,13 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
         .. code-block:: python
 
-            from langchain.prompts import PromptTemplate
+            from langchain_core.prompts import PromptTemplate
             from langchain_core.runnables import ConfigurableField
             from langchain_openai import ChatOpenAI
 
             model = ChatOpenAI(temperature=0).configurable_fields(
                 temperature=ConfigurableField(
-                    id="llm_temperature",
+                    id="temperature",
                     name="LLM Temperature",
                     description="The temperature of the LLM",
                 )
@@ -244,25 +244,20 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             
             # When invoking the created RunnableSequence, you can pass in the
             # value for your ConfigurableField's id which in this case
-            # will be change in llm_temperature
+            # will be change in temperature
             
             prompt = PromptTemplate.from_template("Pick a random number above {x}")
             chain = prompt | model
             
             chain.invoke({"x": 0})
-
-
-            # The `with_config` method brings in the desired Prompt Runnable in your
-            # Runnable Sequence.
-
-            chain.with_config(configurable={"llm_temperature": 0.9}).invoke({"x": 0})
+            chain.invoke({"x": 0}, config={"configurable": {"temperature": 0.9}})
 
 
     Here is an example of using a RunnableConfigurableFields with HubRunnables:
 
         .. code-block:: python
 
-            from langchain.prompts import PromptTemplate
+            from langchain_core.prompts import PromptTemplate
             from langchain_core.runnables import ConfigurableField
             from langchain_openai import ChatOpenAI
             from langchain.runnables.hub import HubRunnable
@@ -277,10 +272,11 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
             prompt.invoke({"question": "foo", "context": "bar"})
 
-            #Invoking prompt with `with_config` method
+            # Invoking prompt with `with_config` method
 
-            prompt.with_config(configurable={"hub_commit": "rlm/rag-prompt-llama"}).invoke(
-                {"question": "foo", "context": "bar"}
+            prompt.invoke(
+                {"question": "foo", "context": "bar"},
+                config={"configurable": {"hub_commit": "rlm/rag-prompt-llama"}},
             )
     """
 
