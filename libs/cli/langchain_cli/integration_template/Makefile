@@ -7,6 +7,12 @@ all: help
 TEST_FILE ?= tests/unit_tests/
 integration_test integration_tests: TEST_FILE = tests/integration_tests/
 
+
+# unit tests are run with the --disable-socket flag to prevent network calls
+test tests:
+	poetry run pytest --disable-socket --allow-unit-socket $(TEST_FILE)
+
+# integration tests are run without the --disable-socket flag to allow network calls
 test tests integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
 
