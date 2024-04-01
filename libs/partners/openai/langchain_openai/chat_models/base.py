@@ -64,7 +64,6 @@ from langchain_core.output_parsers import (
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
-    JsonOutputToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
@@ -233,7 +232,9 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role, id=id_)
     elif role or default_class == ToolCallsMessageChunk:
         return ToolCallsMessageChunk(
-            content=content, additional_kwargs=additional_kwargs, id=id_,
+            content=content,
+            additional_kwargs=additional_kwargs,
+            id=id_,
             tool_calls=None,
         )
     else:
