@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator, Field
+from langchain_core.pydantic_v1 import root_validator, Field, BaseModel
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
@@ -39,6 +39,7 @@ class AzureAiServicesDocumentIntelligenceTool(BaseTool):
         "extract text, tables, and key-value pairs from documents. "
         "Input should be a url to a document."
     )
+    args_schema: Type[BaseModel] = AzureAiServicesDocumentIntelligenceToolInput
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

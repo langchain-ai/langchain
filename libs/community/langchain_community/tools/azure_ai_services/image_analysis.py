@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import root_validator, Field, BaseModel
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
@@ -13,6 +13,12 @@ from langchain_community.tools.azure_ai_services.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class AzureAiServicesImageAnalysisToolInput(BaseTool):
+    """Input for the AzureAiServicesImageAnalysisToolInput."""
+
+    query: str = Field(description="URL for the Image")
 
 
 class AzureAiServicesImageAnalysisTool(BaseTool):
@@ -33,6 +39,7 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
         "Useful for when you need to analyze images. "
         "Input should be a url to an image."
     )
+    args_schema: Type[BaseModel] = AzureAiServicesImageAnalysisToolInput
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
