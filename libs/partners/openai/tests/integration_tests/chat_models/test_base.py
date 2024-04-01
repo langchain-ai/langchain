@@ -10,6 +10,8 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
     ToolMessage,
+    ToolCall,
+    ToolCallsMessage,
 )
 from langchain_core.outputs import (
     ChatGeneration,
@@ -482,6 +484,13 @@ def test_tool_use() -> None:
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
     msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
+
+    assert isinstance(ai_msg, ToolCallsMessage)
+    assert isinstance(ai_msg.tool_calls, list)
+    assert len(ai_msg.tool_calls) == 1
+    tool_call = ai_msg.tool_calls[0]
+    assert isinstance(tool_call, ToolCall)
+
     tool_msg = ToolMessage(
         "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
     )
