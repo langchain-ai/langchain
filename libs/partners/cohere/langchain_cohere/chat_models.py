@@ -17,6 +17,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
@@ -73,7 +74,7 @@ def get_role(message: BaseMessage) -> str:
 def get_cohere_chat_request(
     messages: List[BaseMessage],
     *,
-    documents: Optional[List[Dict[str, str]]] = None,
+    documents: Optional[List[Document]] = None,
     connectors: Optional[List[Dict[str, str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -95,17 +96,25 @@ def get_cohere_chat_request(
             "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."  # noqa: E501
         )
 
+    parsed_docs: Optional[List[Document]] = None
+    if "documents" in additional_kwargs:
+        parsed_docs = (
+            additional_kwargs["documents"]
+            if len(additional_kwargs["documents"]) > 0
+            else None
+        )
+    elif documents is not None and len(documents) > 0:
+        parsed_docs = documents
+
     formatted_docs: Optional[List[Dict[str, Any]]] = None
-    if additional_kwargs.get("documents"):
+    if parsed_docs is not None:
         formatted_docs = [
             {
                 "text": doc.page_content,
                 "id": doc.metadata.get("id") or f"doc-{str(i)}",
             }
-            for i, doc in enumerate(additional_kwargs.get("documents", []))
+            for i, doc in enumerate(parsed_docs)
         ]
-    elif documents:
-        formatted_docs = documents
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
