@@ -98,25 +98,25 @@ class BasePDFLoader(BaseLoader, ABC):
             if "~" in self.file:
                 self.file = os.path.expanduser(self.file)
 
-        # If the file is a web path or S3, download it to a temporary file, and use that
-        if not os.path.isfile(self.file) and self._is_valid_url(self.file):
-            self.temp_dir = tempfile.TemporaryDirectory()
-            _, suffix = os.path.splitext(self.file)
-            if self._is_s3_presigned_url(self.file):
-                suffix = urlparse(self.file).path.split("/")[-1]
-            temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
-            self.web_path = self.file
-            if not self._is_s3_url(self.file):
-                r = requests.get(self.file, headers=self.headers)
-                if r.status_code != 200:
-                    raise ValueError(
-                        "Check the url of your file; returned status code %s"
-                        % r.status_code
-                    )
+            # If the file is a web path or S3, download it to a temporary file, and use that
+            if not os.path.isfile(self.file) and self._is_valid_url(self.file):
+                self.temp_dir = tempfile.TemporaryDirectory()
+                _, suffix = os.path.splitext(self.file)
+                if self._is_s3_presigned_url(self.file):
+                    suffix = urlparse(self.file).path.split("/")[-1]
+                temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
+                self.web_path = self.file
+                if not self._is_s3_url(self.file):
+                    r = requests.get(self.file, headers=self.headers)
+                    if r.status_code != 200:
+                        raise ValueError(
+                            "Check the url of your file; returned status code %s"
+                            % r.status_code
+                        )
 
-                with open(temp_pdf, mode="wb") as f:
-                    f.write(r.content)
-                self.file = str(temp_pdf)
+                    with open(temp_pdf, mode="wb") as f:
+                        f.write(r.content)
+                    self.file = str(temp_pdf)
             elif not os.path.isfile(self.file):
                 raise ValueError("File path %s is not a valid file or url" % self.file)
 
