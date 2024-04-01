@@ -22,7 +22,6 @@ class ToolCallsMessage(AIMessage):
 
 
 class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
-
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
@@ -40,7 +39,7 @@ class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
                     "Cannot concatenate ToolCallsMessageChunks with different example values."
                 )
 
-            additional_kwargs=merge_dicts(
+            additional_kwargs = merge_dicts(
                 self.additional_kwargs, other.additional_kwargs
             )
             raw_tool_calls = additional_kwargs.get("tool_calls", [])

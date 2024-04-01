@@ -43,7 +43,10 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         except KeyError:
             return []
         tool_calls = parse_tool_calls(
-            raw_tool_calls, partial=partial, strict=self.strict, return_id=self.return_id,
+            raw_tool_calls,
+            partial=partial,
+            strict=self.strict,
+            return_id=self.return_id,
         )
         # for backwards compatibility
         for tc in tool_calls:

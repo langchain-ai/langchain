@@ -87,7 +87,11 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
 
 def parse_tool_calls(
-    raw_tool_calls: List[dict], *, partial: bool = False, strict: bool = False, return_id: bool = False,
+    raw_tool_calls: List[dict],
+    *,
+    partial: bool = False,
+    strict: bool = False,
+    return_id: bool = False,
 ) -> List[dict]:
     final_tools = []
     exceptions = []
