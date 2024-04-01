@@ -104,7 +104,7 @@ def test_callback_manager_configure_context_vars(
                                 "completion_tokens": 1,
                                 "total_tokens": 3,
                             },
-                            "model_id": "anthropic.claude-instant-v1"
+                            "model_id": "anthropic.claude-instant-v1",
                         },
                     )
                     mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)
