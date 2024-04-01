@@ -8,6 +8,7 @@ from langchain_core.messages.base import (
     merge_content,
 )
 from langchain_core.utils._merge import merge_dicts
+from langchain_core.utils.tools import parse_tool_calls
 
 
 class ToolCall(Serializable):
@@ -21,7 +22,41 @@ class ToolCallsMessage(AIMessage):
 
 
 class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
-    ...
+
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["ToolCallsMessageChunk"] = "ToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
+
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        if isinstance(other, ToolCallsMessageChunk):
+            if self.example != other.example:
+                raise ValueError(
+                    "Cannot concatenate ToolCallsMessageChunks with different example values."
+                )
+
+            additional_kwargs=merge_dicts(
+                self.additional_kwargs, other.additional_kwargs
+            )
+            raw_tool_calls = additional_kwargs.get("tool_calls", [])
+            tool_calls = parse_tool_calls(raw_tool_calls, partial=True, return_id=True)
+
+            return self.__class__(
+                example=self.example,
+                content=merge_content(self.content, other.content),
+                additional_kwargs=additional_kwargs,
+                response_metadata=merge_dicts(
+                    self.response_metadata, other.response_metadata
+                ),
+                tool_calls=tool_calls,
+            )
+
+        return super().__add__(other)
 
 
 ToolCallsMessage.update_forward_refs()
