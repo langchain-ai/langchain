@@ -164,7 +164,6 @@ optional = true
 # https://python.langchain.com/docs/contributing/code#working-with-optional-dependencies
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
-openai = "^1"
 python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 tiktoken = ">=0.3.2,<0.6.0"
@@ -172,6 +171,7 @@ anthropic = "^0.3.11"
 langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
 langchain-text-splitters = {path = "../text-splitters", develop = true}
+langchain-openai = {path = "../partners/openai", develop = true}
 langchainhub = "^0.1.15"
 
 [tool.poetry.group.lint]
