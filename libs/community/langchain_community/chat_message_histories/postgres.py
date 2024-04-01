@@ -9,33 +9,39 @@ from langchain_core.messages import (
     messages_from_dict,
 )
 
+from psycopg2 import sql, pool, OperationalError
+
+
 logger = logging.getLogger(__name__)
 
 
 class PostgresChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in a Postgres database."""
 
-    def __init__(self, session_id: str, database_config: dict, table_name: str = "message_store"):
+    def __init__(
+        self, session_id: str, database_config: dict, table_name: str = "message_store"
+    ):
         """
-        Initializes a new instance of the chat message history with specified session ID, 
-        database configuration, and table name. Attempts to establish a database connection 
+        Initializes a new instance of the chat message history with specified session ID,
+        database configuration, and table name. Attempts to establish a database connection
         using the provided configuration settings.
-        
+
         Args:
             session_id (str): A unique identifier for the chat session.
-            database_config (dict): Configuration settings for the database connection. 
-                Expected to contain the following keys: DB_HOST, DB_NAME, DB_USER, 
+            database_config (dict): Configuration settings for the database connection.
+                Expected to contain the following keys: DB_HOST, DB_NAME, DB_USER,
                 DB_PASSWORD, and DB_PORT.
-            table_name (str): The name of the database table to store chat messages. 
+            table_name (str): The name of the database table to store chat messages.
                 Defaults to 'message_store'.
-                
+
         Raises:
-            psycopg2.OperationalError: If the connection to the database fails.
+            OperationalError: If the connection to the database fails.
         """
-        import psycopg2
 
         try:
-            connection_pool = psycopg2.pool.ThreadedConnectionPool(
+            connection_pool = pool.ThreadedConnectionPool(
+                minconn=1,
+                maxconn=5,
                 host=database_config["DB_HOST"],
                 dbname=database_config["DB_NAME"],
                 user=database_config["DB_USER"],
@@ -45,8 +51,8 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
 
             self.connection = connection_pool.getconn()
             self.cursor = self.connection.cursor()
-        except psycopg2.OperationalError as error:
-            logger.error(f"Failed to get connection from pool: {error}")
+        except OperationalError as error:
+            print(f"Failed to get connection from pool: {error}")
 
         self.session_id = session_id
         self.table_name = table_name
@@ -75,7 +81,6 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in PostgreSQL"""
-        from psycopg import sql
 
         query = sql.SQL("INSERT INTO {} (session_id, message) VALUES (%s, %s);").format(
             sql.Identifier(self.table_name)
