@@ -183,6 +183,7 @@ def test_streaming_tool_call() -> None:
         "age": 27,
     }
 
+    assert isinstance(chunk, ToolCallsMessageChunk)
     assert chunk.tool_calls == [
         ToolCall(name="Person", args={"name": "Erick", "age": 27})
     ]
