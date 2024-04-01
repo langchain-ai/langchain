@@ -746,7 +746,8 @@ class VDMS(VectorStore):
     ) -> Tuple[List[Dict[str, Any]], List]:
         all_blobs: List[Any] = []
         blob = embedding2bytes(query_embedding)
-        all_blobs.append(blob)
+        if blob is not None:
+            all_blobs.append(blob)
 
         if constraints is None:
             # K results returned
@@ -1534,7 +1535,7 @@ def _check_descriptor_exists_by_id(
 
 def embedding2bytes(embedding: Union[List[float], None]) -> Union[bytes, None]:
     blob = None
-    if embedding:
+    if embedding is not None:
         emb = np.array(embedding, dtype="float32")
         blob = emb.tobytes()
     return blob

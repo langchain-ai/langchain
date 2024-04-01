@@ -12,10 +12,12 @@ from typing import (
 )
 
 from cohere.types import NonStreamedChatResponse, ToolCall
+from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.documents import Document
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
@@ -30,12 +32,20 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 
-from langchain_cohere.cohere_agent import _format_to_cohere_tools
+from langchain_cohere.cohere_agent import (
+    _convert_to_cohere_tool,
+    _format_to_cohere_tools,
+)
 from langchain_cohere.llms import BaseCohere
 
 
@@ -64,7 +74,7 @@ def get_role(message: BaseMessage) -> str:
 def get_cohere_chat_request(
     messages: List[BaseMessage],
     *,
-    documents: Optional[List[Dict[str, str]]] = None,
+    documents: Optional[List[Document]] = None,
     connectors: Optional[List[Dict[str, str]]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -86,17 +96,25 @@ def get_cohere_chat_request(
             "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."  # noqa: E501
         )
 
+    parsed_docs: Optional[List[Document]] = None
+    if "documents" in additional_kwargs:
+        parsed_docs = (
+            additional_kwargs["documents"]
+            if len(additional_kwargs["documents"]) > 0
+            else None
+        )
+    elif documents is not None and len(documents) > 0:
+        parsed_docs = documents
+
     formatted_docs: Optional[List[Dict[str, Any]]] = None
-    if additional_kwargs.get("documents"):
+    if parsed_docs is not None:
         formatted_docs = [
             {
                 "text": doc.page_content,
                 "id": doc.metadata.get("id") or f"doc-{str(i)}",
             }
-            for i, doc in enumerate(additional_kwargs.get("documents", []))
+            for i, doc in enumerate(parsed_docs)
         ]
-    elif documents:
-        formatted_docs = documents
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
@@ -164,6 +182,37 @@ class ChatCohere(BaseChatModel, BaseCohere):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         formatted_tools = _format_to_cohere_tools(tools)
         return super().bind(tools=formatted_tools, **kwargs)
+
+    @beta()
+    def with_structured_output(
+        self,
+        schema: Union[Dict, Type[BaseModel]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict.
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns either a dict or
+            Pydantic class as output.
+        """
+        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        llm = self.bind_tools([schema], **kwargs)
+        if is_pydantic_schema:
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
+            )
+        else:
+            key_name = _convert_to_cohere_tool(schema)["name"]
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
+            )
+
+        return llm | output_parser
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
