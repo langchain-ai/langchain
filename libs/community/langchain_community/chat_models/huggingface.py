@@ -1,52 +1,49 @@
 """Hugging Face Chat Wrapper."""
 
-
 from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Literal,
-    Sequence,
-    Type,
-    Union,
-    Tuple,
-    cast
+        Any,
+        Callable,
+        Dict,
+        List,
+        Literal,
+        Optional,
+        Sequence,
+        Tuple,
+        Type,
+        Union,
+        cast,
 )
-
 
 from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
+        AsyncCallbackManagerForLLMRun,
+        CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    BaseMessageChunk,
-    ChatMessage,
-    ChatMessageChunk,
-    HumanMessage,
-    HumanMessageChunk,
-    SystemMessage,
-    SystemMessageChunk,
-    ToolMessage,
+        AIMessage,
+        AIMessageChunk,
+        BaseMessage,
+        BaseMessageChunk,
+        ChatMessage,
+        ChatMessageChunk,
+        HumanMessage,
+        HumanMessageChunk,
+        SystemMessage,
+        SystemMessageChunk,
+        ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from langchain_core.pydantic_v1 import BaseModel,root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
-from langchain_core.language_models import LanguageModelInput
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_community.llms.huggingface_hub import HuggingFaceHub
 from langchain_community.llms.huggingface_text_gen_inference import (
-    HuggingFaceTextGenInference,
+        HuggingFaceTextGenInference,
 )
-
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
@@ -96,9 +93,9 @@ def _convert_TGI_message_to_LC_message(
     additional_kwargs: Dict = {}
     if tool_calls := _message.tool_calls:
         if 'parameters' in tool_calls[0]['function']:
-                # Convert list to string and replace all single quotes with double quotes
-                var = str(tool_calls[0]['function'].pop('parameters')).replace("'", '"')
-                tool_calls[0]['function']['arguments'] = var
+                functions_string=str(tool_calls[0]['function'].pop('parameters'))
+                corrected_functions = functions_string.replace("'", '"')
+                tool_calls[0]['function']['arguments'] = corrected_functions
         additional_kwargs["tool_calls"] =tool_calls
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
 class ChatHuggingFace(BaseChatModel):
@@ -157,7 +154,8 @@ class ChatHuggingFace(BaseChatModel):
         )
         generations.append(gen)
         token_usage = response.usage
-        llm_output = {"token_usage": token_usage, "model": self.llm.inference_server_url}
+        model_object=self.llm.inference_server_url
+        llm_output = {"token_usage": token_usage, "model": model_object}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _generate(
