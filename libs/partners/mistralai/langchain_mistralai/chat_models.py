@@ -43,6 +43,8 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolCallsMessage,
+    ToolCallsMessageChunk,
     ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
@@ -56,6 +58,7 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.tools import parse_tool_calls
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +85,17 @@ def _convert_mistral_chat_message_to_message(
     content = cast(str, _message["content"])
 
     additional_kwargs: Dict = {}
-    if tool_calls := _message.get("tool_calls"):
-        additional_kwargs["tool_calls"] = tool_calls
+    if raw_tool_calls := _message.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        try:
+            tool_calls = parse_tool_calls(raw_tool_calls)
+        except Exception:
+            tool_calls = None
+        return ToolCallsMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+        )
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
 
 
@@ -133,8 +145,17 @@ def _convert_delta_to_message_chunk(
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
-        if tool_calls := _delta.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
+        if raw_tool_calls := _delta.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            try:
+                tool_calls = parse_tool_calls(raw_tool_calls, partial=True)
+                return ToolCallsMessageChunk(
+                    content=content,
+                    additional_kwargs=additional_kwargs,
+                    tool_calls=tool_calls,
+                )
+            except Exception:
+                tool_calls = None
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
