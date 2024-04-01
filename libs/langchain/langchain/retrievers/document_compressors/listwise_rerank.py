@@ -12,7 +12,7 @@ from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrou
 logger = logging.getLogger(__name__)
 
 
-class CompressorInput(TypedDict):
+class _CompressorInput(TypedDict):
     documents: Sequence[Document]
     query: str
 
@@ -25,12 +25,12 @@ _DEFAULT_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 
-def _get_prompt_input(input_: CompressorInput) -> Dict[str, Any]:
+def _get_prompt_input(input_: dict) -> Dict[str, Any]:
     """Return the compression chain input."""
     documents = input_["documents"]
     context = ""
     for index, doc in enumerate(documents):
-        context += f"Document ID: {index} ```{doc.page_content}```\n"
+        context += f"Document ID: {index}\n```{doc.page_content}```\n\n"
     context += f"Documents = [Document ID: 0, ..., Document ID: {len(documents) - 1}]"
     return {"query": input_["query"], "context": context}
 
@@ -47,11 +47,16 @@ class LLMListwiseRerank(BaseDocumentCompressor):
     Source: https://arxiv.org/pdf/2305.02156.pdf
     """
 
-    reranker: Runnable[CompressorInput, List[Document]]
-    """LLM-based reranker to use for filtering documents."""
+    reranker: Runnable[Dict, List[Document]]
+    """LLM-based reranker to use for filtering documents. Expected to take in a dict 
+        with 'documents: Sequence[Document]' and 'query: str' keys and output a 
+        List[Document]."""
 
     top_n: int = 3
     """Number of documents to return."""
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def compress_documents(
         self,
@@ -89,6 +94,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             raise ValueError(
                 f"llm of type {type(llm)} does not implement `with_structured_output`."
             )
+
         class RankDocuments(BaseModel):
             """Rank the documents by their relevance to the user question.
             Rank from most to least relevant."""
