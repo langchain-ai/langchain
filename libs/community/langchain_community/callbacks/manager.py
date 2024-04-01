@@ -9,7 +9,7 @@ from typing import (
 )
 
 from langchain_community.callbacks.bedrock_anthropic_callback import (
-    BedrockAnthropicTokenUsageCallbackHandler
+    BedrockAnthropicTokenUsageCallbackHandler,
 )
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 from langchain_community.callbacks.tracers.comet import CometTracer
@@ -21,11 +21,10 @@ logger = logging.getLogger(__name__)
 openai_callback_var: ContextVar[Optional[OpenAICallbackHandler]] = ContextVar(
     "openai_callback", default=None
 )
-bedrock_anthropic_callback_var: (
-    ContextVar)[Optional[BedrockAnthropicTokenUsageCallbackHandler]] = ContextVar(
-    "bedrock_anthropic_callback", default=None
-)
-wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(  # noqa: E501
+bedrock_anthropic_callback_var: (ContextVar)[
+    Optional[BedrockAnthropicTokenUsageCallbackHandler]
+] = ContextVar("bedrock_anthropic_callback", default=None)
+wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(
     "tracing_wandb_callback", default=None
 )
 comet_tracing_callback_var: ContextVar[Optional[CometTracer]] = ContextVar(  # noqa: E501
