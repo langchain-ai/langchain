@@ -23,7 +23,8 @@ def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
     assert len(graph.edges) == 2
     assert graph.edges[0].source == first_node.id
     assert graph.edges[1].target == last_node.id
-    assert graph.draw_ascii() == snapshot
+    assert graph.draw_ascii() == snapshot(name="ascii")
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
 def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
@@ -90,7 +91,8 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
             {"source": 2, "target": 3},
         ],
     }
-    assert graph.draw_ascii() == snapshot
+    assert graph.draw_ascii() == snapshot(name="ascii")
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
 def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
@@ -484,7 +486,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
             {"source": 2, "target": 3},
         ],
     }
-    assert graph.draw_ascii() == snapshot
+    assert graph.draw_ascii() == snapshot(name="ascii")
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
 def test_runnable_get_graph_with_invalid_input_type() -> None:
