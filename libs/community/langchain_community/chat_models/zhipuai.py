@@ -247,10 +247,6 @@ class ChatZhipuAI(BaseChatModel):
 
         allow_population_by_field_name = True
 
-    # @property
-    # def _identifying_params(self) -> Dict[str, Any]:
-    #     return {"model_name": self.model}
-
     @root_validator()
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["zhipuai_api_key"] = get_from_dict_or_env(
