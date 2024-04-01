@@ -1,10 +1,10 @@
 ---
-sidebar_position: 2
 sidebar_class_name: hidden
 ---
 
 # Primitives
 
 import DocCardList from "@theme/DocCardList";
+import { useCurrentSidebarCategory } from '@docusaurus/theme-common';
 
-<DocCardList />
+<DocCardList items={useCurrentSidebarCategory().items.filter((item) => item.href !== "/docs/expression_language/primitives/")} />
