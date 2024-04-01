@@ -1,6 +1,18 @@
 {
   "redirects": [
     {
+      "source": "/docs/integrations/tools/alpha_vantage",
+      "destination": "/docs/integrations/utilities/alpha_vantage"
+    },
+    {
+      "source": "/docs/integrations/tools/apify",
+      "destination": "/docs/integrations/utilities/apify"
+    },
+    {
+      "source": "/docs/integrations/tools/searx_search",
+      "destination": "/docs/integrations/utilities/searx_search"
+    },
+    {
       "source": "/docs/integrations/providers/optimum_intel",
       "destination": "/docs/integrations/providers/intel"
     },
