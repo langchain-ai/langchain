@@ -2,9 +2,9 @@ import uuid
 from typing import List, Optional, Sequence
 
 from langchain_core.documents import Document
+from langchain_text_splitters import TextSplitter
 
 from langchain.retrievers import MultiVectorRetriever
-from langchain.text_splitter import TextSplitter
 
 
 class ParentDocumentRetriever(MultiVectorRetriever):
@@ -33,7 +33,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
             from langchain_community.embeddings import OpenAIEmbeddings
             from langchain_community.vectorstores import Chroma
-            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            from langchain_text_splitters import RecursiveCharacterTextSplitter
             from langchain.storage import InMemoryStore
 
             # This text splitter is used to create the parent documents

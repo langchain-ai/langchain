@@ -58,7 +58,7 @@ def test_sequential_usage_single_inputs() -> None:
     """Test sequential on single input chains."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])
+    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])  # type: ignore[call-arg]
     output = chain({"foo": "123"})
     expected_output = {"baz": "123foofoo", "foo": "123"}
     assert output == expected_output
@@ -68,7 +68,7 @@ def test_sequential_usage_multiple_inputs() -> None:
     """Test sequential on multiple input chains."""
     chain_1 = FakeChain(input_variables=["foo", "test"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar", "foo"], output_variables=["baz"])
-    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo", "test"])
+    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo", "test"])  # type: ignore[call-arg]
     output = chain({"foo": "123", "test": "456"})
     expected_output = {
         "baz": "123 456foo 123foo",
@@ -83,7 +83,7 @@ def test_sequential_usage_memory() -> None:
     memory = SimpleMemory(memories={"zab": "rab"})
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    chain = SequentialChain(
+    chain = SequentialChain(  # type: ignore[call-arg]
         memory=memory, chains=[chain_1, chain_2], input_variables=["foo"]
     )
     output = chain({"foo": "123"})
@@ -93,7 +93,7 @@ def test_sequential_usage_memory() -> None:
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     with pytest.raises(ValueError):
-        SequentialChain(
+        SequentialChain(  # type: ignore[call-arg]
             memory=memory, chains=[chain_1, chain_2], input_variables=["foo"]
         )
 
@@ -106,7 +106,7 @@ def test_sequential_internal_chain_use_memory() -> None:
         input_variables=["foo", "bla"], output_variables=["bar"], memory=memory
     )
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])
+    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])  # type: ignore[call-arg]
     output = chain({"foo": "123"})
     print("HEYYY OUTPUT", output)  # noqa: T201
     expected_output = {"foo": "123", "baz": "123 Human: yo\nAI: yafoofoo"}
@@ -117,7 +117,7 @@ def test_sequential_usage_multiple_outputs() -> None:
     """Test sequential usage on multiple output chains."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar", "test"])
     chain_2 = FakeChain(input_variables=["bar", "foo"], output_variables=["baz"])
-    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])
+    chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])  # type: ignore[call-arg]
     output = chain({"foo": "123"})
     expected_output = {
         "baz": "123foo 123foo",
@@ -132,7 +132,7 @@ def test_sequential_missing_inputs() -> None:
     chain_2 = FakeChain(input_variables=["bar", "test"], output_variables=["baz"])
     with pytest.raises(ValueError):
         # Also needs "test" as an input
-        SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])
+        SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])  # type: ignore[call-arg]
 
 
 def test_sequential_bad_outputs() -> None:
@@ -168,7 +168,7 @@ def test_sequential_overlapping_inputs() -> None:
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     with pytest.raises(ValueError):
         # "test" is specified as an input, but also is an output of one step
-        SequentialChain(chains=[chain_1, chain_2], input_variables=["foo", "test"])
+        SequentialChain(chains=[chain_1, chain_2], input_variables=["foo", "test"])  # type: ignore[call-arg]
 
 
 def test_simple_sequential_functionality() -> None:

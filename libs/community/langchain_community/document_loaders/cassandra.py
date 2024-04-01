@@ -5,7 +5,6 @@ from typing import (
     Any,
     Callable,
     Iterator,
-    List,
     Optional,
     Sequence,
     Union,
@@ -105,9 +104,6 @@ class CassandraLoader(BaseLoader):
 
         if query_execution_profile is not _NOT_SET:
             self.query_kwargs["execution_profile"] = query_execution_profile
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
         for row in self.session.execute(self.query, **self.query_kwargs):

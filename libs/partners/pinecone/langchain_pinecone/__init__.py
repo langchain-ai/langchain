@@ -1,5 +1,6 @@
-from langchain_pinecone.vectorstores import Pinecone
+from langchain_pinecone.vectorstores import Pinecone, PineconeVectorStore
 
 __all__ = [
+    "PineconeVectorStore",
     "Pinecone",
 ]

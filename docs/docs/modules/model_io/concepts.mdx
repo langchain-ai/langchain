@@ -24,7 +24,7 @@ they take a list of chat messages as input and they return an AI message as outp
 
 These two API types have pretty different input and output schemas. This means that best way to interact with them may be quite different. Although LangChain makes it possible to treat them interchangeably, that doesn't mean you **should**. In particular, the prompting strategies for LLMs vs ChatModels may be quite different. This means that you will want to make sure the prompt you are using is designed for the model type you are working with.
 
-Additionally, not all models are the same. Different models have different prompting strategies that work best for them. For example, Anthropic's models work best with XML while OpenAI's work best with JSON. This means that the prompt you use for one model may not transfer to other ones. LangChain provides a lot of default prompts, however these are not guaranteed to work well with the model are you using. Historically speaking, most prompts work well with OpenAI but are not heavily tested on other models. This is something we are working to address, but it is something you should keep in mind.
+Additionally, not all models are the same. Different models have different prompting strategies that work best for them. For example, Anthropic's models work best with XML while OpenAI's work best with JSON. This means that the prompt you use for one model may not transfer to other ones. LangChain provides a lot of default prompts, however these are not guaranteed to work well with the model you are using. Historically speaking, most prompts work well with OpenAI but are not heavily tested on other models. This is something we are working to address, but it is something you should keep in mind.
 
 
 ## Messages
@@ -68,11 +68,11 @@ ChatModels and LLMs take different input types. PromptValue is a class designed 
 
 ### PromptTemplate
 
-This is an example of a prompt template. This consists of a template string. This string is then formatted with user inputs to produce a final string.
+[This](/docs/modules/model_io/prompts/quick_start#prompttemplate) is an example of a prompt template. This consists of a template string. This string is then formatted with user inputs to produce a final string.
 
 ### MessagePromptTemplate
 
-This is an example of a prompt template. This consists of a template **message** - meaning a specific role and a PromptTemplate. This PromptTemplate is then formatted with user inputs to produce a final string that becomes the `content` of this message.
+[This](/docs/modules/model_io/prompts/message_prompts) is an example of a prompt template. This consists of a template **message** - meaning a specific role and a PromptTemplate. This PromptTemplate is then formatted with user inputs to produce a final string that becomes the `content` of this message.
 
 #### HumanMessagePromptTemplate
 
@@ -92,7 +92,7 @@ Oftentimes inputs to prompts can be a list of messages. This is when you would u
 
 ### ChatPromptTemplate
 
-This is an example of a prompt template. This consists of a list of MessagePromptTemplates or MessagePlaceholders. These are then formatted with user inputs to produce a final list of messages.
+[This](/docs/modules/model_io/prompts/quick_start#chatprompttemplate) is an example of a prompt template. This consists of a list of MessagePromptTemplates or MessagePlaceholders. These are then formatted with user inputs to produce a final list of messages.
 
 ## Output Parsers
 

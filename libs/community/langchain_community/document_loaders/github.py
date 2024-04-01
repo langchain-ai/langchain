@@ -127,32 +127,6 @@ class GitHubIssuesLoader(BaseGitHubLoader):
             else:
                 url = None
 
-    def load(self) -> List[Document]:
-        """
-        Get issues of a GitHub repository.
-
-        Returns:
-            A list of Documents with attributes:
-                - page_content
-                - metadata
-                    - url
-                    - title
-                    - creator
-                    - created_at
-                    - last_update_time
-                    - closed_time
-                    - number of comments
-                    - state
-                    - labels
-                    - assignee
-                    - assignees
-                    - milestone
-                    - locked
-                    - number
-                    - is_pull_request
-        """
-        return list(self.lazy_load())
-
     def parse_issue(self, issue: dict) -> Document:
         """Create Document objects from a list of GitHub issues."""
         metadata = {
@@ -211,7 +185,7 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
 
     def get_file_paths(self) -> List[Dict]:
         base_url = (
-            f"{self.github_api_url}/api/v3/repos/{self.repo}/git/trees/"
+            f"{self.github_api_url}/repos/{self.repo}/git/trees/"
             f"{self.branch}?recursive=1"
         )
         response = requests.get(base_url, headers=self.headers)
@@ -222,8 +196,8 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
             'path': '.github', 
             'mode': '040000', 
             'type': 'tree', 
-            'sha': '89a2ae046e8b59eb96531f123c0c6d4913885df1', 
-            'url': 'https://github.com/api/v3/repos/shufanhao/langchain/git/trees/89a2ae046e8b59eb96531f123c0c6d4913885dxxx'
+            'sha': '5dc46e6b38b22707894ced126270b15e2f22f64e', 
+            'url': 'https://api.github.com/repos/langchain-ai/langchain/git/blobs/5dc46e6b38b22707894ced126270b15e2f22f64e'
         }
         """
         return [
@@ -233,25 +207,27 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
         ]
 
     def get_file_content_by_path(self, path: str) -> str:
-        base_url = f"{self.github_api_url}/api/v3/repos/{self.repo}/contents/{path}"
+        base_url = f"{self.github_api_url}/repos/{self.repo}/contents/{path}"
         response = requests.get(base_url, headers=self.headers)
         response.raise_for_status()
 
-        content_encoded = response.json()["content"]
-        return base64.b64decode(content_encoded).decode("utf-8")
+        if isinstance(response.json(), dict):
+            content_encoded = response.json()["content"]
+            return base64.b64decode(content_encoded).decode("utf-8")
 
-    def load(self) -> List[Document]:
-        documents = []
+        return ""
 
+    def lazy_load(self) -> Iterator[Document]:
         files = self.get_file_paths()
         for file in files:
             content = self.get_file_content_by_path(file["path"])
+            if content == "":
+                continue
+
             metadata = {
                 "path": file["path"],
                 "sha": file["sha"],
                 "source": f"{self.github_api_url}/{self.repo}/{file['type']}/"
                 f"{self.branch}/{file['path']}",
             }
-            documents.append(Document(page_content=content, metadata=metadata))
-
-        return documents
+            yield Document(page_content=content, metadata=metadata)
