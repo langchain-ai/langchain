@@ -12,13 +12,14 @@ class OpenAPISpecTestCase(unittest.TestCase):
         self.instance = OpenAPISpec(info=Info(title="test", version="1.0.0"))
 
     @patch('langchain_community.utilities.openapi.OpenAPISpec.get_referenced_schema')
-    def test_get_root_referenced_schema_with_object_reference(self, mock_get_referenced_schema):
+    def test_get_root_referenced_schema_with_obj_ref(self, mock_get_referenced_schema):
         address_schema = Schema()
         address_schema.properties = { 
                             'address': Reference(ref='#/components/schemas/Address')}
         
         address_ref_schema = Schema()
-        address_ref_schema.properties = {'street': Schema(), 'city': Schema(), 'state': Schema()}
+        address_ref_schema.properties = {'street': Schema(), 'city': Schema(), 
+                                         'state': Schema()}
     
         mock_get_referenced_schema.side_effect = [address_schema, address_ref_schema]
         ref = Reference(ref='#/components/schemas/Pet')
@@ -27,7 +28,7 @@ class OpenAPISpecTestCase(unittest.TestCase):
 
 
     @patch('langchain_community.utilities.openapi.OpenAPISpec.get_referenced_schema')
-    def test_get_root_referenced_schema_with_object_array_reference(self, mock_get_referenced_schema):
+    def test_get_root_referenced_schema_obj_arr_ref(self, mock_get_referenced_schema):
         hobby_schema = Schema()
         hobby_schema.properties = { 
                             'hobby': Reference(ref='#/components/schemas/Hobby')}
