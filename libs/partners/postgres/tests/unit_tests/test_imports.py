@@ -1,8 +1,6 @@
 from langchain_postgres import __all__
 
-EXPECTED_ALL = [
-    "__version__"
-]
+EXPECTED_ALL = ["__version__"]
 
 
 def test_all_imports() -> None:

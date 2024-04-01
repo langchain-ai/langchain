@@ -1,6 +1,5 @@
 from importlib import metadata
 
-
 try:
     __version__ = metadata.version(__package__)
 except metadata.PackageNotFoundError:
@@ -10,4 +9,3 @@ except metadata.PackageNotFoundError:
 __all__ = [
     "__version__",
 ]
-
