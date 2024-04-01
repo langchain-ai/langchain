@@ -80,36 +80,34 @@ class BasePDFLoader(BaseLoader, ABC):
         clean up the temporary file after completion.
     """
 
-    def __init__(
-        self, file_path: Union[str, BytesIO], *, headers: Optional[Dict] = None
-    ):
+    def __init__(self, file: Union[str, BytesIO], *, headers: Optional[Dict] = None):
         """Initialize with a file path.
 
         Args:
-            file_path: Either a local, S3 or web path to a PDF file.
+            file: Either a local, S3, BytesIO object or web path to a PDF file.
             headers: Headers to use for GET request to download a file from a web path.
         """
-        self.file_path = file_path
+        self.file = file
         self.web_path = None
         self.source_path = None
         self.headers = headers
-        if isinstance(file_path, BytesIO):
+        if isinstance(file, BytesIO):
             self.source_path = "bytes"
-            self.file_path = self.file_path.getvalue()
+            self.file = self.file.getvalue()
         else:
-            if "~" in self.file_path:
-                self.file_path = os.path.expanduser(self.file_path)
+            if "~" in self.file:
+                self.file = os.path.expanduser(self.file)
 
         # If the file is a web path or S3, download it to a temporary file, and use that
-        if not os.path.isfile(self.file_path) and self._is_valid_url(self.file_path):
+        if not os.path.isfile(self.file) and self._is_valid_url(self.file):
             self.temp_dir = tempfile.TemporaryDirectory()
-            _, suffix = os.path.splitext(self.file_path)
-            if self._is_s3_presigned_url(self.file_path):
-                suffix = urlparse(self.file_path).path.split("/")[-1]
+            _, suffix = os.path.splitext(self.file)
+            if self._is_s3_presigned_url(self.file):
+                suffix = urlparse(self.file).path.split("/")[-1]
             temp_pdf = os.path.join(self.temp_dir.name, f"tmp{suffix}")
-            self.web_path = self.file_path
-            if not self._is_s3_url(self.file_path):
-                r = requests.get(self.file_path, headers=self.headers)
+            self.web_path = self.file
+            if not self._is_s3_url(self.file):
+                r = requests.get(self.file, headers=self.headers)
                 if r.status_code != 200:
                     raise ValueError(
                         "Check the url of your file; returned status code %s"
@@ -118,11 +116,9 @@ class BasePDFLoader(BaseLoader, ABC):
 
                 with open(temp_pdf, mode="wb") as f:
                     f.write(r.content)
-                self.file_path = str(temp_pdf)
-            elif not os.path.isfile(self.file_path):
-                raise ValueError(
-                    "File path %s is not a valid file or url" % self.file_path
-                )
+                self.file = str(temp_pdf)
+            elif not os.path.isfile(self.file):
+                raise ValueError("File path %s is not a valid file or url" % self.file)
 
     def __del__(self) -> None:
         if hasattr(self, "temp_dir"):
@@ -156,7 +152,7 @@ class BasePDFLoader(BaseLoader, ABC):
 
     @property
     def source(self) -> str:
-        return self.web_path if self.web_path is not None else self.file_path
+        return self.web_path if self.web_path is not None else self.file
 
 
 class OnlinePDFLoader(BasePDFLoader):
@@ -164,7 +160,7 @@ class OnlinePDFLoader(BasePDFLoader):
 
     def load(self) -> List[Document]:
         """Load documents."""
-        loader = UnstructuredPDFLoader(str(self.file_path))
+        loader = UnstructuredPDFLoader(str(self.file))
         return loader.load()
 
 
@@ -176,7 +172,7 @@ class PyPDFLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: Union[str, BytesIO],
+        file: Union[str, BytesIO],
         password: Optional[Union[str, bytes]] = None,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
@@ -188,7 +184,7 @@ class PyPDFLoader(BasePDFLoader):
             raise ImportError(
                 "pypdf package not found, please install it with " "`pip install pypdf`"
             )
-        super().__init__(file_path, headers=headers)
+        super().__init__(file, headers=headers)
         self.parser = PyPDFParser(password=password, extract_images=extract_images)
 
     def lazy_load(
@@ -196,11 +192,11 @@ class PyPDFLoader(BasePDFLoader):
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file, "rb").read(), path=self.web_path)
         elif self.source_path:
-            blob = Blob.from_data(self.file_path, path=self.source_path)
+            blob = Blob.from_data(self.file, path=self.source_path)
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file)
         yield from self.parser.parse(blob)
 
 
@@ -209,13 +205,13 @@ class PyPDFium2Loader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file: Union[str, BytesIO],
         *,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
     ):
         """Initialize with a file path."""
-        super().__init__(file_path, headers=headers)
+        super().__init__(file, headers=headers)
         self.parser = PyPDFium2Parser(extract_images=extract_images)
 
     def lazy_load(
@@ -223,11 +219,11 @@ class PyPDFium2Loader(BasePDFLoader):
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file, "rb").read(), path=self.web_path)
         elif self.source_path:
-            blob = Blob.from_data(self.file_path, path=self.source_path)
+            blob = Blob.from_data(self.file, path=self.source_path)
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file)
         yield from self.parser.parse(blob)
 
 
@@ -283,7 +279,7 @@ class PDFMinerLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file: Union[str, BytesIO],
         *,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
@@ -304,7 +300,7 @@ class PDFMinerLoader(BasePDFLoader):
                 "`pip install pdfminer.six`"
             )
 
-        super().__init__(file_path, headers=headers)
+        super().__init__(file, headers=headers)
         self.parser = PDFMinerParser(
             extract_images=extract_images, concatenate_pages=concatenate_pages
         )
@@ -314,18 +310,18 @@ class PDFMinerLoader(BasePDFLoader):
     ) -> Iterator[Document]:
         """Lazily load documents."""
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file, "rb").read(), path=self.web_path)
         elif self.source_path:
-            blob = Blob.from_data(self.file_path, path=self.source_path)
+            blob = Blob.from_data(self.file, path=self.source_path)
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file)
         yield from self.parser.parse(blob)
 
 
 class PDFMinerPDFasHTMLLoader(BasePDFLoader):
     """Load `PDF` files as HTML content using `PDFMiner`."""
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
+    def __init__(self, file: Union[str, BytesIO], *, headers: Optional[Dict] = None):
         """Initialize with a file path."""
         try:
             from pdfminer.high_level import extract_text_to_fp  # noqa:F401
@@ -335,7 +331,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
                 "`pip install pdfminer.six`"
             )
 
-        super().__init__(file_path, headers=headers)
+        super().__init__(file, headers=headers)
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
@@ -343,18 +339,19 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         from pdfminer.layout import LAParams
         from pdfminer.utils import open_filename
 
-        output_string = StringIO()
-        with open_filename(self.file_path, "rb") as fp:
-            extract_text_to_fp(
-                fp,
-                output_string,
-                codec="",
-                laparams=LAParams(),
-                output_type="html",
-            )
-        metadata = {
-            "source": self.file_path if self.web_path is None else self.web_path
-        }
+        if os.path.isfile(self.file):
+            output_string = StringIO()
+            with open_filename(self.file, "rb") as fp:
+                extract_text_to_fp(
+                    fp,
+                    output_string,
+                    codec="",
+                    laparams=LAParams(),
+                    output_type="html",
+                )
+            metadata = {"source": self.file if self.web_path is None else self.web_path}
+        elif isinstance(self.file, BytesIO):
+            output_string = StringIO(self.file.getvalue().decode("utf-8"))
         yield Document(page_content=output_string.getvalue(), metadata=metadata)
 
 
@@ -363,7 +360,7 @@ class PyMuPDFLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file: Union[str, BytesIO],
         *,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
@@ -377,7 +374,7 @@ class PyMuPDFLoader(BasePDFLoader):
                 "`PyMuPDF` package not found, please install it with "
                 "`pip install pymupdf`"
             )
-        super().__init__(file_path, headers=headers)
+        super().__init__(file, headers=headers)
         self.extract_images = extract_images
         self.text_kwargs = kwargs
 
@@ -393,11 +390,11 @@ class PyMuPDFLoader(BasePDFLoader):
             text_kwargs=text_kwargs, extract_images=self.extract_images
         )
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file, "rb").read(), path=self.web_path)
         elif self.source_path:
-            blob = Blob.from_data(self.file_path, path=self.source_path)
+            blob = Blob.from_data(self.file, path=self.source_path)
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file)
         yield from parser.lazy_parse(blob)
 
     def load(self, **kwargs: Any) -> List[Document]:
@@ -414,7 +411,7 @@ class MathpixPDFLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file: Union[str, BytesIO],
         processed_file_format: str = "md",
         max_wait_time_seconds: int = 500,
         should_clean_pdf: bool = False,
@@ -424,7 +421,7 @@ class MathpixPDFLoader(BasePDFLoader):
         """Initialize with a file path.
 
         Args:
-            file_path: a file for loading.
+            file: a file for loading.
             processed_file_format: a format of the processed file. Default is "md".
             max_wait_time_seconds: a maximum time to wait for the response from
              the server. Default is 500.
@@ -443,7 +440,7 @@ class MathpixPDFLoader(BasePDFLoader):
         kwargs.pop("mathpix_api_key", None)
         kwargs.pop("mathpix_api_id", None)
 
-        super().__init__(file_path, **kwargs)
+        super().__init__(file, **kwargs)
         self.processed_file_format = processed_file_format
         self.extra_request_data = (
             extra_request_data if extra_request_data is not None else {}
@@ -468,11 +465,16 @@ class MathpixPDFLoader(BasePDFLoader):
         return {"options_json": json.dumps(options)}
 
     def send_pdf(self) -> str:
-        with open(self.file_path, "rb") as f:
-            files = {"file": f}
-            response = requests.post(
-                self.url, headers=self._mathpix_headers, files=files, data=self.data
-            )
+        files = {}
+        if isinstance(self.file, BytesIO):
+            files["file"] = self.file
+            self.file.seek(0)
+        elif os.path.isfile(self.file):
+            with open(self.file, "rb") as f:
+                files["file"] = f
+        response = requests.post(
+            self.url, headers=self._mathpix_headers, files=files, data=self.data
+        )
         response_data = response.json()
         if "error" in response_data:
             raise ValueError(f"Mathpix request failed: {response_data['error']}")
@@ -562,7 +564,7 @@ class PDFPlumberLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file: Union[str, BytesIO],
         text_kwargs: Optional[Mapping[str, Any]] = None,
         dedupe: bool = False,
         headers: Optional[Dict] = None,
@@ -577,7 +579,7 @@ class PDFPlumberLoader(BasePDFLoader):
                 "`pip install pdfplumber`"
             )
 
-        super().__init__(file_path, headers=headers)
+        super().__init__(file, headers=headers)
         self.text_kwargs = text_kwargs or {}
         self.dedupe = dedupe
         self.extract_images = extract_images
@@ -591,11 +593,11 @@ class PDFPlumberLoader(BasePDFLoader):
             extract_images=self.extract_images,
         )
         if self.web_path:
-            blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)
+            blob = Blob.from_data(open(self.file, "rb").read(), path=self.web_path)
         elif self.source_path:
-            blob = Blob.from_data(self.file_path, path=self.source_path)
+            blob = Blob.from_data(self.file, path=self.source_path)
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file)
         return parser.parse(blob)
 
 
@@ -616,14 +618,14 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         .. code-block:: python
             from langchain_community.document_loaders import AmazonTextractPDFLoader
             loader = AmazonTextractPDFLoader(
-                file_path="s3://pdfs/myfile.pdf"
+                file="s3://pdfs/myfile.pdf"
             )
             document = loader.load()
     """
 
     def __init__(
         self,
-        file_path: str,
+        file: Union[str, BytesIO],
         textract_features: Optional[Sequence[str]] = None,
         client: Optional[Any] = None,
         credentials_profile_name: Optional[str] = None,
@@ -636,7 +638,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         """Initialize the loader.
 
         Args:
-            file_path: A file, url or s3 path for input file
+            file: A file, url or s3 path, BytesIO for input file
             textract_features: Features to be used for extraction, each feature
                                should be passed as a str that conforms to the enum
                                `Textract_Features`, see `amazon-textract-caller` pkg
@@ -648,7 +650,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                                   should be an instance of TextLinearizationConfig from
                                   the `textractor` pkg
         """
-        super().__init__(file_path, headers=headers)
+        super().__init__(file, headers=headers)
 
         try:
             import textractcaller as tc  # noqa: F401
@@ -705,14 +707,16 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load documents"""
-        # the self.file_path is local, but the blob has to include
+        # the self.file is local, but the blob has to include
         # the S3 location if the file originated from S3 for multi-page documents
         # raises ValueError when multi-page and not on S3"""
 
         if self.web_path and self._is_s3_url(self.web_path):
             blob = Blob(path=self.web_path)
+        elif self.source_path:
+            blob = Blob.from_data(self.file, path=self.source_path)
         else:
-            blob = Blob.from_path(self.file_path)
+            blob = Blob.from_path(self.file)
             if AmazonTextractPDFLoader._get_number_of_pages(blob) > 1:
                 raise ValueError(
                     f"the file {blob.path} is a multi-page document, \
@@ -754,7 +758,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file: Union[str, BytesIO],
         client: Any,
         model: str = "prebuilt-document",
         headers: Optional[Dict] = None,
@@ -770,7 +774,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
 
         Parameters:
         -----------
-        file_path : str
+        file : Union[str, BytesIO]
             The path to the file that needs to be parsed.
         client: Any
             A DocumentAnalysisClient to perform the analysis of the blob
@@ -780,14 +784,14 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         Examples:
         ---------
         >>> obj = DocumentIntelligenceLoader(
-        ...     file_path="path/to/file",
+        ...     file="path/to/file",
         ...     client=client,
         ...     model="prebuilt-document"
         ... )
         """
 
         self.parser = DocumentIntelligenceParser(client=client, model=model)
-        super().__init__(file_path, headers=headers)
+        super().__init__(file, headers=headers)
 
     def load(self) -> List[Document]:
         """Load given path as pages."""
@@ -797,7 +801,12 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         self,
     ) -> Iterator[Document]:
         """Lazy load given path as pages."""
-        blob = Blob.from_path(self.file_path)
+        if self.web_path:
+            blob = Blob.from_data(open(self.file, "rb").read(), path=self.web_path)
+        elif self.source_path:
+            blob = Blob.from_data(self.file, path=self.source_path)
+        else:
+            blob = Blob.from_path(self.file)
         yield from self.parser.parse(blob)
 
 
