@@ -18,9 +18,10 @@ from langchain_experimental.fallacy_removal.prompts import (
 
 
 class FallacyChain(Chain):
-    """Chain for applying logical fallacy evaluations, modeled after Constitutional AI \
-    and in same format, but applying logical fallacies as generalized rules to remove \
-    in output
+    """Chain for applying logical fallacy evaluations.
+
+    It is modeled after Constitutional AI and in same format, but
+    applying logical fallacies as generalized rules to remove in output.
 
     Example:
         .. code-block:: python

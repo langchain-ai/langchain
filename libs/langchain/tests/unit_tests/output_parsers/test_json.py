@@ -1,8 +1,7 @@
 from typing import Any, AsyncIterator, Iterator
 
 from langchain_core.messages import AIMessageChunk
-
-from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
+from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
 
 GOOD_JSON = """```json
 {

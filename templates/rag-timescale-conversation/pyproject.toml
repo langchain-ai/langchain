@@ -16,6 +16,7 @@ pinecone-client = ">=2.2.4"
 beautifulsoup4 = "^4.12.2"
 python-dotenv = "^1.0.0"
 timescale-vector = "^0.0.3"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"

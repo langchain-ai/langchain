@@ -1,12 +1,14 @@
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
-from langchain.schema import Document
 from langchain.utils import get_from_env
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
+from langchain_core.documents import Document
 
 
 def format_property_key(s: str) -> str:
+    """Formats a string to be used as a property key."""
+
     words = s.split()
     if not words:
         return s
@@ -16,8 +18,7 @@ def format_property_key(s: str) -> str:
 
 
 class NodesList:
-    """
-    Manages a list of nodes with associated properties.
+    """List of nodes with associated properties.
 
     Attributes:
         nodes (Dict[Tuple, Any]): Stores nodes as keys and their properties as values.
@@ -85,8 +86,7 @@ schema_mapping = [
 
 
 class SimplifiedSchema:
-    """
-    Provides functionality for working with a simplified schema mapping.
+    """Simplified schema mapping.
 
     Attributes:
         schema (Dict): A dictionary containing the mapping to simplified schema types.
@@ -116,31 +116,22 @@ class SimplifiedSchema:
 
 
 class DiffbotGraphTransformer:
-    """Transforms documents into graph documents using Diffbot's NLP API.
+    """Transform documents into graph documents using Diffbot NLP API.
 
     A graph document transformation system takes a sequence of Documents and returns a
     sequence of Graph Documents.
 
     Example:
         .. code-block:: python
+          from langchain_experimental.graph_transformers import DiffbotGraphTransformer
+          from langchain_core.documents import Document
 
-            class DiffbotGraphTransformer(BaseGraphDocumentTransformer):
+          diffbot_api_key = "DIFFBOT_API_KEY"
+          diffbot_nlp = DiffbotGraphTransformer(diffbot_api_key=diffbot_api_key)
 
-                def transform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[GraphDocument]:
-                    results = []
+          document = Document(page_content="Mike Tunge is the CEO of Diffbot.")
+          graph_documents = diffbot_nlp.convert_to_graph_documents([document])
 
-                    for document in documents:
-                        raw_results = self.nlp_request(document.page_content)
-                        graph_document = self.process_response(raw_results, document)
-                        results.append(graph_document)
-                    return results
-
-                async def atransform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[Document]:
-                    raise NotImplementedError
     """
 
     def __init__(

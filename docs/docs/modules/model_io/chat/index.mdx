@@ -4,11 +4,13 @@ sidebar_position: 3
 
 # Chat Models
 
-ChatModels are a core component of LangChain.
-LangChain does not serve its own ChatModels, but rather provides a standard interface for interacting with many different models. To be specific, this interface is one that takes as input a list of messages and returns a message.
+Chat Models are a core component of LangChain.
 
+A chat model is a language model that uses chat messages as inputs and returns chat messages as outputs (as opposed to using plain text).
 
-There are lots of model providers (OpenAI, Cohere, Hugging Face, etc) - the `ChatModel` class is designed to provide a standard interface for all of them.
+LangChain has integrations with many model providers (OpenAI, Cohere, Hugging Face, etc.) and exposes a standard interface to interact with all of these models.
+
+LangChain allows you to use models in sync, async, batching and streaming modes and provides other features (e.g., caching) and more.
 
 ## [Quick Start](./quick_start)
 
@@ -27,3 +29,4 @@ This includes:
 - [How to use ChatModels that support function calling](./function_calling)
 - [How to stream responses from a ChatModel](./streaming)
 - [How to track token usage in a ChatModel call](./token_usage_tracking)
+- [How to creat a custom ChatModel](./custom_chat_model)

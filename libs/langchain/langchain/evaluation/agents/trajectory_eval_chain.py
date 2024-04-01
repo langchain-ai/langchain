@@ -255,7 +255,7 @@ The following is the expected answer. Use this to measure correctness:
             prompt = TOOL_FREE_EVAL_CHAT_PROMPT
         eval_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
-            agent_tools=agent_tools,
+            agent_tools=agent_tools,  # type: ignore[arg-type]
             eval_chain=eval_chain,
             output_parser=output_parser or TrajectoryOutputParser(),
             **kwargs,

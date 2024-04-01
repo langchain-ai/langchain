@@ -1,13 +1,16 @@
 """Test ChatAI21 chat model."""
+
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import ChatGeneration
 
 from langchain_ai21.chat_models import ChatAI21
 
+_MODEL_NAME = "j2-ultra"
+
 
 def test_invoke() -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model="j2-ultra")
+    llm = ChatAI21(model=_MODEL_NAME)
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -15,7 +18,7 @@ def test_invoke() -> None:
 
 def test_generation() -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model="j2-ultra")
+    llm = ChatAI21(model=_MODEL_NAME)
     message = HumanMessage(content="Hello")
 
     result = llm.generate([[message], [message]], config=dict(tags=["foo"]))
@@ -30,7 +33,7 @@ def test_generation() -> None:
 
 async def test_ageneration() -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model="j2-ultra")
+    llm = ChatAI21(model=_MODEL_NAME)
     message = HumanMessage(content="Hello")
 
     result = await llm.agenerate([[message], [message]], config=dict(tags=["foo"]))

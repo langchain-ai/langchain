@@ -5,6 +5,7 @@ import ast
 import asyncio
 import inspect
 import textwrap
+from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
@@ -21,10 +22,13 @@ from typing import (
     Protocol,
     Sequence,
     Set,
+    Type,
     TypeVar,
     Union,
 )
 
+from langchain_core.pydantic_v1 import BaseConfig, BaseModel
+from langchain_core.pydantic_v1 import create_model as _create_model_base
 from langchain_core.runnables.schema import StreamEvent
 
 Input = TypeVar("Input", contravariant=True)
@@ -489,3 +493,39 @@ class _RootEventFilter:
             )
 
         return include
+
+
+class _SchemaConfig(BaseConfig):
+    arbitrary_types_allowed = True
+    frozen = True
+
+
+def create_model(
+    __model_name: str,
+    **field_definitions: Any,
+) -> Type[BaseModel]:
+    try:
+        return _create_model_cached(__model_name, **field_definitions)
+    except TypeError:
+        # something in field definitions is not hashable
+        return _create_model_base(
+            __model_name, __config__=_SchemaConfig, **field_definitions
+        )
+
+
+@lru_cache(maxsize=256)
+def _create_model_cached(
+    __model_name: str,
+    **field_definitions: Any,
+) -> Type[BaseModel]:
+    return _create_model_base(
+        __model_name, __config__=_SchemaConfig, **field_definitions
+    )
+
+
+def adapt_first_streaming_chunk(chunk: Any) -> Any:
+    """This might transform the first chunk of a stream into an AddableDict."""
+    if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
+        return AddableDict(chunk)
+    else:
+        return chunk

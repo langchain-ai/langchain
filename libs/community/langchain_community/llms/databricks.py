@@ -1,5 +1,4 @@
 import os
-import pickle
 import re
 import warnings
 from abc import ABC, abstractmethod
@@ -225,7 +224,12 @@ def _is_hex_string(data: str) -> bool:
 def _load_pickled_fn_from_hex_string(data: str) -> Callable:
     """Loads a pickled function from a hexadecimal string."""
     try:
-        return pickle.loads(bytes.fromhex(data))
+        import cloudpickle
+    except Exception as e:
+        raise ValueError(f"Please install cloudpickle>=2.0.0. Error: {e}")
+
+    try:
+        return cloudpickle.loads(bytes.fromhex(data))
     except Exception as e:
         raise ValueError(
             f"Failed to load the pickled function from a hexadecimal string. Error: {e}"
@@ -235,13 +239,17 @@ def _load_pickled_fn_from_hex_string(data: str) -> Callable:
 def _pickle_fn_to_hex_string(fn: Callable) -> str:
     """Pickles a function and returns the hexadecimal string."""
     try:
-        return pickle.dumps(fn).hex()
+        import cloudpickle
+    except Exception as e:
+        raise ValueError(f"Please install cloudpickle>=2.0.0. Error: {e}")
+
+    try:
+        return cloudpickle.dumps(fn).hex()
     except Exception as e:
         raise ValueError(f"Failed to pickle the function: {e}")
 
 
 class Databricks(LLM):
-
     """Databricks serving endpoint or a cluster driver proxy app for LLM.
 
     It supports two endpoint types:
@@ -365,6 +373,15 @@ class Databricks(LLM):
     If not provided, the task is automatically inferred from the endpoint.
     """
 
+    allow_dangerous_deserialization: bool = False
+    """Whether to allow dangerous deserialization of the data which 
+    involves loading data using pickle.
+    
+    If the data has been modified by a malicious actor, it can deliver a
+    malicious payload that results in execution of arbitrary code on the target
+    machine.
+    """
+
     _client: _DatabricksClientBase = PrivateAttr()
 
     class Config:
@@ -426,6 +443,16 @@ class Databricks(LLM):
         return v
 
     def __init__(self, **data: Any):
+        if not data.get("allow_dangerous_deserialization"):
+            raise ValueError(
+                "This code relies on the pickle module. "
+                "You will need to set allow_dangerous_deserialization=True "
+                "if you want to opt-in to allow deserialization of data using pickle."
+                "Data can be compromised by a malicious actor if "
+                "not handled properly to include "
+                "a malicious payload that when deserialized with "
+                "pickle can execute arbitrary code on your machine."
+            )
         if "transform_input_fn" in data and _is_hex_string(data["transform_input_fn"]):
             data["transform_input_fn"] = _load_pickled_fn_from_hex_string(
                 data["transform_input_fn"]

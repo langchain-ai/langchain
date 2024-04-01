@@ -29,6 +29,7 @@ import uuid
 import warnings
 from abc import ABC
 from datetime import timedelta
+from enum import Enum
 from functools import lru_cache, wraps
 from typing import (
     TYPE_CHECKING,
@@ -51,11 +52,17 @@ from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
+from langchain_community.vectorstores.azure_cosmos_db import (
+    CosmosDBSimilarityType,
+    CosmosDBVectorSearchType,
+)
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import LLM, aget_prompts, get_prompts
@@ -68,6 +75,7 @@ from langchain_community.utilities.astradb import (
     SetupMode,
     _AstraDBCollectionEnvironment,
 )
+from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 from langchain_community.vectorstores.redis import Redis as RedisVectorstore
 
 logger = logging.getLogger(__file__)
@@ -395,7 +403,7 @@ class _RedisCacheBase(BaseCache, ABC):
         if results:
             for _, text in results.items():
                 try:
-                    generations.append(loads(text))
+                    generations.append(loads(cast(str, text)))
                 except Exception:
                     logger.warning(
                         "Retrieving a cache value that could not be deserialized "
@@ -461,22 +469,31 @@ class RedisCache(_RedisCacheBase):
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string."""
         # Read from a Redis HASH
-        results = self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)  # type: ignore[arg-type]
+        try:
+            results = self.redis.hgetall(self._key(prompt, llm_string))
+            return self._get_generations(results)  # type: ignore[arg-type]
+        except Exception as e:
+            logger.error(f"Redis lookup failed: {e}")
+            return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
         self._ensure_generation_type(return_val)
         key = self._key(prompt, llm_string)
-
-        with self.redis.pipeline() as pipe:
-            self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-            pipe.execute()
+        try:
+            with self.redis.pipeline() as pipe:
+                self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
+                pipe.execute()
+        except Exception as e:
+            logger.error(f"Redis update failed: {e}")
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
-        asynchronous = kwargs.get("asynchronous", False)
-        self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+        try:
+            asynchronous = kwargs.get("asynchronous", False)
+            self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+        except Exception as e:
+            logger.error(f"Redis clear failed: {e}")
 
 
 class AsyncRedisCache(_RedisCacheBase):
@@ -525,8 +542,12 @@ class AsyncRedisCache(_RedisCacheBase):
 
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string. Async version."""
-        results = await self.redis.hgetall(self._key(prompt, llm_string))
-        return self._get_generations(results)  # type: ignore[arg-type]
+        try:
+            results = await self.redis.hgetall(self._key(prompt, llm_string))
+            return self._get_generations(results)  # type: ignore[arg-type]
+        except Exception as e:
+            logger.error(f"Redis async lookup failed: {e}")
+            return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
@@ -541,10 +562,12 @@ class AsyncRedisCache(_RedisCacheBase):
         """Update cache based on prompt and llm_string. Async version."""
         self._ensure_generation_type(return_val)
         key = self._key(prompt, llm_string)
-
-        async with self.redis.pipeline() as pipe:
-            self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
-            await pipe.execute()  # type: ignore[attr-defined]
+        try:
+            async with self.redis.pipeline() as pipe:
+                self._configure_pipeline_for_update(key, pipe, return_val, self.ttl)
+                await pipe.execute()  # type: ignore[attr-defined]
+        except Exception as e:
+            logger.error(f"Redis async update failed: {e}")
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. If `asynchronous` is True, flush asynchronously."""
@@ -558,8 +581,11 @@ class AsyncRedisCache(_RedisCacheBase):
         Clear cache. If `asynchronous` is True, flush asynchronously.
         Async version.
         """
-        asynchronous = kwargs.get("asynchronous", False)
-        await self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+        try:
+            asynchronous = kwargs.get("asynchronous", False)
+            await self.redis.flushdb(asynchronous=asynchronous, **kwargs)
+        except Exception as e:
+            logger.error(f"Redis async clear failed: {e}")
 
 
 class RedisSemanticCache(BaseCache):
@@ -785,11 +811,7 @@ class GPTCache(BaseCache):
         _gptcache = self._get_gptcache(llm_string)
 
         res = get(prompt, cache_obj=_gptcache)
-        if res:
-            return [
-                Generation(**generation_dict) for generation_dict in json.loads(res)
-            ]
-        return None
+        return _loads_generations(res) if res is not None else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache.
@@ -805,7 +827,7 @@ class GPTCache(BaseCache):
         from gptcache.adapter.api import put
 
         _gptcache = self._get_gptcache(llm_string)
-        handled_data = json.dumps([generation.dict() for generation in return_val])
+        handled_data = _dumps_generations(return_val)
         put(prompt, handled_data, cache_obj=_gptcache)
         return None
 
@@ -1365,17 +1387,12 @@ class SQLAlchemyMd5Cache(BaseCache):
 ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_cache"
 
 
+@deprecated(
+    since="0.0.28",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBCache",
+)
 class AstraDBCache(BaseCache):
-    """
-    Cache that uses Astra DB as a backend.
-
-    It uses a single collection as a kv store
-    The lookup keys, combined in the _id of the documents, are:
-        - prompt, a string
-        - llm_string, a deterministic str representation of the model parameters.
-          (needed to prevent same-prompt-different-model collisions)
-    """
-
     @staticmethod
     def _make_id(prompt: str, llm_string: str) -> str:
         return f"{_hash(prompt)}#{_hash(llm_string)}"
@@ -1393,25 +1410,30 @@ class AstraDBCache(BaseCache):
         setup_mode: SetupMode = SetupMode.SYNC,
     ):
         """
-        Create an AstraDB cache using a collection for storage.
+        Cache that uses Astra DB as a backend.
 
-        Args (only keyword-arguments accepted):
-            collection_name (str): name of the Astra DB collection to create/use.
-            token (Optional[str]): API token for Astra DB usage.
-            api_endpoint (Optional[str]): full URL to the API endpoint,
-                such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-            astra_db_client (Optional[AstraDB]):
-                *alternative to token+api_endpoint*,
+        It uses a single collection as a kv store
+        The lookup keys, combined in the _id of the documents, are:
+            - prompt, a string
+            - llm_string, a deterministic str representation of the model parameters.
+              (needed to prevent same-prompt-different-model collisions)
+
+        Args:
+            collection_name: name of the Astra DB collection to create/use.
+            token: API token for Astra DB usage.
+            api_endpoint: full URL to the API endpoint,
+                such as `https://<DB-ID>-us-east1.apps.astra.datastax.com`.
+            astra_db_client: *alternative to token+api_endpoint*,
                 you can pass an already-created 'astrapy.db.AstraDB' instance.
-            async_astra_db_client (Optional[AsyncAstraDB]):
-                *alternative to token+api_endpoint*,
+            async_astra_db_client: *alternative to token+api_endpoint*,
                 you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
-            namespace (Optional[str]): namespace (aka keyspace) where the
+            namespace: namespace (aka keyspace) where the
                 collection is created. Defaults to the database's "default namespace".
-            pre_delete_collection (bool): whether to delete and re-create the
-                collection. Defaults to False.
-            async_setup (bool): whether to create the collection asynchronously.
-                Enable only if there is a running asyncio event loop. Defaults to False.
+            setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or
+                OFF).
+            pre_delete_collection: whether to delete the collection
+                before creating it. If False and the collection already exists,
+                the collection will be used as is.
         """
         self.astra_env = _AstraDBCollectionEnvironment(
             collection_name=collection_name,
@@ -1427,7 +1449,6 @@ class AstraDBCache(BaseCache):
         self.async_collection = self.astra_env.async_collection
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
         self.astra_env.ensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         item = self.collection.find_one(
@@ -1441,7 +1462,6 @@ class AstraDBCache(BaseCache):
         return _loads_generations(item["body_blob"]) if item is not None else None
 
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
         await self.astra_env.aensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         item = (
@@ -1457,7 +1477,6 @@ class AstraDBCache(BaseCache):
         return _loads_generations(item["body_blob"]) if item is not None else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
         self.astra_env.ensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         blob = _dumps_generations(return_val)
@@ -1471,7 +1490,6 @@ class AstraDBCache(BaseCache):
     async def aupdate(
         self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
-        """Update cache based on prompt and llm_string."""
         await self.astra_env.aensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         blob = _dumps_generations(return_val)
@@ -1523,12 +1541,10 @@ class AstraDBCache(BaseCache):
         await self.async_collection.delete_one(doc_id)
 
     def clear(self, **kwargs: Any) -> None:
-        """Clear cache. This is for all LLMs at once."""
         self.astra_env.ensure_db_setup()
         self.collection.clear()
 
     async def aclear(self, **kwargs: Any) -> None:
-        """Clear cache. This is for all LLMs at once."""
         await self.astra_env.aensure_db_setup()
         await self.async_collection.clear()
 
@@ -1574,19 +1590,12 @@ def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
     return decorating_function
 
 
+@deprecated(
+    since="0.0.28",
+    removal="0.2.0",
+    alternative_import="langchain_astradb.AstraDBSemanticCache",
+)
 class AstraDBSemanticCache(BaseCache):
-    """
-    Cache that uses Astra DB as a vector-store backend for semantic
-    (i.e. similarity-based) lookup.
-
-    It uses a single (vector) collection and can store
-    cached values from several LLMs, so the LLM's 'llm_string' is stored
-    in the document metadata.
-
-    You can choose the preferred similarity (or use the API default) --
-    remember the threshold might require metric-dependent tuning.
-    """
-
     def __init__(
         self,
         *,
@@ -1603,33 +1612,38 @@ class AstraDBSemanticCache(BaseCache):
         similarity_threshold: float = ASTRA_DB_SEMANTIC_CACHE_DEFAULT_THRESHOLD,
     ):
         """
-        Initialize the cache with all relevant parameters.
-        Args:
+        Cache that uses Astra DB as a vector-store backend for semantic
+        (i.e. similarity-based) lookup.
 
-            collection_name (str): name of the Astra DB collection to create/use.
-            token (Optional[str]): API token for Astra DB usage.
-            api_endpoint (Optional[str]): full URL to the API endpoint,
-                such as "https://<DB-ID>-us-east1.apps.astra.datastax.com".
-            astra_db_client (Optional[AstraDB]): *alternative to token+api_endpoint*,
-                you can pass an already-created 'astrapy.db.AstraDB' instance.
-            async_astra_db_client (Optional[AsyncAstraDB]):
-                *alternative to token+api_endpoint*,
-                you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
-            namespace (Optional[str]): namespace (aka keyspace) where the
-                collection is created. Defaults to the database's "default namespace".
-            setup_mode (SetupMode): mode used to create the collection in the DB
-                (SYNC, ASYNC or OFF). Defaults to SYNC.
-            pre_delete_collection (bool): whether to delete and re-create the
-                collection. Defaults to False.
-            embedding (Embedding): Embedding provider for semantic
-                encoding and search.
-            metric: the function to use for evaluating similarity of text embeddings.
-                Defaults to 'cosine' (alternatives: 'euclidean', 'dot_product')
-            similarity_threshold (float, optional): the minimum similarity
-                for accepting a (semantic-search) match.
+        It uses a single (vector) collection and can store
+        cached values from several LLMs, so the LLM's 'llm_string' is stored
+        in the document metadata.
 
+        You can choose the preferred similarity (or use the API default).
         The default score threshold is tuned to the default metric.
         Tune it carefully yourself if switching to another distance metric.
+
+        Args:
+            collection_name: name of the Astra DB collection to create/use.
+            token: API token for Astra DB usage.
+            api_endpoint: full URL to the API endpoint,
+                such as `https://<DB-ID>-us-east1.apps.astra.datastax.com`.
+            astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AstraDB' instance.
+            async_astra_db_client: *alternative to token+api_endpoint*,
+                you can pass an already-created 'astrapy.db.AsyncAstraDB' instance.
+            namespace: namespace (aka keyspace) where the
+                collection is created. Defaults to the database's "default namespace".
+            setup_mode: mode used to create the Astra DB collection (SYNC, ASYNC or
+                OFF).
+            pre_delete_collection: whether to delete the collection
+                before creating it. If False and the collection already exists,
+                the collection will be used as is.
+            embedding: Embedding provider for semantic encoding and search.
+            metric: the function to use for evaluating similarity of text embeddings.
+                Defaults to 'cosine' (alternatives: 'euclidean', 'dot_product')
+            similarity_threshold: the minimum similarity for accepting a
+                (semantic-search) match.
         """
         self.embedding = embedding
         self.metric = metric
@@ -1685,7 +1699,6 @@ class AstraDBSemanticCache(BaseCache):
         return f"{_hash(prompt)}#{_hash(llm_string)}"
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
         self.astra_env.ensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         llm_string_hash = _hash(llm_string)
@@ -1704,7 +1717,6 @@ class AstraDBSemanticCache(BaseCache):
     async def aupdate(
         self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
     ) -> None:
-        """Update cache based on prompt and llm_string."""
         await self.astra_env.aensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         llm_string_hash = _hash(llm_string)
@@ -1721,7 +1733,6 @@ class AstraDBSemanticCache(BaseCache):
         )
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
         hit_with_id = self.lookup_with_id(prompt, llm_string)
         if hit_with_id is not None:
             return hit_with_id[1]
@@ -1729,7 +1740,6 @@ class AstraDBSemanticCache(BaseCache):
             return None
 
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
         hit_with_id = await self.alookup_with_id(prompt, llm_string)
         if hit_with_id is not None:
             return hit_with_id[1]
@@ -1835,11 +1845,204 @@ class AstraDBSemanticCache(BaseCache):
         await self.async_collection.delete_one(document_id)
 
     def clear(self, **kwargs: Any) -> None:
-        """Clear the *whole* semantic cache."""
         self.astra_env.ensure_db_setup()
         self.collection.clear()
 
     async def aclear(self, **kwargs: Any) -> None:
-        """Clear the *whole* semantic cache."""
         await self.astra_env.aensure_db_setup()
         await self.async_collection.clear()
+
+
+class AzureCosmosDBSemanticCache(BaseCache):
+    """Cache that uses Cosmos DB Mongo vCore vector-store backend"""
+
+    DEFAULT_DATABASE_NAME = "CosmosMongoVCoreCacheDB"
+    DEFAULT_COLLECTION_NAME = "CosmosMongoVCoreCacheColl"
+
+    def __init__(
+        self,
+        cosmosdb_connection_string: str,
+        database_name: str,
+        collection_name: str,
+        embedding: Embeddings,
+        *,
+        cosmosdb_client: Optional[Any] = None,
+        num_lists: int = 100,
+        similarity: CosmosDBSimilarityType = CosmosDBSimilarityType.COS,
+        kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+        dimensions: int = 1536,
+        m: int = 16,
+        ef_construction: int = 64,
+        ef_search: int = 40,
+        score_threshold: Optional[float] = None,
+        application_name: str = "LANGCHAIN_CACHING_PYTHON",
+    ):
+        """
+        Args:
+            cosmosdb_connection_string: Cosmos DB Mongo vCore connection string
+            cosmosdb_client: Cosmos DB Mongo vCore client
+            embedding (Embedding): Embedding provider for semantic encoding and search.
+            database_name: Database name for the CosmosDBMongoVCoreSemanticCache
+            collection_name: Collection name for the CosmosDBMongoVCoreSemanticCache
+            num_lists: This integer is the number of clusters that the
+                inverted file (IVF) index uses to group the vector data.
+                We recommend that numLists is set to documentCount/1000
+                for up to 1 million documents and to sqrt(documentCount)
+                for more than 1 million documents.
+                Using a numLists value of 1 is akin to performing
+                brute-force search, which has limited performance
+            dimensions: Number of dimensions for vector similarity.
+                The maximum number of supported dimensions is 2000
+            similarity: Similarity metric to use with the IVF index.
+
+                Possible options are:
+                    - CosmosDBSimilarityType.COS (cosine distance),
+                    - CosmosDBSimilarityType.L2 (Euclidean distance), and
+                    - CosmosDBSimilarityType.IP (inner product).
+            kind: Type of vector index to create.
+                Possible options are:
+                    - vector-ivf
+                    - vector-hnsw: available as a preview feature only,
+                                   to enable visit https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/preview-features
+            m: The max number of connections per layer (16 by default, minimum
+               value is 2, maximum value is 100). Higher m is suitable for datasets
+               with high dimensionality and/or high accuracy requirements.
+            ef_construction: the size of the dynamic candidate list for constructing
+                            the graph (64 by default, minimum value is 4, maximum
+                            value is 1000). Higher ef_construction will result in
+                            better index quality and higher accuracy, but it will
+                            also increase the time required to build the index.
+                            ef_construction has to be at least 2 * m
+            ef_search: The size of the dynamic candidate list for search
+                       (40 by default). A higher value provides better
+                       recall at the cost of speed.
+            score_threshold: Maximum score used to filter the vector search documents.
+            application_name: Application name for the client for tracking and logging
+        """
+
+        self._validate_enum_value(similarity, CosmosDBSimilarityType)
+        self._validate_enum_value(kind, CosmosDBVectorSearchType)
+
+        if not cosmosdb_connection_string:
+            raise ValueError(" CosmosDB connection string can be empty.")
+
+        self.cosmosdb_connection_string = cosmosdb_connection_string
+        self.cosmosdb_client = cosmosdb_client
+        self.embedding = embedding
+        self.database_name = database_name or self.DEFAULT_DATABASE_NAME
+        self.collection_name = collection_name or self.DEFAULT_COLLECTION_NAME
+        self.num_lists = num_lists
+        self.dimensions = dimensions
+        self.similarity = similarity
+        self.kind = kind
+        self.m = m
+        self.ef_construction = ef_construction
+        self.ef_search = ef_search
+        self.score_threshold = score_threshold
+        self._cache_dict: Dict[str, AzureCosmosDBVectorSearch] = {}
+        self.application_name = application_name
+
+    def _index_name(self, llm_string: str) -> str:
+        hashed_index = _hash(llm_string)
+        return f"cache:{hashed_index}"
+
+    def _get_llm_cache(self, llm_string: str) -> AzureCosmosDBVectorSearch:
+        index_name = self._index_name(llm_string)
+
+        namespace = self.database_name + "." + self.collection_name
+
+        # return vectorstore client for the specific llm string
+        if index_name in self._cache_dict:
+            return self._cache_dict[index_name]
+
+        # create new vectorstore client for the specific llm string
+        if self.cosmosdb_client:
+            collection = self.cosmosdb_client[self.database_name][self.collection_name]
+            self._cache_dict[index_name] = AzureCosmosDBVectorSearch(
+                collection=collection,
+                embedding=self.embedding,
+                index_name=index_name,
+            )
+        else:
+            self._cache_dict[
+                index_name
+            ] = AzureCosmosDBVectorSearch.from_connection_string(
+                connection_string=self.cosmosdb_connection_string,
+                namespace=namespace,
+                embedding=self.embedding,
+                index_name=index_name,
+                application_name=self.application_name,
+            )
+
+        # create index for the vectorstore
+        vectorstore = self._cache_dict[index_name]
+        if not vectorstore.index_exists():
+            vectorstore.create_index(
+                self.num_lists,
+                self.dimensions,
+                self.similarity,
+                self.kind,
+                self.m,
+                self.ef_construction,
+            )
+
+        return vectorstore
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        llm_cache = self._get_llm_cache(llm_string)
+        generations: List = []
+        # Read from a Hash
+        results = llm_cache.similarity_search(
+            query=prompt,
+            k=1,
+            kind=self.kind,
+            ef_search=self.ef_search,
+            score_threshold=self.score_threshold,
+        )
+        if results:
+            for document in results:
+                try:
+                    generations.extend(loads(document.metadata["return_val"]))
+                except Exception:
+                    logger.warning(
+                        "Retrieving a cache value that could not be deserialized "
+                        "properly. This is likely due to the cache being in an "
+                        "older format. Please recreate your cache to avoid this "
+                        "error."
+                    )
+                    # In a previous life we stored the raw text directly
+                    # in the table, so assume it's in that format.
+                    generations.extend(
+                        _load_generations_from_json(document.metadata["return_val"])
+                    )
+        return generations if generations else None
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        for gen in return_val:
+            if not isinstance(gen, Generation):
+                raise ValueError(
+                    "CosmosDBMongoVCoreSemanticCache only supports caching of "
+                    f"normal LLM generations, got {type(gen)}"
+                )
+
+        llm_cache = self._get_llm_cache(llm_string)
+        metadata = {
+            "llm_string": llm_string,
+            "prompt": prompt,
+            "return_val": dumps([g for g in return_val]),
+        }
+        llm_cache.add_texts(texts=[prompt], metadatas=[metadata])
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear semantic cache for a given llm_string."""
+        index_name = self._index_name(kwargs["llm_string"])
+        if index_name in self._cache_dict:
+            self._cache_dict[index_name].get_collection().delete_many({})
+            # self._cache_dict[index_name].clear_collection()
+
+    @staticmethod
+    def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
+        if not isinstance(value, enum_type):
+            raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")

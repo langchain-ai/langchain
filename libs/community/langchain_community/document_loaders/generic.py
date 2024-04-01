@@ -22,7 +22,7 @@ from langchain_community.document_loaders.blob_loaders import (
 from langchain_community.document_loaders.parsers.registry import get_parser
 
 if TYPE_CHECKING:
-    from langchain.text_splitter import TextSplitter
+    from langchain_text_splitters import TextSplitter
 
 _PathLike = Union[str, Path]
 
@@ -114,10 +114,6 @@ class GenericLoader(BaseLoader):
         """Load documents lazily. Use this when working at a large scale."""
         for blob in self.blob_loader.yield_blobs():
             yield from self.blob_parser.lazy_parse(blob)
-
-    def load(self) -> List[Document]:
-        """Load all documents."""
-        return list(self.lazy_load())
 
     def load_and_split(
         self, text_splitter: Optional[TextSplitter] = None

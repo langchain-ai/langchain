@@ -10,6 +10,7 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.utilities.openapi import OpenAPISpec
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
 from requests import Response
@@ -17,7 +18,6 @@ from requests import Response
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain.tools import APIOperation
 
 if TYPE_CHECKING:
