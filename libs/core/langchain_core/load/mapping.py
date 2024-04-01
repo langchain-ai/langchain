@@ -51,11 +51,11 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "system",
         "SystemMessage",
     ),
-    ("langchain", "schema", "messages", "ToolMessage"): (
+    ("langchain", "schema", "messages", "ToolOutputMessage"): (
         "langchain_core",
         "messages",
         "tool",
-        "ToolMessage",
+        "ToolOutputMessage",
     ),
     ("langchain", "schema", "agent", "AgentAction"): (
         "langchain_core",
@@ -293,11 +293,11 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "system",
         "SystemMessageChunk",
     ),
-    ("langchain", "schema", "messages", "ToolMessageChunk"): (
+    ("langchain", "schema", "messages", "ToolOutputMessageChunk"): (
         "langchain_core",
         "messages",
         "tool",
-        "ToolMessageChunk",
+        "ToolOutputMessageChunk",
     ),
     ("langchain", "schema", "output", "GenerationChunk"): (
         "langchain_core",
