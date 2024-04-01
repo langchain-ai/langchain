@@ -1,3 +1,4 @@
+"""Custom **exceptions** for LangChain. """
 from typing import Any, Optional
 
 

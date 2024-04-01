@@ -1,18 +1,19 @@
 import json
 from collections import defaultdict
 from html.parser import HTMLParser
-from typing import Any, DefaultDict, Dict, List, Optional
+from typing import Any, DefaultDict, Dict, List, Optional, cast
 
 from langchain.callbacks.manager import (
     CallbackManagerForLLMRun,
 )
-from langchain.chat_models.anthropic import ChatAnthropic
-from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
-from langchain.schema.messages import (
+from langchain_community.chat_models.anthropic import ChatAnthropic
+from langchain_core._api.deprecation import deprecated
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     SystemMessage,
@@ -41,6 +42,8 @@ for the weather in SF you would respond:
 
 
 class TagParser(HTMLParser):
+    """Parser for the tool tags."""
+
     def __init__(self) -> None:
         """A heavy-handed solution, but it's fast for prototyping.
 
@@ -121,7 +124,14 @@ def _destrip(tool_input: Any) -> Any:
         raise ValueError
 
 
+@deprecated(
+    since="0.0.54",
+    removal="0.2",
+    alternative_import="langchain_anthropic.experimental.ChatAnthropicTools",
+)
 class AnthropicFunctions(BaseChatModel):
+    """Chat model for interacting with Anthropic functions."""
+
     llm: BaseChatModel
 
     @root_validator(pre=True)
@@ -176,7 +186,7 @@ class AnthropicFunctions(BaseChatModel):
         response = self.model.predict_messages(
             messages, stop=stop, callbacks=run_manager, **kwargs
         )
-        completion = response.content
+        completion = cast(str, response.content)
         if forced:
             tag_parser = TagParser()
 
@@ -210,7 +220,7 @@ class AnthropicFunctions(BaseChatModel):
             message = AIMessage(content=msg, additional_kwargs=kwargs)
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
-            response.content = response.content.strip()
+            response.content = cast(str, response.content).strip()
             return ChatResult(generations=[ChatGeneration(message=response)])
 
     @property

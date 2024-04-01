@@ -1,7 +1,11 @@
 """Test functionality related to prompts."""
+
+from unittest import mock
+
 import pytest
 
 from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 
 
 def test_prompt_valid() -> None:
@@ -34,6 +38,22 @@ def test_prompt_from_template() -> None:
     assert prompt == expected_prompt
 
 
+def test_prompt_from_template_with_partial_variables() -> None:
+    """Test prompts can be constructed from a template with partial variables."""
+    # given
+    template = "This is a {foo} test {bar}."
+    partial_variables = {"bar": "baz"}
+    # when
+    prompt = PromptTemplate.from_template(template, partial_variables=partial_variables)
+    # then
+    expected_prompt = PromptTemplate(
+        template=template,
+        input_variables=["foo"],
+        partial_variables=partial_variables,
+    )
+    assert prompt == expected_prompt
+
+
 def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {foo} test."
@@ -47,17 +67,10 @@ def test_prompt_missing_input_variables() -> None:
     ).input_variables == ["foo"]
 
 
-def test_prompt_extra_input_variables() -> None:
-    """Test error is raised when there are too many input variables."""
-    template = "This is a {foo} test."
-    input_variables = ["foo", "bar"]
+def test_prompt_empty_input_variable() -> None:
+    """Test error is raised when empty string input variable."""
     with pytest.raises(ValueError):
-        PromptTemplate(
-            input_variables=input_variables, template=template, validate_template=True
-        )
-    assert PromptTemplate(
-        input_variables=input_variables, template=template
-    ).input_variables == ["foo"]
+        PromptTemplate(input_variables=[""], template="{}", validate_template=True)
 
 
 def test_prompt_wrong_input_variables() -> None:
@@ -113,7 +126,9 @@ def test_prompt_invalid_template_format() -> None:
     input_variables = ["foo"]
     with pytest.raises(ValueError):
         PromptTemplate(
-            input_variables=input_variables, template=template, template_format="bar"
+            input_variables=input_variables,
+            template=template,
+            template_format="bar",  # type: ignore[arg-type]
         )
 
 
@@ -123,6 +138,26 @@ def test_prompt_from_file() -> None:
     input_variables = ["question"]
     prompt = PromptTemplate.from_file(template_file, input_variables)
     assert prompt.template == "Question: {question}\nAnswer:"
+
+
+def test_prompt_from_file_with_partial_variables() -> None:
+    """Test prompt can be successfully constructed from a file
+    with partial variables."""
+    # given
+    template = "This is a {foo} test {bar}."
+    partial_variables = {"bar": "baz"}
+    # when
+    with mock.patch("builtins.open", mock.mock_open(read_data=template)):
+        prompt = PromptTemplate.from_file(
+            "mock_file_name", partial_variables=partial_variables
+        )
+    # then
+    expected_prompt = PromptTemplate(
+        template=template,
+        input_variables=["foo"],
+        partial_variables=partial_variables,
+    )
+    assert prompt == expected_prompt
 
 
 def test_partial_init_string() -> None:
@@ -297,3 +332,22 @@ def test_prompt_jinja2_wrong_input_variables() -> None:
     assert PromptTemplate(
         input_variables=input_variables, template=template, template_format="jinja2"
     ).input_variables == ["foo"]
+
+
+def test_prompt_invoke_with_metadata() -> None:
+    """Test prompt can be invoked with metadata."""
+    template = "This is a {foo} test."
+    prompt = PromptTemplate(
+        input_variables=["foo"],
+        template=template,
+        metadata={"version": "1"},
+        tags=["tag1", "tag2"],
+    )
+    tracer = RunCollectorCallbackHandler()
+    result = prompt.invoke(
+        {"foo": "bar"}, {"metadata": {"foo": "bar"}, "callbacks": [tracer]}
+    )
+    assert result.to_string() == "This is a bar test."
+    assert len(tracer.traced_runs) == 1
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore

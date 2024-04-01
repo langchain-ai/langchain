@@ -96,26 +96,6 @@ def test_prompt_missing_input_variables() -> None:
     ).input_variables == ["foo"]
 
 
-def test_prompt_extra_input_variables() -> None:
-    """Test error is raised when there are too many input variables."""
-    template = "This is a {foo} test."
-    input_variables = ["foo", "bar"]
-    with pytest.raises(ValueError):
-        FewShotPromptTemplate(
-            input_variables=input_variables,
-            suffix=template,
-            examples=[],
-            example_prompt=EXAMPLE_PROMPT,
-            validate_template=True,
-        )
-    assert FewShotPromptTemplate(
-        input_variables=input_variables,
-        suffix=template,
-        examples=[],
-        example_prompt=EXAMPLE_PROMPT,
-    ).input_variables == ["foo"]
-
-
 def test_few_shot_functionality() -> None:
     """Test that few shot works with examples."""
     prefix = "This is a test about {content}."
@@ -233,7 +213,7 @@ def test_partial() -> None:
 
 @pytest.mark.requires("jinja2")
 def test_prompt_jinja2_functionality(
-    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]]
+    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]],
 ) -> None:
     prefix = "Starting with {{ foo }}"
     suffix = "Ending with {{ bar }}"
@@ -256,7 +236,7 @@ def test_prompt_jinja2_functionality(
 
 @pytest.mark.requires("jinja2")
 def test_prompt_jinja2_missing_input_variables(
-    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]]
+    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]],
 ) -> None:
     """Test error is raised when input variables are not provided."""
     prefix = "Starting with {{ foo }}"
@@ -303,7 +283,7 @@ def test_prompt_jinja2_missing_input_variables(
 
 @pytest.mark.requires("jinja2")
 def test_prompt_jinja2_extra_input_variables(
-    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]]
+    example_jinja2_prompt: Tuple[PromptTemplate, List[Dict[str, str]]],
 ) -> None:
     """Test error is raised when there are too many input variables."""
     prefix = "Starting with {{ foo }}"
@@ -328,7 +308,7 @@ def test_prompt_jinja2_extra_input_variables(
     ).input_variables == ["bar", "foo"]
 
 
-def test_few_shot_chat_message_prompt_template() -> None:
+async def test_few_shot_chat_message_prompt_template() -> None:
     """Tests for few shot chat message template."""
     examples = [
         {"input": "2+2", "output": "4"},
@@ -353,8 +333,7 @@ def test_few_shot_chat_message_prompt_template() -> None:
         + HumanMessagePromptTemplate.from_template("{input}")
     )
 
-    messages = final_prompt.format_messages(input="100 + 1")
-    assert messages == [
+    expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
         HumanMessage(content="2+2", additional_kwargs={}, example=False),
         AIMessage(content="4", additional_kwargs={}, example=False),
@@ -362,6 +341,11 @@ def test_few_shot_chat_message_prompt_template() -> None:
         AIMessage(content="5", additional_kwargs={}, example=False),
         HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
     ]
+
+    messages = final_prompt.format_messages(input="100 + 1")
+    assert messages == expected
+    messages = await final_prompt.aformat_messages(input="100 + 1")
+    assert messages == expected
 
 
 class AsIsSelector(BaseExampleSelector):
@@ -375,11 +359,9 @@ class AsIsSelector(BaseExampleSelector):
         self.examples = examples
 
     def add_example(self, example: Dict[str, str]) -> Any:
-        """Adds an example to the selector."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
-        """Select which examples to use based on the inputs."""
         return list(self.examples)
 
 
@@ -407,8 +389,7 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
         + few_shot_prompt
         + HumanMessagePromptTemplate.from_template("{input}")
     )
-    messages = final_prompt.format_messages(input="100 + 1")
-    assert messages == [
+    expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
         HumanMessage(content="2+2", additional_kwargs={}, example=False),
         AIMessage(content="4", additional_kwargs={}, example=False),
@@ -416,3 +397,61 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
         AIMessage(content="5", additional_kwargs={}, example=False),
         HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
     ]
+    messages = final_prompt.format_messages(input="100 + 1")
+    assert messages == expected
+
+
+class AsyncAsIsSelector(BaseExampleSelector):
+    """An example selector for testing purposes.
+
+    This selector returns the examples as-is.
+    """
+
+    def __init__(self, examples: Sequence[Dict[str, str]]) -> None:
+        """Initializes the selector."""
+        self.examples = examples
+
+    def add_example(self, example: Dict[str, str]) -> Any:
+        raise NotImplementedError
+
+    def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        raise NotImplementedError
+
+    async def aselect_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        return list(self.examples)
+
+
+async def test_few_shot_chat_message_prompt_template_with_selector_async() -> None:
+    """Tests for few shot chat message template with an async example selector."""
+    examples = [
+        {"input": "2+2", "output": "4"},
+        {"input": "2+3", "output": "5"},
+    ]
+    example_selector = AsyncAsIsSelector(examples)
+    example_prompt = ChatPromptTemplate.from_messages(
+        [
+            HumanMessagePromptTemplate.from_template("{input}"),
+            AIMessagePromptTemplate.from_template("{output}"),
+        ]
+    )
+
+    few_shot_prompt = FewShotChatMessagePromptTemplate(
+        input_variables=["input"],
+        example_prompt=example_prompt,
+        example_selector=example_selector,
+    )
+    final_prompt: ChatPromptTemplate = (
+        SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
+        + few_shot_prompt
+        + HumanMessagePromptTemplate.from_template("{input}")
+    )
+    expected = [
+        SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
+        HumanMessage(content="2+2", additional_kwargs={}, example=False),
+        AIMessage(content="4", additional_kwargs={}, example=False),
+        HumanMessage(content="2+3", additional_kwargs={}, example=False),
+        AIMessage(content="5", additional_kwargs={}, example=False),
+        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+    ]
+    messages = await final_prompt.aformat_messages(input="100 + 1")
+    assert messages == expected

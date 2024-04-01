@@ -1,4 +1,5 @@
 """Test Cassandra caches. Requires a running vector-capable Cassandra cluster."""
+
 import os
 import time
 from typing import Any, Iterator, Tuple
@@ -8,7 +9,7 @@ from langchain_core.outputs import Generation, LLMResult
 
 from langchain.cache import CassandraCache, CassandraSemanticCache
 from langchain.globals import get_llm_cache, set_llm_cache
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.integration_tests.cache.fake_embeddings import FakeEmbeddings
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -46,12 +47,12 @@ def test_cassandra_cache(cassandra_connection: Tuple[Any, str]) -> None:
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo"])
-    print(output)
+    print(output)  # noqa: T201
     expected_output = LLMResult(
         generations=[[Generation(text="fizz")]],
         llm_output={},
     )
-    print(expected_output)
+    print(expected_output)  # noqa: T201
     assert output == expected_output
     cache.clear()
 

@@ -1,7 +1,37 @@
+"""
+**Agent** is a class that uses an LLM to choose a sequence of actions to take.
+
+In Chains, a sequence of actions is hardcoded. In Agents,
+a language model is used as a reasoning engine to determine which actions
+to take and in which order.
+
+Agents select and use **Tools** and **Toolkits** for actions.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseSingleActionAgent --> LLMSingleActionAgent
+                              OpenAIFunctionsAgent
+                              XMLAgent
+                              Agent --> <name>Agent  # Examples: ZeroShotAgent, ChatAgent
+
+
+    BaseMultiActionAgent  --> OpenAIMultiFunctionsAgent
+
+
+**Main helpers:**
+
+.. code-block::
+
+    AgentType, AgentExecutor, AgentOutputParser, AgentExecutorIterator,
+    AgentAction, AgentFinish, AgentStep
+
+"""  # noqa: E501
 from __future__ import annotations
 
 import json
-from typing import Any, Literal, Sequence, Union
+from typing import Any, List, Literal, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
@@ -39,6 +69,11 @@ class AgentAction(Serializable):
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable."""
         return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "agent"]
 
     @property
     def messages(self) -> Sequence[BaseMessage]:
@@ -98,6 +133,11 @@ class AgentFinish(Serializable):
         """Return whether or not the class is serializable."""
         return True
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "agent"]
+
     @property
     def messages(self) -> Sequence[BaseMessage]:
         """Return the messages that correspond to this observation."""
@@ -105,7 +145,7 @@ class AgentFinish(Serializable):
 
 
 def _convert_agent_action_to_messages(
-    agent_action: AgentAction
+    agent_action: AgentAction,
 ) -> Sequence[BaseMessage]:
     """Convert an agent action to a message.
 

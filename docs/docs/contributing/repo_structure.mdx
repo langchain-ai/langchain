@@ -1,0 +1,54 @@
+---
+sidebar_position: 0.5
+---
+# Repository Structure
+
+If you plan on contributing to LangChain code or documentation, it can be useful
+to understand the high level structure of the repository.
+
+LangChain is organized as a [monorep](https://en.wikipedia.org/wiki/Monorepo) that contains multiple packages.
+
+Here's the structure visualized as a tree:
+
+```text
+.
+├── cookbook # Tutorials and examples
+├── docs # Contains content for the documentation here: https://python.langchain.com/
+├── libs
+│   ├── langchain # Main package
+│   │   ├── tests/unit_tests # Unit tests (present in each package not shown for brevity)
+│   │   ├── tests/integration_tests # Integration tests (present in each package not shown for brevity)
+│   ├── langchain-community # Third-party integrations
+│   ├── langchain-core # Base interfaces for key abstractions
+│   ├── langchain-experimental # Experimental components and chains
+│   ├── partners
+│       ├── langchain-partner-1
+│       ├── langchain-partner-2
+│       ├── ...
+│
+├── templates # A collection of easily deployable reference architectures for a wide variety of tasks.
+```
+
+The root directory also contains the following files:
+
+* `pyproject.toml`: Dependencies for building docs and linting docs, cookbook.
+* `Makefile`: A file that contains shortcuts for building, linting and docs and cookbook.
+
+There are other files in the root directory level, but their presence should be self-explanatory. Feel free to browse around!
+
+## Documentation
+
+The `/docs` directory contains the content for the documentation that is shown
+at https://python.langchain.com/ and the associated API Reference https://api.python.langchain.com/en/latest/langchain_api_reference.html.
+
+See the [documentation](./documentation) guidelines to learn how to contribute to the documentation.
+
+## Code
+
+The `/libs` directory contains the code for the LangChain packages.
+
+To learn more about how to contribute code see the following guidelines:
+
+- [Code](./code.mdx) Learn how to develop in the LangChain codebase.
+- [Integrations](./integrations.mdx) to learn how to contribute to third-party integrations to langchain-community or to start a new partner package.
+- [Testing](./testing.mdx) guidelines to learn how to write tests for the packages.

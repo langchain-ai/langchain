@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils._merge import merge_dicts
 
 
 class ChatGeneration(Generation):
@@ -27,9 +28,14 @@ class ChatGeneration(Generation):
             raise ValueError("Error while initializing ChatGeneration") from e
         return values
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "output"]
+
 
 class ChatGenerationChunk(ChatGeneration):
-    """A ChatGeneration chunk, which can be concatenated with other
+    """ChatGeneration chunk, which can be concatenated with other
       ChatGeneration chunks.
 
     Attributes:
@@ -41,16 +47,20 @@ class ChatGenerationChunk(ChatGeneration):
     type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment] # noqa: E501
     """Type is used exclusively for serialization purposes."""
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "output"]
+
     def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:
         if isinstance(other, ChatGenerationChunk):
-            generation_info = (
-                {**(self.generation_info or {}), **(other.generation_info or {})}
-                if self.generation_info is not None or other.generation_info is not None
-                else None
+            generation_info = merge_dicts(
+                self.generation_info or {},
+                other.generation_info or {},
             )
             return ChatGenerationChunk(
                 message=self.message + other.message,
-                generation_info=generation_info,
+                generation_info=generation_info or None,
             )
         else:
             raise TypeError(
