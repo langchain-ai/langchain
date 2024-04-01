@@ -5,11 +5,11 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 
 class SyntheticDataGenerator(BaseModel):
-    """Generates synthetic data using the given LLM and few-shot template.
+    """Generate synthetic data using the given LLM and few-shot template.
 
     Utilizes the provided LLM to produce synthetic data based on the
     few-shot prompt template.

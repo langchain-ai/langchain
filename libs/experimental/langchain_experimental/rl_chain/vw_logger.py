@@ -4,6 +4,8 @@ from typing import Optional, Union
 
 
 class VwLogger:
+    """Vowpal Wabbit custom logger."""
+
     def __init__(self, path: Optional[Union[str, PathLike]]):
         self.path = Path(path) if path else None
         if self.path:

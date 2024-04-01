@@ -1,12 +1,13 @@
 """Memory used to save agent output AND intermediate steps."""
 from typing import Any, Dict, List
 
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage, get_buffer_string
+
 from langchain.agents.format_scratchpad.openai_functions import (
     format_to_openai_function_messages,
 )
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import BaseMessage, get_buffer_string
 
 
 class AgentTokenBufferMemory(BaseChatMemory):

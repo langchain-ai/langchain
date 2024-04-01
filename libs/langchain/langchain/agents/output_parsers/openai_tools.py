@@ -1,20 +1,16 @@
-import asyncio
 import json
 from json import JSONDecodeError
 from typing import List, Union
 
-from langchain.agents.agent import MultiActionAgentOutputParser
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    OutputParserException,
-)
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.messages import (
+from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
 )
-from langchain.schema.output import ChatGeneration, Generation
+from langchain_core.outputs import ChatGeneration, Generation
+
+from langchain.agents.agent import MultiActionAgentOutputParser
 
 
 class OpenAIToolAgentAction(AgentActionMessageLog):
@@ -23,7 +19,7 @@ class OpenAIToolAgentAction(AgentActionMessageLog):
 
 
 def parse_ai_message_to_openai_tool_action(
-    message: BaseMessage
+    message: BaseMessage,
 ) -> Union[List[AgentAction], AgentFinish]:
     """Parse an AI message potentially containing tool_calls."""
     if not isinstance(message, AIMessage):
@@ -39,7 +35,7 @@ def parse_ai_message_to_openai_tool_action(
         function = tool_call["function"]
         function_name = function["name"]
         try:
-            _tool_input = json.loads(function["arguments"])
+            _tool_input = json.loads(function["arguments"] or "{}")
         except JSONDecodeError:
             raise OutputParserException(
                 f"Could not parse tool input: {function} because "
@@ -94,13 +90,6 @@ class OpenAIToolsAgentOutputParser(MultiActionAgentOutputParser):
             raise ValueError("This output parser only works on ChatGeneration output")
         message = result[0].message
         return parse_ai_message_to_openai_tool_action(message)
-
-    async def aparse_result(
-        self, result: List[Generation], *, partial: bool = False
-    ) -> Union[List[AgentAction], AgentFinish]:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self.parse_result, result
-        )
 
     def parse(self, text: str) -> Union[List[AgentAction], AgentFinish]:
         raise ValueError("Can only parse messages")

@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 EXAMPLES = [
     """Question: What is the elevation range for the area that the eastern sector of the Colorado orogeny extends into?

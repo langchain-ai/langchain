@@ -1,4 +1,5 @@
 """Test Python REPL Tools."""
+
 import sys
 
 import numpy as np
@@ -24,7 +25,7 @@ import numpy as np
 v1 = np.array([1, 2, 3])
 v2 = np.array([4, 5, 6])
 dot_product = np.dot(v1, v2)
-print("The dot product is {:d}.".format(dot_product))
+print("The dot product is {:d}.".format(dot_product))  # noqa: T201
     """
     tool = PythonREPLTool()
     assert tool.run(program) == "The dot product is 32.\n"
@@ -75,9 +76,9 @@ def test_python_ast_repl_print() -> None:
     program = """python
 string = "racecar"
 if string == string[::-1]:
-    print(string, "is a palindrome")
+    print(string, "is a palindrome")  # noqa: T201
 else:
-    print(string, "is not a palindrome")"""
+    print(string, "is not a palindrome")"""  # noqa: T201
     tool = PythonAstREPLTool()
     assert tool.run(program) == "racecar is a palindrome\n"
 

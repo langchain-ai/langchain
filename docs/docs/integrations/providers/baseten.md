@@ -1,25 +1,39 @@
 # Baseten
 
-Learn how to use LangChain with models deployed on Baseten.
+>[Baseten](https://baseten.co) is a provider of all the infrastructure you need to deploy and serve 
+> ML models performantly, scalably, and cost-efficiently.
 
-## Installation and setup
+>As a model inference platform, `Baseten` is a `Provider` in the LangChain ecosystem. 
+The `Baseten` integration currently implements a single `Component`, LLMs, but more are planned!
 
-- Create a [Baseten](https://baseten.co) account and [API key](https://docs.baseten.co/settings/api-keys).
-- Install the Baseten Python client with `pip install baseten`
-- Use your API key to authenticate with `baseten login`
+>`Baseten` lets you run both open source models like Llama 2 or Mistral and run proprietary or 
+fine-tuned models on dedicated GPUs. If you're used to a provider like OpenAI, using Baseten has a few differences:
 
-## Invoking a model
+>* Rather than paying per token, you pay per minute of GPU used.
+>* Every model on Baseten uses [Truss](https://truss.baseten.co/welcome), our open-source model packaging framework, for maximum customizability.
+>* While we have some [OpenAI ChatCompletions-compatible models](https://docs.baseten.co/api-reference/openai), you can define your own I/O spec with `Truss`.
 
-Baseten integrates with LangChain through the LLM module, which provides a standardized and interoperable interface for models that are deployed on your Baseten workspace.
+>[Learn more](https://docs.baseten.co/deploy/lifecycle) about model IDs and deployments.
 
-You can deploy foundation models like WizardLM and Alpaca with one click from the [Baseten model library](https://app.baseten.co/explore/) or if you have your own model, [deploy it with this tutorial](https://docs.baseten.co/deploying-models/deploy).
+>Learn more about Baseten in [the Baseten docs](https://docs.baseten.co/).
 
-In this example, we'll work with WizardLM. [Deploy WizardLM here](https://app.baseten.co/explore/wizardlm) and follow along with the deployed [model's version ID](https://docs.baseten.co/managing-models/manage).
+## Installation and Setup
+
+You'll need two things to use Baseten models with LangChain:
+
+- A [Baseten account](https://baseten.co)
+- An [API key](https://docs.baseten.co/observability/api-keys)
+
+Export your API key to your as an environment variable called `BASETEN_API_KEY`.
+
+```sh
+export BASETEN_API_KEY="paste_your_api_key_here"
+```
+
+## LLMs
+
+See a [usage example](/docs/integrations/llms/baseten).
 
 ```python
-from langchain.llms import Baseten
-
-wizardlm = Baseten(model="MODEL_VERSION_ID", verbose=True)
-
-wizardlm("What is the difference between a Wizard and a Sorcerer?")
+from langchain_community.llms import Baseten
 ```

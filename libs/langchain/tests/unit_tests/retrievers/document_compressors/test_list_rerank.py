@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.retrievers.document_compressors.list_rerank import ListRerank
+from langchain.retrievers.document_compressors.listwise_rerank import ListRerank
 from langchain.schema import Document
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

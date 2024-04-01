@@ -1,6 +1,6 @@
-from langchain.chat_models import ChatAnthropic, ChatCohere, ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.runnable import ConfigurableField
+from langchain_community.chat_models import ChatAnthropic, ChatCohere, ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import ConfigurableField
 
 _prompt = ChatPromptTemplate.from_messages(
     [
@@ -14,8 +14,8 @@ _prompt = ChatPromptTemplate.from_messages(
 _model = ChatOpenAI().configurable_alternatives(
     ConfigurableField(id="llm_provider"),
     default_key="openai",
-    anthropic=ChatAnthropic(),
-    cohere=ChatCohere(),
+    anthropic=ChatAnthropic,
+    cohere=ChatCohere,
 )
 
 # if you update this, you MUST also update ../pyproject.toml
