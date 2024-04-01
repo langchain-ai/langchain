@@ -32,20 +32,18 @@ if TYPE_CHECKING:
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 
 # Deprecated as of 0.1.0, will be removed in 0.2.0.
-tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(  # noqa: E501
+tracing_callback_var: ContextVar[Optional[LangChainTracerV1]] = ContextVar(
     "tracing_callback", default=None
-)
+)  # noqa: E501
 
-tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(  # noqa: E501
+tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
     "tracing_callback_v2", default=None
-)
-run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(  # noqa: E501
+)  # noqa: E501
+run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(
     "run_collector", default=None
-)
+)  # noqa: E501
 
 
-@contextmanager
-@deprecated("0.1.0", alternative="tracing_v2_enabled", removal="0.2.0")
 def tracing_enabled(
     session_name: str = "default",
 ) -> Generator[TracerSessionV1, None, None]:
@@ -62,13 +60,9 @@ def tracing_enabled(
         >>> with tracing_enabled() as session:
         ...     # Use the LangChainTracer session
     """
-    cb = LangChainTracerV1()
-    session = cast(TracerSessionV1, cb.load_session(session_name))
-    try:
-        tracing_callback_var.set(cb)
-        yield session
-    finally:
-        tracing_callback_var.set(None)
+    raise RuntimeError(
+        "tracing_enabled is no longer supported. Please use tracing_enabled_v2 instead."
+    )
 
 
 @contextmanager

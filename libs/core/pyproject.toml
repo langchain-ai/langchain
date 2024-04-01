@@ -15,7 +15,6 @@ langsmith = "^0.1.0"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
-requests = "^2"
 packaging = "^23.2"
 jinja2 = { version = "^3", optional = true }
 
@@ -61,10 +60,6 @@ pytest-profiling = "^1.7.0"
 responses = "^0.25.0"
 numpy = "^1.24.0"
 
-
-[tool.poetry.group.test_integration]
-optional = true
-dependencies = {}
 
 [tool.poetry.extras]
 extended_testing = ["jinja2"]
