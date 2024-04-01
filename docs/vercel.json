@@ -1047,11 +1047,11 @@
     },
     {
       "source": "/docs/guides/extending_langchain(/?)",
-      "destination": "/docs/guides/productionization/extending_langchain(/?)"
+      "destination": "/docs/guides/productionization/extending_langchain"
     },
     {
       "source": "/docs/guides/fallbacks(/?)",
-      "destination": "/docs/guides/productionization/fallbacks(/?)"
+      "destination": "/docs/guides/productionization/fallbacks"
     },
     {
       "source": "/docs/guides/privacy/:path*",
@@ -1063,11 +1063,15 @@
     },
     {
       "source": "/docs/guides/model_laboratory(/?)",
-      "destination": "/docs/guides/miscellaneous/model_laboratory(/?)"
+      "destination": "/docs/guides/miscellaneous/model_laboratory"
     },
     {
       "source": "/docs/guides/pydantic_compatibility(/?)",
-      "destination": "/docs/guides/miscellaneous/pydantic_compatibility(/?)"
+      "destination": "/docs/guides/miscellaneous/pydantic_compatibility"
+    },
+    {
+      "source": "/docs/modules/model_io/quick_start(/?)",
+      "destination": "/docs/modules/model_io"
     }
   ]
 }
