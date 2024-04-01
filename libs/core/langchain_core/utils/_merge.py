@@ -30,6 +30,8 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
             )
         elif isinstance(merged[right_k], str):
             merged[right_k] += right_v
+        elif isinstance(merged[right_k], float):
+            merged[right_k] = right_v
         elif isinstance(merged[right_k], dict):
             merged[right_k] = merge_dicts(merged[right_k], right_v)
         elif isinstance(merged[right_k], list):
