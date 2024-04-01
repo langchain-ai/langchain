@@ -36,7 +36,7 @@ class TencentVectorDBTranslator(Visitor):
 
     def visit_operation(self, operation: Operation) -> str:
         if operation.operator in (Operator.AND, Operator.OR):
-            ret = f" {operation.operator} ".join(
+            ret = f" {operation.operator.value} ".join(
                 [arg.accept(self) for arg in operation.arguments]
             )
             if operation.operator == Operator.OR:

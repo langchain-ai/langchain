@@ -14,7 +14,6 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils import guard_import
 from langchain_core.vectorstores import VectorStore
 
-from langchain_community.embeddings import DeterministicFakeEmbedding, FakeEmbeddings
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
@@ -105,12 +104,6 @@ class MetaField(BaseModel):
         else:
             if self.data_type not in enum.FieldType:
                 raise ValueError(f"unsupported data_type {self.data_type}")
-
-
-def is_valid_embedding(embedding: Embeddings) -> bool:
-    return embedding is not None and not isinstance(
-        embedding, (FakeEmbeddings, DeterministicFakeEmbedding)
-    )
 
 
 def translate_filter(
@@ -304,7 +297,7 @@ class TencentVectorDB(VectorStore):
         enum = guard_import("tcvectordb.model.enum")
         if embedding is None and t_vdb_embedding is None:
             raise ValueError("embedding and t_vdb_embedding cannot be both None")
-        if is_valid_embedding(embedding):
+        if embedding:
             embeddings = embedding.embed_documents(texts[0:1])
             dimension = len(embeddings[0])
         else:
@@ -351,7 +344,7 @@ class TencentVectorDB(VectorStore):
         if len(texts) == 0:
             logger.debug("Nothing to insert, skipping.")
             return []
-        if is_valid_embedding(self.embedding_func):
+        if self.embedding_func:
             embeddings = self.embedding_func.embed_documents(texts)
         else:
             embeddings = []
@@ -407,7 +400,7 @@ class TencentVectorDB(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score."""
         # Embed the query text.
-        if is_valid_embedding(self.embedding_func):
+        if self.embedding_func:
             embedding = self.embedding_func.embed_query(query)
             return self.similarity_search_with_score_by_vector(
                 embedding=embedding,
@@ -496,7 +489,7 @@ class TencentVectorDB(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Perform a search and return results that are reordered by MMR."""
-        if is_valid_embedding(self.embedding_func):
+        if self.embedding_func:
             embedding = self.embedding_func.embed_query(query)
             return self.max_marginal_relevance_search_by_vector(
                 embedding=embedding,
