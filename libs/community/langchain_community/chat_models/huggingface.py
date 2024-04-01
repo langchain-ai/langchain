@@ -1,43 +1,42 @@
 """Hugging Face Chat Wrapper."""
 
 from typing import (
-        Any,
-        Callable,
-        Dict,
-        List,
-        Literal,
-        Optional,
-        Sequence,
-        Tuple,
-        Type,
-        Union,
-        cast,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
 )
-
 
 from langchain_core.callbacks.manager import (
-        AsyncCallbackManagerForLLMRun,
-        CallbackManagerForLLMRun,
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
-        AIMessage,
-        AIMessageChunk,
-        BaseMessage,
-        BaseMessageChunk,
-        ChatMessage,
-        ChatMessageChunk,
-        HumanMessage,
-        HumanMessageChunk,
-        SystemMessage,
-        SystemMessageChunk,
-        ToolMessage,
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
+    ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from langchain_core.pydantic_v1 import BaseModel,root_validator
-from langchain_core.tools import BaseTool
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 from langchain_core.runnables import Runnable
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
@@ -46,44 +45,46 @@ from langchain_community.llms.huggingface_text_gen_inference import (
     HuggingFaceTextGenInference,
 )
 
-
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
+
 def _convert_message_to_chat_message(
-        message: BaseMessage,
-    ) -> Dict:
-        if isinstance(message, ChatMessage):
-            return dict(role=message.role, content=message.content)
-        elif isinstance(message, HumanMessage):
-            return dict(role="user", content=message.content)
-        elif isinstance(message, AIMessage):
-            if "tool_calls" in message.additional_kwargs:
-                tool_calls = [
-                    {
-                        "function": {
-                            "name": tc["function"]["name"],
-                            "arguments": tc["function"]["arguments"],
-                        }
+    message: BaseMessage,
+) -> Dict:
+    if isinstance(message, ChatMessage):
+        return dict(role=message.role, content=message.content)
+    elif isinstance(message, HumanMessage):
+        return dict(role="user", content=message.content)
+    elif isinstance(message, AIMessage):
+        if "tool_calls" in message.additional_kwargs:
+            tool_calls = [
+                {
+                    "function": {
+                        "name": tc["function"]["name"],
+                        "arguments": tc["function"]["arguments"],
                     }
-                    for tc in message.additional_kwargs["tool_calls"]
-                ]
-            else:
-                tool_calls = None
-            return {
-                "role": "assistant",
-                "content": message.content,
-                "tool_calls": tool_calls,
-            }
-        elif isinstance(message, SystemMessage):
-            return dict(role="system", content=message.content)
-        elif isinstance(message, ToolMessage):
-            return {
-                "role": "tool",
-                "content": message.content,
-                "name": message.name,
-            }
+                }
+                for tc in message.additional_kwargs["tool_calls"]
+            ]
         else:
-            raise ValueError(f"Got unknown type {message}")
+            tool_calls = None
+        return {
+            "role": "assistant",
+            "content": message.content,
+            "tool_calls": tool_calls,
+        }
+    elif isinstance(message, SystemMessage):
+        return dict(role="system", content=message.content)
+    elif isinstance(message, ToolMessage):
+        return {
+            "role": "tool",
+            "content": message.content,
+            "name": message.name,
+        }
+    else:
+        raise ValueError(f"Got unknown type {message}")
+
+
 def _convert_TGI_message_to_LC_message(
     _message: Dict,
 ) -> BaseMessage:
@@ -91,15 +92,17 @@ def _convert_TGI_message_to_LC_message(
     assert role == "assistant", f"Expected role to be 'assistant', got {role}"
     content = cast(str, _message.content)
     if content is None:
-        content=""
+        content = ""
     additional_kwargs: Dict = {}
     if tool_calls := _message.tool_calls:
-        if 'parameters' in tool_calls[0]['function']:
-                functions_string=str(tool_calls[0]['function'].pop('parameters'))
-                corrected_functions = functions_string.replace("'", '"')
-                tool_calls[0]['function']['arguments'] = corrected_functions
-        additional_kwargs["tool_calls"] =tool_calls
+        if "parameters" in tool_calls[0]["function"]:
+            functions_string = str(tool_calls[0]["function"].pop("parameters"))
+            corrected_functions = functions_string.replace("'", '"')
+            tool_calls[0]["function"]["arguments"] = corrected_functions
+        additional_kwargs["tool_calls"] = tool_calls
     return AIMessage(content=content, additional_kwargs=additional_kwargs)
+
+
 class ChatHuggingFace(BaseChatModel):
     """
     Wrapper for using Hugging Face LLM's as ChatModels.
@@ -138,7 +141,7 @@ class ChatHuggingFace(BaseChatModel):
     def validate_llm(cls, values: dict) -> dict:
         if not isinstance(
             values["llm"],
-            (HuggingFaceHub,HuggingFaceTextGenInference,HuggingFaceEndpoint),
+            (HuggingFaceHub, HuggingFaceTextGenInference, HuggingFaceEndpoint),
         ):
             raise TypeError(
                 "Expected llm to be one of HuggingFaceTextGenInference, "
@@ -148,7 +151,7 @@ class ChatHuggingFace(BaseChatModel):
 
     def _create_chat_result(self, response: Dict) -> ChatResult:
         generations = []
-        
+
         finish_reason = response.choices[0].finish_reason
         gen = ChatGeneration(
             message=_convert_TGI_message_to_LC_message(response.choices[0].message),
@@ -156,7 +159,7 @@ class ChatHuggingFace(BaseChatModel):
         )
         generations.append(gen)
         token_usage = response.usage
-        model_object=self.llm.inference_server_url
+        model_object = self.llm.inference_server_url
         llm_output = {"token_usage": token_usage, "model": model_object}
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -167,12 +170,11 @@ class ChatHuggingFace(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if  isinstance(self.llm,HuggingFaceTextGenInference):
-           
+        if isinstance(self.llm, HuggingFaceTextGenInference):
             message_dicts = self._create_message_dicts(messages, stop)
-           
-            answer=self.llm.client.chat(messages=message_dicts,**kwargs)
-            return(self._create_chat_result(answer))
+
+            answer = self.llm.client.chat(messages=message_dicts, **kwargs)
+            return self._create_chat_result(answer)
         else:
             llm_input = self._to_chat_prompt(messages)
             llm_result = self.llm._generate(
@@ -223,7 +225,7 @@ class ChatHuggingFace(BaseChatModel):
             raise ValueError(f"Unknown message type: {type(message)}")
 
         return {"role": role, "content": message.content}
-    
+
     @staticmethod
     def _to_chat_result(llm_result: LLMResult) -> ChatResult:
         chat_generations = []
@@ -264,6 +266,7 @@ class ChatHuggingFace(BaseChatModel):
                 f"Could not find model id for inference server: {endpoint_url}"
                 "Make sure that your Hugging Face token has access to the endpoint."
             )
+
     def _convert_delta_to_message_chunk(
         _delta: Dict, default_class: Type[BaseMessageChunk]
     ) -> BaseMessageChunk:
@@ -282,7 +285,7 @@ class ChatHuggingFace(BaseChatModel):
             return ChatMessageChunk(content=content, role=role)
         else:
             return default_class(content=content)
-  
+
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -339,13 +342,10 @@ class ChatHuggingFace(BaseChatModel):
                 )
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
-    
-    
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict], Dict[str, Any]]:
-        
         message_dicts = [_convert_message_to_chat_message(m) for m in messages]
         return message_dicts
 
