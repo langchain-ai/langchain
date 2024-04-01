@@ -1915,7 +1915,6 @@ def _configure(
         _configure_hooks,
         _get_tracer_project,
         _tracing_v2_is_enabled,
-        tracing_callback_var,
         tracing_v2_callback_var,
     )
 
@@ -1954,11 +1953,8 @@ def _configure(
         callback_manager.add_metadata(inheritable_metadata or {})
         callback_manager.add_metadata(local_metadata or {}, False)
 
-    tracer = tracing_callback_var.get()
-    v1_tracing_enabled_ = (
-        env_var_is_set("LANGCHAIN_TRACING")
-        or tracer is not None
-        or env_var_is_set("LANGCHAIN_HANDLER")
+    v1_tracing_enabled_ = env_var_is_set("LANGCHAIN_TRACING") or env_var_is_set(
+        "LANGCHAIN_HANDLER"
     )
 
     tracer_v2 = tracing_v2_callback_var.get()
