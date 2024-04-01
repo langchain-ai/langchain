@@ -34,7 +34,7 @@ def _get_anthropic_claude_token_cost(
 
 
 class BedrockAnthropicTokenUsageCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that tracks bedrock anthropic infor."""
+    """Callback Handler that tracks bedrock anthropic info."""
 
     total_tokens: int = 0
     prompt_tokens: int = 0
