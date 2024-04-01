@@ -492,7 +492,7 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
 
     class InvalidInputTypeRunnable(Runnable[int, int]):
         @property
-        def InputType(self) -> type[int]:
+        def InputType(self) -> type:
             raise TypeError()
 
         def invoke(
@@ -514,7 +514,7 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
 
     class InvalidOutputTypeRunnable(Runnable[int, int]):
         @property
-        def OutputType(self) -> type[int]:
+        def OutputType(self) -> type:
             raise TypeError()
 
         def invoke(
