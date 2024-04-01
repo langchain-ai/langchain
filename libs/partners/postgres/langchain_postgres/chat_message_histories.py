@@ -1,4 +1,8 @@
-"""Client for persisting chat message history in a Postgres database."""
+"""Client for persisting chat message history in a Postgres database.
+
+This client provides support for both sync and async via psycopg2 and asyncpg,
+respectively.
+"""
 from __future__ import annotations
 
 import json
@@ -16,19 +20,24 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _create_table_query(table_name: str) -> str:
+def _create_table_query(table_name: str) -> List[str]:
     """Make a SQL query to create a table."""
     if not re.match(r"^\w+$", table_name):
         raise ValueError(
             "Invalid table name. Table name must contain only alphanumeric "
             "characters and underscores."
         )
-    return f"""CREATE TABLE IF NOT EXISTS {table_name} (
+    statements = [
+        f"""CREATE TABLE IF NOT EXISTS {table_name} (
     id SERIAL PRIMARY KEY,
     session_id UUID NOT NULL,
     message JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);"""
+);""",
+        # SQL statement to create an index on the session_id column
+        f"CREATE INDEX IF NOT EXISTS idx_{table_name}_session_id ON {table_name} (session_id);",
+    ]
+    return statements
 
 
 def _delete_by_session_id_query(table_name: str) -> str:
@@ -73,8 +82,31 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         """Client for persisting chat message history in a Postgres database,
 
         This client provides support for both sync and async via
-        psycopg2 and asyncpg, respectively. It can be initialized with a DSN string,
-        or with an existing connection.
+        psycopg2 and asyncpg, respectively.
+
+        The client creates a schema in the database and provides methods to
+        add messages, get messages, and clear the chat message history.
+
+        The schema is created with the following columns:
+
+        - id: A serial primary key.
+        - session_id: The session ID for the chat message history.
+        - message: The JSONB message content.
+        - created_at: The timestamp of when the message was created.
+
+        At the moment, when messages are retrieved, they are returned in the order
+        they were added to the database and are ordered by the id column, which
+        should correspond to the order in which the messages were added.
+
+        The "created_at" column is not returned by the interface, but
+        has been added for the schema so the information is available in the database.
+
+        A session_id can be used to separate different chat histories in the same table,
+        the session_id should be provided when initializing the client.
+
+        The client takes in connection objects which should be reused across
+        instantiations of this class. This will allow reuse of the underlying
+        connection pool and will improve performance.
 
         Args:
             session_id: The session ID to use for the chat message history.
@@ -86,7 +118,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             Must specify one of sync_connection or async_connection.
         """
         if not sync_connection and not async_connection:
-            raise ValueError("Must provide sync_connectino or async_connection")
+            raise ValueError("Must provide sync_connection or async_connection")
 
         self._connection = sync_connection
         self._aconnection = async_connection
@@ -106,9 +138,10 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         table_name: str,
     ) -> None:
         """Create the table schema in the database and create relevant indexes."""
-        query = _create_table_query(table_name)
+        queries = _create_table_query(table_name)
         with connection.cursor() as cursor:
-            cursor.execute(query)
+            for query in queries:
+                cursor.execute(query)
         connection.commit()
 
     @classmethod
