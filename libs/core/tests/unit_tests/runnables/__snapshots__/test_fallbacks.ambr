@@ -481,8 +481,8 @@
                               "name"
                             ]
                           },
-                          "ToolOutputMessage": {
-                            "title": "ToolOutputMessage",
+                          "ToolMessage": {
+                            "title": "ToolMessage",
                             "description": "Message for passing the result of executing a tool back to a model.",
                             "type": "object",
                             "properties": {
@@ -567,7 +567,7 @@
                                       "$ref": "#/definitions/FunctionMessage"
                                     },
                                     {
-                                      "$ref": "#/definitions/ToolOutputMessage"
+                                      "$ref": "#/definitions/ToolMessage"
                                     }
                                   ]
                                 }
@@ -650,7 +650,7 @@
                                   "$ref": "#/definitions/FunctionMessage"
                                 },
                                 {
-                                  "$ref": "#/definitions/ToolOutputMessage"
+                                  "$ref": "#/definitions/ToolMessage"
                                 }
                               ]
                             }
@@ -970,8 +970,8 @@
                               "name"
                             ]
                           },
-                          "ToolOutputMessage": {
-                            "title": "ToolOutputMessage",
+                          "ToolMessage": {
+                            "title": "ToolMessage",
                             "description": "Message for passing the result of executing a tool back to a model.",
                             "type": "object",
                             "properties": {
@@ -1056,7 +1056,7 @@
                                       "$ref": "#/definitions/FunctionMessage"
                                     },
                                     {
-                                      "$ref": "#/definitions/ToolOutputMessage"
+                                      "$ref": "#/definitions/ToolMessage"
                                     }
                                   ]
                                 }
@@ -1566,8 +1566,8 @@
                                 "name"
                               ]
                             },
-                            "ToolOutputMessage": {
-                              "title": "ToolOutputMessage",
+                            "ToolMessage": {
+                              "title": "ToolMessage",
                               "description": "Message for passing the result of executing a tool back to a model.",
                               "type": "object",
                               "properties": {
@@ -1652,7 +1652,7 @@
                                         "$ref": "#/definitions/FunctionMessage"
                                       },
                                       {
-                                        "$ref": "#/definitions/ToolOutputMessage"
+                                        "$ref": "#/definitions/ToolMessage"
                                       }
                                     ]
                                   }
@@ -1735,7 +1735,7 @@
                                     "$ref": "#/definitions/FunctionMessage"
                                   },
                                   {
-                                    "$ref": "#/definitions/ToolOutputMessage"
+                                    "$ref": "#/definitions/ToolMessage"
                                   }
                                 ]
                               }
@@ -2055,8 +2055,8 @@
                                 "name"
                               ]
                             },
-                            "ToolOutputMessage": {
-                              "title": "ToolOutputMessage",
+                            "ToolMessage": {
+                              "title": "ToolMessage",
                               "description": "Message for passing the result of executing a tool back to a model.",
                               "type": "object",
                               "properties": {
@@ -2141,7 +2141,7 @@
                                         "$ref": "#/definitions/FunctionMessage"
                                       },
                                       {
-                                        "$ref": "#/definitions/ToolOutputMessage"
+                                        "$ref": "#/definitions/ToolMessage"
                                       }
                                     ]
                                   }
@@ -2751,7 +2751,7 @@
                           "$ref": "#/definitions/FunctionMessage"
                         },
                         {
-                          "$ref": "#/definitions/ToolOutputMessage"
+                          "$ref": "#/definitions/ToolMessage"
                         }
                       ]
                     }
@@ -3071,8 +3071,8 @@
                       "name"
                     ]
                   },
-                  "ToolOutputMessage": {
-                    "title": "ToolOutputMessage",
+                  "ToolMessage": {
+                    "title": "ToolMessage",
                     "description": "Message for passing the result of executing a tool back to a model.",
                     "type": "object",
                     "properties": {
@@ -3157,7 +3157,7 @@
                               "$ref": "#/definitions/FunctionMessage"
                             },
                             {
-                              "$ref": "#/definitions/ToolOutputMessage"
+                              "$ref": "#/definitions/ToolMessage"
                             }
                           ]
                         }
@@ -3261,7 +3261,7 @@
                             "$ref": "#/definitions/FunctionMessage"
                           },
                           {
-                            "$ref": "#/definitions/ToolOutputMessage"
+                            "$ref": "#/definitions/ToolMessage"
                           }
                         ]
                       }
@@ -3581,8 +3581,8 @@
                         "name"
                       ]
                     },
-                    "ToolOutputMessage": {
-                      "title": "ToolOutputMessage",
+                    "ToolMessage": {
+                      "title": "ToolMessage",
                       "description": "Message for passing the result of executing a tool back to a model.",
                       "type": "object",
                       "properties": {
@@ -3667,7 +3667,7 @@
                                 "$ref": "#/definitions/FunctionMessage"
                               },
                               {
-                                "$ref": "#/definitions/ToolOutputMessage"
+                                "$ref": "#/definitions/ToolMessage"
                               }
                             ]
                           }
@@ -3774,7 +3774,7 @@
                       "$ref": "#/definitions/FunctionMessage"
                     },
                     {
-                      "$ref": "#/definitions/ToolOutputMessage"
+                      "$ref": "#/definitions/ToolMessage"
                     }
                   ]
                 }
@@ -4094,8 +4094,8 @@
                   "name"
                 ]
               },
-              "ToolOutputMessage": {
-                "title": "ToolOutputMessage",
+              "ToolMessage": {
+                "title": "ToolMessage",
                 "description": "Message for passing the result of executing a tool back to a model.",
                 "type": "object",
                 "properties": {
@@ -4180,7 +4180,7 @@
                           "$ref": "#/definitions/FunctionMessage"
                         },
                         {
-                          "$ref": "#/definitions/ToolOutputMessage"
+                          "$ref": "#/definitions/ToolMessage"
                         }
                       ]
                     }
@@ -4297,7 +4297,7 @@
                           "$ref": "#/definitions/FunctionMessage"
                         },
                         {
-                          "$ref": "#/definitions/ToolOutputMessage"
+                          "$ref": "#/definitions/ToolMessage"
                         }
                       ]
                     }
@@ -4617,8 +4617,8 @@
                       "name"
                     ]
                   },
-                  "ToolOutputMessage": {
-                    "title": "ToolOutputMessage",
+                  "ToolMessage": {
+                    "title": "ToolMessage",
                     "description": "Message for passing the result of executing a tool back to a model.",
                     "type": "object",
                     "properties": {
@@ -4703,7 +4703,7 @@
                               "$ref": "#/definitions/FunctionMessage"
                             },
                             {
-                              "$ref": "#/definitions/ToolOutputMessage"
+                              "$ref": "#/definitions/ToolMessage"
                             }
                           ]
                         }
@@ -4807,7 +4807,7 @@
                             "$ref": "#/definitions/FunctionMessage"
                           },
                           {
-                            "$ref": "#/definitions/ToolOutputMessage"
+                            "$ref": "#/definitions/ToolMessage"
                           }
                         ]
                       }
@@ -5127,8 +5127,8 @@
                         "name"
                       ]
                     },
-                    "ToolOutputMessage": {
-                      "title": "ToolOutputMessage",
+                    "ToolMessage": {
+                      "title": "ToolMessage",
                       "description": "Message for passing the result of executing a tool back to a model.",
                       "type": "object",
                       "properties": {
@@ -5213,7 +5213,7 @@
                                 "$ref": "#/definitions/FunctionMessage"
                               },
                               {
-                                "$ref": "#/definitions/ToolOutputMessage"
+                                "$ref": "#/definitions/ToolMessage"
                               }
                             ]
                           }
@@ -5316,7 +5316,7 @@
                             "$ref": "#/definitions/FunctionMessage"
                           },
                           {
-                            "$ref": "#/definitions/ToolOutputMessage"
+                            "$ref": "#/definitions/ToolMessage"
                           }
                         ]
                       }
@@ -5636,8 +5636,8 @@
                         "name"
                       ]
                     },
-                    "ToolOutputMessage": {
-                      "title": "ToolOutputMessage",
+                    "ToolMessage": {
+                      "title": "ToolMessage",
                       "description": "Message for passing the result of executing a tool back to a model.",
                       "type": "object",
                       "properties": {
@@ -5722,7 +5722,7 @@
                                 "$ref": "#/definitions/FunctionMessage"
                               },
                               {
-                                "$ref": "#/definitions/ToolOutputMessage"
+                                "$ref": "#/definitions/ToolMessage"
                               }
                             ]
                           }
@@ -5829,7 +5829,7 @@
                       "$ref": "#/definitions/FunctionMessage"
                     },
                     {
-                      "$ref": "#/definitions/ToolOutputMessage"
+                      "$ref": "#/definitions/ToolMessage"
                     }
                   ]
                 }
@@ -6149,8 +6149,8 @@
                   "name"
                 ]
               },
-              "ToolOutputMessage": {
-                "title": "ToolOutputMessage",
+              "ToolMessage": {
+                "title": "ToolMessage",
                 "description": "Message for passing the result of executing a tool back to a model.",
                 "type": "object",
                 "properties": {
@@ -6235,7 +6235,7 @@
                           "$ref": "#/definitions/FunctionMessage"
                         },
                         {
-                          "$ref": "#/definitions/ToolOutputMessage"
+                          "$ref": "#/definitions/ToolMessage"
                         }
                       ]
                     }
