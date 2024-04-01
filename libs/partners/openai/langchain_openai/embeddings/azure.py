@@ -107,7 +107,8 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/embeddings?tabs=console#best-practices
         if values["chunk_size"] > 2048:
             raise ValueError(
-                "Azure OpenAI embeddings only allow a maximum of 2048 texts at a time in each batch."
+                "Azure OpenAI embeddings only allow a maximum of 2048 texts at a time "
+                "in each batch."
             )
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
