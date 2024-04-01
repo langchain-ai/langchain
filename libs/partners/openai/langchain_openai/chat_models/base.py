@@ -49,6 +49,7 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
     ToolCallsMessage,
+    ToolCallsMessageChunk,
     ToolMessage,
     ToolMessageChunk,
 )
@@ -75,6 +76,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
+from langchain_core.utils.tools import parse_tool_calls
 from langchain_core.utils.utils import build_extra_kwargs
 
 logger = logging.getLogger(__name__)
@@ -103,9 +105,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["function_call"] = dict(function_call)
         if raw_tool_calls := _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
-            parser = JsonOutputToolsParser(return_id=True)
             try:
-                tool_calls = parser.parse_tool_calls(raw_tool_calls)
+                tool_calls = parse_tool_calls(raw_tool_calls, return_id=True)
             except Exception:
                 tool_calls = []
             return ToolCallsMessage(
@@ -197,8 +198,18 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
-    if _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = _dict["tool_calls"]
+    if raw_tool_calls := _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        try:
+            tool_calls = parse_tool_calls(raw_tool_calls, partial=True)
+            return ToolCallsMessageChunk(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                id=id_,
+                tool_calls=tool_calls,
+            )
+        except Exception as e:
+            tool_calls = []
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
@@ -216,6 +227,11 @@ def _convert_delta_to_message_chunk(
         )
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role, id=id_)
+    elif role or default_class == ToolCallsMessageChunk:
+        return ToolCallsMessageChunk(
+            content=content, additional_kwargs=additional_kwargs, id=id_,
+            tool_calls=[],
+        )
     else:
         return default_class(content=content, id=id_)  # type: ignore
 
