@@ -741,3 +741,29 @@ def test_retrieval_params() -> None:
         Document(page_content="test", metadata={"test": "test1"}),
         Document(page_content="test", metadata={"test": "test1"}),
     ]
+
+
+def test_retrieval_dictionary() -> None:
+    """Test if we use parameters in retrieval query"""
+    docsearch = Neo4jVector.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        pre_delete_collection=True,
+        retrieval_query="""
+        RETURN {
+            name:'John', 
+            age: 30,
+            skills: ["Python", "Data Analysis", "Machine Learning"]} as text, 
+            score, {} AS metadata
+        """,
+    )
+    expected_output = [
+        Document(
+            page_content=(
+                "skills:\n- Python\n- Data Analysis\n- "
+                "Machine Learning\nage: 30\nname: John\n"
+            )
+        )
+    ]
+    output = docsearch.similarity_search("Foo", k=1)
+    assert output == expected_output
