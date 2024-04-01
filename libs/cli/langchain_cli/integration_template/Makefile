@@ -13,7 +13,7 @@ test tests:
 	poetry run pytest --disable-socket --allow-unit-socket $(TEST_FILE)
 
 # integration tests are run without the --disable-socket flag to allow network calls
-test tests integration_test integration_tests:
+integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 ######################
