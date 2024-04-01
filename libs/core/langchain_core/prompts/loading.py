@@ -12,7 +12,6 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.utils import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
 logger = logging.getLogger(__name__)

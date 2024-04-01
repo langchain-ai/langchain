@@ -1976,7 +1976,6 @@ def _configure(
     debug = _get_debug()
     if verbose or debug or tracing_v2_enabled_:
         from langchain_core.tracers.langchain import LangChainTracer
-        from langchain_core.tracers.langchain_v1 import LangChainTracerV1
         from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
         if verbose and not any(

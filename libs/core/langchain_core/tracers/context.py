@@ -18,7 +18,6 @@ from uuid import UUID
 from langsmith import utils as ls_utils
 from langsmith.run_helpers import get_run_tree_context
 
-from langchain_core._api import deprecated
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.langchain_v1 import LangChainTracerV1
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
