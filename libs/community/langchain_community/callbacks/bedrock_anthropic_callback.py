@@ -1,5 +1,5 @@
 import threading
-from typing import Any
+from typing import Any, Dict, List
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
@@ -28,8 +28,8 @@ def _get_anthropic_claude_token_cost(
     if model_id is None:
         raise ValueError("Model name is required to calculate cost.")
     return (
-            prompt_tokens * MODEL_COST_PER_1K_INPUT_TOKENS[model_id]
-            + completion_tokens * MODEL_COST_PER_1K_OUTPUT_TOKENS[model_id]
+            (prompt_tokens / 1000) * MODEL_COST_PER_1K_INPUT_TOKENS[model_id]
+            + (completion_tokens / 1000) * MODEL_COST_PER_1K_OUTPUT_TOKENS[model_id]
     )
 
 
@@ -61,7 +61,7 @@ class BedrockAnthropicTokenUsageCallbackHandler(BaseCallbackHandler):
         return True
 
     def on_llm_start(
-            self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
+            self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Print out the prompts."""
         pass
