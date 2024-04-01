@@ -64,8 +64,9 @@ class ChatGroq(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import ChatGroq
-            groq = ChatGroq(model_name="mixtral-8x7b-32768")
+            from langchain_groq import ChatGroq
+
+            model = ChatGroq(model_name="mixtral-8x7b-32768")
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
