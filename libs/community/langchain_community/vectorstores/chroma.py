@@ -276,7 +276,7 @@ class Chroma(VectorStore):
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
-            embeddings = self._embedding_function.embed_documents(texts)
+            embeddings = self._embedding_function(texts)
         if metadatas:
             # fill metadatas with empty dicts if somebody
             # did not specify metadata for all texts
