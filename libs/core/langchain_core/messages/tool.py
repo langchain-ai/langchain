@@ -36,14 +36,20 @@ class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
         if isinstance(other, ToolCallsMessageChunk):
             if self.example != other.example:
                 raise ValueError(
-                    "Cannot concatenate ToolCallsMessageChunks with different example values."
+                    "Cannot concatenate ToolCallsMessageChunks "
+                    "with different example values."
                 )
 
             additional_kwargs = merge_dicts(
                 self.additional_kwargs, other.additional_kwargs
             )
             raw_tool_calls = additional_kwargs.get("tool_calls", [])
-            tool_calls = parse_tool_calls(raw_tool_calls, partial=True, return_id=True)
+            tool_calls = [
+                ToolCall(**tool_call)
+                for tool_call in parse_tool_calls(
+                    raw_tool_calls, partial=True, return_id=True
+                )
+            ]
 
             return self.__class__(
                 example=self.example,
