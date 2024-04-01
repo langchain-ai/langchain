@@ -1032,6 +1032,42 @@
     {
       "source": "/docs/use_cases/csv(/?)",
       "destination": "/docs/use_cases/sql/csv"
+    },
+    {
+      "source": "/docs/guides/debugging(/?)",
+      "destination": "/docs/guides/productionization/debugging"
+    },
+    {
+      "source": "/docs/guides/deployments/:path*",
+      "destination": "/docs/guides/productionization/deployments/:path*"
+    },
+    {
+      "source": "/docs/guides/evaluation/:path*",
+      "destination": "/docs/guides/productionization/evaluation/:path*"
+    },
+    {
+      "source": "/docs/guides/extending_langchain(/?)",
+      "destination": "/docs/guides/productionization/extending_langchain(/?)"
+    },
+    {
+      "source": "/docs/guides/fallbacks(/?)",
+      "destination": "/docs/guides/productionization/fallbacks(/?)"
+    },
+    {
+      "source": "/docs/guides/privacy/:path*",
+      "destination": "/docs/guides/productionization/privacy/:path*"
+    },
+    {
+      "source": "/docs/guides/safety/:path*",
+      "destination": "/docs/guides/productionization/safety/:path*"
+    },
+    {
+      "source": "/docs/guides/model_laboratory(/?)",
+      "destination": "/docs/guides/miscellaneous/model_laboratory(/?)"
+    },
+    {
+      "source": "/docs/guides/pydantic_compatibility(/?)",
+      "destination": "/docs/guides/miscellaneous/pydantic_compatibility(/?)"
     }
   ]
 }
