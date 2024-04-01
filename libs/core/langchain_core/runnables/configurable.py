@@ -220,7 +220,69 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
 
 class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
-    """Runnable that can be dynamically configured."""
+    """Runnable that can be dynamically configured.
+
+    A RunnableConfigurableFields should be initiated using the
+    `configurable_fields` method of a Runnable.
+
+    Here is an example of using a RunnableConfigurableFields with LLMs:
+
+        .. code-block:: python
+
+            from langchain.prompts import PromptTemplate
+            from langchain_core.runnables import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(temperature=0).configurable_fields(
+                temperature=ConfigurableField(
+                    id="llm_temperature",
+                    name="LLM Temperature",
+                    description="The temperature of the LLM",
+                )
+            )
+            # This creates a RunnableConfigurableFields for a chat model.
+            
+            # When invoking the created RunnableSequence, you can pass in the
+            # value for your ConfigurableField's id which in this case
+            # will be change in llm_temperature
+            
+            prompt = PromptTemplate.from_template("Pick a random number above {x}")
+            chain = prompt | model
+            
+            chain.invoke({"x": 0})
+
+
+            # The `with_config` method brings in the desired Prompt Runnable in your
+            # Runnable Sequence.
+
+            chain.with_config(configurable={"llm_temperature": 0.9}).invoke({"x": 0})
+
+
+    Here is an example of using a RunnableConfigurableFields with HubRunnables:
+
+        .. code-block:: python
+
+            from langchain.prompts import PromptTemplate
+            from langchain_core.runnables import ConfigurableField
+            from langchain_openai import ChatOpenAI
+            from langchain.runnables.hub import HubRunnable
+
+            prompt = HubRunnable("rlm/rag-prompt").configurable_fields(
+                owner_repo_commit=ConfigurableField(
+                    id="hub_commit",
+                    name="Hub Commit",
+                    description="The Hub commit to pull from",
+                )
+            )
+
+            prompt.invoke({"question": "foo", "context": "bar"})
+
+            #Invoking prompt with `with_config` method
+
+            prompt.with_config(configurable={"hub_commit": "rlm/rag-prompt-llama"}).invoke(
+                {"question": "foo", "context": "bar"}
+            )
+    """
 
     fields: Dict[str, AnyConfigurableField]
 
