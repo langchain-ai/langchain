@@ -1,7 +1,6 @@
 import os
-from enum import Enum
 from pathlib import Path
-from typing import List, Union
+from typing import List, Literal, Union
 
 import requests
 from langchain_core.documents import Document
@@ -10,29 +9,8 @@ from langchain_community.document_loaders.base import BaseLoader
 
 LAYOUT_ANALYZER_URL = "https://api.upstage.ai/v1/document-ai/layout-analyzer"
 
-
-class OutputType(Enum):
-    """
-    Represents the output type for a document loader.
-    """
-
-    TEXT = "text"
-    HTML = "html"
-
-
-class SplitType(Enum):
-    """
-    Enum class representing the type of split for a document.
-
-    Attributes:
-        NONE (str): Represents no split.
-        ELEMENT (str): Represents splitting by element.
-        PAGE (str): Represents splitting by page.
-    """
-
-    NONE = "none"
-    ELEMENT = "element"
-    PAGE = "page"
+OutputType = Literal["text", "html"]
+SplitType = Literal["none", "element", "page"]
 
 
 def validate_api_key(api_key: str) -> None:
@@ -66,7 +44,7 @@ def validate_file_path(file_path: str) -> None:
         raise FileNotFoundError(f"File not found: {file_path}")
 
 
-def parse_output(data: dict, output_type: str) -> str:
+def parse_output(data: dict, output_type: OutputType) -> str:
     """
     Parse the output data based on the specified output type.
 
@@ -80,9 +58,9 @@ def parse_output(data: dict, output_type: str) -> str:
     Raises:
         ValueError: If the output type is invalid.
     """
-    if (output_type) == OutputType.TEXT.value:
+    if output_type == "text":
         return data["text"]
-    elif (output_type) == OutputType.HTML.value:
+    elif output_type == "html":
         return data["html"]
     else:
         raise ValueError(f"Invalid output type: {output_type}")
@@ -92,33 +70,24 @@ class UpstageDocumentLoader(BaseLoader):
     def __init__(
         self,
         file_path: Union[str, Path],
-        output_type: str = OutputType.TEXT.value,
-        split: str = SplitType.NONE.value,
+        output_type: OutputType = "text",
+        split: SplitType = "none",
         api_key: str = "",
         url: str = LAYOUT_ANALYZER_URL,
     ):
         """
-        A document loader for Upstage API.
+        Initializes an instance of the Upstage document loader.
 
         Args:
-            file_path (str): The path to the file to be loaded.
-            output_type (str, optional): The desired output type.
-                                        Defaults to OutputType.TEXT.value.
-            split (str, optional): The split type for the document.
-                                Defaults to SplitType.NONE.value.
-            api_key (str, optional): The API key for authentication. Defaults to "".
-
-        Attributes:
-            file_path (str): The path to the file to be loaded.
-            output_type (str): The desired output type.
-            split (str): The split type for the document.
-            api_key (str): The API key for authentication.
-            file_name (str): The name of the file.
-
-        Raises:
-            ValueError: If the API call returns a non-200 status code.
-            ValueError: If an invalid split type is provided.
-
+            file_path (Union[str, Path]): The path to the input file.
+            output_type (OutputType, optional): The desired output type.
+                                                Defaults to "text".
+            split (SplitType, optional): The type of splitting to apply.
+                                         Defaults to "none".
+            api_key (str, optional): The API key for authentication.
+                                     Defaults to an empty string.
+            url (str, optional): The URL for the layout analyzer.
+                                 Defaults to LAYOUT_ANALYZER_URL.
         """
         self.file_path = file_path
         self.output_type = output_type
@@ -150,7 +119,7 @@ class UpstageDocumentLoader(BaseLoader):
         finally:
             files["document"].close()
 
-        return response
+        return response.json()
 
     def lazy_load(self) -> List[Document]:
         """
@@ -164,7 +133,7 @@ class UpstageDocumentLoader(BaseLoader):
         """
         response = self._get_response()
 
-        if (self.split) == SplitType.NONE.value:
+        if self.split == "none":
             yield Document(
                 page_content=(parse_output(response, self.output_type)),
                 metadata={
@@ -174,7 +143,7 @@ class UpstageDocumentLoader(BaseLoader):
                 },
             )
 
-        elif (self.split) == SplitType.ELEMENT.value:
+        elif self.split == "element":
             for element in response["elements"]:
                 yield Document(
                     page_content=(parse_output(element, self.output_type)),
@@ -186,7 +155,7 @@ class UpstageDocumentLoader(BaseLoader):
                     },
                 )
 
-        elif (self.split) == SplitType.PAGE.value:
+        elif self.split == "page":
             # Split by page
             elements = response["elements"]
             pages = sorted(set(map(lambda x: x["page"], elements)))
@@ -222,7 +191,7 @@ class UpstageDocumentLoader(BaseLoader):
         """
         response = self._get_response()
 
-        if (self.split) == SplitType.NONE.value:
+        if self.split == "none":
             # Split by document (NONE)
             docs = []
             docs.append(
@@ -237,7 +206,7 @@ class UpstageDocumentLoader(BaseLoader):
             )
             return docs
 
-        elif (self.split) == SplitType.ELEMENT.value:
+        elif self.split == "element":
             # Split by element
             docs = []
             for element in response["elements"]:
@@ -255,7 +224,7 @@ class UpstageDocumentLoader(BaseLoader):
 
             return docs
 
-        elif (self.split) == SplitType.PAGE.value:
+        elif self.split == "page":
             # Split by page
             elements = response["elements"]
             pages = sorted(set(map(lambda x: x["page"], elements)))
