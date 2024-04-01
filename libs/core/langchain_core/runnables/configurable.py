@@ -241,14 +241,14 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 )
             )
             # This creates a RunnableConfigurableFields for a chat model.
-            
+
             # When invoking the created RunnableSequence, you can pass in the
             # value for your ConfigurableField's id which in this case
             # will be change in temperature
-            
+
             prompt = PromptTemplate.from_template("Pick a random number above {x}")
             chain = prompt | model
-            
+
             chain.invoke({"x": 0})
             chain.invoke({"x": 0}, config={"configurable": {"temperature": 0.9}})
 
