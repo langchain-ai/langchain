@@ -90,7 +90,8 @@ def test_callback_manager_configure_context_vars(
                     assert cb.successful_requests == 0
                     assert cb.total_tokens == 0
 
-                    # configure adds this bedrock anthropic cb but doesn't modify the group manager
+                    # configure adds this bedrock anthropic cb,
+                    # but doesn't modify the group manager
                     mngr = CallbackManager.configure(group_manager)
                     assert mngr.handlers == [tracer, cb]
                     assert group_manager.handlers == [tracer]
