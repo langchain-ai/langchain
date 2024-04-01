@@ -6,10 +6,17 @@ from typing import Callable, Literal, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.pydantic_v1 import SecretStr, BaseModel, Field
 from langchain_core.tools import BaseTool
+from typing import Optional, Type
 
 logger = logging.getLogger(__name__)
+
+
+class HuggingFaceTextToSpeechModelInferenceInput(BaseTool):
+    """Input for the HuggingFaceTextToSpeechModelInference."""
+
+    query: str = Field(description="Text to be converted to speech")
 
 
 class HuggingFaceTextToSpeechModelInference(BaseTool):
@@ -39,6 +46,8 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
 
     _HUGGINGFACE_API_KEY_ENV_NAME = "HUGGINGFACE_API_KEY"
     _HUGGINGFACE_API_URL_ROOT = "https://api-inference.huggingface.co/models"
+
+    args_schema: Type[BaseModel] = HuggingFaceTextToSpeechModelInferenceInput
 
     def __init__(
         self,
