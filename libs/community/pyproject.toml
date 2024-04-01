@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.0.30"
+version = "0.0.31"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
