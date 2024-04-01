@@ -1,13 +1,11 @@
 import copy
-import json
-from json import JSONDecodeError
 from typing import Any, List, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
-from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.utils.tools import parse_tool_calls
 
 
 class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
@@ -44,7 +42,9 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
             raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
         except KeyError:
             return []
-        tool_calls = self.parse_tool_calls(raw_tool_calls)
+        tool_calls = parse_tool_calls(
+            raw_tool_calls, partial=partial, strict=self.strict, return_id=self.return_id,
+        )
         # for backwards compatibility
         for tc in tool_calls:
             tc["type"] = tc.pop("name")
@@ -52,44 +52,6 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         if self.first_tool_only:
             return tool_calls[0] if tool_calls else None
         return tool_calls
-
-    def parse_tool_calls(
-        self, raw_tool_calls: List[dict], *, partial: bool = False
-    ) -> List[dict]:
-        final_tools = []
-        exceptions = []
-        for tool_call in raw_tool_calls:
-            if "function" not in tool_call:
-                continue
-            if partial:
-                try:
-                    function_args = parse_partial_json(
-                        tool_call["function"]["arguments"], strict=self.strict
-                    )
-                except JSONDecodeError:
-                    continue
-            else:
-                try:
-                    function_args = json.loads(
-                        tool_call["function"]["arguments"], strict=self.strict
-                    )
-                except JSONDecodeError as e:
-                    exceptions.append(
-                        f"Function {tool_call['function']['name']} arguments:\n\n"
-                        f"{tool_call['function']['arguments']}\n\nare not valid JSON. "
-                        f"Received JSONDecodeError {e}"
-                    )
-                    continue
-            parsed = {
-                "name": tool_call["function"]["name"],
-                "args": function_args,
-            }
-            if self.return_id:
-                parsed["id"] = tool_call["id"]
-            final_tools.append(parsed)
-        if exceptions:
-            raise OutputParserException("\n\n".join(exceptions))
-        return final_tools
 
     def parse(self, text: str) -> Any:
         raise NotImplementedError()
