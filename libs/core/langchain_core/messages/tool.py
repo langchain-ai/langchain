@@ -67,7 +67,7 @@ class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
 ToolCallsMessage.update_forward_refs()
 
 
-class ToolOutputMessage(BaseMessage):
+class ToolMessage(BaseMessage):
     """Message for passing the result of executing a tool back to a model."""
 
     tool_call_id: str
@@ -76,23 +76,19 @@ class ToolOutputMessage(BaseMessage):
     type: Literal["tool"] = "tool"
 
 
-ToolOutputMessage.update_forward_refs()
-ToolMessage = ToolOutputMessage
-
-
-class ToolOutputMessageChunk(ToolOutputMessage, BaseMessageChunk):
+class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     """Tool Message chunk."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["ToolOutputMessageChunk"] = "ToolOutputMessageChunk"  # type: ignore[assignment]
+    type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
-        if isinstance(other, ToolOutputMessageChunk):
+        if isinstance(other, ToolMessageChunk):
             if self.tool_call_id != other.tool_call_id:
                 raise ValueError(
-                    "Cannot concatenate ToolOutputMessageChunks with different names."
+                    "Cannot concatenate ToolMessageChunk with different names."
                 )
 
             return self.__class__(
@@ -107,6 +103,3 @@ class ToolOutputMessageChunk(ToolOutputMessage, BaseMessageChunk):
             )
 
         return super().__add__(other)
-
-
-ToolMessageChunk = ToolOutputMessageChunk
