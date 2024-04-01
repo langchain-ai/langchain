@@ -108,7 +108,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             try:
                 tool_calls = parse_tool_calls(raw_tool_calls, return_id=True)
             except Exception:
-                tool_calls = []
+                tool_calls = None
             return ToolCallsMessage(
                 content=content,
                 additional_kwargs=additional_kwargs,
@@ -208,8 +208,8 @@ def _convert_delta_to_message_chunk(
                 id=id_,
                 tool_calls=tool_calls,
             )
-        except Exception as e:
-            tool_calls = []
+        except Exception:
+            tool_calls = None
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
@@ -230,7 +230,7 @@ def _convert_delta_to_message_chunk(
     elif role or default_class == ToolCallsMessageChunk:
         return ToolCallsMessageChunk(
             content=content, additional_kwargs=additional_kwargs, id=id_,
-            tool_calls=[],
+            tool_calls=None,
         )
     else:
         return default_class(content=content, id=id_)  # type: ignore

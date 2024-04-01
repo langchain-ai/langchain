@@ -18,7 +18,7 @@ class ToolCall(Serializable):
 
 
 class ToolCallsMessage(AIMessage):
-    tool_calls: List[ToolCall]
+    tool_calls: Optional[List[ToolCall]] = None
 
 
 class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
