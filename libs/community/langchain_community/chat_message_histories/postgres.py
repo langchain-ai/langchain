@@ -15,24 +15,35 @@ logger = logging.getLogger(__name__)
 class PostgresChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in a Postgres database."""
 
-    _pool = None
-
-    def __init__(self, session_id: str, database_config: any = {}, table_name: str = "message_store"):
+    def __init__(self, session_id: str, database_config: dict, table_name: str = "message_store"):
+        """
+        Initializes a new instance of the chat message history with specified session ID, 
+        database configuration, and table name. Attempts to establish a database connection 
+        using the provided configuration settings.
+        
+        Args:
+            session_id (str): A unique identifier for the chat session.
+            database_config (dict): Configuration settings for the database connection. 
+                Expected to contain the following keys: DB_HOST, DB_NAME, DB_USER, 
+                DB_PASSWORD, and DB_PORT.
+            table_name (str): The name of the database table to store chat messages. 
+                Defaults to 'message_store'.
+                
+        Raises:
+            psycopg2.OperationalError: If the connection to the database fails.
+        """
         import psycopg2
 
-        if PostgresChatMessageHistory._pool is None:
-            PostgresChatMessageHistory._pool = psycopg2.pool.ThreadedConnectionPool(
-                minconn=1,
-                maxconn=5,
-                host=database_config["DB_HOST"],  # Replace with actual config or variable
+        try:
+            connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                host=database_config["DB_HOST"],
                 dbname=database_config["DB_NAME"],
                 user=database_config["DB_USER"],
                 password=database_config["DB_PASSWORD"],
                 port=database_config["DB_PORT"],
             )
 
-        try:
-            self.connection = PostgresChatMessageHistory._pool.getconn()
+            self.connection = connection_pool.getconn()
             self.cursor = self.connection.cursor()
         except psycopg2.OperationalError as error:
             logger.error(f"Failed to get connection from pool: {error}")
