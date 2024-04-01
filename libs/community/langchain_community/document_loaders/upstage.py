@@ -1,7 +1,7 @@
 import os
 from enum import Enum
-from typing import List, Union
 from pathlib import Path
+from typing import List, Union
 
 import requests
 from langchain_core.documents import Document
@@ -130,21 +130,17 @@ class UpstageDocumentLoader(BaseLoader):
         validate_file_path(self.file_path)
         validate_api_key(self.api_key)
 
-    def load(self) -> List[Document]:
-        """Load data into Document objects.
-
-        This method sends a POST request to the LAYOUT_ANALYZER_URL
-        with the provided API key and file. It parses the response
-        JSON and creates Document objects based on the split type.
+    def _get_response(self) -> requests.Response:
+        """
+        Sends a POST request to the specified URL with the document file
+        and returns the response.
 
         Returns:
-            List[Document]: A list of Document objects containing the loaded data.
+            requests.Response: The response object from the API call.
 
         Raises:
-            ValueError: If the API call returns a non-200 status code
-                        or an invalid split type is provided.
+            ValueError: If there is an error in the API call.
         """
-
         try:
             headers = {"Authorization": f"Bearer {self.api_key}"}
             files = {"document": open(self.file_path, "rb")}
@@ -154,19 +150,86 @@ class UpstageDocumentLoader(BaseLoader):
         finally:
             files["document"].close()
 
-        if response.status_code != 200:
-            raise ValueError(f"API call error: {response.status_code}")
+        return response
 
-        json = response.json()
+    def lazy_load(self) -> List[Document]:
+        """
+        Lazily loads documents based on the split type.
+
+        Returns:
+            A generator that yields Document objects based on the split type.
+
+        Raises:
+            ValueError: If the split type is invalid.
+        """
+        response = self._get_response()
+
+        if (self.split) == SplitType.NONE.value:
+            yield Document(
+                page_content=(parse_output(response, self.output_type)),
+                metadata={
+                    "total_pages": response["billed_pages"],
+                    "type": self.output_type,
+                    "split": self.split,
+                },
+            )
+
+        elif (self.split) == SplitType.ELEMENT.value:
+            for element in response["elements"]:
+                yield Document(
+                    page_content=(parse_output(element, self.output_type)),
+                    metadata={
+                        "page": element["page"],
+                        "id": element["id"],
+                        "type": self.output_type,
+                        "split": self.split,
+                    },
+                )
+
+        elif (self.split) == SplitType.PAGE.value:
+            # Split by page
+            elements = response["elements"]
+            pages = sorted(set(map(lambda x: x["page"], elements)))
+
+            page_group = [
+                [element for element in elements if element["page"] == x] for x in pages
+            ]
+
+            for group in page_group:
+                page_content = " ".join(
+                    [parse_output(element, self.output_type) for element in group]
+                )
+
+                yield Document(
+                    page_content=page_content,
+                    metadata={
+                        "page": group[0]["page"],
+                        "type": self.output_type,
+                        "split": self.split,
+                    },
+                )
+
+        else:
+            # Invalid split type
+            raise ValueError(f"Invalid split type: {self.split}")
+
+    def load(self) -> List[Document]:
+        """
+        Loads the documents from the response based on the specified split type.
+
+        Returns:
+            A list of Document objects representing the loaded documents.
+        """
+        response = self._get_response()
 
         if (self.split) == SplitType.NONE.value:
             # Split by document (NONE)
             docs = []
             docs.append(
                 Document(
-                    page_content=(parse_output(json, self.output_type)),
+                    page_content=(parse_output(response, self.output_type)),
                     metadata={
-                        "total_pages": json["billed_pages"],
+                        "total_pages": response["billed_pages"],
                         "type": self.output_type,
                         "split": self.split,
                     },
@@ -177,7 +240,7 @@ class UpstageDocumentLoader(BaseLoader):
         elif (self.split) == SplitType.ELEMENT.value:
             # Split by element
             docs = []
-            for element in json["elements"]:
+            for element in response["elements"]:
                 docs.append(
                     Document(
                         page_content=(parse_output(element, self.output_type)),
@@ -194,7 +257,7 @@ class UpstageDocumentLoader(BaseLoader):
 
         elif (self.split) == SplitType.PAGE.value:
             # Split by page
-            elements = json["elements"]
+            elements = response["elements"]
             pages = sorted(set(map(lambda x: x["page"], elements)))
 
             page_group = [
@@ -203,12 +266,13 @@ class UpstageDocumentLoader(BaseLoader):
 
             docs = []
             for group in page_group:
-                page_content = ""
-                for element in group:
-                    page_content += parse_output(element, self.output_type) + " "
+                page_content = " ".join(
+                    [parse_output(element, self.output_type) for element in group]
+                )
+
                 docs.append(
                     Document(
-                        page_content=page_content.strip(),
+                        page_content=page_content,
                         metadata={
                             "page": group[0]["page"],
                             "type": self.output_type,
