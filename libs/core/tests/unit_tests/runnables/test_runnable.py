@@ -333,7 +333,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         {"$ref": "#/definitions/ChatMessage"},
                         {"$ref": "#/definitions/SystemMessage"},
                         {"$ref": "#/definitions/FunctionMessage"},
-                        {"$ref": "#/definitions/ToolMessage"},
+                        {"$ref": "#/definitions/ToolOutputMessage"},
                     ]
                 },
             }
@@ -530,8 +530,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 },
                 "required": ["content", "name"],
             },
-            "ToolMessage": {
-                "title": "ToolMessage",
+            "ToolOutputMessage": {
+                "title": "ToolOutputMessage",
                 "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
                 "type": "object",
                 "properties": {
