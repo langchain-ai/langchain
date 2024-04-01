@@ -1,5 +1,4 @@
 from importlib import metadata
-from langchain_postgres.chat_message_histories import PostgresChatMessageHistory
 
 
 try:
@@ -10,6 +9,5 @@ except metadata.PackageNotFoundError:
 
 __all__ = [
     "__version__",
-    "PostgresChatMessageHistory"
 ]
 
