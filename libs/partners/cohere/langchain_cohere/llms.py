@@ -68,8 +68,14 @@ class BaseCohere(Serializable):
     streaming: bool = Field(default=False)
     """Whether to stream the results."""
 
+    timeout: Optional[float] = 60
+    """Timeout in seconds for the Cohere API request."""
+
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
+
+    base_url: Optional[str] = None
+    """Override the default Cohere API URL."""
 
     def get_client(self) -> cohere.Client:
         """Get the Cohere client."""
@@ -93,10 +99,14 @@ class BaseCohere(Serializable):
         values["client"] = cohere.Client(
             api_key=values["cohere_api_key"].get_secret_value(),
             client_name=client_name,
+            timeout=values["timeout"],
+            base_url=values["base_url"],
         )
         values["async_client"] = cohere.AsyncClient(
             api_key=values["cohere_api_key"].get_secret_value(),
             client_name=client_name,
+            timeout=values["timeout"],
+            base_url=values["base_url"],
         )
         return values
 
@@ -176,7 +186,8 @@ class Cohere(LLM, BaseCohere):
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
         params = self._default_params
         if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
+            raise ValueError(
+                "`stop` found in both the input and default params.")
         elif self.stop is not None:
             params["stop_sequences"] = self.stop
         else:
