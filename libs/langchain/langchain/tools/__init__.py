@@ -16,122 +16,62 @@ tool for the job.
 
     CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
 """
+import warnings
+from typing import Any
 
-from langchain.tools.ainetwork.app import AINAppOps
-from langchain.tools.ainetwork.owner import AINOwnerOps
-from langchain.tools.ainetwork.rule import AINRuleOps
-from langchain.tools.ainetwork.transfer import AINTransfer
-from langchain.tools.ainetwork.value import AINValueOps
-from langchain.tools.arxiv.tool import ArxivQueryRun
-from langchain.tools.azure_cognitive_services import (
-    AzureCogsFormRecognizerTool,
-    AzureCogsImageAnalysisTool,
-    AzureCogsSpeech2TextTool,
-    AzureCogsText2SpeechTool,
-)
-from langchain.tools.base import BaseTool, StructuredTool, Tool, tool
-from langchain.tools.bing_search.tool import BingSearchResults, BingSearchRun
-from langchain.tools.brave_search.tool import BraveSearch
-from langchain.tools.ddg_search.tool import DuckDuckGoSearchResults, DuckDuckGoSearchRun
-from langchain.tools.edenai import (
-    EdenAiExplicitImageTool,
-    EdenAiObjectDetectionTool,
-    EdenAiParsingIDTool,
-    EdenAiParsingInvoiceTool,
-    EdenAiSpeechToTextTool,
-    EdenAiTextModerationTool,
-    EdenAiTextToSpeechTool,
-    EdenaiTool,
-)
-from langchain.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
-from langchain.tools.file_management import (
-    CopyFileTool,
-    DeleteFileTool,
-    FileSearchTool,
-    ListDirectoryTool,
-    MoveFileTool,
-    ReadFileTool,
-    WriteFileTool,
-)
-from langchain.tools.gmail import (
-    GmailCreateDraft,
-    GmailGetMessage,
-    GmailGetThread,
-    GmailSearch,
-    GmailSendMessage,
-)
-from langchain.tools.google_places.tool import GooglePlacesTool
-from langchain.tools.google_search.tool import GoogleSearchResults, GoogleSearchRun
-from langchain.tools.google_serper.tool import GoogleSerperResults, GoogleSerperRun
-from langchain.tools.graphql.tool import BaseGraphQLTool
-from langchain.tools.human.tool import HumanInputRun
-from langchain.tools.ifttt import IFTTTWebhook
-from langchain.tools.interaction.tool import StdInInquireTool
-from langchain.tools.jira.tool import JiraAction
-from langchain.tools.json.tool import JsonGetValueTool, JsonListKeysTool
-from langchain.tools.metaphor_search import MetaphorSearchResults
-from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
-from langchain.tools.office365.events_search import O365SearchEvents
-from langchain.tools.office365.messages_search import O365SearchEmails
-from langchain.tools.office365.send_event import O365SendEvent
-from langchain.tools.office365.send_message import O365SendMessage
-from langchain.tools.office365.utils import authenticate
-from langchain.tools.openapi.utils.api_models import APIOperation
-from langchain.tools.openapi.utils.openapi_utils import OpenAPISpec
-from langchain.tools.openweathermap.tool import OpenWeatherMapQueryRun
-from langchain.tools.playwright import (
-    ClickTool,
-    CurrentWebPageTool,
-    ExtractHyperlinksTool,
-    ExtractTextTool,
-    GetElementsTool,
-    NavigateBackTool,
-    NavigateTool,
-)
-from langchain.tools.plugin import AIPluginTool
-from langchain.tools.powerbi.tool import (
-    InfoPowerBITool,
-    ListPowerBITool,
-    QueryPowerBITool,
-)
-from langchain.tools.pubmed.tool import PubmedQueryRun
-from langchain.tools.python.tool import PythonAstREPLTool, PythonREPLTool
-from langchain.tools.render import format_tool_to_openai_function
-from langchain.tools.requests.tool import (
-    BaseRequestsTool,
-    RequestsDeleteTool,
-    RequestsGetTool,
-    RequestsPatchTool,
-    RequestsPostTool,
-    RequestsPutTool,
-)
-from langchain.tools.scenexplain.tool import SceneXplainTool
-from langchain.tools.searx_search.tool import SearxSearchResults, SearxSearchRun
-from langchain.tools.shell.tool import ShellTool
-from langchain.tools.sleep.tool import SleepTool
-from langchain.tools.spark_sql.tool import (
-    BaseSparkSQLTool,
-    InfoSparkSQLTool,
-    ListSparkSQLTool,
-    QueryCheckerTool,
-    QuerySparkSQLTool,
-)
-from langchain.tools.sql_database.tool import (
-    BaseSQLDatabaseTool,
-    InfoSQLDatabaseTool,
-    ListSQLDatabaseTool,
-    QuerySQLCheckerTool,
-    QuerySQLDataBaseTool,
-)
-from langchain.tools.steamship_image_generation import SteamshipImageGenerationTool
-from langchain.tools.vectorstore.tool import (
-    VectorStoreQATool,
-    VectorStoreQAWithSourcesTool,
-)
-from langchain.tools.wikipedia.tool import WikipediaQueryRun
-from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
-from langchain.tools.youtube.search import YouTubeSearchTool
-from langchain.tools.zapier.tool import ZapierNLAListActions, ZapierNLARunAction
+from langchain_core._api import LangChainDeprecationWarning
+from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
+
+from langchain.utils.interactive_env import is_interactive_env
+
+# Used for internal purposes
+_DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
+
+
+def _import_python_tool_PythonAstREPLTool() -> Any:
+    raise ImportError(
+        "This tool has been moved to langchain experiment. "
+        "This tool has access to a python REPL. "
+        "For best practices make sure to sandbox this tool. "
+        "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
+        "To keep using this code as is, install langchain experimental and "
+        "update relevant imports replacing 'langchain' with 'langchain_experimental'"
+    )
+
+
+def _import_python_tool_PythonREPLTool() -> Any:
+    raise ImportError(
+        "This tool has been moved to langchain experiment. "
+        "This tool has access to a python REPL. "
+        "For best practices make sure to sandbox this tool. "
+        "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
+        "To keep using this code as is, install langchain experimental and "
+        "update relevant imports replacing 'langchain' with 'langchain_experimental'"
+    )
+
+
+def __getattr__(name: str) -> Any:
+    if name == "PythonAstREPLTool":
+        return _import_python_tool_PythonAstREPLTool()
+    elif name == "PythonREPLTool":
+        return _import_python_tool_PythonREPLTool()
+    else:
+        from langchain_community import tools
+
+        # If not in interactive env, raise warning.
+        if not is_interactive_env():
+            warnings.warn(
+                "Importing tools from langchain is deprecated. Importing from "
+                "langchain will no longer be supported as of langchain==0.2.0. "
+                "Please import from langchain-community instead:\n\n"
+                f"`from langchain_community.tools import {name}`.\n\n"
+                "To install langchain-community run "
+                "`pip install -U langchain-community`.",
+                category=LangChainDeprecationWarning,
+            )
+
+        return getattr(tools, name)
+
 
 __all__ = [
     "AINAppOps",
@@ -146,11 +86,13 @@ __all__ = [
     "AzureCogsImageAnalysisTool",
     "AzureCogsSpeech2TextTool",
     "AzureCogsText2SpeechTool",
+    "AzureCogsTextAnalyticsHealthTool",
     "BaseGraphQLTool",
     "BaseRequestsTool",
     "BaseSQLDatabaseTool",
     "BaseSparkSQLTool",
     "BaseTool",
+    "BearlyInterpreterTool",
     "BingSearchResults",
     "BingSearchRun",
     "BraveSearch",
@@ -160,13 +102,14 @@ __all__ = [
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
+    "E2BDataAnalysisTool",
     "EdenAiExplicitImageTool",
     "EdenAiObjectDetectionTool",
     "EdenAiParsingIDTool",
     "EdenAiParsingInvoiceTool",
-    "EdenAiTextToSpeechTool",
     "EdenAiSpeechToTextTool",
     "EdenAiTextModerationTool",
+    "EdenAiTextToSpeechTool",
     "EdenaiTool",
     "ElevenLabsText2SpeechTool",
     "ExtractHyperlinksTool",
@@ -178,11 +121,14 @@ __all__ = [
     "GmailGetThread",
     "GmailSearch",
     "GmailSendMessage",
+    "GoogleCloudTextToSpeechTool",
     "GooglePlacesTool",
     "GoogleSearchResults",
     "GoogleSearchRun",
     "GoogleSerperResults",
     "GoogleSerperRun",
+    "SearchAPIResults",
+    "SearchAPIRun",
     "HumanInputRun",
     "IFTTTWebhook",
     "InfoPowerBITool",
@@ -195,21 +141,21 @@ __all__ = [
     "ListPowerBITool",
     "ListSQLDatabaseTool",
     "ListSparkSQLTool",
+    "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
     "MoveFileTool",
+    "NasaAction",
     "NavigateBackTool",
     "NavigateTool",
+    "O365CreateDraftMessage",
     "O365SearchEmails",
     "O365SearchEvents",
-    "O365CreateDraftMessage",
-    "O365SendMessage",
     "O365SendEvent",
-    "authenticate",
+    "O365SendMessage",
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
-    "PythonAstREPLTool",
-    "PythonREPLTool",
+    "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
@@ -221,12 +167,18 @@ __all__ = [
     "RequestsPatchTool",
     "RequestsPostTool",
     "RequestsPutTool",
+    "SteamWebAPIQueryRun",
     "SceneXplainTool",
     "SearxSearchResults",
     "SearxSearchRun",
     "ShellTool",
+    "SlackGetChannel",
+    "SlackGetMessage",
+    "SlackScheduleMessage",
+    "SlackSendMessage",
     "SleepTool",
     "StdInInquireTool",
+    "StackExchangeTool",
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",
@@ -235,9 +187,10 @@ __all__ = [
     "WikipediaQueryRun",
     "WolframAlphaQueryRun",
     "WriteFileTool",
+    "YahooFinanceNewsTool",
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
-    "tool",
     "format_tool_to_openai_function",
+    "tool",
 ]

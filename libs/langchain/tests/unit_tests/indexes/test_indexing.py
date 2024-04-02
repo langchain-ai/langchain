@@ -14,14 +14,14 @@ from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
+from langchain_community.document_loaders.base import BaseLoader
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VST, VectorStore
 
-from langchain.document_loaders.base import BaseLoader
-from langchain.embeddings.base import Embeddings
 from langchain.indexes import aindex, index
-from langchain.indexes._api import _abatch
+from langchain.indexes._api import _abatch, _HashedDocument
 from langchain.indexes._sql_record_manager import SQLRecordManager
-from langchain.schema import Document
-from langchain.schema.vectorstore import VST, VectorStore
 
 
 class ToyLoader(BaseLoader):
@@ -36,30 +36,20 @@ class ToyLoader(BaseLoader):
     ) -> Iterator[Document]:
         yield from self.documents
 
-    def load(self) -> List[Document]:
-        """Load the documents from the source."""
-        return list(self.lazy_load())
-
     async def alazy_load(
         self,
     ) -> AsyncIterator[Document]:
-        async def async_generator() -> AsyncIterator[Document]:
-            for document in self.documents:
-                yield document
-
-        return async_generator()
-
-    async def aload(self) -> List[Document]:
-        """Load the documents from the source."""
-        return [doc async for doc in await self.alazy_load()]
+        for document in self.documents:
+            yield document
 
 
 class InMemoryVectorStore(VectorStore):
     """In-memory implementation of VectorStore using a dictionary."""
 
-    def __init__(self) -> None:
+    def __init__(self, permit_upserts: bool = False) -> None:
         """Vector store interface for testing things in memory."""
         self.store: Dict[str, Document] = {}
+        self.permit_upserts = permit_upserts
 
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
@@ -79,7 +69,7 @@ class InMemoryVectorStore(VectorStore):
         *,
         ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> List[str]:
         """Add the given documents to the store (insert behavior)."""
         if ids and len(ids) != len(documents):
             raise ValueError(
@@ -90,11 +80,13 @@ class InMemoryVectorStore(VectorStore):
             raise NotImplementedError("This is not implemented yet.")
 
         for _id, document in zip(ids, documents):
-            if _id in self.store:
+            if _id in self.store and not self.permit_upserts:
                 raise ValueError(
                     f"Document with uid {_id} already exists in the store."
                 )
             self.store[_id] = document
+
+        return list(ids)
 
     async def aadd_documents(
         self,
@@ -112,7 +104,7 @@ class InMemoryVectorStore(VectorStore):
             raise NotImplementedError("This is not implemented yet.")
 
         for _id, document in zip(ids, documents):
-            if _id in self.store:
+            if _id in self.store and not self.permit_upserts:
                 raise ValueError(
                     f"Document with uid {_id} already exists in the store."
                 )
@@ -173,6 +165,12 @@ def vector_store() -> InMemoryVectorStore:
     return InMemoryVectorStore()
 
 
+@pytest.fixture
+def upserting_vector_store() -> InMemoryVectorStore:
+    """Vector store fixture."""
+    return InMemoryVectorStore(permit_upserts=True)
+
+
 def test_indexing_same_content(
     record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
@@ -207,7 +205,6 @@ def test_indexing_same_content(
         }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_same_content(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -224,7 +221,7 @@ async def test_aindexing_same_content(
         ]
     )
 
-    assert await aindex(await loader.alazy_load(), arecord_manager, vector_store) == {
+    assert await aindex(loader, arecord_manager, vector_store) == {
         "num_added": 2,
         "num_deleted": 0,
         "num_skipped": 0,
@@ -235,9 +232,7 @@ async def test_aindexing_same_content(
 
     for _ in range(2):
         # Run the indexing again
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store) == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -320,7 +315,6 @@ def test_index_simple_delete_full(
         }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aindex_simple_delete_full(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -340,9 +334,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 2,
             "num_deleted": 0,
             "num_skipped": 0,
@@ -352,9 +344,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -375,9 +365,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 1,
             "num_deleted": 1,
             "num_skipped": 1,
@@ -395,9 +383,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
-        assert await aindex(
-            await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-        ) == {
+        assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
             "num_deleted": 0,
             "num_skipped": 2,
@@ -441,7 +427,6 @@ def test_incremental_fails_with_bad_source_ids(
         )
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_fails_with_bad_source_ids(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -467,7 +452,7 @@ async def test_aincremental_fails_with_bad_source_ids(
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
         await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -476,7 +461,7 @@ async def test_aincremental_fails_with_bad_source_ids(
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
         await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -565,7 +550,6 @@ def test_no_delete(
         }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_ano_delete(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -588,7 +572,7 @@ async def test_ano_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup=None,
@@ -605,7 +589,7 @@ async def test_ano_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup=None,
@@ -635,7 +619,7 @@ async def test_ano_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader,
             arecord_manager,
             vector_store,
             cleanup=None,
@@ -752,7 +736,160 @@ def test_incremental_delete(
     }
 
 
-@pytest.mark.asyncio
+def test_incremental_delete_with_batch_size(
+    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test indexing with incremental deletion strategy and batch size."""
+    loader = ToyLoader(
+        documents=[
+            Document(
+                page_content="1",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="2",
+                metadata={"source": "2"},
+            ),
+            Document(
+                page_content="3",
+                metadata={"source": "3"},
+            ),
+            Document(
+                page_content="4",
+                metadata={"source": "4"},
+            ),
+        ]
+    )
+
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=3,
+        ) == {
+            "num_added": 4,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    doc_texts = set(
+        # Ignoring type since doc should be in the store and not a None
+        vector_store.store.get(uid).page_content  # type: ignore
+        for uid in vector_store.store
+    )
+    assert doc_texts == {"1", "2", "3", "4"}
+
+    # Attempt to index again verify that nothing changes
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
+        assert index(
+            loader,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=3,
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 4,
+            "num_updated": 0,
+        }
+
+    # Attempt to index again verify that nothing changes
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2022, 1, 3).timestamp()
+    ):
+        # Docs with same content
+        docs = [
+            Document(
+                page_content="1",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="2",
+                metadata={"source": "2"},
+            ),
+        ]
+        assert index(
+            docs,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=1,
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 2,
+            "num_updated": 0,
+        }
+
+    # Attempt to index again verify that nothing changes
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2023, 1, 3).timestamp()
+    ):
+        # Docs with same content
+        docs = [
+            Document(
+                page_content="1",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="2",
+                metadata={"source": "2"},
+            ),
+        ]
+        assert index(
+            docs,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=1,
+        ) == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 2,
+            "num_updated": 0,
+        }
+
+    # Try to index with changed docs now
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2024, 1, 3).timestamp()
+    ):
+        # Docs with same content
+        docs = [
+            Document(
+                page_content="changed 1",
+                metadata={"source": "1"},
+            ),
+            Document(
+                page_content="changed 2",
+                metadata={"source": "2"},
+            ),
+        ]
+        assert index(
+            docs,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+        ) == {
+            "num_added": 2,
+            "num_deleted": 2,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_delete(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -775,7 +912,7 @@ async def test_aincremental_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader.lazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -799,7 +936,7 @@ async def test_aincremental_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader.lazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -834,7 +971,7 @@ async def test_aincremental_delete(
         arecord_manager, "aget_time", return_value=datetime(2021, 1, 3).timestamp()
     ):
         assert await aindex(
-            await loader.alazy_load(),
+            loader.lazy_load(),
             arecord_manager,
             vector_store,
             cleanup="incremental",
@@ -872,7 +1009,6 @@ def test_indexing_with_no_docs(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_with_no_docs(
     arecord_manager: SQLRecordManager, vector_store: VectorStore
@@ -880,9 +1016,7 @@ async def test_aindexing_with_no_docs(
     """Check edge case when loader returns no new docs."""
     loader = ToyLoader(documents=[])
 
-    assert await aindex(
-        await loader.alazy_load(), arecord_manager, vector_store, cleanup="full"
-    ) == {
+    assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
         "num_added": 0,
         "num_deleted": 0,
         "num_skipped": 0,
@@ -914,7 +1048,6 @@ def test_deduplication(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_adeduplication(
     arecord_manager: SQLRecordManager, vector_store: VectorStore
@@ -977,7 +1110,6 @@ def test_cleanup_with_different_batchsize(
     }
 
 
-@pytest.mark.asyncio
 @pytest.mark.requires("aiosqlite")
 async def test_async_cleanup_with_different_batchsize(
     arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
@@ -1060,7 +1192,6 @@ async def _to_async_iter(it: Iterable[Any]) -> AsyncIterator[Any]:
         yield i
 
 
-@pytest.mark.asyncio
 async def test_abatch() -> None:
     """Test the abatch function."""
     batches = _abatch(5, _to_async_iter(range(12)))
@@ -1078,3 +1209,139 @@ async def test_abatch() -> None:
     batches = _abatch(2, _to_async_iter(range(5)))
     assert isinstance(batches, AsyncIterator)
     assert [batch async for batch in batches] == [[0, 1], [2, 3], [4]]
+
+
+def test_indexing_force_update(
+    record_manager: SQLRecordManager, upserting_vector_store: VectorStore
+) -> None:
+    """Test indexing with force update."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+
+    assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+    assert index(
+        docs, record_manager, upserting_vector_store, cleanup="full", force_update=True
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
+
+
+@pytest.mark.requires("aiosqlite")
+async def test_aindexing_force_update(
+    arecord_manager: SQLRecordManager, upserting_vector_store: VectorStore
+) -> None:
+    """Test indexing with force update."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+        Document(
+            page_content="This is another document.",
+            metadata={"source": "2"},
+        ),
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+
+    assert await aindex(
+        docs, arecord_manager, upserting_vector_store, cleanup="full"
+    ) == {
+        "num_added": 2,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
+
+    assert await aindex(
+        docs, arecord_manager, upserting_vector_store, cleanup="full"
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 2,
+        "num_updated": 0,
+    }
+
+    assert await aindex(
+        docs,
+        arecord_manager,
+        upserting_vector_store,
+        cleanup="full",
+        force_update=True,
+    ) == {
+        "num_added": 0,
+        "num_deleted": 0,
+        "num_skipped": 0,
+        "num_updated": 2,
+    }
+
+
+def test_indexing_custom_batch_size(
+    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test indexing with a custom batch size."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+
+    batch_size = 1
+    with patch.object(vector_store, "add_documents") as mock_add_documents:
+        index(docs, record_manager, vector_store, batch_size=batch_size)
+        args, kwargs = mock_add_documents.call_args
+        assert args == (docs,)
+        assert kwargs == {"ids": ids, "batch_size": batch_size}
+
+
+@pytest.mark.requires("aiosqlite")
+async def test_aindexing_custom_batch_size(
+    arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Test indexing with a custom batch size."""
+    docs = [
+        Document(
+            page_content="This is a test document.",
+            metadata={"source": "1"},
+        ),
+    ]
+    ids = [_HashedDocument.from_document(doc).uid for doc in docs]
+
+    batch_size = 1
+    with patch.object(vector_store, "aadd_documents") as mock_add_documents:
+        await aindex(docs, arecord_manager, vector_store, batch_size=batch_size)
+        args, kwargs = mock_add_documents.call_args
+        assert args == (docs,)
+        assert kwargs == {"ids": ids, "batch_size": batch_size}

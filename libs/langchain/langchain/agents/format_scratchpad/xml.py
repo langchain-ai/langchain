@@ -1,11 +1,19 @@
 from typing import List, Tuple
 
-from langchain.schema.agent import AgentAction
+from langchain_core.agents import AgentAction
 
 
 def format_xml(
     intermediate_steps: List[Tuple[AgentAction, str]],
 ) -> str:
+    """Format the intermediate steps as XML.
+
+    Args:
+        intermediate_steps: The intermediate steps.
+
+    Returns:
+        The intermediate steps as XML.
+    """
     log = ""
     for action, observation in intermediate_steps:
         log += (

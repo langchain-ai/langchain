@@ -49,14 +49,14 @@ def test_visit_comparison_range_lte() -> None:
 
 def test_visit_comparison_range_match() -> None:
     comp = Comparison(comparator=Comparator.CONTAIN, attribute="foo", value="1")
-    expected = {"match": {"metadata.foo": "1"}}
+    expected = {"match": {"metadata.foo": {"query": "1"}}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
 
 def test_visit_comparison_range_like() -> None:
     comp = Comparison(comparator=Comparator.LIKE, attribute="foo", value="bar")
-    expected = {"fuzzy": {"metadata.foo": {"value": "bar", "fuzziness": "AUTO"}}}
+    expected = {"match": {"metadata.foo": {"query": "bar", "fuzziness": "AUTO"}}}
     actual = DEFAULT_TRANSLATOR.visit_comparison(comp)
     assert expected == actual
 
@@ -200,9 +200,9 @@ def test_visit_structured_query_complex() -> None:
                                     "should": [
                                         {"range": {"metadata.bar": {"lt": 1}}},
                                         {
-                                            "fuzzy": {
+                                            "match": {
                                                 "metadata.bar": {
-                                                    "value": "10",
+                                                    "query": "10",
                                                     "fuzziness": "AUTO",
                                                 }
                                             }
@@ -210,6 +210,101 @@ def test_visit_structured_query_complex() -> None:
                                     ]
                                 }
                             },
+                        ]
+                    }
+                }
+            ]
+        },
+    )
+    actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
+    assert expected == actual
+
+
+def test_visit_structured_query_with_date_range() -> None:
+    query = "Who was the president of France in 1995?"
+    operation = Operation(
+        operator=Operator.AND,
+        arguments=[
+            Comparison(comparator=Comparator.EQ, attribute="foo", value="20"),
+            Operation(
+                operator=Operator.AND,
+                arguments=[
+                    Comparison(
+                        comparator=Comparator.GTE,
+                        attribute="timestamp",
+                        value={"date": "1995-01-01", "type": "date"},
+                    ),
+                    Comparison(
+                        comparator=Comparator.LT,
+                        attribute="timestamp",
+                        value={"date": "1996-01-01", "type": "date"},
+                    ),
+                ],
+            ),
+        ],
+    )
+    structured_query = StructuredQuery(query=query, filter=operation, limit=None)
+    expected = (
+        query,
+        {
+            "filter": [
+                {
+                    "bool": {
+                        "must": [
+                            {"term": {"metadata.foo.keyword": "20"}},
+                            {
+                                "bool": {
+                                    "must": [
+                                        {
+                                            "range": {
+                                                "metadata.timestamp": {
+                                                    "gte": "1995-01-01"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "range": {
+                                                "metadata.timestamp": {
+                                                    "lt": "1996-01-01"
+                                                }
+                                            }
+                                        },
+                                    ]
+                                }
+                            },
+                        ]
+                    }
+                }
+            ]
+        },
+    )
+    actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
+    assert expected == actual
+
+
+def test_visit_structured_query_with_date() -> None:
+    query = "Who was the president of France on 1st of January 1995?"
+    operation = Operation(
+        operator=Operator.AND,
+        arguments=[
+            Comparison(comparator=Comparator.EQ, attribute="foo", value="20"),
+            Comparison(
+                comparator=Comparator.EQ,
+                attribute="timestamp",
+                value={"date": "1995-01-01", "type": "date"},
+            ),
+        ],
+    )
+    structured_query = StructuredQuery(query=query, filter=operation, limit=None)
+    expected = (
+        query,
+        {
+            "filter": [
+                {
+                    "bool": {
+                        "must": [
+                            {"term": {"metadata.foo.keyword": "20"}},
+                            {"term": {"metadata.timestamp": "1995-01-01"}},
                         ]
                     }
                 }

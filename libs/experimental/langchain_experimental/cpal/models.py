@@ -1,11 +1,9 @@
 from __future__ import annotations  # allows pydantic model to reference itself
 
 import re
-from typing import Any, Optional, Union
+from typing import Any, List, Optional, Union
 
-import duckdb
-import pandas as pd
-from langchain.graphs.networkx_graph import NetworkxEntityGraph
+from langchain_community.graphs.networkx_graph import NetworkxEntityGraph
 
 from langchain_experimental.cpal.constants import Constant
 from langchain_experimental.pydantic_v1 import (
@@ -19,7 +17,7 @@ from langchain_experimental.pydantic_v1 import (
 
 class NarrativeModel(BaseModel):
     """
-    Represent the narrative input as three story elements.
+    Narrative input as three story elements.
     """
 
     story_outcome_question: str
@@ -35,10 +33,12 @@ class NarrativeModel(BaseModel):
 
 
 class EntityModel(BaseModel):
+    """Entity in the story."""
+
     name: str = Field(description="entity name")
     code: str = Field(description="entity actions")
     value: float = Field(description="entity initial value")
-    depends_on: list[str] = Field(default=[], description="ancestor entities")
+    depends_on: List[str] = Field(default=[], description="ancestor entities")
 
     # TODO: generalize to multivariate math
     # TODO: acyclic graph
@@ -53,14 +53,17 @@ class EntityModel(BaseModel):
 
 
 class CausalModel(BaseModel):
+    """Casual data."""
+
     attribute: str = Field(description="name of the attribute to be calculated")
-    entities: list[EntityModel] = Field(description="entities in the story")
+    entities: List[EntityModel] = Field(description="entities in the story")
 
     # TODO: root validate each `entity.depends_on` using system's entity names
 
 
 class EntitySettingModel(BaseModel):
-    """
+    """Entity initial conditions.
+
     Initial conditions for an entity
 
     {"name": "bud", "attribute": "pet_count", "value": 12}
@@ -77,7 +80,8 @@ class EntitySettingModel(BaseModel):
 
 
 class SystemSettingModel(BaseModel):
-    """
+    """System initial conditions.
+
     Initial global conditions for the system.
 
     {"parameter": "interest_rate", "value": .05}
@@ -88,8 +92,7 @@ class SystemSettingModel(BaseModel):
 
 
 class InterventionModel(BaseModel):
-    """
-    aka initial conditions
+    """Intervention data of the story aka initial conditions.
 
     >>> intervention.dict()
     {
@@ -101,8 +104,8 @@ class InterventionModel(BaseModel):
     }
     """
 
-    entity_settings: list[EntitySettingModel]
-    system_settings: Optional[list[SystemSettingModel]] = None
+    entity_settings: List[EntitySettingModel]
+    system_settings: Optional[List[SystemSettingModel]] = None
 
     @validator("system_settings")
     def lower_case_name(cls, v: str) -> Union[str, None]:
@@ -112,7 +115,9 @@ class InterventionModel(BaseModel):
 
 
 class QueryModel(BaseModel):
-    """translate a question about the story outcome into a programmatic expression"""
+    """Query data of the story.
+
+    translate a question about the story outcome into a programmatic expression"""
 
     question: str = Field(alias=Constant.narrative_input.value)  # input
     expression: str  # output, part of llm completion
@@ -121,15 +126,19 @@ class QueryModel(BaseModel):
 
 
 class ResultModel(BaseModel):
+    """Result of the story query."""
+
     question: str = Field(alias=Constant.narrative_input.value)  # input
     _result_table: str = PrivateAttr()  # result of the executed query
 
 
 class StoryModel(BaseModel):
+    """Story data."""
+
     causal_operations: Any = Field(required=True)
     intervention: Any = Field(required=True)
     query: Any = Field(required=True)
-    _outcome_table: pd.DataFrame = PrivateAttr(default=None)
+    _outcome_table: Any = PrivateAttr(default=None)
     _networkx_wrapper: Any = PrivateAttr(default=None)
 
     def __init__(self, **kwargs: Any):
@@ -139,7 +148,9 @@ class StoryModel(BaseModel):
         # TODO: when langchain adopts pydantic.v2 replace w/ `__post_init__`
         # misses hints github.com/pydantic/pydantic/issues/1729#issuecomment-1300576214
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     def check_intervention_is_valid(cls, values: dict) -> dict:
         valid_names = [e.name for e in values["causal_operations"].entities]
         for setting in values["intervention"].entity_settings:
@@ -188,6 +199,12 @@ class StoryModel(BaseModel):
         self.causal_operations.entities.sort(key=lambda x: sorted_nodes.index(x.name))
 
     def _forward_propagate(self) -> None:
+        try:
+            import pandas as pd
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import pandas, please install with `pip install pandas`."
+            ) from e
         entity_scope = {
             entity.name: entity for entity in self.causal_operations.entities
         }
@@ -215,11 +232,17 @@ class StoryModel(BaseModel):
 
         if self.query.llm_error_msg == "":
             try:
+                import duckdb
+
                 df = self._outcome_table  # noqa
                 query_result = duckdb.sql(self.query.expression).df()
                 self.query._result_table = query_result
             except duckdb.BinderException as e:
                 self.query._result_table = humanize_sql_error_msg(str(e))
+            except ImportError as e:
+                raise ImportError(
+                    "Unable to import duckdb, please install with `pip install duckdb`."
+                ) from e
             except Exception as e:
                 self.query._result_table = str(e)
         else:

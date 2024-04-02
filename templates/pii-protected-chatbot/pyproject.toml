@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "pii_protected_chatbot"
+version = "0.0.1"
+description = "Flag PII before passing it to the LLM"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+presidio-analyzer = "^2.2.350"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "pii_protected_chatbot.chain"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["OpenAI", "Microsoft Presidio"]
+tags = ["data", "redaction"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

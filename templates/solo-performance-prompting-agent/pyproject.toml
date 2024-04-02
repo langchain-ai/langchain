@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "solo-performance-prompting-agent"
+version = "0.0.1"
+description = "Agent that transforms a single LLM into a cognitive synergist that has multiple points of view"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+duckduckgo-search = "^3.9.3"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "solo_performance_prompting_agent.agent"
+export_attr = "agent_executor"
+
+[tool.templates-hub]
+use-case = "research"
+author = "LangChain"
+integrations = ["OpenAI"]
+tags = ["data", "agents"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

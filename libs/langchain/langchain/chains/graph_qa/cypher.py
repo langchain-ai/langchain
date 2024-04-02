@@ -4,15 +4,16 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain_community.graphs.graph_store import GraphStore
+from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Field
+
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.chains.llm import LLMChain
-from langchain.graphs.neo4j_graph import Neo4jGraph
-from langchain.pydantic_v1 import Field
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 
@@ -45,7 +46,7 @@ def construct_schema(
     def filter_func(x: str) -> bool:
         return x in include_types if include_types else x not in exclude_types
 
-    filtered_schema = {
+    filtered_schema: Dict[str, Any] = {
         "node_props": {
             k: v
             for k, v in structured_schema.get("node_props", {}).items()
@@ -63,23 +64,56 @@ def construct_schema(
         ],
     }
 
-    return (
-        f"Node properties are the following: \n {filtered_schema['node_props']}\n"
-        f"Relationships properties are the following: \n {filtered_schema['rel_props']}"
-        "\nRelationships are: \n"
-        + str(
-            [
-                f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
-                for el in filtered_schema["relationships"]
-            ]
+    # Format node properties
+    formatted_node_props = []
+    for label, properties in filtered_schema["node_props"].items():
+        props_str = ", ".join(
+            [f"{prop['property']}: {prop['type']}" for prop in properties]
         )
+        formatted_node_props.append(f"{label} {{{props_str}}}")
+
+    # Format relationship properties
+    formatted_rel_props = []
+    for rel_type, properties in filtered_schema["rel_props"].items():
+        props_str = ", ".join(
+            [f"{prop['property']}: {prop['type']}" for prop in properties]
+        )
+        formatted_rel_props.append(f"{rel_type} {{{props_str}}}")
+
+    # Format relationships
+    formatted_rels = [
+        f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
+        for el in filtered_schema["relationships"]
+    ]
+
+    return "\n".join(
+        [
+            "Node properties are the following:",
+            ",".join(formatted_node_props),
+            "Relationship properties are the following:",
+            ",".join(formatted_rel_props),
+            "The relationships are the following:",
+            ",".join(formatted_rels),
+        ]
     )
 
 
 class GraphCypherQAChain(Chain):
-    """Chain for question-answering against a graph by generating Cypher statements."""
+    """Chain for question-answering against a graph by generating Cypher statements.
 
-    graph: Neo4jGraph = Field(exclude=True)
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
+
+    graph: GraphStore = Field(exclude=True)
     cypher_generation_chain: LLMChain
     qa_chain: LLMChain
     graph_schema: str
@@ -120,13 +154,15 @@ class GraphCypherQAChain(Chain):
         cls,
         llm: Optional[BaseLanguageModel] = None,
         *,
-        qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
-        cypher_prompt: BasePromptTemplate = CYPHER_GENERATION_PROMPT,
+        qa_prompt: Optional[BasePromptTemplate] = None,
+        cypher_prompt: Optional[BasePromptTemplate] = None,
         cypher_llm: Optional[BaseLanguageModel] = None,
         qa_llm: Optional[BaseLanguageModel] = None,
         exclude_types: List[str] = [],
         include_types: List[str] = [],
         validate_cypher: bool = False,
+        qa_llm_kwargs: Optional[Dict[str, Any]] = None,
+        cypher_llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> GraphCypherQAChain:
         """Initialize from LLM."""
@@ -140,9 +176,35 @@ class GraphCypherQAChain(Chain):
                 "You can specify up to two of 'cypher_llm', 'qa_llm'"
                 ", and 'llm', but not all three simultaneously."
             )
+        if cypher_prompt and cypher_llm_kwargs:
+            raise ValueError(
+                "Specifying cypher_prompt and cypher_llm_kwargs together is"
+                " not allowed. Please pass prompt via cypher_llm_kwargs."
+            )
+        if qa_prompt and qa_llm_kwargs:
+            raise ValueError(
+                "Specifying qa_prompt and qa_llm_kwargs together is"
+                " not allowed. Please pass prompt via qa_llm_kwargs."
+            )
+        use_qa_llm_kwargs = qa_llm_kwargs if qa_llm_kwargs is not None else {}
+        use_cypher_llm_kwargs = (
+            cypher_llm_kwargs if cypher_llm_kwargs is not None else {}
+        )
+        if "prompt" not in use_qa_llm_kwargs:
+            use_qa_llm_kwargs["prompt"] = (
+                qa_prompt if qa_prompt is not None else CYPHER_QA_PROMPT
+            )
+        if "prompt" not in use_cypher_llm_kwargs:
+            use_cypher_llm_kwargs["prompt"] = (
+                cypher_prompt if cypher_prompt is not None else CYPHER_GENERATION_PROMPT
+            )
 
-        qa_chain = LLMChain(llm=qa_llm or llm, prompt=qa_prompt)
-        cypher_generation_chain = LLMChain(llm=cypher_llm or llm, prompt=cypher_prompt)
+        qa_chain = LLMChain(llm=qa_llm or llm, **use_qa_llm_kwargs)  # type: ignore[arg-type]
+
+        cypher_generation_chain = LLMChain(
+            llm=cypher_llm or llm,  # type: ignore[arg-type]
+            **use_cypher_llm_kwargs,  # type: ignore[arg-type]
+        )
 
         if exclude_types and include_types:
             raise ValueError(
@@ -151,7 +213,7 @@ class GraphCypherQAChain(Chain):
             )
 
         graph_schema = construct_schema(
-            kwargs["graph"].structured_schema, include_types, exclude_types
+            kwargs["graph"].get_structured_schema, include_types, exclude_types
         )
 
         cypher_query_corrector = None

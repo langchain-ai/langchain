@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 from langchain_experimental.data_anonymizer.deanonymizer_mapping import MappingDataType
 from langchain_experimental.data_anonymizer.deanonymizer_matching_strategies import (
@@ -10,18 +10,26 @@ DEFAULT_DEANONYMIZER_MATCHING_STRATEGY = exact_matching_strategy
 
 
 class AnonymizerBase(ABC):
-    """
-    Base abstract class for anonymizers.
+    """Base abstract class for anonymizers.
+
     It is public and non-virtual because it allows
         wrapping the behavior for all methods in a base class.
     """
 
-    def anonymize(self, text: str, language: Optional[str] = None) -> str:
-        """Anonymize text"""
-        return self._anonymize(text, language)
+    def anonymize(
+        self,
+        text: str,
+        language: Optional[str] = None,
+        allow_list: Optional[List[str]] = None,
+    ) -> str:
+        """Anonymize text."""
+
+        return self._anonymize(text, language, allow_list)
 
     @abstractmethod
-    def _anonymize(self, text: str, language: Optional[str]) -> str:
+    def _anonymize(
+        self, text: str, language: Optional[str], allow_list: Optional[List[str]] = None
+    ) -> str:
         """Abstract method to anonymize text"""
 
 

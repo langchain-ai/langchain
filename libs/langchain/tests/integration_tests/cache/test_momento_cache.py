@@ -11,10 +11,10 @@ from datetime import timedelta
 from typing import Iterator
 
 import pytest
+from langchain_core.outputs import Generation, LLMResult
 
-import langchain
 from langchain.cache import MomentoCache
-from langchain.schema import Generation, LLMResult
+from langchain.globals import set_llm_cache
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -34,7 +34,7 @@ def momento_cache() -> Iterator[MomentoCache]:
     )
     try:
         llm_cache = MomentoCache(client, cache_name)
-        langchain.llm_cache = llm_cache
+        set_llm_cache(llm_cache)
         yield llm_cache
     finally:
         client.delete_cache(cache_name)

@@ -1,4 +1,5 @@
 from langchain.chains.openai_functions.base import (
+    convert_to_openai_function,
     create_openai_fn_chain,
     create_structured_output_chain,
 )
@@ -17,8 +18,14 @@ from langchain.chains.openai_functions.tagging import (
     create_tagging_chain,
     create_tagging_chain_pydantic,
 )
+from langchain.chains.structured_output.base import (
+    create_openai_fn_runnable,
+    create_structured_output_runnable,
+    get_openai_output_parser,
+)
 
 __all__ = [
+    "convert_to_openai_function",
     "create_tagging_chain",
     "create_tagging_chain_pydantic",
     "create_extraction_chain_pydantic",
@@ -28,4 +35,7 @@ __all__ = [
     "create_qa_with_sources_chain",
     "create_structured_output_chain",
     "create_openai_fn_chain",
+    "create_structured_output_runnable",  # backwards compatibility
+    "create_openai_fn_runnable",  # backwards compatibility
+    "get_openai_output_parser",  # backwards compatibility
 ]
