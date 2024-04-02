@@ -43,6 +43,34 @@ llm = Cohere(model="command")
 print(llm.invoke("Come up with a pet name"))
 ```
 
+### ReAct Agent
+
+```python
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_cohere import ChatCohere, create_cohere_react_agent
+from langchain.prompts import ChatPromptTemplate
+from langchain.agents import AgentExecutor
+
+llm = ChatCohere()
+
+internet_search = TavilySearchResults(max_results=4)
+internet_search.name = "internet_search"
+internet_search.description = "Route a user query to the internet"
+
+prompt = ChatPromptTemplate.from_template("{input}")
+
+agent = create_cohere_react_agent(
+    llm,
+    [internet_search],
+    prompt
+)
+
+agent_executor = AgentExecutor(agent=agent, tools=[internet_search], verbose=True)```
+
+agent_executor.invoke({
+    "input": "In what year was the company that was founded as Sound of Music added to the S&P 500?",
+})
+```
 
 ### RAG Retriever
 
