@@ -26,7 +26,7 @@ Get a [Cohere api key](https://dashboard.cohere.ai/) and set it as an environmen
 ### Chat
 
 ```python
-from langchain_cohere.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 from langchain_core.messages import HumanMessage
 chat = ChatCohere()
 messages = [HumanMessage(content="knock knock")]
