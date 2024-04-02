@@ -383,7 +383,7 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
         raise ValueError("`database` must be present.")
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
-        chain = load_chain_from_config(llm_chain_config, **kwargs, **kwargs)
+        chain = load_chain_from_config(llm_chain_config, **kwargs)
         return SQLDatabaseChain(llm_chain=chain, database=database, **config)
     if "llm" in config:
         llm_config = config.pop("llm")
