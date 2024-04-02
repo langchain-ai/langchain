@@ -23,10 +23,6 @@ from langchain_core.prompts import (
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.tools import BaseTool
 
-from langchain_cohere.cohere_agent import (
-    JSON_TO_PYTHON_TYPES,
-    _remove_signature_from_description,
-)
 from langchain_cohere.react_multi_hop.default_prompt_constants import (
     _SpecialToken,
     default_basic_rules,
@@ -34,6 +30,10 @@ from langchain_cohere.react_multi_hop.default_prompt_constants import (
     default_safety_rules,
     default_style_guide,
     default_task_context,
+)
+from langchain_cohere.utils import (
+    JSON_TO_PYTHON_TYPES,
+    _remove_signature_from_tool_description,
 )
 
 multi_hop_prompt_partial = PromptTemplate.from_template(
@@ -96,7 +96,7 @@ def render_tool(tool: BaseTool) -> str:
 ```"""
     return template.format(
         tool_signature=render_tool_signature(tool),
-        tool_description=_remove_signature_from_description(
+        tool_description=_remove_signature_from_tool_description(
             tool.name, tool.description
         ),
         tool_args=render_tool_args(tool),

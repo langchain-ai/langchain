@@ -1,5 +1,4 @@
 import json
-import re
 from typing import Any, Dict, List, Sequence, Tuple, Type, Union
 
 from cohere.types import (
@@ -22,7 +21,10 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
 )
 
-from langchain_cohere.utils import JSON_TO_PYTHON_TYPES
+from langchain_cohere.utils import (
+    JSON_TO_PYTHON_TYPES,
+    _remove_signature_from_tool_description,
+)
 
 
 def create_cohere_tools_agent(
@@ -95,17 +97,6 @@ def _format_to_cohere_tools_messages(
     return tool_results
 
 
-def _remove_signature_from_description(name: str, description: str) -> str:
-    """
-    Removes the `{name}{signature} - ` prefix and Args: section from tool description.
-    The signature is usually present for tools created with the @tool decorator,
-    whereas the Args: section may be present in function doc blocks.
-    """
-    description = re.sub(rf"^{name}\(.*?\) -(?:> \w+? -)? ", "", description)
-    description = re.sub(r"(?s)(?:\n?\n\s*?)?Args:.*$", "", description)
-    return description
-
-
 def _convert_to_cohere_tool(
     tool: Union[Dict[str, Any], BaseTool, Type[BaseModel]],
 ) -> Dict[str, Any]:
@@ -115,7 +106,9 @@ def _convert_to_cohere_tool(
     if isinstance(tool, BaseTool):
         return Tool(
             name=tool.name,
-            description=_remove_signature_from_description(tool.name, tool.description),
+            description=_remove_signature_from_tool_description(
+                tool.name, tool.description
+            ),
             parameter_definitions={
                 param_name: ToolParameterDefinitionsValue(
                     description=param_definition.get("description")

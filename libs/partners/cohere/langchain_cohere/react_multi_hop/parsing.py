@@ -126,10 +126,7 @@ def parse_actions(generation: str) -> Tuple[str, str, List[Dict]]:
         if "Plan: " in generation or "Reflection: " in generation:
             # Model is trained to output a Plan or Reflection followed by an action.
             # Use regex to extract the plan and action.
-            regex = (
-                r"^(Plan|Reflection)\s*\d*\s*:(.*?)"
-                + r"(Action\s*\d*\s*:\s*\d*\s*```json\n.*?```)"
-            )
+            regex = r"^(Plan|Reflection)\s*\d*\s*:(.*?)(Action\s*\d*\s*:\s*\d*\s*```json\n.*?```)"  # noqa: E501
             action_match = re.search(regex, generation, re.DOTALL)
             if not action_match:
                 raise ValueError(

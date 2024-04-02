@@ -8,7 +8,6 @@ from langchain_core.tools import BaseModel, BaseTool, Field
 from langchain_cohere.cohere_agent import (
     _format_to_cohere_tools,
     _format_to_cohere_tools_messages,
-    _remove_signature_from_description,
 )
 
 expected_test_tool_definition = {
@@ -139,43 +138,3 @@ def test_format_to_cohere_tools_messages(
     actual = _format_to_cohere_tools_messages(intermediate_steps=[intermediate_step])
 
     assert [expected] == actual
-
-
-@pytest.mark.parametrize(
-    "name,description,expected",
-    [
-        pytest.param(
-            "foo", "bar baz", "bar baz", id="description doesn't have signature"
-        ),
-        pytest.param("foo", "", "", id="description is empty"),
-        pytest.param("foo", "foo(a: str) - bar baz", "bar baz", id="signature"),
-        pytest.param(
-            "foo", "foo() - bar baz", "bar baz", id="signature with empty args"
-        ),
-        pytest.param(
-            "foo",
-            "foo(a: str) - foo(b: str) - bar",
-            "foo(b: str) - bar",
-            id="signature with edge case",
-        ),
-        pytest.param(
-            "foo", "foo() -> None - bar baz", "bar baz", id="signature with return type"
-        ),
-        pytest.param(
-            "foo",
-            """My description.
-
-Args:
-    Bar: 
-""",
-            "My description.",
-            id="signature with Args: section",
-        ),
-    ],
-)
-def test_remove_signature_from_description(
-    name: str, description: str, expected: str
-) -> None:
-    actual = _remove_signature_from_description(name=name, description=description)
-
-    assert expected == actual
