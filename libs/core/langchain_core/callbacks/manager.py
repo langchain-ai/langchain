@@ -26,7 +26,6 @@ from typing import (
 )
 from uuid import UUID
 
-from langsmith.run_helpers import get_run_tree_context
 from tenacity import RetryCallState
 
 from langchain_core.callbacks.base import (
@@ -39,7 +38,6 @@ from langchain_core.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
-from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.utils.env import env_var_is_set
 
@@ -1911,6 +1909,8 @@ def _configure(
     Returns:
         T: The configured callback manager.
     """
+    from langsmith.run_helpers import get_run_tree_context
+
     from langchain_core.tracers.context import (
         _configure_hooks,
         _get_tracer_project,
@@ -1966,6 +1966,7 @@ def _configure(
     tracer_project = _get_tracer_project()
     debug = _get_debug()
     if verbose or debug or tracing_enabled_ or tracing_v2_enabled_:
+        from langchain_core.callbacks.stdout import StdOutCallbackHandler
         from langchain_core.tracers.langchain import LangChainTracer
         from langchain_core.tracers.langchain_v1 import LangChainTracerV1
         from langchain_core.tracers.stdout import ConsoleCallbackHandler

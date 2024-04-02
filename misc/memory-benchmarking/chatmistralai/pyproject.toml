@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "chatmistralai"
+version = "0.1.0"
+description = ""
+authors = ["Erick Friis <erick@langchain.dev>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain-mistralai = {path = "../../../libs/partners/mistralai", develop = true}
+langchain-core = {path = "../../../libs/core", develop = true}
+memray = "^1.11.0"
+langsmith = {path = "/Users/erickfriis/langchain/smith-sdk/python", develop = true}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

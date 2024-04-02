@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "chatopenai"
+version = "0.1.0"
+description = ""
+authors = ["Erick Friis <erick@langchain.dev>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain-core = {path = "../../../libs/core", develop = true}
+langchain-openai = {path = "../../../libs/partners/openai", develop = true}
+memray = "^1.11.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

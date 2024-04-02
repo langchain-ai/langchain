@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from operator import itemgetter
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncContextManager,
     AsyncIterator,
@@ -18,14 +19,7 @@ from typing import (
     cast,
 )
 
-import httpx
-from httpx_sse import EventSource, aconnect_sse, connect_sse
 from langchain_core._api import beta
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -51,11 +45,20 @@ from langchain_core.output_parsers.openai_tools import (
     PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
+
+if TYPE_CHECKING:
+    import httpx
+    from httpx_sse import EventSource
+    from langchain_core.callbacks import (
+        AsyncCallbackManagerForLLMRun,
+        CallbackManagerForLLMRun,
+    )
+    from langchain_core.language_models import LanguageModelInput
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +70,9 @@ def _create_retry_decorator(
     ] = None,
 ) -> Callable[[Any], Any]:
     """Returns a tenacity retry decorator, preconfigured to handle exceptions"""
+    from httpx import RequestError, StreamError
 
-    errors = [httpx.RequestError, httpx.StreamError]
+    errors = [RequestError, StreamError]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
@@ -112,6 +116,8 @@ async def acompletion_with_retry(
             kwargs["stream"] = False
         stream = kwargs["stream"]
         if stream:
+            from httpx_sse import aconnect_sse
+
             event_source = aconnect_sse(
                 llm.async_client, "POST", "/chat/completions", json=kwargs
             )
@@ -184,8 +190,8 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    _client: Optional[httpx.Client] = None
+    _async_client: Optional[httpx.AsyncClient] = None
     mistral_api_key: Optional[SecretStr] = None
     endpoint: str = "https://api.mistral.ai/v1"
     max_retries: int = 5
@@ -201,6 +207,83 @@ class ChatMistralAI(BaseChatModel):
     random_seed: Optional[int] = None
     safe_mode: bool = False
     streaming: bool = False
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate api key, python package exists, temperature, and top_p."""
+
+        values["mistral_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values, "mistral_api_key", "MISTRAL_API_KEY", default=""
+            )
+        )
+        if "client" in values:
+            values["_client"] = values["client"]
+            del values["client"]
+        if "async_client" in values:
+            values["_async_client"] = values["async_client"]
+            del values["async_client"]
+
+        if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
+            raise ValueError("temperature must be in the range [0.0, 1.0]")
+
+        if values["top_p"] is not None and not 0 <= values["top_p"] <= 1:
+            raise ValueError("top_p must be in the range [0.0, 1.0]")
+
+        return values
+
+    @property
+    def client(self) -> httpx.Client:
+        """Get the client."""
+        if self._client:
+            return self._client
+
+        from httpx import Client
+
+        # todo: handle retries
+        return Client(
+            base_url=self.endpoint,
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                **(
+                    {
+                        "Authorization": (
+                            f"Bearer {self.mistral_api_key.get_secret_value()}"
+                        )
+                    }
+                    if self.mistral_api_key
+                    else {}
+                ),
+            },
+            timeout=self.timeout,
+        )
+
+    @property
+    def async_client(self) -> httpx.AsyncClient:
+        """Get the async client."""
+        if self._async_client:
+            return self._async_client
+        # todo: handle retries and max concurrency
+        from httpx import AsyncClient
+
+        return AsyncClient(
+            base_url=self.endpoint,
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                **(
+                    {
+                        "Authorization": (
+                            f"Bearer {self.mistral_api_key.get_secret_value()}"
+                        )
+                    }
+                    if self.mistral_api_key
+                    else {}
+                ),
+            },
+            timeout=self.timeout,
+        )
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -235,6 +318,8 @@ class ChatMistralAI(BaseChatModel):
             if stream:
 
                 def iter_sse() -> Iterator[Dict]:
+                    from httpx_sse import connect_sse
+
                     with connect_sse(
                         self.client, "POST", "/chat/completions", json=kwargs
                     ) as event_source:
@@ -265,45 +350,6 @@ class ChatMistralAI(BaseChatModel):
                         overall_token_usage[k] = v
         combined = {"token_usage": overall_token_usage, "model_name": self.model}
         return combined
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate api key, python package exists, temperature, and top_p."""
-
-        values["mistral_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, "mistral_api_key", "MISTRAL_API_KEY", default=""
-            )
-        )
-        api_key_str = values["mistral_api_key"].get_secret_value()
-        # todo: handle retries
-        values["client"] = httpx.Client(
-            base_url=values["endpoint"],
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": f"Bearer {api_key_str}",
-            },
-            timeout=values["timeout"],
-        )
-        # todo: handle retries and max_concurrency
-        values["async_client"] = httpx.AsyncClient(
-            base_url=values["endpoint"],
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": f"Bearer {api_key_str}",
-            },
-            timeout=values["timeout"],
-        )
-
-        if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
-            raise ValueError("temperature must be in the range [0.0, 1.0]")
-
-        if values["top_p"] is not None and not 0 <= values["top_p"] <= 1:
-            raise ValueError("top_p must be in the range [0.0, 1.0]")
-
-        return values
 
     def _generate(
         self,
