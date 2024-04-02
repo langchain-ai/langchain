@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from json import JSONDecodeError
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, List, Optional, Type, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
 import pydantic  # pydantic: ignore
@@ -12,7 +12,6 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.pydantic_v1 import validator
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 if PYDANTIC_MAJOR_VERSION < 2:
@@ -208,21 +207,11 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """
 
     pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
-    json_schema: Optional[Dict[str, Any]] = None
-
-    @validator("json_schema", always=True, allow_reuse=True)
-    def _validate_json_schema(
-        cls, v: Optional[dict[str, Any]], values: dict
-    ) -> Optional[dict[str, Any]]:
-        if v is None and values.get("pydantic_object") is not None:
-            return cls._get_schema(values["pydantic_object"])
-        return v
 
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    @classmethod
-    def _get_schema(cls, pydantic_object: Type[TBaseModel]) -> dict[str, Any]:
+    def _get_schema(self, pydantic_object: Type[TBaseModel]) -> dict[str, Any]:
         if PYDANTIC_MAJOR_VERSION == 2:
             if issubclass(pydantic_object, pydantic.BaseModel):
                 return pydantic_object.model_json_schema()
@@ -249,11 +238,11 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         return self.parse_result([Generation(text=text)])
 
     def get_format_instructions(self) -> str:
-        if self.json_schema is None:
+        if self.pydantic_object is None:
             return "Return a JSON object."
         else:
             # Copy schema to avoid altering original Pydantic schema.
-            schema = {k: v for k, v in self.json_schema.items()}
+            schema = {k: v for k, v in self._get_schema(self.pydantic_object).items()}
 
             # Remove extraneous fields.
             reduced_schema = schema

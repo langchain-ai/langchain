@@ -90,7 +90,6 @@ def test_json_parser_chaining(
     model = ParrotFakeChatModel()
 
     parser = JsonOutputParser(pydantic_object=pydantic_object)  # type: ignore
-    assert parser.json_schema is not None
     chain = prompt | model | parser
 
     res = chain.invoke({})
