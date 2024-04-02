@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC
 from typing import Any, Dict, Optional, Tuple
 
@@ -26,9 +27,21 @@ class BaseChatMemory(BaseMemory, ABC):
         else:
             prompt_input_key = self.input_key
         if self.output_key is None:
-            if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
+            if len(outputs) == 1:
+                output_key = list(outputs.keys())[0]
+            elif "output" in outputs:
+                output_key = "output"
+                warnings.warn(
+                    f"'{self.__class__.__name__}' got multiple output keys:"
+                    f" {outputs.keys()}. The default 'output' key is being used."
+                    f" If this is not desired, please manually set 'output_key'."
+                )
+            else:
+                raise ValueError(
+                    f"Got multiple output keys: {outputs.keys()}, cannot "
+                    f"determine which to store in memory. Please set the "
+                    f"'output_key' explicitly."
+                )
         else:
             output_key = self.output_key
         return inputs[prompt_input_key], outputs[output_key]

@@ -2,11 +2,11 @@ from langchain_cohere import __all__
 
 EXPECTED_ALL = [
     "ChatCohere",
-    "CohereVectorStore",
     "CohereEmbeddings",
     "CohereRagRetriever",
     "CohereRerank",
     "create_cohere_tools_agent",
+    "create_cohere_react_agent",
 ]
 
 

@@ -3,6 +3,7 @@ from typing import Any
 
 _module_lookup = {
     "LLMLinguaCompressor": "langchain_community.document_compressors.llmlingua_filter",
+    "OpenVINOReranker": "langchain_community.document_compressors.openvino_rerank",
 }
 
 
