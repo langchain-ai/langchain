@@ -1,4 +1,3 @@
-import os
 from typing import Any, Dict, List, Tuple, Type
 
 import pytest
@@ -12,8 +11,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import BaseTool
 
 from langchain_cohere.react_multi_hop.prompt import multi_hop_prompt
-
-DATA_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "data")
+from tests.unit_tests.react_multi_hop import ExpectationType, read_expectation_from_file
 
 
 class InternetSearchTool(BaseTool):
@@ -158,7 +156,7 @@ def test_multihop_prompt(
     scenario_name: str,
 ) -> None:
     """Tests prompt rendering against hardcoded expectations."""
-    expected = _read_expected_from_file(scenario_name)
+    expected = read_expectation_from_file(ExpectationType.prompts, scenario_name)
     chain = RunnablePassthrough.assign(
         agent_scratchpad=lambda _: [],  # Usually provided by create_cohere_react_agent.
         intermediate_steps=lambda _: intermediate_steps,
@@ -168,17 +166,3 @@ def test_multihop_prompt(
 
     assert StringPromptValue == type(actual)
     assert expected == actual.text
-
-
-def _read_expected_from_file(scenario_name: str) -> str:
-    """
-    Returns an expected prompt from a given scenario name.
-    Prompts are stored as .txt files to aid readability.
-    """
-    with open(os.path.join(DATA_DIR, "prompts", f"{scenario_name}.txt"), "r") as f:
-        content = f.read()
-
-    # Remove a single trailing new line, if present, to aid authoring the txt file.
-    if content.endswith("\n"):
-        content = content[: -len("\n")]
-    return content
