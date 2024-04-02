@@ -125,7 +125,9 @@ class PebbloSafeLoader(BaseLoader):
         doc_content = [doc.dict() for doc in self.docs]
         docs = []
         for doc in doc_content:
-            doc_source_path = get_full_path(doc.get("metadata", {}).get("source"))
+            doc_source_path = get_full_path(
+                doc.get("metadata", {}).get("source", self.source_path)
+            )
             doc_source_owner = PebbloSafeLoader.get_file_owner_from_path(
                 doc_source_path
             )

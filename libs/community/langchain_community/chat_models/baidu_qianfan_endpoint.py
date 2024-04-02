@@ -271,6 +271,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 },
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stop"] = stop
         response_payload = self.client.do(**params)
         lc_msg = _convert_dict_to_message(response_payload)
         gen = ChatGeneration(
@@ -316,6 +317,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 },
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stop"] = stop
         response_payload = await self.client.ado(**params)
         lc_msg = _convert_dict_to_message(response_payload)
         generations = []
@@ -339,6 +341,7 @@ class QianfanChatEndpoint(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stop"] = stop
         params["stream"] = True
         for res in self.client.do(**params):
             if res:
@@ -365,6 +368,7 @@ class QianfanChatEndpoint(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stop"] = stop
         params["stream"] = True
         async for res in await self.client.ado(**params):
             if res:
