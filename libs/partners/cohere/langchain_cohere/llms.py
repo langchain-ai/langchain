@@ -69,7 +69,7 @@ class BaseCohere(Serializable):
     timeout: Optional[float] = 60
     """Timeout in seconds for the Cohere API request."""
 
-    user_agent: str = "langchain"
+    user_agent: str = "langchain:partner"
     """Identifier for the application making the request."""
 
     base_url: Optional[str] = None

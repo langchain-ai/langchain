@@ -42,7 +42,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Maximum number of retries to make when generating."""
     request_timeout: Optional[float] = None
     """Timeout in seconds for the Cohere API request."""
-    user_agent: str = "langchain"
+    user_agent: str = "langchain:partner"
     """Identifier for the application making the request."""
 
     base_url: Optional[str] = None
