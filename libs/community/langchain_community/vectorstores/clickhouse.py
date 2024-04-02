@@ -172,9 +172,11 @@ class Clickhouse(VectorStore):
                 else ""
             )
             if isinstance(self.config.index_param, Dict)
-            else ",".join([str(p) for p in self.config.index_param])
-            if isinstance(self.config.index_param, List)
-            else self.config.index_param
+            else (
+                ",".join([str(p) for p in self.config.index_param])
+                if isinstance(self.config.index_param, List)
+                else self.config.index_param
+            )
         )
 
         self.schema = self._schema(dim, index_params)
@@ -202,7 +204,7 @@ class Clickhouse(VectorStore):
             )
         self.client.command(self.schema)
 
-    def _schema(self, dim, index_params):
+    def _schema(self, dim: int, index_params: Optional[Union[List, Dict]]) -> str:
         """Create table schema
         :param dim: dimension of embeddings
         :param index_params: parameters used for index
