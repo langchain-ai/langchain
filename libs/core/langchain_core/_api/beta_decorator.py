@@ -166,17 +166,17 @@ def beta(
                 def __get__(self, instance, owner=None):
                     if instance is not None or owner is not None:
                         emit_warning()
-                    return super().__get__(instance, owner)
+                    return self.fget(instance)
 
                 def __set__(self, instance, value):
                     if instance is not None:
                         emit_warning()
-                    return super().__set__(instance, value)
+                    return self.fset(instance, value)
 
                 def __delete__(self, instance):
                     if instance is not None:
                         emit_warning()
-                    return super().__delete__(instance)
+                    return self.fdel(instance)
 
                 def __set_name__(self, owner, set_name):
                     nonlocal _name
