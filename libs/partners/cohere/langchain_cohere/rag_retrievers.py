@@ -62,6 +62,7 @@ class CohereRagRetriever(BaseRetriever):
 
         arbitrary_types_allowed = True
         """Allow arbitrary types."""
+        check_fields = False
 
     def _get_relevant_documents(
         self,
