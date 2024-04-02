@@ -234,7 +234,7 @@ def test_invalid_html() -> None:
 
 @pytest.mark.requires("bs4")
 def test_remove_comments() -> None:
-    bs_transformer = BeautifulSoupTransformer(remove_comments=True)
+    bs_transformer = BeautifulSoupTransformer()
     html_with_comments = (
         "<html><!-- Google tag (gtag.js) --><p>First paragraph.</p</html>"
     )
@@ -243,7 +243,7 @@ def test_remove_comments() -> None:
     ]
 
     docs_transformed = bs_transformer.transform_documents(
-        documents, tags_to_extract=["html"]
+        documents, tags_to_extract=["html"], remove_comments=True
     )
     assert docs_transformed[0].page_content == "First paragraph."
 
@@ -261,6 +261,5 @@ def test_do_not_remove_comments() -> None:
     docs_transformed = bs_transformer.transform_documents(
         documents,
         tags_to_extract=["html"],
-        remove_comments=False,
     )
     assert docs_transformed[0].page_content == "Google tag (gtag.js) First paragraph."
