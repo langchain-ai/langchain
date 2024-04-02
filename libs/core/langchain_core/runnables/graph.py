@@ -116,7 +116,9 @@ def node_data_str(node: Node) -> str:
     return data if not data.startswith("Runnable") else data[8:]
 
 
-def node_data_json(node: Node) -> Dict[str, Union[str, Dict[str, Any]]]:
+def node_data_json(
+    node: Node, *, with_schemas: bool = False
+) -> Dict[str, Union[str, Dict[str, Any]]]:
     from langchain_core.load.serializable import to_json_not_implemented
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 
@@ -137,10 +139,17 @@ def node_data_json(node: Node) -> Dict[str, Union[str, Dict[str, Any]]]:
             },
         }
     elif inspect.isclass(node.data) and issubclass(node.data, BaseModel):
-        return {
-            "type": "schema",
-            "data": node.data.schema(),
-        }
+        return (
+            {
+                "type": "schema",
+                "data": node.data.schema(),
+            }
+            if with_schemas
+            else {
+                "type": "schema",
+                "data": node_data_str(node),
+            }
+        )
     else:
         return {
             "type": "unknown",
@@ -156,7 +165,7 @@ class Graph:
     edges: List[Edge] = field(default_factory=list)
     branches: Optional[Dict[str, List[Branch]]] = field(default_factory=dict)
 
-    def to_json(self) -> Dict[str, List[Dict[str, Any]]]:
+    def to_json(self, *, with_schemas: bool = False) -> Dict[str, List[Dict[str, Any]]]:
         """Convert the graph to a JSON-serializable format."""
         stable_node_ids = {
             node.id: i if is_uuid(node.id) else node.id
@@ -165,7 +174,10 @@ class Graph:
 
         return {
             "nodes": [
-                {"id": stable_node_ids[node.id], **node_data_json(node)}
+                {
+                    "id": stable_node_ids[node.id],
+                    **node_data_json(node, with_schemas=with_schemas),
+                }
                 for node in self.nodes.values()
             ],
             "edges": [
