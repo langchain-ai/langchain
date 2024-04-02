@@ -147,16 +147,14 @@ def create_simple_model(
 
 def map_to_base_node(node: Any) -> Node:
     """Map the SimpleNode to the base Node."""
-    return Node(id=node.id.title(), type=node.type.capitalize())
+    return Node(id=node.id, type=node.type)
 
 
 def map_to_base_relationship(rel: Any) -> Relationship:
     """Map the SimpleRelationship to the base Relationship."""
-    source = Node(id=rel.source_node_id.title(), type=rel.source_node_type.capitalize())
-    target = Node(id=rel.target_node_id.title(), type=rel.target_node_type.capitalize())
-    return Relationship(
-        source=source, target=target, type=rel.type.replace(" ", "_").upper()
-    )
+    source = Node(id=rel.source_node_id, type=rel.source_node_type)
+    target = Node(id=rel.target_node_id, type=rel.target_node_type)
+    return Relationship(source=source, target=target, type=rel.type)
 
 
 def _parse_and_clean_json(
@@ -168,8 +166,8 @@ def _parse_and_clean_json(
             continue
         nodes.append(
             Node(
-                id=node["id"].title(),
-                type=node.get("type").capitalize() if node.get("type") else None,
+                id=node["id"],
+                type=node.get("type"),
             )
         )
     relationships = []
@@ -186,38 +184,53 @@ def _parse_and_clean_json(
         if not rel.get("source_node_type"):
             try:
                 rel["source_node_type"] = [
-                    el["type"]
+                    el.get("type")
                     for el in argument_json["nodes"]
                     if el["id"] == rel["source_node_id"]
-                ][0].capitalize()
+                ][0]
             except IndexError:
                 rel["source_node_type"] = None
         if not rel.get("target_node_type"):
             try:
                 rel["target_node_type"] = [
-                    el["type"]
+                    el.get("type")
                     for el in argument_json["nodes"]
                     if el["id"] == rel["target_node_id"]
-                ][0].capitalize()
+                ][0]
             except IndexError:
                 rel["target_node_type"] = None
 
         source_node = Node(
-            id=rel["source_node_id"].title(),
+            id=rel["source_node_id"],
             type=rel["source_node_type"],
         )
         target_node = Node(
-            id=rel["target_node_id"].title(),
+            id=rel["target_node_id"],
             type=rel["target_node_type"],
         )
         relationships.append(
             Relationship(
                 source=source_node,
                 target=target_node,
-                type=rel["type"].replace(" ", "_").upper(),
+                type=rel["type"],
             )
         )
     return nodes, relationships
+
+
+def _format_nodes(nodes: List[Node]) -> List[Node]:
+    return [Node(id=el.id.title(), type=el.type.capitalize()) for el in nodes]
+
+
+def _format_relationships(rels: List[Relationship]) -> List[Relationship]:
+    return [
+        Relationship(
+            source=_format_nodes([el.source])[0],
+            target=_format_nodes([el.target])[0],
+            type=el.type.replace(" ", "_").upper(),
+        )
+        for el in rels
+    ]
 
 
 def _convert_to_graph_document(
@@ -231,7 +244,7 @@ def _convert_to_graph_document(
                     "arguments"
                 ]
             )
-            return _parse_and_clean_json(argument_json)
+            nodes, relationships = _parse_and_clean_json(argument_json)
         except Exception:  # If we can't parse JSON
             return ([], [])
     else:  # If there are no validation errors use parsed pydantic object
@@ -247,7 +260,8 @@ def _convert_to_graph_document(
             if parsed_schema.relationships
             else []
         )
-    return nodes, relationships
+    # Title / Capitalize
+    return _format_nodes(nodes), _format_relationships(relationships)
 
 
 class LLMGraphTransformer:
