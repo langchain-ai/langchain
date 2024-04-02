@@ -6,7 +6,7 @@ EXPECTED_ALL = [
     "ArceeRetriever",
     "ArxivRetriever",
     "AzureAISearchRetriever",
-    "BreebsRetriever",
+    "AzureCognitiveSearchRetriever" "BreebsRetriever",
     "ChatGPTPluginRetriever",
     "ChaindeskRetriever",
     "CohereRagRetriever",

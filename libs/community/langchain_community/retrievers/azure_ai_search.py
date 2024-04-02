@@ -122,3 +122,11 @@ class AzureAISearchRetriever(BaseRetriever):
             Document(page_content=result.pop(self.content_key), metadata=result)
             for result in search_results
         ]
+
+
+# For backwards compatibility
+class AzureCognitiveSearchRetriever(AzureAISearchRetriever):
+    """`Azure Cognitive Search` service retriever.
+    This version of the retriever will soon be
+    depreciated. Please switch to AzureAISearchRetriever
+    """

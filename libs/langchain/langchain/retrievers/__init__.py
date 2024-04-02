@@ -61,6 +61,7 @@ __all__ = [
     "ArceeRetriever",
     "ArxivRetriever",
     "AzureAISearchRetriever",
+    "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
     "ChaindeskRetriever",

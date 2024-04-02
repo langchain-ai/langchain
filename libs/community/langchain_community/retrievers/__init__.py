@@ -27,6 +27,7 @@ _module_lookup = {
     "ArceeRetriever": "langchain_community.retrievers.arcee",
     "ArxivRetriever": "langchain_community.retrievers.arxiv",
     "AzureAISearchRetriever": "langchain_community.retrievers.azure_ai_search",  # noqa: E501
+    "AzureCognitiveSearchRetriever": "langchain_community.retrievers.azure_ai_search",  # noqa: E501
     "BM25Retriever": "langchain_community.retrievers.bm25",
     "BreebsRetriever": "langchain_community.retrievers.breebs",
     "ChaindeskRetriever": "langchain_community.retrievers.chaindesk",
