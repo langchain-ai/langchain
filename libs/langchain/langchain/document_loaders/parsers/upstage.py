@@ -1,5 +1,3 @@
-from langchain_community.document_loaders.upstage import (
-    UpstageDocumentLoader
-)
+from langchain_community.document_loaders.parsers.upstage import UpstageDocumentParser
 
-__all__ = ["UpstageDocumentLoader"]
+__all__ = ["UpstageDocumentParser"]
