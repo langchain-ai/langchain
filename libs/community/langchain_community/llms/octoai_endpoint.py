@@ -92,13 +92,6 @@ class OctoAIEndpoint(BaseOpenAI):
                 client_params = {
                     "api_key": values["octoai_api_token"].get_secret_value(),
                     "base_url": values["octoai_api_base"],
-                    # To do: future support
-                    # "organization": values["openai_organization"],
-                    # "timeout": values["request_timeout"],
-                    # "max_retries": values["max_retries"],
-                    # "default_headers": values["default_headers"],
-                    # "default_query": values["default_query"],
-                    # "http_client": values["http_client"],
                 }
                 if not values.get("client"):
                     values["client"] = openai.OpenAI(**client_params).completions
@@ -114,6 +107,11 @@ class OctoAIEndpoint(BaseOpenAI):
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
+            )
+
+        if "endpoint_url" in values["model_kwargs"]:
+            raise ValueError(
+                "`endpoint_url` was deprecated, please use `octoai_api_base`."
             )
 
         return values
