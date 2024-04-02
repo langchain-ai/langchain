@@ -133,8 +133,53 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             sync_connection: An existing psycopg connection instance
             async_connection: An existing psycopg async connection instance
 
+        Usage:
+            - Use the create_schema or acreate_schema method to set up the table
+              schema in the database.
+            - Initialize the class with the appropriate session ID, table name,
+              and database connection.
+            - Add messages to the database using add_messages or aadd_messages.
+            - Retrieve messages with get_messages or aget_messages.
+            - Clear the session history with clear or aclear when needed.
+
         Note:
-            Must specify one of sync_connection or async_connection.
+            - At least one of sync_connection or async_connection must be provided.
+
+        Examples:
+
+        .. code-block:: python
+
+            import uuid
+
+            from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
+            from langchain_postgres import PostgresChatMessageHistory
+            import psycopg
+
+            # Establish a synchronous connection to the database
+            # (or use psycopg.AsyncConnection for async)
+            sync_connection = psycopg2.connect(conn_info)
+
+            # Create the table schema (only needs to be done once)
+            table_name = "chat_history"
+            PostgresChatMessageHistory.create_schema(sync_connection, table_name)
+
+            session_id = str(uuid.uuid4())
+
+            # Initialize the chat history manager
+            chat_history = PostgresChatMessageHistory(
+                table_name,
+                session_id,
+                sync_connection=sync_connection
+            )
+
+            # Add messages to the chat history
+            chat_history.add_messages([
+                SystemMessage(content="Meow"),
+                AIMessage(content="woof"),
+                HumanMessage(content="bark"),
+            ])
+
+            print(chat_history.messages)
         """
         if not sync_connection and not async_connection:
             raise ValueError("Must provide sync_connection or async_connection")
@@ -159,9 +204,8 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             )
         self._table_name = table_name
 
-    @classmethod
+    @staticmethod
     def create_schema(
-        cls,
         connection: psycopg.Connection,
         table_name: str,
         /,
@@ -174,9 +218,9 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
                 cursor.execute(query)
         connection.commit()
 
-    @classmethod
+    @staticmethod
     async def acreate_schema(
-        cls, connection: psycopg.AsyncConnection, table_name: str, /
+        connection: psycopg.AsyncConnection, table_name: str, /
     ) -> None:
         """Create the table schema in the database and create relevant indexes."""
         queries = _create_table_and_index(table_name)
@@ -186,8 +230,8 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
                 await cur.execute(query)
         await connection.commit()
 
-    @classmethod
-    def drop_table(cls, connection: psycopg.Connection, table_name: str, /) -> None:
+    @staticmethod
+    def drop_table(connection: psycopg.Connection, table_name: str, /) -> None:
         """Delete the table schema in the database.
 
         WARNING:
@@ -205,9 +249,9 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             cursor.execute(query)
         connection.commit()
 
-    @classmethod
+    @staticmethod
     async def adrop_table(
-        cls, connection: psycopg.AsyncConnection, table_name: str, /
+        connection: psycopg.AsyncConnection, table_name: str, /
     ) -> None:
         """Delete the table schema in the database.
 
