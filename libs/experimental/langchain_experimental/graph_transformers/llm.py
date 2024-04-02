@@ -172,12 +172,14 @@ def _convert_to_graph_document(
             )
             nodes = []
             for node in argument_json["nodes"]:
-                if not node.get("id"):  # Id is mandatory
+                if not node.get("id"):  # Id is mandatory, skip this node
                     continue
                 nodes.append(
                     Node(
                         id=node["id"].title(),
-                        type=node.get("type", "Node").capitalize(),
+                        type=node.get("type").capitalize()
+                        if node.get("type")
+                        else None,
                     )
                 )
             relationships = []
@@ -197,26 +199,26 @@ def _convert_to_graph_document(
                             el["type"]
                             for el in argument_json["nodes"]
                             if el["id"] == rel["source_node_id"]
-                        ][0]
+                        ][0].capitalize()
                     except IndexError:
-                        rel["source_node_type"] = "Node"
+                        rel["source_node_type"] = None
                 if not rel.get("target_node_type"):
                     try:
                         rel["target_node_type"] = [
                             el["type"]
                             for el in argument_json["nodes"]
                             if el["id"] == rel["target_node_id"]
-                        ][0]
+                        ][0].capitalize()
                     except IndexError:
-                        rel["target_node_type"] = "Node"
+                        rel["target_node_type"] = None
 
                 source_node = Node(
                     id=rel["source_node_id"].title(),
-                    type=rel["source_node_type"].capitalize(),
+                    type=rel["source_node_type"],
                 )
                 target_node = Node(
                     id=rel["target_node_id"].title(),
-                    type=rel["target_node_type"].capitalize(),
+                    type=rel["target_node_type"],
                 )
                 relationships.append(
                     Relationship(
