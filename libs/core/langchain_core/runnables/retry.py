@@ -37,7 +37,7 @@ U = TypeVar("U")
 class RunnableRetry(RunnableBindingBase[Input, Output]):
     """Retry a Runnable if it fails.
 
-    A RunnableRetry helps can be used to add retry logic to any object
+    RunnableRetry can be used to add retry logic to any object
     that subclasses the base Runnable.
 
     Such retries are especially useful for network calls that may fail

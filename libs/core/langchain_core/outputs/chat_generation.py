@@ -35,7 +35,7 @@ class ChatGeneration(Generation):
 
 
 class ChatGenerationChunk(ChatGeneration):
-    """A ChatGeneration chunk, which can be concatenated with other
+    """ChatGeneration chunk, which can be concatenated with other
       ChatGeneration chunks.
 
     Attributes:

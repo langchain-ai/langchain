@@ -12,7 +12,7 @@ Listener = Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
 
 
 class RootListenersTracer(BaseTracer):
-    """A tracer that calls listeners on run start, end, and error."""
+    """Tracer that calls listeners on run start, end, and error."""
 
     def __init__(
         self,

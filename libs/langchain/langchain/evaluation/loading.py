@@ -131,7 +131,7 @@ def load_evaluator(
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
         try:
-            llm = llm or ChatOpenAI(
+            llm = llm or ChatOpenAI(  # type: ignore[call-arg]
                 model="gpt-4", model_kwargs={"seed": 42}, temperature=0
             )
         except Exception as e:

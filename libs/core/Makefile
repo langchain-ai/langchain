@@ -15,6 +15,9 @@ tests:
 test_watch:
 	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
 
+test_profile:
+	poetry run pytest -vv tests/unit_tests/ --profile-svg
+
 check_imports: $(shell find langchain_core -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 

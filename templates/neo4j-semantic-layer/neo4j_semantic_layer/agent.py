@@ -5,9 +5,9 @@ from langchain.agents.format_scratchpad import format_to_openai_function_message
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import AIMessage, HumanMessage
 from langchain.tools.render import format_tool_to_openai_function
 from langchain_community.chat_models import ChatOpenAI
+from langchain_core.messages import AIMessage, HumanMessage
 
 from neo4j_semantic_layer.information_tool import InformationTool
 from neo4j_semantic_layer.memory_tool import MemoryTool
@@ -45,9 +45,9 @@ def _format_chat_history(chat_history: List[Tuple[str, str]]):
 agent = (
     {
         "input": lambda x: x["input"],
-        "chat_history": lambda x: _format_chat_history(x["chat_history"])
-        if x.get("chat_history")
-        else [],
+        "chat_history": lambda x: (
+            _format_chat_history(x["chat_history"]) if x.get("chat_history") else []
+        ),
         "agent_scratchpad": lambda x: format_to_openai_function_messages(
             x["intermediate_steps"]
         ),

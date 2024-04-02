@@ -18,6 +18,7 @@ import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
+from langchain_community.tools.file_management import ReadFileTool
 from langchain_core.tools import Tool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import BaseCallbackManager
@@ -106,23 +107,48 @@ from langchain_community.utilities.reddit_search import RedditSearchAPIWrapper
 
 
 def _get_tools_requests_get() -> BaseTool:
-    return RequestsGetTool(requests_wrapper=TextRequestsWrapper())
+    # Dangerous requests are allowed here, because there's another flag that the user
+    # has to provide in order to actually opt in.
+    # This is a private function and should not be used directly.
+    return RequestsGetTool(
+        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+    )
 
 
 def _get_tools_requests_post() -> BaseTool:
-    return RequestsPostTool(requests_wrapper=TextRequestsWrapper())
+    # Dangerous requests are allowed here, because there's another flag that the user
+    # has to provide in order to actually opt in.
+    # This is a private function and should not be used directly.
+    return RequestsPostTool(
+        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+    )
 
 
 def _get_tools_requests_patch() -> BaseTool:
-    return RequestsPatchTool(requests_wrapper=TextRequestsWrapper())
+    # Dangerous requests are allowed here, because there's another flag that the user
+    # has to provide in order to actually opt in.
+    # This is a private function and should not be used directly.
+    return RequestsPatchTool(
+        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+    )
 
 
 def _get_tools_requests_put() -> BaseTool:
-    return RequestsPutTool(requests_wrapper=TextRequestsWrapper())
+    # Dangerous requests are allowed here, because there's another flag that the user
+    # has to provide in order to actually opt in.
+    # This is a private function and should not be used directly.
+    return RequestsPutTool(
+        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+    )
 
 
 def _get_tools_requests_delete() -> BaseTool:
-    return RequestsDeleteTool(requests_wrapper=TextRequestsWrapper())
+    # Dangerous requests are allowed here, because there's another flag that the user
+    # has to provide in order to actually opt in.
+    # This is a private function and should not be used directly.
+    return RequestsDeleteTool(
+        requests_wrapper=TextRequestsWrapper(), allow_dangerous_requests=True
+    )
 
 
 def _get_terminal() -> BaseTool:
@@ -134,6 +160,15 @@ def _get_sleep() -> BaseTool:
 
 
 _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
+    "sleep": _get_sleep,
+}
+
+DANGEROUS_TOOLS = {
+    # Tools that contain some level of risk.
+    # Please use with caution and read the documentation of these tools
+    # to understand the risks and how to mitigate them.
+    # Refer to https://python.langchain.com/docs/security
+    # for more information.
     "requests": _get_tools_requests_get,  # preserved for backwards compatibility
     "requests_get": _get_tools_requests_get,
     "requests_post": _get_tools_requests_post,
@@ -141,7 +176,6 @@ _BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
     "requests_put": _get_tools_requests_put,
     "requests_delete": _get_tools_requests_delete,
     "terminal": _get_terminal,
-    "sleep": _get_sleep,
 }
 
 
@@ -373,11 +407,15 @@ def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
 
 
 def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
-    return Memorize(llm=llm)
+    return Memorize(llm=llm)  # type: ignore[arg-type]
 
 
 def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
     return GoogleCloudTextToSpeechTool(**kwargs)
+
+
+def _get_file_management_tool(**kwargs: Any) -> BaseTool:
+    return ReadFileTool(**kwargs)
 
 
 def _get_reddit_search(**kwargs: Any) -> BaseTool:
@@ -453,7 +491,10 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "stackexchange": (_get_stackexchange, []),
     "sceneXplain": (_get_scenexplain, []),
-    "graphql": (_get_graphql_tool, ["graphql_endpoint", "custom_headers"]),
+    "graphql": (
+        _get_graphql_tool,
+        ["graphql_endpoint", "custom_headers", "fetch_schema_from_transport"],
+    ),
     "openweathermap-api": (_get_openweathermap, ["openweathermap_api_key"]),
     "dataforseo-api-search": (
         _get_dataforseo_api_search,
@@ -465,6 +506,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
     "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
+    "read_file": (_get_file_management_tool, []),
     "reddit_search": (
         _get_reddit_search,
         ["reddit_client_id", "reddit_client_secret", "reddit_user_agent"],
@@ -538,6 +580,7 @@ def load_tools(
     tool_names: List[str],
     llm: Optional[BaseLanguageModel] = None,
     callbacks: Callbacks = None,
+    allow_dangerous_tools: bool = False,
     **kwargs: Any,
 ) -> List[BaseTool]:
     """Load tools based on their name.
@@ -563,6 +606,15 @@ def load_tools(
         llm: An optional language model, may be needed to initialize certain tools.
         callbacks: Optional callback manager or list of callback handlers.
             If not provided, default global callback manager will be used.
+        allow_dangerous_tools: Optional flag to allow dangerous tools.
+            Tools that contain some level of risk.
+            Please use with caution and read the documentation of these tools
+            to understand the risks and how to mitigate them.
+            Refer to https://python.langchain.com/docs/security
+            for more information.
+            Please note that this list may not be fully exhaustive.
+            It is your responsibility to understand which tools
+            you're using and the risks associated with them.
 
     Returns:
         List of tools.
@@ -571,10 +623,26 @@ def load_tools(
     callbacks = _handle_callbacks(
         callback_manager=kwargs.get("callback_manager"), callbacks=callbacks
     )
-    # print(_BASE_TOOLS)
-    # print(1)
     for name in tool_names:
-        if name == "requests":
+        if name in DANGEROUS_TOOLS and not allow_dangerous_tools:
+            raise ValueError(
+                f"{name} is a dangerous tool. You cannot use it without opting in "
+                "by setting allow_dangerous_tools to True. "
+                "Most tools have some inherit risk to them merely because they are "
+                'allowed to interact with the "real world".'
+                "Please refer to LangChain security guidelines "
+                "to https://python.langchain.com/docs/security."
+                "Some tools have been designated as dangerous because they pose "
+                "risk that is not intuitively obvious. For example, a tool that "
+                "allows an agent to make requests to the web, can also be used "
+                "to make requests to a server that is only accessible from the "
+                "server hosting the code."
+                "Again, all tools carry some risk, and it's your responsibility to "
+                "understand which tools you're using and the risks associated with "
+                "them."
+            )
+
+        if name in {"requests"}:
             warnings.warn(
                 "tool name `requests` is deprecated - "
                 "please use `requests_all` or specify the requests method"
@@ -587,6 +655,8 @@ def load_tools(
             tool_names.extend(requests_method_tools)
         elif name in _BASE_TOOLS:
             tools.append(_BASE_TOOLS[name]())
+        elif name in DANGEROUS_TOOLS:
+            tools.append(DANGEROUS_TOOLS[name]())
         elif name in _LLM_TOOLS:
             if llm is None:
                 raise ValueError(f"Tool {name} requires an LLM to be provided")
@@ -625,4 +695,5 @@ def get_all_tool_names() -> List[str]:
         + list(_EXTRA_OPTIONAL_TOOLS)
         + list(_EXTRA_LLM_TOOLS)
         + list(_LLM_TOOLS)
+        + list(DANGEROUS_TOOLS)
     )

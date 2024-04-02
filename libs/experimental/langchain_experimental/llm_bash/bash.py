@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 
 
 class BashProcess:
-    """
-    Wrapper class for starting subprocesses.
+    """Wrapper for starting subprocesses.
+
     Uses the python built-in subprocesses.run()
     Persistent processes are **not** available
     on Windows systems, as pexpect makes use of

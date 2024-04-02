@@ -59,7 +59,7 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """Run on agent action."""
         pass
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running."""
 
     def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
