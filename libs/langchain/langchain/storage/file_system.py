@@ -37,12 +37,12 @@ class LocalFileStore(ByteStore):
     """
 
     def __init__(
-            self,
-            root_path: Union[str, Path],
-            *,
-            chmod_file: Optional[int] = None,
-            chmod_dir: Optional[int] = None
-        ) -> None:
+        self,
+        root_path: Union[str, Path],
+        *,
+        chmod_file: Optional[int] = None,
+        chmod_dir: Optional[int] = None,
+    ) -> None:
         """Implement the BaseStore interface for the local file system.
 
         Args:
