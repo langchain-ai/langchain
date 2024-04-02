@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple, Type
 import pytest
 from freezegun import freeze_time
 from langchain_core.agents import AgentAction, AgentActionMessageLog
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompt_values import StringPromptValue
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -76,7 +76,13 @@ Action: ```json
 ]
 ```""",  # noqa: E501,
 ]
-# MESSAGES = []
+MESSAGES = [
+    HumanMessage(content="Hello, how are you doing?"),
+    AIMessage(content="I'm doing well, thanks!"),
+    HumanMessage(
+        content="In what year was the company that was founded as Sound of Music added to the S&P 500?"  # noqa: E501
+    ),
+]
 
 
 @freeze_time("Saturday, March 30, 2024 13:20:40")
@@ -145,6 +151,14 @@ Action: ```json
             ],
             "base_after_two_hops",
             id="after two hops",
+        ),
+        pytest.param(
+            [TOOLS[0]],
+            ChatPromptTemplate.from_messages([MESSAGES[0], MESSAGES[1], MESSAGES[2]]),
+            {},
+            [],
+            "base_with_chat_history",
+            id="base with chat history",
         ),
     ],
 )
