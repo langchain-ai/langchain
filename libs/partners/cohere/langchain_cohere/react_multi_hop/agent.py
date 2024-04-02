@@ -63,7 +63,8 @@ def create_cohere_react_agent(
     """  # noqa: E501
     agent = (
         RunnablePassthrough.assign(
-            # Handled in the multi_hop_prompt
+            # agent_scratchpad isn't used in this chain, but added here for
+            # interoperability with other chains that may require it.
             agent_scratchpad=lambda _: [],
         )
         | multi_hop_prompt(tools=tools, prompt=prompt)
