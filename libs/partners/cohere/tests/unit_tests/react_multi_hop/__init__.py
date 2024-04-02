@@ -9,12 +9,16 @@ class ExpectationType(str, Enum):
     completions = "completions"
 
 
-def read_expectation_from_file(expectation_type: ExpectationType, scenario_name: str) -> str:
+def read_expectation_from_file(
+    expectation_type: ExpectationType, scenario_name: str
+) -> str:
     """
     Returns an expected prompt or completion from a given scenario name.
     Expectations are stored as .txt files make it as easy as possible to read.
     """
-    with open(os.path.join(DATA_DIR, expectation_type.value, f"{scenario_name}.txt"), "r") as f:
+    with open(
+        os.path.join(DATA_DIR, expectation_type.value, f"{scenario_name}.txt"), "r"
+    ) as f:
         content = f.read()
 
     # Remove a single trailing new line, if present, to aid authoring the txt file.
