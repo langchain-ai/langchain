@@ -1723,7 +1723,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.1.13"
+version = "0.1.14"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1735,8 +1735,8 @@ aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
 jsonpatch = "^1.33"
-langchain-community = ">=0.0.29,<0.1"
-langchain-core = "^0.1.33"
+langchain-community = ">=0.0.30,<0.1"
+langchain-core = "^0.1.37"
 langchain-text-splitters = ">=0.0.1,<0.1"
 langsmith = "^0.1.17"
 numpy = "^1"
@@ -1767,7 +1767,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-community"
-version = "0.0.29"
+version = "0.0.30"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1777,7 +1777,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = "^0.1.33"
+langchain-core = "^0.1.37"
 langsmith = "^0.1.0"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -1795,7 +1795,7 @@ url = "../community"
 
 [[package]]
 name = "langchain-core"
-version = "0.1.36"
+version = "0.1.37"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -5430,4 +5430,4 @@ extended-testing = ["faker", "jinja2", "pandas", "presidio-analyzer", "presidio-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "c0251b06d3f8c3df0d7aaa7e142c5f1ce450bf88ff37690bd36cb6074eb803be"
+content-hash = "30f27d97454c7708433772a52d6c20e3808f36bfbf7f0979aab829193b0b6d42"
