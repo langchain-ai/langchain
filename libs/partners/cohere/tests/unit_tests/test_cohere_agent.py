@@ -1,10 +1,13 @@
-from typing import Any, Dict, Optional, Type, Union
+import json
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import pytest
+from langchain_core.agents import AgentAction
 from langchain_core.tools import BaseModel, BaseTool, Field
 
 from langchain_cohere.cohere_agent import (
     _format_to_cohere_tools,
+    _format_to_cohere_tools_messages,
     _remove_signature_from_description,
 )
 
@@ -83,6 +86,59 @@ def test_format_to_cohere_tools(
     actual = _format_to_cohere_tools([tool])
 
     assert [expected_test_tool_definition] == actual
+
+
+@pytest.mark.parametrize(
+    "intermediate_step,expected",
+    [
+        pytest.param(
+            (
+                AgentAction(tool="tool_name", tool_input={"arg1": "value1"}, log=""),
+                "result",
+            ),
+            {
+                "call": {"name": "tool_name", "parameters": {"arg1": "value1"}},
+                "outputs": [{"answer": "result"}],
+            },
+            id="tool_input as dict",
+        ),
+        pytest.param(
+            (
+                AgentAction(
+                    tool="tool_name", tool_input=json.dumps({"arg1": "value1"}), log=""
+                ),
+                "result",
+            ),
+            {
+                "call": {"name": "tool_name", "parameters": {"arg1": "value1"}},
+                "outputs": [{"answer": "result"}],
+            },
+            id="tool_input as serialized dict",
+        ),
+        pytest.param(
+            (AgentAction(tool="tool_name", tool_input="foo", log=""), "result"),
+            {
+                "call": {"name": "tool_name", "parameters": {"input": "foo"}},
+                "outputs": [{"answer": "result"}],
+            },
+            id="tool_input as string",
+        ),
+        pytest.param(
+            (AgentAction(tool="tool_name", tool_input="['foo']", log=""), "result"),
+            {
+                "call": {"name": "tool_name", "parameters": {"input": "['foo']"}},
+                "outputs": [{"answer": "result"}],
+            },
+            id="tool_input unrelated JSON",
+        ),
+    ],
+)
+def test_format_to_cohere_tools_messages(
+    intermediate_step: Tuple[AgentAction, str], expected: List[Dict[str, Any]]
+) -> None:
+    actual = _format_to_cohere_tools_messages(intermediate_steps=[intermediate_step])
+
+    assert [expected] == actual
 
 
 @pytest.mark.parametrize(
