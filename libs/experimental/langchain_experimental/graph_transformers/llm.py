@@ -225,7 +225,7 @@ def _convert_to_graph_document(
                         type=rel["type"].replace(" ", "_").upper(),
                     )
                 )
-        except Exception as e:  # If we can't parse JSON
+        except Exception:  # If we can't parse JSON
             return [], []
     else:  # If there are no validation errors use parsed pydantic object
         raw_schema = raw_schema["parsed"]
