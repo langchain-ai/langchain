@@ -17,6 +17,7 @@ _EXPECTED = [
     "Clickhouse",
     "ClickhouseSettings",
     "DashVector",
+    "DatabricksVectorSearch",
     "DeepLake",
     "Dingo",
     "DocArrayHnswSearch",
@@ -68,6 +69,7 @@ _EXPECTED = [
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
+    "Yellowbrick",
 ]
 
 

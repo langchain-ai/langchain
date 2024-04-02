@@ -1,11 +1,12 @@
 import asyncio
 from typing import List
 
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.schema import BaseRetriever, Document
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
 
 
 class MergerRetriever(BaseRetriever):
@@ -79,7 +80,7 @@ class MergerRetriever(BaseRetriever):
 
         # Merge the results of the retrievers.
         merged_documents = []
-        max_docs = max(len(docs) for docs in retriever_docs)
+        max_docs = max(map(len, retriever_docs), default=0)
         for i in range(max_docs):
             for retriever, doc in zip(self.retrievers, retriever_docs):
                 if i < len(doc):
@@ -112,7 +113,7 @@ class MergerRetriever(BaseRetriever):
 
         # Merge the results of the retrievers.
         merged_documents = []
-        max_docs = max(len(docs) for docs in retriever_docs)
+        max_docs = max(map(len, retriever_docs), default=0)
         for i in range(max_docs):
             for retriever, doc in zip(self.retrievers, retriever_docs):
                 if i < len(doc):

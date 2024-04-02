@@ -1,0 +1,5 @@
+{
+  "input_variables": ["foo"],
+  "template": "This is a {foo} test.",
+  "bad_var": 1
+}

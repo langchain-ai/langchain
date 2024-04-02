@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class ModelRepository:
+    """Model Repository."""
+
     def __init__(
         self,
         folder: Union[str, os.PathLike],

@@ -1,13 +1,18 @@
 from typing import Any, Dict, List
 
 from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.schema.embeddings import Embeddings
+from langchain_core.embeddings import Embeddings
 
 
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
+    """OpenCLIP Embeddings model."""
+
     model: Any
     preprocess: Any
     tokenizer: Any
+    # Select model: https://github.com/mlfoundations/open_clip
+    model_name: str = "ViT-H-14"
+    checkpoint: str = "laion2b_s32b_b79k"
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -15,12 +20,11 @@ class OpenCLIPEmbeddings(BaseModel, Embeddings):
         try:
             import open_clip
 
-            ### Smaller, less performant
-            # model_name = "ViT-B-32"
-            # checkpoint = "laion2b_s34b_b79k"
-            ### Larger, more performant
-            model_name = "ViT-g-14"
-            checkpoint = "laion2b_s34b_b88k"
+            # Fall back to class defaults if not provided
+            model_name = values.get("model_name", cls.__fields__["model_name"].default)
+            checkpoint = values.get("checkpoint", cls.__fields__["checkpoint"].default)
+
+            # Load model
             model, _, preprocess = open_clip.create_model_and_transforms(
                 model_name=model_name, pretrained=checkpoint
             )
