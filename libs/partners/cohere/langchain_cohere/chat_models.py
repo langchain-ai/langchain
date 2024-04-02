@@ -341,7 +341,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         request = get_cohere_chat_request(
             messages, stop_sequences=stop, **self._default_params, **kwargs
         )
-        response = self._get_async_client().chat(**request)
+        response = await self._get_async_client().chat(**request)
 
         generation_info = self._get_generation_info(response)
         message = AIMessage(content=response.text, additional_kwargs=generation_info)
