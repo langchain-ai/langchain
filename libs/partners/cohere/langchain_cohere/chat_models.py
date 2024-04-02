@@ -203,8 +203,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             A Runnable that takes any ChatModel input and returns either a dict or
             Pydantic class as output.
         """
-        is_pydantic_schema = isinstance(
-            schema, type) and issubclass(schema, BaseModel)
+        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
         llm = self.bind_tools([schema], **kwargs)
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
@@ -239,8 +238,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
                     run_manager.on_llm_new_token(delta, chunk=chunk)
                 yield chunk
@@ -269,8 +267,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
         async for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
                     await run_manager.on_llm_new_token(delta, chunk=chunk)
                 yield chunk
@@ -322,12 +319,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
         response = self._get_client().chat(**request)
 
         generation_info = self._get_generation_info(response)
-        message = AIMessage(content=response.text,
-                            additional_kwargs=generation_info)
+        message = AIMessage(content=response.text, additional_kwargs=generation_info)
         return ChatResult(
             generations=[
-                ChatGeneration(message=message,
-                               generation_info=generation_info)
+                ChatGeneration(message=message, generation_info=generation_info)
             ]
         )
 
@@ -350,12 +345,10 @@ class ChatCohere(BaseChatModel, BaseCohere):
         response = self._get_async_client().chat(**request)
 
         generation_info = self._get_generation_info(response)
-        message = AIMessage(content=response.text,
-                            additional_kwargs=generation_info)
+        message = AIMessage(content=response.text, additional_kwargs=generation_info)
         return ChatResult(
             generations=[
-                ChatGeneration(message=message,
-                               generation_info=generation_info)
+                ChatGeneration(message=message, generation_info=generation_info)
             ]
         )
 
