@@ -3,6 +3,9 @@
 import os
 
 import pytest
+from anthropic.types import ContentBlock, Message, Usage
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 
@@ -52,3 +55,31 @@ def test_anthropic_initialization() -> None:
     # Verify that chat anthropic can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
     ChatAnthropic(model="test", anthropic_api_key="test")
+
+
+def test__format_output() -> None:
+    anthropic_msg = Message(
+        id="foo",
+        content=[ContentBlock(type="text", text="bar")],
+        model="baz",
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=2, output_tokens=1),
+        type="message",
+    )
+    expected = ChatResult(
+        generations=[
+            ChatGeneration(message=AIMessage("bar")),
+        ],
+        llm_output={
+            "id": "foo",
+            "model": "baz",
+            "stop_reason": None,
+            "stop_sequence": None,
+            "usage": {"input_tokens": 2, "output_tokens": 1},
+        },
+    )
+    llm = ChatAnthropic(model="test", anthropic_api_key="test")
+    actual = llm._format_output(anthropic_msg)
+    assert expected == actual

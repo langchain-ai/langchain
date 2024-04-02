@@ -1,7 +1,17 @@
-from langchain_community.document_compressors.llmlingua_filter import (
-    LLMLinguaCompressor,
-)
+import importlib
+from typing import Any
 
-__all__ = [
-    "LLMLinguaCompressor",
-]
+_module_lookup = {
+    "LLMLinguaCompressor": "langchain_community.document_compressors.llmlingua_filter",
+    "OpenVINOReranker": "langchain_community.document_compressors.openvino_rerank",
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _module_lookup:
+        module = importlib.import_module(_module_lookup[name])
+        return getattr(module, name)
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
+__all__ = list(_module_lookup.keys())
