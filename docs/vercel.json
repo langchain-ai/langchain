@@ -1076,6 +1076,18 @@
     {
       "source": "/docs/modules/model_io/quick_start(/?)",
       "destination": "/docs/modules/model_io"
+    },
+    {
+      "source": "/docs/expression_language/how_to/generators(/?)",
+      "destination": "/docs/expression_language/primitives/functions"
+    },
+    {
+      "source": "/docs/expression_language/how_to/configure(/?)",
+      "destination": "/docs/expression_language/primitives/configure"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/prompt_llm_parser(/?)",
+      "destination": "/docs/expression_language/get_started"
     }
   ]
 }
