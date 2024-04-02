@@ -224,6 +224,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     run_manager.on_llm_new_token(
                         cast(str, chunk.message.content), chunk=chunk
                     )
+                    if chunk.message.id is None:
+                        chunk.message.id = f"run-{run_manager.run_id}"
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     yield chunk.message
                     if generation is None:
@@ -294,6 +296,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 await run_manager.on_llm_new_token(
                     cast(str, chunk.message.content), chunk=chunk
                 )
+                if chunk.message.id is None:
+                    chunk.message.id = f"run-{run_manager.run_id}"
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 yield chunk.message
                 if generation is None:
@@ -607,6 +611,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             chunks: List[ChatGenerationChunk] = []
             for chunk in self._stream(messages, stop=stop, **kwargs):
                 if run_manager:
+                    if chunk.message.id is None:
+                        chunk.message.id = f"run-{run_manager.run_id}"
                     run_manager.on_llm_new_token(
                         cast(str, chunk.message.content), chunk=chunk
                     )
@@ -622,7 +628,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 result = self._generate(messages, stop=stop, **kwargs)
 
         # Add response metadata to each generation
-        for generation in result.generations:
+        for idx, generation in enumerate(result.generations):
+            if run_manager and generation.message.id is None:
+                generation.message.id = f"run-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -684,6 +692,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             chunks: List[ChatGenerationChunk] = []
             async for chunk in self._astream(messages, stop=stop, **kwargs):
                 if run_manager:
+                    if chunk.message.id is None:
+                        chunk.message.id = f"run-{run_manager.run_id}"
                     await run_manager.on_llm_new_token(
                         cast(str, chunk.message.content), chunk=chunk
                     )
@@ -699,7 +709,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 result = await self._agenerate(messages, stop=stop, **kwargs)
 
         # Add response metadata to each generation
-        for generation in result.generations:
+        for idx, generation in enumerate(result.generations):
+            if run_manager and generation.message.id is None:
+                generation.message.id = f"run-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
