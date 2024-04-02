@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
@@ -159,8 +159,69 @@ def map_to_base_relationship(rel: Any) -> Relationship:
     )
 
 
+def _parse_and_clean_json(
+    argument_json: Dict[str, Any],
+) -> Tuple[List[Node], List[Relationship]]:
+    nodes = []
+    for node in argument_json["nodes"]:
+        if not node.get("id"):  # Id is mandatory, skip this node
+            continue
+        nodes.append(
+            Node(
+                id=node["id"].title(),
+                type=node.get("type").capitalize() if node.get("type") else None,
+            )
+        )
+    relationships = []
+    for rel in argument_json["relationships"]:
+        # Mandatory props
+        if (
+            not rel.get("source_node_id")
+            or not rel.get("target_node_id")
+            or not rel.get("type")
+        ):
+            continue
+
+        # Node type copying if needed from node list
+        if not rel.get("source_node_type"):
+            try:
+                rel["source_node_type"] = [
+                    el["type"]
+                    for el in argument_json["nodes"]
+                    if el["id"] == rel["source_node_id"]
+                ][0].capitalize()
+            except IndexError:
+                rel["source_node_type"] = None
+        if not rel.get("target_node_type"):
+            try:
+                rel["target_node_type"] = [
+                    el["type"]
+                    for el in argument_json["nodes"]
+                    if el["id"] == rel["target_node_id"]
+                ][0].capitalize()
+            except IndexError:
+                rel["target_node_type"] = None
+
+        source_node = Node(
+            id=rel["source_node_id"].title(),
+            type=rel["source_node_type"],
+        )
+        target_node = Node(
+            id=rel["target_node_id"].title(),
+            type=rel["target_node_type"],
+        )
+        relationships.append(
+            Relationship(
+                source=source_node,
+                target=target_node,
+                type=rel["type"].replace(" ", "_").upper(),
+            )
+        )
+        return nodes, relationships
+
+
 def _convert_to_graph_document(
-    raw_schema: Dict[Any, Any],
+    raw_schema: Union[Dict[Any, Any], BaseModel],
 ) -> Tuple[List[Node], List[Relationship]]:
     # If there are validation errors
     if not raw_schema["parsed"]:
@@ -170,63 +231,7 @@ def _convert_to_graph_document(
                     "arguments"
                 ]
             )
-            nodes = []
-            for node in argument_json["nodes"]:
-                if not node.get("id"):  # Id is mandatory, skip this node
-                    continue
-                nodes.append(
-                    Node(
-                        id=node["id"].title(),
-                        type=node.get("type").capitalize()
-                        if node.get("type")
-                        else None,
-                    )
-                )
-            relationships = []
-            for rel in argument_json["relationships"]:
-                # Mandatory props
-                if (
-                    not rel.get("source_node_id")
-                    or not rel.get("target_node_id")
-                    or not rel.get("type")
-                ):
-                    continue
-
-                # Node type copying if needed from node list
-                if not rel.get("source_node_type"):
-                    try:
-                        rel["source_node_type"] = [
-                            el["type"]
-                            for el in argument_json["nodes"]
-                            if el["id"] == rel["source_node_id"]
-                        ][0].capitalize()
-                    except IndexError:
-                        rel["source_node_type"] = None
-                if not rel.get("target_node_type"):
-                    try:
-                        rel["target_node_type"] = [
-                            el["type"]
-                            for el in argument_json["nodes"]
-                            if el["id"] == rel["target_node_id"]
-                        ][0].capitalize()
-                    except IndexError:
-                        rel["target_node_type"] = None
-
-                source_node = Node(
-                    id=rel["source_node_id"].title(),
-                    type=rel["source_node_type"],
-                )
-                target_node = Node(
-                    id=rel["target_node_id"].title(),
-                    type=rel["target_node_type"],
-                )
-                relationships.append(
-                    Relationship(
-                        source=source_node,
-                        target=target_node,
-                        type=rel["type"].replace(" ", "_").upper(),
-                    )
-                )
+            return _parse_and_clean_json(argument_json)
         except Exception:  # If we can't parse JSON
             return ([], [])
     else:  # If there are no validation errors use parsed pydantic object
