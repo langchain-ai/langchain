@@ -535,6 +535,25 @@ def test_chat_prompt_message_placeholder_partial() -> None:
     assert prompt.format_messages() == [SystemMessage(content="foo")]
 
 
+def test_chat_prompt_message_placeholder_tuple() -> None:
+    prompt = ChatPromptTemplate.from_messages([("placeholder", "{convo}")])
+    assert prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+
+    assert prompt.format_messages() == []
+
+    # Is optional = True
+    optional_prompt = ChatPromptTemplate.from_messages(
+        [("placeholder", ["{convo}", False])]
+    )
+    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+    with pytest.raises(KeyError):
+        assert optional_prompt.format_messages() == []
+
+
 def test_messages_prompt_accepts_list() -> None:
     prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
     value = prompt.invoke([("user", "Hi there")])  # type: ignore
