@@ -216,30 +216,32 @@ class HanaDB(VectorStore):
         if embeddings is None:
             embeddings = self.embedding.embed_documents(list(texts))
 
-        cur = self.connection.cursor()
+        sql_params = []
+        for i, text in enumerate(texts):
+            # Use provided values by default or fallback
+            metadata = metadatas[i] if metadatas else {}
+            embedding = (
+                embeddings[i]
+                if embeddings
+                else self.embedding.embed_documents([text])[0]
+            )
+            sql_params.append(
+                (
+                    text,
+                    json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
+                    f"[{','.join(map(str, embedding))}]",
+                )
+            )
+
+        # Insert data into the table
         try:
-            # Insert data into the table
-            for i, text in enumerate(texts):
-                # Use provided values by default or fallback
-                metadata = metadatas[i] if metadatas else {}
-                embedding = (
-                    embeddings[i]
-                    if embeddings
-                    else self.embedding.embed_documents([text])[0]
-                )
-                sql_str = (
-                    f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
-                    f'"{self.metadata_column}", "{self.vector_column}") '
-                    f"VALUES (?, ?, TO_REAL_VECTOR (?));"
-                )
-                cur.execute(
-                    sql_str,
-                    (
-                        text,
-                        json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
-                        f"[{','.join(map(str, embedding))}]",
-                    ),
-                )
+            cur = self.connection.cursor()
+            sql_str = (
+                f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
+                f'"{self.metadata_column}", "{self.vector_column}") '
+                f"VALUES (?, ?, TO_REAL_VECTOR (?));"
+            )
+            cur.executemany(sql_str, sql_params)
         finally:
             cur.close()
         return []
