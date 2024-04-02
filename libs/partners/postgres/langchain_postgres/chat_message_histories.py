@@ -85,21 +85,21 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
     ) -> None:
         """Client for persisting chat message history in a Postgres database,
 
-        This client provides support for both sync and async via psycopg 3.
+        This client provides support for both sync and async via psycopg >=3.
 
-        The client creates a schema in the database and provides methods to
+        The client can create schema in the database and provides methods to
         add messages, get messages, and clear the chat message history.
 
-        The schema is created with the following columns:
+        The schema has the following columns:
 
         - id: A serial primary key.
         - session_id: The session ID for the chat message history.
         - message: The JSONB message content.
         - created_at: The timestamp of when the message was created.
 
-        At the moment, when messages are retrieved, they are returned in the order
-        they were added to the database and are ordered by the id column, which
-        should correspond to the order in which the messages were added.
+        Messages are retrieved for a given session_id and are sorted by
+        the id (which should be increasing monotonically), and correspond
+        to the order in which the messages were added to the history.
 
         The "created_at" column is not returned by the interface, but
         has been added for the schema so the information is available in the database.
@@ -107,9 +107,24 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         A session_id can be used to separate different chat histories in the same table,
         the session_id should be provided when initializing the client.
 
-        The client takes in connection objects which should be reused across
-        instantiations of this class. This will allow reuse of the underlying
-        connection pool and will improve performance.
+        This chat history client takes in a psycopg connection object (either
+        Connection or AsyncConnection) and uses it to interact with the database.
+
+        This design allows to reuse the underlying connection object across
+        multiple instantiations of this class, making instantiation fast.
+
+        This chat history client is designed for prototyping applications that
+        involve chat and are based on Postgres.
+
+        As your application grows, you will likely need to extend the schema to
+        handle more complex queries. For example, a chat application
+        may involve multiple tables like a user table, a table for storing
+        chat sessions / conversations, and this table for storing chat messages
+        for a given session. The application will require access to additional
+        endpoints like deleting messages by user id, listing conversations by
+        user id or ordering them based on last message time, etc.
+
+        Feel free to adapt this implementation to suit your application's needs.
 
         Args:
             session_id: The session ID to use for the chat message history
@@ -143,6 +158,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
     ) -> None:
         """Create the table schema in the database and create relevant indexes."""
         queries = _create_table_and_index(table_name)
+        logger.info("Creating schema for table %s", table_name)
         with connection.cursor() as cursor:
             for query in queries:
                 cursor.execute(query)
@@ -154,6 +170,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
     ) -> None:
         """Create the table schema in the database and create relevant indexes."""
         queries = _create_table_and_index(table_name)
+        logger.info("Creating schema for table %s", table_name)
         async with connection.cursor() as cur:
             for query in queries:
                 await cur.execute(query)
@@ -174,6 +191,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             table_name: The name of the table to create.
         """
         query = _delete_table_query(table_name)
+        logger.info("Dropping table %s", table_name)
         with connection.cursor() as cursor:
             cursor.execute(query)
         connection.commit()
@@ -193,6 +211,8 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             table_name: The name of the table to create.
         """
         query = _delete_table_query(table_name)
+        logger.info("Dropping table %s", table_name)
+
         async with connection.cursor() as acur:
             await acur.execute(query)
         await connection.commit()
@@ -273,7 +293,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         return self.get_messages()
 
     def clear(self) -> None:
-        """Clear the chat message history for the given session."""
+        """Clear the chat message history for the GIVEN session."""
         if self._connection is None:
             raise ValueError(
                 "Please initialize the PostgresChatMessageHistory "
@@ -286,7 +306,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         self._connection.commit()
 
     async def aclear(self) -> None:
-        """Clear the chat message history for the given session."""
+        """Clear the chat message history for the GIVEN session."""
         if self._aconnection is None:
             raise ValueError(
                 "Please initialize the PostgresChatMessageHistory "
