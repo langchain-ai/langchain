@@ -56,7 +56,7 @@ Let's walk through an example, again setting `verbose=True` so we can see the pr
 
 
 ```python
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.chains import ConversationChain
 conversation_with_summary = ConversationChain(
     llm=OpenAI(temperature=0),

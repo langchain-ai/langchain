@@ -1,4 +1,4 @@
-def raise_on_import() -> None:
+def __getattr__(name: str = "") -> None:
     """Raise an error on import since is deprecated."""
     raise ImportError(
         "This module has been moved to langchain-experimental. "
@@ -7,6 +7,3 @@ def raise_on_import() -> None:
         "`from langchain_experimental.llm_bash.base "
         "import LLMBashChain`"
     )
-
-
-raise_on_import()

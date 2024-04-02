@@ -550,7 +550,6 @@ nouns = [
     "sister",
     "size",
     "sky",
-    "slave",
     "sleep",
     "smash",
     "smell",
@@ -720,10 +719,9 @@ nouns = [
 ]
 
 
-def random_name(prefix: str = "test") -> str:
+def random_name() -> str:
     """Generate a random name."""
     adjective = random.choice(adjectives)
     noun = random.choice(nouns)
     number = random.randint(1, 100)
-
-    return f"{prefix}-{adjective}-{noun}-{number}"
+    return f"{adjective}-{noun}-{number}"

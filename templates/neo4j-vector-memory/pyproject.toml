@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "neo4j-vector-memory"
+version = "0.1.0"
+description = "Store conversational flows in a Neo4j graph database"
+authors = [
+    "Tomaz Bratanic <tomaz.bratanic@neo4j.com>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+tiktoken = "^0.5.1"
+openai = "<2"
+neo4j = "^5.14.0"
+langchain-text-splitters = ">=0.0.1,<0.1"
+langchain-openai = "^0.1.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "neo4j_vector_memory"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Neo4j"
+integrations = ["Neo4j", "OpenAI"]
+tags = ["graph-database", "conversation"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

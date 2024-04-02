@@ -5,11 +5,16 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, Union
 
+from langchain_community.chat_models.azure_openai import AzureChatOpenAI
+from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import Extra, Field
+
 from langchain.callbacks.manager import Callbacks
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
-from langchain.chat_models.azure_openai import AzureChatOpenAI
-from langchain.chat_models.openai import ChatOpenAI
 from langchain.evaluation.criteria.eval_chain import (
     CRITERIA_TYPE,
     Criteria,
@@ -21,10 +26,7 @@ from langchain.evaluation.scoring.prompt import (
     SCORING_TEMPLATE,
     SCORING_TEMPLATE_WITH_REFERENCE,
 )
-from langchain.prompts.prompt import PromptTemplate
-from langchain.pydantic_v1 import Extra, Field
-from langchain.schema import RUN_KEY, BaseOutputParser
-from langchain.schema.language_model import BaseLanguageModel
+from langchain.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ _SUPPORTED_CRITERIA = {
 
 
 def resolve_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]]
+    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]],
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
 
@@ -150,7 +152,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         output_parser (BaseOutputParser): The output parser for the chain.
 
     Example:
-        >>> from langchain.chat_models import ChatOpenAI
+        >>> from langchain_community.chat_models import ChatOpenAI
         >>> from langchain.evaluation.scoring import ScoreStringEvalChain
         >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
         >>> chain = ScoreStringEvalChain.from_llm(llm=llm)
@@ -182,6 +184,10 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """Configuration for the ScoreStringEvalChain."""
 
         extra = Extra.ignore
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return False
 
     @property
     def requires_reference(self) -> bool:

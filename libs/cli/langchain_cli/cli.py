@@ -4,15 +4,22 @@ import typer
 from typing_extensions import Annotated
 
 from langchain_cli.namespaces import app as app_namespace
+from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
+from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
-__version__ = "0.0.15"
+__version__ = "0.0.22rc0"
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
     template_namespace.package_cli, name="template", help=template_namespace.__doc__
 )
 app.add_typer(app_namespace.app_cli, name="app", help=app_namespace.__doc__)
+app.add_typer(
+    integration_namespace.integration_cli,
+    name="integration",
+    help=integration_namespace.__doc__,
+)
 
 
 def version_callback(show_version: bool) -> None:
@@ -49,11 +56,17 @@ def serve(
     Start the LangServe app, whether it's a template or an app.
     """
 
-    # try starting template package, if error, try langserve
+    # see if is a template
     try:
-        template_namespace.serve(port=port, host=host)
+        project_dir = get_package_root()
+        pyproject = project_dir / "pyproject.toml"
+        get_langserve_export(pyproject)
     except KeyError:
+        # not a template
         app_namespace.serve(port=port, host=host)
+    else:
+        # is a template
+        template_namespace.serve(port=port, host=host)
 
 
 if __name__ == "__main__":
