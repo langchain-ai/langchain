@@ -2,14 +2,20 @@ from __future__ import annotations
 
 import logging
 import tempfile
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
+
+
+class AzureCogsText2SpeechToolInput(BaseTool):
+    """Input for the AzureCogsText2SpeechTool."""
+
+    query: str = Field(description="Text that needs to converted to speech")
 
 
 class AzureCogsText2SpeechTool(BaseTool):
@@ -29,6 +35,7 @@ class AzureCogsText2SpeechTool(BaseTool):
         "A wrapper around Azure Cognitive Services Text2Speech. "
         "Useful for when you need to convert text to speech. "
     )
+    args_schema: Type[BaseModel] = AzureCogsText2SpeechToolInput
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:

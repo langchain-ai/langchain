@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
@@ -15,6 +15,12 @@ from langchain_community.tools.azure_cognitive_services.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class AzureCogsSpeech2TextToolInput(BaseTool):
+    """Input for the AzureCogsSpeech2TextTool."""
+
+    query: str = Field(description="URL for the Audio File")
 
 
 class AzureCogsSpeech2TextTool(BaseTool):
@@ -35,6 +41,7 @@ class AzureCogsSpeech2TextTool(BaseTool):
         "Useful for when you need to transcribe audio to text. "
         "Input should be a url to an audio file."
     )
+    args_schema: Type[BaseModel] = AzureCogsSpeech2TextToolInput
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
