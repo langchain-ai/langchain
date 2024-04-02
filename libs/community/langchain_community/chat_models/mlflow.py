@@ -20,7 +20,7 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk
 from langchain_core.pydantic_v1 import (
     Field,
     PrivateAttr,
