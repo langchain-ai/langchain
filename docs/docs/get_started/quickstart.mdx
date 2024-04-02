@@ -66,6 +66,7 @@ We will link to relevant docs.
 ## LLM Chain
 
 We'll show how to use models available via API, like OpenAI, and local open source models, using integrations like Ollama.
+See [here](/docs/integrations/chat) for the list of supported chat models.
 
 <Tabs>
   <TabItem value="openai" label="OpenAI" default>
@@ -261,11 +262,12 @@ docs = loader.load()
 Next, we need to index it into a vectorstore. This requires a few components, namely an [embedding model](/docs/modules/data_connection/text_embedding) and a [vectorstore](/docs/modules/data_connection/vectorstores).
 
 For embedding models, we once again provide examples for accessing via API or by running local models.
+See [here](/docs/integrations/text_embedding) for the list of supported embedding models.
 
 <Tabs>
   <TabItem value="openai" label="OpenAI (API)" default>
   
-Make sure you have the `langchain_openai` package installed an the appropriate environment variables set (these are the same as needed for the LLM).
+Make sure you have the `langchain_openai` package installed and the appropriate environment variables set (these are the same as needed for the LLM).
 
 ```python
 from langchain_openai import OpenAIEmbeddings
@@ -273,8 +275,8 @@ from langchain_openai import OpenAIEmbeddings
 embeddings = OpenAIEmbeddings()
 ```
 
-</TabItem>
-<TabItem value="local" label="Local (using Ollama)">
+  </TabItem>
+  <TabItem value="local" label="Local (using Ollama)">
 
 Make sure you have Ollama running (same set up as with the LLM).
 
@@ -284,7 +286,7 @@ from langchain_community.embeddings import OllamaEmbeddings
 embeddings = OllamaEmbeddings()
 ```
   </TabItem>
-<TabItem value="cohere" label="Cohere (API)" default>
+  <TabItem value="cohere" label="Cohere (API)" default>
 
 Make sure you have the `cohere` package installed and the appropriate environment variables set (these are the same as needed for the LLM).
 
@@ -294,11 +296,46 @@ from langchain_community.embeddings import CohereEmbeddings
 embeddings = CohereEmbeddings()
 ```
 
-</TabItem>
+  </TabItem>
 </Tabs>
 
 Now, we can use this embedding model to ingest documents into a vectorstore.
-We will use a simple local vectorstore, [FAISS](/docs/integrations/vectorstores/faiss), for simplicity's sake.
+See [here](/docs/integrations/vectorstores) for the list of supported vectorstores.
+We provide examples for accessing vectorstores via API or by running local ones.
+
+<Tabs>
+  <TabItem value="astradb" label="Astra DB (API)" default>
+
+First we need to install the required packages for that:
+
+```shell
+pip install langchain-astradb
+```
+
+Accessing the API requires an API token and an API endpoint, which you get by creating a free-tier account.
+See [here](https://docs.datastax.com/en/astra/astra-db-vector/get-started/quickstart.html#create-a-serverless-vector-database) for the steps to get your API token and API endpoint.
+
+Then we can build our index:
+
+```python
+from langchain_astradb import AstraDBVectorStore
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter()
+documents = text_splitter.split_documents(docs)
+vector = AstraDBVectorStore.from_documents(
+    documents=documents,
+    embedding=embeddings,
+    collection_name="my_store",
+    api_endpoint="your API endpoint",
+    token="your API token",
+)
+```
+
+  </TabItem>
+  <TabItem value="faiss" label="FAISS (local)">
+
+We will use a local vectorstore, [FAISS](/docs/integrations/vectorstores/faiss).
 
 First we need to install the required packages for that:
 
@@ -317,6 +354,9 @@ text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
 vector = FAISS.from_documents(documents, embeddings)
 ```
+
+  </TabItem>
+</Tabs>
 
 Now that we have this data indexed in a vectorstore, we will create a retrieval chain.
 This chain will take an incoming question, look up relevant documents, then pass those documents along with the original question into an LLM and ask it to answer the original question.
@@ -550,6 +590,99 @@ To create a server for our application we'll make a `serve.py` file. This will c
 2. Our FastAPI app
 3. A definition of a route from which to serve the chain, which is done with `langserve.add_routes`
 
+<Tabs>
+  <TabItem value="astradb" label="Astra DB (API)" default>
+
+Replace the Astra DB API key and endpoint with your own in the following `server.py` file.
+```python
+#!/usr/bin/env python
+from typing import List
+
+from fastapi import FastAPI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_openai import OpenAIEmbeddings
+from langchain_astradb import AstraDBVectorStore
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.tools.retriever import create_retriever_tool
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain import hub
+from langchain.agents import create_openai_functions_agent
+from langchain.agents import AgentExecutor
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain_core.messages import BaseMessage
+from langserve import add_routes
+
+# 1. Load Retriever
+loader = WebBaseLoader("https://docs.smith.langchain.com/user_guide")
+docs = loader.load()
+text_splitter = RecursiveCharacterTextSplitter()
+documents = text_splitter.split_documents(docs)
+embeddings = OpenAIEmbeddings()
+vector = AstraDBVectorStore.from_documents(
+    documents=documents,
+    embedding=embeddings,
+    collection_name="my_store",
+    api_endpoint="your API endpoint",
+    token="your API token",
+)
+retriever = vector.as_retriever()
+
+# 2. Create Tools
+retriever_tool = create_retriever_tool(
+    retriever,
+    "langsmith_search",
+    "Search for information about LangSmith. For any questions about LangSmith, you must use this tool!",
+)
+search = TavilySearchResults()
+tools = [retriever_tool, search]
+
+
+# 3. Create Agent
+prompt = hub.pull("hwchase17/openai-functions-agent")
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+agent = create_openai_functions_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+
+# 4. App definition
+app = FastAPI(
+  title="LangChain Server",
+  version="1.0",
+  description="A simple API server using LangChain's Runnable interfaces",
+)
+
+# 5. Adding chain route
+
+# We need to add these input/output schemas because the current AgentExecutor
+# is lacking in schemas.
+
+class Input(BaseModel):
+    input: str
+    chat_history: List[BaseMessage] = Field(
+        ...,
+        extra={"widget": {"type": "chat", "input": "location"}},
+    )
+
+
+class Output(BaseModel):
+    output: str
+
+add_routes(
+    app,
+    agent_executor.with_types(input_type=Input, output_type=Output),
+    path="/agent",
+)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="localhost", port=8000)
+```
+  </TabItem>
+  <TabItem value="faiss" label="FAISS (local)">
+
 ```python
 #!/usr/bin/env python
 from typing import List
@@ -630,6 +763,8 @@ if __name__ == "__main__":
 
     uvicorn.run(app, host="localhost", port=8000)
 ```
+  </TabItem>
+</Tabs>
 
 And that's it! If we execute this file:
 ```bash
