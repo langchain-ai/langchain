@@ -7,7 +7,6 @@ from langchain_cohere.rerank import CohereRerank
 
 __all__ = [
     "ChatCohere",
-    "CohereVectorStore",
     "CohereEmbeddings",
     "CohereRagRetriever",
     "CohereRerank",

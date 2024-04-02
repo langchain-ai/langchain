@@ -5,7 +5,7 @@
     This agent uses a multi hop prompt by Cohere, which is experimental and subject
     to change. The latest prompt can be used by upgrading the langchain-cohere package.
 """
-from typing import List
+from typing import Sequence
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -22,7 +22,7 @@ from langchain_cohere.react_multi_hop.prompt import (
 
 def create_cohere_react_agent(
     llm: BaseLanguageModel,
-    tools: List[BaseTool],
+    tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
 ) -> Runnable:
     """

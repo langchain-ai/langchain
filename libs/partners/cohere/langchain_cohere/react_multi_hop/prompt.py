@@ -187,12 +187,13 @@ def render_intermediate_steps(
 
 
 def multi_hop_prompt(
-    tools: List[BaseTool], prompt: ChatPromptTemplate
+    tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ) -> Callable[[Dict], BasePromptTemplate]:
     """The returned function produces a BasePromptTemplate suitable for multi-hop."""
 
     # the directly_answer tool is used internally by the model, but never produces an
     # AgentAction, so we only need to add it to the prompt.
+    tools = list(tools)
     tools.insert(0, create_directly_answer_tool())
 
     def inner(x: Dict) -> BasePromptTemplate:
