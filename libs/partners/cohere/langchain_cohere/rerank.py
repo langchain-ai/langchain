@@ -13,7 +13,7 @@ from langchain_core.utils import get_from_dict_or_env
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
 
-    client: cohere.Client  #: :meta private:
+    client: Optional[cohere.Client]  #: :meta private:
     """Cohere client."""
     top_n: Optional[int] = 3
     """Number of documents to return."""

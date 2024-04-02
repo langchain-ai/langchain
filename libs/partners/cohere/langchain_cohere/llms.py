@@ -31,7 +31,7 @@ def completion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
-        return llm.client.generate(**kwargs)
+        return llm._get_client().generate(**kwargs)
 
     return _completion_with_retry(**kwargs)
 
@@ -42,7 +42,7 @@ def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        return await llm.async_client.generate(**kwargs)
+        return await llm._get_async_client().generate(**kwargs)
 
     return _completion_with_retry(**kwargs)
 
@@ -103,6 +103,18 @@ class BaseCohere(Serializable):
             base_url=values["base_url"],
         )
         return values
+
+    def _get_client(self) -> cohere.Client:
+        """Get the Cohere client."""
+        if self.client is None:
+            raise ValueError("Cohere client has not been initialised.")
+        return self.client
+
+    def _get_async_client(self) -> cohere.AsyncClient:
+        """Get the Cohere async client."""
+        if self.async_client is None:
+            raise ValueError("Cohere async client has not been initialised.")
+        return self.async_client
 
 
 class Cohere(LLM, BaseCohere):
