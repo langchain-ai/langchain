@@ -17,17 +17,17 @@ expected_test_tool_definition = {
         "arg_1": {
             "description": "Arg1 description",
             "required": True,
-            "type": "string",
+            "type": "str",
         },
         "optional_arg_2": {
             "description": "Arg2 description",
             "required": False,
-            "type": "string",
+            "type": "str",
         },
         "arg_3": {
             "description": "Arg3 description",
             "required": True,
-            "type": "integer",
+            "type": "int",
         },
     },
 }
