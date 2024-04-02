@@ -150,6 +150,7 @@ class ChatMlflow(BaseChatModel):
         data = self._prepare_inputs(
             messages, stop, **kwargs,
         )
+        # TODO: check if `_client.predict_stream` is available.
         chunk_iter = self._client.predict_stream(endpoint=self.endpoint, inputs=data)
         for chunk in chunk_iter:
             choice = chunk["choices"][0]
@@ -166,7 +167,7 @@ class ChatMlflow(BaseChatModel):
             )
 
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
 
             yield chunk
 
