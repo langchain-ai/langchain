@@ -69,10 +69,14 @@ class CohereRerank(BaseDocumentCompressor):
         model = model or self.model
         top_n = top_n if (top_n is None or top_n > 0) else self.top_n
         results = self.client.rerank(
-            query, docs, model, top_n=top_n, max_chunks_per_doc=max_chunks_per_doc
+            query=query,
+            documents=docs,
+            model=model,
+            top_n=top_n,
+            max_chunks_per_doc=max_chunks_per_doc,
         )
         result_dicts = []
-        for res in results:
+        for res in results.results:
             result_dicts.append(
                 {"index": res.index, "relevance_score": res.relevance_score}
             )
