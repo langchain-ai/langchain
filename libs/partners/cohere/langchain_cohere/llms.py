@@ -77,6 +77,11 @@ class BaseCohere(Serializable):
     base_url: Optional[str] = None
     """Override the default Cohere API URL."""
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -174,7 +179,8 @@ class Cohere(LLM, BaseCohere):
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
         params = self._default_params
         if self.stop is not None and stop is not None:
-            raise ValueError("`stop` found in both the input and default params.")
+            raise ValueError(
+                "`stop` found in both the input and default params.")
         elif self.stop is not None:
             params["stop_sequences"] = self.stop
         else:
