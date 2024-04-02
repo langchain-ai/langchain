@@ -10,7 +10,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Type,
     Union,
 )
 
@@ -267,7 +266,11 @@ def create_directly_answer_tool() -> BaseTool:
 
         name = "directly_answer"
         description = "Calls a standard (un-augmented) AI chatbot to generate a response given the conversation history"  # noqa: E501
-        args_schema: Type[InputSchema] = InputSchema
+        args_schema = InputSchema
+
+        @property
+        def args(self) -> dict:
+            return {}
 
         def _run(self, *args: Any, **kwargs: Any) -> Any:
             raise NotImplementedError()
