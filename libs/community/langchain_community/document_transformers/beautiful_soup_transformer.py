@@ -91,7 +91,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def extract_tags(
-        html_content: str, tags: List[str], *, remove_comments: bool = True
+        html_content: str, tags: List[str], *, remove_comments: bool = False
     ) -> str:
         """
         Extract specific tags from a given HTML content.
@@ -144,7 +144,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         raise NotImplementedError
 
 
-def get_navigable_strings(element: Any, *, remove_comments: bool = True) -> Iterator[str]:
+def get_navigable_strings(element: Any, *, remove_comments: bool = False) -> Iterator[str]:
     """Get all navigable strings from a BeautifulSoup element.
 
     Args:
