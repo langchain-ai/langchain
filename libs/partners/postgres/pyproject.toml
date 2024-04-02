@@ -29,6 +29,11 @@ optional = true
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.6"
 
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.test_integration.dependencies]
+
 [tool.poetry.group.lint]
 optional = true
 
