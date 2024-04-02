@@ -76,6 +76,9 @@ class ToolMessage(BaseMessage):
     type: Literal["tool"] = "tool"
 
 
+ToolMessage.update_forward_refs()
+
+
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     """Tool Message chunk."""
 
@@ -84,11 +87,16 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     # non-chunk variant.
     type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
+
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, ToolMessageChunk):
             if self.tool_call_id != other.tool_call_id:
                 raise ValueError(
-                    "Cannot concatenate ToolMessageChunk with different names."
+                    "Cannot concatenate ToolMessageChunks with different names."
                 )
 
             return self.__class__(
