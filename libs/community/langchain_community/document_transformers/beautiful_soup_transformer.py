@@ -144,7 +144,9 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         raise NotImplementedError
 
 
-def get_navigable_strings(element: Any, *, remove_comments: bool = False) -> Iterator[str]:
+def get_navigable_strings(
+    element: Any, *, remove_comments: bool = False
+) -> Iterator[str]:
     """Get all navigable strings from a BeautifulSoup element.
 
     Args:
@@ -160,7 +162,7 @@ def get_navigable_strings(element: Any, *, remove_comments: bool = False) -> Ite
         if isinstance(child, Comment) and remove_comments:
             continue
         if isinstance(child, Tag):
-            yield from get_navigable_strings(child, remove_comments)
+            yield from get_navigable_strings(child, remove_comments=remove_comments)
         elif isinstance(child, NavigableString):
             if (element.name == "a") and (href := element.get("href")):
                 yield f"{child.strip()} ({href})"
