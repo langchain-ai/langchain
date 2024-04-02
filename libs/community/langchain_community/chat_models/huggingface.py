@@ -8,7 +8,6 @@ from typing import (
     Literal,
     Optional,
     Sequence,
-    Tuple,
     Type,
     Union,
     cast,
@@ -22,15 +21,10 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
-    AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
     ChatMessage,
-    ChatMessageChunk,
     HumanMessage,
-    HumanMessageChunk,
     SystemMessage,
-    SystemMessageChunk,
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
@@ -86,7 +80,7 @@ def _convert_message_to_chat_message(
 
 
 def _convert_TGI_message_to_LC_message(
-    _message: Dict,
+    _message: Any,
 ) -> BaseMessage:
     role = _message.role
     assert role == "assistant", f"Expected role to be 'assistant', got {role}"
@@ -149,9 +143,8 @@ class ChatHuggingFace(BaseChatModel):
             )
         return values
 
-    def _create_chat_result(self, response: Dict) -> ChatResult:
+    def _create_chat_result(self, response: Any) -> ChatResult:
         generations = []
-
         finish_reason = response.choices[0].finish_reason
         gen = ChatGeneration(
             message=_convert_TGI_message_to_LC_message(response.choices[0].message),
@@ -267,25 +260,6 @@ class ChatHuggingFace(BaseChatModel):
                 "Make sure that your Hugging Face token has access to the endpoint."
             )
 
-    def _convert_delta_to_message_chunk(
-        _delta: Dict, default_class: Type[BaseMessageChunk]
-    ) -> BaseMessageChunk:
-        role = _delta.get("role")
-        content = _delta.get("content") or ""
-        if role == "user" or default_class == HumanMessageChunk:
-            return HumanMessageChunk(content=content)
-        elif role == "assistant" or default_class == AIMessageChunk:
-            additional_kwargs: Dict = {}
-            if tool_calls := _delta.get("tool_calls"):
-                additional_kwargs["tool_calls"] = tool_calls
-            return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
-        elif role == "system" or default_class == SystemMessageChunk:
-            return SystemMessageChunk(content=content)
-        elif role or default_class == ChatMessageChunk:
-            return ChatMessageChunk(content=content, role=role)
-        else:
-            return default_class(content=content)
-
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -345,7 +319,7 @@ class ChatHuggingFace(BaseChatModel):
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
-    ) -> Tuple[List[Dict], Dict[str, Any]]:
+    ) -> List[Dict[Any, Any]]:
         message_dicts = [_convert_message_to_chat_message(m) for m in messages]
         return message_dicts
 
