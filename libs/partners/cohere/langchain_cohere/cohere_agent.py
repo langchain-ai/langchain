@@ -97,10 +97,13 @@ def _format_to_cohere_tools_messages(
 
 def _remove_signature_from_description(name: str, description: str) -> str:
     """
-    Removes the `{name}{signature} - ` prefix from tool description.
-    This is usually present for tools created with the @tool decorator.
+    Removes the `{name}{signature} - ` prefix and Args: section from tool description.
+    The signature is usually present for tools created with the @tool decorator,
+    whereas the Args: section may be present in function doc blocks.
     """
-    return re.sub(rf"^{name}\(.*?\) -(?:> \w+? -)? ", "", description)
+    description = re.sub(rf"^{name}\(.*?\) -(?:> \w+? -)? ", "", description)
+    description = re.sub(r"(?s)(?:\n?\n\s*?)?Args:.*$", "", description)
+    return description
 
 
 def _convert_to_cohere_tool(

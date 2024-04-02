@@ -161,6 +161,16 @@ def test_format_to_cohere_tools_messages(
         pytest.param(
             "foo", "foo() -> None - bar baz", "bar baz", id="signature with return type"
         ),
+        pytest.param(
+            "foo",
+            """My description.
+
+Args:
+    Bar: 
+""",
+            "My description.",
+            id="signature with Args: section",
+        ),
     ],
 )
 def test_remove_signature_from_description(
