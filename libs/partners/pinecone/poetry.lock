@@ -567,13 +567,13 @@ files = [
 
 [[package]]
 name = "pinecone-client"
-version = "3.2.1"
+version = "3.2.2"
 description = "Pinecone client and SDK"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pinecone_client-3.2.1-py3-none-any.whl", hash = "sha256:e3e7983762509235250b9bcd543ec6283b7dffaed2e899f1631327f2b77859e3"},
-    {file = "pinecone_client-3.2.1.tar.gz", hash = "sha256:8560ffafb13b9c45a92eb9eb77a2db32d5a1fa7903a1db17f7af58ee1058bb60"},
+    {file = "pinecone_client-3.2.2-py3-none-any.whl", hash = "sha256:7e492fdda23c73726bc0cb94c689bb950d06fb94e82b701a0c610c2e830db327"},
+    {file = "pinecone_client-3.2.2.tar.gz", hash = "sha256:887a12405f90ac11c396490f605fc479f31cf282361034d1ae0fccc02ac75bee"},
 ]
 
 [package.dependencies]
@@ -1213,4 +1213,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.13"
-content-hash = "e42f477f342dc034437a8e3d0b9086caa48e397edcb9adabd027af28f5ca49f3"
+content-hash = "246a6e9d027f1da73e99796ea6ef17c61f045bc2ec4047ffa69befa35961909b"
