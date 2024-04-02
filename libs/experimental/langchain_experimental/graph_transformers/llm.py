@@ -315,6 +315,7 @@ class LLMGraphTransformer:
         """
         text = document.page_content
         raw_schema = self.chain.invoke({"input": text})
+        raw_schema = cast(Dict[Any, Any], raw_schema)
         nodes, relationships = _convert_to_graph_document(raw_schema)
 
         # Strict mode filtering
