@@ -31,6 +31,6 @@ def test_invoke():
             "input": "In what year was the company that was founded as Sound of Music added to the S&P 500?",  # noqa: E501
         }
     )
-    expected = "Best Buy, originally called Sound of Music, was added to Standard & Poor's S&P 500 in 1999."
+    expected = "Best Buy, originally called Sound of Music, was added to Standard & Poor's S&P 500 in 1999."  # noqa: E501
 
     assert expected == actual
