@@ -1035,7 +1035,7 @@
     },
     {
       "source": "/docs/guides/debugging(/?)",
-      "destination": "/docs/guides/productionization/debugging"
+      "destination": "/docs/guides/development/debugging"
     },
     {
       "source": "/docs/guides/deployments/:path*",
@@ -1047,7 +1047,7 @@
     },
     {
       "source": "/docs/guides/extending_langchain(/?)",
-      "destination": "/docs/guides/productionization/extending_langchain"
+      "destination": "/docs/guides/development/extending_langchain"
     },
     {
       "source": "/docs/guides/fallbacks(/?)",
@@ -1063,11 +1063,15 @@
     },
     {
       "source": "/docs/guides/model_laboratory(/?)",
-      "destination": "/docs/guides/miscellaneous/model_laboratory"
+      "destination": "/docs/guides/productionization/evaluation"
     },
     {
       "source": "/docs/guides/pydantic_compatibility(/?)",
-      "destination": "/docs/guides/miscellaneous/pydantic_compatibility"
+      "destination": "/docs/guides/development/pydantic_compatibility"
+    },
+    {
+      "source": "/docs/guides/local_llms(/?)",
+      "destination": "/docs/guides/development/local_llms"
     },
     {
       "source": "/docs/modules/model_io/quick_start(/?)",
