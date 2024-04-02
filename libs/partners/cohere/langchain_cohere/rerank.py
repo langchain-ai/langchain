@@ -30,7 +30,6 @@ class CohereRerank(BaseDocumentCompressor):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
-        check_fields = False
 
     def _get_client(self) -> cohere.Client:
         """Get the Cohere client."""

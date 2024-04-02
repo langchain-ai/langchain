@@ -53,7 +53,6 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
         arbitrary_types_allowed = True
         extra = Extra.forbid
-        check_fields = False
 
     def _get_client(self) -> cohere.Client:
         """Get the Cohere client."""

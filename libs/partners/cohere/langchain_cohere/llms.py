@@ -81,7 +81,6 @@ class BaseCohere(Serializable):
         """Configuration for this pydantic object."""
 
         arbitrary_types_allowed = True
-        check_fields = False
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -160,7 +159,6 @@ class Cohere(LLM, BaseCohere):
 
         arbitrary_types_allowed = True
         extra = Extra.forbid
-        check_fields = False
 
     @property
     def _default_params(self) -> Dict[str, Any]:
