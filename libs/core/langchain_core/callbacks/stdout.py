@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.utils import print_text
 
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
+    from langchain_core.outputs import LLMResult
 
 
 class StdOutCallbackHandler(BaseCallbackHandler):
@@ -24,10 +25,24 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Print out that we are entering a chain."""
         class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
         print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")  # noqa: T201
+        # print(serialized)  # noqa: T201
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
         print("\n\033[1m> Finished chain.\033[0m")  # noqa: T201
+
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> None:
+        """Run when a LLM starts running."""
+        llm_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
+        print(f"\n\n\033[1m> Entering {llm_name} with prompt: {prompts} ...\033[0m")  # noqa: T201
+        # print(prompts)
+        # print(serialized)  # noqa: T201
+
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        """Run when LLM ends running."""
+        print("\n\033[1m> Finished llm.\033[0m")  # noqa: T201
 
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
