@@ -979,7 +979,7 @@
     },
     {
       "source": "/docs/expression_language/cookbook/retrieval(/?)",
-      "destination": "/docs/use_cases/question_answering/chat_history"
+      "destination": "/docs/use_cases/question_answering"
     },
     {
       "source": "/docs/expression_language/cookbook/agent(/?)",
