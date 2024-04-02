@@ -230,16 +230,16 @@ def _convert_to_graph_document(
         except Exception:  # If we can't parse JSON
             return ([], [])
     else:  # If there are no validation errors use parsed pydantic object
-        raw_schema = raw_schema["parsed"]
+        parsed_schema: _Graph = raw_schema["parsed"]
         nodes = (
-            [map_to_base_node(node) for node in raw_schema.nodes]
-            if raw_schema.nodes
+            [map_to_base_node(node) for node in parsed_schema.nodes]
+            if parsed_schema.nodes
             else []
         )
 
         relationships = (
-            [map_to_base_relationship(rel) for rel in raw_schema.relationships]
-            if raw_schema.relationships
+            [map_to_base_relationship(rel) for rel in parsed_schema.relationships]
+            if parsed_schema.relationships
             else []
         )
     return nodes, relationships
