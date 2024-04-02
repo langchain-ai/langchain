@@ -97,7 +97,7 @@ def get_cohere_chat_request(
             "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."  # noqa: E501
         )
 
-    parsed_docs: Optional[List[Document]] = None
+    parsed_docs: Optional[Union[List[Document], List[Dict]]] = None
     if "documents" in additional_kwargs:
         parsed_docs = (
             additional_kwargs["documents"]
@@ -108,14 +108,18 @@ def get_cohere_chat_request(
         parsed_docs = documents
 
     formatted_docs: Optional[List[Dict[str, Any]]] = None
-    if parsed_docs is not None:
-        formatted_docs = [
-            {
-                "text": doc.page_content,
-                "id": doc.metadata.get("id") or f"doc-{str(i)}",
-            }
-            for i, doc in enumerate(parsed_docs)
-        ]
+    if parsed_docs:
+        formatted_docs = []
+        for i, parsed_doc in enumerate(parsed_docs):
+            if isinstance(parsed_doc, Document):
+                formatted_docs.append(
+                    {
+                        "text": parsed_doc.page_content,
+                        "id": parsed_doc.metadata.get("id") or f"doc-{str(i)}",
+                    }
+                )
+            elif isinstance(parsed_doc, dict):
+                formatted_docs.append(parsed_doc)
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
