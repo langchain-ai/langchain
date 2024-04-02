@@ -1055,7 +1055,7 @@
     },
     {
       "source": "/docs/guides/privacy/:path*",
-      "destination": "/docs/guides/productionization/privacy/:path*"
+      "destination": "/docs/guides/productionization/safety/:path*"
     },
     {
       "source": "/docs/guides/safety/:path*",
