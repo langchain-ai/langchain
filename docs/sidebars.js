@@ -35,7 +35,6 @@
     {
       type: "category",
       label: "Use cases",
-      link: { type: "doc", id: "use_cases/question_answering/index" },
       collapsed: false,
       collapsible: false,
       items: [
@@ -102,7 +101,10 @@
           ]
         }
       ],
-      link: { type: 'generated-index', slug: "use_cases"}
+      link: {
+        type: 'doc',
+        id: "use_cases/index"
+      },
     },
     {
       type: "category",

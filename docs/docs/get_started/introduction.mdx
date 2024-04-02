@@ -12,8 +12,9 @@ sidebar_class_name: hidden
 This framework consists of several parts.
 - **LangChain Libraries**: The Python and JavaScript libraries. Contains interfaces and integrations for a myriad of components, a basic run time for combining these components into chains and agents, and off-the-shelf implementations of chains and agents.
 - **[LangChain Templates](/docs/templates)**: A collection of easily deployable reference architectures for a wide variety of tasks.
-- **[LangServe](/docs/langserve)**: A library for deploying LangChain chains as a REST API.
+- **[LangServe](/docs/langserve)**: A library for deploying LangChain chains as REST APIs.
 - **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
+- **[LangGraph](/docs/langgraph)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
 import ThemedImage from '@theme/ThemedImage';
 
@@ -46,9 +47,9 @@ The LangChain libraries themselves are made up of several different packages.
 
 ## Get started
 
-[Here’s](/docs/get_started/installation) how to install LangChain, set up your environment, and start building.
-
 We recommend following our [Quickstart](/docs/get_started/quickstart) guide to familiarize yourself with the framework by building your first LangChain application.
+
+[See here](/docs/get_started/installation) for instructions on how to install LangChain, set up your environment, and start building.
 
 Read up on our [Security](/docs/security) best practices to make sure you're developing safely with LangChain.
 
@@ -57,6 +58,17 @@ Read up on our [Security](/docs/security) best practices to make sure you're dev
 These docs focus on the Python LangChain library. [Head here](https://js.langchain.com) for docs on the JavaScript LangChain library.
 
 :::
+
+## Use cases
+
+If you're looking to build something specific or are more of a hands-on learner, check out our [use-cases](/docs/use_cases).
+They're walkthroughs and techniques for common end-to-end tasks, such as:
+
+- [Document question answering](/docs/use_cases/question_answering/)
+- [Chatbots](/docs/use_cases/chatbots/)
+- [Analyzing structured data](/docs/use_cases/sql/)
+- and more!
+
 
 ## LangChain Expression Language (LCEL)
 
@@ -72,7 +84,7 @@ LCEL is a declarative way to compose chains. LCEL was designed from day 1 to sup
 LangChain provides standard, extendable interfaces and integrations for many different components, including:
 
 #### [Model I/O](/docs/modules/model_io/)
-Interface with language models
+Formatting and managing language model input and output
 
 #### [Retrieval](/docs/modules/data_connection/)
 Interface with application-specific data
@@ -82,13 +94,6 @@ Let models choose which tools to use given high-level directives
 
 
 ## Examples, ecosystem, and resources
-
-### [Use cases](/docs/use_cases/question_answering/)
-Walkthroughs and techniques for common end-to-end use cases, like:
-- [Document question answering](/docs/use_cases/question_answering/)
-- [Chatbots](/docs/use_cases/chatbots/)
-- [Analyzing structured data](/docs/use_cases/sql/)
-- and much more...
 
 ### [Integrations](/docs/integrations/providers/)
 LangChain is part of a rich ecosystem of tools that integrate with our framework and build on top of it. Check out our growing list of [integrations](/docs/integrations/providers/).
@@ -101,4 +106,3 @@ Head to the reference section for full documentation of all classes and methods 
 
 ### [Developer's guide](/docs/contributing)
 Check out the developer's guide for guidelines on contributing and help getting your dev environment set up.
-
