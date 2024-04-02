@@ -160,7 +160,7 @@ def map_to_base_relationship(rel: Any) -> Relationship:
 
 
 def _convert_to_graph_document(
-    raw_schema: Dict,
+    raw_schema: Dict[str, Any],
 ) -> Tuple[List[Node], Tuple[List[Relationship]]]:
     # If there are validation errors
     if not raw_schema["parsed"]:
@@ -226,7 +226,7 @@ def _convert_to_graph_document(
                     )
                 )
         except Exception:  # If we can't parse JSON
-            return [], []
+            return ([], [])
     else:  # If there are no validation errors use parsed pydantic object
         raw_schema = raw_schema["parsed"]
         nodes = (
