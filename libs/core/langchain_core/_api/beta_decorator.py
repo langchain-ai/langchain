@@ -120,7 +120,7 @@ def beta(
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
-            wrapped = obj.__dict__["__init__"]
+            wrapped = obj.__init__  # type: ignore
             _name = _name or obj.__name__
             old_doc = obj.__doc__
 
@@ -141,8 +141,7 @@ def beta(
                         emit_warning()
                     return wrapped(self, *args, **kwargs)
 
-                obj_init = obj.__dict__["__init__"]
-                obj_init = functools.wraps(obj_init)(
+                obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
                 return cast(T, obj)
@@ -154,7 +153,7 @@ def beta(
             _name = _name or obj.fget.__name__
             old_doc = obj.__doc__
 
-            class _beta_property(property): 
+            class _beta_property(property):
                 """A beta property."""
 
                 def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -196,9 +195,7 @@ def beta(
             _name = _name or obj.__name__
             old_doc = wrapped.__doc__
 
-            def finalize(
-                wrapper: Callable[..., Any], new_doc: str
-            ) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:
