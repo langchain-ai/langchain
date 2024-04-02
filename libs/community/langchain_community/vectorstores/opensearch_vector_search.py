@@ -604,38 +604,27 @@ class OpenSearchVectorSearch(VectorStore):
             **kwargs,
         )
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        refresh_indices: Optional[bool] = True,
-        **kwargs: Any,
-    ) -> Optional[bool]:
-        """Delete documents from the Opensearch index.
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids of documents to delete.
-            refresh_indices: Whether to refresh the index
-                            after deleting documents. Defaults to True.
+            ids: List of ids to delete.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            Optional[bool]: True if deletion is successful,
+            False otherwise, None if not implemented.
         """
-        bulk = _import_bulk()
-
-        body = []
-
         if ids is None:
-            raise ValueError("ids must be provided.")
+            raise ValueError("No ids provided to delete.")
 
-        for _id in ids:
-            body.append({"_op_type": "delete", "_index": self.index_name, "_id": _id})
+        actions = [{"delete": {"_index": self.index_name, "_id": id_}} for id_ in ids]
+        response = self.client.bulk(actions, **kwargs)
 
-        if len(body) > 0:
-            try:
-                bulk(self.client, body, refresh=refresh_indices, ignore_status=404)
-                return True
-            except Exception as e:
-                raise e
-        else:
-            return False
-       
+        return not any(
+            item.get("delete", {}).get("error") for item in response["items"]
+        )
+
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
@@ -657,7 +646,7 @@ class OpenSearchVectorSearch(VectorStore):
         return not any(
             item.get("delete", {}).get("error") for item in response["items"]
         )
- 
+
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
@@ -720,15 +709,6 @@ class OpenSearchVectorSearch(VectorStore):
         docs_with_scores = self.similarity_search_with_score(query, k, **kwargs)
         return [doc[0] for doc in docs_with_scores]
 
-    def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        """Return docs most similar to the embedding vector."""
-        docs_with_scores = self.similarity_search_with_score_by_vector(
-            embedding, k, **kwargs
-        )
-        return [doc[0] for doc in docs_with_scores]
-
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
@@ -747,33 +727,11 @@ class OpenSearchVectorSearch(VectorStore):
         Optional Args:
             same as `similarity_search`
         """
-        embedding = self.embedding_function.embed_query(query)
-        return self.similarity_search_with_score_by_vector(embedding, k, **kwargs)
 
-    def similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and it's scores most similar to the embedding vector.
-
-        By default, supports Approximate Search.
-        Also supports Script Scoring and Painless Scripting.
-
-        Args:
-            embedding: Embedding vector to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-
-        Returns:
-            List of Documents along with its scores most similar to the query.
-
-        Optional Args:
-            same as `similarity_search`
-        """
         text_field = kwargs.get("text_field", "text")
         metadata_field = kwargs.get("metadata_field", "metadata")
 
-        hits = self._raw_similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, **kwargs
-        )
+        hits = self._raw_similarity_search_with_score(query=query, k=k, **kwargs)
 
         documents_with_scores = [
             (
@@ -791,25 +749,26 @@ class OpenSearchVectorSearch(VectorStore):
         ]
         return documents_with_scores
 
-    def _raw_similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+    def _raw_similarity_search_with_score(
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[dict]:
         """Return raw opensearch documents (dict) including vectors,
-        scores most similar to the embedding vector.
+        scores most similar to query.
 
         By default, supports Approximate Search.
         Also supports Script Scoring and Painless Scripting.
 
         Args:
-            embedding: Embedding vector to look up documents similar to.
+            query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
 
         Returns:
-            List of dict with its scores most similar to the embedding.
+            List of dict with its scores most similar to the query.
 
         Optional Args:
             same as `similarity_search`
         """
+        embedding = self.embedding_function.embed_query(query)
         search_type = kwargs.get("search_type", "approximate_search")
         vector_field = kwargs.get("vector_field", "vector_field")
         index_name = kwargs.get("index_name", self.index_name)
@@ -938,9 +897,7 @@ class OpenSearchVectorSearch(VectorStore):
         embedding = self.embedding_function.embed_query(query)
 
         # Do ANN/KNN search to get top fetch_k results where fetch_k >= k
-        results = self._raw_similarity_search_with_score_by_vector(
-            embedding, fetch_k, **kwargs
-        )
+        results = self._raw_similarity_search_with_score(query, fetch_k, **kwargs)
 
         embeddings = [result["_source"][vector_field] for result in results]
 
