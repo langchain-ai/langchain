@@ -3,6 +3,9 @@ from typing import Any, List, Union
 
 import pytest
 
+from langchain_core._api.deprecation import (
+    LangChainPendingDeprecationWarning,
+)
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -19,6 +22,7 @@ from langchain_core.prompts.chat import (
     ChatMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
+    MessagesPlaceholder,
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
@@ -63,7 +67,7 @@ def create_chat_prompt_template() -> ChatPromptTemplate:
     """Create a chat prompt template."""
     return ChatPromptTemplate(
         input_variables=["foo", "bar", "context"],
-        messages=create_messages(),
+        messages=create_messages(),  # type: ignore[arg-type]
     )
 
 
@@ -187,10 +191,12 @@ def test_chat_invalid_input_variables_extra() -> None:
     messages = [HumanMessage(content="foo")]
     with pytest.raises(ValueError):
         ChatPromptTemplate(
-            messages=messages, input_variables=["foo"], validate_template=True
+            messages=messages,  # type: ignore[arg-type]
+            input_variables=["foo"],
+            validate_template=True,  # type: ignore[arg-type]
         )
     assert (
-        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables
+        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables  # type: ignore[arg-type]
         == []
     )
 
@@ -199,16 +205,19 @@ def test_chat_invalid_input_variables_missing() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
     with pytest.raises(ValueError):
         ChatPromptTemplate(
-            messages=messages, input_variables=[], validate_template=True
+            messages=messages,  # type: ignore[arg-type]
+            input_variables=[],
+            validate_template=True,  # type: ignore[arg-type]
         )
     assert ChatPromptTemplate(
-        messages=messages, input_variables=[]
+        messages=messages,  # type: ignore[arg-type]
+        input_variables=[],  # type: ignore[arg-type]
     ).input_variables == ["foo"]
 
 
 def test_infer_variables() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
-    prompt = ChatPromptTemplate(messages=messages)
+    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
     assert prompt.input_variables == ["foo"]
 
 
@@ -219,7 +228,7 @@ def test_chat_valid_with_partial_variables() -> None:
         )
     ]
     prompt = ChatPromptTemplate(
-        messages=messages,
+        messages=messages,  # type: ignore[arg-type]
         input_variables=["question", "context"],
         partial_variables={"formatins": "some structure"},
     )
@@ -233,8 +242,9 @@ def test_chat_valid_infer_variables() -> None:
             "Do something with {question} using {context} giving it like {formatins}"
         )
     ]
-    prompt = ChatPromptTemplate(
-        messages=messages, partial_variables={"formatins": "some structure"}
+    prompt = ChatPromptTemplate(  # type: ignore[call-arg]
+        messages=messages,  # type: ignore[arg-type]
+        partial_variables={"formatins": "some structure"},  # type: ignore[arg-type]
     )
     assert set(prompt.input_variables) == {"question", "context"}
     assert prompt.partial_variables == {"formatins": "some structure"}
@@ -242,14 +252,15 @@ def test_chat_valid_infer_variables() -> None:
 
 def test_chat_from_role_strings() -> None:
     """Test instantiation of chat template from role strings."""
-    template = ChatPromptTemplate.from_role_strings(
-        [
-            ("system", "You are a bot."),
-            ("assistant", "hello!"),
-            ("human", "{question}"),
-            ("other", "{quack}"),
-        ]
-    )
+    with pytest.warns(LangChainPendingDeprecationWarning):
+        template = ChatPromptTemplate.from_role_strings(
+            [
+                ("system", "You are a bot."),
+                ("assistant", "hello!"),
+                ("human", "{question}"),
+                ("other", "{quack}"),
+            ]
+        )
 
     messages = template.format_messages(question="How are you?", quack="duck")
     assert messages == [
@@ -360,3 +371,197 @@ def test_chat_message_partial() -> None:
     ]
     assert res == expected
     assert template2.format(input="hello") == get_buffer_string(expected)
+
+
+def test_chat_tmpl_from_messages_multipart_text() -> None:
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an AI assistant named {name}."),
+            (
+                "human",
+                [
+                    {"type": "text", "text": "What's in this image?"},
+                    {"type": "text", "text": "Oh nvm"},
+                ],
+            ),
+        ]
+    )
+    messages = template.format_messages(name="R2D2")
+    expected = [
+        SystemMessage(content="You are an AI assistant named R2D2."),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What's in this image?"},
+                {"type": "text", "text": "Oh nvm"},
+            ]
+        ),
+    ]
+    assert messages == expected
+
+
+def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an AI assistant named {name}."),
+            (
+                "human",
+                [
+                    {"type": "text", "text": "What's in this {object_name}?"},
+                    {"type": "text", "text": "Oh nvm"},
+                ],
+            ),
+        ]
+    )
+    messages = template.format_messages(name="R2D2", object_name="image")
+    expected = [
+        SystemMessage(content="You are an AI assistant named R2D2."),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What's in this image?"},
+                {"type": "text", "text": "Oh nvm"},
+            ]
+        ),
+    ]
+    assert messages == expected
+
+
+def test_chat_tmpl_from_messages_multipart_image() -> None:
+    base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
+    other_base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are an AI assistant named {name}."),
+            (
+                "human",
+                [
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": "data:image/jpeg;base64,{my_image}",
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/jpeg;base64,{my_image}"},
+                    },
+                    {"type": "image_url", "image_url": "{my_other_image}"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "{my_other_image}", "detail": "medium"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://www.langchain.com/image.png"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                    },
+                ],
+            ),
+        ]
+    )
+    messages = template.format_messages(
+        name="R2D2", my_image=base64_image, my_other_image=other_base64_image
+    )
+    expected = [
+        SystemMessage(content="You are an AI assistant named R2D2."),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{other_base64_image}"
+                    },
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"{other_base64_image}"},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"{other_base64_image}",
+                        "detail": "medium",
+                    },
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://www.langchain.com/image.png"},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                },
+            ]
+        ),
+    ]
+    assert messages == expected
+
+
+def test_messages_placeholder() -> None:
+    prompt = MessagesPlaceholder("history")
+    with pytest.raises(KeyError):
+        prompt.format_messages()
+    prompt = MessagesPlaceholder("history", optional=True)
+    assert prompt.format_messages() == []
+    assert prompt.format_messages(
+        history=[("system", "You are an AI assistant."), "Hello!"]
+    ) == [
+        SystemMessage(content="You are an AI assistant."),
+        HumanMessage(content="Hello!"),
+    ]
+
+
+def test_chat_prompt_message_placeholder_partial() -> None:
+    prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
+    prompt = prompt.partial(history=[("system", "foo")])
+    assert prompt.format_messages() == [SystemMessage(content="foo")]
+    assert prompt.format_messages(history=[("system", "bar")]) == [
+        SystemMessage(content="bar")
+    ]
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            MessagesPlaceholder("history", optional=True),
+        ]
+    )
+    assert prompt.format_messages() == []
+    prompt = prompt.partial(history=[("system", "foo")])
+    assert prompt.format_messages() == [SystemMessage(content="foo")]
+
+
+def test_chat_prompt_message_placeholder_tuple() -> None:
+    prompt = ChatPromptTemplate.from_messages([("placeholder", "{convo}")])
+    assert prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+
+    assert prompt.format_messages() == []
+
+    # Is optional = True
+    optional_prompt = ChatPromptTemplate.from_messages(
+        [("placeholder", ["{convo}", False])]
+    )
+    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+    with pytest.raises(KeyError):
+        assert optional_prompt.format_messages() == []
+
+
+def test_messages_prompt_accepts_list() -> None:
+    prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
+    value = prompt.invoke([("user", "Hi there")])  # type: ignore
+    assert value.to_messages() == [HumanMessage(content="Hi there")]
+
+    # Assert still raises a nice error
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", "You are a {foo}"), MessagesPlaceholder("history")]
+    )
+    with pytest.raises(TypeError):
+        prompt.invoke([("user", "Hi there")])  # type: ignore

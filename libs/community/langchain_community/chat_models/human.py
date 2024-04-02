@@ -1,12 +1,10 @@
 """ChatModel wrapper which returns user input as the response.."""
-import asyncio
-from functools import partial
+
 from io import StringIO
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import yaml
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -33,9 +31,9 @@ def _display_messages(messages: List[BaseMessage]) -> None:
             width=10000,
             line_break=None,
         )
-        print("\n", "======= start of message =======", "\n\n")
-        print(yaml_string)
-        print("======= end of message =======", "\n\n")
+        print("\n", "======= start of message =======", "\n\n")  # noqa: T201
+        print(yaml_string)  # noqa: T201
+        print("======= end of message =======", "\n\n")  # noqa: T201
 
 
 def _collect_yaml_input(
@@ -111,15 +109,3 @@ class HumanInputChatModel(BaseChatModel):
         self.message_func(messages, **self.message_kwargs)
         user_input = self.input_func(messages, stop=stop, **self.input_kwargs)
         return ChatResult(generations=[ChatGeneration(message=user_input)])
-
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        func = partial(
-            self._generate, messages, stop=stop, run_manager=run_manager, **kwargs
-        )
-        return await asyncio.get_event_loop().run_in_executor(None, func)

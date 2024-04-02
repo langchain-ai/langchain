@@ -5,10 +5,11 @@ from langchain_core.messages.base import (
     BaseMessageChunk,
     merge_content,
 )
+from langchain_core.utils._merge import merge_dicts
 
 
 class AIMessage(BaseMessage):
-    """A Message from an AI."""
+    """Message from an AI."""
 
     example: bool = False
     """Whether this Message is being passed in to the model as part of an example 
@@ -27,7 +28,7 @@ AIMessage.update_forward_refs()
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
-    """A Message chunk from an AI."""
+    """Message chunk from an AI."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
@@ -49,8 +50,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             return self.__class__(
                 example=self.example,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
+                additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
+                ),
+                response_metadata=merge_dicts(
+                    self.response_metadata, other.response_metadata
                 ),
             )
 

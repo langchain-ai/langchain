@@ -19,13 +19,24 @@ class BooleanOutputParser(BaseOutputParser[bool]):
             boolean
 
         """
-        cleaned_text = text.strip()
-        if cleaned_text.upper() not in (self.true_val.upper(), self.false_val.upper()):
+        cleaned_upper_text = text.strip().upper()
+        if (
+            self.true_val.upper() in cleaned_upper_text
+            and self.false_val.upper() in cleaned_upper_text
+        ):
             raise ValueError(
-                f"BooleanOutputParser expected output value to either be "
-                f"{self.true_val} or {self.false_val}. Received {cleaned_text}."
+                f"Ambiguous response. Both {self.true_val} and {self.false_val} in "
+                f"received: {text}."
             )
-        return cleaned_text.upper() == self.true_val.upper()
+        elif self.true_val.upper() in cleaned_upper_text:
+            return True
+        elif self.false_val.upper() in cleaned_upper_text:
+            return False
+        else:
+            raise ValueError(
+                f"BooleanOutputParser expected output value to include either "
+                f"{self.true_val} or {self.false_val}. Received {text}."
+            )
 
     @property
     def _type(self) -> str:

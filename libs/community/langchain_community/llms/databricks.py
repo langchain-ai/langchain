@@ -1,4 +1,5 @@
 import os
+import re
 import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Mapping, Optional
@@ -55,6 +56,10 @@ def _transform_completions(response: Dict[str, Any]) -> str:
     return response["choices"][0]["text"]
 
 
+def _transform_llama2_chat(response: Dict[str, Any]) -> str:
+    return response["candidates"][0]["text"]
+
+
 def _transform_chat(response: Dict[str, Any]) -> str:
     return response["choices"][0]["message"]["content"]
 
@@ -87,11 +92,12 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             "external_model",
             "foundation_model_api",
         )
-        self.task = endpoint.get("task")
+        if self.task is None:
+            self.task = endpoint.get("task")
 
     @property
     def llm(self) -> bool:
-        return self.task in ("llm/v1/chat", "llm/v1/completions")
+        return self.task in ("llm/v1/chat", "llm/v1/completions", "llama2/chat")
 
     @root_validator(pre=True)
     def set_api_url(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -125,6 +131,8 @@ class _DatabricksServingEndpointClient(_DatabricksClientBase):
             preds = response["predictions"]
             # For a single-record query, the result is not a list.
             pred = preds[0] if isinstance(preds, list) else preds
+            if self.task == "llama2/chat":
+                return _transform_llama2_chat(pred)
             return transform_output_fn(pred) if transform_output_fn else pred
 
 
@@ -205,8 +213,43 @@ def get_default_api_token() -> str:
     return api_token
 
 
-class Databricks(LLM):
+def _is_hex_string(data: str) -> bool:
+    """Checks if a data is a valid hexadecimal string using a regular expression."""
+    if not isinstance(data, str):
+        return False
+    pattern = r"^[0-9a-fA-F]+$"
+    return bool(re.match(pattern, data))
 
+
+def _load_pickled_fn_from_hex_string(data: str) -> Callable:
+    """Loads a pickled function from a hexadecimal string."""
+    try:
+        import cloudpickle
+    except Exception as e:
+        raise ValueError(f"Please install cloudpickle>=2.0.0. Error: {e}")
+
+    try:
+        return cloudpickle.loads(bytes.fromhex(data))
+    except Exception as e:
+        raise ValueError(
+            f"Failed to load the pickled function from a hexadecimal string. Error: {e}"
+        )
+
+
+def _pickle_fn_to_hex_string(fn: Callable) -> str:
+    """Pickles a function and returns the hexadecimal string."""
+    try:
+        import cloudpickle
+    except Exception as e:
+        raise ValueError(f"Please install cloudpickle>=2.0.0. Error: {e}")
+
+    try:
+        return cloudpickle.dumps(fn).hex()
+    except Exception as e:
+        raise ValueError(f"Failed to pickle the function: {e}")
+
+
+class Databricks(LLM):
     """Databricks serving endpoint or a cluster driver proxy app for LLM.
 
     It supports two endpoint types:
@@ -325,6 +368,19 @@ class Databricks(LLM):
     """The maximum number of tokens to generate."""
     extra_params: Dict[str, Any] = Field(default_factory=dict)
     """Any extra parameters to pass to the endpoint."""
+    task: Optional[str] = None
+    """The task of the endpoint. Only used when using a serving endpoint.
+    If not provided, the task is automatically inferred from the endpoint.
+    """
+
+    allow_dangerous_deserialization: bool = False
+    """Whether to allow dangerous deserialization of the data which 
+    involves loading data using pickle.
+    
+    If the data has been modified by a malicious actor, it can deliver a
+    malicious payload that results in execution of arbitrary code on the target
+    machine.
+    """
 
     _client: _DatabricksClientBase = PrivateAttr()
 
@@ -387,6 +443,27 @@ class Databricks(LLM):
         return v
 
     def __init__(self, **data: Any):
+        if not data.get("allow_dangerous_deserialization"):
+            raise ValueError(
+                "This code relies on the pickle module. "
+                "You will need to set allow_dangerous_deserialization=True "
+                "if you want to opt-in to allow deserialization of data using pickle."
+                "Data can be compromised by a malicious actor if "
+                "not handled properly to include "
+                "a malicious payload that when deserialized with "
+                "pickle can execute arbitrary code on your machine."
+            )
+        if "transform_input_fn" in data and _is_hex_string(data["transform_input_fn"]):
+            data["transform_input_fn"] = _load_pickled_fn_from_hex_string(
+                data["transform_input_fn"]
+            )
+        if "transform_output_fn" in data and _is_hex_string(
+            data["transform_output_fn"]
+        ):
+            data["transform_output_fn"] = _load_pickled_fn_from_hex_string(
+                data["transform_output_fn"]
+            )
+
         super().__init__(**data)
         if self.model_kwargs is not None and self.extra_params is not None:
             raise ValueError("Cannot set both extra_params and extra_params.")
@@ -401,6 +478,7 @@ class Databricks(LLM):
                 api_token=self.api_token,
                 endpoint_name=self.endpoint_name,
                 databricks_uri=self.databricks_uri,
+                task=self.task,
             )
         elif self.cluster_id and self.cluster_driver_port:
             self._client = _DatabricksClusterDriverProxyClient(
@@ -430,9 +508,13 @@ class Databricks(LLM):
             "stop": self.stop,
             "max_tokens": self.max_tokens,
             "extra_params": self.extra_params,
-            # TODO: Support saving transform_input_fn and transform_output_fn
-            # "transform_input_fn": self.transform_input_fn,
-            # "transform_output_fn": self.transform_output_fn,
+            "task": self.task,
+            "transform_input_fn": None
+            if self.transform_input_fn is None
+            else _pickle_fn_to_hex_string(self.transform_input_fn),
+            "transform_output_fn": None
+            if self.transform_output_fn is None
+            else _pickle_fn_to_hex_string(self.transform_output_fn),
         }
 
     @property

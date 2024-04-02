@@ -1,4 +1,5 @@
 """Integration tests for the langchain tracer module."""
+
 import asyncio
 
 from langchain_community.callbacks import get_openai_callback
@@ -62,7 +63,7 @@ def test_openai_callback_agent() -> None:
             "Who is Olivia Wilde's boyfriend? "
             "What is his current age raised to the 0.23 power?"
         )
-        print(f"Total Tokens: {cb.total_tokens}")
-        print(f"Prompt Tokens: {cb.prompt_tokens}")
-        print(f"Completion Tokens: {cb.completion_tokens}")
-        print(f"Total Cost (USD): ${cb.total_cost}")
+        print(f"Total Tokens: {cb.total_tokens}")  # noqa: T201
+        print(f"Prompt Tokens: {cb.prompt_tokens}")  # noqa: T201
+        print(f"Completion Tokens: {cb.completion_tokens}")  # noqa: T201
+        print(f"Total Cost (USD): ${cb.total_cost}")  # noqa: T201

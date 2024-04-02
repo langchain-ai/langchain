@@ -5,10 +5,11 @@ from langchain_core.messages.base import (
     BaseMessageChunk,
     merge_content,
 )
+from langchain_core.utils._merge import merge_dicts
 
 
 class FunctionMessage(BaseMessage):
-    """A Message for passing the result of executing a function back to a model."""
+    """Message for passing the result of executing a function back to a model."""
 
     name: str
     """The name of the function that was executed."""
@@ -25,7 +26,7 @@ FunctionMessage.update_forward_refs()
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
-    """A Function Message chunk."""
+    """Function Message chunk."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
@@ -47,8 +48,11 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
             return self.__class__(
                 name=self.name,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
+                additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
+                ),
+                response_metadata=merge_dicts(
+                    self.response_metadata, other.response_metadata
                 ),
             )
 

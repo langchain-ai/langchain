@@ -6,6 +6,7 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -22,9 +23,14 @@ if TYPE_CHECKING:
 
     from langchain_community.embeddings import TensorflowHubEmbeddings
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.12",
+    removal="0.2.0",
+    alternative_import="langchain_google_vertexai.VectorSearchVectorStore",
+)
 class MatchingEngine(VectorStore):
     """`Google Vertex AI Vector Search` (previously Matching Engine) vector store.
 
@@ -49,6 +55,8 @@ class MatchingEngine(VectorStore):
         gcs_client: storage.Client,
         gcs_bucket_name: str,
         credentials: Optional[Credentials] = None,
+        *,
+        document_id_key: Optional[str] = None,
     ):
         """Google Vertex AI Vector Search (previously Matching Engine)
          implementation of the vector store.
@@ -78,6 +86,9 @@ class MatchingEngine(VectorStore):
             gcs_client: The GCS client.
             gcs_bucket_name: The GCS bucket name.
             credentials (Optional): Created GCP credentials.
+            document_id_key (Optional): Key for storing document ID in document
+                metadata. If None, document ID will not be returned in document
+                metadata.
         """
         super().__init__()
         self._validate_google_libraries_installation()
@@ -89,6 +100,7 @@ class MatchingEngine(VectorStore):
         self.gcs_client = gcs_client
         self.credentials = credentials
         self.gcs_bucket_name = gcs_bucket_name
+        self.document_id_key = document_id_key
 
     @property
     def embeddings(self) -> Embeddings:
@@ -229,6 +241,7 @@ class MatchingEngine(VectorStore):
             List[Tuple[Document, float]]: List of documents most similar to
             the query text and cosine distance in float for each.
             Lower score represents more similarity.
+
         """
         filter = filter or []
 
@@ -255,19 +268,27 @@ class MatchingEngine(VectorStore):
         if len(response) == 0:
             return []
 
-        results = []
+        docs: List[Tuple[Document, float]] = []
 
         # I'm only getting the first one because queries receives an array
         # and the similarity_search method only receives one query. This
         # means that the match method will always return an array with only
         # one element.
-        for doc in response[0]:
-            page_content = self._download_from_gcs(f"documents/{doc.id}")
-            results.append((Document(page_content=page_content), doc.distance))
+        for result in response[0]:
+            page_content = self._download_from_gcs(f"documents/{result.id}")
+            # TODO: return all metadata.
+            metadata = {}
+            if self.document_id_key is not None:
+                metadata[self.document_id_key] = result.id
+            document = Document(
+                page_content=page_content,
+                metadata=metadata,
+            )
+            docs.append((document, result.distance))
 
         logger.debug("Downloaded documents for query.")
 
-        return results
+        return docs
 
     def similarity_search(
         self,
@@ -382,6 +403,7 @@ class MatchingEngine(VectorStore):
         endpoint_id: str,
         credentials_path: Optional[str] = None,
         embedding: Optional[Embeddings] = None,
+        **kwargs: Any,
     ) -> "MatchingEngine":
         """Takes the object creation out of the constructor.
 
@@ -397,6 +419,7 @@ class MatchingEngine(VectorStore):
             the local file system.
             embedding: The :class:`Embeddings` that will be used for
             embedding the texts.
+            kwargs: Additional keyword arguments to pass to MatchingEngine.__init__().
 
         Returns:
             A configured MatchingEngine with the texts added to the index.
@@ -419,6 +442,7 @@ class MatchingEngine(VectorStore):
             gcs_client=gcs_client,
             credentials=credentials,
             gcs_bucket_name=gcs_bucket_name,
+            **kwargs,
         )
 
     @classmethod

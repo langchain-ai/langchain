@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
@@ -72,7 +72,7 @@ class OpenLLM(LLM):
 
             from langchain.llms import OpenLLM
             llm = OpenLLM(server_url='http://localhost:3000')
-            llm("What is the difference between a duck and a goose?")
+            llm.invoke("What is the difference between a duck and a goose?")
     """
 
     model_name: Optional[str] = None
@@ -82,6 +82,8 @@ class OpenLLM(LLM):
     See 'openllm models' for all available model variants."""
     server_url: Optional[str] = None
     """Optional server URL that currently runs a LLMServer with 'openllm start'."""
+    timeout: int = 30
+    """"Time out for the openllm client"""
     server_type: ServerType = "http"
     """Optional server type. Either 'http' or 'grpc'."""
     embedded: bool = True
@@ -124,6 +126,7 @@ class OpenLLM(LLM):
         *,
         model_id: Optional[str] = None,
         server_url: Optional[str] = None,
+        timeout: int = 30,
         server_type: Literal["http"] = "http",
         embedded: bool = True,
         **llm_kwargs: Any,
@@ -147,13 +150,14 @@ class OpenLLM(LLM):
             super().__init__(
                 **{
                     "server_url": server_url,
+                    "timeout": timeout,
                     "server_type": "http",
                     "llm_kwargs": llm_kwargs,
                 }
             )
             self._llm = None  # type: ignore
-            self._client = openllm.HTTPClient(server_url)
-            self._async_client = openllm.AsyncHTTPClient(server_url)
+            self._client = openllm.HTTPClient(server_url, timeout=timeout)
+            self._async_client = openllm.AsyncHTTPClient(server_url, timeout=timeout)
         else:
             if model_name is None:  # supports not passing model_name
                 assert model_id is not None, "Must provide 'model_id' or 'server_url'"

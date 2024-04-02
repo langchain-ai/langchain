@@ -19,19 +19,39 @@ class ConversationBufferMemory(BaseChatMemory):
         """String buffer of memory."""
         return self.buffer_as_messages if self.return_messages else self.buffer_as_str
 
-    @property
-    def buffer_as_str(self) -> str:
-        """Exposes the buffer as a string in case return_messages is True."""
+    async def abuffer(self) -> Any:
+        """String buffer of memory."""
+        return (
+            await self.abuffer_as_messages()
+            if self.return_messages
+            else await self.abuffer_as_str()
+        )
+
+    def _buffer_as_str(self, messages: List[BaseMessage]) -> str:
         return get_buffer_string(
-            self.chat_memory.messages,
+            messages,
             human_prefix=self.human_prefix,
             ai_prefix=self.ai_prefix,
         )
 
     @property
+    def buffer_as_str(self) -> str:
+        """Exposes the buffer as a string in case return_messages is True."""
+        return self._buffer_as_str(self.chat_memory.messages)
+
+    async def abuffer_as_str(self) -> str:
+        """Exposes the buffer as a string in case return_messages is True."""
+        messages = await self.chat_memory.aget_messages()
+        return self._buffer_as_str(messages)
+
+    @property
     def buffer_as_messages(self) -> List[BaseMessage]:
         """Exposes the buffer as a list of messages in case return_messages is False."""
         return self.chat_memory.messages
+
+    async def abuffer_as_messages(self) -> List[BaseMessage]:
+        """Exposes the buffer as a list of messages in case return_messages is False."""
+        return await self.chat_memory.aget_messages()
 
     @property
     def memory_variables(self) -> List[str]:
@@ -44,6 +64,11 @@ class ConversationBufferMemory(BaseChatMemory):
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
+
+    async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """Return key-value pairs given the text input to the chain."""
+        buffer = await self.abuffer()
+        return {self.memory_key: buffer}
 
 
 class ConversationStringBufferMemory(BaseMemory):
@@ -77,6 +102,10 @@ class ConversationStringBufferMemory(BaseMemory):
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
+    async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+        """Return history buffer."""
+        return self.load_memory_variables(inputs)
+
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         if self.input_key is None:
@@ -93,6 +122,15 @@ class ConversationStringBufferMemory(BaseMemory):
         ai = f"{self.ai_prefix}: " + outputs[output_key]
         self.buffer += "\n" + "\n".join([human, ai])
 
+    async def asave_context(
+        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+    ) -> None:
+        """Save context from this conversation to buffer."""
+        return self.save_context(inputs, outputs)
+
     def clear(self) -> None:
         """Clear memory contents."""
         self.buffer = ""
+
+    async def aclear(self) -> None:
+        self.clear()

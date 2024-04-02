@@ -1,9 +1,9 @@
 import json
+import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
@@ -29,6 +29,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     """
 
     client: Any  #: :meta private:
+    async_client: Any  #: :meta private:
     model: Optional[str] = None
     """Model name to use."""
     repo_id: Optional[str] = None
@@ -48,11 +49,12 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
+        huggingfacehub_api_token = values["huggingfacehub_api_token"] or os.getenv(
+            "HUGGINGFACEHUB_API_TOKEN"
         )
+
         try:
-            from huggingface_hub import InferenceClient
+            from huggingface_hub import AsyncInferenceClient, InferenceClient
 
             if values["model"]:
                 values["repo_id"] = values["model"]
@@ -66,12 +68,20 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
                 model=values["model"],
                 token=huggingfacehub_api_token,
             )
+
+            async_client = AsyncInferenceClient(
+                model=values["model"],
+                token=huggingfacehub_api_token,
+            )
+
             if values["task"] not in VALID_TASKS:
                 raise ValueError(
                     f"Got invalid task {values['task']}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
             values["client"] = client
+            values["async_client"] = async_client
+
         except ImportError:
             raise ImportError(
                 "Could not import huggingface_hub python package. "
@@ -92,7 +102,24 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         texts = [text.replace("\n", " ") for text in texts]
         _model_kwargs = self.model_kwargs or {}
         responses = self.client.post(
-            json={"inputs": texts, "parameters": _model_kwargs, "task": self.task}
+            json={"inputs": texts, "parameters": _model_kwargs}, task=self.task
+        )
+        return json.loads(responses.decode())
+
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Async Call to HuggingFaceHub's embedding endpoint for embedding search docs.
+
+        Args:
+            texts: The list of texts to embed.
+
+        Returns:
+            List of embeddings, one for each text.
+        """
+        # replace newlines, which can negatively affect performance.
+        texts = [text.replace("\n", " ") for text in texts]
+        _model_kwargs = self.model_kwargs or {}
+        responses = await self.async_client.post(
+            json={"inputs": texts, "parameters": _model_kwargs}, task=self.task
         )
         return json.loads(responses.decode())
 
@@ -106,4 +133,16 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         response = self.embed_documents([text])[0]
+        return response
+
+    async def aembed_query(self, text: str) -> List[float]:
+        """Async Call to HuggingFaceHub's embedding endpoint for embedding query text.
+
+        Args:
+            text: The text to embed.
+
+        Returns:
+            Embeddings for the text.
+        """
+        response = (await self.aembed_documents([text]))[0]
         return response

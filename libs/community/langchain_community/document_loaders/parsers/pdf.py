@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     import pdfplumber.page
     import pypdf._page
     import pypdfium2._helpers.page
+    from textractor.data.text_linearization_config import TextLinearizationConfig
 
 
 _PDF_FILTER_WITH_LOSS = ["DCTDecode", "DCT", "JPXDecode"]
@@ -454,6 +455,8 @@ class AmazonTextractPDFParser(BaseBlobParser):
         self,
         textract_features: Optional[Sequence[int]] = None,
         client: Optional[Any] = None,
+        *,
+        linearization_config: Optional["TextLinearizationConfig"] = None,
     ) -> None:
         """Initializes the parser.
 
@@ -462,6 +465,9 @@ class AmazonTextractPDFParser(BaseBlobParser):
                                should be passed as an int that conforms to the enum
                                `Textract_Features`, see `amazon-textract-caller` pkg
             client: boto3 textract client
+            linearization_config: Config to be used for linearization of the output
+                                  should be an instance of TextLinearizationConfig from
+                                  the `textractor` pkg
         """
 
         try:
@@ -477,6 +483,16 @@ class AmazonTextractPDFParser(BaseBlobParser):
                 ]
             else:
                 self.textract_features = []
+
+            if linearization_config is not None:
+                self.linearization_config = linearization_config
+            else:
+                self.linearization_config = self.textractor.TextLinearizationConfig(
+                    hide_figure_layout=True,
+                    title_prefix="# ",
+                    section_header_prefix="## ",
+                    list_element_prefix="*",
+                )
         except ImportError:
             raise ImportError(
                 "Could not import amazon-textract-caller or "
@@ -527,24 +543,26 @@ class AmazonTextractPDFParser(BaseBlobParser):
 
         document = self.textractor.Document.open(textract_response_json)
 
-        linearizer_config = self.textractor.TextLinearizationConfig(
-            hide_figure_layout=True,
-            title_prefix="# ",
-            section_header_prefix="## ",
-            list_element_prefix="*",
-        )
         for idx, page in enumerate(document.pages):
             yield Document(
-                page_content=page.get_text(config=linearizer_config),
+                page_content=page.get_text(config=self.linearization_config),
                 metadata={"source": blob.source, "page": idx + 1},
             )
 
 
 class DocumentIntelligenceParser(BaseBlobParser):
     """Loads a PDF with Azure Document Intelligence
-    (formerly Forms Recognizer) and chunks at character level."""
+    (formerly Form Recognizer) and chunks at character level."""
 
     def __init__(self, client: Any, model: str):
+        warnings.warn(
+            "langchain_community.document_loaders.parsers.pdf.DocumentIntelligenceParser"
+            "and langchain_community.document_loaders.pdf.DocumentIntelligenceLoader"
+            " are deprecated. Please upgrade to "
+            "langchain_community.document_loaders.DocumentIntelligenceLoader "
+            "for any file parsing purpose using Azure Document Intelligence "
+            "service."
+        )
         self.client = client
         self.model = model
 

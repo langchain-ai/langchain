@@ -36,7 +36,7 @@ class SemaDB(VectorStore):
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
         api_key: str = "",
     ):
-        """Initialise the SemaDB vector store."""
+        """initialize the SemaDB vector store."""
         self.collection_name = collection_name
         self.vector_size = vector_size
         self.api_key = api_key or get_from_env("api_key", "SEMADB_API_KEY")
@@ -146,7 +146,7 @@ class SemaDB(VectorStore):
                 headers=self.headers,
             )
             if response.status_code != 200:
-                print("HERE--", batch)
+                print("HERE--", batch)  # noqa: T201
                 raise ValueError(f"Error adding points: {response.text}")
             failed_ranges = response.json()["failedRanges"]
             if len(failed_ranges) > 0:

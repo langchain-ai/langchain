@@ -1,7 +1,3 @@
-from langchain_community.document_loaders.generic import (
-    DEFAULT,
-    GenericLoader,
-    _PathLike,
-)
+from langchain_community.document_loaders.generic import GenericLoader
 
-__all__ = ["_PathLike", "DEFAULT", "GenericLoader"]
+__all__ = ["GenericLoader"]

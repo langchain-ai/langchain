@@ -132,6 +132,7 @@ class WebBaseLoader(BaseLoader):
                         url,
                         headers=self.session.headers,
                         ssl=None if self.session.verify else False,
+                        cookies=self.session.cookies.get_dict(),
                     ) as response:
                         return await response.text()
                 except aiohttp.ClientConnectionError as e:
@@ -249,10 +250,6 @@ class WebBaseLoader(BaseLoader):
             text = soup.get_text(**self.bs_get_text_kwargs)
             metadata = _build_metadata(soup, path)
             yield Document(page_content=text, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        """Load text from the url(s) in web_path."""
-        return list(self.lazy_load())
 
     def aload(self) -> List[Document]:
         """Load text from the urls in web_path async into Documents."""

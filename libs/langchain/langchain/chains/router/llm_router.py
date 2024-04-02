@@ -3,16 +3,16 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type, cast
 
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import root_validator
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-)
 from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
 from langchain.output_parsers.json import parse_and_check_json_markdown
@@ -56,9 +56,11 @@ class LLMRouterChain(RouterChain):
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
+
+        prediction = self.llm_chain.predict(callbacks=callbacks, **inputs)
         output = cast(
             Dict[str, Any],
-            self.llm_chain.predict_and_parse(callbacks=callbacks, **inputs),
+            self.llm_chain.prompt.output_parser.parse(prediction),
         )
         return output
 

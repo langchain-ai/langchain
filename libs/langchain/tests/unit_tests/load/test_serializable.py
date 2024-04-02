@@ -27,8 +27,8 @@ def import_all_modules(package_name: str) -> dict:
             if module_name not in (
                 "langchain.chains.llm_bash",
                 "langchain.chains.llm_symbolic_math",
-                "langchain.tools.python",
-                "langchain.vectorstores._pgvector_data_models",
+                "langchain_community.tools.python",
+                "langchain_community.vectorstores._pgvector_data_models",
             ):
                 importlib.import_module(module_name)
                 new_classes = import_all_modules(module_name)
@@ -40,8 +40,28 @@ def import_all_modules(package_name: str) -> dict:
 
 
 def test_serializable_mapping() -> None:
+    to_skip = {
+        # This should have had a different namespace, as it was never
+        # exported from the langchain module, but we keep for whoever has
+        # already serialized it.
+        ("langchain", "prompts", "image", "ImagePromptTemplate"): (
+            "langchain_core",
+            "prompts",
+            "image",
+            "ImagePromptTemplate",
+        ),
+        # This is not exported from langchain, only langchain_core
+        ("langchain_core", "prompts", "structured", "StructuredPrompt"): (
+            "langchain_core",
+            "prompts",
+            "structured",
+            "StructuredPrompt",
+        ),
+    }
     serializable_modules = import_all_modules("langchain")
-    missing = set(SERIALIZABLE_MAPPING).difference(serializable_modules)
+    missing = set(SERIALIZABLE_MAPPING).difference(
+        set(serializable_modules).union(to_skip)
+    )
     assert missing == set()
     extra = set(serializable_modules).difference(SERIALIZABLE_MAPPING)
     assert extra == set()

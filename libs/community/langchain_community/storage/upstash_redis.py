@@ -120,7 +120,7 @@ class _UpstashRedisStore(BaseStore[str, str]):
                     yield key
 
 
-@deprecated("0.0.335", alternative="UpstashRedisByteStore")
+@deprecated("0.0.1", alternative="UpstashRedisByteStore")
 class UpstashRedisStore(_UpstashRedisStore):
     """
     BaseStore implementation using Upstash Redis

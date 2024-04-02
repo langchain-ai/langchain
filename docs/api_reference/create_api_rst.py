@@ -1,24 +1,19 @@
 """Script for auto-generating api_reference.rst."""
+
 import importlib
 import inspect
+import os
+import sys
 import typing
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
+import toml
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
-
-PKG_DIR = ROOT_DIR / "libs" / "langchain" / "langchain"
-EXP_DIR = ROOT_DIR / "libs" / "experimental" / "langchain_experimental"
-CORE_DIR = ROOT_DIR / "libs" / "core" / "langchain_core"
-COMMUNITY_DIR = ROOT_DIR / "libs" / "core" / "langchain_community"
-WRITE_FILE = HERE / "api_reference.rst"
-EXP_WRITE_FILE = HERE / "experimental_api_reference.rst"
-COMMUNITY_WRITE_FILE = HERE / "community_api_reference.rst"
-
 
 ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum"]
 
@@ -192,13 +187,15 @@ def _load_package_modules(
             modules_by_namespace[top_namespace] = _module_members
 
         except ImportError as e:
-            print(f"Error: Unable to import module '{namespace}' with error: {e}")
+            print(f"Error: Unable to import module '{namespace}' with error: {e}")  # noqa: T201
 
     return modules_by_namespace
 
 
 def _construct_doc(
-    package_namespace: str, members_by_namespace: Dict[str, ModuleMembers]
+    package_namespace: str,
+    members_by_namespace: Dict[str, ModuleMembers],
+    package_version: str,
 ) -> str:
     """Construct the contents of the reference.rst file for the given package.
 
@@ -213,7 +210,7 @@ def _construct_doc(
     """
     full_doc = f"""\
 =======================
-``{package_namespace}`` API Reference
+``{package_namespace}`` {package_version}
 =======================
 
 """
@@ -221,8 +218,8 @@ def _construct_doc(
 
     for module in namespaces:
         _members = members_by_namespace[module]
-        classes = _members["classes_"]
-        functions = _members["functions"]
+        classes = [el for el in _members["classes_"] if el["is_public"]]
+        functions = [el for el in _members["functions"] if el["is_public"]]
         if not (classes or functions):
             continue
         section = f":mod:`{package_namespace}.{module}`"
@@ -248,9 +245,6 @@ Classes
 """
 
             for class_ in sorted(classes, key=lambda c: c["qualified_name"]):
-                if not class_["is_public"]:
-                    continue
-
                 if class_["kind"] == "TypedDict":
                     template = "typeddict.rst"
                 elif class_["kind"] == "enum":
@@ -268,7 +262,7 @@ Classes
 """
 
         if functions:
-            _functions = [f["qualified_name"] for f in functions if f["is_public"]]
+            _functions = [f["qualified_name"] for f in functions]
             fstring = "\n    ".join(sorted(_functions))
             full_doc += f"""\
 Functions
@@ -291,56 +285,96 @@ def _build_rst_file(package_name: str = "langchain") -> None:
     Args:
         package_name: Can be either "langchain" or "core" or "experimental".
     """
-    package_members = _load_package_modules(_package_dir(package_name))
+    package_dir = _package_dir(package_name)
+    package_members = _load_package_modules(package_dir)
+    package_version = _get_package_version(package_dir)
     with open(_out_file_path(package_name), "w") as f:
         f.write(
             _doc_first_line(package_name)
-            + _construct_doc(package_namespace[package_name], package_members)
+            + _construct_doc(
+                _package_namespace(package_name), package_members, package_version
+            )
         )
 
 
-package_namespace = {
-    "langchain": "langchain",
-    "experimental": "langchain_experimental",
-    "core": "langchain_core",
-    "community": "langchain_community",
-}
+def _package_namespace(package_name: str) -> str:
+    return (
+        package_name
+        if package_name == "langchain"
+        else f"langchain_{package_name.replace('-', '_')}"
+    )
 
 
 def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
-    return ROOT_DIR / "libs" / package_name / package_namespace[package_name]
+    if package_name in (
+        "langchain",
+        "experimental",
+        "community",
+        "core",
+        "cli",
+        "text-splitters",
+    ):
+        return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
+    else:
+        return (
+            ROOT_DIR
+            / "libs"
+            / "partners"
+            / package_name
+            / _package_namespace(package_name)
+        )
 
 
-def _out_file_path(package_name: str = "langchain") -> Path:
+def _get_package_version(package_dir: Path) -> str:
+    """Return the version of the package."""
+    try:
+        with open(package_dir.parent / "pyproject.toml", "r") as f:
+            pyproject = toml.load(f)
+    except FileNotFoundError as e:
+        print(
+            f"pyproject.toml not found in {package_dir.parent}.\n"
+            "You are either attempting to build a directory which is not a package or "
+            "the package is missing a pyproject.toml file which should be added."
+            "Aborting the build."
+        )
+        exit(1)
+    return pyproject["tool"]["poetry"]["version"]
+
+
+def _out_file_path(package_name: str) -> Path:
     """Return the path to the file containing the documentation."""
-    name_prefix = {
-        "langchain": "",
-        "experimental": "experimental_",
-        "core": "core_",
-        "community": "community_",
-    }
-    return HERE / f"{name_prefix[package_name]}api_reference.rst"
+    return HERE / f"{package_name.replace('-', '_')}_api_reference.rst"
 
 
-def _doc_first_line(package_name: str = "langchain") -> str:
+def _doc_first_line(package_name: str) -> str:
     """Return the path to the file containing the documentation."""
-    prefix = {
-        "langchain": "",
-        "experimental": "experimental",
-        "core": "core",
-        "community": "community",
-    }
-    return f".. {prefix[package_name]}_api_reference:\n\n"
+    return f".. {package_name.replace('-', '_')}_api_reference:\n\n"
 
 
-def main() -> None:
+def main(dirs: Optional[list] = None) -> None:
     """Generate the api_reference.rst file for each package."""
-    _build_rst_file(package_name="core")
-    _build_rst_file(package_name="langchain")
-    _build_rst_file(package_name="experimental")
-    _build_rst_file(package_name="community")
+    print("Starting to build API reference files.")
+    if not dirs:
+        dirs = [
+            dir_
+            for dir_ in os.listdir(ROOT_DIR / "libs")
+            if dir_ not in ("cli", "partners")
+        ]
+        dirs += os.listdir(ROOT_DIR / "libs" / "partners")
+    for dir_ in dirs:
+        # Skip any hidden directories
+        # Some of these could be present by mistake in the code base
+        # e.g., .pytest_cache from running tests from the wrong location.
+        if dir_.startswith("."):
+            print("Skipping dir:", dir_)
+            continue
+        else:
+            print("Building package:", dir_)
+            _build_rst_file(package_name=dir_)
+    print("API reference files built.")
 
 
 if __name__ == "__main__":
-    main()
+    dirs = sys.argv[1:] or None
+    main(dirs=dirs)

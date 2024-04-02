@@ -1,4 +1,5 @@
 """Tests for the various PDF parsers."""
+
 from pathlib import Path
 from typing import Iterator
 
@@ -110,3 +111,23 @@ def test_pdfplumber_parser() -> None:
     _assert_with_parser(PDFPlumberParser())
     _assert_with_duplicate_parser(PDFPlumberParser())
     _assert_with_duplicate_parser(PDFPlumberParser(dedupe=True), dedupe=True)
+
+
+def test_extract_images_text_from_pdf_pypdfparser() -> None:
+    """Test extract image from pdf and recognize text with rapid ocr - PyPDFParser"""
+    _assert_with_parser(PyPDFParser(extract_images=True))
+
+
+def test_extract_images_text_from_pdf_pdfminerparser() -> None:
+    """Test extract image from pdf and recognize text with rapid ocr - PDFMinerParser"""
+    _assert_with_parser(PDFMinerParser(extract_images=True))
+
+
+def test_extract_images_text_from_pdf_pymupdfparser() -> None:
+    """Test extract image from pdf and recognize text with rapid ocr - PyMuPDFParser"""
+    _assert_with_parser(PyMuPDFParser(extract_images=True))
+
+
+def test_extract_images_text_from_pdf_pypdfium2parser() -> None:
+    """Test extract image from pdf and recognize text with rapid ocr - PyPDFium2Parser"""  # noqa: E501
+    _assert_with_parser(PyPDFium2Parser(extract_images=True))

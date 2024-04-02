@@ -11,6 +11,8 @@ from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIW
 
 
 class DDGInput(BaseModel):
+    """Input for the DuckDuckGo search tool."""
+
     query: str = Field(description="search query to look up")
 
 
@@ -40,7 +42,7 @@ class DuckDuckGoSearchRun(BaseTool):
 class DuckDuckGoSearchResults(BaseTool):
     """Tool that queries the DuckDuckGo search API and gets back json."""
 
-    name: str = "DuckDuckGo Results JSON"
+    name: str = "duckduckgo_results_json"
     description: str = (
         "A wrapper around Duck Duck Go Search. "
         "Useful for when you need to answer questions about current events. "

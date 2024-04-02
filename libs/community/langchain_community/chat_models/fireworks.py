@@ -10,6 +10,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -78,6 +79,11 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
         return ChatMessage(content=content, role=role)
 
 
+@deprecated(
+    since="0.0.26",
+    removal="0.2",
+    alternative_import="langchain_fireworks.ChatFireworks",
+)
 class ChatFireworks(BaseChatModel):
     """Fireworks Chat models."""
 
@@ -219,10 +225,12 @@ class ChatFireworks(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
-            yield chunk
+            cg_chunk = ChatGenerationChunk(
+                message=chunk, generation_info=generation_info
+            )
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                run_manager.on_llm_new_token(cg_chunk.text, chunk=cg_chunk)
+            yield cg_chunk
 
     async def _astream(
         self,
@@ -250,15 +258,27 @@ class ChatFireworks(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
-            yield chunk
+            cg_chunk = ChatGenerationChunk(
+                message=chunk, generation_info=generation_info
+            )
             if run_manager:
-                await run_manager.on_llm_new_token(token=chunk.text, chunk=chunk)
+                await run_manager.on_llm_new_token(token=chunk.text, chunk=cg_chunk)
+            yield cg_chunk
 
 
 def conditional_decorator(
     condition: bool, decorator: Callable[[Any], Any]
 ) -> Callable[[Any], Any]:
+    """Define conditional decorator.
+
+    Args:
+        condition: The condition.
+        decorator: The decorator.
+
+    Returns:
+        The decorated function.
+    """
+
     def actual_decorator(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
         if condition:
             return decorator(func)
@@ -281,6 +301,7 @@ def completion_with_retry(
 
     @conditional_decorator(use_retry, retry_decorator)
     def _completion_with_retry(**kwargs: Any) -> Any:
+        """Use tenacity to retry the completion call."""
         return fireworks.client.ChatCompletion.create(
             **kwargs,
         )

@@ -65,7 +65,10 @@ class EmbedchainRetriever(BaseRetriever):
             docs.append(
                 Document(
                     page_content=r["context"],
-                    metadata={"source": r["source"], "document_id": r["document_id"]},
+                    metadata={
+                        "source": r["metadata"]["url"],
+                        "document_id": r["metadata"]["doc_id"],
+                    },
                 )
             )
         return docs

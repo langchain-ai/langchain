@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import logging
 import os
-import uuid
+from hashlib import md5
 from typing import (
     Any,
     Callable,
@@ -17,7 +17,7 @@ from typing import (
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_env
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import DistanceStrategy
@@ -48,14 +48,19 @@ def _get_search_index_query(search_type: SearchType) -> str:
             "CALL { "
             "CALL db.index.vector.queryNodes($index, $k, $embedding) "
             "YIELD node, score "
-            "RETURN node, score UNION "
+            "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
+            "UNWIND nodes AS n "
+            # We use 0 as min
+            "RETURN n.node AS node, (n.score / max) AS score UNION "
             "CALL db.index.fulltext.queryNodes($keyword_index, $query, {limit: $k}) "
             "YIELD node, score "
             "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
             "UNWIND nodes AS n "
-            "RETURN n.node AS node, (n.score / max) AS score "  # We use 0 as min
+            # We use 0 as min
+            "RETURN n.node AS node, (n.score / max) AS score "
             "} "
-            "WITH node, max(score) AS score ORDER BY score DESC LIMIT $k "  # dedup
+            # dedup
+            "WITH node, max(score) AS score ORDER BY score DESC LIMIT $k "
         ),
     }
     return type_to_query_map[search_type]
@@ -72,7 +77,60 @@ def sort_by_index_name(
     lst: List[Dict[str, Any]], index_name: str
 ) -> List[Dict[str, Any]]:
     """Sort first element to match the index_name if exists"""
-    return sorted(lst, key=lambda x: x.get("index_name") != index_name)
+    return sorted(lst, key=lambda x: x.get("name") != index_name)
+
+
+def remove_lucene_chars(text: str) -> str:
+    """Remove Lucene special characters"""
+    special_chars = [
+        "+",
+        "-",
+        "&",
+        "|",
+        "!",
+        "(",
+        ")",
+        "{",
+        "}",
+        "[",
+        "]",
+        "^",
+        '"',
+        "~",
+        "*",
+        "?",
+        ":",
+        "\\",
+    ]
+    for char in special_chars:
+        if char in text:
+            text = text.replace(char, " ")
+    return text.strip()
+
+
+def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
+    """
+    Converts a dictionary to a YAML-like string without using external libraries.
+
+    Parameters:
+    - input_dict (dict): The dictionary to convert.
+    - indent (int): The current indentation level.
+
+    Returns:
+    - str: The YAML-like string representation of the input dictionary.
+    """
+    yaml_str = ""
+    for key, value in input_dict.items():
+        padding = "  " * indent
+        if isinstance(value, dict):
+            yaml_str += f"{padding}{key}:\n{dict_to_yaml_str(value, indent + 1)}"
+        elif isinstance(value, list):
+            yaml_str += f"{padding}{key}:\n"
+            for item in value:
+                yaml_str += f"{padding}- {item}\n"
+        else:
+            yaml_str += f"{padding}{key}: {value}\n"
+    return yaml_str
 
 
 class Neo4jVector(VectorStore):
@@ -122,7 +180,7 @@ class Neo4jVector(VectorStore):
         password: Optional[str] = None,
         url: Optional[str] = None,
         keyword_index_name: Optional[str] = "keyword",
-        database: str = "neo4j",
+        database: Optional[str] = None,
         index_name: str = "vector",
         node_label: str = "Chunk",
         embedding_node_property: str = "embedding",
@@ -153,11 +211,19 @@ class Neo4jVector(VectorStore):
         # Handle if the credentials are environment variables
 
         # Support URL for backwards compatibility
-        url = os.environ.get("NEO4J_URL", url)
-        url = get_from_env("url", "NEO4J_URI", url)
-        username = get_from_env("username", "NEO4J_USERNAME", username)
-        password = get_from_env("password", "NEO4J_PASSWORD", password)
-        database = get_from_env("database", "NEO4J_DATABASE", database)
+        if not url:
+            url = os.environ.get("NEO4J_URL")
+
+        url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+        username = get_from_dict_or_env(
+            {"username": username}, "username", "NEO4J_USERNAME"
+        )
+        password = get_from_dict_or_env(
+            {"password": password}, "password", "NEO4J_PASSWORD"
+        )
+        database = get_from_dict_or_env(
+            {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+        )
 
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
@@ -393,7 +459,7 @@ class Neo4jVector(VectorStore):
         **kwargs: Any,
     ) -> Neo4jVector:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -460,7 +526,7 @@ class Neo4jVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -516,6 +582,7 @@ class Neo4jVector(VectorStore):
         self,
         query: str,
         k: int = 4,
+        params: Dict[str, Any] = {},
         **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search with Neo4jVector.
@@ -529,13 +596,15 @@ class Neo4jVector(VectorStore):
         """
         embedding = self.embedding.embed_query(text=query)
         return self.similarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            query=query,
+            embedding=embedding, k=k, query=query, params=params, **kwargs
         )
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4
+        self,
+        query: str,
+        k: int = 4,
+        params: Dict[str, Any] = {},
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -548,12 +617,16 @@ class Neo4jVector(VectorStore):
         """
         embedding = self.embedding.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, query=query
+            embedding=embedding, k=k, query=query, params=params, **kwargs
         )
         return docs
 
     def similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        params: Dict[str, Any] = {},
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
         Perform a similarity search in the Neo4j database using a
@@ -589,7 +662,8 @@ class Neo4jVector(VectorStore):
             "k": k,
             "embedding": embedding,
             "keyword_index": self.keyword_index_name,
-            "query": kwargs["query"],
+            "query": remove_lucene_chars(kwargs["query"]),
+            **params,
         }
 
         results = self.query(read_query, params=parameters)
@@ -597,7 +671,9 @@ class Neo4jVector(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result["text"],
+                    page_content=dict_to_yaml_str(result["text"])
+                    if isinstance(result["text"], dict)
+                    else result["text"],
                     metadata={
                         k: v for k, v in result["metadata"].items() if v is not None
                     },

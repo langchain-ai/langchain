@@ -41,7 +41,7 @@ index_settings = {
 
 response = client.indices.create(index=OPENSEARCH_INDEX_NAME, body=index_settings)
 
-print(response)
+print(response)  # noqa: T201
 
 
 # Insert docs
@@ -57,4 +57,4 @@ for each in docs:
 
     response = client.index(index=OPENSEARCH_INDEX_NAME, body=document, refresh=True)
 
-    print(response)
+    print(response)  # noqa: T201

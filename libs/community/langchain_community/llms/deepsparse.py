@@ -63,7 +63,7 @@ class DeepSparse(LLM):
         except ImportError:
             raise ImportError(
                 "Could not import `deepsparse` package. "
-                "Please install it with `pip install deepsparse`"
+                "Please install it with `pip install deepsparse[llm]`"
             )
 
         model_config = values["model_config"] or {}
@@ -103,9 +103,7 @@ class DeepSparse(LLM):
             text = combined_output
         else:
             text = (
-                self.pipeline(
-                    sequences=prompt, generation_config=self.generation_config
-                )
+                self.pipeline(sequences=prompt, **self.generation_config)
                 .generations[0]
                 .text
             )
@@ -143,9 +141,7 @@ class DeepSparse(LLM):
             text = combined_output
         else:
             text = (
-                self.pipeline(
-                    sequences=prompt, generation_config=self.generation_config
-                )
+                self.pipeline(sequences=prompt, **self.generation_config)
                 .generations[0]
                 .text
             )
@@ -181,10 +177,10 @@ class DeepSparse(LLM):
                 )
                 for chunk in llm.stream("Tell me a joke",
                         stop=["'","\n"]):
-                    print(chunk, end='', flush=True)
+                    print(chunk, end='', flush=True)  # noqa: T201
         """
         inference = self.pipeline(
-            sequences=prompt, generation_config=self.generation_config, streaming=True
+            sequences=prompt, streaming=True, **self.generation_config
         )
         for token in inference:
             chunk = GenerationChunk(text=token.generations[0].text)
@@ -219,10 +215,10 @@ class DeepSparse(LLM):
                 )
                 for chunk in llm.stream("Tell me a joke",
                         stop=["'","\n"]):
-                    print(chunk, end='', flush=True)
+                    print(chunk, end='', flush=True)  # noqa: T201
         """
         inference = self.pipeline(
-            sequences=prompt, generation_config=self.generation_config, streaming=True
+            sequences=prompt, streaming=True, **self.generation_config
         )
         for token in inference:
             chunk = GenerationChunk(text=token.generations[0].text)
