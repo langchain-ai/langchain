@@ -537,6 +537,130 @@ class VectorStore(ABC):
             **kwargs,
         )
 
+    def similarity_search_with_relevance_scores_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores in the range [0, 1] to embedding vector.
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            embedding: Embedding to look up vector similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Tuples of (doc, relevance_score)
+        """
+        score_threshold = kwargs.pop("score_threshold", None)
+        relevance_score_fn = self._select_relevance_score_fn()
+
+        docs_and_similarities = self.similarity_search_with_score_by_vector(
+            embedding=embedding, k=k, **kwargs
+        )
+
+        docs_and_scores = [
+            (doc, relevance_score_fn(score)) for doc, score in docs_and_similarities
+        ]
+
+        if any(score < 0.0 or score > 1.0 for _, score in docs_and_scores):
+            warnings.warn(
+                "Relevance scores must be between" f" 0 and 1, got {docs_and_scores}"
+            )
+
+        if score_threshold is not None:
+            docs_and_scores = [
+                (doc, score)
+                for doc, score in docs_and_scores
+                if score >= score_threshold
+            ]
+            if len(docs_and_scores) == 0:
+                warnings.warn(
+                    "No relevant docs were retrieved using the relevance score"
+                    f" threshold {score_threshold}"
+                )
+        return docs_and_scores
+
+    async def asimilarity_search_with_relevance_scores_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and relevance scores in the range [0, 1] to embedding vector.
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            embedding: Embedding to look up vector similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Tuples of (doc, relevance_score)
+        """
+        score_threshold = kwargs.pop("score_threshold", None)
+        relevance_score_fn = self._select_relevance_score_fn()
+
+        docs_and_similarities = await self.asimilarity_search_with_score_by_vector(
+            embedding=embedding, k=k, **kwargs
+        )
+
+        docs_and_scores = [
+            (doc, relevance_score_fn(score)) for doc, score in docs_and_similarities
+        ]
+
+        if any(score < 0.0 or score > 1.0 for _, score in docs_and_scores):
+            warnings.warn(
+                "Relevance scores must be between" f" 0 and 1, got {docs_and_scores}"
+            )
+
+        if score_threshold is not None:
+            docs_and_scores = [
+                (doc, score)
+                for doc, score in docs_and_scores
+                if score >= score_threshold
+            ]
+            if len(docs_and_scores) == 0:
+                warnings.warn(
+                    "No relevant docs were retrieved using the relevance score"
+                    f" threshold {score_threshold}"
+                )
+        return docs_and_scores
+
+    def similarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and scores most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of (Documents, Scores) most similar to the query vector.
+        """
+
+        raise NotImplementedError
+
+    async def asimilarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs and scores most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of (Documents, Scores) most similar to the query vector.
+        """
+
+        raise NotImplementedError
+
     @classmethod
     def from_documents(
         cls: Type[VST],
@@ -740,64 +864,3 @@ class VectorStoreRetriever(BaseRetriever):
     ) -> List[str]:
         """Add documents to vectorstore."""
         return await self.vectorstore.aadd_documents(documents, **kwargs)
-
-    def similarity_search_by_vector_with_relevance_scores(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and relevance scores in the range [0, 1] to embedding vector.
-
-        0 is dissimilar, 1 is most similar.
-
-        Args:
-            embedding: Embedding to look up vector similar to.
-            k: Number of Documents to return. Defaults to 4.
-
-        Returns:
-            List of Tuples of (doc, relevance_score)
-        """
-        score_threshold = kwargs.pop("score_threshold", None)
-        relevance_score_fn = self._select_relevance_score_fn()
-
-        docs_and_similarities = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, **kwargs
-        )
-
-        docs_and_scores = [
-            (doc, relevance_score_fn(score)) for doc, score in docs_and_similarities
-        ]
-
-        if any(score < 0.0 or score > 1.0 for _, score in docs_and_scores):
-            warnings.warn(
-                "Relevance scores must be between" f" 0 and 1, got {docs_and_scores}"
-            )
-
-        if score_threshold is not None:
-            docs_and_scores = [
-                (doc, score)
-                for doc, score in docs_and_scores
-                if score >= score_threshold
-            ]
-            if len(docs_and_scores) == 0:
-                warnings.warn(
-                    "No relevant docs were retrieved using the relevance score"
-                    f" threshold {score_threshold}"
-                )
-        return docs_and_scores
-
-    def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[dict] = None,
-    ) -> List[Tuple[Document, float]]:
-        """Return docs and scores most similar to embedding vector.
-
-        Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-
-        Returns:
-            List of (Documents, Scores) most similar to the query vector.
-        """
-
-        raise NotImplementedError
