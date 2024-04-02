@@ -984,7 +984,6 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
         Args:
             output (Any): The output of the tool.
         """
-        output = str(output)
         handle_event(
             self.handlers,
             "on_tool_end",

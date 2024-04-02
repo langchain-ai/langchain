@@ -427,11 +427,13 @@ class BedrockBase(BaseModel, ABC):
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
+        except ValueError as e:
+            raise ValueError(f"Error raised by bedrock service: {e}")
         except Exception as e:
             raise ValueError(
                 "Could not load credentials to authenticate with AWS client. "
                 "Please check that credentials in the specified "
-                "profile name are valid."
+                f"profile name are valid. Bedrock error: {e}"
             ) from e
 
         return values

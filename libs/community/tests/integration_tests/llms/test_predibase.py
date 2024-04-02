@@ -5,14 +5,14 @@ from langchain_community.llms.predibase import Predibase
 
 
 def test_api_key_is_string() -> None:
-    llm = Predibase(predibase_api_key="secret-api-key")
+    llm = Predibase(model="my_llm", predibase_api_key="secret-api-key")
     assert isinstance(llm.predibase_api_key, SecretStr)
 
 
 def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
-    llm = Predibase(predibase_api_key="secret-api-key")
+    llm = Predibase(model="my_llm", predibase_api_key="secret-api-key")
     print(llm.predibase_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
