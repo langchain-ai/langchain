@@ -17,7 +17,7 @@ from langchain_text_splitters import (
 )
 from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
-from langchain_text_splitters.html import HTMLHeaderTextSplitter
+from langchain_text_splitters.html import HTMLHeaderTextSplitter, HTMLSectionSplitter
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.markdown import MarkdownHeaderTextSplitter
 from langchain_text_splitters.python import PythonCodeTextSplitter
@@ -1338,6 +1338,162 @@ def test_split_text_on_tokens() -> None:
     output = split_text_on_tokens(text=text, tokenizer=tokenizer)
     expected_output = ["foo bar", "bar baz", "baz 123"]
     assert output == expected_output
+
+
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_section_aware_happy_path_splitting_based_on_header_1_2() -> None:
+    # arrange
+    html_string = """<!DOCTYPE html>
+            <html>
+            <body>
+                <div>
+                    <h1>Foo</h1>
+                    <p>Some intro text about Foo.</p>
+                    <div>
+                        <h2>Bar main section</h2>
+                        <p>Some intro text about Bar.</p>
+                        <h3>Bar subsection 1</h3>
+                        <p>Some text about the first subtopic of Bar.</p>
+                        <h3>Bar subsection 2</h3>
+                        <p>Some text about the second subtopic of Bar.</p>
+                    </div>
+                    <div>
+                        <h2>Baz</h2>
+                        <p>Some text about Baz</p>
+                    </div>
+                    <br>
+                    <p>Some concluding text about Foo</p>
+                </div>
+            </body>
+            </html>"""
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
+    )
+
+    docs = sec_splitter.split_text(html_string)
+
+    assert len(docs) == 3
+    assert docs[0].metadata["Header 1"] == "Foo"
+    assert docs[0].page_content == "Foo \n Some intro text about Foo."
+
+    assert docs[1].page_content == (
+        "Bar main section \n Some intro text about Bar. \n "
+        "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
+        "Bar subsection 2 \n Some text about the second subtopic of Bar."
+    )
+    assert docs[1].metadata["Header 2"] == "Bar main section"
+
+    assert (
+        docs[2].page_content
+        == "Baz \n Some text about Baz \n \n \n Some concluding text about Foo"
+    )
+    # Baz \n Some text about Baz \n \n \n Some concluding text about Foo
+    # Baz \n Some text about Baz \n \n Some concluding text about Foo
+    assert docs[2].metadata["Header 2"] == "Baz"
+
+
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_happy_path_splitting_based_on_header_with_font_size() -> None:
+    # arrange
+    html_string = """<!DOCTYPE html>
+            <html>
+            <body>
+                <div>
+                    <span style="font-size: 22px">Foo</span>
+                    <p>Some intro text about Foo.</p>
+                    <div>
+                        <h2>Bar main section</h2>
+                        <p>Some intro text about Bar.</p>
+                        <h3>Bar subsection 1</h3>
+                        <p>Some text about the first subtopic of Bar.</p>
+                        <h3>Bar subsection 2</h3>
+                        <p>Some text about the second subtopic of Bar.</p>
+                    </div>
+                    <div>
+                        <h2>Baz</h2>
+                        <p>Some text about Baz</p>
+                    </div>
+                    <br>
+                    <p>Some concluding text about Foo</p>
+                </div>
+            </body>
+            </html>"""
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
+    )
+
+    docs = sec_splitter.split_text(html_string)
+
+    assert len(docs) == 3
+    assert docs[0].page_content == "Foo \n Some intro text about Foo."
+    assert docs[0].metadata["Header 1"] == "Foo"
+
+    assert docs[1].page_content == (
+        "Bar main section \n Some intro text about Bar. \n "
+        "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
+        "Bar subsection 2 \n Some text about the second subtopic of Bar."
+    )
+    assert docs[1].metadata["Header 2"] == "Bar main section"
+
+    assert docs[2].page_content == (
+        "Baz \n Some text about Baz \n \n \n Some concluding text about Foo"
+    )
+    assert docs[2].metadata["Header 2"] == "Baz"
+
+
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
+    # arrange
+    html_string = """<!DOCTYPE html>
+            <html>
+            <body>
+                <div>
+                    <span style="font-size: 22px">\nFoo </span>
+                    <p>Some intro text about Foo.</p>
+                    <div>
+                        <h2>Bar main section</h2>
+                        <p>Some intro text about Bar.</p>
+                        <h3>Bar subsection 1</h3>
+                        <p>Some text about the first subtopic of Bar.</p>
+                        <h3>Bar subsection 2</h3>
+                        <p>Some text about the second subtopic of Bar.</p>
+                    </div>
+                    <div>
+                        <h2>Baz</h2>
+                        <p>Some text about Baz</p>
+                    </div>
+                    <br>
+                    <p>Some concluding text about Foo</p>
+                </div>
+            </body>
+            </html>"""
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")]
+    )
+
+    docs = sec_splitter.split_text(html_string)
+
+    assert len(docs) == 3
+    assert docs[0].page_content == "Foo  \n Some intro text about Foo."
+    assert docs[0].metadata["Header 1"] == "Foo"
+
+    assert docs[1].page_content == (
+        "Bar main section \n Some intro text about Bar. \n "
+        "Bar subsection 1 \n Some text about the first subtopic of Bar. \n "
+        "Bar subsection 2 \n Some text about the second subtopic of Bar."
+    )
+    assert docs[1].metadata["Header 2"] == "Bar main section"
+
+    assert docs[2].page_content == (
+        "Baz \n Some text about Baz \n \n \n Some concluding text about Foo"
+    )
+    assert docs[2].metadata["Header 2"] == "Baz"
 
 
 def test_split_json() -> None:

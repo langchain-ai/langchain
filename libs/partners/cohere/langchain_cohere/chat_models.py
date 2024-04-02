@@ -76,6 +76,7 @@ def get_cohere_chat_request(
     *,
     documents: Optional[List[Document]] = None,
     connectors: Optional[List[Dict[str, str]]] = None,
+    stop_sequences: Optional[List[str]] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Get the request for the Cohere chat API.
@@ -96,7 +97,7 @@ def get_cohere_chat_request(
             "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."  # noqa: E501
         )
 
-    parsed_docs: Optional[List[Document]] = None
+    parsed_docs: Optional[Union[List[Document], List[Dict]]] = None
     if "documents" in additional_kwargs:
         parsed_docs = (
             additional_kwargs["documents"]
@@ -107,14 +108,18 @@ def get_cohere_chat_request(
         parsed_docs = documents
 
     formatted_docs: Optional[List[Dict[str, Any]]] = None
-    if parsed_docs is not None:
-        formatted_docs = [
-            {
-                "text": doc.page_content,
-                "id": doc.metadata.get("id") or f"doc-{str(i)}",
-            }
-            for i, doc in enumerate(parsed_docs)
-        ]
+    if parsed_docs:
+        formatted_docs = []
+        for i, parsed_doc in enumerate(parsed_docs):
+            if isinstance(parsed_doc, Document):
+                formatted_docs.append(
+                    {
+                        "text": parsed_doc.page_content,
+                        "id": parsed_doc.metadata.get("id") or f"doc-{str(i)}",
+                    }
+                )
+            elif isinstance(parsed_doc, dict):
+                formatted_docs.append(parsed_doc)
 
     # by enabling automatic prompt truncation, the probability of request failure is
     # reduced with minimal impact on response quality
@@ -130,6 +135,7 @@ def get_cohere_chat_request(
         "documents": formatted_docs,
         "connectors": connectors,
         "prompt_truncation": prompt_truncation,
+        "stop_sequences": stop_sequences,
         **kwargs,
     }
 
@@ -226,7 +232,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, stop_sequences=stop, **self._default_params, **kwargs
+        )
 
         if hasattr(self.client, "chat_stream"):  # detect and support sdk v5
             stream = self.client.chat_stream(**request)
@@ -256,7 +264,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, stop_sequences=stop, **self._default_params, **kwargs
+        )
 
         if hasattr(self.async_client, "chat_stream"):  # detect and support sdk v5
             stream = self.async_client.chat_stream(**request)
@@ -312,7 +322,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return generate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, stop_sequences=stop, **self._default_params, **kwargs
+        )
         response = self.client.chat(**request)
 
         generation_info = self._get_generation_info(response)
@@ -336,7 +348,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
             )
             return await agenerate_from_stream(stream_iter)
 
-        request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
+        request = get_cohere_chat_request(
+            messages, stop_sequences=stop, **self._default_params, **kwargs
+        )
         response = self.client.chat(**request)
 
         generation_info = self._get_generation_info(response)
