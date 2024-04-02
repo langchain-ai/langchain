@@ -13,13 +13,13 @@ Get a [Cohere api key](https://dashboard.cohere.ai/) and set it as an environmen
 
 ## Cohere langchain integrations
 
-|API|description|Endpoint docs|
-|---|---|---|
-|Chat|Build chat bots|[chat](https://docs.cohere.com/reference/chat)|
-|LLM (legacy)|Generate text|[generate](https://docs.cohere.com/reference/generate)|
-|RAG Retriever|Connect to external data sources|[chat + rag](https://docs.cohere.com/reference/chat)|
-|Text Embedding|Embed strings to vectors|[embed](https://docs.cohere.com/reference/embed)|
-|Rerank Retriever|Rank strings based on relevance|[rerank](https://docs.cohere.com/reference/rerank)|
+|API|description|Endpoint docs|Import|Usage Examples|
+| --- | --- | --- | --- | --- |
+|Chat|Build chat bots|[chat](https://docs.cohere.com/reference/chat)|'from langchain_cohere.chat_models import ChatCohere` | [Chat Model](/docs/integrations/chat/cohere) |
+|LLM (legacy)|Generate text|[generate](https://docs.cohere.com/reference/generate)|'from langchain_cohere.llms import Cohere` | [LLM model](/docs/integrations/llms/cohere)  |
+|RAG Retriever|Connect to external data sources|[chat + rag](https://docs.cohere.com/reference/chat)|'from langchain_cohere.rag_retrievers import CohereRagRetriever` | [RAG Retriever](/docs/integrations/retrievers/cohere) |
+|Text Embedding|Embed strings to vectors|[embed](https://docs.cohere.com/reference/embed)|'from langchain_cohere.embeddings import CohereEmbeddings` | [Text Embeddings model](/docs/integrations/text_embedding/cohere) |
+|Rerank Retriever|Rank strings based on relevance|[rerank](https://docs.cohere.com/reference/rerank)|'from langchain_cohere.rerank import CohereRerank` | [Reranker](/docs/integrations/retrievers/cohere-reranker) |
 
 
 ## Quick copy examples
@@ -27,7 +27,7 @@ Get a [Cohere api key](https://dashboard.cohere.ai/) and set it as an environmen
 ### Chat
 
 ```python
-from langchain_cohere.chat_model import ChatCohere
+from langchain_cohere.chat_models import ChatCohere
 from langchain_core.messages import HumanMessage
 chat = ChatCohere()
 messages = [HumanMessage(content="knock knock")]
@@ -51,7 +51,7 @@ Usage of the Cohere (legacy) [LLM model](/docs/integrations/llms/cohere)
 ### RAG Retriever
 
 ```python
-from langchain_community.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 from langchain_cohere.rag_retrievers import CohereRagRetriever
 from langchain_core.documents import Document
 
@@ -59,7 +59,7 @@ rag = CohereRagRetriever(llm=ChatCohere())
 print(rag.get_relevant_documents("What is cohere ai?"))
 ```
 
-Usage of the Cohere [RAG Retriever](/docs/integrations/retrievers/cohere)|
+Usage of the Cohere [RAG Retriever](/docs/integrations/retrievers/cohere)
 
 ### Text Embedding
 
@@ -70,7 +70,7 @@ embeddings = CohereEmbeddings(model="embed-english-light-v3.0")
 print(embeddings.embed_documents(["This is a test document."]))
 ```
 
-Usage of the Cohere [Text Embeddings model](/docs/integrations/text_embedding/cohere)|
+Usage of the Cohere [Text Embeddings model](/docs/integrations/text_embedding/cohere)
 
 ### Reranker
 
