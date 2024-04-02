@@ -228,7 +228,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
     ) -> Iterator[ChatGenerationChunk]:
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
 
-        stream = self.get_client().chat_stream(**request)
+        stream = self.client.chat_stream(**request)
 
         for data in stream:
             if data.event_type == "text-generation":
@@ -255,7 +255,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
     ) -> AsyncIterator[ChatGenerationChunk]:
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
 
-        stream = self.get_async_client().chat_stream(**request)
+        stream = self.async_client.chat_stream(**request)
 
         async for data in stream:
             if data.event_type == "text-generation":
@@ -307,7 +307,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             return generate_from_stream(stream_iter)
 
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        response = self.get_client().chat(**request)
+        response = self.client.chat(**request)
 
         generation_info = self._get_generation_info(response)
         message = AIMessage(content=response.text, additional_kwargs=generation_info)
@@ -331,7 +331,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             return await agenerate_from_stream(stream_iter)
 
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        response = self.get_client().chat(**request)
+        response = self.client.chat(**request)
 
         generation_info = self._get_generation_info(response)
         message = AIMessage(content=response.text, additional_kwargs=generation_info)
@@ -345,9 +345,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         """Calculate number of tokens."""
         if model or self.model:
             return len(
-                self.get_client().tokenize(text=text, model=model or self.model).tokens
+                self.client.tokenize(text=text, model=model or self.model).tokens
             )
-        return len(self.get_client().tokenize(text=text).tokens)
+        return len(self.client.tokenize(text=text).tokens)
 
 
 def _format_cohere_tool_calls(

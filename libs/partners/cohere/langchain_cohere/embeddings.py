@@ -26,9 +26,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Optional[cohere.Client]  #: :meta private:
+    client: cohere.Client  #: :meta private:
     """Cohere client."""
-    async_client: Optional[cohere.AsyncClient]  #: :meta private:
+    async_client: cohere.AsyncClient  #: :meta private:
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
