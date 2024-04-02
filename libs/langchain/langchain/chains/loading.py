@@ -11,7 +11,6 @@ from langchain_core.prompts.loading import (
     load_prompt,
     load_prompt_from_config,
 )
-from langchain_core.utils.loading import try_load_from_hub
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
