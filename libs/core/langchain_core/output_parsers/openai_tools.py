@@ -40,7 +40,9 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
             )
         message = generation.message
         if isinstance(message, ToolCallsMessage):
-            tool_calls = [tc.dict() for tc in message.tool_calls]
+            tool_calls = (
+                [tc.dict() for tc in message.tool_calls] if message.tool_calls else []
+            )
         else:
             try:
                 raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
