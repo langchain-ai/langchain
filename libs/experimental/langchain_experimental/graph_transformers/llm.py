@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
@@ -357,6 +357,7 @@ class LLMGraphTransformer:
         """
         text = document.page_content
         raw_schema = await self.chain.ainvoke({"input": text})
+        raw_schema = cast(Dict[Any, Any], raw_schema)
         nodes, relationships = _convert_to_graph_document(raw_schema)
 
         if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
