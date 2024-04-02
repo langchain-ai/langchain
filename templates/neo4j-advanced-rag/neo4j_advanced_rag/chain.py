@@ -1,10 +1,10 @@
 from operator import itemgetter
 
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import ConfigurableField, RunnableParallel
+from langchain_openai import ChatOpenAI
 
 from neo4j_advanced_rag.retrievers import (
     hypothetic_question_vectorstore,
@@ -12,6 +12,11 @@ from neo4j_advanced_rag.retrievers import (
     summary_vectorstore,
     typical_rag,
 )
+
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
 
 template = """Answer the question based only on the following context:
 {context}
@@ -33,7 +38,7 @@ retriever = typical_rag.as_retriever().configurable_alternatives(
 chain = (
     RunnableParallel(
         {
-            "context": itemgetter("question") | retriever,
+            "context": itemgetter("question") | retriever | format_docs,
             "question": itemgetter("question"),
         }
     )

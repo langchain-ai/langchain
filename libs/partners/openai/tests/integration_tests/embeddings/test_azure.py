@@ -60,8 +60,8 @@ def test_azure_openai_embedding_documents_chunk_size() -> None:
     embedding = _get_embeddings()
     embedding.embedding_ctx_length = 8191
     output = embedding.embed_documents(documents)
-    # Max 16 chunks per batch on Azure OpenAI embeddings
-    assert embedding.chunk_size == 16
+    # Max 2048 chunks per batch on Azure OpenAI embeddings
+    assert embedding.chunk_size == 2048
     assert len(output) == 20
     assert all([len(out) == 1536 for out in output])
 
