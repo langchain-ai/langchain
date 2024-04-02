@@ -2,6 +2,7 @@ import copy
 from typing import Any, List, Type
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import ToolCallsMessage
 from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
@@ -38,16 +39,19 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
                 "This output parser can only be used with a chat generation."
             )
         message = generation.message
-        try:
-            raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
-        except KeyError:
-            return []
-        tool_calls = parse_tool_calls(
-            raw_tool_calls,
-            partial=partial,
-            strict=self.strict,
-            return_id=self.return_id,
-        )
+        if isinstance(message, ToolCallsMessage):
+            tool_calls = [tc.dict() for tc in message.tool_calls]
+        else:
+            try:
+                raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
+            except KeyError:
+                return []
+            tool_calls = parse_tool_calls(
+                raw_tool_calls,
+                partial=partial,
+                strict=self.strict,
+                return_id=self.return_id,
+            )
         # for backwards compatibility
         for tc in tool_calls:
             tc["type"] = tc.pop("name")
