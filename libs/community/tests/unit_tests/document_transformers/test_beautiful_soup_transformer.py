@@ -233,8 +233,8 @@ def test_invalid_html() -> None:
 
 
 @pytest.mark.requires("bs4")
-def test_remove_comments_by_default() -> None:
-    bs_transformer = BeautifulSoupTransformer()
+def test_remove_comments() -> None:
+    bs_transformer = BeautifulSoupTransformer(remove_comments=True)
     html_with_comments = (
         "<html><!-- Google tag (gtag.js) --><p>First paragraph.</p</html>"
     )
@@ -249,7 +249,7 @@ def test_remove_comments_by_default() -> None:
 
 
 @pytest.mark.requires("bs4")
-def test_optionally_do_not_remove_comments() -> None:
+def test_do_not_remove_comments() -> None:
     bs_transformer = BeautifulSoupTransformer()
     html_with_comments = (
         "<html><!-- Google tag (gtag.js) --><p>First paragraph.</p</html>"
