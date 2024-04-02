@@ -1,7 +1,6 @@
 """Client for persisting chat message history in a Postgres database.
 
-This client provides support for both sync and async via psycopg and asyncpg,
-respectively.
+This client provides support for both sync and async via psycopg 3.
 """
 from __future__ import annotations
 
@@ -86,8 +85,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
     ) -> None:
         """Client for persisting chat message history in a Postgres database,
 
-        This client provides support for both sync and async via
-        psycopg and asyncpg, respectively.
+        This client provides support for both sync and async via psycopg 3.
 
         The client creates a schema in the database and provides methods to
         add messages, get messages, and clear the chat message history.
@@ -114,10 +112,10 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         connection pool and will improve performance.
 
         Args:
-            session_id: The session ID to use for the chat message history.
-            table_name: The name of the database table to use.
-            sync_connection: An existing psycopg database client.
-            async_connection: An existing asyncpg database client.
+            session_id: The session ID to use for the chat message history
+            table_name: The name of the database table to use
+            sync_connection: An existing psycopg connection instance
+            async_connection: An existing psycopg async connection instance
 
         Note:
             Must specify one of sync_connection or async_connection.
