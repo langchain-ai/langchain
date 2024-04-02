@@ -217,11 +217,11 @@ def _parse_and_clean_json(
                 type=rel["type"].replace(" ", "_").upper(),
             )
         )
-        return nodes, relationships
+    return nodes, relationships
 
 
 def _convert_to_graph_document(
-    raw_schema: Union[Dict[Any, Any], BaseModel],
+    raw_schema: Dict[Any, Any],
 ) -> Tuple[List[Node], List[Relationship]]:
     # If there are validation errors
     if not raw_schema["parsed"]:
