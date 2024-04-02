@@ -1,16 +1,19 @@
 """Generic utility functions."""
+
 import contextlib
 import datetime
 import functools
 import importlib
 import warnings
 from importlib.metadata import version
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set, Tuple, Union
 
 from packaging.version import parse
-from requests import HTTPError, Response
 
 from langchain_core.pydantic_v1 import SecretStr
+
+if TYPE_CHECKING:
+    from requests import Response
 
 
 def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
@@ -39,8 +42,11 @@ def xor_args(*arg_groups: Tuple[str, ...]) -> Callable:
     return decorator
 
 
-def raise_for_status_with_text(response: Response) -> None:
+def raise_for_status_with_text(response: "Response") -> None:
     """Raise an error with the response text."""
+
+    from requests import HTTPError
+
     try:
         response.raise_for_status()
     except HTTPError as e:
