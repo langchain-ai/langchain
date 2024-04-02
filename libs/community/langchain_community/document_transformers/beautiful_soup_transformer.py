@@ -8,10 +8,12 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     Example:
         .. code-block:: python
-            from langchain.document_transformers import BeautifulSoupTransformer
+
+            from langchain_community.document_transformers import BeautifulSoupTransformer
+
             bs4_transformer = BeautifulSoupTransformer()
             docs_transformed = bs4_transformer.transform_documents(docs)
-    """
+    """  # noqa: E501
 
     def __init__(self) -> None:
         """
@@ -34,7 +36,8 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         unwanted_tags: List[str] = ["script", "style"],
         tags_to_extract: List[str] = ["p", "li", "div", "a"],
         remove_lines: bool = True,
-        remove_comments: bool = True,
+        *,
+        remove_comments: bool = False,
         **kwargs: Any,
     ) -> Sequence[Document]:
         """
@@ -56,7 +59,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
             cleaned_content = self.remove_unwanted_tags(cleaned_content, unwanted_tags)
 
             cleaned_content = self.extract_tags(
-                cleaned_content, tags_to_extract, remove_comments
+                cleaned_content, tags_to_extract, remove_comments=remove_comments
             )
 
             if remove_lines:
@@ -87,7 +90,9 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return str(soup)
 
     @staticmethod
-    def extract_tags(html_content: str, tags: List[str], remove_comments: bool) -> str:
+    def extract_tags(
+        html_content: str, tags: List[str], remove_comments: bool = True
+    ) -> str:
         """
         Extract specific tags from a given HTML content.
 
@@ -105,7 +110,9 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         for element in soup.find_all():
             if element.name in tags:
                 # Extract all navigable strings recursively from this element.
-                text_parts += get_navigable_strings(element, remove_comments)
+                text_parts += get_navigable_strings(
+                    element, remove_comments=remove_comments
+                )
 
                 # To avoid duplicate text, remove all descendants from the soup.
                 element.decompose()
@@ -137,7 +144,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         raise NotImplementedError
 
 
-def get_navigable_strings(element: Any, remove_comments: bool) -> Iterator[str]:
+def get_navigable_strings(element: Any, remove_comments: bool = True) -> Iterator[str]:
     """Get all navigable strings from a BeautifulSoup element.
 
     Args:
