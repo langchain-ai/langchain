@@ -161,7 +161,7 @@ def map_to_base_relationship(rel: Any) -> Relationship:
 
 def _convert_to_graph_document(
     raw_schema: Dict[str, Any],
-) -> Tuple[List[Node], Tuple[List[Relationship]]]:
+) -> Tuple[List[Node], List[Relationship]]:
     # If there are validation errors
     if not raw_schema["parsed"]:
         try:
