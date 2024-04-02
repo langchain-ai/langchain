@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import uuid
 from typing import List, Optional, Sequence
 
 import psycopg
@@ -140,6 +141,15 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
 
         self._connection = sync_connection
         self._aconnection = async_connection
+
+        # Validate that session id is a UUID
+        try:
+            uuid.UUID(session_id)
+        except ValueError:
+            raise ValueError(
+                f"Invalid session id. Session id must be a valid UUID. Got {session_id}"
+            )
+
         self._session_id = session_id
 
         if not re.match(r"^\w+$", table_name):
@@ -152,7 +162,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
     @classmethod
     def create_schema(
         cls,
-        connection: Optional[psycopg.Connection],
+        connection: psycopg.Connection,
         table_name: str,
         /,
     ) -> None:
@@ -166,7 +176,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
 
     @classmethod
     async def acreate_schema(
-        cls, connection: Optional[psycopg.AsyncConnection], table_name: str, /
+        cls, connection: psycopg.AsyncConnection, table_name: str, /
     ) -> None:
         """Create the table schema in the database and create relevant indexes."""
         queries = _create_table_and_index(table_name)
@@ -177,9 +187,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         await connection.commit()
 
     @classmethod
-    def drop_table(
-        cls, connection: psycopg.AsyncConnection, table_name: str, /
-    ) -> None:
+    def drop_table(cls, connection: psycopg.Connection, table_name: str, /) -> None:
         """Delete the table schema in the database.
 
         WARNING:
@@ -190,6 +198,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
             connection: The database connection.
             table_name: The name of the table to create.
         """
+
         query = _delete_table_query(table_name)
         logger.info("Dropping table %s", table_name)
         with connection.cursor() as cursor:
@@ -287,7 +296,7 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict(items)
         return messages
 
-    @property
+    @property  # type: ignore[override]
     def messages(self) -> List[BaseMessage]:
         """The abstraction required a property."""
         return self.get_messages()

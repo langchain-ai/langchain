@@ -28,7 +28,7 @@ async def asyncpg_client() -> AsyncGenerator[psycopg.AsyncConnection, None]:
         yield conn
     finally:
         # Cleanup: close the connection after the test is done
-        conn.close()
+        await conn.close()
 
 
 @contextmanager
