@@ -219,7 +219,13 @@ def _parse_and_clean_json(
 
 
 def _format_nodes(nodes: List[Node]) -> List[Node]:
-    return [Node(id=el.id.title(), type=el.type.capitalize()) for el in nodes]
+    return [
+        Node(
+            id=el.id.title() if isinstance(el.id, str) else el.id,
+            type=el.type.capitalize(),
+        )
+        for el in nodes
+    ]
 
 
 def _format_relationships(rels: List[Relationship]) -> List[Relationship]:
