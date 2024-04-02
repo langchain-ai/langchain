@@ -1,6 +1,7 @@
-# Contributing to GigaChain
+# Участие в развитии GigaChain
 
-Hi there! Thank you for even being interested in contributing to GigaChain.
-As an open-source project in a rapidly developing field, we are extremely open to contributions, whether they involve new features, improved infrastructure, better documentation, or bug fixes.
+Приветствуем!
 
-To learn how to contribute to LangChain, please follow the [contribution guide here](https://python.langchain.com/docs/contributing/).
+Спасибо, что проявили интерес к участию в GigaChain.
+
+Как проект с открытым исходным кодом в быстро развивающейся области, мы рады любому участию, будь то новые функции, улучшение инфраструктуры или документация, или исправления ошибок.
