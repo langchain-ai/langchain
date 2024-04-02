@@ -28,7 +28,7 @@ class BaseNeptuneGraph(ABC):
         return self.schema
 
     @abstractmethod
-    def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
+    def query(self, query: str, params: dict = {}) -> dict:
         raise NotImplementedError()
 
     @abstractmethod
