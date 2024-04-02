@@ -9,7 +9,6 @@ import yaml
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import Tool
-from langchain_core.utils.loading import try_load_from_hub
 
 from langchain.agents.agent import BaseMultiActionAgent, BaseSingleActionAgent
 from langchain.agents.types import AGENT_TO_CLASS
