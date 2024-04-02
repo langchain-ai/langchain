@@ -2,8 +2,8 @@
 import os
 from contextlib import asynccontextmanager, contextmanager
 
-import asyncpg
-import psycopg2
+import psycopg
+from typing_extensions import AsyncGenerator, Generator
 
 PG_USER = os.environ.get("PG_USER", "langchain")
 PG_HOST = os.environ.get("PG_HOST", "localhost")
@@ -21,20 +21,20 @@ DSN = f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
 
 
 @asynccontextmanager
-async def asyncpg_client():
+async def asyncpg_client() -> AsyncGenerator[psycopg.AsyncConnection, None]:
     # Establish a connection to your test database
-    conn = await asyncpg.connect(dsn=DSN)
+    conn = await psycopg.AsyncConnection.connect(conninfo=DSN)
     try:
         yield conn
     finally:
         # Cleanup: close the connection after the test is done
-        await conn.close()
+        conn.close()
 
 
 @contextmanager
-def syncpg_client():
+def syncpg_client() -> Generator[psycopg.Connection, None, None]:
     # Establish a connection to your test database
-    conn = psycopg2.connect(dsn=DSN)
+    conn = psycopg.connect(conninfo=DSN)
     try:
         yield conn
     finally:
