@@ -190,11 +190,6 @@ const config = {
                 label: "Versioning",
               },
               {
-                type: "docSidebar",
-                sidebarId: "changelog",
-                label: "Changelog",
-              },
-              {
                 to: "/docs/contributing",
                 label: "Contributing",
               },
