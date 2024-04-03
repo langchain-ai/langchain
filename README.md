@@ -42,24 +42,17 @@ For these applications, LangChain simplifies the entire application lifecycle:
 - **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](https://python.langchain.com/docs/langsmith/) so that you can constantly optimize and deploy with confidence.
 - **Deployment**: Turn any chain into a REST API with [LangServe](https://python.langchain.com/docs/langserve).
 
-Concretely, the **open-source libraries** consist of several packages:
-
+### Open-source libraries
 - **`langchain-core`**: Base abstractions and LangChain Expression Language.
 - **`langchain-community`**: Third party integrations.
   - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
+- **`[LangGraph](https://python.langchain.com/docs/langgraph)`**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
-The main value props of these packages are:
-
-1. **Components**: composable tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
-2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
-
-Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
-
-The broader LangChain ecosystem consists of:
-
+### Productionization:
 - **[LangSmith](https://python.langchain.com/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
-- **[LangGraph](https://python.langchain.com/docs/langgraph)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+
+### Deployment:
 - **[LangServe](https://python.langchain.com/docs/langserve)**: A library for deploying LangChain chains as REST APIs.
 
 ![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack.svg "LangChain Architecture Overview")

@@ -24,25 +24,18 @@ import ThemedImage from '@theme/ThemedImage';
   title="LangChain Framework Overview"
 />
 
-Concretely, the **open-source libraries** consist of several packages:
-
+### Open-source libraries
 - **`langchain-core`**: Base abstractions and LangChain Expression Language.
 - **`langchain-community`**: Third party integrations.
   - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
+- **`[🦜🕸️ LangGraph](/docs/langgraph)`**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
-The main value props of these packages are:
+### Productionization:
+- **[🦜🛠️ LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
 
-1. **Components**: composable tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
-2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
-
-Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
-
-The broader LangChain ecosystem consists of:
-
-- **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
-- **[LangGraph](/docs/langgraph)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
-- **[LangServe](/docs/langserve)**: A library for deploying LangChain chains as REST APIs.
+### Deployment:
+- **[🦜🏓 LangServe](/docs/langserve)**: A library for deploying LangChain chains as REST APIs.
 
 ## Get started
 
@@ -56,63 +49,27 @@ These docs focus on the Python LangChain library. [Head here](https://js.langcha
 
 :::
 
-## Use cases
+## Helpful links
 
-If you're looking to build something specific or are more of a hands-on learner, check out our [use-cases](/docs/use_cases).
-They're walkthroughs and techniques for common end-to-end tasks, such as:
+### Open source packages
+- [Use cases](/docs/use_cases/)
+  - [Question answering with RAG](/docs/use_cases/question_answering/)
+  - [Extracting structured output](/docs/use_cases/extraction/)
+  - [Chatbots](/docs/use_cases/chatbots/)
+  - and more!
+- [LangChain Expression Language (LCEL)](/docs/expression_language/)
+  - [Get started](/docs/expression_language/): LCEL and its benefits
+  - [Runnable interface](/docs/expression_language/interface): The standard interface for LCEL objects
+  - [Primitives](/docs/expression_language/primitives): More on the primitives LCEL includes
+- [Components](/docs/modules)
+- [Integrations](/docs/integrations/platforms/)
+- [Guides](/docs/guides)
+- [LangChain API references](https://api.python.langchain.com/)
+- [🦜🕸️ LangGraph](/docs/langgraph)
 
-- [Question answering with RAG](/docs/use_cases/question_answering/)
-- [Extracting structured output](/docs/use_cases/extraction/)
-- [Chatbots](/docs/use_cases/chatbots/)
-- and more!
+### Productionization
+- [🦜🛠️ LangSmith](/docs/langsmith)
+- [Security](/docs/security)
 
-
-## LangChain Expression Language (LCEL)
-
-LCEL is the foundation of many of LangChain's components, and is a declarative way to compose chains. LCEL was designed from day 1 to support putting prototypes in production, with no code changes, from the simplest “prompt + LLM” chain to the most complex chains.
-
-- **[Get started](/docs/expression_language/)**: LCEL and its benefits
-- **[Runnable interface](/docs/expression_language/interface)**: The standard interface for LCEL objects
-- **[Primitives](/docs/expression_language/primitives)**: More on the primitives LCEL includes
-
-
-## Ecosystem
-
-### [🦜🛠️ LangSmith](/docs/langsmith)
-Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
-
-### [🦜🕸️ LangGraph](/docs/langgraph)
-Build stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain primitives.
-
-### [🦜🏓 LangServe](/docs/langserve)
-Deploy LangChain runnables and chains as REST APIs.
-
-## [Security](/docs/security)
-Read up on our [Security](/docs/security) best practices to make sure you're developing safely with LangChain.
-
-## Additional resources
-
-### [Components](/docs/modules/)
-
-LangChain provides standard, extendable interfaces and integrations for many different components, including:
-
-#### [Model I/O](/docs/modules/model_io/)
-Formatting and managing language model input and output
-
-#### [Retrieval](/docs/modules/data_connection/)
-Interface with application-specific data
-
-#### [Agents](/docs/modules/agents/)
-Let models choose which tools to use given high-level directives
-
-### [Integrations](/docs/integrations/providers/)
-LangChain is part of a rich ecosystem of tools that integrate with our framework and build on top of it. Check out our growing list of [integrations](/docs/integrations/providers/).
-
-### [Guides](/docs/guides/)
-Best practices for developing with LangChain.
-
-### [API reference](https://api.python.langchain.com)
-Head to the reference section for full documentation of all classes and methods in the LangChain and LangChain Experimental Python packages.
-
-### [Developer's guide](/docs/contributing)
-Check out the developer's guide for guidelines on contributing and help getting your dev environment set up.
+### Deployment
+- [🦜🏓 LangServe](/docs/langserve)
