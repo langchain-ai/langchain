@@ -1,5 +1,6 @@
 """Utilities for loading configurations from langchain_core-hub."""
 
+import warnings
 from typing import Any
 
 
@@ -7,7 +8,8 @@ def try_load_from_hub(
     *args: Any,
     **kwargs: Any,
 ) -> Any:
-    raise RuntimeError(
+    warnings.warn(
         "Loading from the deprecated github-based Hub is no longer supported. "
         "Please use the new LangChain Hub at https://smith.langchain.com/hub instead."
     )
+    return None
