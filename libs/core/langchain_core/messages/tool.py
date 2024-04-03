@@ -1,68 +1,11 @@
-from typing import Any, List, Literal, Optional
+from typing import Any, List, Literal
 
-from langchain_core.load import Serializable
-from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
     merge_content,
 )
-from langchain_core.utils._merge import merge_dicts, merge_lists
-from langchain_core.utils.tools import parse_tool_calls
-
-
-class ToolCall(Serializable):
-    name: str
-    args: dict
-    id: Optional[str] = None
-
-
-class ToolCallsMessage(AIMessage):
-    tool_calls: Optional[List[ToolCall]] = None
-    type: Literal["tool_calls"] = "tool_calls"
-
-
-class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
-    # Ignoring mypy re-assignment here since we're overriding the value
-    # to make sure that the chunk variant can be discriminated from the
-    # non-chunk variant.
-    type: Literal["ToolCallsMessageChunk"] = "ToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "messages"]
-
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
-        if isinstance(other, AIMessageChunk):
-            if self.example != other.example:
-                raise ValueError(
-                    "Cannot concatenate ToolCallsMessageChunks "
-                    "with different example values."
-                )
-
-            if isinstance(other, ToolCallsMessageChunk):
-                tool_calls = merge_lists(self.tool_calls, other.tool_calls)
-            else:
-                tool_calls = self.tool_calls
-
-            return self.__class__(
-                example=self.example,
-                content=merge_content(self.content, other.content),
-                additional_kwargs=merge_dicts(
-                    self.additional_kwargs, other.additional_kwargs
-                ),
-                response_metadata=merge_dicts(
-                    self.response_metadata, other.response_metadata
-                ),
-                tool_calls=tool_calls,
-                id=self.id,
-            )
-
-        return super().__add__(other)
-
-
-ToolCallsMessage.update_forward_refs()
+from langchain_core.utils._merge import merge_dicts
 
 
 class ToolMessage(BaseMessage):

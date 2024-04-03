@@ -15,7 +15,13 @@
 
 """  # noqa: E501
 
-from langchain_core.messages.ai import AIMessage, AIMessageChunk
+from langchain_core.messages.ai import (
+    AIMessage,
+    AIMessageChunk,
+    ToolCall,
+    ToolCallsMessage,
+    ToolCallsMessageChunk,
+)
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
@@ -27,13 +33,7 @@ from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
-from langchain_core.messages.tool import (
-    ToolCall,
-    ToolCallsMessage,
-    ToolCallsMessageChunk,
-    ToolMessage,
-    ToolMessageChunk,
-)
+from langchain_core.messages.tool import ToolMessage, ToolMessageChunk
 from langchain_core.messages.utils import (
     AnyMessage,
     MessageLikeRepresentation,
