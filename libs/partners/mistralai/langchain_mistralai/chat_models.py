@@ -148,14 +148,22 @@ def _convert_delta_to_message_chunk(
         if raw_tool_calls := _delta.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
-                tool_calls = parse_tool_calls(raw_tool_calls, partial=True)
-                return AIToolCallsMessageChunk(
-                    content=content,
-                    additional_kwargs=additional_kwargs,
-                    tool_calls=tool_calls,
-                )
-            except Exception:
-                tool_calls = None
+                tool_call_chunks = [
+                    {
+                        "name": rtc["function"].get("name"),
+                        "args": rtc["function"].get("arguments"),
+                        "id": rtc.get("id"),
+                        "index": rtc.get("index"),
+                    }
+                    for rtc in raw_tool_calls
+                ]
+            except KeyError:
+                tool_call_chunks = None
+            return AIToolCallsMessageChunk(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                tool_call_chunks=tool_call_chunks,
+            )
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
