@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import AsyncIterator, Iterator, List
 
@@ -63,6 +62,33 @@ class AsyncChromiumLoader(BaseLoader):
             await browser.close()
         return results
 
+    def scrape_playwright(self, url: str) -> str:
+        """
+        Sychronously scrape the content of a given URL using Playwright's async API.
+
+        Args:
+            url (str): The URL to scrape.
+
+        Returns:
+            str: The scraped HTML content or an error message if an exception occurs.
+
+        """
+        from playwright.sync_api import sync_playwright
+
+        logger.info("Starting scraping...")
+        results = ""
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            try:
+                page = browser.new_page()
+                page.goto(url)
+                results = page.content()
+                logger.info("Content scraped")
+            except Exception as e:
+                results = f"Error: {e}"
+            browser.close()
+        return results
+
     def lazy_load(self) -> Iterator[Document]:
         """
         Lazily load text content from the provided URLs.
@@ -75,7 +101,7 @@ class AsyncChromiumLoader(BaseLoader):
 
         """
         for url in self.urls:
-            html_content = asyncio.run(self.ascrape_playwright(url))
+            html_content = self.ascrape_playwright(url)
             metadata = {"source": url}
             yield Document(page_content=html_content, metadata=metadata)
 
