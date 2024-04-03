@@ -83,12 +83,12 @@ class ToolCall(Serializable):
     id: Optional[str] = None
 
 
-class ToolCallsMessage(AIMessage):
+class AIToolCallsMessage(AIMessage):
     tool_calls: Optional[List[ToolCall]] = None
     type: Literal["tool_calls"] = "tool_calls"  # type: ignore[assignment] # noqa: E501
 
 
-class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
+class ToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
@@ -128,4 +128,4 @@ class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
         return super().__add__(other)
 
 
-ToolCallsMessage.update_forward_refs()
+AIToolCallsMessage.update_forward_refs()

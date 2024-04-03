@@ -52,7 +52,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    ToolCallsMessage,
+    AIToolCallsMessage,
     ToolCallsMessageChunk,
     ToolMessage,
     ToolMessageChunk,
@@ -112,7 +112,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                 tool_calls = parse_tool_calls(raw_tool_calls, return_id=True)
             except Exception:
                 tool_calls = None
-            return ToolCallsMessage(
+            return AIToolCallsMessage(
                 content=content,
                 additional_kwargs=additional_kwargs,
                 id=id_,

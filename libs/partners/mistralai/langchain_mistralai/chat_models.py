@@ -43,7 +43,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    ToolCallsMessage,
+    AIToolCallsMessage,
     ToolCallsMessageChunk,
     ToolMessage,
 )
@@ -91,7 +91,7 @@ def _convert_mistral_chat_message_to_message(
             tool_calls = parse_tool_calls(raw_tool_calls)
         except Exception:
             tool_calls = None
-        return ToolCallsMessage(
+        return AIToolCallsMessage(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_calls=tool_calls,

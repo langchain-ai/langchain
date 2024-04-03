@@ -10,7 +10,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
     ToolCall,
-    ToolCallsMessage,
+    AIToolCallsMessage,
     ToolMessage,
 )
 from langchain_core.outputs import (
@@ -485,7 +485,7 @@ def test_tool_use() -> None:
     msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
 
-    assert isinstance(ai_msg, ToolCallsMessage)
+    assert isinstance(ai_msg, AIToolCallsMessage)
     assert isinstance(ai_msg.tool_calls, list)
     assert len(ai_msg.tool_calls) == 1
     tool_call = ai_msg.tool_calls[0]
