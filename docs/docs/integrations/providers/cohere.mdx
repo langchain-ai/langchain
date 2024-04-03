@@ -75,18 +75,7 @@ agent_executor.invoke({
 })
 ```
 
-### RAG Retriever
-
-```python
-from langchain_cohere import ChatCohere
-from langchain.retrievers import CohereRagRetriever
-from langchain_core.documents import Document
-
-rag = CohereRagRetriever(llm=ChatCohere())
-print(rag.get_relevant_documents("What is cohere ai?"))
-```
-
-Usage of the Cohere [RAG Retriever](/docs/integrations/retrievers/cohere)
+Usage of the [Cohere multi hop agent](/libs/partners/cohere/docs/multi_hop_agent.ipynb) and [more details of multi hop tool use with Cohere](https://docs.cohere.com/docs/tool-use). 
 
 ### Single Step Tool Use
 
@@ -136,8 +125,22 @@ response = question_router.invoke({"question": "Hi how are you?"})
 print('tool_calls' in response.response_metadata)
 ```
 
-Usage of the [Cohere tools agent](/libs/partners/cohere/docs/cohere_agent.ipynb)
+Usage of the [Cohere tools agent](/libs/partners/cohere/docs/cohere_agent.ipynb) and [more details of tool use with Cohere](https://docs.cohere.com/docs/tool-use). 
 
+
+
+### RAG Retriever
+
+```python
+from langchain_cohere import ChatCohere
+from langchain.retrievers import CohereRagRetriever
+from langchain_core.documents import Document
+
+rag = CohereRagRetriever(llm=ChatCohere())
+print(rag.get_relevant_documents("What is cohere ai?"))
+```
+
+Usage of the Cohere [RAG Retriever](/docs/integrations/retrievers/cohere)
 
 ### Text Embedding
 
