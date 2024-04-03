@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Iterator, List
+from typing import AsyncIterator, Iterator, List
 
 from langchain_core.documents import Document
 
@@ -76,5 +76,11 @@ class AsyncChromiumLoader(BaseLoader):
         """
         for url in self.urls:
             html_content = asyncio.run(self.ascrape_playwright(url))
+            metadata = {"source": url}
+            yield Document(page_content=html_content, metadata=metadata)
+
+    async def alazy_load(self) -> AsyncIterator[Document]:
+        for url in self.urls:
+            html_content = await self.ascrape_playwright(url)
             metadata = {"source": url}
             yield Document(page_content=html_content, metadata=metadata)
