@@ -11,8 +11,8 @@ sidebar_class_name: hidden
 
 For these applications, LangChain simplifies the entire application lifecycle:
 
-- **Development**: Write your applications using LangChain's [robust building blocks](/docs/expression_language/get_started) and [flexible components](/docs/modules). Hit the ground running using [third-party integrations](/docs/integrations/platforms/) and [LangChain Templates](/docs/templates).
-- **Productionization**: Use [LangSmith](/docs/langsmith) to inspect, test and evaluate your chains, so that you can constantly improve and deploy with confidence.
+- **Development**: Write your applications using LangChain's [building blocks](/docs/expression_language/) and [components](/docs/modules/). Hit the ground running using [third-party integrations](/docs/integrations/platforms/) and [LangChain Templates](/docs/templates).
+- **Productionization**: Use [LangSmith](/docs/langsmith/) to inspect, monitor and evaluate your chains, so that you can constantly optimize and deploy with confidence.
 - **Deployment**: Turn any chain into an API with [LangServe](/docs/langserve).
 
 import ThemedImage from '@theme/ThemedImage';
@@ -73,23 +73,9 @@ They're walkthroughs and techniques for common end-to-end tasks, such as:
 
 LCEL is the foundation of many of LangChain's components, and is a declarative way to compose chains. LCEL was designed from day 1 to support putting prototypes in production, with no code changes, from the simplest “prompt + LLM” chain to the most complex chains.
 
-- **[Overview](/docs/expression_language/)**: LCEL and its benefits
-- **[Interface](/docs/expression_language/interface)**: The standard interface for LCEL objects
+- **[Get started](/docs/expression_language/)**: LCEL and its benefits
+- **[Runnable interface](/docs/expression_language/interface)**: The standard interface for LCEL objects
 - **[Primitives](/docs/expression_language/primitives)**: More on the primitives LCEL includes
-
-
-## Components
-
-LangChain provides standard, extendable interfaces and integrations for many different components, including:
-
-#### [Model I/O](/docs/modules/model_io/)
-Formatting and managing language model input and output
-
-#### [Retrieval](/docs/modules/data_connection/)
-Interface with application-specific data
-
-#### [Agents](/docs/modules/agents/)
-Let models choose which tools to use given high-level directives
 
 
 ## Ecosystem
@@ -103,16 +89,29 @@ Build stateful, multi-actor applications with LLMs, built on top of (and intende
 ### [🦜🏓 LangServe](/docs/langserve)
 Deploy LangChain runnables and chains as REST APIs.
 
-## Examples and resources
+## [Security](/docs/security)
+Read up on our [Security](/docs/security) best practices to make sure you're developing safely with LangChain.
+
+## Additional resources
+
+### [Components](/docs/modules/)
+
+LangChain provides standard, extendable interfaces and integrations for many different components, including:
+
+#### [Model I/O](/docs/modules/model_io/)
+Formatting and managing language model input and output
+
+#### [Retrieval](/docs/modules/data_connection/)
+Interface with application-specific data
+
+#### [Agents](/docs/modules/agents/)
+Let models choose which tools to use given high-level directives
 
 ### [Integrations](/docs/integrations/providers/)
 LangChain is part of a rich ecosystem of tools that integrate with our framework and build on top of it. Check out our growing list of [integrations](/docs/integrations/providers/).
 
 ### [Guides](/docs/guides/)
 Best practices for developing with LangChain.
-
-### [Security](/docs/security)
-Read up on our [Security](/docs/security) best practices to make sure you're developing safely with LangChain.
 
 ### [API reference](https://api.python.langchain.com)
 Head to the reference section for full documentation of all classes and methods in the LangChain and LangChain Experimental Python packages.

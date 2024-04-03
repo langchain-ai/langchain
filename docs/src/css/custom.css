@@ -101,6 +101,49 @@ nav, h1, h2, h3, h4 {
   font-size: 0.85rem;
 }
 
+/* .theme-code-block.language-python::before {
+  content: "";
+  padding: 2px 12px;
+  background-color: var(--ifm-color-primary-light);
+  color: #ffffff;
+  font-weight: bold;
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+  display: block;
+  margin-bottom: 12px;
+  font-size: 0.6em;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+} */
+
+.theme-code-block.language-python,
+.theme-code-block.language-javascript,
+.theme-code-block.language-js,
+.theme-code-block.language-typescript,
+.theme-code-block.language-ts {
+  position: relative; /* Ensure this is set so the ::before pseudo-element is positioned relative to this element */
+  padding-left: 4px;
+  border: 1px solid var(--ifm-color-primary-darkest);
+}
+
+.theme-code-block.language-python::before,
+.theme-code-block.language-javascript::before,
+.theme-code-block.language-js::before,
+.theme-code-block.language-typescript::before,
+.theme-code-block.language-ts::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  background-color: var(--ifm-color-primary-light);
+  z-index: 1;
+}
+
 .theme-doc-sidebar-menu > .theme-doc-sidebar-item-category:not(:first-of-type),
 .theme-doc-sidebar-menu > .theme-doc-sidebar-item-link,
 .theme-doc-sidebar-menu > .theme-doc-sidebar-item-link.theme-doc-sidebar-item-link-level-1 {
