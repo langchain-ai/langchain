@@ -165,9 +165,15 @@ def parse_actions(generation: str) -> Tuple[str, str, List[Dict]]:
 def parse_citations(
     grounded_answer: str, documents: List[Mapping]
 ) -> Tuple[str, List[CohereCitation]]:
+    """
+    Parses a grounded_generation (from parse_actions) and documents (from
+    convert_to_documents) into a (generation, CohereCitation list) tuple.
+    """
+
     no_markup_answer, parsed_answer = _parse_answer_spans(grounded_answer)
     citations: List[CohereCitation] = []
     start = 0
+
     for answer in parsed_answer:
         text = answer.get("text", "")
         document_indexes = answer.get("cited_docs")
@@ -177,9 +183,11 @@ def parse_citations(
             continue
         end = start + len(text)
 
+        # Look up the cited document by index
         cited_documents: List[Mapping] = []
         for index in set(document_indexes):
             if index >= len(documents):
+                # The document index doesn't exist
                 continue
             cited_documents.append(documents[index])
 
