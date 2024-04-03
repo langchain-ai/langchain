@@ -1,8 +1,8 @@
 import asyncio
 from functools import partial
-from typing import Any, List, Optional, Tuple, cast
+from typing import Any, List, Mapping, Optional, Tuple, cast
 
-from ai21.models import ChatMessage, Penalty, RoleType
+from ai21.models import ChatMessage, RoleType
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -109,13 +109,13 @@ class ChatAI21(BaseChatModel, AI21Base):
     top_k_return: int = 0
     """The number of top-scoring tokens to consider for each generation step."""
 
-    frequency_penalty: Optional[Penalty] = None
+    frequency_penalty: Optional[Any] = None
     """A penalty applied to tokens that are frequently generated."""
 
-    presence_penalty: Optional[Penalty] = None
+    presence_penalty: Optional[Any] = None
     """ A penalty applied to tokens that are already present in the prompt."""
 
-    count_penalty: Optional[Penalty] = None
+    count_penalty: Optional[Any] = None
     """A penalty applied to tokens based on their frequency 
     in the generated responses."""
 
@@ -129,6 +129,51 @@ class ChatAI21(BaseChatModel, AI21Base):
         """Return type of chat model."""
         return "chat-ai21"
 
+    @property
+    def _default_params(self) -> Mapping[str, Any]:
+        base_params = {
+            "model": self.model,
+            "num_results": self.num_results,
+            "max_tokens": self.max_tokens,
+            "min_tokens": self.min_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k_return": self.top_k_return,
+        }
+
+        if self.count_penalty is not None:
+            base_params["count_penalty"] = self.count_penalty.to_dict()
+
+        if self.frequency_penalty is not None:
+            base_params["frequency_penalty"] = self.frequency_penalty.to_dict()
+
+        if self.presence_penalty is not None:
+            base_params["presence_penalty"] = self.presence_penalty.to_dict()
+
+        return base_params
+
+    def _build_params_for_request(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Mapping[str, Any]:
+        params = {}
+        system, ai21_messages = _convert_messages_to_ai21_messages(messages)
+
+        if stop is not None:
+            if "stop" in kwargs:
+                raise ValueError("stop is defined in both stop and kwargs")
+            params["stop_sequences"] = stop
+
+        return {
+            "system": system or "",
+            "messages": ai21_messages,
+            **self._default_params,
+            **params,
+            **kwargs,
+        }
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -136,24 +181,9 @@ class ChatAI21(BaseChatModel, AI21Base):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        system, ai21_messages = _convert_messages_to_ai21_messages(messages)
+        params = self._build_params_for_request(messages=messages, stop=stop, **kwargs)
 
-        response = self.client.chat.create(
-            model=self.model,
-            messages=ai21_messages,
-            system=system or "",
-            num_results=self.num_results,
-            temperature=self.temperature,
-            max_tokens=self.max_tokens,
-            min_tokens=self.min_tokens,
-            top_p=self.top_p,
-            top_k_return=self.top_k_return,
-            stop_sequences=stop,
-            frequency_penalty=self.frequency_penalty,
-            presence_penalty=self.presence_penalty,
-            count_penalty=self.count_penalty,
-            **kwargs,
-        )
+        response = self.client.chat.create(**params)
 
         outputs = response.outputs
         message = AIMessage(content=outputs[0].text)

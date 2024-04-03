@@ -108,6 +108,31 @@ def remove_lucene_chars(text: str) -> str:
     return text.strip()
 
 
+def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
+    """
+    Converts a dictionary to a YAML-like string without using external libraries.
+
+    Parameters:
+    - input_dict (dict): The dictionary to convert.
+    - indent (int): The current indentation level.
+
+    Returns:
+    - str: The YAML-like string representation of the input dictionary.
+    """
+    yaml_str = ""
+    for key, value in input_dict.items():
+        padding = "  " * indent
+        if isinstance(value, dict):
+            yaml_str += f"{padding}{key}:\n{dict_to_yaml_str(value, indent + 1)}"
+        elif isinstance(value, list):
+            yaml_str += f"{padding}{key}:\n"
+            for item in value:
+                yaml_str += f"{padding}- {item}\n"
+        else:
+            yaml_str += f"{padding}{key}: {value}\n"
+    return yaml_str
+
+
 class Neo4jVector(VectorStore):
     """`Neo4j` vector index.
 
@@ -646,7 +671,9 @@ class Neo4jVector(VectorStore):
         docs = [
             (
                 Document(
-                    page_content=result["text"],
+                    page_content=dict_to_yaml_str(result["text"])
+                    if isinstance(result["text"], dict)
+                    else result["text"],
                     metadata={
                         k: v for k, v in result["metadata"].items() if v is not None
                     },

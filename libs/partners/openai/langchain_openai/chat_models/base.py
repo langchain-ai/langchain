@@ -92,9 +92,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         The LangChain message.
     """
     role = _dict.get("role")
+    name = _dict.get("name")
     id_ = _dict.get("id")
     if role == "user":
-        return HumanMessage(content=_dict.get("content", ""), id=id_)
+        return HumanMessage(content=_dict.get("content", ""), id=id_, name=name)
     elif role == "assistant":
         # Fix for azure
         # Also OpenAI returns None for tool invocations
@@ -104,12 +105,14 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["function_call"] = dict(function_call)
         if tool_calls := _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = tool_calls
-        return AIMessage(content=content, additional_kwargs=additional_kwargs, id=id_)
+        return AIMessage(
+            content=content, additional_kwargs=additional_kwargs, name=name, id=id_
+        )
     elif role == "system":
-        return SystemMessage(content=_dict.get("content", ""), id=id_)
+        return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
     elif role == "function":
         return FunctionMessage(
-            content=_dict.get("content", ""), name=_dict.get("name"), id=id_
+            content=_dict.get("content", ""), name=cast(str, _dict.get("name")), id=id_
         )
     elif role == "tool":
         additional_kwargs = {}
@@ -117,8 +120,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["name"] = _dict["name"]
         return ToolMessage(
             content=_dict.get("content", ""),
-            tool_call_id=_dict.get("tool_call_id"),
+            tool_call_id=cast(str, _dict.get("tool_call_id")),
             additional_kwargs=additional_kwargs,
+            name=name,
             id=id_,
         )
     else:
@@ -134,13 +138,19 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: Dict[str, Any]
+    message_dict: Dict[str, Any] = {
+        "content": message.content,
+    }
+    if (name := message.name or message.additional_kwargs.get("name")) is not None:
+        message_dict["name"] = name
+
+    # populate role and additional message data
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict["role"] = message.role
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict["role"] = "user"
     elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict["role"] = "assistant"
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -152,23 +162,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             if message_dict["content"] == "":
                 message_dict["content"] = None
     elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
+        message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
-        message_dict = {
-            "role": "function",
-            "content": message.content,
-            "name": message.name,
-        }
+        message_dict["role"] = "function"
     elif isinstance(message, ToolMessage):
-        message_dict = {
-            "role": "tool",
-            "content": message.content,
-            "tool_call_id": message.tool_call_id,
-        }
+        message_dict["role"] = "tool"
+        message_dict["tool_call_id"] = message.tool_call_id
+
+        supported_props = {"content", "role", "tool_call_id"}
+        message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
         raise TypeError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
     return message_dict
 
 
@@ -376,12 +380,31 @@ class ChatOpenAI(BaseChatModel):
             "default_query": values["default_query"],
         }
 
+        openai_proxy = values["openai_proxy"]
         if not values.get("client"):
+            if openai_proxy and not values["http_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_client"] = httpx.Client(proxy=openai_proxy)
             sync_specific = {"http_client": values["http_client"]}
             values["client"] = openai.OpenAI(
                 **client_params, **sync_specific
             ).chat.completions
         if not values.get("async_client"):
+            if openai_proxy and not values["http_async_client"]:
+                try:
+                    import httpx
+                except ImportError as e:
+                    raise ImportError(
+                        "Could not import httpx python package. "
+                        "Please install it with `pip install httpx`."
+                    ) from e
+                values["http_async_client"] = httpx.AsyncClient(proxy=openai_proxy)
             async_specific = {"http_client": values["http_async_client"]}
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific
@@ -440,6 +463,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
@@ -462,21 +487,15 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if self.streaming:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            **params,
-            **({"stream": stream} if stream is not None else {}),
-            **kwargs,
-        }
+        params = {**params, **kwargs}
         response = self.client.create(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -497,6 +516,14 @@ class ChatOpenAI(BaseChatModel):
         generations = []
         if not isinstance(response, dict):
             response = response.model_dump()
+
+        # Sometimes the AI Model calling will get error, we should raise it.
+        # Otherwise, the next code 'choices.extend(response["choices"])'
+        # will throw a "TypeError: 'NoneType' object is not iterable" error
+        # to mask the true error. Because 'response["choices"]' is None.
+        if response.get("error"):
+            raise ValueError(response.get("error"))
+
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             generation_info = dict(finish_reason=res.get("finish_reason"))
@@ -534,6 +561,8 @@ class ChatOpenAI(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
+            if choice["delta"] is None:
+                continue
             chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
@@ -558,22 +587,16 @@ class ChatOpenAI(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if self.streaming:
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            **params,
-            **({"stream": stream} if stream is not None else {}),
-            **kwargs,
-        }
+        params = {**params, **kwargs}
         response = await self.async_client.create(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
