@@ -2,13 +2,13 @@
 from typing import List
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
     BaseTransformOutputParser,
 )
 from langchain_core.outputs import ChatGeneration, Generation
-from tests.unit_tests.fake.chat_model import GenericFakeChatModel
 
 
 def test_base_generation_parser() -> None:

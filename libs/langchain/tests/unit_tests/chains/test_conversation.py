@@ -1,5 +1,9 @@
 """Test conversation chain and memory."""
+from typing import Any, List, Optional
+
 import pytest
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import LLM
 from langchain_core.memory import BaseMemory
 from langchain_core.prompts.prompt import PromptTemplate
 
@@ -8,6 +12,27 @@ from langchain.memory.buffer import ConversationBufferMemory
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.summary import ConversationSummaryMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
+
+
+class DummyLLM(LLM):
+    last_prompt = ""
+
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+
+    @property
+    def _llm_type(self) -> str:
+        return "dummy"
+
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        self.last_prompt = prompt
+        return "dummy"
 
 
 def test_memory_ai_prefix() -> None:
@@ -32,13 +57,18 @@ async def test_memory_async() -> None:
     }
 
 
-def test_conversation_chain_works() -> None:
+async def test_conversation_chain_works() -> None:
     """Test that conversation chain works in basic setting."""
-    llm = FakeLLM()
+    llm = DummyLLM()
     prompt = PromptTemplate(input_variables=["foo", "bar"], template="{foo} {bar}")
     memory = ConversationBufferMemory(memory_key="foo")
     chain = ConversationChain(llm=llm, prompt=prompt, memory=memory, input_key="bar")
-    chain.run("foo")
+    chain.run("aaa")
+    assert llm.last_prompt == " aaa"
+    chain.run("bbb")
+    assert llm.last_prompt == "Human: aaa\nAI: dummy bbb"
+    await chain.arun("ccc")
+    assert llm.last_prompt == "Human: aaa\nAI: dummy\nHuman: bbb\nAI: dummy ccc"
 
 
 def test_conversation_chain_errors_bad_prompt() -> None:

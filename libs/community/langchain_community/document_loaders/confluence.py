@@ -316,7 +316,7 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 status="any" if include_archived_content else "current",
-                expand=content_format.value,
+                expand=f"{content_format.value},version",
             )
             yield from self.process_pages(
                 pages,
@@ -349,7 +349,7 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 include_archived_spaces=include_archived_content,
-                expand=content_format.value,
+                expand=f"{content_format.value},version",
             )
             yield from self.process_pages(
                 pages,

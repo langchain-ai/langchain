@@ -1,12 +1,14 @@
 """**Toolkits** are sets of tools that can be used to interact with
 various services and APIs.
 """
+
 import importlib
 from typing import Any
 
 _module_lookup = {
     "AINetworkToolkit": "langchain_community.agent_toolkits.ainetwork.toolkit",
     "AmadeusToolkit": "langchain_community.agent_toolkits.amadeus.toolkit",
+    "AzureAiServicesToolkit": "langchain_community.agent_toolkits.azure_ai_services",
     "AzureCognitiveServicesToolkit": "langchain_community.agent_toolkits.azure_cognitive_services",  # noqa: E501
     "CogniswitchToolkit": "langchain_community.agent_toolkits.cogniswitch.toolkit",
     "ConneryToolkit": "langchain_community.agent_toolkits.connery",

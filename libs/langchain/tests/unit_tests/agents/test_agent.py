@@ -35,6 +35,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.tools import tool
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
+from tests.unit_tests.stubs import AnyStr
 
 
 class FakeListLLM(LLM):
@@ -457,7 +458,7 @@ async def test_runnable_agent() -> None:
         return AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message")
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[])
+    executor = AgentExecutor(agent=agent, tools=[])  # type: ignore[arg-type]
 
     # Invoke
     result = executor.invoke({"question": "hello"})
@@ -573,7 +574,7 @@ async def test_runnable_agent_with_function_calls() -> None:
         return "Spying from under the bed."
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[find_pet])
+    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
     result = executor.invoke({"question": "hello"})
@@ -685,7 +686,7 @@ async def test_runnable_with_multi_action_per_step() -> None:
         return "purrrr"
 
     agent = template | model | fake_parse
-    executor = AgentExecutor(agent=agent, tools=[find_pet])
+    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
     result = executor.invoke({"question": "hello"})
@@ -819,7 +820,7 @@ async def test_openai_agent_with_streaming() -> None:
         [find_pet],  # type: ignore[list-item]
         template,
     )
-    executor = AgentExecutor(agent=agent, tools=[find_pet])
+    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
     result = executor.invoke({"question": "hello"})
@@ -839,6 +840,7 @@ async def test_openai_agent_with_streaming() -> None:
                     log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
                     message_log=[
                         AIMessageChunk(
+                            id=AnyStr(),
                             content="",
                             additional_kwargs={
                                 "function_call": {
@@ -852,6 +854,7 @@ async def test_openai_agent_with_streaming() -> None:
             ],
             "messages": [
                 AIMessageChunk(
+                    id=AnyStr(),
                     content="",
                     additional_kwargs={
                         "function_call": {
@@ -874,6 +877,7 @@ async def test_openai_agent_with_streaming() -> None:
                         log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
                         message_log=[
                             AIMessageChunk(
+                                id=AnyStr(),
                                 content="",
                                 additional_kwargs={
                                     "function_call": {
@@ -994,7 +998,7 @@ async def test_openai_agent_tools_agent() -> None:
         [find_pet],  # type: ignore[list-item]
         template,
     )
-    executor = AgentExecutor(agent=agent, tools=[find_pet])
+    executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
     # Invoke
     result = executor.invoke({"question": "hello"})
@@ -1014,6 +1018,7 @@ async def test_openai_agent_tools_agent() -> None:
                     log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
                     message_log=[
                         AIMessageChunk(
+                            id=AnyStr(),
                             content="",
                             additional_kwargs={
                                 "tool_calls": [
@@ -1040,6 +1045,7 @@ async def test_openai_agent_tools_agent() -> None:
             ],
             "messages": [
                 AIMessageChunk(
+                    id=AnyStr(),
                     content="",
                     additional_kwargs={
                         "tool_calls": [
@@ -1067,6 +1073,7 @@ async def test_openai_agent_tools_agent() -> None:
                     log="\nInvoking: `check_time` with `{}`\n\n\n",
                     message_log=[
                         AIMessageChunk(
+                            id=AnyStr(),
                             content="",
                             additional_kwargs={
                                 "tool_calls": [
@@ -1093,6 +1100,7 @@ async def test_openai_agent_tools_agent() -> None:
             ],
             "messages": [
                 AIMessageChunk(
+                    id=AnyStr(),
                     content="",
                     additional_kwargs={
                         "tool_calls": [
@@ -1124,6 +1132,7 @@ async def test_openai_agent_tools_agent() -> None:
                         log="\nInvoking: `find_pet` with `{'pet': 'cat'}`\n\n\n",
                         message_log=[
                             AIMessageChunk(
+                                id=AnyStr(),
                                 content="",
                                 additional_kwargs={
                                     "tool_calls": [
@@ -1166,6 +1175,7 @@ async def test_openai_agent_tools_agent() -> None:
                         log="\nInvoking: `check_time` with `{}`\n\n\n",
                         message_log=[
                             AIMessageChunk(
+                                id=AnyStr(),
                                 content="",
                                 additional_kwargs={
                                     "tool_calls": [

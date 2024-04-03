@@ -18,6 +18,7 @@ import warnings
 from typing import Any, Dict, List, Optional, Callable, Tuple
 from mypy_extensions import Arg, KwArg
 
+from langchain_community.tools.file_management import ReadFileTool
 from langchain_core.tools import Tool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.callbacks import BaseCallbackManager
@@ -406,11 +407,15 @@ def _get_eleven_labs_text2speech(**kwargs: Any) -> BaseTool:
 
 
 def _get_memorize(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
-    return Memorize(llm=llm)
+    return Memorize(llm=llm)  # type: ignore[arg-type]
 
 
 def _get_google_cloud_texttospeech(**kwargs: Any) -> BaseTool:
     return GoogleCloudTextToSpeechTool(**kwargs)
+
+
+def _get_file_management_tool(**kwargs: Any) -> BaseTool:
+    return ReadFileTool(**kwargs)
 
 
 def _get_reddit_search(**kwargs: Any) -> BaseTool:
@@ -501,6 +506,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
     ),
     "eleven_labs_text2speech": (_get_eleven_labs_text2speech, ["eleven_api_key"]),
     "google_cloud_texttospeech": (_get_google_cloud_texttospeech, []),
+    "read_file": (_get_file_management_tool, []),
     "reddit_search": (
         _get_reddit_search,
         ["reddit_client_id", "reddit_client_secret", "reddit_user_agent"],
