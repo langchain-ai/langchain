@@ -203,16 +203,21 @@ def _convert_delta_to_message_chunk(
         additional_kwargs["function_call"] = function_call
     if raw_tool_calls := _dict.get("tool_calls"):
         additional_kwargs["tool_calls"] = raw_tool_calls
-        try:
-            tool_calls = parse_tool_calls(raw_tool_calls, partial=True)
-            return AIToolCallsMessageChunk(
-                content=content,
-                additional_kwargs=additional_kwargs,
-                id=id_,
-                tool_calls=tool_calls,
-            )
-        except Exception:
-            tool_calls = None
+        tool_call_chunks = [
+            {
+                "name": rtc["function"].get("name"),
+                "args": rtc["function"].get("arguments"),
+                "id": rtc.get("id"),
+                "index": rtc["index"],
+            }
+            for rtc in raw_tool_calls
+        ]
+        return AIToolCallsMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            id=id_,
+            tool_call_chunks=tool_call_chunks,
+        )
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
