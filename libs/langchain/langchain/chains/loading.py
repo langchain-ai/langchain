@@ -1,4 +1,5 @@
 """Functionality for loading chains."""
+
 import json
 from pathlib import Path
 from typing import Any, Union
@@ -10,7 +11,6 @@ from langchain_core.prompts.loading import (
     load_prompt,
     load_prompt_from_config,
 )
-from langchain_core.utils.loading import try_load_from_hub
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
@@ -622,12 +622,13 @@ def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
 
 def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
     """Unified method for loading a chain from LangChainHub or local fs."""
-    if hub_result := try_load_from_hub(
-        path, _load_chain_from_file, "chains", {"json", "yaml"}, **kwargs
-    ):
-        return hub_result
-    else:
-        return _load_chain_from_file(path, **kwargs)
+    if isinstance(path, str) and path.startswith("lc://"):
+        raise RuntimeError(
+            "Loading from the deprecated github-based Hub is no longer supported. "
+            "Please use the new LangChain Hub at https://smith.langchain.com/hub "
+            "instead."
+        )
+    return _load_chain_from_file(path, **kwargs)
 
 
 def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:

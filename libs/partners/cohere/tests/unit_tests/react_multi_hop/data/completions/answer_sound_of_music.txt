@@ -1,0 +1,4 @@
+Relevant Documents: 0,2,3
+Cited Documents: 0,2
+Answer: Best Buy, originally called Sound of Music, was added to Standard & Poor's S&P 500 in 1999.
+Grounded answer: <co: 0,2>Best Buy</co: 0,2>, originally called Sound of Music, was added to <co: 2>Standard & Poor's S&P 500</co: 2> in <co: 2>1999</co: 2>.
