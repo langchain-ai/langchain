@@ -42,6 +42,8 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    AIToolCallsMessage,
+    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -52,8 +54,6 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    ToolCallsMessage,
-    ToolCallsMessageChunk,
     ToolMessage,
     ToolMessageChunk,
 )
@@ -112,7 +112,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                 tool_calls = parse_tool_calls(raw_tool_calls, return_id=True)
             except Exception:
                 tool_calls = None
-            return ToolCallsMessage(
+            return AIToolCallsMessage(
                 content=content,
                 additional_kwargs=additional_kwargs,
                 id=id_,
@@ -212,7 +212,7 @@ def _convert_delta_to_message_chunk(
             }
             for rtc in raw_tool_calls
         ]
-        return ToolCallsMessageChunk(
+        return AIToolCallsMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             id=id_,
@@ -235,8 +235,8 @@ def _convert_delta_to_message_chunk(
         )
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role, id=id_)
-    elif role or default_class == ToolCallsMessageChunk:
-        return ToolCallsMessageChunk(
+    elif role or default_class == AIToolCallsMessageChunk:
+        return AIToolCallsMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             id=id_,

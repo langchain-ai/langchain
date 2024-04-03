@@ -56,8 +56,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.response_metadata, other.response_metadata
             )
 
-            if isinstance(other, ToolCallsMessageChunk):
-                return ToolCallsMessageChunk(
+            if isinstance(other, AIToolCallsMessageChunk):
+                return AIToolCallsMessageChunk(
                     example=self.example,
                     content=content,
                     additional_kwargs=additional_kwargs,
@@ -89,16 +89,16 @@ class ToolCallChunk(ToolCall):
     args: Optional[str] = None
 
 
-class ToolCallsMessage(AIMessage):
+class AIToolCallsMessage(AIMessage):
     tool_calls: Optional[List[ToolCall]] = None
     type: Literal["tool_calls"] = "tool_calls"  # type: ignore[assignment] # noqa: E501
 
 
-class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
+class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["ToolCallsMessageChunk"] = "ToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
+    type: Literal["AIToolCallsMessageChunk"] = "AIToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
     tool_calls: Optional[List[ToolCallChunk]] = None
 
     @classmethod
@@ -110,12 +110,12 @@ class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
         if isinstance(other, AIMessageChunk):
             if self.example != other.example:
                 raise ValueError(
-                    "Cannot concatenate ToolCallsMessageChunks "
+                    "Cannot concatenate AIToolCallsMessageChunks "
                     "with different example values."
                 )
 
             if (
-                isinstance(other, ToolCallsMessageChunk)
+                isinstance(other, AIToolCallsMessageChunk)
                 and other.tool_calls
                 and self.tool_calls
             ):
@@ -145,4 +145,4 @@ class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
         return super().__add__(other)
 
 
-ToolCallsMessage.update_forward_refs()
+AIToolCallsMessage.update_forward_refs()

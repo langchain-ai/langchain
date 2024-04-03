@@ -35,6 +35,8 @@ from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    AIToolCallsMessage,
+    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -43,8 +45,6 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    ToolCallsMessage,
-    ToolCallsMessageChunk,
     ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
@@ -91,7 +91,7 @@ def _convert_mistral_chat_message_to_message(
             tool_calls = parse_tool_calls(raw_tool_calls)
         except Exception:
             tool_calls = None
-        return ToolCallsMessage(
+        return AIToolCallsMessage(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_calls=tool_calls,
@@ -149,7 +149,7 @@ def _convert_delta_to_message_chunk(
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
                 tool_calls = parse_tool_calls(raw_tool_calls, partial=True)
-                return ToolCallsMessageChunk(
+                return AIToolCallsMessageChunk(
                     content=content,
                     additional_kwargs=additional_kwargs,
                     tool_calls=tool_calls,

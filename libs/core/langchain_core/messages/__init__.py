@@ -18,9 +18,9 @@
 from langchain_core.messages.ai import (
     AIMessage,
     AIMessageChunk,
+    AIToolCallsMessage,
+    AIToolCallsMessageChunk,
     ToolCall,
-    ToolCallsMessage,
-    ToolCallsMessageChunk,
 )
 from langchain_core.messages.base import (
     BaseMessage,
@@ -60,8 +60,8 @@ __all__ = [
     "SystemMessage",
     "SystemMessageChunk",
     "ToolCall",
-    "ToolCallsMessage",
-    "ToolCallsMessageChunk",
+    "AIToolCallsMessage",
+    "AIToolCallsMessageChunk",
     "ToolMessage",
     "ToolMessageChunk",
     "_message_from_dict",
