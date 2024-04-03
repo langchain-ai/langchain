@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, List, Literal, Optional
 
 from langchain_core.load import Serializable
 from langchain_core.messages.base import (
@@ -6,7 +6,7 @@ from langchain_core.messages.base import (
     BaseMessageChunk,
     merge_content,
 )
-from langchain_core.utils._merge import merge_dicts
+from langchain_core.utils._merge import merge_dicts, merge_lists
 
 
 class AIMessage(BaseMessage):
@@ -88,18 +88,6 @@ class AIToolCallsMessage(AIMessage):
     type: Literal["tool_calls"] = "tool_calls"  # type: ignore[assignment] # noqa: E501
 
 
-def _merge_tool_calls(left: List[ToolCall], right: List[ToolCall]) -> List[ToolCall]:
-    """Merge two lists of ToolCall objects, matching on name and id."""
-    combined: Dict[Tuple[Optional[str], str], ToolCall] = {}
-    for tool_call in left + right:
-        key = (tool_call.id, tool_call.name)
-        if key in combined:
-            combined[key].args = merge_dicts(combined[key].args, tool_call.args)
-        else:
-            combined[key] = tool_call
-    return list(combined.values())
-
-
 class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
@@ -120,14 +108,7 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
                 )
 
             if isinstance(other, AIToolCallsMessageChunk):
-                if self.tool_calls is None and other.tool_calls is None:
-                    tool_calls = None
-                elif self.tool_calls is None:
-                    tool_calls = other.tool_calls
-                elif other.tool_calls is None:
-                    tool_calls = self.tool_calls
-                else:
-                    tool_calls = _merge_tool_calls(self.tool_calls, other.tool_calls)
+                tool_calls = merge_lists(self.tool_calls, other.tool_calls)
             else:
                 tool_calls = self.tool_calls
 
