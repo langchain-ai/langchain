@@ -17,7 +17,7 @@ from langchain_core.utils.function_calling import (
 
 
 def create_gigachat_fn_runnable(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
@@ -100,7 +100,7 @@ def create_gigachat_fn_runnable(
 
 
 def create_structured_output_runnable(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[Type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
@@ -198,7 +198,7 @@ def create_structured_output_runnable(
 
 
 def get_gigachat_output_parser(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Type[BaseModel]],
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
     """Get the appropriate function output parser given the user functions.
 
@@ -226,30 +226,22 @@ def get_gigachat_output_parser(
 
 
 def _create_gigachat_functions_structured_output_runnable(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[Type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
     **llm_kwargs: Any,
 ) -> Runnable:
-    if isinstance(output_schema, dict):
-        function: Any = {
-            "name": "output_formatter",
-            "description": ("Output formatter. Всегда используй чтобы выдать ответ"),
-            "parameters": output_schema,
-        }
-    else:
+    class _OutputFormatter(BaseModel):
+        """Output formatter. Всегда используй чтобы выдать ответ"""  # noqa: E501
 
-        class _OutputFormatter(BaseModel):
-            """Output formatter. Всегда используй чтобы выдать ответ"""  # noqa: E501
+        output: output_schema  # type: ignore
 
-            output: output_schema  # type: ignore
-
-        function = _OutputFormatter
-        output_parser = output_parser or PydanticAttrOutputFunctionsParser(
-            pydantic_schema=_OutputFormatter, attr_name="output"
-        )
+    function = _OutputFormatter
+    output_parser = output_parser or PydanticAttrOutputFunctionsParser(
+        pydantic_schema=_OutputFormatter, attr_name="output"
+    )
     return create_gigachat_fn_runnable(
         [function],
         llm,
