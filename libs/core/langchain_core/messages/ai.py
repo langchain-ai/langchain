@@ -118,12 +118,12 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
 
             if (
                 isinstance(other, AIToolCallsMessageChunk)
-                and other.tool_calls
-                and self.tool_calls
+                and other.tool_call_chunks
+                and self.tool_call_chunks
             ):
                 raw_tool_calls = merge_lists(
-                    [tc.dict() for tc in self.tool_calls],
-                    [tc.dict() for tc in other.tool_calls],
+                    [tc.dict() for tc in self.tool_call_chunks],
+                    [tc.dict() for tc in other.tool_call_chunks],
                 )
                 if raw_tool_calls:
                     tool_call_chunks = [ToolCallChunk(**rtc) for rtc in raw_tool_calls]

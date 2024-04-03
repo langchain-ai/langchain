@@ -13,6 +13,7 @@ from langchain_core.messages import (
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
+    ToolCallChunk,
     ToolMessage,
     convert_to_messages,
     get_buffer_string,
@@ -20,6 +21,7 @@ from langchain_core.messages import (
     messages_from_dict,
     messages_to_dict,
 )
+from langchain_core.utils._merge import merge_lists
 
 
 def test_message_chunks() -> None:
@@ -542,3 +544,32 @@ def test_message_name_chat(MessageClass: Type) -> None:
 
     msg3 = MessageClass(content="foo", role="user")
     assert msg3.name is None
+
+
+def test_merge_tool_calls() -> None:
+    left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id="1").dict()
+    right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id="2").dict()
+    merged = merge_lists([left], [right])
+    assert len(merged) == 2
+
+    left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id=None).dict()
+    right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id=None).dict()
+    merged = merge_lists([left], [right])
+    assert len(merged) == 2
+
+    left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id="1").dict()
+    right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id=None).dict()
+    merged = merge_lists([left], [right])
+    assert len(merged) == 2
+
+    tool_call_1 = ToolCallChunk(name="tool1", args="", id="1", index=0).dict()
+    tool_call_2 = ToolCallChunk(name=None, args='{"arg1": "val', id="1", index=0).dict()
+    tool_call_3 = ToolCallChunk(name=None, args='ue}"', id="1", index=0).dict()
+    merged = merge_lists([tool_call_1], [tool_call_2])
+    assert merged == [
+        {"name": "tool1", "args": '{"arg1": "val', "id": "11", "index": 0}
+    ]
+    merged = merge_lists(merged, [tool_call_3])
+    assert merged == [
+        {"name": "tool1", "args": '{"arg1": "value}"', "id": "111", "index": 0}
+    ]
