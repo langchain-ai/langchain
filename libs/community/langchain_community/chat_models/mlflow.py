@@ -26,8 +26,7 @@ from langchain_core.pydantic_v1 import (
     Field,
     PrivateAttr,
 )
-if TYPE_CHECKING:
-    from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig
 
 logger = logging.getLogger(__name__)
 
