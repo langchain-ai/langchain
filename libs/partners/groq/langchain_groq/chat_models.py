@@ -277,20 +277,20 @@ class ChatGroq(BaseChatModel):
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
             message = generation.message
-            chunk = ChatGenerationChunk(
+            chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
                     content=message.content, additional_kwargs=message.additional_kwargs
                 ),
                 generation_info=generation.generation_info,
             )
             if run_manager:
-                geninfo = chunk.generation_info or {}
+                geninfo = chunk_.generation_info or {}
                 run_manager.on_llm_new_token(
-                    chunk.text,
-                    chunk=chunk,
+                    chunk_.text,
+                    chunk=chunk_,
                     logprobs=geninfo.get("logprobs"),
                 )
-            yield chunk
+            yield chunk_
             return
 
         params = {**params, **kwargs, "stream": True}
@@ -335,20 +335,20 @@ class ChatGroq(BaseChatModel):
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
             message = generation.message
-            chunk = ChatGenerationChunk(
+            chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
                     content=message.content, additional_kwargs=message.additional_kwargs
                 ),
                 generation_info=generation.generation_info,
             )
             if run_manager:
-                geninfo = chunk.generation_info or {}
+                geninfo = chunk_.generation_info or {}
                 await run_manager.on_llm_new_token(
-                    chunk.text,
-                    chunk=chunk,
+                    chunk_.text,
+                    chunk=chunk_,
                     logprobs=geninfo.get("logprobs"),
                 )
-            yield chunk
+            yield chunk_
             return
 
         params = {**params, **kwargs, "stream": True}
