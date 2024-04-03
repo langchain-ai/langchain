@@ -64,7 +64,7 @@ class AsyncChromiumLoader(BaseLoader):
 
     def scrape_playwright(self, url: str) -> str:
         """
-        Sychronously scrape the content of a given URL using Playwright's async API.
+        Synchronously scrape the content of a given URL using Playwright's async API.
 
         Args:
             url (str): The URL to scrape.
