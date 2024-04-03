@@ -14,7 +14,7 @@ class Predibase(LLM):
     The `model` parameter is the Predibase "serverless" base_model ID
     (see https://docs.predibase.com/user-guide/inference/models for the catalog).
 
-    An optional `adapter_id` parameter is whe HuggingFace ID of a fine-tuned LLM
+    An optional `adapter_id` parameter is the HuggingFace ID of a fine-tuned LLM
     adapter, whose base model is the `model` parameter; the fine-tuned adapter
     must be compatible with its base model; otherwise, an error is raised.
     """
