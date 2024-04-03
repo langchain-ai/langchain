@@ -1200,7 +1200,7 @@ class LLM(BaseLLM):
 
     You should subclass this class and implement the following:
 
-    - `_call` method: Run the LLM on the given prompt and input.
+    - `_call` method: Run the LLM on the given prompt and input (used by `invoke`).
     - `_identifying_params` property: Return a dictionary of the identifying parameters
         This is critical for caching and tracing purposes. Identifying parameters
         is a dict that identifies the LLM.
@@ -1210,16 +1210,14 @@ class LLM(BaseLLM):
 
     - `_acall`: Provide a native async version of the `_call` method.
         If not provided, will delegate to the synchronous version using
-        `run_in_executor`.
+        `run_in_executor`. (Used by `ainvoke`).
     - `_stream`: Stream the LLM on the given prompt and input.
-        If not provided, will delegate to _call, and the output will arrive
-        in one chunk.
+        `stream` will use `_stream` if provided, otherwise it
+        use `_call` and output will arrive in one chunk.
     - `_astream`: Override to provide a native async version of the `_stream` method.
-        If not provided, will delegate to the synchronous version using
-        `run_in_executor`.
-        astream will use _astream if provided, otherwise it will implement
-        a fallback behavior that involves using the default _astream if
-        _stream is implemented, and using _acall if _stream is not implemented.
+        `astream` will use `_astream` if provided, otherwise it will implement
+        a fallback behavior that will use `_stream` if `_stream` is implemented,
+        and use `_acall` if `_stream` is not implemented.
     """
 
     @abstractmethod
