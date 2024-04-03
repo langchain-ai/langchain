@@ -72,6 +72,58 @@ agent_executor.invoke({
 })
 ```
 
+Usage of the [Cohere multi hop agent](/libs/partners/cohere/docs/multi_hop_agent.ipynb) and [more details of multi hop tool use with Cohere](https://docs.cohere.com/docs/tool-use). 
+
+### Single Step Tool Use
+
+```python 
+### Router
+from typing import Literal
+
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_cohere import ChatCohere
+
+# Data model
+class web_search(BaseModel):
+    """
+    The internet. Use web_search for questions that are related to anything else than agents, prompt engineering, and adversarial attacks.
+    """
+    query: str = Field(description="The query to use when searching the internet.")
+
+class vectorstore(BaseModel):
+    """
+    A vectorstore containing documents related to agents, prompt engineering, and adversarial attacks. Use the vectorstore for questions on these topics.
+    """
+    query: str = Field(description="The query to use when searching the vectorstore.")
+
+# Preamble
+preamble = """You are an expert at routing a user question to a vectorstore or web search.
+The vectorstore contains documents related to agents, prompt engineering, and adversarial attacks.
+Use the vectorstore for questions on these topics. Otherwise, use web-search."""
+
+# LLM with tool use and preamble
+llm = ChatCohere()
+structured_llm_router = llm.bind_tools(tools=[web_search, vectorstore], preamble=preamble)
+
+# Prompt
+route_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("human", "{question}"),
+    ]
+)
+
+question_router = route_prompt | structured_llm_router
+response = question_router.invoke({"question": "Who will the Bears draft first in the NFL draft?"})
+print(response.response_metadata['tool_calls'])
+response = question_router.invoke({"question": "What are the types of agent memory?"})
+print(response.response_metadata['tool_calls'])
+response = question_router.invoke({"question": "Hi how are you?"})
+print('tool_calls' in response.response_metadata)
+```
+
+Usage of the [Cohere tools agent](/libs/partners/cohere/docs/cohere_agent.ipynb) and [more details of tool use with Cohere](https://docs.cohere.com/docs/tool-use). 
+
 ### RAG Retriever
 
 ```python
