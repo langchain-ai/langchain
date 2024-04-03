@@ -140,6 +140,25 @@ class ChatMlflow(BaseChatModel):
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return ChatMlflow._create_chat_result(resp)
 
+    def stream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Iterator[BaseMessageChunk]:
+        # We need to override `stream` to handle the case
+        # that `self._client` does not implement `predict_stream`
+        if not hasattr(self._client, "predict_stream"):
+            # MLflow deployment client does not implement streaming,
+            # so use default implementation
+            yield cast(
+                BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
+            )
+        else:
+            yield from super().stream(input, config, stop=stop, **kwargs)
+
     def _stream(
         self,
         messages: List[BaseMessage],
