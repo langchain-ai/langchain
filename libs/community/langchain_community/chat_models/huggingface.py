@@ -1,5 +1,5 @@
 """Hugging Face Chat Wrapper."""
-
+from dataclasses import dataclass
 from typing import (
     Any,
     Callable,
@@ -42,6 +42,19 @@ from langchain_community.llms.huggingface_text_gen_inference import (
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
 
+@dataclass
+class TGI_RESPONSE:
+    choices: List[Any]
+    usage: Dict
+
+
+@dataclass
+class TGI_MESSAGE:
+    role: str
+    content: str
+    tool_calls: List[Dict]
+
+
 def _convert_message_to_chat_message(
     message: BaseMessage,
 ) -> Dict:
@@ -80,7 +93,7 @@ def _convert_message_to_chat_message(
 
 
 def _convert_TGI_message_to_LC_message(
-    _message: Any,
+    _message: TGI_MESSAGE,
 ) -> BaseMessage:
     role = _message.role
     assert role == "assistant", f"Expected role to be 'assistant', got {role}"
@@ -143,7 +156,7 @@ class ChatHuggingFace(BaseChatModel):
             )
         return values
 
-    def _create_chat_result(self, response: Any) -> ChatResult:
+    def _create_chat_result(self, response: TGI_RESPONSE) -> ChatResult:
         generations = []
         finish_reason = response.choices[0].finish_reason
         gen = ChatGeneration(
@@ -182,11 +195,16 @@ class ChatHuggingFace(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        llm_input = self._to_chat_prompt(messages)
-        llm_result = await self.llm._agenerate(
-            prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
-        )
-        return self._to_chat_result(llm_result)
+        if isinstance(self.llm, HuggingFaceTextGenInference):
+            message_dicts = self._create_message_dicts(messages, stop)
+            answer = await self.llm.async_client.chat(messages=message_dicts, **kwargs)
+            return self._create_chat_result(answer)
+        else:
+            llm_input = self._to_chat_prompt(messages)
+            llm_result = await self.llm._agenerate(
+                prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
+            )
+            return self._to_chat_result(llm_result)
 
     def _to_chat_prompt(
         self,
