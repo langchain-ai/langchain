@@ -533,6 +533,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         This method should be overridden by subclasses that support streaming.
 
+        If not implemented, the default behavior of calls to stream will be to
+        fallback to the non-streaming version of the model and return
+        the output as a single chunk.
+
         Args:
             prompt: The prompt to generate from.
             stop: Stop words to use when generating. Model output is cut off at the
@@ -1199,10 +1203,8 @@ class LLM(BaseLLM):
     - `_call` method: Run the LLM on the given prompt and input.
     - `_identifying_params` property: Return a dictionary of the identifying parameters
         This is critical for caching and tracing purposes. Identifying parameters
-        are a dict that includes the parameters with which the LLM was used
-        (e.g., model name, temperature etc.)
-        It must NOT include any non-essential parameters (e.g., api secret,
-        api URL etc.)
+        is a dict that identifies the LLM.
+        It should mostly include a `model_name`.
 
     Optional: Override the following methods to provide more optimizations:
 
