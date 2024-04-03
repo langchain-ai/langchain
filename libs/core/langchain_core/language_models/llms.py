@@ -529,6 +529,21 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
+        """Stream the LLM on the given prompt.
+
+        This method should be overridden by subclasses that support streaming.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An iterator of GenerationChunks.
+        """
         raise NotImplementedError()
 
     async def _astream(
@@ -538,6 +553,23 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
+        """An async version of the _stream method.
+
+        The default implementation uses the synchronous _stream method and wraps it in
+        an async iterator. Subclasses that need to provide a true async implementation
+        should override this method.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            An async iterator of GenerationChunks.
+        """
         iterator = await run_in_executor(
             None,
             self._stream,
@@ -1160,10 +1192,32 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
 
 class LLM(BaseLLM):
-    """Base LLM abstract class.
+    """This class exposes a simple interface for implementing a custom LLM.
 
-    The purpose of this class is to expose a simpler interface for working
-    with LLMs, rather than expect the user to implement the full _generate method.
+    You should subclass this class and implement the following:
+
+    - `_call` method: Run the LLM on the given prompt and input.
+    - `_identifying_params` property: Return a dictionary of the identifying parameters
+        This is critical for caching and tracing purposes. Identifying parameters
+        are a dict that includes the parameters with which the LLM was used
+        (e.g., model name, temperature etc.)
+        It must NOT include any non-essential parameters (e.g., api secret,
+        api URL etc.)
+
+    Optional: Override the following methods to provide more optimizations:
+
+    - `_acall`: Provide a native async version of the `_call` method.
+        If not provided, will delegate to the synchronous version using
+        `run_in_executor`.
+    - `_stream`: Stream the LLM on the given prompt and input.
+        If not provided, will delegate to _call, and the output will arrive
+        in one chunk.
+    - `_astream`: Override to provide a native async version of the `_stream` method.
+        If not provided, will delegate to the synchronous version using
+        `run_in_executor`.
+        astream will use _astream if provided, otherwise it will implement
+        a fallback behavior that involves using the default _astream if
+        _stream is implemented, and using _acall if _stream is not implemented.
     """
 
     @abstractmethod
@@ -1174,7 +1228,22 @@ class LLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Run the LLM on the given prompt and input."""
+        """Run the LLM on the given input.
+
+        Override this method to implement the LLM logic.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of the stop substrings.
+                If stop tokens are not supported consider raising NotImplementedError.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The model output as a string. SHOULD NOT include the prompt.
+        """
 
     async def _acall(
         self,
@@ -1183,7 +1252,24 @@ class LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Run the LLM on the given prompt and input."""
+        """Async version of the _call method.
+
+        The default implementation delegates to the synchronous _call method using
+        `run_in_executor`. Subclasses that need to provide a true async implementation
+        should override this method to reduce the overhead of using `run_in_executor`.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of the stop substrings.
+                If stop tokens are not supported consider raising NotImplementedError.
+            run_manager: Callback manager for the run.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The model output as a string. SHOULD NOT include the prompt.
+        """
         return await run_in_executor(
             None,
             self._call,
