@@ -9,12 +9,11 @@ sidebar_class_name: hidden
 - **Are context-aware**: connect a language model to sources of context (prompt instructions, few shot examples, content to ground its response in, etc.)
 - **Reason**: rely on a language model to reason (about how to answer based on provided context, what actions to take, etc.)
 
-This framework consists of several parts.
-- **LangChain Libraries**: The Python and JavaScript libraries. Contains interfaces and integrations for a myriad of components, a basic run time for combining these components into chains and agents, and off-the-shelf implementations of chains and agents.
-- **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
-- **[LangGraph](/docs/langgraph)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
-- **[LangChain Templates](/docs/templates)**: A collection of easily deployable reference architectures for a wide variety of tasks.
-- **[LangServe](/docs/langserve)**: A library for deploying LangChain chains as REST APIs.
+For these applications, LangChain simplifies the entire application lifecycle:
+
+- **Development**: Write your applications using LangChain's robust building blocks and flexible components. Hit the ground running using [third-party integrations](/docs/integrations/platforms/) and [LangChain Templates](/docs/templates).
+- **Productionization**: Use [LangSmith](/docs/langsmith) to inspect, test and evaluate your chains, so that you can constantly improve and deploy with confidence.
+- **Deployment**: Turn any chain into an API with [LangServe](/docs/langserve).
 
 import ThemedImage from '@theme/ThemedImage';
 
@@ -27,24 +26,25 @@ import ThemedImage from '@theme/ThemedImage';
   title="LangChain Framework Overview"
 />
 
-Together, these products simplify the entire application lifecycle:
-- **Develop**: Write your applications in LangChain/LangChain.js. Hit the ground running using Templates for reference.
-- **Productionize**: Use LangSmith to inspect, test and monitor your chains, so that you can constantly improve and deploy with confidence.
-- **Deploy**: Turn any chain into an API with LangServe.
+Concretely, the open-source framework consists of several packages:
 
-## LangChain Libraries
+- **`langchain-core`**: Base abstractions and LangChain Expression Language.
+- **`langchain-community`**: Third party integrations.
+  - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
+- **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 
-The main value props of the LangChain packages are:
+The main value props of these packages are:
+
 1. **Components**: composable tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
 2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
 
 Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
 
-The LangChain libraries themselves are made up of several different packages.
-- **`langchain-core`**: Base abstractions and LangChain Expression Language.
-- **`langchain-community`**: Third party integrations.
-  - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
-- **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
+The broader ecosystem consists of:
+
+- **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
+- **[LangGraph](/docs/langgraph)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+- **[LangServe](/docs/langserve)**: A library for deploying LangChain chains as REST APIs.
 
 ## Get started
 
