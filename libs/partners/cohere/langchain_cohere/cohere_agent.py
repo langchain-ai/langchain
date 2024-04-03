@@ -17,7 +17,14 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.tools import BaseTool
-from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function,
+)
+
+from langchain_cohere.utils import (
+    JSON_TO_PYTHON_TYPES,
+    _remove_signature_from_tool_description,
+)
 
 
 def create_cohere_tools_agent(
@@ -99,11 +106,17 @@ def _convert_to_cohere_tool(
     if isinstance(tool, BaseTool):
         return Tool(
             name=tool.name,
-            description=tool.description,
+            description=_remove_signature_from_tool_description(
+                tool.name, tool.description
+            ),
             parameter_definitions={
                 param_name: ToolParameterDefinitionsValue(
-                    description=param_definition.get("description"),
-                    type=param_definition.get("type"),
+                    description=param_definition.get("description")
+                    if "description" in param_definition
+                    else "",
+                    type=JSON_TO_PYTHON_TYPES.get(
+                        param_definition.get("type"), param_definition.get("type")
+                    ),
                     required="default" not in param_definition,
                 )
                 for param_name, param_definition in tool.args.items()
@@ -120,7 +133,9 @@ def _convert_to_cohere_tool(
             parameter_definitions={
                 param_name: ToolParameterDefinitionsValue(
                     description=param_definition.get("description"),
-                    type=param_definition.get("type"),
+                    type=JSON_TO_PYTHON_TYPES.get(
+                        param_definition.get("type"), param_definition.get("type")
+                    ),
                     required="default" not in param_definition,
                 )
                 for param_name, param_definition in tool.get("properties", {}).items()
@@ -140,7 +155,9 @@ def _convert_to_cohere_tool(
             parameter_definitions={
                 param_name: ToolParameterDefinitionsValue(
                     description=param_definition.get("description"),
-                    type=param_definition.get("type"),
+                    type=JSON_TO_PYTHON_TYPES.get(
+                        param_definition.get("type"), param_definition.get("type")
+                    ),
                     required=param_name in parameters.get("required", []),
                 )
                 for param_name, param_definition in properties.items()

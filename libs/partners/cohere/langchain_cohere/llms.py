@@ -66,11 +66,11 @@ class BaseCohere(Serializable):
     streaming: bool = Field(default=False)
     """Whether to stream the results."""
 
-    timeout: Optional[float] = 60
-    """Timeout in seconds for the Cohere API request."""
-
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
+
+    timeout_seconds: Optional[float] = 300
+    """Timeout in seconds for the Cohere API request."""
 
     base_url: Optional[str] = None
     """Override the default Cohere API URL."""
@@ -82,16 +82,17 @@ class BaseCohere(Serializable):
             get_from_dict_or_env(values, "cohere_api_key", "COHERE_API_KEY")
         )
         client_name = values["user_agent"]
+        timeout_seconds = values.get("timeout_seconds")
         values["client"] = cohere.Client(
             api_key=values["cohere_api_key"].get_secret_value(),
+            timeout=timeout_seconds,
             client_name=client_name,
-            timeout=values["timeout"],
             base_url=values["base_url"],
         )
         values["async_client"] = cohere.AsyncClient(
             api_key=values["cohere_api_key"].get_secret_value(),
             client_name=client_name,
-            timeout=values["timeout"],
+            timeout=timeout_seconds,
             base_url=values["base_url"],
         )
         return values
