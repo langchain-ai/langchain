@@ -62,7 +62,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     content=content,
                     additional_kwargs=additional_kwargs,
                     response_metadata=response_metadata,
-                    tool_calls=other.tool_calls,
+                    tool_call_chunks=other.tool_call_chunks,
                     id=self.id,
                 )
 
