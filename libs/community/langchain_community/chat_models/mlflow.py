@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models.base import LanguageModelInput
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -25,6 +26,8 @@ from langchain_core.pydantic_v1 import (
     Field,
     PrivateAttr,
 )
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 logger = logging.getLogger(__name__)
 
