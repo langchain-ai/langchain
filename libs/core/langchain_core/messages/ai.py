@@ -85,7 +85,7 @@ class ToolCall(Serializable):
 
 class ToolCallsMessage(AIMessage):
     tool_calls: Optional[List[ToolCall]] = None
-    type: Literal["tool_calls"] = "tool_calls"
+    type: Literal["tool_calls"] = "tool_calls"  # type: ignore[assignment] # noqa: E501
 
 
 class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
