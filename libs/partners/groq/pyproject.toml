@@ -89,7 +89,9 @@ markers = [
 ]
 filterwarnings = [
   "error",
+  'ignore::ResourceWarning:',
+  'ignore:The function `with_structured_output` is in beta',
   # Maintain support for pydantic 1.X
-  'default:The `dict` method is deprecated; use `model_dump` instead.*:DeprecationWarning',
+  'default:The `dict` method is deprecated; use `model_dump` instead:DeprecationWarning',
 ]
 asyncio_mode = "auto"
