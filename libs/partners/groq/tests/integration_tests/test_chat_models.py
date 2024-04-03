@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
@@ -262,6 +263,64 @@ def test_tool_choice_bool() -> None:
     assert isinstance(resp, AIMessage)
     assert resp.content == ""  # should just be tool call
     tool_calls = resp.additional_kwargs["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert tool_call["function"]["name"] == "MyTool"
+    assert json.loads(tool_call["function"]["arguments"]) == {
+        "age": 27,
+        "name": "Erick",
+    }
+    assert tool_call["type"] == "function"
+
+
+def test_streaming_tool_call() -> None:
+    """Test that tool choice is respected."""
+    llm = ChatGroq()
+
+    class MyTool(BaseModel):
+        name: str
+        age: int
+
+    with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
+
+    resp = with_tool.stream("Who was the 27 year old named Erick?")
+    additional_kwargs = None
+    for chunk in resp:
+        assert isinstance(chunk, AIMessageChunk)
+        assert chunk.content == ""  # should just be tool call
+        additional_kwargs = chunk.additional_kwargs
+
+    assert additional_kwargs is not None
+    tool_calls = additional_kwargs["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert tool_call["function"]["name"] == "MyTool"
+    assert json.loads(tool_call["function"]["arguments"]) == {
+        "age": 27,
+        "name": "Erick",
+    }
+    assert tool_call["type"] == "function"
+
+
+async def test_astreaming_tool_call() -> None:
+    """Test that tool choice is respected."""
+    llm = ChatGroq()
+
+    class MyTool(BaseModel):
+        name: str
+        age: int
+
+    with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
+
+    resp = with_tool.astream("Who was the 27 year old named Erick?")
+    additional_kwargs = None
+    async for chunk in resp:
+        assert isinstance(chunk, AIMessageChunk)
+        assert chunk.content == ""  # should just be tool call
+        additional_kwargs = chunk.additional_kwargs
+
+    assert additional_kwargs is not None
+    tool_calls = additional_kwargs["tool_calls"]
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]
     assert tool_call["function"]["name"] == "MyTool"
