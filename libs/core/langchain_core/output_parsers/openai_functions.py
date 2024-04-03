@@ -18,7 +18,11 @@ def _get_arguments_from_function_call(function_call: Any) -> Any:
     """Supports both type of function_call - dict and objects (for giga)"""
     if hasattr(function_call, "arguments"):
         return json.dumps(function_call.arguments, ensure_ascii=False)
-    return function_call["arguments"]
+    args = function_call["arguments"]
+    if isinstance(args, str):
+        return args
+    else:
+        return json.dumps(args, ensure_ascii=False)
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
