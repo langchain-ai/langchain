@@ -34,17 +34,15 @@ conda install langchain -c conda-forge
 
 ## 🤔 What is LangChain?
 
-**LangChain** is a framework for developing applications powered by language models. It enables applications that:
-- **Are context-aware**: connect a language model to sources of context (prompt instructions, few shot examples, content to ground its response in, etc.)
-- **Reason**: rely on a language model to reason (about how to answer based on provided context, what actions to take, etc.)
+**LangChain** is a framework for developing applications powered by large language models (LLMs).
 
 For these applications, LangChain simplifies the entire application lifecycle:
 
-- **Development**: Write your applications using LangChain's [building blocks](https://python.langchain.com/docs/expression_language/) and [components](https://python.langchain.com/docs/modules/). Hit the ground running using [third-party integrations](https://python.langchain.com/docs/integrations/platforms/) and [LangChain Templates](https://python.langchain.com/docs/templates).
-- **Productionization**: Use [LangSmith](https://python.langchain.com/docs/langsmith/) to inspect, monitor and evaluate your chains, so that you can constantly optimize and deploy with confidence.
-- **Deployment**: Turn any chain into an API with [LangServe](https://python.langchain.com/docs/langserve).
+- **Open-source libraries**: Build your applications using LangChain's [modular building blocks](https://python.langchain.com/docs/expression_language/) and [components](https://python.langchain.com/docs/modules/). Integrate with hundreds of [third-party providers](https://python.langchain.com/docs/integrations/platforms/).
+- **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](https://python.langchain.com/docs/langsmith/) so that you can constantly optimize and deploy with confidence.
+- **Deployment**: Turn any chain into a REST API with [LangServe](https://python.langchain.com/docs/langserve).
 
-Concretely, the open-source framework consists of several packages:
+Concretely, the **open-source libraries** consist of several packages:
 
 - **`langchain-core`**: Base abstractions and LangChain Expression Language.
 - **`langchain-community`**: Third party integrations.
@@ -58,7 +56,7 @@ The main value props of these packages are:
 
 Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
 
-The broader ecosystem consists of:
+The broader LangChain ecosystem consists of:
 
 - **[LangSmith](https://python.langchain.com/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
 - **[LangGraph](https://python.langchain.com/docs/langgraph)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.

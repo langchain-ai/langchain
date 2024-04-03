@@ -5,15 +5,13 @@ sidebar_class_name: hidden
 
 # Introduction
 
-**LangChain** is a framework for developing applications powered by language models. It enables applications that:
-- **Are context-aware**: connect a language model to sources of context (prompt instructions, few shot examples, content to ground its response in, etc.)
-- **Reason**: rely on a language model to reason (about how to answer based on provided context, what actions to take, etc.)
+**LangChain** is a framework for developing applications powered by large language models (LLMs).
 
 For these applications, LangChain simplifies the entire application lifecycle:
 
-- **Development**: Write your applications using LangChain's [building blocks](/docs/expression_language/) and [components](/docs/modules/). Hit the ground running using [third-party integrations](/docs/integrations/platforms/) and [LangChain Templates](/docs/templates).
-- **Productionization**: Use [LangSmith](/docs/langsmith/) to inspect, monitor and evaluate your chains, so that you can constantly optimize and deploy with confidence.
-- **Deployment**: Turn any chain into an API with [LangServe](/docs/langserve).
+- **Open-source libraries**: Build your applications using LangChain's [modular building blocks](/docs/expression_language/) and [components](/docs/modules/). Integrate with hundreds of [third-party providers](/docs/integrations/platforms/).
+- **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](/docs/langsmith/) so that you can constantly optimize and deploy with confidence.
+- **Deployment**: Turn any chain into a REST API with [LangServe](/docs/langserve).
 
 import ThemedImage from '@theme/ThemedImage';
 
@@ -26,7 +24,7 @@ import ThemedImage from '@theme/ThemedImage';
   title="LangChain Framework Overview"
 />
 
-Concretely, the open-source framework consists of several packages:
+Concretely, the **open-source libraries** consist of several packages:
 
 - **`langchain-core`**: Base abstractions and LangChain Expression Language.
 - **`langchain-community`**: Third party integrations.
@@ -40,7 +38,7 @@ The main value props of these packages are:
 
 Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
 
-The broader ecosystem consists of:
+The broader LangChain ecosystem consists of:
 
 - **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
 - **[LangGraph](/docs/langgraph)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
