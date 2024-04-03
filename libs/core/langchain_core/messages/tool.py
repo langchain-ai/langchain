@@ -19,6 +19,7 @@ class ToolCall(Serializable):
 
 class ToolCallsMessage(AIMessage):
     tool_calls: Optional[List[ToolCall]] = None
+    type: Literal["tool_calls"] = "tool_calls"
 
 
 class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
@@ -59,6 +60,7 @@ class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
                     self.response_metadata, other.response_metadata
                 ),
                 tool_calls=tool_calls,
+                id=self.id,
             )
 
         return super().__add__(other)
