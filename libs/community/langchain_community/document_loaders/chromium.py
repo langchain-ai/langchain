@@ -101,7 +101,7 @@ class AsyncChromiumLoader(BaseLoader):
 
         """
         for url in self.urls:
-            html_content = self.ascrape_playwright(url)
+            html_content = self.scrape_playwright(url)
             metadata = {"source": url}
             yield Document(page_content=html_content, metadata=metadata)
 
