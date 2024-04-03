@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1"
+langchain-core = "^0.1.40"
 groq = ">=0.4.1,<1"
 
 [tool.poetry.group.test]
