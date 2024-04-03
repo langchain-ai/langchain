@@ -5,12 +5,12 @@ import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
+    AIToolCallsMessage,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolCall,
-    AIToolCallsMessage,
     ToolMessage,
 )
 from langchain_core.outputs import (

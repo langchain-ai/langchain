@@ -35,6 +35,8 @@ from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    AIToolCallsMessage,
+    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -43,8 +45,6 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike

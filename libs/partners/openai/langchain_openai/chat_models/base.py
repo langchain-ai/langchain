@@ -42,6 +42,8 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    AIToolCallsMessage,
+    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -52,8 +54,6 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     ToolMessage,
     ToolMessageChunk,
 )
