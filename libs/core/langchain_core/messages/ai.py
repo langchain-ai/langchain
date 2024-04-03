@@ -81,6 +81,12 @@ class ToolCall(Serializable):
     name: str
     args: dict
     id: Optional[str] = None
+    index: Optional[int] = None
+
+
+class ToolCallChunk(ToolCall):
+    name: Optional[str] = None
+    args: Optional[str] = None
 
 
 class ToolCallsMessage(AIMessage):
@@ -93,6 +99,7 @@ class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["ToolCallsMessageChunk"] = "ToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
+    tool_calls: Optional[List[ToolCallChunk]] = None
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -107,10 +114,20 @@ class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
                     "with different example values."
                 )
 
-            if isinstance(other, ToolCallsMessageChunk):
-                tool_calls = merge_lists(self.tool_calls, other.tool_calls)
+            if (
+                isinstance(other, ToolCallsMessageChunk)
+                and other.tool_calls
+                and self.tool_calls
+            ):
+                raw_tool_calls = merge_lists(
+                    [tc.dict() for tc in self.tool_calls],
+                    [tc.dict() for tc in other.tool_calls],
+                )
+                tool_calls: Optional[List] = [
+                    ToolCallChunk(**rtc) for rtc in raw_tool_calls
+                ]
             else:
-                tool_calls = self.tool_calls
+                tool_calls = self.tool_calls or getattr(other, "tool_calls", None)
 
             return self.__class__(
                 example=self.example,

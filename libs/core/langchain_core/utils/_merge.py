@@ -33,22 +33,7 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
         elif isinstance(merged[right_k], dict):
             merged[right_k] = merge_dicts(merged[right_k], right_v)
         elif isinstance(merged[right_k], list):
-            merged[right_k] = merged[right_k].copy()
-            for e in right_v:
-                if isinstance(e, dict) and "index" in e and isinstance(e["index"], int):
-                    to_merge = [
-                        i
-                        for i, e_left in enumerate(merged[right_k])
-                        if e_left["index"] == e["index"]
-                    ]
-                    if to_merge:
-                        merged[right_k][to_merge[0]] = merge_dicts(
-                            merged[right_k][to_merge[0]], e
-                        )
-                    else:
-                        merged[right_k] = merged[right_k] + [e]
-                else:
-                    merged[right_k] = merged[right_k] + [e]
+            merged[right_k] = merge_lists(merged[right_k], right_v)
         elif merged[right_k] == right_v:
             continue
         else:
@@ -76,8 +61,21 @@ def merge_lists(left: Optional[List], right: Optional[List]) -> Optional[List]:
     """
     if left is None and right is None:
         return None
-    if left is None:
-        return right
-    if right is None:
-        return left
-    return left + right
+    elif left is None or right is None:
+        return left or right
+    else:
+        merged = left.copy()
+        for e in right:
+            if isinstance(e, dict) and "index" in e and isinstance(e["index"], int):
+                to_merge = [
+                    i
+                    for i, e_left in enumerate(merged)
+                    if e_left["index"] == e["index"]
+                ]
+                if to_merge:
+                    merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], e)
+                else:
+                    merged = merged + [e]
+            else:
+                merged = merged + [e]
+        return merged
