@@ -30,6 +30,7 @@ _module_lookup = {
     "SageMakerCallbackHandler": "langchain_community.callbacks.sagemaker_callback",
     "StreamlitCallbackHandler": "langchain_community.callbacks.streamlit",
     "TrubricsCallbackHandler": "langchain_community.callbacks.trubrics_callback",
+    "UpTrainCallbackHandler": "langchain_community.callbacks.uptrain_callback",
     "WandbCallbackHandler": "langchain_community.callbacks.wandb_callback",
     "WhyLabsCallbackHandler": "langchain_community.callbacks.whylabs_callback",
     "get_openai_callback": "langchain_community.callbacks.manager",
