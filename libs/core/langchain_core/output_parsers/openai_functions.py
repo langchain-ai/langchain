@@ -14,7 +14,7 @@ from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
-def _get_arguments_from_function_call(function_call):
+def _get_arguments_from_function_call(function_call: Any) -> Any:
     """Supports both type of function_call - dict and objects (for giga)"""
     if hasattr(function_call, "arguments"):
         return json.dumps(function_call.arguments, ensure_ascii=False)

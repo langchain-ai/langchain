@@ -204,6 +204,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         )
 
         payload.functions = kwargs.get("functions", None)
+        payload.function_call = kwargs.get("function_call", None)
 
         if self.profanity_check is not None:
             payload.profanity_check = self.profanity_check
