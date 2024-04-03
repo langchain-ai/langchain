@@ -99,7 +99,7 @@ chat_model = ChatAnthropic(anthropic_api_key="...")
 First we'll need to install their partner package:
 
 ```shell
-pip install cohere
+pip install langchain-cohere
 ```
 
 Accessing the API requires an API key, which you can get by creating an account and heading [here](https://dashboard.cohere.com/api-keys). Once we have a key we'll want to set it as an environment variable by running:
@@ -111,7 +111,7 @@ export COHERE_API_KEY="..."
 We can then initialize the model:
 
 ```python
-from langchain_community.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 
 chat_model = ChatCohere()
 ```
@@ -119,7 +119,7 @@ chat_model = ChatCohere()
 If you'd prefer not to set an environment variable you can pass the key in directly via the `cohere_api_key` named parameter when initiating the Cohere LLM class:
 
 ```python
-from langchain_community.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 
 chat_model = ChatCohere(cohere_api_key="...")
 ```
