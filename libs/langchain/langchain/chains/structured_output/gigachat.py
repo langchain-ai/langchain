@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Sequence, Type, Union
+from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
@@ -219,9 +219,9 @@ def get_gigachat_output_parser(
         }
     else:
         pydantic_schema = functions[0]
-    output_parser: Union[
-        BaseOutputParser, BaseGenerationOutputParser
-    ] = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+    output_parser: Union[BaseOutputParser, BaseGenerationOutputParser] = (
+        PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+    )
     return output_parser
 
 
