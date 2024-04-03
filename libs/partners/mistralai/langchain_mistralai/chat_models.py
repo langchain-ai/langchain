@@ -88,7 +88,7 @@ def _convert_mistral_chat_message_to_message(
     if raw_tool_calls := _message.get("tool_calls"):
         additional_kwargs["tool_calls"] = raw_tool_calls
         try:
-            tool_calls = parse_tool_calls(raw_tool_calls)
+            tool_calls = parse_tool_calls(raw_tool_calls, return_id=False)
         except Exception:
             tool_calls = None
         return AIToolCallsMessage(

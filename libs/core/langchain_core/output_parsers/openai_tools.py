@@ -16,7 +16,7 @@ def parse_tool_calls(
     *,
     partial: bool = False,
     strict: bool = False,
-    return_id: bool = False,
+    return_id: bool = True,
 ) -> List[dict]:
     final_tools = []
     exceptions = []

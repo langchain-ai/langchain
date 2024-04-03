@@ -103,11 +103,6 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
     type: Literal["AIToolCallsMessageChunk"] = "AIToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
     tool_call_chunks: Optional[List[ToolCallChunk]] = None
 
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "messages"]
-
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
             if self.example != other.example:

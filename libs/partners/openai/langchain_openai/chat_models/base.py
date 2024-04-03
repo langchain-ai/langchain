@@ -243,7 +243,7 @@ def _convert_delta_to_message_chunk(
             content=content,
             additional_kwargs=additional_kwargs,
             id=id_,
-            tool_calls=None,
+            tool_call_chunks=None,
         )
     else:
         return default_class(content=content, id=id_)  # type: ignore
