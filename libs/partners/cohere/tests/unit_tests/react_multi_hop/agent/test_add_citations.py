@@ -63,7 +63,6 @@ def test_add_citations(
 ) -> None:
     chain = _AddCitations()
     actual = chain.invoke(invoke_with)
-    parse_citations_mock.return_value = (GENERATION, CITATIONS)
 
     assert expected == actual
 
