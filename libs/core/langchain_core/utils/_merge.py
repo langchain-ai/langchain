@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 
 def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
@@ -57,27 +57,3 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
                 f"value has unsupported type {type(merged[right_k])}."
             )
     return merged
-
-
-def merge_lists(left: Optional[List], right: Optional[List]) -> Optional[List]:
-    """Add two lists, handling None.
-
-    Example:
-        merge_lists([1], [2]) == [1, 2]
-        merge_lists(None, [2]) == [2]
-        merge_lists([1], None) == [1]
-        merge_lists(None, None) == None
-
-    Args:
-        left: The left list or None.
-        right: The right list or None.
-    Returns:
-        The merged list.
-    """
-    if left is None and right is None:
-        return None
-    if left is None:
-        return right
-    if right is None:
-        return left
-    return left + right
