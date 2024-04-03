@@ -1,12 +1,11 @@
 import os
-from pathlib import Path
-from typing import Dict, Iterator, Literal, Optional, Union
+from typing import Iterator, Literal, Optional
 
-import requests
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.upstage import UpstageDocumentLoader
 
 LAYOUT_ANALYZER_URL = "https://api.upstage.ai/v1/document-ai/layout-analyzer"
 
@@ -124,94 +123,27 @@ class UpstageDocumentParser(BaseBlobParser):
 
         validate_api_key(self.api_key)
 
-    def _get_response(self, file_path: Union[str, Path]) -> Dict:
-        """
-        Sends a POST request to the API endpoint with the given file path and returns
-        the response as a JSON dictionary.
-
-        Args:
-            file_path (Union[str, Path]): The path to the file to be sent in
-                                          the request.
-
-        Returns:
-            Dict: The response from the API as a JSON dictionary.
-
-        Raises:
-            ValueError: If there is an error in the API call.
-        """
-        try:
-            headers = {"Authorization": f"Bearer {self.api_key}"}
-            files = {"document": open(file_path, "rb")}
-            response = requests.post(self.api_base, headers=headers, files=files)
-        except requests.exceptions.RequestException as e:
-            raise ValueError(f"API call error: {e}")
-        finally:
-            files["document"].close()
-
-        return response.json()
-
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """
-        Lazily parses the given blob and yields Document objects based on the split
-        type.
+        Lazily parses a blob using the UpstageDocumentLoader.
 
         Args:
             blob (Blob): The blob to be parsed.
 
         Yields:
-            Document: A parsed document object.
+            Document: The parsed document.
 
-        Raises:
-            ValueError: If the split type is invalid.
+        Returns:
+            Iterator[Document]: An iterator of parsed documents.
         """
 
-        response = self._get_response(blob.path)
+        loader = UpstageDocumentLoader(
+            file_path=blob.path,
+            output_type=self.output_type,
+            split=self.split,
+            api_key=self.api_key,
+            api_base=self.api_base,
+        )
 
-        if self.split == "none":
-            yield Document(
-                page_content=(parse_output(response, self.output_type)),
-                metadata={
-                    "total_pages": response["billed_pages"],
-                    "type": self.output_type,
-                    "split": self.split,
-                },
-            )
-
-        elif self.split == "element":
-            for element in response["elements"]:
-                yield Document(
-                    page_content=(parse_output(element, self.output_type)),
-                    metadata={
-                        "page": element["page"],
-                        "id": element["id"],
-                        "type": self.output_type,
-                        "split": self.split,
-                    },
-                )
-
-        elif self.split == "page":
-            # Split by page
-            elements = response["elements"]
-            pages = sorted(set(map(lambda x: x["page"], elements)))
-
-            page_group = [
-                [element for element in elements if element["page"] == x] for x in pages
-            ]
-
-            for group in page_group:
-                page_content = " ".join(
-                    [parse_output(element, self.output_type) for element in group]
-                )
-
-                yield Document(
-                    page_content=page_content,
-                    metadata={
-                        "page": group[0]["page"],
-                        "type": self.output_type,
-                        "split": self.split,
-                    },
-                )
-
-        else:
-            # Invalid split type
-            raise ValueError(f"Invalid split type: {self.split}")
+        for doc in loader.lazy_load():
+            yield doc
