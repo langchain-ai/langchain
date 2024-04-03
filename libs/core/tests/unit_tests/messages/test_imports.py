@@ -19,6 +19,7 @@ EXPECTED_ALL = [
     "SystemMessage",
     "SystemMessageChunk",
     "ToolCall",
+    "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
     "convert_to_messages",
