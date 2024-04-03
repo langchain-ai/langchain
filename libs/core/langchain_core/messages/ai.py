@@ -84,9 +84,11 @@ class ToolCall(Serializable):
     index: Optional[int] = None
 
 
-class ToolCallChunk(ToolCall):
+class ToolCallChunk(Serializable):
     name: Optional[str] = None
     args: Optional[str] = None
+    id: Optional[str] = None
+    index: Optional[int] = None
 
 
 class AIToolCallsMessage(AIMessage):
@@ -99,7 +101,7 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["AIToolCallsMessageChunk"] = "AIToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
-    tool_calls: Optional[List[ToolCallChunk]] = None
+    tool_call_chunks: Optional[List[ToolCallChunk]] = None
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -123,11 +125,14 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
                     [tc.dict() for tc in self.tool_calls],
                     [tc.dict() for tc in other.tool_calls],
                 )
-                tool_calls: Optional[List] = [
-                    ToolCallChunk(**rtc) for rtc in raw_tool_calls
-                ]
+                if raw_tool_calls:
+                    tool_call_chunks = [ToolCallChunk(**rtc) for rtc in raw_tool_calls]
+                else:
+                    tool_call_chunks = None
             else:
-                tool_calls = self.tool_calls or getattr(other, "tool_calls", None)
+                tool_call_chunks = self.tool_call_chunks or getattr(
+                    other, "tool_call_chunks", None
+                )
 
             return self.__class__(
                 example=self.example,
@@ -138,7 +143,7 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
-                tool_calls=tool_calls,
+                tool_call_chunks=tool_call_chunks,
                 id=self.id,
             )
 
