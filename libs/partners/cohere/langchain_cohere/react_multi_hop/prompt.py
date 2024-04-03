@@ -108,6 +108,39 @@ def render_observations(
     index: int,
 ) -> Tuple[BaseMessage, int]:
     """Renders the 'output' part of an Agent's intermediate step into prompt content."""
+    documents = convert_to_documents(observations)
+
+    rendered_documents: List[str] = []
+    document_prompt = """Document: {index}
+{fields}"""
+    for doc in documents:
+        # Render document fields into Key: value strings.
+        fields: List[str] = []
+        for k, v in doc.items():
+            if k.lower() == "url":
+                # 'url' is a special key which is always upper case.
+                k = "URL"
+            else:
+                # keys are otherwise transformed into title case.
+                k = k.title()
+            fields.append(f"{k}: {v}")
+
+        rendered_documents.append(
+            document_prompt.format(
+                index=index,
+                fields="\n".join(fields),
+            )
+        )
+        index += 1
+
+    prompt_content = "<results>\n" + "\n\n".join(rendered_documents) + "\n</results>"
+    return SystemMessage(content=prompt_content), index
+
+
+def convert_to_documents(
+    observations: Union[List[Mapping[str, str]], List[str], Mapping[str, str], str],
+) -> List[Mapping]:
+    """Converts observations into a 'document' dict"""
     if (
         not isinstance(observations, list)
         and not isinstance(observations, str)
@@ -115,9 +148,7 @@ def render_observations(
     ):
         raise ValueError("observation must be a list, a Mapping, or a string")
 
-    rendered_documents = []
-    document_prompt = """Document: {index}
-{fields}"""
+    documents: List[Mapping] = []
 
     if isinstance(observations, str):
         # strings are turned into a key/value pair and a key of 'output' is added.
@@ -137,28 +168,9 @@ def render_observations(
                 raise ValueError(
                     "all observation list items must be a Mapping or a string"
                 )
+            documents.append(doc)
 
-            # Render document fields into Key: value strings.
-            fields: List[str] = []
-            for k, v in doc.items():
-                if k.lower() == "url":
-                    # 'url' is a special key which is always upper case.
-                    k = "URL"
-                else:
-                    # keys are otherwise transformed into title case.
-                    k = k.title()
-                fields.append(f"{k}: {v}")
-
-            rendered_documents.append(
-                document_prompt.format(
-                    index=index,
-                    fields="\n".join(fields),
-                )
-            )
-            index += 1
-
-    prompt_content = "<results>\n" + "\n\n".join(rendered_documents) + "\n</results>"
-    return SystemMessage(content=prompt_content), index
+    return documents
 
 
 def render_intermediate_steps(
