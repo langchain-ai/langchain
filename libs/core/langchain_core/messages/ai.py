@@ -56,8 +56,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.response_metadata, other.response_metadata
             )
 
-            if isinstance(other, ToolCallsMessageChunk):
-                return ToolCallsMessageChunk(
+            if isinstance(other, AIToolCallsMessageChunk):
+                return AIToolCallsMessageChunk(
                     example=self.example,
                     content=content,
                     additional_kwargs=additional_kwargs,
@@ -88,11 +88,11 @@ class AIToolCallsMessage(AIMessage):
     type: Literal["tool_calls"] = "tool_calls"  # type: ignore[assignment] # noqa: E501
 
 
-class ToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
+class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["ToolCallsMessageChunk"] = "ToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
+    type: Literal["AIToolCallsMessageChunk"] = "AIToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -103,11 +103,11 @@ class ToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
         if isinstance(other, AIMessageChunk):
             if self.example != other.example:
                 raise ValueError(
-                    "Cannot concatenate ToolCallsMessageChunks "
+                    "Cannot concatenate AIToolCallsMessageChunks "
                     "with different example values."
                 )
 
-            if isinstance(other, ToolCallsMessageChunk):
+            if isinstance(other, AIToolCallsMessageChunk):
                 tool_calls = merge_lists(self.tool_calls, other.tool_calls)
             else:
                 tool_calls = self.tool_calls

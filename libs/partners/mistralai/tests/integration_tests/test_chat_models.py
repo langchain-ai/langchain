@@ -7,7 +7,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     HumanMessage,
     ToolCall,
-    ToolCallsMessageChunk,
+    AIToolCallsMessageChunk,
 )
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -170,7 +170,7 @@ def test_streaming_tool_call() -> None:
 
     additional_kwargs = None
     for chunk in strm:
-        assert type(chunk) in (AIMessageChunk, ToolCallsMessageChunk)
+        assert type(chunk) in (AIMessageChunk, AIToolCallsMessageChunk)
         assert chunk.content == ""
         additional_kwargs = chunk.additional_kwargs
 
@@ -183,7 +183,7 @@ def test_streaming_tool_call() -> None:
         "age": 27,
     }
 
-    assert isinstance(chunk, ToolCallsMessageChunk)
+    assert isinstance(chunk, AIToolCallsMessageChunk)
     assert chunk.tool_calls == [
         ToolCall(name="Person", args={"name": "Erick", "age": 27})
     ]

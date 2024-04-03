@@ -44,7 +44,7 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
     AIToolCallsMessage,
-    ToolCallsMessageChunk,
+    AIToolCallsMessageChunk,
     ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
@@ -149,7 +149,7 @@ def _convert_delta_to_message_chunk(
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
                 tool_calls = parse_tool_calls(raw_tool_calls, partial=True)
-                return ToolCallsMessageChunk(
+                return AIToolCallsMessageChunk(
                     content=content,
                     additional_kwargs=additional_kwargs,
                     tool_calls=tool_calls,

@@ -53,7 +53,7 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
     AIToolCallsMessage,
-    ToolCallsMessageChunk,
+    AIToolCallsMessageChunk,
     ToolMessage,
     ToolMessageChunk,
 )
@@ -205,7 +205,7 @@ def _convert_delta_to_message_chunk(
         additional_kwargs["tool_calls"] = raw_tool_calls
         try:
             tool_calls = parse_tool_calls(raw_tool_calls, partial=True)
-            return ToolCallsMessageChunk(
+            return AIToolCallsMessageChunk(
                 content=content,
                 additional_kwargs=additional_kwargs,
                 id=id_,
@@ -230,8 +230,8 @@ def _convert_delta_to_message_chunk(
         )
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role, id=id_)
-    elif role or default_class == ToolCallsMessageChunk:
-        return ToolCallsMessageChunk(
+    elif role or default_class == AIToolCallsMessageChunk:
+        return AIToolCallsMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             id=id_,
