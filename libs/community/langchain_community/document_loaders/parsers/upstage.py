@@ -105,7 +105,7 @@ class UpstageDocumentParser(BaseBlobParser):
                                      Defaults to None.
             api_base (str, optional): The base URL for the Upstage API. If not provided,
                                       it will be retrieved from the environment variable
-                                      PSTAGE_API_BASE. Defaults to None.
+                                      UPSTAGE_API_BASE. Defaults to None.
             output_type (OutputType, optional): The type of output to retrieve from the
                                                 Upstage API. Defaults to "text".
             split (SplitType, optional): The type of splitting to apply to the output.
