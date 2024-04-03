@@ -48,15 +48,29 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     "Cannot concatenate AIMessageChunks with different example values."
                 )
 
+            content = merge_content(self.content, other.content)
+            additional_kwargs = merge_dicts(
+                self.additional_kwargs, other.additional_kwargs
+            )
+            response_metadata = merge_dicts(
+                self.response_metadata, other.response_metadata
+            )
+
+            if isinstance(other, ToolCallsMessageChunk):
+                return ToolCallsMessageChunk(
+                    example=self.example,
+                    content=content,
+                    additional_kwargs=additional_kwargs,
+                    response_metadata=response_metadata,
+                    tool_calls=other.tool_calls,
+                    id=self.id,
+                )
+
             return self.__class__(
                 example=self.example,
-                content=merge_content(self.content, other.content),
-                additional_kwargs=merge_dicts(
-                    self.additional_kwargs, other.additional_kwargs
-                ),
-                response_metadata=merge_dicts(
-                    self.response_metadata, other.response_metadata
-                ),
+                content=content,
+                additional_kwargs=additional_kwargs,
+                response_metadata=response_metadata,
                 id=self.id,
             )
 
