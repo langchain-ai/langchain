@@ -11,10 +11,10 @@ sidebar_class_name: hidden
 
 This framework consists of several parts.
 - **LangChain Libraries**: The Python and JavaScript libraries. Contains interfaces and integrations for a myriad of components, a basic run time for combining these components into chains and agents, and off-the-shelf implementations of chains and agents.
-- **[LangChain Templates](/docs/templates)**: A collection of easily deployable reference architectures for a wide variety of tasks.
-- **[LangServe](/docs/langserve)**: A library for deploying LangChain chains as REST APIs.
 - **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
 - **[LangGraph](/docs/langgraph)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+- **[LangChain Templates](/docs/templates)**: A collection of easily deployable reference architectures for a wide variety of tasks.
+- **[LangServe](/docs/langserve)**: A library for deploying LangChain chains as REST APIs.
 
 import ThemedImage from '@theme/ThemedImage';
 
@@ -43,7 +43,7 @@ Off-the-shelf chains make it easy to get started. Components make it easy to cus
 The LangChain libraries themselves are made up of several different packages.
 - **`langchain-core`**: Base abstractions and LangChain Expression Language.
 - **`langchain-community`**: Third party integrations.
-  - Some providers have been further split into **partner packages**, like **`langchain_openai`** or **`langchain_anthropic`**.
+  - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 
 ## Get started
@@ -71,7 +71,7 @@ They're walkthroughs and techniques for common end-to-end tasks, such as:
 
 ## LangChain Expression Language (LCEL)
 
-LCEL is a declarative way to compose chains. LCEL was designed from day 1 to support putting prototypes in production, with no code changes, from the simplest “prompt + LLM” chain to the most complex chains.
+LCEL is the foundation of many of LangChain's components, and is a declarative way to compose chains. LCEL was designed from day 1 to support putting prototypes in production, with no code changes, from the simplest “prompt + LLM” chain to the most complex chains.
 
 - **[Overview](/docs/expression_language/)**: LCEL and its benefits
 - **[Interface](/docs/expression_language/interface)**: The standard interface for LCEL objects
