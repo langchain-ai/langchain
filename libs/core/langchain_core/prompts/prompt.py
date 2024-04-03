@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,

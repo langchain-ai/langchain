@@ -2751,6 +2751,17 @@ docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,<8.1)", "pytest-mock", "pytest-mypy-testing"]
 
 [[package]]
+name = "types-chevron"
+version = "0.14.2.20240310"
+description = "Typing stubs for chevron"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-chevron-0.14.2.20240310.tar.gz", hash = "sha256:01e33dea521a369ca36669db44d42ccd355287edb432cd5ebe985297bce50505"},
+    {file = "types_chevron-0.14.2.20240310-py3-none-any.whl", hash = "sha256:3583ccabdf11fbcabad48f26cda8814f3983b238635736c5bd02aa2fce196820"},
+]
+
+[[package]]
 name = "types-jinja2"
 version = "2.11.9"
 description = "Typing stubs for Jinja2"
@@ -2979,4 +2990,4 @@ extended-testing = ["jinja2"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "043720060673dde342b5cc9bd19cae4755c735d3645c06f2d1e139aed2ce219f"
+content-hash = "c45f4a07ecd941f3e6b4810fa41dddb0e3231ce090540eb2e0b1143f04171023"

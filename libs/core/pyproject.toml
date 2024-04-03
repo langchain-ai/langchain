@@ -34,6 +34,7 @@ types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"
 langchain-text-splitters = { path = "../text-splitters", develop = true }
+types-chevron = "^0.14.2.20240310"
 
 [tool.poetry.group.dev]
 optional = true
