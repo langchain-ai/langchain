@@ -32,6 +32,7 @@
   --ifm-color-primary-light: #33925d;
   --ifm-color-primary-lighter: #359962;
   --ifm-color-primary-lightest: #3cad6e;
+  --ifm-font-weight-bold: 600;
   --ifm-code-font-size: 95%;
   --ifm-font-family-base: 'Public Sans';
   --ifm-menu-link-padding-horizontal: 0.5rem;
