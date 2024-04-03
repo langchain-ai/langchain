@@ -1,12 +1,57 @@
 import copy
+import json
+from json import JSONDecodeError
 from typing import Any, List, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import ToolCallsMessage
 from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
+from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
-from langchain_core.utils.tools import parse_tool_calls
+
+
+def parse_tool_calls(
+    raw_tool_calls: List[dict],
+    *,
+    partial: bool = False,
+    strict: bool = False,
+    return_id: bool = False,
+) -> List[dict]:
+    final_tools = []
+    exceptions = []
+    for tool_call in raw_tool_calls:
+        if "function" not in tool_call:
+            continue
+        if partial:
+            try:
+                function_args = parse_partial_json(
+                    tool_call["function"]["arguments"], strict=strict
+                )
+            except JSONDecodeError:
+                continue
+        else:
+            try:
+                function_args = json.loads(
+                    tool_call["function"]["arguments"], strict=strict
+                )
+            except JSONDecodeError as e:
+                exceptions.append(
+                    f"Function {tool_call['function']['name']} arguments:\n\n"
+                    f"{tool_call['function']['arguments']}\n\nare not valid JSON. "
+                    f"Received JSONDecodeError {e}"
+                )
+                continue
+        parsed = {
+            "name": tool_call["function"]["name"] or "",
+            "args": function_args or {},
+        }
+        if return_id:
+            parsed["id"] = tool_call["id"]
+        final_tools.append(parsed)
+    if exceptions:
+        raise OutputParserException("\n\n".join(exceptions))
+    return final_tools
 
 
 class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):

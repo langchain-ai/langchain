@@ -16,6 +16,11 @@ class ToolMessage(BaseMessage):
 
     type: Literal["tool"] = "tool"
 
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
+
 
 ToolMessage.update_forward_refs()
 
