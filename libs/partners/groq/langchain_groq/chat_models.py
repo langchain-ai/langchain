@@ -270,6 +270,7 @@ class ChatGroq(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
 
+        # groq api does not support streaming with tools yet
         if "tools" in kwargs:
             response = self.client.create(
                 messages=message_dicts, **{**params, **kwargs}
@@ -328,6 +329,8 @@ class ChatGroq(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
+
+        # groq api does not support streaming with tools yet
         if "tools" in kwargs:
             response = await self.async_client.create(
                 messages=message_dicts, **{**params, **kwargs}
