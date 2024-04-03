@@ -1,13 +1,13 @@
 from typing import Any, List, Literal, Optional
 
 from langchain_core.load import Serializable
-from langchain_core.messages.ai import AIMessage
+from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
     merge_content,
 )
-from langchain_core.utils._merge import merge_dicts
+from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.tools import parse_tool_calls
 
 
@@ -22,7 +22,7 @@ class ToolCallsMessage(AIMessage):
     type: Literal["tool_calls"] = "tool_calls"
 
 
-class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
+class ToolCallsMessageChunk(ToolCallsMessage, AIMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
@@ -34,28 +34,24 @@ class ToolCallsMessageChunk(ToolCallsMessage, BaseMessageChunk):
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
-        if isinstance(other, ToolCallsMessageChunk):
+        if isinstance(other, AIMessageChunk):
             if self.example != other.example:
                 raise ValueError(
                     "Cannot concatenate ToolCallsMessageChunks "
                     "with different example values."
                 )
 
-            additional_kwargs = merge_dicts(
-                self.additional_kwargs, other.additional_kwargs
-            )
-            raw_tool_calls = additional_kwargs.get("tool_calls", [])
-            tool_calls = [
-                ToolCall(**tool_call)
-                for tool_call in parse_tool_calls(
-                    raw_tool_calls, partial=True, return_id=True
-                )
-            ]
+            if isinstance(other, ToolCallsMessageChunk):
+                tool_calls = merge_lists(self.tool_calls, other.tool_calls)
+            else:
+                tool_calls = self.tool_calls
 
             return self.__class__(
                 example=self.example,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=additional_kwargs,
+                additional_kwargs=merge_dicts(
+                    self.additional_kwargs, other.additional_kwargs
+                ),
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
