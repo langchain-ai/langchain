@@ -138,37 +138,25 @@ def render_observations(
 
 
 def convert_to_documents(
-    observations: Union[List[Mapping[str, str]], List[str], Mapping[str, str], str],
+    observations: Any,
 ) -> List[Mapping]:
     """Converts observations into a 'document' dict"""
-    if (
-        not isinstance(observations, list)
-        and not isinstance(observations, str)
-        and not isinstance(observations, Mapping)
-    ):
-        raise ValueError("observation must be a list, a Mapping, or a string")
-
     documents: List[Mapping] = []
-
     if isinstance(observations, str):
         # strings are turned into a key/value pair and a key of 'output' is added.
-        observations = [{"output": observations}]  # type: ignore
-
-    if isinstance(observations, Mapping):
-        # single items are transformed into a list to simplify the rest of the code.
+        observations = [{"output": observations}]
+    elif isinstance(observations, Mapping):
+        # single mappings are transformed into a list to simplify the rest of the code.
         observations = [observations]
+    elif not isinstance(observations, Sequence):
+        # all other types are turned into a key/value pair within a list
+        observations = [{"output": observations}]
 
-    if isinstance(observations, list):
-        for doc in observations:
-            if isinstance(doc, str):
-                # strings are turned into a key/value pair.
-                doc = {"output": doc}
-
-            if not isinstance(doc, Mapping):
-                raise ValueError(
-                    "all observation list items must be a Mapping or a string"
-                )
-            documents.append(doc)
+    for doc in observations:
+        if not isinstance(doc, Mapping):
+            # types that aren't Mapping are turned into a key/value pair.
+            doc = {"output": doc}
+        documents.append(doc)
 
     return documents
 
