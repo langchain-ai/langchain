@@ -76,8 +76,8 @@ class UpTrainCallbackHandler(AsyncCallbackHandler):
     def __init__(
             self,
             project_name_prefix: str = "langchain",
-            key_type = "uptrain", # "openai",
-            api_key = "up-22155174c8464b4392cccc25b9330940" # os.getenv("OPENAI_API_KEY"),
+            key_type = "openai",
+            api_key = os.getenv("OPENAI_API_KEY"),
             ) -> None:
         """Initializes the `UpTrainCallbackHandler`."""
         super().__init__()
@@ -97,7 +97,7 @@ class UpTrainCallbackHandler(AsyncCallbackHandler):
             settings = Settings(uptrain_access_token=api_key)
             self.uptrain_client = APIClient(settings=settings)
         elif key_type == "openai":
-            settings = Settings(openai_api_key=api_key)
+            settings = Settings(openai_api_key=api_key, evaluate_locally=False)
             self.uptrain_client = EvalLLM(settings=settings)
         else:
             raise ValueError("Invalid key type: Must be 'uptrain' or 'openai'")
@@ -134,10 +134,6 @@ class UpTrainCallbackHandler(AsyncCallbackHandler):
             "score_multi_query_accuracy": "Multi Query Accuracy Score",
         }
 
-        # import pdb; pdb.set_trace()
-        # Print the results
-        from pprint import pprint
-        pprint(uptrain_result)
         for row in uptrain_result:
             columns = list(row.keys())
             for column in columns:
@@ -174,9 +170,6 @@ class UpTrainCallbackHandler(AsyncCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Store the prompts"""
-        # print("on_llm_start")
-        # print("Run ID: ", run_id)
-        # print("Parent Run ID: ", parent_run_id)
         pass
         
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -193,10 +186,6 @@ class UpTrainCallbackHandler(AsyncCallbackHandler):
     ) -> None:
         """Log records to uptrain when an LLM ends."""
         self.schema.response = response.generations[0][0].text
-        # print("Run ID: ", run_id)
-        # print("Parent Run ID: ", parent_run_id)
-        # print(self.schema.response)
-
         if "qa_rag" in self.schema.eval_types and parent_run_id != self.schema.multi_query_daugher_run_id:
             data = [
                 {
@@ -251,9 +240,6 @@ class UpTrainCallbackHandler(AsyncCallbackHandler):
         **kwargs: Any,
     ) -> None:        
         """Do nothing when chain starts"""
-        # print("on_chain_start")
-        # print("Run ID: ", run_id)
-        # print("Parent Run ID: ", parent_run_id)
         if parent_run_id == self.schema.multi_query_run_id:
             self.schema.multi_query_daugher_run_id = run_id
         if isinstance(inputs, dict) and set(inputs.keys()) == {"context", "question"}:
@@ -338,7 +324,6 @@ class UpTrainCallbackHandler(AsyncCallbackHandler):
             self.schema.eval_types.add("multi_query")
             self.schema.multi_query_run_id = run_id
             self.schema.query = query
-            # print("Multi Query Run ID: ", run_id)
         elif "multi_query" in self.schema.eval_types:
             self.schema.multi_queries.append(query)
 
