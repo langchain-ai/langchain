@@ -178,7 +178,6 @@ class GitHubIssuesLoader(BaseGitHubLoader):
 class GithubFileLoader(BaseGitHubLoader, ABC):
     """Load GitHub File"""
 
-    file_extension: str = ".md"
     branch: str = "main"
 
     file_filter: Optional[Callable[[str], bool]]
