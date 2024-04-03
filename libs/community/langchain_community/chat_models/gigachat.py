@@ -55,6 +55,7 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import (
     convert_to_gigachat_function,
     convert_to_gigachat_tool,
@@ -65,7 +66,6 @@ from langchain_community.chat_models.gigachat_tools import (
     PydanticToolsParser,
 )
 from langchain_community.llms.gigachat import _BaseGigaChat
-from langchain_core.tools import BaseTool
 
 if TYPE_CHECKING:
     import gigachat.models as gm
@@ -619,7 +619,6 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
-
 
     def bind_tools(
         self,
