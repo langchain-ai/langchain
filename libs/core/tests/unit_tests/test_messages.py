@@ -550,26 +550,31 @@ def test_merge_tool_calls() -> None:
     left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id="1").dict()
     right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id="2").dict()
     merged = merge_lists([left], [right])
+    assert merged is not None
     assert len(merged) == 2
 
     left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id=None).dict()
     right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id=None).dict()
     merged = merge_lists([left], [right])
+    assert merged is not None
     assert len(merged) == 2
 
     left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id="1").dict()
     right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id=None).dict()
     merged = merge_lists([left], [right])
+    assert merged is not None
     assert len(merged) == 2
 
     tool_call_1 = ToolCallChunk(name="tool1", args="", id="1", index=0).dict()
     tool_call_2 = ToolCallChunk(name=None, args='{"arg1": "val', id="1", index=0).dict()
     tool_call_3 = ToolCallChunk(name=None, args='ue}"', id="1", index=0).dict()
     merged = merge_lists([tool_call_1], [tool_call_2])
+    assert merged is not None
     assert merged == [
         {"name": "tool1", "args": '{"arg1": "val', "id": "11", "index": 0}
     ]
     merged = merge_lists(merged, [tool_call_3])
+    assert merged is not None
     assert merged == [
         {"name": "tool1", "args": '{"arg1": "value}"', "id": "111", "index": 0}
     ]
