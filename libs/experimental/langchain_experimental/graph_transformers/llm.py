@@ -245,13 +245,13 @@ def _convert_to_graph_document(
     # If there are validation errors
     if not raw_schema["parsed"]:
         try:
-            try: # OpenAI type response
+            try:  # OpenAI type response
                 argument_json = json.loads(
                     raw_schema["raw"].additional_kwargs["tool_calls"][0]["function"][
                         "arguments"
                     ]
                 )
-            except Exception: # Google type response
+            except Exception:  # Google type response
                 argument_json = json.loads(
                     raw_schema["raw"].additional_kwargs["function_call"]["arguments"]
                 )
