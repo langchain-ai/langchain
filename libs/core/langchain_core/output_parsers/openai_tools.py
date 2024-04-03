@@ -84,7 +84,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
                 "This output parser can only be used with a chat generation."
             )
         message = generation.message
-        if isinstance(message, ToolCallsMessage):
+        if type(message) is ToolCallsMessage:
             tool_calls = (
                 [tc.dict() for tc in message.tool_calls] if message.tool_calls else []
             )
