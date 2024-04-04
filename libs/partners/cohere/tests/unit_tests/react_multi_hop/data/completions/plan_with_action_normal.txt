@@ -1,0 +1,20 @@
+Plan: Do a thing.
+And then do another thing.
+Action: ```json
+[
+    {
+        "tool_name": "tool1",
+        "parameters": {
+            "arg1": "value1",
+            "arg2": 2
+        }
+    },
+    {
+        "tool_name": "tool2",
+        "parameters": {
+            "arg3": "value3",
+            "arg4": true
+        }
+    }
+]
+```
