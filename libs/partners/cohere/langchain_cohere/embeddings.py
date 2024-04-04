@@ -54,13 +54,13 @@ class CohereEmbeddings(BaseModel, Embeddings):
         arbitrary_types_allowed = True
         extra = Extra.forbid
 
-    def _get_client(self) -> cohere.Client:
+    def get_client(self) -> cohere.Client:
         """Get the Cohere client."""
         if self.client is None:
             raise ValueError("Cohere client has not been initialised.")
         return self.client
 
-    def _get_async_client(self) -> cohere.AsyncClient:
+    def get_async_client(self) -> cohere.AsyncClient:
         """Get the Cohere async client."""
         if self.async_client is None:
             raise ValueError("Cohere async client has not been initialised.")
@@ -96,7 +96,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
         @retry_decorator
         def _embed_with_retry(**kwargs: Any) -> Any:
-            return self._get_client().embed(**kwargs)
+            return self.get_client().embed(**kwargs)
 
         return _embed_with_retry(**kwargs)
 
@@ -106,7 +106,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
         @retry_decorator
         async def _embed_with_retry(**kwargs: Any) -> Any:
-            return await self._get_async_client().embed(**kwargs)
+            return await self.get_async_client().embed(**kwargs)
 
         return _embed_with_retry(**kwargs)
 
