@@ -1,11 +1,16 @@
 import json
 import logging
 import re
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Mapping, Tuple, Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import BaseOutputParser
+
+from langchain_cohere import CohereCitation
+
+OUTPUT_KEY = "output"
+GROUNDED_ANSWER_KEY = "grounded_answer"
 
 
 class CohereToolsReactAgentOutputParser(
@@ -23,7 +28,13 @@ class CohereToolsReactAgentOutputParser(
                 "cited_docs": "Cited Documents:",
             }
             parsed_answer = parse_answer_with_prefixes(text, prefix_map)
-            return AgentFinish({"output": parsed_answer["answer"]}, text)
+            return AgentFinish(
+                return_values={
+                    OUTPUT_KEY: parsed_answer["answer"],
+                    GROUNDED_ANSWER_KEY: parsed_answer["grounded_answer"],
+                },
+                log=text,
+            )
         elif any([x in text for x in ["Plan: ", "Reflection: ", "Action: "]]):
             completion, plan, actions = parse_actions(text)
             agent_actions: List[AgentAction] = []
@@ -149,3 +160,144 @@ def parse_actions(generation: str) -> Tuple[str, str, List[Dict]]:
 
     parsed_actions = parse_jsonified_tool_use_generation(actions, "Action:")
     return generation, plan, parsed_actions
+
+
+def parse_citations(
+    grounded_answer: str, documents: List[Mapping]
+) -> Tuple[str, List[CohereCitation]]:
+    """
+    Parses a grounded_generation (from parse_actions) and documents (from
+    convert_to_documents) into a (generation, CohereCitation list) tuple.
+    """
+
+    no_markup_answer, parsed_answer = _parse_answer_spans(grounded_answer)
+    citations: List[CohereCitation] = []
+    start = 0
+
+    for answer in parsed_answer:
+        text = answer.get("text", "")
+        document_indexes = answer.get("cited_docs")
+        if not document_indexes:
+            # There were no citations for this piece of text.
+            start += len(text)
+            continue
+        end = start + len(text)
+
+        # Look up the cited document by index
+        cited_documents: List[Mapping] = []
+        for index in set(document_indexes):
+            if index >= len(documents):
+                # The document index doesn't exist
+                continue
+            cited_documents.append(documents[index])
+
+        citations.append(
+            CohereCitation(
+                start=start,
+                end=end,
+                text=text,
+                documents=cited_documents,
+            )
+        )
+        start = end
+
+    return no_markup_answer, citations
+
+
+def _strip_spans(answer: str) -> str:
+    """removes any <co> tags from a string, including trailing partial tags
+
+    input: "hi my <co>name</co> is <co: 1> patrick</co:3> and <co"
+    output: "hi my name is patrick and"
+
+    Args:
+        answer (str): string
+
+    Returns:
+        str: same string with co tags removed
+    """
+    answer = re.sub(r"<co(.*?)>|</co(.*?)>", "", answer)
+    idx = answer.find("<co")
+    if idx > -1:
+        answer = answer[:idx]
+    idx = answer.find("</")
+    if idx > -1:
+        answer = answer[:idx]
+    return answer
+
+
+def _parse_answer_spans(grounded_answer: str) -> Tuple[str, List[Dict[str, Any]]]:
+    actual_cites = []
+    for c in re.findall(r"<co:(.*?)>", grounded_answer):
+        actual_cites.append(c.strip().split(","))
+    no_markup_answer = _strip_spans(grounded_answer)
+
+    current_idx = 0
+    parsed_answer: List[Dict[str, Union[str, List[int]]]] = []
+    cited_docs_set = []
+    last_entry_is_open_cite = False
+    parsed_current_cite_document_idxs: List[int] = []
+
+    while current_idx < len(grounded_answer):
+        current_cite = re.search(r"<co: (.*?)>", grounded_answer[current_idx:])
+        if current_cite:
+            # previous part
+            parsed_answer.append(
+                {
+                    "text": grounded_answer[
+                        current_idx : current_idx + current_cite.start()
+                    ]
+                }
+            )
+
+            current_cite_document_idxs = current_cite.group(1).split(",")
+            parsed_current_cite_document_idxs = []
+            for cited_idx in current_cite_document_idxs:
+                if cited_idx.isdigit():
+                    cited_idx = int(cited_idx.strip())
+                    parsed_current_cite_document_idxs.append(cited_idx)
+                    if cited_idx not in cited_docs_set:
+                        cited_docs_set.append(cited_idx)
+
+            current_idx += current_cite.end()
+
+            current_cite_close = re.search(
+                r"</co: " + current_cite.group(1) + ">", grounded_answer[current_idx:]
+            )
+
+            if current_cite_close:
+                # there might have been issues parsing the ids, so we need to check
+                # that they are actually ints and available
+                if len(parsed_current_cite_document_idxs) > 0:
+                    pt = grounded_answer[
+                        current_idx : current_idx + current_cite_close.start()
+                    ]
+                    parsed_answer.append(
+                        {"text": pt, "cited_docs": parsed_current_cite_document_idxs}
+                    )
+                else:
+                    parsed_answer.append(
+                        {
+                            "text": grounded_answer[
+                                current_idx : current_idx + current_cite_close.start()
+                            ],
+                        }
+                    )
+
+                current_idx += current_cite_close.end()
+
+            else:
+                last_entry_is_open_cite = True
+                break
+        else:
+            break
+
+    # don't forget about the last one
+    if last_entry_is_open_cite:
+        pt = _strip_spans(grounded_answer[current_idx:])
+        parsed_answer.append(
+            {"text": pt, "cited_docs": parsed_current_cite_document_idxs}
+        )
+    else:
+        parsed_answer.append({"text": _strip_spans(grounded_answer[current_idx:])})
+    return no_markup_answer, parsed_answer

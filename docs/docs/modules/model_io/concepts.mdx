@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+sidebar_class_name: hidden
 ---
 
 # Concepts
@@ -72,7 +73,7 @@ ChatModels and LLMs take different input types. PromptValue is a class designed 
 
 ### MessagePromptTemplate
 
-[This](/docs/modules/model_io/prompts/message_prompts) is an example of a prompt template. This consists of a template **message** - meaning a specific role and a PromptTemplate. This PromptTemplate is then formatted with user inputs to produce a final string that becomes the `content` of this message.
+This type of template consists of a template **message** - meaning a specific role and a PromptTemplate. This PromptTemplate is then formatted with user inputs to produce a final string that becomes the `content` of this message.
 
 #### HumanMessagePromptTemplate
 
@@ -108,8 +109,4 @@ There are a few parsers dedicated to working with OpenAI function calling. They 
 
 ### Agent Output Parsers
 
-[Agents](../agents) are systems that use language models to determine what steps to take. The output of a language model therefore needs to be parsed into some schema that can represent what actions (if any) are to be taken. AgentOutputParsers are responsible for taking raw LLM or ChatModel output and converting it to that schema. The logic inside these output parsers can differ depending on the model and prompting strategy being used.
-
-
-
-
+[Agents](/docs/modules/agents/) are systems that use language models to determine what steps to take. The output of a language model therefore needs to be parsed into some schema that can represent what actions (if any) are to be taken. AgentOutputParsers are responsible for taking raw LLM or ChatModel output and converting it to that schema. The logic inside these output parsers can differ depending on the model and prompting strategy being used.

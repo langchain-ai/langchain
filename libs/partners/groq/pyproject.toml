@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-groq"
-version = "0.0.1"
+version = "0.1.0"
 description = "An integration package connecting Groq and LangChain"
 authors = []
 readme = "README.md"
@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1"
+langchain-core = "^0.1.40"
 groq = ">=0.4.1,<1"
 
 [tool.poetry.group.test]
@@ -20,10 +20,10 @@ optional = true
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
-pytest-mock  = "^3.10.0"
+pytest-mock = "^3.10.0"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true
@@ -39,35 +39,33 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.test_integration]
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.ruff]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
-  "W",  # Warnings
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
+  "W", # Warnings
 ]
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
 [tool.coverage.run]
-omit = [
-    "tests/*",
-]
+omit = ["tests/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -89,7 +87,9 @@ markers = [
 ]
 filterwarnings = [
   "error",
+  'ignore::ResourceWarning:',
+  'ignore:The function `with_structured_output` is in beta',
   # Maintain support for pydantic 1.X
-  'default:The `dict` method is deprecated; use `model_dump` instead.*:DeprecationWarning',
+  'default:The `dict` method is deprecated; use `model_dump` instead:DeprecationWarning',
 ]
 asyncio_mode = "auto"
