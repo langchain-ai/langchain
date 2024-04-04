@@ -190,7 +190,6 @@ class RequestsDeleteTool(BaseRequestsTool, BaseTool):
     Input should be a specific url, and the output will be the text
     response of the DELETE request.
     """
-    
 
     def _run(
         self,
