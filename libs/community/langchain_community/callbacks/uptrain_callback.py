@@ -146,7 +146,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         checks: List[str],
     ) -> None:
         """Run an evaluation on the UpTrain server using UpTrain client."""
-        if self.uptrain_client.__class__.__name__ == "uptrain.APIClient":
+        if self.uptrain_client.__class__.__name__ == "APIClient":
             uptrain_result = self.uptrain_client.log_and_evaluate(
                 project_name=project_name,
                 data=data,
