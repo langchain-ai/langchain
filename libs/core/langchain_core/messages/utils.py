@@ -1,6 +1,11 @@
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from langchain_core.messages.ai import AIMessage, AIMessageChunk
+from langchain_core.messages.ai import (
+    AIMessage,
+    AIMessageChunk,
+    AIToolCallsMessage,
+    AIToolCallsMessageChunk,
+)
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
@@ -91,6 +96,10 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return SystemMessageChunk(**message["data"])
     elif _type == "ChatMessageChunk":
         return ChatMessageChunk(**message["data"])
+    elif _type == "tool_calls":
+        return AIToolCallsMessage(**message["data"])
+    elif _type == "AIToolCallsMessageChunk":
+        return AIToolCallsMessageChunk(**message["data"])
     else:
         raise ValueError(f"Got unexpected message type: {_type}")
 
