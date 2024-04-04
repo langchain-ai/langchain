@@ -57,14 +57,14 @@ class KineticaLoader(BaseLoader):
             options.username = self.username
             options.password = self.password
 
-            conn = GPUdb(host=self.host, options=options )
+            conn = GPUdb(host=self.host, options=options)
 
             with GPUdbSqlIterator(conn, self.query) as records:
                 column_names = records.type_map.keys()
                 query_result = [dict(zip(column_names, record)) for record in records]
 
         except Exception as e:
-            print(f"An error occurred: {e}")   # noqa: T201
+            print(f"An error occurred: {e}")  # noqa: T201
             query_result = []
 
         return query_result
@@ -85,7 +85,7 @@ class KineticaLoader(BaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         query_result = self._execute_query()
         if isinstance(query_result, Exception):
-            print(f"An error occurred during the query: {query_result}")   # noqa: T201
+            print(f"An error occurred during the query: {query_result}")  # noqa: T201
             return []
         page_content_columns, metadata_columns = self._get_columns(query_result)
         if "*" in page_content_columns:
