@@ -325,7 +325,7 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        if "extra_body" in params and params["extra_body"].get("tools"):
+        if _tools_in_params(params):
             warnings.warn("stream: Tool use is not yet supported in streaming mode.")
             result = self._generate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
@@ -347,7 +347,7 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        if "extra_body" in params and params["extra_body"].get("tools"):
+        if _tools_in_params(params):
             warnings.warn("stream: Tool use is not yet supported in streaming mode.")
             result = await self._agenerate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
@@ -385,7 +385,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         if self.streaming:
-            if "extra_body" in params and params["extra_body"].get("tools"):
+            if _tools_in_params(params):
                 warnings.warn(
                     "stream: Tool use is not yet supported in streaming mode."
                 )
@@ -394,7 +394,10 @@ class ChatAnthropic(BaseChatModel):
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 )
                 return generate_from_stream(stream_iter)
-        data = self._client.messages.create(**params)
+        if _tools_in_params(params):
+            data = self._client.beta.tools.messages.create(**params)
+        else:
+            data = self._client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -406,7 +409,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         if self.streaming:
-            if "extra_body" in params and params["extra_body"].get("tools"):
+            if _tools_in_params(params):
                 warnings.warn(
                     "stream: Tool use is not yet supported in streaming mode."
                 )
@@ -415,7 +418,10 @@ class ChatAnthropic(BaseChatModel):
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 )
                 return await agenerate_from_stream(stream_iter)
-        data = await self._async_client.messages.create(**params)
+        if _tools_in_params(params):
+            data = await self._async_client.beta.tools.messages.create(**params)
+        else:
+            data = await self._async_client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
     @beta()
@@ -434,9 +440,7 @@ class ChatAnthropic(BaseChatModel):
             **kwargs: Any additional parameters to bind.
         """
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
-        extra_body = kwargs.pop("extra_body", {})
-        extra_body["tools"] = formatted_tools
-        return self.bind(extra_body=extra_body, **kwargs)
+        return self.bind(tools=formatted_tools, **kwargs)
 
     @beta()
     def with_structured_output(
@@ -488,6 +492,12 @@ def convert_to_anthropic_tool(
             description=formatted["description"],
             input_schema=formatted["parameters"],
         )
+
+
+def _tools_in_params(params: dict) -> bool:
+    return "tools" in params or (
+        "extra_body" in params and params["extra_body"].get("tools")
+    )
 
 
 @deprecated(since="0.1.0", removal="0.2.0", alternative="ChatAnthropic")
