@@ -1,5 +1,4 @@
 """UpTrain's Callback Handler."""
-#Langchain Community
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
