@@ -61,15 +61,18 @@ class UpTrainDataSchema:
         self.multi_query_daugher_run_id: str = ""
 
 class UpTrainCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that logs to uptrain.
+    """Callback Handler that logs evalution results to uptrain and the console.
 
     Args:
-        BaseCallbackHandler (_type_): _description_
-    """
+        project_name_prefix (str): Prefix for the project name.
+        key_type (str): Type of key to use. Must be 'uptrain' or 'openai'.
+        api_key (str): API key for the UpTrain or OpenAI API.
 
-    REPO_URL: str = "https://github.com/uptrain-ai/uptrain"
-    ISSUES_URL: str = f"{REPO_URL}/issues"
-    DOCS_URL: str = "https://docs.uptrain.ai"
+    Raises:
+        ValueError: If the key type is invalid.
+        ImportError: If the `uptrain` package is not installed.
+
+    """
 
     def __init__(
             self,
@@ -86,9 +89,6 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         self.schema = UpTrainDataSchema(project_name_prefix=project_name_prefix)
         self.first_score_printed_flag = False
 
-
-        # Based on whether the user enters an UpTrain API key or an OpenAI API key, the client is initialized
-        # If both are entered, the UpTrain API key is used
         if key_type == "uptrain":
             settings = Settings(uptrain_access_token=api_key)
             self.uptrain_client = APIClient(settings=settings)
@@ -349,7 +349,6 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 ],
             )
         if "contextual_compression" in self.schema.eval_types:
-            # Get the original context
             if parent_run_id == self.schema.context_conciseness_run_id:
                 for doc in documents:
                     self.schema.old_context.append(doc.page_content)
