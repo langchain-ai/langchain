@@ -6,11 +6,13 @@ from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
     AIToolCallsMessage,
+    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolCall,
+    ToolCallChunk,
     ToolMessage,
 )
 from langchain_core.outputs import (
@@ -490,6 +492,21 @@ def test_tool_use() -> None:
     assert len(ai_msg.tool_calls) == 1
     tool_call = ai_msg.tool_calls[0]
     assert isinstance(tool_call, ToolCall)
+
+    # Test streaming
+    ai_messages = llm_with_tool.stream(msgs)
+    first = True
+    for message in ai_messages:
+        if first:
+            gathered = message
+            first = False
+        else:
+            gathered = gathered + message  # type: ignore
+    assert isinstance(gathered, AIToolCallsMessageChunk)
+    assert isinstance(gathered.tool_call_chunks, list)
+    assert len(gathered.tool_call_chunks) == 1
+    tool_call_chunk = gathered.tool_call_chunks[0]
+    assert isinstance(tool_call_chunk, ToolCallChunk)
 
     tool_msg = ToolMessage(
         "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
