@@ -14,13 +14,13 @@ from typing import (
 from uuid import UUID
 
 from langchain.schema import AgentAction, AgentFinish, LLMResult
-from langchain_core.callbacks.base import AsyncCallbackHandler
+from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.messages.base import BaseMessage
 from uptrain import APIClient, EvalLLM, Evals, Settings
 
 
-def import_uptrain():
+def import_uptrain() -> Any:
     try:
         import uptrain
     except ImportError as e:
@@ -60,7 +60,7 @@ class UpTrainDataSchema:
         self.multi_query_run_id: str = ""
         self.multi_query_daugher_run_id: str = ""
 
-class UpTrainCallbackHandler(AsyncCallbackHandler):
+class UpTrainCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs to uptrain.
 
     Args:
@@ -71,19 +71,16 @@ class UpTrainCallbackHandler(AsyncCallbackHandler):
     ISSUES_URL: str = f"{REPO_URL}/issues"
     DOCS_URL: str = "https://docs.uptrain.ai"
 
-    import os
     def __init__(
             self,
             project_name_prefix: str = "langchain",
-            key_type = "openai",
-            api_key = os.getenv("OPENAI_API_KEY"),
+            key_type: str = "openai",
+            api_key: str = "sk-****************",
             ) -> None:
         """Initializes the `UpTrainCallbackHandler`."""
         super().__init__()
 
-        uptrain = import_uptrain()
-
-        import os
+        import_uptrain()
 
         # Set uptrain variables
         self.schema = UpTrainDataSchema(project_name_prefix=project_name_prefix)
