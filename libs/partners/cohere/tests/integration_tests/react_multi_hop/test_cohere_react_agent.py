@@ -73,3 +73,4 @@ def test_invoke_multihop_agent() -> None:
 
     assert "output" in actual
     assert "best buy" in actual["output"].lower()
+    assert "citations" in actual
