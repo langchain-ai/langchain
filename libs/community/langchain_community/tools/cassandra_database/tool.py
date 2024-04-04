@@ -73,7 +73,7 @@ class GetSchemaCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the schema for a keyspace."""
-        return self.db.get_keyspace_schema_no_throw(keyspace)
+        return self.db.get_keyspace_tables_str_no_throw(keyspace)
 
 
 class _GetTableDataCassandraDatabaseToolInput(BaseModel):

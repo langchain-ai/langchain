@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import re
+import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import cassio
+import cassio.config
 from cassandra.cluster import ResultSet, Session
 
 IGNORED_KEYSPACES = [
@@ -25,7 +26,6 @@ class CassandraDatabase:
     def __init__(
         self,
         session: Optional[Session] = None,
-        keyspace_list: Optional[List[str]] = None,
         exclude_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
         cassio_init_kwargs: Optional[Dict[str, Any]] = None,
@@ -35,9 +35,8 @@ class CassandraDatabase:
             raise ValueError("Session not provided and cannot be resolved")
 
         self._exclude_keyspaces = IGNORED_KEYSPACES
-        self._ignore_tables = exclude_tables or []
+        self._exclude_tables = exclude_tables or []
         self._include_tables = include_tables or []
-        self._keyspaces = self._resolve_keyspaces(keyspace_list)
 
     def run(
         self,
@@ -70,25 +69,33 @@ class CassandraDatabase:
             return self.run(query, fetch, include_columns, **kwargs)
         except Exception as e:
             """Format the error message"""
-            return f"Error: {e}"
+            return f"Error: {e}\n{traceback.format_exc()}"
 
-    def get_keyspace_schema_no_throw(self, keyspace: str) -> str:
-        """Get the schema for the specified keyspace."""
+    def get_keyspace_tables_str_no_throw(self, keyspace: str) -> str:
+        """Get the tables for the specified keyspace."""
         try:
-            schema = self.get_keyspace_schema(keyspace)
-            schema_string = ""
-            for table in schema[keyspace]:
-                schema_string += table.as_markdown() + "\n\n"
-
+            schema_string = self.get_keyspace_tables_str(keyspace)
             return schema_string
         except Exception as e:
             """Format the error message"""
-            return f"Error: {e}"
+            return f"Error: {e}\n{traceback.format_exc()}"
 
-    def get_keyspace_schema(self, keyspace: str) -> Dict[str, List[Table]]:
-        """Get the schema for the specified keyspace."""
-        keyspace_list = [keyspace]
-        return self._resolve_keyspaces(keyspace_list)
+    def get_keyspace_tables_str(self, keyspace: str) -> str:
+        """Get the tables for the specified keyspace."""
+        tables = self.get_keyspace_tables(keyspace)
+        schema_string = ""
+        for table in tables:
+            schema_string += table.as_markdown() + "\n\n"
+
+        return schema_string
+
+    def get_keyspace_tables(self, keyspace: str) -> List[Table]:
+        """Get the Table objects for the specified keyspace."""
+        schema = self._resolve_schema([keyspace])
+        if keyspace in schema:
+            return schema[keyspace]
+        else:
+            return []
 
     def get_table_data_no_throw(
         self, keyspace: str, table: str, predicate: str, limit: int
@@ -99,7 +106,7 @@ class CassandraDatabase:
             return self.get_table_data(keyspace, table, predicate, limit)
         except Exception as e:
             """Format the error message"""
-            return f"Error: {e}"
+            return f"Error: {e}\n{traceback.format_exc()}"
 
     # This is a more basic string building function that doesn't use a query builder
     # or prepared statements
@@ -124,9 +131,12 @@ class CassandraDatabase:
 
     def get_context(self) -> Dict[str, Any]:
         """Return db context that you may want in agent prompt."""
-        return {"keyspaces": ", ".join(self._keyspaces.keys())}
+        keyspaces = self._fetch_keyspaces()
+        return {"keyspaces": ", ".join(keyspaces)}
 
-    def format_keyspace_to_markdown(self, keyspace: str) -> str:
+    def format_keyspace_to_markdown(
+        self, keyspace: str, tables: Optional[List[Table]] = None
+    ) -> str:
         """
         Generates a markdown representation of the schema for a specific keyspace
         by iterating over all tables within that keyspace and calling their
@@ -135,17 +145,25 @@ class CassandraDatabase:
         Parameters:
         - keyspace (str): The name of the keyspace to generate markdown
         documentation for.
+        - tables (list[Table]): list of tables in the keyspace; it will be resolved
+        if not provided.
 
         Returns:
         A string containing the markdown representation of the specified
         keyspace schema.
         """
-        if keyspace in self._keyspaces:
+        if not tables:
+            tables = self.get_keyspace_tables(keyspace)
+
+        if tables:
             output = f"## Keyspace: {keyspace}\n\n"
-            for table in self._keyspaces[keyspace]:
-                output += (
-                    table.as_markdown(include_keyspace=False, header_level=3) + "\n\n"
-                )
+            if tables:
+                for table in tables:
+                    output += table.as_markdown(include_keyspace=False, header_level=3)
+                    output += "\n\n"
+            else:
+                output += "No tables present in keyspace\n\n"
+
             return output
         else:
             return ""
@@ -169,10 +187,10 @@ class CassandraDatabase:
         names, table names, comments, columns, partition keys, clustering keys,
         and indexes for each table.
         """
+        schema = self._resolve_schema()
         output = "# Cassandra Database Schema\n\n"
-        for keyspace in self._keyspaces.keys():
-            output += f"{self.format_keyspace_to_markdown(keyspace)}\n\n"
-
+        for keyspace, tables in schema.items():
+            output += f"{self.format_keyspace_to_markdown(keyspace, tables)}\n\n"
         return output
 
     def _validate_cql(self, cql: str, type: str = "SELECT") -> str:
@@ -263,7 +281,7 @@ class CassandraDatabase:
 
         return filtered_keyspaces
 
-    def _fetch_filtered_schema_data(self, keyspace_list: List[str]) -> Tuple:
+    def _fetch_schema_data(self, keyspace_list: List[str]) -> Tuple:
         """
         Fetches schema data, including tables, columns, and indexes, filtered by a
         list of keyspaces. This method constructs CQL queries to retrieve detailed
@@ -320,7 +338,7 @@ class CassandraDatabase:
 
         return tables_data, columns_data, indexes_data
 
-    def _resolve_keyspaces(
+    def _resolve_schema(
         self, keyspace_list: Optional[List[str]] = None
     ) -> Dict[str, List[Table]]:
         """
@@ -333,46 +351,51 @@ class CassandraDatabase:
         where each Table object is populated with schema details appropriate for its
         keyspace and table name.
         """
-        if keyspace_list is None:
-            keyspace_list = []
+        if not keyspace_list:
+            keyspace_list = self._fetch_keyspaces()
 
-        keyspaces = self._fetch_keyspaces(keyspace_list)
-        tables_data, columns_data, indexes_data = self._fetch_filtered_schema_data(
-            keyspaces
-        )
-
+        tables_data, columns_data, indexes_data = self._fetch_schema_data(keyspace_list)
+            
         keyspace_dict: dict = {}
         for table_data in tables_data:
-            keyspace, table_name = table_data["keyspace_name"], table_data["table_name"]
-            comment = table_data.get("comment", "")
+
+            keyspace = table_data.keyspace_name
+            table_name = table_data.table_name
+            comment = table_data.comment
+
+            if self._include_tables and table_name not in self._include_tables:
+                continue
+
+            if self._exclude_tables and table_name in self._exclude_tables:
+                continue
 
             # Filter columns and indexes for this table
             table_columns = [
-                (c["column_name"], c["type"])
+                (c.column_name, c.type)
                 for c in columns_data
-                if c["keyspace_name"] == keyspace and c["table_name"] == table_name
+                if c.keyspace_name == keyspace and c.table_name == table_name
             ]
 
             partition_keys = [
-                c["column_name"]
+                c.column_name
                 for c in columns_data
-                if c["kind"] == "partition_key"
-                and c["keyspace_name"] == keyspace
-                and c["table_name"] == table_name
+                if c.kind == "partition_key"
+                and c.keyspace_name == keyspace
+                and c.table_name == table_name
             ]
 
             clustering_keys = [
-                (c["column_name"], c["clustering_order"])
+                (c.column_name, c.clustering_order)
                 for c in columns_data
-                if c["kind"] == "clustering"
-                and c["keyspace_name"] == keyspace
-                and c["table_name"] == table_name
+                if c.kind == "clustering"
+                and c.keyspace_name == keyspace
+                and c.table_name == table_name
             ]
 
             table_indexes = [
-                (c["index_name"], c["kind"], c["options"])
+                (c.index_name, c.kind, c.options)
                 for c in indexes_data
-                if c["keyspace_name"] == keyspace and c["table_name"] == table_name
+                if c.keyspace_name == keyspace and c.table_name == table_name
             ]
 
             table_obj = Table(
@@ -424,18 +447,15 @@ class CassandraDatabase:
             return session
 
         # Use pre-existing session on cassio
-        try:
-            s = cassio.check_resolve_session()
+        s = cassio.config.resolve_session()
+        if s:
             return s
-        except ValueError:
-            # check_resolve_session throws a value error if session is not set
-            pass
 
         # Try to init and return cassio session
         if cassio_init_kwargs:
             if isinstance(cassio_init_kwargs, dict):
                 cassio.init(**cassio_init_kwargs)
-                s = cassio.check_resolve_session()
+                s = cassio.config.check_resolve_session()
                 return s
             else:
                 raise ValueError("cassio_init_kwargs must be a keyword dictionary")
@@ -549,7 +569,8 @@ class Table:
         for column, type in self._columns:
             output += f"  - {column} ({type})\n"
 
-        output += f"- Partition ({', '.join(self._partition)})\n"
+        output += f"- Partition Keys: ({', '.join(self._partition)})\n"
+        output += "- Clustering Keys: "
         if self._clustering:
             cluster_list = []
             for column, clustering_order in self._clustering:
@@ -557,7 +578,7 @@ class Table:
                     cluster_list.append(column)
                 else:
                     cluster_list.append(f"{column} {clustering_order}")
-            output += f"- Clustering: ({', '.join(cluster_list)})\n"
+            output += f"({', '.join(cluster_list)})\n"
 
         if self._indexes:
             output += "- Indexes\n"
