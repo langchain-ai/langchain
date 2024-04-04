@@ -200,7 +200,7 @@ class TitanTakeoffPro(LLM):
                 if buffer:  # Ensure that there's content to process.
                     chunk = GenerationChunk(text=buffer)
                     buffer = ""  # Reset buffer for the next set of data.
-                    
+
                     if run_manager:
                         run_manager.on_llm_new_token(token=chunk.text)
                     yield chunk

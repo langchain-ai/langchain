@@ -215,7 +215,7 @@ class GooglePalm(BaseLLM, BaseModel):
             **kwargs,
         ):
             chunk = GenerationChunk(text=stream_resp.text)
-            
+
             if run_manager:
                 run_manager.on_llm_new_token(
                     stream_resp.text,

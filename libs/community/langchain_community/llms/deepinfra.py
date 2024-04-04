@@ -154,7 +154,7 @@ class DeepInfra(LLM):
         self._handle_status(response.status_code, response.text)
         for line in _parse_stream(response.iter_lines()):
             chunk = _handle_sse_line(line)
-            if chunk:               
+            if chunk:
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text)
                 yield chunk
@@ -173,7 +173,7 @@ class DeepInfra(LLM):
             self._handle_status(response.status, response.text)
             async for line in _parse_stream_async(response.content):
                 chunk = _handle_sse_line(line)
-                if chunk:                   
+                if chunk:
                     if run_manager:
                         await run_manager.on_llm_new_token(chunk.text)
                     yield chunk

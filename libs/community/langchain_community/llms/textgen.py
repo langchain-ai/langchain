@@ -335,7 +335,7 @@ class TextGen(LLM):
                     text=result["text"],
                     generation_info=None,
                 )
-                
+
             elif result["event"] == "stream_end":
                 websocket_client.close()
                 return

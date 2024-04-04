@@ -231,7 +231,7 @@ class Friendli(LLM, BaseFriendli):
             model=self.model, prompt=prompt, stream=True, **params
         )
         for line in stream:
-            chunk = _stream_response_to_generation_chunk(line)          
+            chunk = _stream_response_to_generation_chunk(line)
             if run_manager:
                 run_manager.on_llm_new_token(line.text, chunk=chunk)
             yield chunk

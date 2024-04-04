@@ -655,7 +655,7 @@ class BedrockBase(BaseModel, ABC):
 
         for chunk in LLMInputOutputAdapter.prepare_output_stream(
             provider, response, stop, True if messages else False
-        ):          
+        ):
             # verify and raise callback error if any middleware intervened
             self._get_bedrock_services_signal(chunk.generation_info)  # type: ignore[arg-type]
 
@@ -701,7 +701,7 @@ class BedrockBase(BaseModel, ABC):
 
         async for chunk in LLMInputOutputAdapter.aprepare_output_stream(
             provider, response, stop
-        ):           
+        ):
             if run_manager is not None and asyncio.iscoroutinefunction(
                 run_manager.on_llm_new_token
             ):
