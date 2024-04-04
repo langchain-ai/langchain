@@ -52,7 +52,7 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_pydantic_field_names,
 )
-from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_anthropic.output_parsers import ToolsOutputParser
 
@@ -476,12 +476,18 @@ class AnthropicTool(TypedDict):
 def convert_to_anthropic_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> AnthropicTool:
-    formatted = convert_to_openai_function(tool)
-    return AnthropicTool(
-        name=formatted["name"],
-        description=formatted["description"],
-        input_schema=formatted["parameters"],
-    )
+    # already in Anthropic tool format
+    if isinstance(tool, dict) and all(
+        k in tool for k in ("name", "description", "input_schema")
+    ):
+        return AnthropicTool(tool)  # type: ignore
+    else:
+        formatted = convert_to_openai_tool(tool)["function"]
+        return AnthropicTool(
+            name=formatted["name"],
+            description=formatted["description"],
+            input_schema=formatted["parameters"],
+        )
 
 
 @deprecated(since="0.1.0", removal="0.2.0", alternative="ChatAnthropic")
