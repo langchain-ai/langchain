@@ -216,6 +216,8 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         _result = super().parse_result(result)
         if self.args_only:
+            if isinstance(_result, dict):  # Also support gigachat model
+                _result = json.dumps(_result, ensure_ascii=False)
             pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
         else:
             fn_name = _result["name"]
