@@ -5,7 +5,7 @@ You will need FIREWORKS_API_KEY set in your environment to run these tests.
 
 import json
 
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, AIToolCallsMessage, ToolCall
 from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_fireworks import ChatFireworks
@@ -36,7 +36,7 @@ def test_tool_choice() -> None:
     with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
 
     resp = with_tool.invoke("Who was the 27 year old named Erick?")
-    assert isinstance(resp, AIMessage)
+    assert isinstance(resp, AIToolCallsMessage)
     assert resp.content == ""  # should just be tool call
     tool_calls = resp.additional_kwargs["tool_calls"]
     assert len(tool_calls) == 1
@@ -47,6 +47,12 @@ def test_tool_choice() -> None:
         "name": "Erick",
     }
     assert tool_call["type"] == "function"
+    assert isinstance(resp.tool_calls, list)
+    assert len(resp.tool_calls) == 1
+    tool_call = resp.tool_calls[0]
+    assert isinstance(tool_call, ToolCall)
+    assert tool_call.name == "MyTool"
+    assert tool_call.args == {"age": 27, "name": "Erick"}
 
 
 def test_tool_choice_bool() -> None:
