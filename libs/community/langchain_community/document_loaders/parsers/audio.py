@@ -372,7 +372,6 @@ class FasterWhisperParser(BaseBlobParser):
                 self.model_size = "large-v3"
         if model_size is not None:
             self.model_size = model_size
-        print(f"Using the following model: Systran/faster-whisper-{self.model_size}")
         
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -400,11 +399,13 @@ class FasterWhisperParser(BaseBlobParser):
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
         # Transcribe
-        model = WhisperModel(self.model_size, device=self.device, compute_type="float16")
+        model = WhisperModel(
+            self.model_size, 
+            device=self.device, 
+            compute_type="float16"
+        )
 
         segments, info = model.transcribe(file_obj, beam_size=5)
-
-        print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
 
         for segment in segments:
             yield Document(
