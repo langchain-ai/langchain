@@ -43,10 +43,15 @@ async def _aget_relevant_documents(
     )
 
 
+_DEFAULT_RETRIEVER_TOOL_DESCRIPTION = (
+    "Use this tool to retrieve relevant documents for a given query."
+)
+
+
 def create_retriever_tool(
     retriever: BaseRetriever,
     name: str,
-    description: str,
+    description: str = _DEFAULT_RETRIEVER_TOOL_DESCRIPTION,
     *,
     document_prompt: Optional[BasePromptTemplate] = None,
     document_separator: str = "\n\n",
@@ -59,6 +64,9 @@ def create_retriever_tool(
             so should be unique and somewhat descriptive.
         description: The description for the tool. This will be passed to the language
             model, so should be descriptive.
+        document_prompt: Prompt template used to format the retrieved documents to a
+            string.
+        document_separator: Separator used to join the retrieved document strings.
 
     Returns:
         Tool class to pass to an agent
