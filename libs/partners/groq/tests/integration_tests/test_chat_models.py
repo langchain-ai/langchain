@@ -7,10 +7,14 @@ import pytest
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    AIToolCallsMessage,
+    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
+    ToolCall,
+    ToolCallChunk,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -235,7 +239,7 @@ def test_tool_choice() -> None:
     with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
 
     resp = with_tool.invoke("Who was the 27 year old named Erick?")
-    assert isinstance(resp, AIMessage)
+    assert isinstance(resp, AIToolCallsMessage)
     assert resp.content == ""  # should just be tool call
     tool_calls = resp.additional_kwargs["tool_calls"]
     assert len(tool_calls) == 1
@@ -246,6 +250,13 @@ def test_tool_choice() -> None:
         "name": "Erick",
     }
     assert tool_call["type"] == "function"
+
+    assert isinstance(resp.tool_calls, list)
+    assert len(resp.tool_calls) == 1
+    tool_call = resp.tool_calls[0]
+    assert isinstance(tool_call, ToolCall)
+    assert tool_call.name == "MyTool"
+    assert tool_call.args == {"name": "Erick", "age": 27}
 
 
 @pytest.mark.scheduled
@@ -301,6 +312,15 @@ def test_streaming_tool_call() -> None:
     }
     assert tool_call["type"] == "function"
 
+    assert isinstance(chunk, AIToolCallsMessageChunk)
+    assert isinstance(chunk.tool_call_chunks, list)
+    assert len(chunk.tool_call_chunks) == 1
+    tool_call_chunk = chunk.tool_call_chunks[0]
+    assert isinstance(tool_call_chunk, ToolCallChunk)
+    assert tool_call_chunk.name == "MyTool"
+    assert isinstance(tool_call_chunk.args, str)
+    assert json.loads(tool_call_chunk.args) == {"name": "Erick", "age": 27}
+
 
 async def test_astreaming_tool_call() -> None:
     """Test that tool choice is respected."""
@@ -329,6 +349,15 @@ async def test_astreaming_tool_call() -> None:
         "name": "Erick",
     }
     assert tool_call["type"] == "function"
+
+    assert isinstance(chunk, AIToolCallsMessageChunk)
+    assert isinstance(chunk.tool_call_chunks, list)
+    assert len(chunk.tool_call_chunks) == 1
+    tool_call_chunk = chunk.tool_call_chunks[0]
+    assert isinstance(tool_call_chunk, ToolCallChunk)
+    assert tool_call_chunk.name == "MyTool"
+    assert isinstance(tool_call_chunk.args, str)
+    assert json.loads(tool_call_chunk.args) == {"name": "Erick", "age": 27}
 
 
 @pytest.mark.scheduled

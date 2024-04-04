@@ -37,6 +37,8 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    AIToolCallsMessage,
+    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -58,6 +60,7 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    parse_tool_calls,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -278,9 +281,20 @@ class ChatGroq(BaseChatModel):
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
             message = generation.message
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc.get("index"),
+                }
+                for rtc in message.additional_kwargs["tool_calls"]
+            ]
             chunk_ = ChatGenerationChunk(
-                message=AIMessageChunk(
-                    content=message.content, additional_kwargs=message.additional_kwargs
+                message=AIToolCallsMessageChunk(
+                    content=message.content,
+                    additional_kwargs=message.additional_kwargs,
+                    tool_call_chunks=tool_call_chunks,
                 ),
                 generation_info=generation.generation_info,
             )
@@ -338,9 +352,20 @@ class ChatGroq(BaseChatModel):
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
             message = generation.message
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc.get("index"),
+                }
+                for rtc in message.additional_kwargs["tool_calls"]
+            ]
             chunk_ = ChatGenerationChunk(
-                message=AIMessageChunk(
-                    content=message.content, additional_kwargs=message.additional_kwargs
+                message=AIToolCallsMessageChunk(
+                    content=message.content,
+                    additional_kwargs=message.additional_kwargs,
+                    tool_call_chunks=tool_call_chunks,
                 ),
                 generation_info=generation.generation_info,
             )
@@ -883,8 +908,18 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
-        if tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            try:
+                tool_calls = parse_tool_calls(raw_tool_calls, return_id=True)
+            except Exception:
+                tool_calls = None
+            return AIToolCallsMessage(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                id=id_,
+                tool_calls=tool_calls,
+            )
         return AIMessage(content=content, id=id_, additional_kwargs=additional_kwargs)
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
