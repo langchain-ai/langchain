@@ -54,6 +54,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
+                id=self.id,
             )
 
         return super().__add__(other)

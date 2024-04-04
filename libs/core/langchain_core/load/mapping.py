@@ -971,4 +971,10 @@ _JS_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "tool",
         "ToolMessageChunk",
     ),
+    ("langchain_core", "prompts", "image", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
+    ),
 }
