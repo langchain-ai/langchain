@@ -1,7 +1,6 @@
 # Cohere
 
->[Cohere](https://cohere.ai/about) is a Canadian startup that provides natural language processing models
-> that help companies improve human-machine interactions.
+[Cohere](https://cohere.com/) empowers every developer and enterprise to build amazing products and capture true business value with language AI.
 
 ## Installation and Setup
 - Install the Python SDK :
@@ -13,13 +12,14 @@ Get a [Cohere api key](https://dashboard.cohere.ai/) and set it as an environmen
 
 ## Cohere langchain integrations
 
-| API              | description                      | Endpoint docs                                          | Import                                                               | Example usage                                                 |
-| ---------------- | -------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Chat             | Build chat bots                  | [chat](https://docs.cohere.com/reference/chat)         | `from langchain_cohere import ChatCohere`                            | [cohere.ipynb](/docs/integrations/chat/cohere)                |
-| LLM              | Generate text                    | [generate](https://docs.cohere.com/reference/generate) | `from langchain_cohere import Cohere`                                | [cohere.ipynb](/docs/integrations/llms/cohere)                |
-| RAG Retriever    | Connect to external data sources | [chat + rag](https://docs.cohere.com/reference/chat)   | `from langchain.retrievers import CohereRagRetriever`                | [cohere.ipynb](/docs/integrations/retrievers/cohere)          |
-| Text Embedding   | Embed strings to vectors         | [embed](https://docs.cohere.com/reference/embed)       | `from langchain_cohere import CohereEmbeddings`                      | [cohere.ipynb](/docs/integrations/text_embedding/cohere)      |
-| Rerank Retriever | Rank strings based on relevance  | [rerank](https://docs.cohere.com/reference/rerank)     | `from langchain.retrievers.document_compressors import CohereRerank` | [cohere.ipynb](/docs/integrations/retrievers/cohere-reranker) |
+| API              | description                                         | Endpoint docs                                             | Import                                                                         | Example usage                                                                                            |
+|------------------|-----------------------------------------------------|-----------------------------------------------------------|--------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| Chat             | Build chat bots                                     | [chat](https://docs.cohere.com/reference/chat)            | `from langchain_cohere import ChatCohere`                                      | [cohere.ipynb](/docs/integrations/chat/cohere)                                                           |
+| RAG Retriever    | Connect to external data sources                    | [chat + rag](https://docs.cohere.com/reference/chat)      | `from langchain_cohere import CohereRagRetriever`                              | [cohere.ipynb](/docs/integrations/retrievers/cohere)                                                     |
+| Text Embedding   | Embed strings to vectors                            | [embed](https://docs.cohere.com/reference/embed)          | `from langchain_cohere import CohereEmbeddings`                                | [cohere.ipynb](/docs/integrations/text_embedding/cohere)                                                 |
+| Rerank Retriever | Rank strings based on relevance                     | [rerank](https://docs.cohere.com/reference/rerank)        | `from langchain_cohere import CohereRerank`                                    | [cohere.ipynb](/docs/integrations/retrievers/cohere-reranker)                                            |
+| ReAct Agent      | Let the model choose a sequence of actions to take  | [chat + rag](https://docs.cohere.com/reference/chat)      | `from langchain_cohere.react_multi_hop.agent import create_cohere_react_agent` | [notebook](https://github.com/cohere-ai/notebooks/blob/main/notebooks/Vanilla_Multi_Step_Tool_Use.ipynb) |
+
 
 ## Quick copy examples
 
@@ -28,19 +28,11 @@ Get a [Cohere api key](https://dashboard.cohere.ai/) and set it as an environmen
 ```python
 from langchain_cohere import ChatCohere
 from langchain_core.messages import HumanMessage
-chat = ChatCohere()
-messages = [HumanMessage(content="knock knock")]
-print(chat(messages))
-```
 
-### LLM
+llm = ChatCohere()
 
-
-```python
-from langchain_cohere import Cohere
-
-llm = Cohere(model="command")
-print(llm.invoke("Come up with a pet name"))
+messages = [HumanMessage(content="Hello, can you introduce yourself?")]
+print(llm(messages))
 ```
 
 ### ReAct Agent
@@ -65,7 +57,7 @@ agent = create_cohere_react_agent(
     prompt
 )
 
-agent_executor = AgentExecutor(agent=agent, tools=[internet_search], verbose=True)```
+agent_executor = AgentExecutor(agent=agent, tools=[internet_search], verbose=True)
 
 agent_executor.invoke({
     "input": "In what year was the company that was founded as Sound of Music added to the S&P 500?",
@@ -75,12 +67,10 @@ agent_executor.invoke({
 ### RAG Retriever
 
 ```python
-from langchain_cohere import ChatCohere
-from langchain.retrievers import CohereRagRetriever
-from langchain_core.documents import Document
+from langchain_cohere import ChatCohere, CohereRagRetriever
 
 rag = CohereRagRetriever(llm=ChatCohere())
-print(rag.get_relevant_documents("What is cohere ai?"))
+print(rag.get_relevant_documents("Who are Cohere?"))
 ```
 
 ### Text Embedding
