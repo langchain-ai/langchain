@@ -364,9 +364,9 @@ class ChatZhipuAI(BaseChatModel):
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
                     )
-                    yield chunk
                     if run_manager:
                         run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
                     if finish_reason is not None:
                         break
 
@@ -447,9 +447,9 @@ class ChatZhipuAI(BaseChatModel):
                     )
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
-                    )
-                    yield chunk
+                    )                   
                     if run_manager:
                         await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
                     if finish_reason is not None:
                         break

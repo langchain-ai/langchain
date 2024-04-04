@@ -335,13 +335,14 @@ class TextGen(LLM):
                     text=result["text"],
                     generation_info=None,
                 )
-                yield chunk
+                
             elif result["event"] == "stream_end":
                 websocket_client.close()
                 return
 
             if run_manager:
                 run_manager.on_llm_new_token(token=chunk.text)
+            yield chunk
 
     async def _astream(
         self,
