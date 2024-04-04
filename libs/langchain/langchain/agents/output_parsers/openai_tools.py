@@ -6,7 +6,9 @@ from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinis
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
+    AIToolCallsMessage,
     BaseMessage,
+    ToolCall,
 )
 from langchain_core.outputs import ChatGeneration, Generation
 
@@ -31,23 +33,32 @@ def parse_ai_message_to_openai_tool_action(
         )
 
     actions: List = []
-    for tool_call in message.additional_kwargs["tool_calls"]:
-        function = tool_call["function"]
-        function_name = function["name"]
-        try:
-            _tool_input = json.loads(function["arguments"] or "{}")
-        except JSONDecodeError:
-            raise OutputParserException(
-                f"Could not parse tool input: {function} because "
-                f"the `arguments` is not valid JSON."
-            )
-
+    if isinstance(message, AIToolCallsMessage) and message.tool_calls:
+        tool_calls = message.tool_calls
+    else:
+        tool_calls = []
+        for tool_call in message.additional_kwargs["tool_calls"]:
+            function = tool_call["function"]
+            function_name = function["name"]
+            try:
+                args = json.loads(function["arguments"] or "{}")
+                tool_calls.append(
+                    ToolCall(name=function_name, args=args, id=tool_call["id"])
+                )
+            except JSONDecodeError:
+                raise OutputParserException(
+                    f"Could not parse tool input: {function} because "
+                    f"the `arguments` is not valid JSON."
+                )
+    for tool_call in tool_calls:
         # HACK HACK HACK:
         # The code that encodes tool input into Open AI uses a special variable
         # name called `__arg1` to handle old style tools that do not expose a
         # schema and expect a single string argument as an input.
         # We unpack the argument here if it exists.
         # Open AI does not support passing in a JSON array as an argument.
+        function_name = tool_call.name
+        _tool_input = tool_call.args
         if "__arg1" in _tool_input:
             tool_input = _tool_input["__arg1"]
         else:
@@ -61,7 +72,7 @@ def parse_ai_message_to_openai_tool_action(
                 tool_input=tool_input,
                 log=log,
                 message_log=[message],
-                tool_call_id=tool_call["id"],
+                tool_call_id=tool_call.id,
             )
         )
     return actions
