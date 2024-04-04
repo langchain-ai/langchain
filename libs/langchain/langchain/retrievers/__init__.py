@@ -82,6 +82,7 @@ __all__ = [
     "OutlineRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
+    "RememberizerRetriever",
     "RemoteLangChainRetriever",
     "SVMRetriever",
     "SelfQueryRetriever",
