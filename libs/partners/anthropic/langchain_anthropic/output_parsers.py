@@ -31,24 +31,24 @@ class ToolsOutputParser(BaseGenerationOutputParser):
             tool_calls: List = []
         else:
             content: List = message.content
-            tool_calls = extract_tool_calls(content)
+            tool_calls = [tool_call.dict() for tool_call in extract_tool_calls(content)]
         if self.pydantic_schemas:
             tool_calls = [self._pydantic_parse(tc) for tc in tool_calls]
         elif self.args_only:
-            tool_calls = [tc.args for tc in tool_calls]
+            tool_calls = [tc["args"] for tc in tool_calls]
         else:
             pass
 
         if self.first_tool_only:
             return tool_calls[0] if tool_calls else None
         else:
-            return tool_calls
+            return [tool_call for tool_call in tool_calls]
 
-    def _pydantic_parse(self, tool_call: ToolCall) -> BaseModel:
+    def _pydantic_parse(self, tool_call: dict) -> BaseModel:
         cls_ = {schema.__name__: schema for schema in self.pydantic_schemas or []}[
-            tool_call.name
+            tool_call["name"]
         ]
-        return cls_(**tool_call.args)
+        return cls_(**tool_call["args"])
 
 
 def extract_tool_calls(content: List[dict]) -> List[ToolCall]:
