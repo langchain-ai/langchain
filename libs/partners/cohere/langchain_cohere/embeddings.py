@@ -42,8 +42,11 @@ class CohereEmbeddings(BaseModel, Embeddings):
     """Maximum number of retries to make when generating."""
     request_timeout: Optional[float] = None
     """Timeout in seconds for the Cohere API request."""
-    user_agent: str = "langchain"
+    user_agent: str = "langchain:partner"
     """Identifier for the application making the request."""
+
+    base_url: Optional[str] = None
+    """Override the default Cohere API URL."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -64,11 +67,13 @@ class CohereEmbeddings(BaseModel, Embeddings):
             cohere_api_key,
             timeout=request_timeout,
             client_name=client_name,
+            base_url=values["base_url"],
         )
         values["async_client"] = cohere.AsyncClient(
             cohere_api_key,
             timeout=request_timeout,
             client_name=client_name,
+            base_url=values["base_url"],
         )
 
         return values
