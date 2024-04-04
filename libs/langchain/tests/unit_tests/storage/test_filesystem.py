@@ -32,7 +32,7 @@ def test_mset_and_mget(file_store: LocalFileStore) -> None:
 @pytest.mark.parametrize(
     "chmod_dir, chmod_file", [("777", "666"), ("770", "660"), ("700", "600")]
 )
-def test_mset_chmod(chmod_dir, str, chmod_file, str) -> None:
+def test_mset_chmod(chmod_dir: str, chmod_file: str) -> None:
     chmod_dir = int(chmod_dir, base=8)
     chmod_file = int(chmod_file, base=8)
 
