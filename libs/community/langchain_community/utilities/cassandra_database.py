@@ -34,7 +34,7 @@ class CassandraDatabase:
             raise ValueError("Session not provided and cannot be resolved")
 
         self._exclude_keyspaces = IGNORED_KEYSPACES
-        self._ignore_tables = exclude_tables or []
+        self._exclude_tables = exclude_tables or []
         self._include_tables = include_tables or []
 
     def run(
@@ -278,7 +278,7 @@ class CassandraDatabase:
 
         return filtered_keyspaces
 
-    def _fetch_filtered_schema_data(self, keyspace_list: List[str]) -> Tuple:
+    def _fetch_schema_data(self, keyspace_list: List[str]) -> Tuple:
         """
         Fetches schema data, including tables, columns, and indexes, filtered by a
         list of keyspaces. This method constructs CQL queries to retrieve detailed
@@ -351,13 +351,20 @@ class CassandraDatabase:
         if not keyspace_list:
             keyspace_list = self._fetch_keyspaces()
 
-        tables_data, columns_data, indexes_data = self._fetch_filtered_schema_data(
+        tables_data, columns_data, indexes_data = self._fetch_schema_data(
             keyspace_list
         )
 
         keyspace_dict: dict = {}
         for table_data in tables_data:
             keyspace, table_name = table_data["keyspace_name"], table_data["table_name"]
+
+            if self._include_tables and table_name not in self._include_tables:
+                continue
+
+            if self._exclude_tables and table_name in self._exclude_tables:
+                continue
+
             comment = table_data.get("comment", "")
 
             # Filter columns and indexes for this table
