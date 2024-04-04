@@ -1,4 +1,44 @@
-"""UpTrain's Callback Handler."""
+"""
+UpTrain Callback Handler
+
+UpTrain is an open-source platform to evaluate and improve LLM applications. It provides
+grades for 20+ preconfigured checks (covering language, code, embedding use cases), 
+performs root cause analyses on instances of failure cases and provides guidance for 
+resolving them.
+
+This module contains a callback handler for integrating UpTrain seamlessly into your 
+pipeline and facilitating diverse evaluations. The callback handler automates various 
+evaluations to assess the performance and effectiveness of the components within the pipeline.
+
+The evaluations conducted include:
+
+1. RAG Evaluations:
+   - Context Relevance: Determines the relevance of the context extracted from the query to the response.
+   - Factual Accuracy: Assesses if the Language Model (LLM) is providing accurate information or hallucinating.
+   - Response Completeness: Checks if the response contains all the information requested by the query.
+
+2. Multi Query Generation Evaluation:
+   MultiQueryRetriever generates multiple variants of a question with similar meanings to the original question. 
+   This evaluation includes previous assessments and adds:
+   - Multi Query Accuracy: Ensures that the multi-queries generated convey the same meaning as the original query.
+
+3. Re-Ranking Evaluations:
+   Re-ranking involves reordering nodes based on relevance to the query and selecting top n nodes. 
+   Due to the potential reduction in the number of nodes after re-ranking, the following evaluations
+   are performed in addition to the RAG evaluations:
+   - Context Reranking: Determines if the order of re-ranked nodes is more relevant to the query than the original order.
+   - Context Conciseness: Examines whether the reduced number of nodes still provides all the required information.
+
+These evaluations collectively ensure the robustness and effectiveness of the RAG query engine, 
+MultiQueryRetriever, and the re-ranking process within the pipeline.
+
+Useful links:
+Github: https://github.com/uptrain-ai/uptrain
+Website: https://uptrain.ai/
+Docs: https://docs.uptrain.ai/getting-started/introduction
+
+"""
+
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -28,10 +68,11 @@ def import_uptrain() -> Any:
             "To use the UpTrainCallbackHandler, you need the"
             "`uptrain` package. Please install it with"
             "`pip install uptrain`.",
-            e
+            e,
         )
 
     return uptrain
+
 
 class UpTrainDataSchema:
     """UpTrain Data Schema"""
@@ -60,6 +101,7 @@ class UpTrainDataSchema:
         self.multi_query_run_id: str = ""
         self.multi_query_daugher_run_id: str = ""
 
+
 class UpTrainCallbackHandler(BaseCallbackHandler):
     """Callback Handler that logs evalution results to uptrain and the console.
 
@@ -75,11 +117,11 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
     """
 
     def __init__(
-            self,
-            project_name_prefix: str = "langchain",
-            key_type: str = "openai",
-            api_key: str = "sk-****************",
-            ) -> None:
+        self,
+        project_name_prefix: str = "langchain",
+        key_type: str = "openai",
+        api_key: str = "sk-****************",
+    ) -> None:
         """Initializes the `UpTrainCallbackHandler`."""
         super().__init__()
 
@@ -98,8 +140,6 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         else:
             raise ValueError("Invalid key type: Must be 'uptrain' or 'openai'")
 
-            
-        
     def uptrain_evaluate(
         self,
         project_name: str,
@@ -167,7 +207,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Store the prompts"""
         pass
-        
+
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Do nothing when a new token is generated."""
         pass
@@ -182,7 +222,10 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Log records to uptrain when an LLM ends."""
         self.schema.response = response.generations[0][0].text
-        if "qa_rag" in self.schema.eval_types and parent_run_id != self.schema.multi_query_daugher_run_id:
+        if (
+            "qa_rag" in self.schema.eval_types
+            and parent_run_id != self.schema.multi_query_daugher_run_id
+        ):
             data = [
                 {
                     "question": self.schema.query,
@@ -221,7 +264,6 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         """Run when a chat model starts running."""
         pass
 
-
     def on_chain_start(
         self,
         serialized: Dict[str, Any],
@@ -234,7 +276,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         run_type: Optional[str] = None,
         name: Optional[str] = None,
         **kwargs: Any,
-    ) -> None:        
+    ) -> None:
         """Do nothing when chain starts"""
         if parent_run_id == self.schema.multi_query_run_id:
             self.schema.multi_query_daugher_run_id = run_id
@@ -323,7 +365,6 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         elif "multi_query" in self.schema.eval_types:
             self.schema.multi_queries.append(query)
 
-
     def on_retriever_end(
         self,
         documents: Sequence[Document],
@@ -344,9 +385,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             self.uptrain_evaluate(
                 project_name=f"{self.schema.project_name_prefix}",
                 data=data,
-                checks=[
-                    Evals.MULTI_QUERY_ACCURACY
-                ],
+                checks=[Evals.MULTI_QUERY_ACCURACY],
             )
         if "contextual_compression" in self.schema.eval_types:
             if parent_run_id == self.schema.context_conciseness_run_id:
