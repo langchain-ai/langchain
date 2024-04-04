@@ -16,7 +16,8 @@ from tests.unit_tests.react_multi_hop import ExpectationType, read_expectation_f
             "answer_sound_of_music",
             AgentFinish(
                 return_values={
-                    "output": "Best Buy, originally called Sound of Music, was added to Standard & Poor's S&P 500 in 1999."  # noqa: E501
+                    "output": "Best Buy, originally called Sound of Music, was added to Standard & Poor's S&P 500 in 1999.",  # noqa: E501
+                    "grounded_answer": "<co: 0,2>Best Buy</co: 0,2>, originally called Sound of Music, was added to <co: 2>Standard & Poor's S&P 500</co: 2> in <co: 2>1999</co: 2>.",  # noqa: E501
                 },
                 log="Relevant Documents: 0,2,3\nCited Documents: 0,2\nAnswer: Best Buy, originally called Sound of Music, was added to Standard & Poor's S&P 500 in 1999.\nGrounded answer: <co: 0,2>Best Buy</co: 0,2>, originally called Sound of Music, was added to <co: 2>Standard & Poor's S&P 500</co: 2> in <co: 2>1999</co: 2>.",  # noqa: E501
             ),
