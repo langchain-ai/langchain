@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.32"
-cohere = "^5.1.4"
+cohere = ">=5.1.8,<5.2"
 
 [tool.poetry.group.test]
 optional = true
