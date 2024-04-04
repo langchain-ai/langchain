@@ -57,7 +57,6 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.messages.base import BaseMessage
-from uptrain import APIClient, EvalLLM, Evals, Settings
 
 
 def import_uptrain() -> Any:
@@ -125,18 +124,18 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         """Initializes the `UpTrainCallbackHandler`."""
         super().__init__()
 
-        import_uptrain()
+        uptrain = import_uptrain()
 
         # Set uptrain variables
         self.schema = UpTrainDataSchema(project_name_prefix=project_name_prefix)
         self.first_score_printed_flag = False
 
         if key_type == "uptrain":
-            settings = Settings(uptrain_access_token=api_key)
-            self.uptrain_client = APIClient(settings=settings)
+            settings = uptrain.Settings(uptrain_access_token=api_key)
+            self.uptrain_client = uptrain.APIClient(settings=settings)
         elif key_type == "openai":
-            settings = Settings(openai_api_key=api_key, evaluate_locally=False)
-            self.uptrain_client = EvalLLM(settings=settings)
+            settings = uptrain.Settings(openai_api_key=api_key, evaluate_locally=False)
+            self.uptrain_client = uptrain.EvalLLM(settings=settings)
         else:
             raise ValueError("Invalid key type: Must be 'uptrain' or 'openai'")
 
@@ -147,7 +146,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         checks: List[str],
     ) -> None:
         """Run an evaluation on the UpTrain server using UpTrain client."""
-        if self.uptrain_client.__class__.__name__ == "APIClient":
+        if self.uptrain_client.__class__.__name__ == "uptrain.APIClient":
             uptrain_result = self.uptrain_client.log_and_evaluate(
                 project_name=project_name,
                 data=data,
@@ -221,6 +220,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Log records to uptrain when an LLM ends."""
+        uptrain = import_uptrain()
         self.schema.response = response.generations[0][0].text
         if (
             "qa_rag" in self.schema.eval_types
@@ -238,9 +238,9 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 project_name=f"{self.schema.project_name_prefix}",
                 data=data,
                 checks=[
-                    Evals.CONTEXT_RELEVANCE,
-                    Evals.FACTUAL_ACCURACY,
-                    Evals.RESPONSE_COMPLETENESS,
+                    uptrain.Evals.CONTEXT_RELEVANCE,
+                    uptrain.Evals.FACTUAL_ACCURACY,
+                    uptrain.Evals.RESPONSE_COMPLETENESS,
                 ],
             )
 
@@ -374,6 +374,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> Any:
         """Run when Retriever ends running."""
+        uptrain = import_uptrain()
         if run_id == self.schema.multi_query_run_id:
             data = [
                 {
@@ -385,7 +386,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             self.uptrain_evaluate(
                 project_name=f"{self.schema.project_name_prefix}",
                 data=data,
-                checks=[Evals.MULTI_QUERY_ACCURACY],
+                checks=[uptrain.Evals.MULTI_QUERY_ACCURACY],
             )
         if "contextual_compression" in self.schema.eval_types:
             if parent_run_id == self.schema.context_conciseness_run_id:
@@ -418,7 +419,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                     project_name=f"{self.schema.project_name_prefix}_context_conciseness",
                     data=data,
                     checks=[
-                        Evals.CONTEXT_CONCISENESS,
-                        Evals.CONTEXT_RERANKING,
+                        uptrain.Evals.CONTEXT_CONCISENESS,
+                        uptrain.Evals.CONTEXT_RERANKING,
                     ],
                 )
