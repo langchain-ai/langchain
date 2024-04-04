@@ -12,17 +12,17 @@ evaluations to assess the performance and effectiveness of the components within
 
 The evaluations conducted include:
 
-1. RAG Evaluations:
+1. RAG:
    - Context Relevance: Determines the relevance of the context extracted from the query to the response.
    - Factual Accuracy: Assesses if the Language Model (LLM) is providing accurate information or hallucinating.
    - Response Completeness: Checks if the response contains all the information requested by the query.
 
-2. Multi Query Generation Evaluation:
+2. Multi Query Generation:
    MultiQueryRetriever generates multiple variants of a question with similar meanings to the original question. 
    This evaluation includes previous assessments and adds:
    - Multi Query Accuracy: Ensures that the multi-queries generated convey the same meaning as the original query.
 
-3. Re-Ranking Evaluations:
+3. Context Compression and Reranking:
    Re-ranking involves reordering nodes based on relevance to the query and selecting top n nodes. 
    Due to the potential reduction in the number of nodes after re-ranking, the following evaluations
    are performed in addition to the RAG evaluations:
