@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, List, Literal
 
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
@@ -6,7 +6,7 @@ from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_anthropic.output_parsers import ToolsOutputParser
 
-_CONTENT = [
+_CONTENT: List = [
     {
         "type": "text",
         "text": "thought",
@@ -19,7 +19,7 @@ _CONTENT = [
     {"type": "tool_use", "input": {"baz": "a"}, "id": "2", "name": "_Foo2"},
 ]
 
-_RESULT = [ChatGeneration(message=AIMessage(_CONTENT))]
+_RESULT: List = [ChatGeneration(message=AIMessage(_CONTENT))]
 
 
 class _Foo1(BaseModel):
@@ -56,7 +56,7 @@ def test_tools_output_parser_args_only() -> None:
 
 def test_tools_output_parser_first_tool_only() -> None:
     output_parser = ToolsOutputParser(first_tool_only=True)
-    expected = {"name": "_Foo1", "args": {"bar": 0}, "id": "1", "index": 1}
+    expected: Any = {"name": "_Foo1", "args": {"bar": 0}, "id": "1", "index": 1}
     actual = output_parser.parse_result(_RESULT)
     assert expected == actual
 
