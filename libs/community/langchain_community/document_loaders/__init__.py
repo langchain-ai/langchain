@@ -125,7 +125,6 @@ from langchain_community.document_loaders.imsdb import IMSDbLoader
 from langchain_community.document_loaders.iugu import IuguLoader
 from langchain_community.document_loaders.joplin import JoplinLoader
 from langchain_community.document_loaders.json_loader import JSONLoader
-from langchain_community.document_loaders.kinetica_loader import KineticaLoader
 from langchain_community.document_loaders.lakefs import LakeFSLoader
 from langchain_community.document_loaders.larksuite import LarkSuiteDocLoader
 from langchain_community.document_loaders.markdown import UnstructuredMarkdownLoader
