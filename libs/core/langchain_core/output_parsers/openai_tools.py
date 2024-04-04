@@ -28,7 +28,7 @@ def parse_tool_calls(
                 function_args = parse_partial_json(
                     tool_call["function"]["arguments"], strict=strict
                 )
-            except JSONDecodeError:
+            except (JSONDecodeError, TypeError):  # None args raise TypeError
                 continue
         else:
             try:
