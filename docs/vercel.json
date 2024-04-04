@@ -153,10 +153,6 @@
       "destination": "/docs/modules/data_connection/document_transformers/:path*"
     },
     {
-      "source": "/docs/modules/model_io/prompts/example_selectors/:path*",
-      "destination": "/docs/modules/model_io/prompts/example_selector_types/:path*"
-    },
-    {
       "source": "/docs/modules/model_io/prompts/prompt_templates(/?)",
       "destination": "/docs/modules/model_io/prompts/"
     },
@@ -974,8 +970,144 @@
       "destination": "/docs/integrations/platforms/google#google-document-ai"
     },
     {
-      "source": "/docs/integrations/tools/metaphor_search",
+      "source": "/docs/integrations/tools/metaphor_search(/?)",
       "destination": "/docs/integrations/tools/exa_search"
+    },
+    {
+      "source": "/docs/expression_language/how_to/fallbacks(/?)",
+      "destination": "/docs/guides/productionization/fallbacks"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/retrieval(/?)",
+      "destination": "/docs/use_cases/question_answering"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/agent(/?)",
+      "destination": "/docs/modules/agents/agent_types/xml_agent"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/message_prompts(/?)",
+      "destination": "/docs/modules/model_io/prompts/quick_start#message-prompts"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/pipeline(/?)",
+      "destination": "/docs/modules/model_io/prompts/composition#using-pipelineprompt"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/memory(/?)",
+      "destination": "/docs/modules/memory"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/tools(/?)",
+      "destination": "/docs/use_cases/tool_use/quickstart"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/sql_db(/?)",
+      "destination": "/docs/use_cases/sql/quickstart"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/moderation(/?)",
+      "destination": "/docs/guides/productionization/safety/moderation"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/embedding_router(/?)",
+      "destination": "/docs/expression_language/how_to/routing"
+    },
+    {
+      "source": "/docs/modules/model_io/prompts/example_selector_types/:path*",
+      "destination": "/docs/modules/model_io/prompts/example_selectors/:path*"
+    },
+    {
+      "source": "/docs/modules/agents/tools/:path*",
+      "destination": "/docs/modules/tools/:path*"
+    },
+    {
+      "source": "/docs/guides/structured_output(/?)",
+      "destination": "/docs/modules/model_io/chat/structured_output"
+    },
+    {
+      "source": "/docs/modules/agents/how_to/structured_tools(/?)",
+      "destination": "/docs/modules/tools"
+    },
+    {
+      "source": "/docs/use_cases/csv(/?)",
+      "destination": "/docs/use_cases/sql/csv"
+    },
+    {
+      "source": "/docs/guides/debugging(/?)",
+      "destination": "/docs/guides/development/debugging"
+    },
+    {
+      "source": "/docs/guides/deployments/:path*",
+      "destination": "/docs/guides/productionization/deployments/:path*"
+    },
+    {
+      "source": "/docs/guides/evaluation/:path*",
+      "destination": "/docs/guides/productionization/evaluation/:path*"
+    },
+    {
+      "source": "/docs/guides/extending_langchain(/?)",
+      "destination": "/docs/guides/development/extending_langchain"
+    },
+    {
+      "source": "/docs/guides/fallbacks(/?)",
+      "destination": "/docs/guides/productionization/fallbacks"
+    },
+    {
+      "source": "/docs/guides/privacy/:path*",
+      "destination": "/docs/guides/productionization/safety/:path*"
+    },
+    {
+      "source": "/docs/guides/safety/:path*",
+      "destination": "/docs/guides/productionization/safety/:path*"
+    },
+    {
+      "source": "/docs/guides/model_laboratory(/?)",
+      "destination": "/docs/guides/productionization/evaluation"
+    },
+    {
+      "source": "/docs/guides/pydantic_compatibility(/?)",
+      "destination": "/docs/guides/development/pydantic_compatibility"
+    },
+    {
+      "source": "/docs/guides/local_llms(/?)",
+      "destination": "/docs/guides/development/local_llms"
+    },
+    {
+      "source": "/docs/modules/model_io/quick_start(/?)",
+      "destination": "/docs/modules/model_io"
+    },
+    {
+      "source": "/docs/expression_language/how_to/generators(/?)",
+      "destination": "/docs/expression_language/primitives/functions"
+    },
+    {
+      "source": "/docs/expression_language/how_to/functions(/?)",
+      "destination": "/docs/expression_language/primitives/functions"
+    },
+    {
+      "source": "/docs/expression_language/how_to/passthrough(/?)",
+      "destination": "/docs/expression_language/primitives/passthrough"
+    },
+    {
+      "source": "/docs/expression_language/how_to/map(/?)",
+      "destination": "/docs/expression_language/primitives/parallel"
+    },
+    {
+      "source": "/docs/expression_language/how_to/binding(/?)",
+      "destination": "/docs/expression_language/primitives/binding"
+    },
+    {
+      "source": "/docs/expression_language/how_to/configure(/?)",
+      "destination": "/docs/expression_language/primitives/configure"
+    },
+    {
+      "source": "/docs/expression_language/cookbook/prompt_llm_parser(/?)",
+      "destination": "/docs/expression_language/get_started"
+    },
+    {
+      "source": "/docs/contributing/documentation(/?)",
+      "destination": "/docs/contributing/documentation/technical_logistics"
     }
   ]
 }
