@@ -6,6 +6,62 @@
       "destination": "/docs/integrations/providers/intel"
     },
     {
+      "source": "/docs/use_cases/graph/integrations/diffbot_graphtransformer",
+      "destination": "/docs/integrations/graphs/diffbot"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_arangodb_qa",
+      "destination": "/docs/integrations/graphs/arangodb"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_cypher_qa",
+      "destination": "/docs/integrations/graphs/neo4j_cypher"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_falkordb_qa",
+      "destination": "/docs/integrations/graphs/falkordb"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_gremlin_cosmosdb_qa",
+      "destination": "/docs/integrations/graphs/azure_cosmosdb_gremlin"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_hugegraph_qa",
+      "destination": "/docs/integrations/graphs/hugegraph"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_kuzu_qa",
+      "destination": "/docs/integrations/graphs/kuzu_db"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_memgraph_qa",
+      "destination": "/docs/integrations/graphs/memgraph"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_nebula_qa",
+      "destination": "/docs/integrations/graphs/nebula_graph"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_networkx_qa",
+      "destination": "/docs/integrations/graphs/networkx"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_ontotext_graphdb_qa",
+      "destination": "/docs/integrations/graphs/ontotext"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/graph_sparql_qa",
+      "destination": "/docs/integrations/graphs/rdflib_sparql"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/neptune_cypher_qa",
+      "destination": "/docs/integrations/graphs/amazon_neptune_open_cypher"
+    },
+    {
+      "source": "/docs/use_cases/graph/integrations/neptune_sparql_qa",
+      "destination": "/docs/integrations/graphs/amazon_neptune_sparql"
+    },
+    {
       "source": "/docs/integrations/providers/facebook_chat",
       "destination": "/docs/integrations/providers/facebook"
     },
