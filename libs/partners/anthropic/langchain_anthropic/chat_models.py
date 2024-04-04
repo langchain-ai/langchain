@@ -452,7 +452,7 @@ class ChatAnthropic(BaseChatModel):
                 first_tool_only=True, pydantic_schemas=[schema]
             )
         else:
-            output_parser = ToolsOutputParser(first_tool_only=True)
+            output_parser = ToolsOutputParser(first_tool_only=True, args_only=True)
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
