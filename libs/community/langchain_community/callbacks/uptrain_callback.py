@@ -235,7 +235,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             ]
 
             self.uptrain_evaluate(
-                project_name=f"{self.schema.project_name_prefix}",
+                project_name=f"{self.schema.project_name_prefix}_rag",
                 data=data,
                 checks=[
                     uptrain.Evals.CONTEXT_RELEVANCE,
@@ -384,7 +384,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             ]
 
             self.uptrain_evaluate(
-                project_name=f"{self.schema.project_name_prefix}",
+                project_name=f"{self.schema.project_name_prefix}_multi_query",
                 data=data,
                 checks=[uptrain.Evals.MULTI_QUERY_ACCURACY],
             )
@@ -416,7 +416,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                     }
                 ]
                 self.uptrain_evaluate(
-                    project_name=f"{self.schema.project_name_prefix}_context_conciseness",
+                    project_name=f"{self.schema.project_name_prefix}_context_reranking",
                     data=data,
                     checks=[
                         uptrain.Evals.CONTEXT_CONCISENESS,
