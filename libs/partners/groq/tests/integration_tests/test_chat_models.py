@@ -1,15 +1,19 @@
 """Test ChatGroq chat model."""
 
+import json
 from typing import Any
 
 import pytest
 from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_groq import ChatGroq
 from tests.unit_tests.fake.callbacks import (
@@ -45,9 +49,9 @@ def test_invoke() -> None:
 @pytest.mark.scheduled
 async def test_ainvoke() -> None:
     """Test ainvoke tokens from ChatGroq."""
-    llm = ChatGroq(max_tokens=10)
+    chat = ChatGroq(max_tokens=10)
 
-    result = await llm.ainvoke("Welcome to the Groqetship!", config={"tags": ["foo"]})
+    result = await chat.ainvoke("Welcome to the Groqetship!", config={"tags": ["foo"]})
     assert isinstance(result, BaseMessage)
     assert isinstance(result.content, str)
 
@@ -55,9 +59,9 @@ async def test_ainvoke() -> None:
 @pytest.mark.scheduled
 def test_batch() -> None:
     """Test batch tokens from ChatGroq."""
-    llm = ChatGroq(max_tokens=10)
+    chat = ChatGroq(max_tokens=10)
 
-    result = llm.batch(["Hello!", "Welcome to the Groqetship!"])
+    result = chat.batch(["Hello!", "Welcome to the Groqetship!"])
     for token in result:
         assert isinstance(token, BaseMessage)
         assert isinstance(token.content, str)
@@ -66,9 +70,9 @@ def test_batch() -> None:
 @pytest.mark.scheduled
 async def test_abatch() -> None:
     """Test abatch tokens from ChatGroq."""
-    llm = ChatGroq(max_tokens=10)
+    chat = ChatGroq(max_tokens=10)
 
-    result = await llm.abatch(["Hello!", "Welcome to the Groqetship!"])
+    result = await chat.abatch(["Hello!", "Welcome to the Groqetship!"])
     for token in result:
         assert isinstance(token, BaseMessage)
         assert isinstance(token.content, str)
@@ -77,9 +81,9 @@ async def test_abatch() -> None:
 @pytest.mark.scheduled
 async def test_stream() -> None:
     """Test streaming tokens from Groq."""
-    llm = ChatGroq(max_tokens=10)
+    chat = ChatGroq(max_tokens=10)
 
-    for token in llm.stream("Welcome to the Groqetship!"):
+    for token in chat.stream("Welcome to the Groqetship!"):
         assert isinstance(token, BaseMessageChunk)
         assert isinstance(token.content, str)
 
@@ -87,9 +91,9 @@ async def test_stream() -> None:
 @pytest.mark.scheduled
 async def test_astream() -> None:
     """Test streaming tokens from Groq."""
-    llm = ChatGroq(max_tokens=10)
+    chat = ChatGroq(max_tokens=10)
 
-    async for token in llm.astream("Welcome to the Groqetship!"):
+    async for token in chat.astream("Welcome to the Groqetship!"):
         assert isinstance(token, BaseMessageChunk)
         assert isinstance(token.content, str)
 
@@ -202,11 +206,11 @@ def test_streaming_generation_info() -> None:
         temperature=0,
         callbacks=[callback],
     )
-    list(chat.stream("Respond with the single word Hello"))
+    list(chat.stream("Respond with the single word Hello", stop=["o"]))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
     assert isinstance(generation, LLMResult)
-    assert generation.generations[0][0].text == "Hello"
+    assert generation.generations[0][0].text == "Hell"
 
 
 def test_system_message() -> None:
@@ -217,6 +221,133 @@ def test_system_message() -> None:
     response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
+
+
+@pytest.mark.scheduled
+def test_tool_choice() -> None:
+    """Test that tool choice is respected."""
+    llm = ChatGroq()
+
+    class MyTool(BaseModel):
+        name: str
+        age: int
+
+    with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
+
+    resp = with_tool.invoke("Who was the 27 year old named Erick?")
+    assert isinstance(resp, AIMessage)
+    assert resp.content == ""  # should just be tool call
+    tool_calls = resp.additional_kwargs["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert tool_call["function"]["name"] == "MyTool"
+    assert json.loads(tool_call["function"]["arguments"]) == {
+        "age": 27,
+        "name": "Erick",
+    }
+    assert tool_call["type"] == "function"
+
+
+@pytest.mark.scheduled
+def test_tool_choice_bool() -> None:
+    """Test that tool choice is respected just passing in True."""
+    llm = ChatGroq()
+
+    class MyTool(BaseModel):
+        name: str
+        age: int
+
+    with_tool = llm.bind_tools([MyTool], tool_choice=True)
+
+    resp = with_tool.invoke("Who was the 27 year old named Erick?")
+    assert isinstance(resp, AIMessage)
+    assert resp.content == ""  # should just be tool call
+    tool_calls = resp.additional_kwargs["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert tool_call["function"]["name"] == "MyTool"
+    assert json.loads(tool_call["function"]["arguments"]) == {
+        "age": 27,
+        "name": "Erick",
+    }
+    assert tool_call["type"] == "function"
+
+
+def test_streaming_tool_call() -> None:
+    """Test that tool choice is respected."""
+    llm = ChatGroq()
+
+    class MyTool(BaseModel):
+        name: str
+        age: int
+
+    with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
+
+    resp = with_tool.stream("Who was the 27 year old named Erick?")
+    additional_kwargs = None
+    for chunk in resp:
+        assert isinstance(chunk, AIMessageChunk)
+        assert chunk.content == ""  # should just be tool call
+        additional_kwargs = chunk.additional_kwargs
+
+    assert additional_kwargs is not None
+    tool_calls = additional_kwargs["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert tool_call["function"]["name"] == "MyTool"
+    assert json.loads(tool_call["function"]["arguments"]) == {
+        "age": 27,
+        "name": "Erick",
+    }
+    assert tool_call["type"] == "function"
+
+
+async def test_astreaming_tool_call() -> None:
+    """Test that tool choice is respected."""
+    llm = ChatGroq()
+
+    class MyTool(BaseModel):
+        name: str
+        age: int
+
+    with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
+
+    resp = with_tool.astream("Who was the 27 year old named Erick?")
+    additional_kwargs = None
+    async for chunk in resp:
+        assert isinstance(chunk, AIMessageChunk)
+        assert chunk.content == ""  # should just be tool call
+        additional_kwargs = chunk.additional_kwargs
+
+    assert additional_kwargs is not None
+    tool_calls = additional_kwargs["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert tool_call["function"]["name"] == "MyTool"
+    assert json.loads(tool_call["function"]["arguments"]) == {
+        "age": 27,
+        "name": "Erick",
+    }
+    assert tool_call["type"] == "function"
+
+
+@pytest.mark.scheduled
+def test_json_mode_structured_output() -> None:
+    """Test with_structured_output with json"""
+
+    class Joke(BaseModel):
+        """Joke to tell user."""
+
+        setup: str = Field(description="question to set up a joke")
+        punchline: str = Field(description="answer to resolve the joke")
+
+    chat = ChatGroq().with_structured_output(Joke, method="json_mode")
+    result = chat.invoke(
+        "Tell me a joke about cats, respond in JSON with `setup` and `punchline` keys"
+    )
+    assert type(result) == Joke
+    assert len(result.setup) != 0
+    assert len(result.punchline) != 0
 
 
 # Groq does not currently support N > 1

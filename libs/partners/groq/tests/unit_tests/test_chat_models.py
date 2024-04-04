@@ -16,7 +16,8 @@ from langchain_core.messages import (
 
 from langchain_groq.chat_models import ChatGroq, _convert_dict_to_message
 
-os.environ["GROQ_API_KEY"] = "fake-key"
+if "GROQ_API_KEY" not in os.environ:
+    os.environ["GROQ_API_KEY"] = "fake-key"
 
 
 def test_groq_model_param() -> None:
