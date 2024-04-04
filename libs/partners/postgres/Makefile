@@ -7,13 +7,7 @@ all: help
 TEST_FILE ?= tests/unit_tests/
 integration_test integration_tests: TEST_FILE = tests/integration_tests/
 
-
-# unit tests are run with the --disable-socket flag to prevent network calls
-test tests:
-	poetry run pytest --disable-socket --allow-unit-socket $(TEST_FILE)
-
-# integration tests are run without the --disable-socket flag to allow network calls
-integration_test integration_tests:
+test tests integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 ######################
@@ -24,8 +18,8 @@ integration_test integration_tests:
 PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
-lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/__package_name_short__ --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
-lint_package: PYTHON_FILES=__module_name__
+lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/postgres --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain_postgres
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
@@ -45,7 +39,7 @@ spell_check:
 spell_fix:
 	poetry run codespell --toml pyproject.toml -w
 
-check_imports: $(shell find __module_name__ -name '*.py')
+check_imports: $(shell find langchain_postgres -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 ######################
