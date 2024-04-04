@@ -45,20 +45,7 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def merge_lists(left: Optional[List], right: Optional[List]) -> Optional[List]:
-    """Add two lists, handling None.
-
-    Example:
-        merge_lists([1], [2]) == [1, 2]
-        merge_lists(None, [2]) == [2]
-        merge_lists([1], None) == [1]
-        merge_lists(None, None) == None
-
-    Args:
-        left: The left list or None.
-        right: The right list or None.
-    Returns:
-        The merged list.
-    """
+    """Add two lists, handling None."""
     if left is None and right is None:
         return None
     elif left is None or right is None:
