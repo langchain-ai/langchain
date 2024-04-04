@@ -1,5 +1,6 @@
 """Web base loader class."""
 import asyncio
+from tqdm.asyncio import tqdm_asyncio
 import logging
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Union
@@ -180,7 +181,7 @@ class WebBaseLoader(BaseLoader):
             )
         except ImportError:
             warnings.warn("For better logging of progress, `pip install tqdm`")
-            return await asyncio.gather(*tasks)
+            return await tqdm_asyncio.gather(*tasks, desc="Fetching pages", ascii=True, mininterval=1)
 
     @staticmethod
     def _check_parser(parser: str) -> None:
