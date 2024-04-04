@@ -1,6 +1,6 @@
 """Test Neo4jVector functionality."""
 import os
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from langchain_core.documents import Document
 
