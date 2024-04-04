@@ -156,6 +156,7 @@ EXPECTED_ALL = [
     "TwitterTweetLoader",
     "UnstructuredAPIFileIOLoader",
     "UnstructuredAPIFileLoader",
+    "UnstructuredCHMLoader",
     "UnstructuredCSVLoader",
     "UnstructuredEPubLoader",
     "UnstructuredEmailLoader",
