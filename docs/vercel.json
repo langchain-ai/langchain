@@ -1082,6 +1082,22 @@
       "destination": "/docs/expression_language/primitives/functions"
     },
     {
+      "source": "/docs/expression_language/how_to/functions(/?)",
+      "destination": "/docs/expression_language/primitives/functions"
+    },
+    {
+      "source": "/docs/expression_language/how_to/passthrough(/?)",
+      "destination": "/docs/expression_language/primitives/passthrough"
+    },
+    {
+      "source": "/docs/expression_language/how_to/map(/?)",
+      "destination": "/docs/expression_language/primitives/parallel"
+    },
+    {
+      "source": "/docs/expression_language/how_to/binding(/?)",
+      "destination": "/docs/expression_language/primitives/binding"
+    },
+    {
       "source": "/docs/expression_language/how_to/configure(/?)",
       "destination": "/docs/expression_language/primitives/configure"
     },
