@@ -186,7 +186,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                                 "thread_ts": value[1],
                             }
                         },
-                        pickle.loads(value[0]),
+                        self.serializer.loads(value[0]),
                         {
                             "configurable": {
                                 "thread_id": thread_id,
@@ -230,7 +230,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                     if value:
                         return CheckpointTuple(
                             config,
-                            pickle.loads(value[0]),
+                            self.serializer.loads(value[0]),
                             {
                                 "configurable": {
                                     "thread_id": thread_id,
@@ -259,7 +259,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                                     "thread_ts": value[1].isoformat(),
                                 }
                             },
-                            checkpoint=pickle.loads(value[0]),
+                            checkpoint=self.serializer.loads(value[0]),
                             parent_config={
                                 "configurable": {
                                     "thread_id": thread_id,
@@ -300,7 +300,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                         "thread_id": thread_id,
                         "thread_ts": checkpoint["ts"],
                         "parent_ts": parent_ts if parent_ts else None,
-                        "checkpoint": pickle.dumps(checkpoint),
+                        "checkpoint": self.serializer.dumps(checkpoint),
                     },
                 )
 
