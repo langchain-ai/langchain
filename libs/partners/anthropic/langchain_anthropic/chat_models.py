@@ -18,7 +18,6 @@ from typing import (
 )
 
 import anthropic
-
 from langchain_core._api import beta, deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -179,6 +178,9 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                                 "source": source,
                             }
                         )
+                    elif item["type"] == "tool_use":
+                        item.pop("text", None)
+                        content.append(item)
                     else:
                         content.append(item)
                 else:
