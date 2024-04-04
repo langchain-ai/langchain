@@ -196,7 +196,7 @@ def combine_queries(
 
 def collect_params(
     input_data: List[Tuple[str, Dict[str, str]]],
-) -> Tuple[List[str], Dict[str, str]]:
+) -> Tuple[List[str], Dict[str, Any]]:
     """
     Transform the input data into the desired format.
 
@@ -385,10 +385,8 @@ def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
                     for index, (k, v) in enumerate(filter.items())
                 ]
             )
-            if len(and_) > 1:
+            if len(and_) >= 1:
                 return " AND ".join(and_[0]), and_[1]
-            elif len(and_) == 1:  # Can this really happen?
-                return and_
             else:
                 raise ValueError(
                     "Invalid filter condition. Expected a dictionary "
