@@ -12,7 +12,7 @@ from typing import (
     cast,
 )
 
-from langchain_core._api.beta_decorator import beta
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -168,7 +168,15 @@ def _xml_to_tool_calls(elem: Any, tools: List[Dict]) -> List[Dict[str, Any]]:
     return [_xml_to_function_call(invoke, tools) for invoke in invokes]
 
 
-@beta()
+@deprecated(
+    "0.1.5",
+    removal="0.2.0",
+    alternative="ChatAnthropic",
+    message=(
+        "Tool-calling is now officially supported by the Anthropic API so this "
+        "workaround is no longer needed."
+    ),
+)
 class ChatAnthropicTools(ChatAnthropic):
     """Chat model for interacting with Anthropic functions."""
 
@@ -188,7 +196,7 @@ class ChatAnthropicTools(ChatAnthropic):
             )
         return values
 
-    def bind_tools(
+    def bind_tools(  # type: ignore[override]
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], BaseTool]],
         **kwargs: Any,
