@@ -949,8 +949,8 @@ class Neo4jVector(VectorStore):
             parallel_query = "CYPHER runtime = parallel " if self._is_enterprise else ""
             base_index_query = parallel_query + f"MATCH (n:`{self.node_label}`) WHERE "
             base_cosine_query = (
-                f" WITH n as node, vector.similarity.cosine("
-                "n.`{self.embedding_node_property}`, "
+                " WITH n as node, vector.similarity.cosine("
+                f"n.`{self.embedding_node_property}`, "
                 "$embedding) AS score ORDER BY score DESC LIMIT toInteger($k) "
             )
             filter_snippets, filter_params = construct_metadata_filter(filter)
