@@ -70,6 +70,29 @@ from langchain_openai import ChatOpenAI
 llm = ChatOpenAI(openai_api_key="...")
 ```
 
+Both `llm` and `chat_model` are objects that represent configuration for a particular model. 
+You can initialize them with parameters like `temperature` and others, and pass them around.
+The main difference between them is their input and output schemas.
+The LLM objects take string as input and output string.
+The ChatModel objects take a list of messages as input and output a message.
+
+We can see the difference between an LLM and a ChatModel when we invoke it.
+
+```python
+from langchain_core.messages import HumanMessage
+
+text = "What would be a good company name for a company that makes colorful socks?"
+messages = [HumanMessage(content=text)]
+
+llm.invoke(text)
+# >> Feetful of Fun
+
+chat_model.invoke(messages)
+# >> AIMessage(content="Socks O'Color")
+```
+
+The LLM returns a string, while the ChatModel returns a message.
+
   </TabItem>
   <TabItem value="local" label="Local (using Ollama)">
 
@@ -88,6 +111,29 @@ from langchain_community.chat_models import ChatOllama
 llm = Ollama(model="llama2")
 chat_model = ChatOllama()
 ```
+
+Both `llm` and `chat_model` are objects that represent configuration for a particular model. 
+You can initialize them with parameters like `temperature` and others, and pass them around.
+The main difference between them is their input and output schemas.
+The LLM objects take string as input and output string.
+The ChatModel objects take a list of messages as input and output a message.
+
+We can see the difference between an LLM and a ChatModel when we invoke it.
+
+```python
+from langchain_core.messages import HumanMessage
+
+text = "What would be a good company name for a company that makes colorful socks?"
+messages = [HumanMessage(content=text)]
+
+llm.invoke(text)
+# >> Feetful of Fun
+
+chat_model.invoke(messages)
+# >> AIMessage(content="Socks O'Color")
+```
+
+The LLM returns a string, while the ChatModel returns a message.
 
   </TabItem>
   <TabItem value="anthropic" label="Anthropic (chat model only)">
@@ -119,7 +165,7 @@ chat_model = ChatAnthropic(anthropic_api_key="...")
 ```
 
   </TabItem>
-  <TabItem value="cohere" label="Cohere">
+  <TabItem value="cohere" label="Cohere (chat model only)">
 
 First we'll need to install their partner package:
 
@@ -151,29 +197,6 @@ chat_model = ChatCohere(cohere_api_key="...")
 
   </TabItem>
 </Tabs>
-
-Both `llm` and `chat_model` are objects that represent configuration for a particular model. 
-You can initialize them with parameters like `temperature` and others, and pass them around.
-The main difference between them is their input and output schemas.
-The LLM objects take string as input and output string.
-The ChatModel objects take a list of messages as input and output a message.
-
-We can see the difference between an LLM and a ChatModel when we invoke it.
-
-```python
-from langchain_core.messages import HumanMessage
-
-text = "What would be a good company name for a company that makes colorful socks?"
-messages = [HumanMessage(content=text)]
-
-llm.invoke(text)
-# >> Feetful of Fun
-
-chat_model.invoke(messages)
-# >> AIMessage(content="Socks O'Color")
-```
-
-The LLM returns a string, while the ChatModel returns a message.
 
 ## Prompt Templates
 
