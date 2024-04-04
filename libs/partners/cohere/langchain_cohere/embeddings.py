@@ -26,9 +26,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Optional[cohere.Client]  #: :meta private:
+    client: cohere.Client = Field(default=None)  #: :meta private:
     """Cohere client."""
-    async_client: Optional[cohere.AsyncClient]  #: :meta private:
+    async_client: cohere.Client = Field(default=None)  #: :meta private:
     """Cohere async client."""
     model: str = "embed-english-v2.0"
     """Model name to use."""
@@ -53,18 +53,6 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
         arbitrary_types_allowed = True
         extra = Extra.forbid
-
-    def get_client(self) -> cohere.Client:
-        """Get the Cohere client."""
-        if self.client is None:
-            raise ValueError("Cohere client has not been initialised.")
-        return self.client
-
-    def get_async_client(self) -> cohere.AsyncClient:
-        """Get the Cohere async client."""
-        if self.async_client is None:
-            raise ValueError("Cohere async client has not been initialised.")
-        return self.async_client
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -96,7 +84,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
         @retry_decorator
         def _embed_with_retry(**kwargs: Any) -> Any:
-            return self.get_client().embed(**kwargs)
+            return self.client.embed(**kwargs)
 
         return _embed_with_retry(**kwargs)
 
@@ -106,7 +94,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
         @retry_decorator
         async def _embed_with_retry(**kwargs: Any) -> Any:
-            return await self.get_async_client().embed(**kwargs)
+            return await self.async_client.embed(**kwargs)
 
         return _embed_with_retry(**kwargs)
 
