@@ -386,7 +386,7 @@ def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
                 ]
             )
             if len(and_multiple) >= 1:
-                return " AND ".join(and_[0]), and_[1]
+                return " AND ".join(and_multiple[0]), and_multiple[1]
             else:
                 raise ValueError(
                     "Invalid filter condition. Expected a dictionary "
