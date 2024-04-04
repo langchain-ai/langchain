@@ -379,13 +379,13 @@ def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
                         f"Invalid filter condition. Expected a field but got: {key}"
                     )
             # These should all be fields and combined using an $and operator
-            and_ = collect_params(
+            and_multiple = collect_params(
                 [
                     _handle_field_filter(k, v, index)
                     for index, (k, v) in enumerate(filter.items())
                 ]
             )
-            if len(and_) >= 1:
+            if len(and_multiple) >= 1:
                 return " AND ".join(and_[0]), and_[1]
             else:
                 raise ValueError(
