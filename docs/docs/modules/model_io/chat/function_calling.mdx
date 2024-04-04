@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 title: Function calling
 ---
 
@@ -30,7 +30,7 @@ We’ll focus here on the first two points. For a detailed guide on output
 parsing check out the [OpenAI Tools output
 parsers](../../../../docs/modules/model_io/output_parsers/types/openai_tools)
 and to see the structured output chains check out the [Structured output
-guide](../../../../docs/guides/structured_output).
+guide](/docs/modules/model_io/chat/structured_output).
 
 Before getting started make sure you have `langchain-core` installed.
 
@@ -298,13 +298,13 @@ print(json.dumps(convert_to_openai_tool(Multiply()), indent=2))
 ## Next steps
 
 - **Output parsing**: See [OpenAI Tools output
-  parsers](../../../../docs/modules/model_io/output_parsers/types/openai_tools)
-  and [OpenAI Functions output
-  parsers](../../../../docs/modules/model_io/output_parsers/types/openai_functions)
-  to learn about extracting the function calling API responses into
-  various formats.
-- **Structured output chains**: [Some models have constructors](../../../../docs/guides/structured_output) that
-  handle creating a structured output chain for you.
+    parsers](../../../../docs/modules/model_io/output_parsers/types/openai_tools)
+    and [OpenAI Functions output
+    parsers](../../../../docs/modules/model_io/output_parsers/types/openai_functions)
+    to learn about extracting the function calling API responses into
+    various formats.
+- **Structured output chains**: [Some models have constructors](/docs/modules/model_io/chat/structured_output) that
+    handle creating a structured output chain for you.
 - **Tool use**: See how to construct chains and agents that actually
-  call the invoked tools in [these
-  guides](../../../../docs/use_cases/tool_use/).
+    call the invoked tools in [these
+    guides](../../../../docs/use_cases/tool_use/).
