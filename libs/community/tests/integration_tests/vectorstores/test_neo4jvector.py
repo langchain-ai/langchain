@@ -1,6 +1,6 @@
 """Test Neo4jVector functionality."""
 import os
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Dict, List, cast
 
 from langchain_core.documents import Document
 
@@ -788,17 +788,16 @@ def test_metadata_filters_type1() -> None:
         pre_delete_collection=True,
     )
     # We don't test type 5, because LIKE has very SQL specific examples
-    examples = (
+    for example in (
         TYPE_1_FILTERING_TEST_CASES
         + TYPE_2_FILTERING_TEST_CASES
         + TYPE_3_FILTERING_TEST_CASES
         + TYPE_4_FILTERING_TEST_CASES
-    )
-    examples = cast(List[Tuple[Dict[str, Any], List]], examples)
-    for example in examples:
+    ):
         filter_dict = cast(Dict[str, Any], example[0])
         output = docsearch.similarity_search("Foo", filter=filter_dict)
-        adjusted_indices = [index - 1 for index in example[1]]
+        indices = cast(List[int], example[1])
+        adjusted_indices = [index - 1 for index in indices]
         expected_output = [DOCUMENTS[index] for index in adjusted_indices]
         # We don't return id properties from similarity search by default
         # Also remove any key where the value is None
