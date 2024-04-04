@@ -1,5 +1,6 @@
 import os
 import re
+import warnings
 from operator import itemgetter
 from typing import (
     Any,
@@ -15,6 +16,7 @@ from typing import (
     Type,
     TypedDict,
     Union,
+    cast,
 )
 
 import anthropic
@@ -323,6 +325,13 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
+        if "extra_body" in params and params["extra_body"].get("tools"):
+            warnings.warn("stream: Tool use is not yet supported in streaming mode.")
+            result = self._generate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            yield cast(ChatGenerationChunk, result.generations[0])
+            return
         with self._client.messages.stream(**params) as stream:
             for text in stream.text_stream:
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
@@ -338,6 +347,13 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
+        if "extra_body" in params and params["extra_body"].get("tools"):
+            warnings.warn("stream: Tool use is not yet supported in streaming mode.")
+            result = await self._agenerate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            yield cast(ChatGenerationChunk, result.generations[0])
+            return
         async with self._async_client.messages.stream(**params) as stream:
             async for text in stream.text_stream:
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
@@ -367,12 +383,17 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return generate_from_stream(stream_iter)
         params = self._format_params(messages=messages, stop=stop, **kwargs)
+        if self.streaming:
+            if "extra_body" in params and params["extra_body"].get("tools"):
+                warnings.warn(
+                    "stream: Tool use is not yet supported in streaming mode."
+                )
+            else:
+                stream_iter = self._stream(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                )
+                return generate_from_stream(stream_iter)
         data = self._client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
@@ -383,12 +404,17 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._astream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return await agenerate_from_stream(stream_iter)
         params = self._format_params(messages=messages, stop=stop, **kwargs)
+        if self.streaming:
+            if "extra_body" in params and params["extra_body"].get("tools"):
+                warnings.warn(
+                    "stream: Tool use is not yet supported in streaming mode."
+                )
+            else:
+                stream_iter = self._astream(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                )
+                return await agenerate_from_stream(stream_iter)
         data = await self._async_client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
