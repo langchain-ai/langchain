@@ -1104,6 +1104,10 @@
     {
       "source": "/docs/expression_language/cookbook/prompt_llm_parser(/?)",
       "destination": "/docs/expression_language/get_started"
+    },
+    {
+      "source": "/docs/contributing/documentation(/?)",
+      "destination": "/docs/contributing/documentation/technical_logistics"
     }
   ]
 }
