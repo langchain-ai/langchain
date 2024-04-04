@@ -32,7 +32,7 @@ from langchain_core.messages import HumanMessage
 llm = ChatCohere()
 
 messages = [HumanMessage(content="Hello, can you introduce yourself?")]
-print(llm(messages))
+print(llm.invoke(messages))
 ```
 
 ### ReAct Agent
