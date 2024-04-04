@@ -196,7 +196,7 @@ def combine_queries(
 
 def collect_params(
     input_data: List[Tuple[str, Dict[str, str]]],
-) -> Tuple[str, Dict[str, str]]:
+) -> Tuple[List[str], Dict[str, str]]:
     """
     Transform the input data into the desired format.
 
