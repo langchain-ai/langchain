@@ -88,6 +88,7 @@ from langchain_core.callbacks import StdOutCallbackHandler
 from langchain.chains import LLMChain
 from langchain_openai import OpenAI
 from langchain_core.prompts import PromptTemplate
+from langchain_core.tracers.root_listeners import RootListenersTracer
 
 handler = StdOutCallbackHandler()
 llm = OpenAI()
@@ -138,22 +139,84 @@ Prompt after formatting:
 The `callbacks` are available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) in two different places:
 
 - **Constructor callbacks**: defined in the constructor, e.g. `LLMChain(callbacks=[handler], tags=['a-tag'])`. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the `LLMChain` constructor, it will not be used by the Model attached to that chain.
-- **Request callbacks**: defined in the 'invoke' method used for issuing a request. In this case, the callbacks will be used for that specific request only, and all sub-requests that it contains (e.g. a call to an LLMChain triggers a call to a Model, which uses the same handler passed in the `invoke()` method).  In the `invoke()` method callbacks are passed through the config parameter.
-Example with the 'invoke' method (**Note**: the same approach can be used for the `batch`, `ainvoke`, and `abatch` methods.):
+Here is an example of how you can pass a constructor callback:
 ```python
 handler = StdOutCallbackHandler()
 llm = OpenAI()
 prompt = PromptTemplate.from_template("1 + {number} = ")
 
+# Define your callbacks
+def on_start(run):
+    print(f"Start: {run}")
+
+def on_end(run):
+    print(f"End: {run}")
+
+def on_error(run):
+    print(f"Error: {run}")
+
+# Create a RunnableConfig with your callbacks
 config = {
-    'callbacks' : [handler]
+    "callbacks": [
+        RootListenersTracer(
+            config=config,
+            on_start=on_start,
+            on_end=on_end,
+            on_error=on_error,
+        )
+    ],
 }
+
+# Assign the handler to the config
+config['callbacks'].append(handler)
+
+# Add constructor callbacks
+chain = prompt | LLMChain(llm=llm, callbacks=[on_start, on_end, on_error, handler])
+```
+
+In the above code, we pass on_start, on_end, on_error, and handler as a list to the callbacks parameter of the LLMChain constructor. This means that the on_start, on_end, on_error and handler callbacks will be called for all invocations of the LLMChain object.
+
+Keep in mind that constructor callbacks are scoped to the object they are defined on, so the on_start, on_end, on_error and handler callbacks will only be used for the LLMChain object and not for any other objects, such as the OpenAI LLM instance.
+
+- **Request callbacks**: defined in the 'invoke' method used for issuing a request. In this case, the callbacks will be used for that specific request only, and all sub-requests that it contains (e.g. a call to an LLMChain triggers a call to a Model, which uses the same handler passed in the `invoke()` method).  In the `invoke()` method callbacks are passed through the config parameter.
+Here is an example of how you can pass a request callback using the config parameter to the Invoke method: (**Note**: the same approach can be used for the `batch`, `ainvoke`, and `abatch` methods.):
+```python
+handler = StdOutCallbackHandler()
+llm = OpenAI()
+prompt = PromptTemplate.from_template("1 + {number} = ")
+
+# Define your callbacks
+def on_start(run):
+    print(f"Start: {run}")
+
+def on_end(run):
+    print(f"End: {run}")
+
+def on_error(run):
+    print(f"Error: {run}")
+
+# Create a RunnableConfig with your callbacks
+config = {
+    "callbacks": [
+        RootListenersTracer(
+            config=config,
+            on_start=on_start,
+            on_end=on_end,
+            on_error=on_error,
+        )
+    ],
+}
+
+# Assign the handler to the config
+config['callbacks'].append(handler)
 
 chain = prompt | chain
 chain.invoke({"number":2}, config=config)
 ```
 
 **Note:** `chain = prompt | chain` is equivalent to `chain = LLMChain(llm=llm, prompt=prompt)` (check [LangChain Expression Language (LCEL) documentation](/docs/expression_language/) for more details)
+
+In the above code, the StdOutCallbackHandler is used in conjunction with other custom callbacks (on_start, on_end, and on_error) to provide a comprehensive logging and debugging experience. By combining these callbacks, you can get a detailed view of the execution of your runnable, including when it starts and ends, as well as any errors that may occur during the execution.
 
 The `verbose` argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) as a constructor argument, e.g. `LLMChain(verbose=True)`, and it is equivalent to passing a `ConsoleCallbackHandler` to the `callbacks` argument of that object and all child objects. This is useful for debugging, as it will log all events to the console.
 
