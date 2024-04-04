@@ -225,11 +225,9 @@ class ChatGroq(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if self.streaming:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -237,7 +235,6 @@ class ChatGroq(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {
             **params,
-            **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
         response = self.client.create(messages=message_dicts, **params)
@@ -248,11 +245,9 @@ class ChatGroq(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else self.streaming
-        if should_stream:
+        if self.streaming:
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -261,7 +256,6 @@ class ChatGroq(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {
             **params,
-            **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
         response = await self.async_client.create(messages=message_dicts, **params)
@@ -275,6 +269,31 @@ class ChatGroq(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
+
+        # groq api does not support streaming with tools yet
+        if "tools" in kwargs:
+            response = self.client.create(
+                messages=message_dicts, **{**params, **kwargs}
+            )
+            chat_result = self._create_chat_result(response)
+            generation = chat_result.generations[0]
+            message = generation.message
+            chunk_ = ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content=message.content, additional_kwargs=message.additional_kwargs
+                ),
+                generation_info=generation.generation_info,
+            )
+            if run_manager:
+                geninfo = chunk_.generation_info or {}
+                run_manager.on_llm_new_token(
+                    chunk_.text,
+                    chunk=chunk_,
+                    logprobs=geninfo.get("logprobs"),
+                )
+            yield chunk_
+            return
+
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
@@ -310,6 +329,31 @@ class ChatGroq(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
+
+        # groq api does not support streaming with tools yet
+        if "tools" in kwargs:
+            response = await self.async_client.create(
+                messages=message_dicts, **{**params, **kwargs}
+            )
+            chat_result = self._create_chat_result(response)
+            generation = chat_result.generations[0]
+            message = generation.message
+            chunk_ = ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content=message.content, additional_kwargs=message.additional_kwargs
+                ),
+                generation_info=generation.generation_info,
+            )
+            if run_manager:
+                geninfo = chunk_.generation_info or {}
+                await run_manager.on_llm_new_token(
+                    chunk_.text,
+                    chunk=chunk_,
+                    logprobs=geninfo.get("logprobs"),
+                )
+            yield chunk_
+            return
+
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
