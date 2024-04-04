@@ -171,6 +171,7 @@ _module_lookup = {
     "TwitterTweetLoader": "langchain_community.document_loaders.twitter",
     "UnstructuredAPIFileIOLoader": "langchain_community.document_loaders.unstructured",
     "UnstructuredAPIFileLoader": "langchain_community.document_loaders.unstructured",
+    "UnstructuredCHMLoader": "langchain_community.document_loaders.chm",
     "UnstructuredCSVLoader": "langchain_community.document_loaders.csv_loader",
     "UnstructuredEPubLoader": "langchain_community.document_loaders.epub",
     "UnstructuredEmailLoader": "langchain_community.document_loaders.email",
