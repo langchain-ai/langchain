@@ -1,11 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.brave_search import BraveSearchWrapper
+
+
+class BraveSearchToolInput(BaseTool):
+    """Input for the BraveSearch."""
+
+    query: str = Field(description="Query for Brave Search")
 
 
 class BraveSearch(BaseTool):
@@ -18,6 +25,7 @@ class BraveSearch(BaseTool):
         " input should be a search query."
     )
     search_wrapper: BraveSearchWrapper
+    args_schema: Type[BaseModel] = BraveSearchToolInput
 
     @classmethod
     def from_api_key(
