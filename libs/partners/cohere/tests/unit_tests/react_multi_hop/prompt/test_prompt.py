@@ -61,6 +61,16 @@ document_template = """Document: {index}
             ),
             id="list of dictionaries",
         ),
+        pytest.param(
+            2,
+            document_template.format(index=0, fields="Output: 2"),
+            id="int",
+        ),
+        pytest.param(
+            [2],
+            document_template.format(index=0, fields="Output: 2"),
+            id="list of int",
+        ),
     ],
 )
 def test_render_observation_has_correct_content(
