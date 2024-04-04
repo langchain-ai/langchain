@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import cassio.config
@@ -68,7 +69,7 @@ class CassandraDatabase:
             return self.run(query, fetch, include_columns, **kwargs)
         except Exception as e:
             """Format the error message"""
-            return f"Error: {e}"
+            return f"Error: {e}\n{traceback.format_exc()}"
 
     def get_keyspace_tables_str_no_throw(self, keyspace: str) -> str:
         """Get the tables for the specified keyspace."""
@@ -77,7 +78,7 @@ class CassandraDatabase:
             return schema_string
         except Exception as e:
             """Format the error message"""
-            return f"Error: {e}"
+            return f"Error: {e}\n{traceback.format_exc()}"
 
     def get_keyspace_tables_str(self, keyspace: str) -> str:
         """Get the tables for the specified keyspace."""
@@ -105,7 +106,7 @@ class CassandraDatabase:
             return self.get_table_data(keyspace, table, predicate, limit)
         except Exception as e:
             """Format the error message"""
-            return f"Error: {e}"
+            return f"Error: {e}\n{traceback.format_exc()}"
 
     # This is a more basic string building function that doesn't use a query builder
     # or prepared statements
@@ -354,10 +355,13 @@ class CassandraDatabase:
             keyspace_list = self._fetch_keyspaces()
 
         tables_data, columns_data, indexes_data = self._fetch_schema_data(keyspace_list)
-
+            
         keyspace_dict: dict = {}
         for table_data in tables_data:
-            keyspace, table_name = table_data["keyspace_name"], table_data["table_name"]
+
+            keyspace = table_data.keyspace_name
+            table_name = table_data.table_name
+            comment = table_data.comment
 
             if self._include_tables and table_name not in self._include_tables:
                 continue
@@ -365,35 +369,33 @@ class CassandraDatabase:
             if self._exclude_tables and table_name in self._exclude_tables:
                 continue
 
-            comment = table_data.get("comment", "")
-
             # Filter columns and indexes for this table
             table_columns = [
-                (c["column_name"], c["type"])
+                (c.column_name, c.type)
                 for c in columns_data
-                if c["keyspace_name"] == keyspace and c["table_name"] == table_name
+                if c.keyspace_name == keyspace and c.table_name == table_name
             ]
 
             partition_keys = [
-                c["column_name"]
+                c.column_name
                 for c in columns_data
-                if c["kind"] == "partition_key"
-                and c["keyspace_name"] == keyspace
-                and c["table_name"] == table_name
+                if c.kind == "partition_key"
+                and c.keyspace_name == keyspace
+                and c.table_name == table_name
             ]
 
             clustering_keys = [
-                (c["column_name"], c["clustering_order"])
+                (c.column_name, c.clustering_order)
                 for c in columns_data
-                if c["kind"] == "clustering"
-                and c["keyspace_name"] == keyspace
-                and c["table_name"] == table_name
+                if c.kind == "clustering"
+                and c.keyspace_name == keyspace
+                and c.table_name == table_name
             ]
 
             table_indexes = [
-                (c["index_name"], c["kind"], c["options"])
+                (c.index_name, c.kind, c.options)
                 for c in indexes_data
-                if c["keyspace_name"] == keyspace and c["table_name"] == table_name
+                if c.keyspace_name == keyspace and c.table_name == table_name
             ]
 
             table_obj = Table(
@@ -567,7 +569,8 @@ class Table:
         for column, type in self._columns:
             output += f"  - {column} ({type})\n"
 
-        output += f"- Partition ({', '.join(self._partition)})\n"
+        output += f"- Partition Keys: ({', '.join(self._partition)})\n"
+        output += "- Clustering Keys: "
         if self._clustering:
             cluster_list = []
             for column, clustering_order in self._clustering:
@@ -575,7 +578,7 @@ class Table:
                     cluster_list.append(column)
                 else:
                     cluster_list.append(f"{column} {clustering_order}")
-            output += f"- Clustering: ({', '.join(cluster_list)})\n"
+            output += f"({', '.join(cluster_list)})\n"
 
         if self._indexes:
             output += "- Indexes\n"
