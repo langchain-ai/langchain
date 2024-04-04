@@ -1,0 +1,13 @@
+Reflection: I found out a thing.
+And then do another thing.
+Action: ```json
+[
+    {
+        "tool_name": "tool1",
+        "parameters": {
+            "arg1": "value1",
+            "arg2": 2
+        }
+    }
+]
+```
