@@ -319,3 +319,95 @@ class YandexSTTParser(BaseBlobParser):
                 page_content=res.normalized_text,
                 metadata={"source": blob.source},
             )
+
+
+class FasterWhisperParser(BaseBlobParser):
+    """Transcribe and parse audio files with faster-whisper.
+
+    faster-whisper is a reimplementation of OpenAI's Whisper model using CTranslate2, 
+    which is up to 4 times faster than openai/whisper for the same accuracy while using 
+    less memory. The efficiency can be further improved with 8-bit quantization on both 
+    CPU and GPU.
+
+    It can automatically detect the following 14 languages and transcribe the text 
+    into their respective languages: en, zh, fr, de, ja, ko, ru, es, th, it, pt, vi, 
+    ar, tr.
+
+    The gitbub repository for faster-whisper is :
+    https://github.com/SYSTRAN/faster-whisper
+
+    """
+
+    def __init__(
+        self,
+        device: Optional[str] = "0",
+        model_size: Optional[str] = None,
+    ):
+        try:
+            import torch
+        except ImportError:
+            raise ImportError(
+                "torch package not found, please install it with " "`pip install torch`"
+            )
+
+        # Determine the device to use
+        if device == "cpu":
+            self.device = "cpu"
+        else:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Determine the model_size
+        if self.device == "cpu":
+            self.model_size = "base"
+        else:
+            # Set the model_size based on the device and available memory
+            mem = torch.cuda.get_device_properties(self.device).total_memory / (1024**2)
+            if mem < 1000:
+                self.model_size = "base"
+            elif mem < 3000:
+                self.model_size = "small"
+            elif mem < 5000:
+                self.model_size = "medium"
+            else:
+                self.model_size = "large-v3"
+        if model_size is not None:
+            self.model_size = model_size
+        print(f"Using the following model: Systran/faster-whisper-{self.model_size}")
+        
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """Lazily parse the blob."""
+
+        import io
+
+        try:
+            from pydub import AudioSegment
+        except ImportError:
+            raise ImportError(
+                "pydub package not found, please install it with `pip install pydub`"
+            )
+
+        try:
+            from faster_whisper import WhisperModel
+        except ImportError:
+            raise ImportError(
+                "faster_whisper package not found, please install it with "
+                "`pip install faster-whisper`"
+            )
+
+        # Audio file from disk
+        audio = AudioSegment.from_file(blob.path)
+
+        file_obj = io.BytesIO(audio.export(format="mp3").read())
+
+        # Transcribe
+        model = WhisperModel(self.model_size, device=self.device, compute_type="float16")
+
+        segments, info = model.transcribe(file_obj, beam_size=5)
+
+        print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
+
+        for segment in segments:
+            yield Document(
+                page_content=segment.text,
+                metadata={"source": blob.source},
+            )
