@@ -162,11 +162,13 @@ def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
     return yaml_str
 
 
-def combine_queries(input_queries: List[Tuple[str, Dict[str, Any]]], operator: str):
+def combine_queries(
+    input_queries: List[Tuple[str, Dict[str, Any]]], operator: str
+) -> Tuple[str, Dict[str, Any]]:
     # Initialize variables to hold the combined query and parameters
-    combined_query = ""
-    combined_params = {}
-    param_counter = {}
+    combined_query: str = ""
+    combined_params: Dict = {}
+    param_counter: Dict = {}
 
     for query, params in input_queries:
         # Process each query fragment and its parameters
