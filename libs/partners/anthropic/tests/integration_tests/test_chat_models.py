@@ -217,7 +217,6 @@ async def test_astreaming() -> None:
 def test_tool_use() -> None:
     llm = ChatAnthropic(
         model="claude-3-opus-20240229",
-        default_headers={"anthropic-beta": "tools-2024-04-04"},
     )
 
     llm_with_tools = llm.bind_tools(
@@ -240,7 +239,6 @@ def test_tool_use() -> None:
 def test_with_structured_output() -> None:
     llm = ChatAnthropic(
         model="claude-3-opus-20240229",
-        default_headers={"anthropic-beta": "tools-2024-04-04"},
     )
 
     structured_llm = llm.with_structured_output(
