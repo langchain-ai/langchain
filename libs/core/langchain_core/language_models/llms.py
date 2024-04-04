@@ -211,10 +211,7 @@ def update_cache(
     prompts: List[str],
 ) -> Optional[dict]:
     """Update the cache and get the LLM output."""
-    if cache is not None and isinstance(cache, BaseCache):
-        llm_cache = cache
-    else:
-        llm_cache = get_llm_cache()
+    llm_cache = _resolve_cache(cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
@@ -233,10 +230,7 @@ async def aupdate_cache(
     prompts: List[str],
 ) -> Optional[dict]:
     """Update the cache and get the LLM output. Async version"""
-    if cache is not None and isinstance(cache, BaseCache):
-        llm_cache = cache
-    else:
-        llm_cache = get_llm_cache()
+    llm_cache = _resolve_cache(cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
