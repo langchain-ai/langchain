@@ -17,7 +17,6 @@ from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
     TYPE_2_FILTERING_TEST_CASES,
     TYPE_3_FILTERING_TEST_CASES,
     TYPE_4_FILTERING_TEST_CASES,
-    TYPE_5_FILTERING_TEST_CASES,
 )
 
 url = os.environ.get("NEO4J_URL", "bolt://localhost:7687")
