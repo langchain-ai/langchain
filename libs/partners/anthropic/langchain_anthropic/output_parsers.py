@@ -1,16 +1,9 @@
-from typing import Any, List, Optional, Type, TypedDict, cast
+from typing import Any, List, Optional, Type
 
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import ToolCall
 from langchain_core.output_parsers import BaseGenerationOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel
-
-
-class _ToolCall(TypedDict):
-    name: str
-    args: dict
-    id: str
-    index: int
 
 
 class ToolsOutputParser(BaseGenerationOutputParser):
@@ -33,11 +26,16 @@ class ToolsOutputParser(BaseGenerationOutputParser):
         """
         if not result or not isinstance(result[0], ChatGeneration):
             return None if self.first_tool_only else []
-        tool_calls: List = _extract_tool_calls(result[0].message)
+        message = result[0].message
+        if isinstance(message.content, str):
+            tool_calls: List = []
+        else:
+            content: List = message.content
+            tool_calls = extract_tool_calls(content)
         if self.pydantic_schemas:
             tool_calls = [self._pydantic_parse(tc) for tc in tool_calls]
         elif self.args_only:
-            tool_calls = [tc["args"] for tc in tool_calls]
+            tool_calls = [tc.args for tc in tool_calls]
         else:
             pass
 
@@ -46,21 +44,19 @@ class ToolsOutputParser(BaseGenerationOutputParser):
         else:
             return tool_calls
 
-    def _pydantic_parse(self, tool_call: _ToolCall) -> BaseModel:
+    def _pydantic_parse(self, tool_call: ToolCall) -> BaseModel:
         cls_ = {schema.__name__: schema for schema in self.pydantic_schemas or []}[
-            tool_call["name"]
+            tool_call.name
         ]
-        return cls_(**tool_call["args"])
+        return cls_(**tool_call.args)
 
 
-def _extract_tool_calls(msg: BaseMessage) -> List[_ToolCall]:
-    if isinstance(msg.content, str):
-        return []
+def extract_tool_calls(content: List[dict]) -> List[ToolCall]:
     tool_calls = []
-    for i, block in enumerate(cast(List[dict], msg.content)):
+    for i, block in enumerate(content):
         if block["type"] != "tool_use":
             continue
         tool_calls.append(
-            _ToolCall(name=block["name"], args=block["input"], id=block["id"], index=i)
+            ToolCall(name=block["name"], args=block["input"], id=block["id"], index=i)
         )
     return tool_calls
