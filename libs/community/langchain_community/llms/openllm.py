@@ -308,7 +308,7 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            async_client = openllm.client.AsyncHTTPClient(self.server_url)
+            async_client = openllm.client.AsyncHTTPClient(self.server_url, self.timeout)
             res = (
                 (await async_client.generate(prompt, **config.model_dump(flatten=True)))
                 .outputs[0]
