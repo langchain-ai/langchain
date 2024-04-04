@@ -136,6 +136,27 @@ def _as_async_iterator(sync_iterator: Callable) -> Callable:
     return _as_sync_iterator
 
 
+def _resolve_cache(cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
+    """Resolve the cache."""
+    if isinstance(cache, BaseCache):
+        llm_cache = cache
+    elif cache is None:
+        llm_cache = get_llm_cache()
+    elif cache is True:
+        llm_cache = get_llm_cache()
+        if llm_cache is None:
+            raise ValueError(
+                "No global cache was configured. Use `set_llm_cache`."
+                "to set a global cache if you want to use a global cache."
+                "Otherwise either pass a cache object or set cache to False/None"
+            )
+    elif cache is False:
+        llm_cache = None
+    else:
+        raise ValueError(f"Unsupported cache value {cache}")
+    return llm_cache
+
+
 def get_prompts(
     params: Dict[str, Any],
     prompts: List[str],
@@ -146,12 +167,10 @@ def get_prompts(
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    if cache is not None and isinstance(cache, BaseCache):
-        llm_cache = cache
-    else:
-        llm_cache = get_llm_cache()
+
+    llm_cache = _resolve_cache(cache)
     for i, prompt in enumerate(prompts):
-        if llm_cache is not None and cache is not False:
+        if llm_cache:
             cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
@@ -171,12 +190,9 @@ async def aget_prompts(
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    if cache is not None and isinstance(cache, BaseCache):
-        llm_cache = cache
-    else:
-        llm_cache = get_llm_cache()
+    llm_cache = _resolve_cache(cache)
     for i, prompt in enumerate(prompts):
-        if llm_cache is not None and cache is not False:
+        if llm_cache:
             cache_val = await llm_cache.alookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
