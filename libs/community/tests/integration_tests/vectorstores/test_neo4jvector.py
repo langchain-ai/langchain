@@ -1,6 +1,6 @@
 """Test Neo4jVector functionality."""
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from langchain_core.documents import Document
 
@@ -794,7 +794,7 @@ def test_metadata_filters_type1() -> None:
         + TYPE_3_FILTERING_TEST_CASES
         + TYPE_4_FILTERING_TEST_CASES
     ):
-        filter_dict: Dict[str, Any] = example[0]
+        filter_dict = cast(Dict[str, Any], example[0])
         output = docsearch.similarity_search("Foo", filter=filter_dict)
         adjusted_indices = [index - 1 for index in example[1]]
         expected_output = [DOCUMENTS[index] for index in adjusted_indices]
