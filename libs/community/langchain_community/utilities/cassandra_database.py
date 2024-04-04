@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import cassio
+import cassio.config
 from cassandra.cluster import ResultSet, Session
 
 IGNORED_KEYSPACES = [
@@ -70,21 +70,26 @@ class CassandraDatabase:
             """Format the error message"""
             return f"Error: {e}"
 
-    def get_keyspace_tables_no_throw(self, keyspace: str) -> str:
+    def get_keyspace_tables_str_no_throw(self, keyspace: str) -> str:
         """Get the tables for the specified keyspace."""
         try:
-            tables = self.get_keyspace_tables(keyspace)
-            schema_string = ""
-            for table in tables:
-                schema_string += table.as_markdown() + "\n\n"
-
+            schema_string = self.get_keyspace_tables_str(keyspace)
             return schema_string
         except Exception as e:
             """Format the error message"""
             return f"Error: {e}"
 
-    def get_keyspace_tables(self, keyspace: str) -> List[Table]:
+    def get_keyspace_tables_str(self, keyspace: str) -> str:
         """Get the tables for the specified keyspace."""
+        tables = self.get_keyspace_tables(keyspace)
+        schema_string = ""
+        for table in tables:
+            schema_string += table.as_markdown() + "\n\n"
+
+        return schema_string
+
+    def get_keyspace_tables(self, keyspace: str) -> List[Table]:
+        """Get the Table objects for the specified keyspace."""
         schema = self._resolve_schema([keyspace])
         if keyspace in schema:
             return schema[keyspace]
@@ -129,10 +134,8 @@ class CassandraDatabase:
         return {"keyspaces": ", ".join(keyspaces)}
 
     def format_keyspace_to_markdown(
-            self, 
-            keyspace: str, 
-            tables: List[Table] = None
-        ) -> str:
+        self, keyspace: str, tables: Optional[List[Table]] = None
+    ) -> str:
         """
         Generates a markdown representation of the schema for a specific keyspace
         by iterating over all tables within that keyspace and calling their
@@ -155,13 +158,12 @@ class CassandraDatabase:
             output = f"## Keyspace: {keyspace}\n\n"
             if tables:
                 for table in tables:
-                    output += (
-                        table.as_markdown(include_keyspace=False, header_level=3) + "\n\n"
-                    )
+                    output += table.as_markdown(include_keyspace=False, header_level=3)
+                    output += "\n\n"
             else:
                 output += "No tables present in keyspace\n\n"
-            
-            return output            
+
+            return output
         else:
             return ""
 
@@ -351,9 +353,7 @@ class CassandraDatabase:
         if not keyspace_list:
             keyspace_list = self._fetch_keyspaces()
 
-        tables_data, columns_data, indexes_data = self._fetch_schema_data(
-            keyspace_list
-        )
+        tables_data, columns_data, indexes_data = self._fetch_schema_data(keyspace_list)
 
         keyspace_dict: dict = {}
         for table_data in tables_data:
@@ -445,18 +445,15 @@ class CassandraDatabase:
             return session
 
         # Use pre-existing session on cassio
-        try:
-            s = cassio.check_resolve_session()
+        s = cassio.config.resolve_session()
+        if s:
             return s
-        except ValueError:
-            # check_resolve_session throws a value error if session is not set
-            pass
 
         # Try to init and return cassio session
         if cassio_init_kwargs:
             if isinstance(cassio_init_kwargs, dict):
                 cassio.init(**cassio_init_kwargs)
-                s = cassio.check_resolve_session()
+                s = cassio.config.check_resolve_session()
                 return s
             else:
                 raise ValueError("cassio_init_kwargs must be a keyword dictionary")
