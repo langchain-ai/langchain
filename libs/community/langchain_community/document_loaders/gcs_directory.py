@@ -79,5 +79,6 @@ class GCSDirectoryLoader(BaseLoader):
                     logger.warning(f"Problem processing blob {blob.name}, message: {e}")
                     continue
                 else:
+                    logger.error(f"Problem processing blob {blob.name}, message: {e}")
                     raise e
         return docs
