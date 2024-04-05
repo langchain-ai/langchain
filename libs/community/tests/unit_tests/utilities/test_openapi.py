@@ -1,17 +1,19 @@
 import unittest
 from unittest.mock import patch
 
-from openapi_pydantic import Reference, Schema
+import pytest
+from openapi_pydantic import Info, Reference, Schema
 
 from langchain_community.utilities.openapi import OpenAPISpec
 
 
 class OpenAPISpecTestCase(unittest.TestCase):
+    @pytest.mark.requires("openapi-pydantic")
     def setUp(self):
-        from openapi_pydantic import Info
         self.instance = OpenAPISpec(info=Info(title="test", version="1.0.0"))
 
     @patch('langchain_community.utilities.openapi.OpenAPISpec.get_referenced_schema')
+    @pytest.mark.requires("openapi-pydantic")
     def test_get_root_referenced_schema_with_obj_ref(self, mock_get_referenced_schema):
         address_schema = Schema()
         address_schema.properties = { 
@@ -28,6 +30,7 @@ class OpenAPISpecTestCase(unittest.TestCase):
 
 
     @patch('langchain_community.utilities.openapi.OpenAPISpec.get_referenced_schema')
+    @pytest.mark.requires("openapi-pydantic")
     def test_get_root_referenced_schema_obj_arr_ref(self, mock_get_referenced_schema):
         hobby_schema = Schema()
         hobby_schema.properties = { 
