@@ -139,6 +139,21 @@ class PostgresCheckpoint(BaseCheckpointSaver):
             )
 
     @staticmethod
+    def create_schema(connection: psycopg.Connection, /) -> None:
+        """Create the schema for the checkpoint saver."""
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS checkpoints (
+                    thread_id TEXT NOT NULL,
+                    checkpoint BYTEA NOT NULL,
+                    thread_ts TIMESTAMPTZ NOT NULL,
+                    parent_ts TIMESTAMPTZ,
+                    PRIMARY KEY (thread_id, thread_ts)
+                );
+                """
+            )
+    @staticmethod
     async def acreate_schema(connection: psycopg.AsyncConnection, /) -> None:
         """Create the schema for the checkpoint saver."""
         async with connection.cursor() as cur:
@@ -155,15 +170,84 @@ class PostgresCheckpoint(BaseCheckpointSaver):
             )
 
     @staticmethod
-    async def adrop_table(connection: psycopg.AsyncConnection, /) -> None:
+    def drop_schema(connection: psycopg.Connection, /) -> None:
+        """Drop the table for the checkpoint saver."""
+        with connection.cursor() as cur:
+            cur.execute("DROP TABLE IF EXISTS checkpoints;")
+
+    @staticmethod
+    async def adrop_schema(connection: psycopg.AsyncConnection, /) -> None:
         """Drop the table for the checkpoint saver."""
         async with connection.cursor() as cur:
             await cur.execute("DROP TABLE IF EXISTS checkpoints;")
 
+
+
     def put(self, config: RunnableConfig, checkpoint: Checkpoint) -> RunnableConfig:
         """Put the checkpoint for the given configuration."""
-        raise NotImplementedError
+        thread_id = config["configurable"]["thread_id"]
+        parent_ts = config["configurable"].get("thread_ts")
 
+        with self._get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO checkpoints (thread_id, thread_ts, parent_ts, checkpoint)
+                    VALUES (%(thread_id)s, %(thread_ts)s, %(parent_ts)s, %(checkpoint)s)
+                    ON CONFLICT (thread_id, thread_ts) 
+                    DO UPDATE SET checkpoint = EXCLUDED.checkpoint;
+                    """,
+                    {
+                        "thread_id": thread_id,
+                        "thread_ts": checkpoint["ts"],
+                        "parent_ts": parent_ts if parent_ts else None,
+                        "checkpoint": self.serializer.dumps(checkpoint),
+                    },
+                )
+
+        return
+
+    async def aput(
+            self, config: RunnableConfig, checkpoint: Checkpoint
+    ) -> RunnableConfig:
+        """Put the checkpoint for the given configuration.
+
+        Args:
+            config: The configuration for the checkpoint.
+                A dict with a `configurable` key which is a dict with
+                a `thread_id` key and an optional `thread_ts` key.
+                For example, { 'configurable': { 'thread_id': 'test_thread' } }
+            checkpoint: That was saved.
+
+        Returns:
+            The configuration for the checkpoint.
+        """
+        thread_id = config["configurable"]["thread_id"]
+        parent_ts = config["configurable"].get("thread_ts")
+        async with self._get_async_connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    """
+                    INSERT INTO checkpoints (thread_id, thread_ts, parent_ts, checkpoint)
+                    VALUES (%(thread_id)s, %(thread_ts)s, %(parent_ts)s, %(checkpoint)s)
+                    ON CONFLICT (thread_id, thread_ts) 
+                    DO UPDATE SET checkpoint = EXCLUDED.checkpoint;
+                    """,
+                    {
+                        "thread_id": thread_id,
+                        "thread_ts": checkpoint["ts"],
+                        "parent_ts": parent_ts if parent_ts else None,
+                        "checkpoint": self.serializer.dumps(checkpoint),
+                    },
+                )
+
+        return {
+            **config,  # TODO(Nuno): Confirm
+            "configurable": {
+                "thread_id": thread_id,
+                "thread_ts": checkpoint["ts"],
+            },
+        }
     async def alist(self, config: RunnableConfig) -> AsyncIterator[CheckpointTuple]:
         """Get all the checkpoints for the given configuration."""
         async with self._get_async_connection() as conn:
@@ -270,44 +354,3 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                             else None,
                         )
 
-    async def aput(
-        self, config: RunnableConfig, checkpoint: Checkpoint
-    ) -> RunnableConfig:
-        """Put the checkpoint for the given configuration.
-
-        Args:
-            config: The configuration for the checkpoint.
-                A dict with a `configurable` key which is a dict with
-                a `thread_id` key and an optional `thread_ts` key.
-                For example, { 'configurable': { 'thread_id': 'test_thread' } }
-            checkpoint: That was saved.
-
-        Returns:
-            The configuration for the checkpoint.
-        """
-        thread_id = config["configurable"]["thread_id"]
-        parent_ts = config["configurable"].get("thread_ts")
-        async with self._get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    INSERT INTO checkpoints (thread_id, thread_ts, parent_ts, checkpoint)
-                    VALUES (%(thread_id)s, %(thread_ts)s, %(parent_ts)s, %(checkpoint)s)
-                    ON CONFLICT (thread_id, thread_ts) 
-                    DO UPDATE SET checkpoint = EXCLUDED.checkpoint;
-                    """,
-                    {
-                        "thread_id": thread_id,
-                        "thread_ts": checkpoint["ts"],
-                        "parent_ts": parent_ts if parent_ts else None,
-                        "checkpoint": self.serializer.dumps(checkpoint),
-                    },
-                )
-
-        return {
-            **config,  # TODO(Nuno): Confirm
-            "configurable": {
-                "thread_id": thread_id,
-                "thread_ts": checkpoint["ts"],
-            },
-        }

@@ -10,7 +10,7 @@ from tests.utils import asyncpg_client
 async def test_async_checkpoint() -> None:
     """Test the async chat history."""
     async with asyncpg_client() as async_connection:
-        await PostgresCheckpoint.adrop_table(async_connection)
+        await PostgresCheckpoint.adrop_schema(async_connection)
         await PostgresCheckpoint.acreate_schema(async_connection)
         checkpoint_saver = PostgresCheckpoint(
             async_connection=async_connection, serializer=PickleSerializer()
@@ -158,7 +158,7 @@ async def test_async_checkpoint() -> None:
 
 async def test_on_conflict_aput() -> None:
     async with asyncpg_client() as async_connection:
-        await PostgresCheckpoint.adrop_table(async_connection)
+        await PostgresCheckpoint.adrop_schema(async_connection)
         await PostgresCheckpoint.acreate_schema(async_connection)
         checkpoint_saver = PostgresCheckpoint(
             async_connection=async_connection, serializer=PickleSerializer()
