@@ -11,7 +11,7 @@ const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "🦜️🔗 Langchain",
+  title: "🦜️🔗 LangChain",
   tagline: "LangChain Python Docs",
   favicon: "img/brand/favicon.png",
   // Set the production url of your site here
@@ -19,7 +19,7 @@ const config = {
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
-
+  trailingSlash: true,
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
 
