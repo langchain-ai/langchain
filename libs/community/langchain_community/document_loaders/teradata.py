@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
-import teradatasql
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -48,6 +47,13 @@ class TeradataLoader(BaseLoader):
 
     def _execute_query(self) -> List[Dict[str, Any]]:
         """Executes the SQL query and returns a list of dictionaries."""
+        try:
+            import teradatasql
+        except ImportError as e:
+            raise ImportError(
+                "The teradatasql package is required for TeradataLoader. "
+                "Please install it using 'pip install teradatasql'."
+            ) from e
         with teradatasql.connect(
             host=self.db_url, user=self.user, password=self.password
         ) as con:
