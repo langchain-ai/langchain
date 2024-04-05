@@ -59,8 +59,6 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_anthropic.output_parsers import ToolsOutputParser, extract_tool_calls
 
-_message_type_lookups = {"human": "user", "ai": "assistant"}
-
 
 def _format_image(image_url: str) -> Dict:
     """
@@ -152,7 +150,15 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
             system = message.content
             continue
 
-        role = _message_type_lookups[message.type]
+        if isinstance(message, AIMessage):
+            role = "assistant"
+        elif isinstance(message, HumanMessage):
+            role = "user"
+        else:
+            raise ValueError(
+                f"Unknown message type does not correspond to user or assistant roles: "
+                f"{message=}"
+            )
         content: Union[str, List[Dict]]
 
         if not isinstance(message.content, str):
@@ -349,7 +355,6 @@ class ChatAnthropic(BaseChatModel):
                     ]
                 message_chunk = AIToolCallsMessageChunk(
                     content=message.content,
-                    tool_calls=message.tool_calls,
                     tool_call_chunks=tool_call_chunks,
                 )
                 yield ChatGenerationChunk(message=message_chunk)
@@ -392,7 +397,6 @@ class ChatAnthropic(BaseChatModel):
                     ]
                 message_chunk = AIToolCallsMessageChunk(
                     content=message.content,
-                    tool_calls=message.tool_calls,
                     tool_call_chunks=tool_call_chunks,
                 )
                 yield ChatGenerationChunk(message=message_chunk)
