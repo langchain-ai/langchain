@@ -76,7 +76,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
-        from langchain_core.utils.json import parse_json_markdown
+        from langchain.output_parsers.json import parse_json_markdown
 
         try:
             data = parse_json_markdown(text)
@@ -110,7 +110,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
-        from langchain_core.utils.json import parse_json_markdown
+        from langchain.output_parsers.json import parse_json_markdown
 
         try:
             data = parse_json_markdown(text)
@@ -141,7 +141,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
-        from langchain_core.utils.json import parse_json_markdown
+        from langchain.output_parsers.json import parse_json_markdown
 
         try:
             data = parse_json_markdown(text)
@@ -174,7 +174,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
     """LLMChain used to extract the response."""
 
     def _run(self, text: str) -> str:
-        from langchain_core.utils.json import parse_json_markdown
+        from langchain.output_parsers.json import parse_json_markdown
 
         try:
             data = parse_json_markdown(text)
@@ -206,7 +206,7 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
     """The LLM chain used to parse the response."""
 
     def _run(self, text: str) -> str:
-        from langchain_core.utils.json import parse_json_markdown
+        from langchain.output_parsers.json import parse_json_markdown
 
         try:
             data = parse_json_markdown(text)
