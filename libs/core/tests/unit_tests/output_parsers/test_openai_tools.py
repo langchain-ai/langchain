@@ -1,10 +1,6 @@
 from typing import Any, AsyncIterator, Iterator, List
 
-from langchain_core.messages import (
-    AIMessageChunk,
-    BaseMessage,
-    ToolCallChunk,
-)
+from langchain_core.messages import AIMessageChunk, BaseMessage, ToolCallChunk
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
@@ -301,302 +297,173 @@ STREAMED_MESSAGES: list = [
         },
     ),
     AIMessageChunk(content=""),
-    AIMessageChunk(
-        content="",
-        additional_kwargs={
-            "tool_calls": [
-                {
-                    "index": 1,
-                    "id": "call_YpExKmDW7ByjE2dHSxVeIWlX",
-                    "function": {"arguments": "", "name": "get_word_length"},
-                    "type": "function",
-                }
-            ]
-        },
-        tool_call_chunks=[
-            ToolCallChunk(
-                name="get_word_length",
-                args="",
-                id="call_YpExKmDW7ByjE2dHSxVeIWlX",
-                index=1,
-            )
-        ],
-    ),
-    AIMessageChunk(
-        content="",
-        additional_kwargs={
-            "tool_calls": [
-                {
-                    "index": 1,
-                    "id": None,
-                    "function": {"arguments": '{"word": "chr', "name": None},
-                    "type": None,
-                }
-            ]
-        },
-        tool_call_chunks=[
-            ToolCallChunk(name=None, args='{"word": "chr', id=None, index=1)
-        ],
-    ),
-    AIMessageChunk(
-        content="",
-        additional_kwargs={
-            "tool_calls": [
-                {
-                    "index": 1,
-                    "id": None,
-                    "function": {"arguments": 'ysanthemum"}', "name": None},
-                    "type": None,
-                }
-            ]
-        },
-        tool_call_chunks=[
-            ToolCallChunk(name=None, args='ysanthemum"}', id=None, index=1)
-        ],
-    ),
-    AIMessageChunk(content=""),
 ]
 
+
+STREAMED_MESSAGES_WITH_TOOL_CALLS = []
+for message in STREAMED_MESSAGES:
+    if message.additional_kwargs:
+        STREAMED_MESSAGES_WITH_TOOL_CALLS.append(
+            AIMessageChunk(
+                content=message.content,
+                additional_kwargs=message.additional_kwargs,
+                tool_call_chunks=[
+                    ToolCallChunk(
+                        name=chunk["function"].get("name"),
+                        args=chunk["function"].get("arguments"),
+                        id=chunk.get("id"),
+                        index=chunk["index"],
+                    )
+                    for chunk in message.additional_kwargs["tool_calls"]
+                ],
+            )
+        )
+    else:
+        STREAMED_MESSAGES_WITH_TOOL_CALLS.append(message)
+
+
 EXPECTED_STREAMED_JSON = [
-    [{"args": {}, "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl", "type": "NameCollector"}],
-    [
-        {
-            "args": {"names": ["suz"]},
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {"names": ["suzy"]},
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {"names": ["suzy", "jerm"]},
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {"names": ["suzy", "jermaine"]},
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {"names": ["suzy", "jermaine", "al"]},
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {"names": ["suzy", "jermaine", "alex"]},
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {"names": ["suzy", "jermaine", "alex"], "person": {}},
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {"names": ["suzy", "jermaine", "alex"], "person": {"age": 39}},
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {
-                "names": ["suzy", "jermaine", "alex"],
-                "person": {"age": 39, "hair_color": "br"},
-            },
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {
-                "names": ["suzy", "jermaine", "alex"],
-                "person": {"age": 39, "hair_color": "brown"},
-            },
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {
-                "names": ["suzy", "jermaine", "alex"],
-                "person": {"age": 39, "hair_color": "brown", "job": "c"},
-            },
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {
-                "names": ["suzy", "jermaine", "alex"],
-                "person": {"age": 39, "hair_color": "brown", "job": "concie"},
-            },
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {
-                "names": ["suzy", "jermaine", "alex"],
-                "person": {"age": 39, "hair_color": "brown", "job": "concierge"},
-            },
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        }
-    ],
-    [
-        {
-            "args": {
-                "names": ["suzy", "jermaine", "alex"],
-                "person": {"age": 39, "hair_color": "brown", "job": "concierge"},
-            },
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        },
-        {
-            "args": {"word": "chr"},
-            "id": "call_YpExKmDW7ByjE2dHSxVeIWlX",
-            "type": "get_word_length",
-        },
-    ],
-    [
-        {
-            "args": {
-                "names": ["suzy", "jermaine", "alex"],
-                "person": {"age": 39, "hair_color": "brown", "job": "concierge"},
-            },
-            "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            "type": "NameCollector",
-        },
-        {
-            "args": {"word": "chrysanthemum"},
-            "id": "call_YpExKmDW7ByjE2dHSxVeIWlX",
-            "type": "get_word_length",
-        },
-    ],
+    {},
+    {"names": ["suz"]},
+    {"names": ["suzy"]},
+    {"names": ["suzy", "jerm"]},
+    {"names": ["suzy", "jermaine"]},
+    {"names": ["suzy", "jermaine", "al"]},
+    {"names": ["suzy", "jermaine", "alex"]},
+    {"names": ["suzy", "jermaine", "alex"], "person": {}},
+    {"names": ["suzy", "jermaine", "alex"], "person": {"age": 39}},
+    {"names": ["suzy", "jermaine", "alex"], "person": {"age": 39, "hair_color": "br"}},
+    {
+        "names": ["suzy", "jermaine", "alex"],
+        "person": {"age": 39, "hair_color": "brown"},
+    },
+    {
+        "names": ["suzy", "jermaine", "alex"],
+        "person": {"age": 39, "hair_color": "brown", "job": "c"},
+    },
+    {
+        "names": ["suzy", "jermaine", "alex"],
+        "person": {"age": 39, "hair_color": "brown", "job": "concie"},
+    },
+    {
+        "names": ["suzy", "jermaine", "alex"],
+        "person": {"age": 39, "hair_color": "brown", "job": "concierge"},
+    },
 ]
+
+
+def _get_iter(use_tool_calls: bool = False) -> Any:
+    if use_tool_calls:
+        list_to_iter = STREAMED_MESSAGES_WITH_TOOL_CALLS
+    else:
+        list_to_iter = STREAMED_MESSAGES
+
+    def input_iter(_: Any) -> Iterator[BaseMessage]:
+        for msg in list_to_iter:
+            yield msg
+
+    return input_iter
+
+
+def _get_aiter(use_tool_calls: bool = False) -> Any:
+    if use_tool_calls:
+        list_to_iter = STREAMED_MESSAGES_WITH_TOOL_CALLS
+    else:
+        list_to_iter = STREAMED_MESSAGES
+
+    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
+        for msg in list_to_iter:
+            yield msg
+
+    return input_iter
 
 
 def test_partial_json_output_parser() -> None:
-    def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
-            yield msg
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
+        chain = input_iter | JsonOutputToolsParser()
 
-    chain = input_iter | JsonOutputToolsParser()
-
-    actual = list(chain.stream(None))
-    chunks_without_ids = [
-        [{k: v for k, v in tool_call.items() if k != "id"} for tool_call in chunk]
-        for chunk in EXPECTED_STREAMED_JSON
-    ]
-    expected: list = [[]] + chunks_without_ids
-    assert actual == expected
+        actual = list(chain.stream(None))
+        expected: list = [[]] + [
+            [{"type": "NameCollector", "args": chunk}]
+            for chunk in EXPECTED_STREAMED_JSON
+        ]
+        assert actual == expected
 
 
 async def test_partial_json_output_parser_async() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
-        for token in STREAMED_MESSAGES:
-            yield token
+    for use_tool_calls in [False, True]:
+        input_iter = _get_aiter(use_tool_calls)
+        chain = input_iter | JsonOutputToolsParser()
 
-    chain = input_iter | JsonOutputToolsParser()
-
-    actual = [p async for p in chain.astream(None)]
-    chunks_without_ids = [
-        [{k: v for k, v in tool_call.items() if k != "id"} for tool_call in chunk]
-        for chunk in EXPECTED_STREAMED_JSON
-    ]
-    expected: list = [[]] + chunks_without_ids
-    assert actual == expected
+        actual = [p async for p in chain.astream(None)]
+        expected: list = [[]] + [
+            [{"type": "NameCollector", "args": chunk}]
+            for chunk in EXPECTED_STREAMED_JSON
+        ]
+        assert actual == expected
 
 
 def test_partial_json_output_parser_return_id() -> None:
-    def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
-            yield msg
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
+        chain = input_iter | JsonOutputToolsParser(return_id=True)
 
-    chain = input_iter | JsonOutputToolsParser(return_id=True)
-
-    actual = list(chain.stream(None))
-    assert actual == [[]] + EXPECTED_STREAMED_JSON
+        actual = list(chain.stream(None))
+        expected: list = [[]] + [
+            [
+                {
+                    "type": "NameCollector",
+                    "args": chunk,
+                    "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
+                }
+            ]
+            for chunk in EXPECTED_STREAMED_JSON
+        ]
+        assert actual == expected
 
 
 def test_partial_json_output_key_parser() -> None:
-    def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
-            yield msg
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
+        chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
-    chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
-
-    actual = list(chain.stream(None))
-    name_collector_chunks = [
-        [tool_call["args"] for tool_call in chunk]
-        for chunk in EXPECTED_STREAMED_JSON[:-2]
-    ]
-    expected: list = [[]] + name_collector_chunks
-    assert actual == expected
+        actual = list(chain.stream(None))
+        expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+        assert actual == expected
 
 
 async def test_partial_json_output_parser_key_async() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
-        for token in STREAMED_MESSAGES:
-            yield token
+    for use_tool_calls in [False, True]:
+        input_iter = _get_aiter(use_tool_calls)
 
-    chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
+        chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
-    actual = [p async for p in chain.astream(None)]
-    name_collector_chunks = [
-        [tool_call["args"] for tool_call in chunk]
-        for chunk in EXPECTED_STREAMED_JSON[:-2]
-    ]
-    expected: list = [[]] + name_collector_chunks
-    assert actual == expected
+        actual = [p async for p in chain.astream(None)]
+        expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+        assert actual == expected
 
 
 def test_partial_json_output_key_parser_first_only() -> None:
-    def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
-            yield msg
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
 
-    chain = input_iter | JsonOutputKeyToolsParser(
-        key_name="NameCollector", first_tool_only=True
-    )
-    expected = [chunk[0]["args"] for chunk in EXPECTED_STREAMED_JSON[:-2]]
+        chain = input_iter | JsonOutputKeyToolsParser(
+            key_name="NameCollector", first_tool_only=True
+        )
 
-    assert list(chain.stream(None)) == expected
+        assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
 
 
 async def test_partial_json_output_parser_key_async_first_only() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
-        for token in STREAMED_MESSAGES:
-            yield token
+    for use_tool_calls in [False, True]:
+        input_iter = _get_aiter(use_tool_calls)
 
-    chain = input_iter | JsonOutputKeyToolsParser(
-        key_name="NameCollector", first_tool_only=True
-    )
-    expected = [chunk[0]["args"] for chunk in EXPECTED_STREAMED_JSON[:-2]]
+        chain = input_iter | JsonOutputKeyToolsParser(
+            key_name="NameCollector", first_tool_only=True
+        )
 
-    assert [p async for p in chain.astream(None)] == expected
+        assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
 
 
 class Person(BaseModel):
@@ -630,26 +497,24 @@ EXPECTED_STREAMED_PYDANTIC = [
 
 
 def test_partial_pydantic_output_parser() -> None:
-    def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
-            yield msg
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
 
-    chain = input_iter | PydanticToolsParser(
-        tools=[NameCollector], first_tool_only=True
-    )
+        chain = input_iter | PydanticToolsParser(
+            tools=[NameCollector], first_tool_only=True
+        )
 
-    actual = list(chain.stream(None))
-    assert actual == EXPECTED_STREAMED_PYDANTIC
+        actual = list(chain.stream(None))
+        assert actual == EXPECTED_STREAMED_PYDANTIC
 
 
 async def test_partial_pydantic_output_parser_async() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
-        for token in STREAMED_MESSAGES:
-            yield token
+    for use_tool_calls in [False, True]:
+        input_iter = _get_aiter(use_tool_calls)
 
-    chain = input_iter | PydanticToolsParser(
-        tools=[NameCollector], first_tool_only=True
-    )
+        chain = input_iter | PydanticToolsParser(
+            tools=[NameCollector], first_tool_only=True
+        )
 
-    actual = [p async for p in chain.astream(None)]
-    assert actual == EXPECTED_STREAMED_PYDANTIC
+        actual = [p async for p in chain.astream(None)]
+        assert actual == EXPECTED_STREAMED_PYDANTIC

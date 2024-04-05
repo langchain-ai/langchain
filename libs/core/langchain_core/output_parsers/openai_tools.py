@@ -85,9 +85,11 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
             )
         message = generation.message
         if isinstance(message, AIMessage) and message.tool_calls is not None:
-            tool_calls = (
-                [tc.dict() for tc in message.tool_calls]
-            )
+            tool_calls = [tc.dict() for tc in message.tool_calls]
+            for tool_call in tool_calls:
+                _ = tool_call.pop("index")
+                if not self.return_id:
+                    _ = tool_call.pop("id")
         else:
             try:
                 raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
