@@ -949,7 +949,7 @@ def _make_tools_invocation(
         for idx, (name, arguments) in enumerate(name_to_arguments.items())
     ]
     tool_calls = [
-        ToolCall(name=name, args=args, id=idx)
+        ToolCall(name=name, args=args, id=str(idx))
         for idx, (name, args) in enumerate(name_to_arguments.items())
     ]
     return AIToolCallsMessage(
