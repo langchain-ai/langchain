@@ -20,6 +20,7 @@ Could not import AsyncOpenSearch.
 Please install it with `pip install opensearch-py`."""
 
 SCRIPT_SCORING_SEARCH = "script_scoring"
+HYBRID_SEARCH = 'hybrid_search'
 PAINLESS_SCRIPTING_SEARCH = "painless_scripting"
 MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
 
@@ -419,6 +420,7 @@ class OpenSearchVectorSearch(VectorStore):
         self.index_name = index_name
         http_auth = kwargs.get("http_auth")
         self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
+        self.hybrid_search_weights = kwargs.get("hybrid_search_weights", (0.7, 0.3))
         self.client = _get_opensearch_client(opensearch_url, **kwargs)
         self.async_client = _get_async_opensearch_client(opensearch_url, **kwargs)
         self.engine = kwargs.get("engine")
@@ -732,47 +734,73 @@ class OpenSearchVectorSearch(VectorStore):
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        """Return docs and it's scores most similar to query.
-
-        By default, supports Approximate Search.
-        Also supports Script Scoring and Painless Scripting.
+        """Return docs and their similarity scores based on the input query.
 
         Args:
-            query: Text to look up documents similar to.
+            query: The query text to search for.
             k: Number of Documents to return. Defaults to 4.
 
         Returns:
-            List of Documents along with its scores most similar to the query.
+            List of tuples containing the Document and its similarity score.
 
         Optional Args:
-            same as `similarity_search`
+            search_type: The type of search to perform. Can be one of:
+                - "approximate_search" (default)
+                - "script_scoring"
+                - "painless_scripting"
+                - "hybrid_search"
+            query_text: The query text to use for keyword search in hybrid search.
+            Other optional arguments are the same as `similarity_search`.
         """
         embedding = self.embedding_function.embed_query(query)
-        return self.similarity_search_with_score_by_vector(embedding, k, **kwargs)
+        hits = self._raw_similarity_search_with_score_by_vector(
+            embedding=embedding, k=k, query_text=query, **kwargs
+        )
+        text_field = kwargs.get("text_field", "text")
+        metadata_field = kwargs.get("metadata_field", "metadata")
+
+        documents_with_scores = [
+            (
+                Document(
+                    page_content=hit["_source"][text_field],
+                    metadata=(
+                        hit["_source"]
+                        if metadata_field == "*" or metadata_field not in hit["_source"]
+                        else hit["_source"][metadata_field]
+                    ),
+                ),
+                hit["_score"],
+            )
+            for hit in hits
+        ]
+        return documents_with_scores
 
     def similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        """Return docs and it's scores most similar to the embedding vector.
-
-        By default, supports Approximate Search.
-        Also supports Script Scoring and Painless Scripting.
+        """Return docs and their similarity scores based on the input vector.
 
         Args:
-            embedding: Embedding vector to look up documents similar to.
+            embedding: The embedding vector to search for.
             k: Number of Documents to return. Defaults to 4.
 
         Returns:
-            List of Documents along with its scores most similar to the query.
+            List of tuples containing the Document and its similarity score.
 
         Optional Args:
-            same as `similarity_search`
+            search_type: The type of search to perform. Can be one of:
+                - "approximate_search" (default)
+                - "script_scoring"
+                - "painless_scripting"
+                - "hybrid_search"
+            query_text: The query text to use for keyword search in hybrid search.
+            Other optional arguments are the same as `similarity_search`.
         """
         text_field = kwargs.get("text_field", "text")
         metadata_field = kwargs.get("metadata_field", "metadata")
 
         hits = self._raw_similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, **kwargs
+            embedding=embedding, k=k, query_text=kwargs.get("query_text", ""), **kwargs
         )
 
         documents_with_scores = [
@@ -897,6 +925,44 @@ class OpenSearchVectorSearch(VectorStore):
             search_query = _default_painless_scripting_query(
                 embedding, k, space_type, pre_filter, vector_field
             )
+        elif search_type == HYBRID_SEARCH:
+            keyword_weight, vector_weight = self.hybrid_search_weights
+            query_text = kwargs.get("query_text", "")
+            search_query = {
+                "size": k,
+                "query": {
+                    "function_score": {
+                        "query": {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "match": {
+                                            "text": query_text
+                                        }
+                                    },
+                                    {
+                                        "knn": {
+                                            vector_field: {
+                                                "vector": embedding,
+                                                "k": k
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "functions": [
+                            {
+                                "weight": keyword_weight
+                            },
+                            {
+                                "weight": vector_weight
+                            }
+                        ],
+                        "score_mode": "sum"
+                    }
+                }
+            }
         else:
             raise ValueError("Invalid `search_type` provided as an argument")
 
