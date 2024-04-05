@@ -8,12 +8,12 @@ from langchain_core.output_parsers import (
     BaseCumulativeTransformOutputParser,
     BaseGenerationOutputParser,
 )
-from langchain_core.utils.json import parse_partial_json
 from langchain_core.outputs.chat_generation import (
     ChatGeneration,
     Generation,
 )
 from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.utils.json import parse_partial_json
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
