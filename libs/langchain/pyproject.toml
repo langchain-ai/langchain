@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.1.12"
+version = "0.1.14"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,9 +12,9 @@ langchain-server = "langchain.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.31"
+langchain-core = "^0.1.37"
 langchain-text-splitters = ">=0.0.1,<0.1"
-langchain-community = ">=0.0.28,<0.1"
+langchain-community = ">=0.0.30,<0.1"
 langsmith = "^0.1.17"
 pydantic = ">=1,<3"
 SQLAlchemy = ">=1.4,<3"
@@ -36,7 +36,7 @@ jinja2 = {version = "^3", optional = true}
 tiktoken = {version = ">=0.3.2,<0.6.0", optional = true, python=">=3.9"}
 qdrant-client = {version = "^1.3.1", optional = true, python = ">=3.8.1,<3.12"}
 dataclasses-json = ">= 0.5.7, < 0.7"
-cohere = {version = "^4", optional = true}
+cohere = {version = ">=4,<6", optional = true}
 openai = {version = "<2", optional = true}
 nlpcloud = {version = "^1", optional = true}
 huggingface_hub = {version = "^0", optional = true}
@@ -54,7 +54,7 @@ azure-cosmos = {version="^4.4.0b1", optional=true}
 jq = {version = "^1.4.1", optional = true}
 pdfminer-six = {version = "^20221105", optional = true}
 docarray = {version="^0.32.0", extras=["hnswlib"], optional=true}
-lxml = {version = "^4.9.2", optional = true}
+lxml = {version = ">=4.9.3,<6.0", optional = true}
 pymupdf = {version = "^1.22.3", optional = true}
 rapidocr-onnxruntime = {version = "^1.3.2", optional = true, python = ">=3.8.1,<3.12"}
 pypdfium2 = {version = "^4.10.0", optional = true}

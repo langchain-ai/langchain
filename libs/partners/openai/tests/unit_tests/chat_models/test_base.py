@@ -10,10 +10,14 @@ from langchain_core.messages import (
     FunctionMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
 )
 
 from langchain_openai import ChatOpenAI
-from langchain_openai.chat_models.base import _convert_dict_to_message
+from langchain_openai.chat_models.base import (
+    _convert_dict_to_message,
+    _convert_message_to_dict,
+)
 
 
 def test_openai_model_param() -> None:
@@ -43,6 +47,7 @@ def test__convert_dict_to_message_human() -> None:
     result = _convert_dict_to_message(message)
     expected_output = HumanMessage(content="foo")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_human_with_name() -> None:
@@ -50,6 +55,7 @@ def test__convert_dict_to_message_human_with_name() -> None:
     result = _convert_dict_to_message(message)
     expected_output = HumanMessage(content="foo", name="test")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_ai() -> None:
@@ -57,6 +63,7 @@ def test__convert_dict_to_message_ai() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(content="foo")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_ai_with_name() -> None:
@@ -64,6 +71,7 @@ def test__convert_dict_to_message_ai_with_name() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(content="foo", name="test")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_system() -> None:
@@ -71,6 +79,7 @@ def test__convert_dict_to_message_system() -> None:
     result = _convert_dict_to_message(message)
     expected_output = SystemMessage(content="foo")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_system_with_name() -> None:
@@ -78,6 +87,15 @@ def test__convert_dict_to_message_system_with_name() -> None:
     result = _convert_dict_to_message(message)
     expected_output = SystemMessage(content="foo", name="test")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_tool() -> None:
+    message = {"role": "tool", "content": "foo", "tool_call_id": "bar"}
+    result = _convert_dict_to_message(message)
+    expected_output = ToolMessage(content="foo", tool_call_id="bar")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 @pytest.fixture

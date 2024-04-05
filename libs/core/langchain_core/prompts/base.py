@@ -89,10 +89,15 @@ class BasePromptTemplate(
 
     def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
         if not isinstance(inner_input, dict):
-            raise TypeError(
-                f"Expected mapping type as input to {self.__class__.__name__}. "
-                f"Received {type(inner_input)}."
-            )
+            if len(self.input_variables) == 1:
+                var_name = self.input_variables[0]
+                inner_input = {var_name: inner_input}
+
+            else:
+                raise TypeError(
+                    f"Expected mapping type as input to {self.__class__.__name__}. "
+                    f"Received {type(inner_input)}."
+                )
         missing = set(self.input_variables).difference(inner_input)
         if missing:
             raise KeyError(
@@ -107,9 +112,9 @@ class BasePromptTemplate(
     ) -> PromptValue:
         config = ensure_config(config)
         if self.metadata:
-            config["metadata"].update(self.metadata)
+            config["metadata"] = {**config["metadata"], **self.metadata}
         if self.tags:
-            config["tags"].extend(self.tags)
+            config["tags"] = config["tags"] + self.tags
         return self._call_with_config(
             self._format_prompt_with_error_handling,
             input,
@@ -176,6 +181,23 @@ class BasePromptTemplate(
 
             prompt.format(variable1="foo")
         """
+
+    async def aformat(self, **kwargs: Any) -> FormatOutputType:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+
+        Example:
+
+        .. code-block:: python
+
+            await prompt.aformat(variable1="foo")
+        """
+        return self.format(**kwargs)
 
     @property
     def _prompt_type(self) -> str:

@@ -80,14 +80,14 @@ class BasePDFLoader(BaseLoader, ABC):
         clean up the temporary file after completion.
     """
 
-    def __init__(self, file_path: str, *, headers: Optional[Dict] = None):
+    def __init__(self, file_path: Union[str, Path], *, headers: Optional[Dict] = None):
         """Initialize with a file path.
 
         Args:
             file_path: Either a local, S3 or web path to a PDF file.
             headers: Headers to use for GET request to download a file from a web path.
         """
-        self.file_path = file_path
+        self.file_path = str(file_path)
         self.web_path = None
         self.headers = headers
         if "~" in self.file_path:
@@ -226,7 +226,7 @@ class PyPDFDirectoryLoader(BaseLoader):
 
     def __init__(
         self,
-        path: str,
+        path: Union[str, Path],
         glob: str = "**/[!.]*.pdf",
         silent_errors: bool = False,
         load_hidden: bool = False,
@@ -670,7 +670,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                 raise ValueError(
                     "Could not load credentials to authenticate with AWS client. "
                     "Please check that credentials in the specified "
-                    "profile name are valid."
+                    f"profile name are valid. {e}"
                 ) from e
         self.parser = AmazonTextractPDFParser(
             textract_features=features,

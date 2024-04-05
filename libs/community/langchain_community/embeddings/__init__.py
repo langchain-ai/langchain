@@ -18,6 +18,7 @@ from typing import Any
 _module_lookup = {
     "AlephAlphaAsymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
     "AlephAlphaSymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
+    "AnyscaleEmbeddings": "langchain_community.embeddings.anyscale",
     "AwaEmbeddings": "langchain_community.embeddings.awa",
     "AzureOpenAIEmbeddings": "langchain_community.embeddings.azure_openai",
     "BaichuanTextEmbeddings": "langchain_community.embeddings.baichuan",
@@ -38,6 +39,7 @@ _module_lookup = {
     "GPT4AllEmbeddings": "langchain_community.embeddings.gpt4all",
     "GooglePalmEmbeddings": "langchain_community.embeddings.google_palm",
     "GradientEmbeddings": "langchain_community.embeddings.gradient_ai",
+    "GigaChatEmbeddings": "langchain_community.embeddings.gigachat",
     "HuggingFaceBgeEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceHubEmbeddings": "langchain_community.embeddings.huggingface_hub",
@@ -65,13 +67,17 @@ _module_lookup = {
     "OctoAIEmbeddings": "langchain_community.embeddings.octoai_embeddings",
     "OllamaEmbeddings": "langchain_community.embeddings.ollama",
     "OpenAIEmbeddings": "langchain_community.embeddings.openai",
+    "OpenVINOEmbeddings": "langchain_community.embeddings.openvino",
+    "OpenVINOBgeEmbeddings": "langchain_community.embeddings.openvino",
     "QianfanEmbeddingsEndpoint": "langchain_community.embeddings.baidu_qianfan_endpoint",  # noqa: E501
+    "QuantizedBgeEmbeddings": "langchain_community.embeddings.itrex",
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
     "SelfHostedHuggingFaceEmbeddings": "langchain_community.embeddings.self_hosted_hugging_face",  # noqa: E501
     "SelfHostedHuggingFaceInstructEmbeddings": "langchain_community.embeddings.self_hosted_hugging_face",  # noqa: E501
     "SentenceTransformerEmbeddings": "langchain_community.embeddings.sentence_transformer",  # noqa: E501
+    "SolarEmbeddings": "langchain_community.embeddings.solar",
     "SpacyEmbeddings": "langchain_community.embeddings.spacy_embeddings",
     "SparkLLMTextEmbeddings": "langchain_community.embeddings.sparkllm",
     "TensorflowHubEmbeddings": "langchain_community.embeddings.tensorflow_hub",
@@ -79,6 +85,8 @@ _module_lookup = {
     "VolcanoEmbeddings": "langchain_community.embeddings.volcengine",
     "VoyageEmbeddings": "langchain_community.embeddings.voyageai",
     "XinferenceEmbeddings": "langchain_community.embeddings.xinference",
+    "PremAIEmbeddings": "langchain_community.embeddings.premai",
+    "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
 }
 
 

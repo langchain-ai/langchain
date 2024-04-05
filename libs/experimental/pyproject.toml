@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.0.54"
+version = "0.0.56"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -10,8 +10,8 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.31"
-langchain = "^0.1.12"
+langchain-core = "^0.1.37"
+langchain = "^0.1.14"
 presidio-anonymizer = {version = "^2.2.352", optional = true}
 presidio-analyzer = {version = "^2.2.352", optional = true}
 faker = {version = "^19.3.1", optional = true}
@@ -69,6 +69,7 @@ optional = true
 langchain = {path = "../langchain", develop = true}
 langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
+langchain-openai = {path = "../partners/openai", develop = true}
 
 # An extra used to be able to add extended testing.
 # Please use new-line on formatting to make it easier to add new packages without
