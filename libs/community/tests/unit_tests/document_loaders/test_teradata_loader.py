@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -7,7 +7,7 @@ from langchain_community.document_loaders.teradata import TeradataLoader
 
 @pytest.mark.requires("teradatasql")
 @patch("teradatasql.connect")
-def test_query_execution_with_mock(self, mock_connect) -> None:
+def test_query_execution_with_mock(mock_connect: Mock) -> None:
 
     mock_conn = mock_connect.return_value.__enter__.return_value
     mock_cursor = mock_conn.cursor.return_value.__enter__.return_value
@@ -25,11 +25,10 @@ def test_query_execution_with_mock(self, mock_connect) -> None:
 
     documents = list(loader.lazy_load())
 
-    self.assertTrue(len(documents) > 0, "No documents loaded")
+    assert len(documents) > 0, "No documents loaded"
     first_doc = documents[0]
-    self.assertIn(
-        "version",
-        first_doc.metadata["InfoKey"].lower(),
-        "InfoKey 'version' not found in metadata",
-    )
-    self.assertIsNotNone(first_doc.page_content, "InfoData is None")
+    assert (
+        "version" in first_doc.metadata["InfoKey"].lower()
+    ), "InfoKey 'version' not found in metadata"
+
+    assert first_doc.page_content is not None, "InfoData is None"
