@@ -269,7 +269,6 @@ class MintbaseDocumentLoader(BaseLoader):
             if not self.get_all_tokens:
                 break
 
-
             if (
                 self.max_execution_time is not None
                 and (time.time() - start_time) > self.max_execution_time
