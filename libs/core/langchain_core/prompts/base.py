@@ -251,6 +251,21 @@ class BasePromptTemplate(
             raise ValueError(f"{save_path} must be json or yaml")
 
 
+def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> Dict:
+    base_info = {"page_content": doc.page_content, **doc.metadata}
+    missing_metadata = set(prompt.input_variables).difference(base_info)
+    if len(missing_metadata) > 0:
+        required_metadata = [
+            iv for iv in prompt.input_variables if iv != "page_content"
+        ]
+        raise ValueError(
+            f"Document prompt requires documents to have metadata variables: "
+            f"{required_metadata}. Received document with missing metadata: "
+            f"{list(missing_metadata)}."
+        )
+    return {k: base_info[k] for k in prompt.input_variables}
+
+
 def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
     """Format a document into a string based on a prompt template.
 
@@ -285,16 +300,30 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
             format_document(doc, prompt)
             >>> "Page 1: This is a joke"
     """
-    base_info = {"page_content": doc.page_content, **doc.metadata}
-    missing_metadata = set(prompt.input_variables).difference(base_info)
-    if len(missing_metadata) > 0:
-        required_metadata = [
-            iv for iv in prompt.input_variables if iv != "page_content"
-        ]
-        raise ValueError(
-            f"Document prompt requires documents to have metadata variables: "
-            f"{required_metadata}. Received document with missing metadata: "
-            f"{list(missing_metadata)}."
-        )
-    document_info = {k: base_info[k] for k in prompt.input_variables}
-    return prompt.format(**document_info)
+    return prompt.format(**_get_document_info(doc, prompt))
+
+
+async def aformat_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
+    """Format a document into a string based on a prompt template.
+
+    First, this pulls information from the document from two sources:
+
+    1. `page_content`:
+        This takes the information from the `document.page_content`
+        and assigns it to a variable named `page_content`.
+    2. metadata:
+        This takes information from `document.metadata` and assigns
+        it to variables of the same name.
+
+    Those variables are then passed into the `prompt` to produce a formatted string.
+
+    Args:
+        doc: Document, the page_content and metadata will be used to create
+            the final string.
+        prompt: BasePromptTemplate, will be used to format the page_content
+            and metadata into the final string.
+
+    Returns:
+        string of the document formatted.
+    """
+    return await prompt.aformat(**_get_document_info(doc, prompt))
