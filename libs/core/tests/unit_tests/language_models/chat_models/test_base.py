@@ -236,7 +236,7 @@ async def test_astream_implementation_uses_astream() -> None:
 class FakeTracer(BaseTracer):
     def __init__(self) -> None:
         super().__init__()
-        self.traced_run_ids = []
+        self.traced_run_ids: list = []
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
