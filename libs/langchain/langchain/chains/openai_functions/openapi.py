@@ -137,11 +137,13 @@ def openapi_spec_to_openai_fn(
                     if media_type_object.media_type_schema:
                         if isinstance(media_type_object.media_type_schema, Reference):
                             schema = spec._get_root_referenced_schema(
-                                media_type_object.media_type_schema)
-                        else:    
+                                media_type_object.media_type_schema
+                            )
+                        else:
                             schema = spec.get_schema(
-                                media_type_object.media_type_schema)
-                            
+                                media_type_object.media_type_schema
+                            )
+
                         media_types[media_type] = json.loads(
                             schema.json(exclude_none=True)
                         )
