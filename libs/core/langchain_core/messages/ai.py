@@ -1,5 +1,5 @@
 from json import JSONDecodeError
-from typing import Any, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from langchain_core.load import Serializable
 from langchain_core.messages.base import (
@@ -81,13 +81,35 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
 
 class ToolCall(Serializable):
+    """A call to a tool.
+
+    Attributes:
+        name: (str) the name of the tool to be called
+        args: (dict) the arguments to the tool call
+        id: (str) if provided, an identifier associated with the tool call
+        index: (int) if provided, the index of the tool call in a sequence
+    """
+
     name: str
-    args: dict
+    args: Dict[str, Any]
     id: Optional[str] = None
     index: Optional[int] = None
 
 
 class ToolCallChunk(Serializable):
+    """A chunk of a tool call (e.g., as part of a stream).
+
+    When merging ToolCallChunks (e.g., via AIToolCallsMessageChunk.__add__),
+    all string attributes are concatenated. Chunks are only merged if their
+    values of `index` are equal and not None.
+
+    Attributes:
+        name: (str) if provided, a substring of the name of the tool to be called
+        args: (str) if provided, a JSON substring of the arguments to the tool call
+        id: (str) if provided, a substring of an identifier for the tool call
+        index: (int) if provided, the index of the tool call in a sequence
+    """
+
     name: Optional[str] = None
     args: Optional[str] = None
     id: Optional[str] = None
@@ -95,11 +117,31 @@ class ToolCallChunk(Serializable):
 
 
 class AIToolCallsMessage(AIMessage):
+    """AIMessage containing tool calls."""
+
     tool_calls: Optional[List[ToolCall]] = None
     type: Literal["tool_calls"] = "tool_calls"  # type: ignore[assignment] # noqa: E501
 
 
 class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
+    """AIMessageChunk containing tool calls.
+
+    AIToolCallsMessageChunks have an additional tool_call_chunks attribute,
+    representing a list of ToolCallChunk. When addding two AIToolCallsMessageChunks,
+    their corresponding ToolCallChunks are merged if their values of `index` are
+    equal and not None.
+
+    Example:
+
+    .. code-block:: python
+        left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
+        right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+        (
+            AIToolCallsMessageChunk(content="", tool_call_chunks=left_chunks)
+            + AIToolCallsMessageChunk(content="", tool_call_chunks=right_chunks)
+        ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+    """
+
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
