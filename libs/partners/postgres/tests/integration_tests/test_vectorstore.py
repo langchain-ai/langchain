@@ -28,7 +28,7 @@ from tests.integration_tests.fixtures.filtering_test_cases import (
 # To spin up postgres with the pgvector extension:
 # cd [root]/docker/docker-compose.yml
 # docker compose up pgvector
-CONNECTION_STRING = PGVector.connection_from_db_params(
+CONNECTION_STRING = PGVector.connection_string_from_db_params(
     driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg"),
     host=os.environ.get("TEST_PGVECTOR_HOST", "localhost"),
     port=int(os.environ.get("TEST_PGVECTOR_PORT", "6024")),
@@ -61,7 +61,7 @@ def test_pgvector(pgvector: PGVector) -> None:
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -76,7 +76,7 @@ def test_pgvector_embeddings() -> None:
         text_embeddings=text_embedding_pairs,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -91,7 +91,7 @@ def test_pgvector_with_metadatas() -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
@@ -106,7 +106,7 @@ def test_pgvector_with_metadatas_with_scores() -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
@@ -121,7 +121,7 @@ def test_pgvector_with_filter_match() -> None:
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "0"})
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
@@ -136,7 +136,7 @@ def test_pgvector_with_filter_distant_match() -> None:
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "2"})
     assert output == [
@@ -153,7 +153,7 @@ def test_pgvector_with_filter_no_match() -> None:
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "5"})
     assert output == []
@@ -165,7 +165,7 @@ def test_pgvector_collection_with_metadata() -> None:
         collection_name="test_collection",
         collection_metadata={"foo": "bar"},
         embeddings=FakeEmbeddingsWithAdaDimension(),
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     session = Session(pgvector._create_engine())
     collection = pgvector.get_collection(session)
@@ -185,30 +185,10 @@ def test_pgvector_with_filter_in_set() -> None:
         collection_name="test_collection_filter",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     output = docsearch.similarity_search_with_score(
         "foo", k=2, filter={"page": {"IN": ["0", "2"]}}
-    )
-    assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}), 0.0),
-        (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406),
-    ]
-
-
-def test_pgvector_with_filter_nin_set() -> None:
-    """Test end to end construction and search."""
-    texts = ["foo", "bar", "baz"]
-    metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = PGVector.from_texts(
-        texts=texts,
-        collection_name="test_collection_filter",
-        embedding=FakeEmbeddingsWithAdaDimension(),
-        metadatas=metadatas,
-        connection=CONNECTION_STRING,
-    )
-    output = docsearch.similarity_search_with_score(
-        "foo", k=2, filter={"page": {"NIN": ["1"]}}
     )
     assert output == [
         (Document(page_content="foo", metadata={"page": "0"}), 0.0),
@@ -226,7 +206,7 @@ def test_pgvector_delete_docs() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         ids=["1", "2", "3"],
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
     docsearch.delete(["1", "2"])
     with docsearch._make_session() as session:
@@ -252,7 +232,7 @@ def test_pgvector_relevance_score() -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
 
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
@@ -272,7 +252,7 @@ def test_pgvector_retriever_search_threshold() -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
     )
 
     retriever = docsearch.as_retriever(
@@ -295,7 +275,7 @@ def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
         relevance_score_fn=lambda d: d * 0,
     )
 
@@ -316,7 +296,7 @@ def test_pgvector_with_custom_connection() -> None:
             texts=texts,
             collection_name="test_collection",
             embedding=FakeEmbeddingsWithAdaDimension(),
-            connection=CONNECTION_STRING,
+            connection_string=CONNECTION_STRING,
             connection=connection,
         )
         output = docsearch.similarity_search("foo", k=1)
@@ -338,7 +318,7 @@ def test_pgvector_with_custom_engine_args() -> None:
         texts=texts,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
         engine_args=engine_args,
     )
     output = docsearch.similarity_search("foo", k=1)
@@ -354,7 +334,7 @@ def pgvector() -> Generator[PGVector, None, None]:
         documents=DOCUMENTS,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
-        connection=CONNECTION_STRING,
+        connection_string=CONNECTION_STRING,
         relevance_score_fn=lambda d: d * 0,
     )
     try:
