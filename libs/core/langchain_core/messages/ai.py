@@ -1,6 +1,6 @@
+import warnings
 from json import JSONDecodeError
 from typing import Any, Dict, List, Literal, Optional
-import warnings
 
 from langchain_core.load import Serializable
 from langchain_core.messages.base import (
@@ -90,6 +90,7 @@ class AIMessage(BaseMessage):
         # TODO: best-effort parsing
         return values
 
+
 AIMessage.update_forward_refs()
 
 
@@ -158,9 +159,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     [tc.dict() for tc in other.tool_call_chunks or []],
                 )
                 if raw_tool_calls:
-                    tool_call_chunks = [
-                        ToolCallChunk(**rtc) for rtc in raw_tool_calls
-                    ]
+                    tool_call_chunks = [ToolCallChunk(**rtc) for rtc in raw_tool_calls]
                 else:
                     tool_call_chunks = None
             else:
