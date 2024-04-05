@@ -15,6 +15,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "ai",
         "AIMessageChunk",
     ),
+    ("langchain", "schema", "messages", "AIToolCallsMessage"): (
+        "langchain_core",
+        "messages",
+        "ai",
+        "AIToolCallsMessage",
+    ),
     ("langchain", "schema", "messages", "BaseMessage"): (
         "langchain_core",
         "messages",
