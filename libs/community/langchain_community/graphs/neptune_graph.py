@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
 import json
-from typing import Any, Dict, List, Tuple, Union, Optional
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 class NeptuneQueryException(Exception):
