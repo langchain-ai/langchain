@@ -195,23 +195,6 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                         print(f"{column}: {row[column]}")
             print()
 
-    def on_llm_start(
-        self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Store the prompts"""
-        pass
-
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        """Do nothing when a new token is generated."""
-        pass
 
     def on_llm_end(
         self,
@@ -295,53 +278,6 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 context = inputs["context"]
             self.schema.context = context
             self.schema.query = inputs["question"]
-        pass
-
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
-        """Do nothing when chain ends."""
-        pass
-
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Do nothing when LLM chain outputs an error."""
-        pass
-
-    def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        **kwargs: Any,
-    ) -> None:
-        """Do nothing when tool starts."""
-        pass
-
-    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
-        """Do nothing when agent takes a specific action."""
-        pass
-
-    def on_tool_end(
-        self,
-        output: str,
-        observation_prefix: Optional[str] = None,
-        llm_prefix: Optional[str] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Do nothing when tool ends."""
-        pass
-
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Do nothing when tool outputs an error."""
-        pass
-
-    def on_text(self, text: str, **kwargs: Any) -> None:
-        """Do nothing"""
-        pass
-
-    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
-        """Do nothing"""
         pass
 
     def on_retriever_start(
