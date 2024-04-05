@@ -49,7 +49,6 @@ from langchain_community.chat_models.maritalk import ChatMaritalk
 from langchain_community.chat_models.minimax import MiniMaxChat
 from langchain_community.chat_models.mlflow import ChatMlflow
 from langchain_community.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
-from langchain_community.chat_models.mlx import ChatMLX
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
@@ -78,7 +77,6 @@ __all__ = [
     "ChatGooglePalm",
     "ChatMlflow",
     "ChatMLflowAIGateway",
-    "ChatMLX",
     "ChatOllama",
     "ChatVertexAI",
     "JinaChat",
@@ -136,7 +134,6 @@ _module_lookup = {
     "ChatMLflowAIGateway": "langchain_community.chat_models.mlflow_ai_gateway",
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
-    "ChatMLX": "langchain_community.chat_models.mlx",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
