@@ -204,7 +204,7 @@ class Clickhouse(VectorStore):
             )
         self.client.command(self.schema)
 
-    def _schema(self, dim: int, index_params: Optional[Union[List, Dict]]) -> str:
+    def _schema(self, dim: int, index_params: Optional[str]) -> str:
         """Create table schema
         :param dim: dimension of embeddings
         :param index_params: parameters used for index
