@@ -25,7 +25,6 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Print out that we are entering a chain."""
         class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
         print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")  # noqa: T201
-        # print(serialized)  # noqa: T201
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
@@ -37,12 +36,10 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Run when a LLM starts running."""
         llm_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
         print(f"\n\n\033[1m> Entering {llm_name} with prompt: {prompts} ...\033[0m")  # noqa: T201
-        # print(prompts)
-        # print(serialized)  # noqa: T201
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""
-        print("\n\033[1m> Finished llm.\033[0m")  # noqa: T201
+        print("\n\033[1m> Finished llm chain.\033[0m")  # noqa: T201
 
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any

@@ -8,7 +8,7 @@ sidebar_class_name: hidden
 Head to [Integrations](/docs/integrations/callbacks/) for documentation on built-in callbacks integrations with 3rd-party tools.
 :::
 
-The core idea of LangChain's callbacks system is to provide a set of hooks to allow you entry into various stages of your application. This is useful for loggging, tracing and monitoring.
+LangChain provides a callbacks system that provides a set of hooks to allow you entry into various stages of your application. This is useful for loggging, tracing and monitoring.
 
 ## Concepts
 Concepts include the hooks or events that provide entry to the application and the callbacks handler object which subscribes to one or more of these events.
@@ -37,20 +37,24 @@ Concepts include the hooks or events that provide entry to the application and t
 
 ### Callbacks Handler
 
-Callbacks handlers are objects theat implement the method for each event you are interested in. Handlers register for these events using the `callbacks` argument available throughout the API. When the event is triggered, LangChain will call the appropriated method on every registered handler.
+Callbacks handlers are objects that implement the associated method (see table above) for each event you are interested in. Handlers register for these events using the `callbacks` argument available throughout the API. When the event is triggered, LangChain will call the appropriated method on every registered handler.
 
 
 ### Types
 
 The callbacks are available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
 
-- **Constructor callbacks**: defined in the constructor, e.g. `LLMChain(callbacks=[handler], tags=['a-tag'])`. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the `LLMChain` constructor, it will not be used by the Model attached to that chain.
-- **Request callbacks**: Defined in the `invoke` method used for issuing a request. In this case, the callbacks will be used only for that specific request (and all sub-requests that it contains (e.g. a call to an LLMChain triggers a call to a Model, which uses the same handler passed in the `invoke` method).
+- **Constructor callbacks**: Defined in the constructor, e.g. `LLMChain(callbacks=[handler], tags=['a-tag'])`. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the `LLMChain` constructor, it will not be used by the Model attached to that chain.
+- **Request callbacks**: Defined in the `invoke` method used for issuing a request. In this case, the callbacks will be used for that specific request (and all sub-requests that it contains (e.g. defining in the `invoke` method of a LCEL chain triggers a call to all entities in the chain, using the same handler). The same approach can be used for the `ainvoke`, `batch` and `abatch` methods.):
 
+#### When do you want to use each of these?
+
+- Constructor callbacks are most useful for use cases such as logging, monitoring, etc., which are _not specific to a single request_, but rather to the entire chain. For example, if you want to log all the requests made to an entire chain, you would pass a handler to the constructor.
+- Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the `invoke()` method through the `config` option.
 
 ## Quick start
 
-LangChain provides a few built-in handlers that you can use to get started. The most basic handler is the `StdOutCallbackHandler`, which simply logs all events to `stdout`.
+Let us understand how to use callbacks by examining one of the built-in handlers provided by LangChain - the `StdOutCallbackHandler`, which simply logs all events to `stdout`.
 
 **Note**: when the `verbose` flag on the object is set to true, the `StdOutCallbackHandler` will be invoked even without being explicitly passed in.
 
@@ -63,72 +67,19 @@ handler = StdOutCallbackHandler()
 llm = OpenAI()
 prompt = PromptTemplate.from_template("1 + {number} = ")
 
-# Constructor callback: First, let's explicitly set the StdOutCallbackHandler when initializing our chain
-# chain = LLMChain(llm=llm, prompt=prompt, callbacks=[handler])
-chain.invoke({"number":2, config={"callbacks": handler})
+# Constructor callback: we set the callback when initializing the model
+chain = prompt | model.with_config({"callbacks": [handler]})
+chain.invoke({"number": 20})
 
-# Use verbose flag: Then, let's use the `verbose` flag to achieve the same result
-chain = LLMChain(llm=llm, prompt=prompt, verbose=True)
-chain.invoke({"number":2})
+# Constructor callback: we set the callback when initializing the prompt
+chain = prompt.with_config({"callbacks": [handler]}) | model
+chain.invoke({"number": 25})
 
-# Request callbacks: Finally, let's use the request `callbacks` to achieve the same result
-chain = LLMChain(llm=llm, prompt=prompt)
-chain.invoke({"number":2}, {"callbacks":[handler]})
 
+# Request callbacks: we set the request callback on the chain and see it propagated to all subrequests
+chain = prompt | model
+chain.invoke({"number": 32}, config = config)
 ```
-
-<CodeOutputBlock lang="python">
-
-```
-> Entering new LLMChain chain...
-Prompt after formatting:
-1 + 2 = 
-
-> Finished chain.
-
-
-> Entering new LLMChain chain...
-Prompt after formatting:
-1 + 2 = 
-
-> Finished chain.
-
-
-> Entering new LLMChain chain...
-Prompt after formatting:
-1 + 2 = 
-
-> Finished chain.
-```
-
-</CodeOutputBlock>
-
-## Where to pass in callbacks
-
-The `callbacks` are available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) in two different places:
-
-- **Constructor callbacks**: defined in the constructor, e.g. `LLMChain(callbacks=[handler], tags=['a-tag'])`. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the `LLMChain` constructor, it will not be used by the Model attached to that chain.
-- **Request callbacks**: defined in the 'invoke' method used for issuing a request. In this case, the callbacks will be used for that specific request only, and all sub-requests that it contains (e.g. a call to an LLMChain triggers a call to a Model, which uses the same handler passed in the `invoke()` method).  In the `invoke()` method callbacks are passed through the config parameter.
-Example with the 'invoke' method (**Note**: the same approach can be used for the `batch`, `ainvoke`, and `abatch` methods.):
-```python
-handler = StdOutCallbackHandler()
-llm = OpenAI()
-prompt = PromptTemplate.from_template("1 + {number} = ")
-
-config = {
-    'callbacks' : [handler]
-}
-
-chain = prompt | chain
-chain.invoke({"number":2}, config=config)
-```
-
-The `verbose` argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) as a constructor argument, e.g. `LLMChain(verbose=True)`, and it is equivalent to passing a `ConsoleCallbackHandler` to the `callbacks` argument of that object and all child objects. This is useful for debugging, as it will log all events to the console.
-
-### When do you want to use each of these?
-
-- Constructor callbacks are most useful for use cases such as logging, monitoring, etc., which are _not specific to a single request_, but rather to the entire chain. For example, if you want to log all the requests made to an entire chain, you would pass a handler to the constructor.
-- Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the `invoke()` method through the `config` option.
 
 ## tmp
 
@@ -201,3 +152,48 @@ class BaseCallbackHandler:
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
 ```
+
+```
+
+<CodeOutputBlock lang="python">
+
+```
+> Entering new LLMChain chain...
+Prompt after formatting:
+1 + 2 = 
+
+> Finished chain.
+
+
+> Entering new LLMChain chain...
+Prompt after formatting:
+1 + 2 = 
+
+> Finished chain.
+
+
+> Entering new LLMChain chain...
+Prompt after formatting:
+1 + 2 = 
+
+> Finished chain.
+```
+
+</CodeOutputBlock>
+
+
+```python
+handler = StdOutCallbackHandler()
+llm = OpenAI()
+prompt = PromptTemplate.from_template("1 + {number} = ")
+
+config = {
+    'callbacks' : [handler]
+}
+
+chain = prompt | chain
+chain.invoke({"number":2}, config=config)
+```
+
+The `verbose` argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) as a constructor argument, e.g. `LLMChain(verbose=True)`, and it is equivalent to passing a `ConsoleCallbackHandler` to the `callbacks` argument of that object and all child objects. This is useful for debugging, as it will log all events to the console.
+
