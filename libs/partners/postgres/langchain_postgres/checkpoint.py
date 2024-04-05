@@ -2,7 +2,7 @@
 import abc
 import pickle
 from contextlib import asynccontextmanager, contextmanager
-from typing import AsyncGenerator, AsyncIterator, Generator, Optional, Union
+from typing import AsyncGenerator, AsyncIterator, Generator, Optional, Union, cast
 
 import psycopg
 from langchain_core.runnables import ConfigurableFieldSpec, RunnableConfig
@@ -11,21 +11,19 @@ from langgraph.checkpoint.base import Checkpoint, CheckpointThreadTs, Checkpoint
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 
 
-class Serializer(abc.ABC):
+class CheckpointSerializer(abc.ABC):
     """A serializer for serializing and deserializing objects to and from bytes."""
 
-    @staticmethod
     @abc.abstractmethod
-    def dumps(obj: object) -> bytes:
+    def dumps(self, obj: Checkpoint) -> bytes:
         """Serialize an object to bytes."""
 
-    @staticmethod
     @abc.abstractmethod
-    def loads(data: bytes) -> object:
+    def loads(self, data: bytes) -> Checkpoint:
         """Deserialize an object from bytes."""
 
 
-class PickleSerializer(Serializer):
+class PickleCheckpointSerializer(CheckpointSerializer):
     """Use the pickle module to serialize and deserialize objects.
 
     This serializer uses the pickle module to serialize and deserialize objects.
@@ -39,36 +37,119 @@ class PickleSerializer(Serializer):
         have serialized yourself and can guarantee the integrity of.
     """
 
-    @staticmethod
-    def dumps(obj: object) -> bytes:
+    def dumps(self, obj: Checkpoint) -> bytes:
         """Serialize an object to bytes."""
         return pickle.dumps(obj)
 
-    @staticmethod
-    def loads(data: bytes) -> object:
+    def loads(self, data: bytes) -> Checkpoint:
         """Deserialize an object from bytes."""
-        return pickle.loads(data)
+        return cast(Checkpoint, pickle.loads(data))
 
 
 class PostgresCheckpoint(BaseCheckpointSaver):
-    """Implementation of a langgraph checkpoint saver for Postgres.
+    """LangGraph checkpoint saver for Postgres.
 
-    This is a reference implementation of a checkpoint saver for Postgres.
+    This implementation of a checkpoint saver uses a Postgres database to save
+    and retrieve checkpoints. It uses the psycopg3 package to interact with the
+    Postgres database.
 
-    The implementation provides some functionality to create the necessary table
-    and schema for the checkpoint saver, as well as to get and put checkpoints.
+    The checkpoint accepts either a sync_connection in the form of a psycopg.Connection
+    or a psycopg.ConnectionPool object, or an async_connection in the form of a
+    psycopg.AsyncConnection or psycopg.AsyncConnectionPool object.
+
+    Usage:
+
+    1. First time use: create schema in the database using the `create_schema` method or
+       the async version `acreate_schema` method.
+    2. Create a PostgresCheckpoint object with a serializer and an appropriate
+       connection object.
+       It's recommended to use a connection pool object for the connection.
+       If using a connection object, you are responsible for closing the connection
+       when done.
 
     Examples:
 
+
+    Sync usage with a connection pool:
+
         .. code-block:: python
 
-            from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-            from langchain_postgres.checkpoint import PostgresCheckpoint
+            from psycopg_pool import ConnectionPool
+            from langchain_postgres.checkpoint import (
+                PostgresCheckpoint, PickleCheckpointSerializer
+            )
 
-            import psycopg
+            pool = ConnectionPool(
+                # Example configuration
+                conninfo="postgresql://user:password@localhost:5432/dbname",
+                max_size=20,
+            )
+
+            # Uses the pickle module for serialization
+            # Make sure that you're only de-serializing trusted data
+            # (e.g., payloads that you have serialized yourself).
+            # Or implement a custom serializer.
+            checkpoint = PostgresCheckpoint(
+                serializer=PickleCheckpointSerializer(),
+                sync_connection=pool,
+            )
+
+            # Use the checkpoint object to put, get, list checkpoints, etc.
+
+
+    Async usage with a connection pool:
+
+        .. code-block:: python
+
+            from psycopg_pool import AsyncConnectionPool
+            from langchain_postgres.checkpoint import (
+                PostgresCheckpoint, PickleCheckpointSerializer
+            )
+
+            pool = AsyncConnectionPool(
+                # Example configuration
+                conninfo="postgresql://user:password@localhost:5432/dbname",
+                max_size=20,
+            )
+
+            # Uses the pickle module for serialization
+            # Make sure that you're only de-serializing trusted data
+            # (e.g., payloads that you have serialized yourself).
+            # Or implement a custom serializer.
+            checkpoint = PostgresCheckpoint(
+                serializer=PickleCheckpointSerializer(),
+                async_connection=pool,
+            )
+
+            # Use the checkpoint object to put, get, list checkpoints, etc.
+
+
+    Async usage with a connection object:
+
+        .. code-block:: python
+
+            from psycopg import AsyncConnection
+            from langchain_postgres.checkpoint import (
+                PostgresCheckpoint, PickleCheckpointSerializer
+            )
+
+            conninfo="postgresql://user:password@localhost:5432/dbname"
+            # Take care of closing the connection when done
+            async with AsyncConnection(conninfo=conninfo) as conn:
+                # Uses the pickle module for serialization
+                # Make sure that you're only de-serializing trusted data
+                # (e.g., payloads that you have serialized yourself).
+                # Or implement a custom serializer.
+                checkpoint = PostgresCheckpoint(
+                    serializer=PickleCheckpointSerializer(),
+                    async_connection=conn,
+                )
+
+                # Use the checkpoint object to put, get, list checkpoints, etc.
+                ...
     """
 
-    serializer: Serializer
+    serializer: CheckpointSerializer
     """The serializer for serializing and deserializing objects to and from bytes."""
 
     sync_connection: Optional[Union[psycopg.Connection, ConnectionPool]] = None
@@ -88,6 +169,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
 
     class Config:
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:
@@ -104,12 +186,8 @@ class PostgresCheckpoint(BaseCheckpointSaver):
             CheckpointThreadTs,
         ]
 
-    def get(self, config: RunnableConfig) -> Optional[Checkpoint]:
-        """Get the checkpoint for the given configuration."""
-        raise NotImplementedError
-
     @contextmanager
-    def _get_connection(self) -> Generator[psycopg.Connection, None, None]:
+    def _get_sync_connection(self) -> Generator[psycopg.Connection, None, None]:
         """Get the connection to the Postgres database."""
         if isinstance(self.sync_connection, psycopg.Connection):
             yield self.sync_connection
@@ -153,6 +231,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                 );
                 """
             )
+
     @staticmethod
     async def acreate_schema(connection: psycopg.AsyncConnection, /) -> None:
         """Create the schema for the checkpoint saver."""
@@ -181,14 +260,24 @@ class PostgresCheckpoint(BaseCheckpointSaver):
         async with connection.cursor() as cur:
             await cur.execute("DROP TABLE IF EXISTS checkpoints;")
 
-
-
     def put(self, config: RunnableConfig, checkpoint: Checkpoint) -> RunnableConfig:
-        """Put the checkpoint for the given configuration."""
+        """Put the checkpoint for the given configuration.
+
+        Args:
+            config: The configuration for the checkpoint.
+                A dict with a `configurable` key which is a dict with
+                a `thread_id` key and an optional `thread_ts` key.
+                For example, { 'configurable': { 'thread_id': 'test_thread' } }
+            checkpoint: The checkpoint to persist.
+
+        Returns:
+            The RunnableConfig that describes the checkpoint that was just created.
+            It'll contain the `thread_id` and `thread_ts` of the checkpoint.
+        """
         thread_id = config["configurable"]["thread_id"]
         parent_ts = config["configurable"].get("thread_ts")
 
-        with self._get_connection() as conn:
+        with self._get_sync_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -205,10 +294,15 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                     },
                 )
 
-        return
+        return {
+            "configurable": {
+                "thread_id": thread_id,
+                "thread_ts": checkpoint["ts"],
+            },
+        }
 
     async def aput(
-            self, config: RunnableConfig, checkpoint: Checkpoint
+        self, config: RunnableConfig, checkpoint: Checkpoint
     ) -> RunnableConfig:
         """Put the checkpoint for the given configuration.
 
@@ -217,10 +311,11 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                 A dict with a `configurable` key which is a dict with
                 a `thread_id` key and an optional `thread_ts` key.
                 For example, { 'configurable': { 'thread_id': 'test_thread' } }
-            checkpoint: That was saved.
+            checkpoint: The checkpoint to persist.
 
         Returns:
-            The configuration for the checkpoint.
+            The RunnableConfig that describes the checkpoint that was just created.
+            It'll contain the `thread_id` and `thread_ts` of the checkpoint.
         """
         thread_id = config["configurable"]["thread_id"]
         parent_ts = config["configurable"].get("thread_ts")
@@ -242,12 +337,45 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                 )
 
         return {
-            **config,  # TODO(Nuno): Confirm
             "configurable": {
                 "thread_id": thread_id,
                 "thread_ts": checkpoint["ts"],
             },
         }
+
+    def list(self, config: RunnableConfig) -> Generator[CheckpointTuple, None, None]:
+        """Get all the checkpoints for the given configuration."""
+        with self._get_sync_connection() as conn:
+            with conn.cursor() as cur:
+                thread_id = config["configurable"]["thread_id"]
+                cur.execute(
+                    "SELECT checkpoint, thread_ts, parent_ts "
+                    "FROM checkpoints "
+                    "WHERE thread_id = %(thread_id)s "
+                    "ORDER BY thread_ts DESC",
+                    {
+                        "thread_id": thread_id,
+                    },
+                )
+                for value in cur:
+                    yield CheckpointTuple(
+                        {
+                            "configurable": {
+                                "thread_id": thread_id,
+                                "thread_ts": value[1],
+                            }
+                        },
+                        self.serializer.loads(value[0]),
+                        {
+                            "configurable": {
+                                "thread_id": thread_id,
+                                "thread_ts": value[2],
+                            }
+                        }
+                        if value[2]
+                        else None,
+                    )
+
     async def alist(self, config: RunnableConfig) -> AsyncIterator[CheckpointTuple]:
         """Get all the checkpoints for the given configuration."""
         async with self._get_async_connection() as conn:
@@ -280,6 +408,79 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                         if value[2]
                         else None,
                     )
+
+    def get_tuple(self, config: RunnableConfig) -> Optional[CheckpointTuple]:
+        """Get the checkpoint tuple for the given configuration.
+
+        Args:
+            config: The configuration for the checkpoint.
+                A dict with a `configurable` key which is a dict with
+                a `thread_id` key and an optional `thread_ts` key.
+                For example, { 'configurable': { 'thread_id': 'test_thread' } }
+
+        Returns:
+            The checkpoint tuple for the given configuration if it exists,
+            otherwise None.
+
+            If thread_ts is None, the latest checkpoint is returned if it exists.
+        """
+        thread_id = config["configurable"]["thread_id"]
+        thread_ts = config["configurable"].get("thread_ts")
+        with self._get_sync_connection() as conn:
+            with conn.cursor() as cur:
+                if thread_ts:
+                    cur.execute(
+                        "SELECT checkpoint, parent_ts "
+                        "FROM checkpoints "
+                        "WHERE thread_id = %(thread_id)s AND thread_ts = %(thread_ts)s",
+                        {
+                            "thread_id": thread_id,
+                            "thread_ts": thread_ts,
+                        },
+                    )
+                    value = cur.fetchone()
+                    if value:
+                        return CheckpointTuple(
+                            config,
+                            self.serializer.loads(value[0]),
+                            {
+                                "configurable": {
+                                    "thread_id": thread_id,
+                                    "thread_ts": value[1].isoformat(),
+                                }
+                            }
+                            if value[1]
+                            else None,
+                        )
+                else:
+                    cur.execute(
+                        "SELECT checkpoint, thread_ts, parent_ts "
+                        "FROM checkpoints "
+                        "WHERE thread_id = %(thread_id)s "
+                        "ORDER BY thread_ts DESC LIMIT 1",
+                        {
+                            "thread_id": thread_id,
+                        },
+                    )
+                    value = cur.fetchone()
+                    if value:
+                        return CheckpointTuple(
+                            config={
+                                "configurable": {
+                                    "thread_id": thread_id,
+                                    "thread_ts": value[1].isoformat(),
+                                }
+                            },
+                            checkpoint=self.serializer.loads(value[0]),
+                            parent_config={
+                                "configurable": {
+                                    "thread_id": thread_id,
+                                    "thread_ts": value[2].isoformat(),
+                                }
+                            }
+                            if value[2]
+                            else None,
+                        )
 
     async def aget_tuple(self, config: RunnableConfig) -> Optional[CheckpointTuple]:
         """Get the checkpoint tuple for the given configuration.
@@ -353,4 +554,3 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                             if value[2]
                             else None,
                         )
-

@@ -3,8 +3,8 @@ from collections import defaultdict
 from langgraph.checkpoint import Checkpoint
 from langgraph.checkpoint.base import CheckpointTuple
 
-from langchain_postgres.checkpoint import PickleSerializer, PostgresCheckpoint
-from tests.utils import asyncpg_client
+from langchain_postgres.checkpoint import PickleCheckpointSerializer, PostgresCheckpoint
+from tests.utils import asyncpg_client, syncpg_client
 
 
 async def test_async_checkpoint() -> None:
@@ -13,7 +13,7 @@ async def test_async_checkpoint() -> None:
         await PostgresCheckpoint.adrop_schema(async_connection)
         await PostgresCheckpoint.acreate_schema(async_connection)
         checkpoint_saver = PostgresCheckpoint(
-            async_connection=async_connection, serializer=PickleSerializer()
+            async_connection=async_connection, serializer=PickleCheckpointSerializer()
         )
         checkpoint_tuple = [
             c
@@ -155,13 +155,135 @@ async def test_async_checkpoint() -> None:
             parent_config=None,
         )
 
+def test_sync_checkpoint() -> None:
+    """Test the sync check point implementation."""
+    with syncpg_client() as sync_connection:
+        PostgresCheckpoint.drop_schema(sync_connection)
+        PostgresCheckpoint.create_schema(sync_connection)
+        checkpoint_saver = PostgresCheckpoint(
+            sync_connection=sync_connection, serializer=PickleCheckpointSerializer()
+        )
+        checkpoint_tuple = [
+            c
+            for c in checkpoint_saver.list(
+                {
+                    "configurable": {
+                        "thread_id": "test_thread",
+                    }
+                }
+            )
+        ]
+        assert len(checkpoint_tuple) == 0
+
+        # Add a checkpoint
+        sample_checkpoint = {
+            "v": 1,
+            "ts": "2021-09-01T00:00:00+00:00",
+            "channel_values": {},
+            "channel_versions": defaultdict(),
+            "versions_seen": defaultdict(),
+        }
+
+        checkpoint_saver.put(
+            {
+                "configurable": {
+                    "thread_id": "test_thread",
+                }
+            },
+            sample_checkpoint,
+        )
+
+        checkpoints = [
+            c
+            for c in checkpoint_saver.list(
+                {
+                    "configurable": {
+                        "thread_id": "test_thread",
+                    }
+                }
+            )
+        ]
+
+        assert len(checkpoints) == 1
+        assert checkpoints[0].checkpoint == sample_checkpoint
+
+        # Add another checkpoint
+        sample_checkpoint: Checkpoint = {
+            "v": 1,
+            "ts": "2021-09-02T00:00:00+00:00",
+            "channel_values": {},
+            "channel_versions": {},
+            "versions_seen": {},
+        }
+
+        checkpoint_saver.put(
+            {
+                "configurable": {
+                    "thread_id": "test_thread",
+                }
+            },
+            sample_checkpoint,
+        )
+
+        # Try aget
+        checkpoints = [
+            c
+            for c in checkpoint_saver.list(
+                {
+                    "configurable": {
+                        "thread_id": "test_thread",
+                    }
+                }
+            )
+        ]
+
+        assert len(checkpoints) == 2
+        # Should be sorted by timestamp desc
+        assert checkpoints[0].checkpoint == {
+            "v": 1,
+            "ts": "2021-09-02T00:00:00+00:00",
+            "channel_values": {},
+            "channel_versions": {},
+            "versions_seen": {},
+        }
+
+        assert checkpoints[1].checkpoint == {
+            "v": 1,
+            "ts": "2021-09-01T00:00:00+00:00",
+            "channel_values": {},
+            "channel_versions": {},
+            "versions_seen": {},
+        }
+
+        assert checkpoint_saver.get_tuple(
+            {
+                "configurable": {
+                    "thread_id": "test_thread",
+                }
+            }
+        ) == CheckpointTuple(
+            config={
+                "configurable": {
+                    "thread_id": "test_thread",
+                    "thread_ts": "2021-09-02T00:00:00+00:00",
+                }
+            },
+            checkpoint={
+                "v": 1,
+                "ts": "2021-09-02T00:00:00+00:00",
+                "channel_values": {},
+                "channel_versions": {},
+                "versions_seen": {},
+            },
+            parent_config=None,
+        )
 
 async def test_on_conflict_aput() -> None:
     async with asyncpg_client() as async_connection:
         await PostgresCheckpoint.adrop_schema(async_connection)
         await PostgresCheckpoint.acreate_schema(async_connection)
         checkpoint_saver = PostgresCheckpoint(
-            async_connection=async_connection, serializer=PickleSerializer()
+            async_connection=async_connection, serializer=PickleCheckpointSerializer()
         )
 
         # aput with twice on the same (thread_id, thread_ts) should not raise any error
