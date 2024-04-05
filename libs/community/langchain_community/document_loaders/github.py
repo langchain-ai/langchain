@@ -207,7 +207,7 @@ class GithubFileLoader(BaseGitHubLoader, ABC):
         ]
 
     def get_file_content_by_path(self, path: str) -> str:
-        base_url = f"{self.github_api_url}/repos/{self.repo}/contents/{path}"
+        base_url = f"{self.github_api_url}/repos/{self.repo}/contents/{path}?ref={self.branch}"
         response = requests.get(base_url, headers=self.headers)
         response.raise_for_status()
 
