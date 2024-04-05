@@ -438,7 +438,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             return super_schema
 
     def _get_input_messages(
-        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage]]
+        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
@@ -479,6 +479,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             raise ValueError()
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> List[BaseMessage]:
+        if self.message_history is None:
+            raise AssertionError("unreachable: message_history is not set")
         messages = self.message_history.messages.copy()
 
         if not self.history_messages_key:
@@ -492,6 +494,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     async def _aenter_history(
         self, input: Dict[str, Any], config: RunnableConfig
     ) -> List[BaseMessage]:
+        if self.message_history is None:
+            raise AssertionError("unreachable: message_history is not set")
         messages = (await self.message_history.aget_messages()).copy()
 
         if not self.history_messages_key:
@@ -540,6 +544,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 **{key: configurable[key] for key in expected_keys}
             )
         self.message_history = message_history
+        if self.exit_history_callback is None:
+            raise AssertionError("unreachable: exit_history_callback is not set")
         self.exit_history_callback.message_history = message_history
         return config
 
