@@ -336,18 +336,44 @@ class FasterWhisperParser(BaseBlobParser):
     The gitbub repository for faster-whisper is :
     https://github.com/SYSTRAN/faster-whisper
 
+    Example: Load a YouTube video and transcribe the video speech into a document.
+        .. code-block:: python
+
+            from langchain.document_loaders.generic import GenericLoader
+            from langchain_community.document_loaders.parsers.audio 
+                import FasterWhisperParser
+            from langchain.document_loaders.blob_loaders.youtube_audio 
+                import YoutubeAudioLoader
+
+
+            url="https://www.youtube.com/watch?v=your_video"
+            save_dir="your_dir/"
+            loader = GenericLoader(
+                YoutubeAudioLoader([url],save_dir),
+                FasterWhisperParser()
+            )
+            docs = loader.load()
+
     """
 
     def __init__(
         self,
-        device: Optional[str] = "0",
+        *,
+        device: Optional[str] = "cuda",
         model_size: Optional[str] = None,
     ):
+        """Initialize the parser.
+
+        Args:
+            device: It can be "cuda" or "cpu" based on the available device.
+            model_size: There are four model sizes to choose from: "base", "small", 
+                        "medium", and "large-v3", based on the available GPU memory.
+        """
         try:
             import torch
         except ImportError:
             raise ImportError(
-                "torch package not found, please install it with " "`pip install torch`"
+                "torch package not found, please install it with `pip install torch`"
             )
 
         # Determine the device to use
@@ -360,7 +386,7 @@ class FasterWhisperParser(BaseBlobParser):
         if self.device == "cpu":
             self.model_size = "base"
         else:
-            # Set the model_size based on the device and available memory
+            # Set the model_size based on the available memory
             mem = torch.cuda.get_device_properties(self.device).total_memory / (1024**2)
             if mem < 1000:
                 self.model_size = "base"
@@ -370,6 +396,7 @@ class FasterWhisperParser(BaseBlobParser):
                 self.model_size = "medium"
             else:
                 self.model_size = "large-v3"
+        # If the user has assigned a model size, then use the assigned size
         if model_size is not None:
             self.model_size = model_size
         
@@ -405,10 +432,13 @@ class FasterWhisperParser(BaseBlobParser):
             compute_type="float16"
         )
 
-        segments, info = model.transcribe(file_obj, beam_size=5)
+        segments, infos = model.transcribe(file_obj, beam_size=5)
 
         for segment in segments:
             yield Document(
                 page_content=segment.text,
-                metadata={"source": blob.source},
+                metadata={
+                    "source": blob.source,
+                    "timestamps": "[%.2fs -> %.2fs]" % (segment.start, segment.end),
+                    },
             )
