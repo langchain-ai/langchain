@@ -158,6 +158,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 tags=config.get("tags"),
                 metadata=config.get("metadata"),
                 run_name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 **kwargs,
             ).generations[0][0],
         ).message
@@ -178,6 +179,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             **kwargs,
         )
         return cast(ChatGeneration, llm_result.generations[0][0]).message
