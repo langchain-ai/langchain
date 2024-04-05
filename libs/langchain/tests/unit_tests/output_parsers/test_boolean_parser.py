@@ -24,6 +24,10 @@ def test_boolean_output_parser_parse() -> None:
     result = parser.parse("Not relevant (NO)")
     assert result is False
 
+    # Test valid input
+    result = parser.parse("NOW this is relevant (YES)")
+    assert result is True
+
     # Test ambiguous input
     try:
         parser.parse("yes and no")
