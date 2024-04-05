@@ -357,6 +357,18 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             }
         },
         "definitions": {
+            "ToolCall": {
+                "title": "ToolCall",
+                "description": "A call to a tool.\n\nAttributes:\n    name: (str) the name of the tool to be called\n    args: (dict) the arguments to the tool call\n    id: (str) if provided, an identifier associated with the tool call\n    index: (int) if provided, the index of the tool call in a sequence\n        of content",  # type: ignore  # noqa: E501
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "args": {"title": "Args", "type": "object"},
+                    "id": {"title": "Id", "type": "string"},
+                    "index": {"title": "Index", "type": "integer"},
+                },
+                "required": ["name", "args"],
+            },
             "AIMessage": {
                 "title": "AIMessage",
                 "description": "Message from an AI.",
@@ -388,12 +400,17 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["ai"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
                         "type": "boolean",
+                    },
+                    "tool_calls": {
+                        "title": "Tool Calls",
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/ToolCall"},
                     },
                 },
                 "required": ["content"],
@@ -429,8 +446,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["human"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
@@ -441,7 +458,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ChatMessage": {
                 "title": "ChatMessage",
-                "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
+                "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # type: ignore  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -470,15 +487,15 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["chat"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "role": {"title": "Role", "type": "string"},
                 },
                 "required": ["content", "role"],
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
+                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # type: ignore  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -507,14 +524,14 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["system"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                 },
                 "required": ["content"],
             },
             "FunctionMessage": {
                 "title": "FunctionMessage",
-                "description": "Message for passing the result of executing a function back to a model.",  # noqa: E501
+                "description": "Message for passing the result of executing a function back to a model.",  # type: ignore  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -543,14 +560,14 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["function"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                 },
                 "required": ["content", "name"],
             },
             "ToolMessage": {
                 "title": "ToolMessage",
-                "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
+                "description": "Message for passing the result of executing a tool back to a model.",  # type: ignore  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -579,8 +596,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["tool"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "tool_call_id": {"title": "Tool Call Id", "type": "string"},
                 },
                 "required": ["content", "tool_call_id"],

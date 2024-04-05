@@ -5307,6 +5307,13 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -5623,6 +5630,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -5773,6 +5816,13 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -6089,6 +6139,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -6223,6 +6309,13 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -6470,6 +6563,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -6592,6 +6721,13 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -6908,6 +7044,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -7030,6 +7202,13 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -7348,6 +7527,42 @@
         'title': 'SystemMessage',
         'type': 'object',
       }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
+        'type': 'object',
+      }),
       'ToolMessage': dict({
         'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
@@ -7459,6 +7674,13 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'tool_calls': dict({
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
           }),
           'type': dict({
             'default': 'ai',
@@ -7789,6 +8011,42 @@
         'title': 'SystemMessage',
         'type': 'object',
       }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
+        'type': 'object',
+      }),
       'ToolMessage': dict({
         'description': 'Message for passing the result of executing a tool back to a model.',
         'properties': dict({
@@ -7927,6 +8185,13 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'tool_calls': dict({
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
           }),
           'type': dict({
             'default': 'ai',
@@ -8175,6 +8440,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
