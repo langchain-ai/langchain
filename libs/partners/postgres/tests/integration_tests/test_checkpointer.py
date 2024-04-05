@@ -28,7 +28,7 @@ async def test_async_checkpoint() -> None:
         assert len(checkpoint_tuple) == 0
 
         # Add a checkpoint
-        sample_checkpoint = {
+        sample_checkpoint: Checkpoint = {
             "v": 1,
             "ts": "2021-09-01T00:00:00+00:00",
             "channel_values": {},
@@ -60,12 +60,12 @@ async def test_async_checkpoint() -> None:
         assert checkpoints[0].checkpoint == sample_checkpoint
 
         # Add another checkpoint
-        sample_checkpoint: Checkpoint = {
+        sample_checkpoint2: Checkpoint = {
             "v": 1,
             "ts": "2021-09-02T00:00:00+00:00",
             "channel_values": {},
-            "channel_versions": {},
-            "versions_seen": {},
+            "channel_versions": defaultdict(),
+            "versions_seen": defaultdict(),
         }
 
         await checkpoint_saver.aput(
@@ -74,7 +74,7 @@ async def test_async_checkpoint() -> None:
                     "thread_id": "test_thread",
                 }
             },
-            sample_checkpoint,
+            sample_checkpoint2,
         )
 
         # Try aget
@@ -91,21 +91,8 @@ async def test_async_checkpoint() -> None:
 
         assert len(checkpoints) == 2
         # Should be sorted by timestamp desc
-        assert checkpoints[0].checkpoint == {
-            "v": 1,
-            "ts": "2021-09-02T00:00:00+00:00",
-            "channel_values": {},
-            "channel_versions": {},
-            "versions_seen": {},
-        }
-
-        assert checkpoints[1].checkpoint == {
-            "v": 1,
-            "ts": "2021-09-01T00:00:00+00:00",
-            "channel_values": {},
-            "channel_versions": {},
-            "versions_seen": {},
-        }
+        assert checkpoints[0].checkpoint == sample_checkpoint2
+        assert checkpoints[1].checkpoint == sample_checkpoint
 
         assert await checkpoint_saver.aget_tuple(
             {
@@ -155,6 +142,7 @@ async def test_async_checkpoint() -> None:
             parent_config=None,
         )
 
+
 def test_sync_checkpoint() -> None:
     """Test the sync check point implementation."""
     with syncpg_client() as sync_connection:
@@ -176,7 +164,7 @@ def test_sync_checkpoint() -> None:
         assert len(checkpoint_tuple) == 0
 
         # Add a checkpoint
-        sample_checkpoint = {
+        sample_checkpoint: Checkpoint = {
             "v": 1,
             "ts": "2021-09-01T00:00:00+00:00",
             "channel_values": {},
@@ -208,12 +196,12 @@ def test_sync_checkpoint() -> None:
         assert checkpoints[0].checkpoint == sample_checkpoint
 
         # Add another checkpoint
-        sample_checkpoint: Checkpoint = {
+        sample_checkpoint_2: Checkpoint = {
             "v": 1,
             "ts": "2021-09-02T00:00:00+00:00",
             "channel_values": {},
-            "channel_versions": {},
-            "versions_seen": {},
+            "channel_versions": defaultdict(),
+            "versions_seen": defaultdict(),
         }
 
         checkpoint_saver.put(
@@ -222,7 +210,7 @@ def test_sync_checkpoint() -> None:
                     "thread_id": "test_thread",
                 }
             },
-            sample_checkpoint,
+            sample_checkpoint_2,
         )
 
         # Try aget
@@ -239,21 +227,8 @@ def test_sync_checkpoint() -> None:
 
         assert len(checkpoints) == 2
         # Should be sorted by timestamp desc
-        assert checkpoints[0].checkpoint == {
-            "v": 1,
-            "ts": "2021-09-02T00:00:00+00:00",
-            "channel_values": {},
-            "channel_versions": {},
-            "versions_seen": {},
-        }
-
-        assert checkpoints[1].checkpoint == {
-            "v": 1,
-            "ts": "2021-09-01T00:00:00+00:00",
-            "channel_values": {},
-            "channel_versions": {},
-            "versions_seen": {},
-        }
+        assert checkpoints[0].checkpoint == sample_checkpoint_2
+        assert checkpoints[1].checkpoint == sample_checkpoint
 
         assert checkpoint_saver.get_tuple(
             {
@@ -272,11 +247,12 @@ def test_sync_checkpoint() -> None:
                 "v": 1,
                 "ts": "2021-09-02T00:00:00+00:00",
                 "channel_values": {},
-                "channel_versions": {},
-                "versions_seen": {},
+                "channel_versions": defaultdict(),
+                "versions_seen": defaultdict(),
             },
             parent_config=None,
         )
+
 
 async def test_on_conflict_aput() -> None:
     async with asyncpg_client() as async_connection:

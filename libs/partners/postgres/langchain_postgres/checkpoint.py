@@ -202,7 +202,9 @@ class PostgresCheckpoint(BaseCheckpointSaver):
             )
 
     @asynccontextmanager
-    async def _get_async_connection(self) -> AsyncGenerator[psycopg.Connection, None]:
+    async def _get_async_connection(
+        self,
+    ) -> AsyncGenerator[psycopg.AsyncConnection, None]:
         """Get the connection to the Postgres database."""
         if isinstance(self.async_connection, psycopg.AsyncConnection):
             yield self.async_connection
@@ -281,8 +283,10 @@ class PostgresCheckpoint(BaseCheckpointSaver):
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO checkpoints (thread_id, thread_ts, parent_ts, checkpoint)
-                    VALUES (%(thread_id)s, %(thread_ts)s, %(parent_ts)s, %(checkpoint)s)
+                    INSERT INTO checkpoints 
+                        (thread_id, thread_ts, parent_ts, checkpoint)
+                    VALUES 
+                        (%(thread_id)s, %(thread_ts)s, %(parent_ts)s, %(checkpoint)s)
                     ON CONFLICT (thread_id, thread_ts) 
                     DO UPDATE SET checkpoint = EXCLUDED.checkpoint;
                     """,
@@ -323,8 +327,10 @@ class PostgresCheckpoint(BaseCheckpointSaver):
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    INSERT INTO checkpoints (thread_id, thread_ts, parent_ts, checkpoint)
-                    VALUES (%(thread_id)s, %(thread_ts)s, %(parent_ts)s, %(checkpoint)s)
+                    INSERT INTO 
+                        checkpoints (thread_id, thread_ts, parent_ts, checkpoint)
+                    VALUES 
+                        (%(thread_id)s, %(thread_ts)s, %(parent_ts)s, %(checkpoint)s)
                     ON CONFLICT (thread_id, thread_ts) 
                     DO UPDATE SET checkpoint = EXCLUDED.checkpoint;
                     """,
@@ -362,14 +368,14 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                         {
                             "configurable": {
                                 "thread_id": thread_id,
-                                "thread_ts": value[1],
+                                "thread_ts": value[1].isoformat(),
                             }
                         },
                         self.serializer.loads(value[0]),
                         {
                             "configurable": {
                                 "thread_id": thread_id,
-                                "thread_ts": value[2],
+                                "thread_ts": value[2].isoformat(),
                             }
                         }
                         if value[2]
@@ -395,14 +401,14 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                         {
                             "configurable": {
                                 "thread_id": thread_id,
-                                "thread_ts": value[1],
+                                "thread_ts": value[1].isoformat(),
                             }
                         },
                         self.serializer.loads(value[0]),
                         {
                             "configurable": {
                                 "thread_id": thread_id,
-                                "thread_ts": value[2],
+                                "thread_ts": value[2].isoformat(),
                             }
                         }
                         if value[2]
@@ -481,6 +487,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                             if value[2]
                             else None,
                         )
+        return None
 
     async def aget_tuple(self, config: RunnableConfig) -> Optional[CheckpointTuple]:
         """Get the checkpoint tuple for the given configuration.
@@ -554,3 +561,5 @@ class PostgresCheckpoint(BaseCheckpointSaver):
                             if value[2]
                             else None,
                         )
+
+        return None
