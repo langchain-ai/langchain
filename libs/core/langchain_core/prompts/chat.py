@@ -297,6 +297,17 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
             Formatted message.
         """
 
+    async def aformat(self, **kwargs: Any) -> BaseMessage:
+        """Format the prompt template.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            Formatted message.
+        """
+        return self.format(**kwargs)
+
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
 
@@ -307,6 +318,9 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
             List of BaseMessages.
         """
         return [self.format(**kwargs)]
+
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        return [await self.aformat(**kwargs)]
 
     @property
     def input_variables(self) -> List[str]:
@@ -346,6 +360,12 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
             Formatted message.
         """
         text = self.prompt.format(**kwargs)
+        return ChatMessage(
+            content=text, role=self.role, additional_kwargs=self.additional_kwargs
+        )
+
+    async def aformat(self, **kwargs: Any) -> BaseMessage:
+        text = await self.prompt.aformat(**kwargs)
         return ChatMessage(
             content=text, role=self.role, additional_kwargs=self.additional_kwargs
         )
