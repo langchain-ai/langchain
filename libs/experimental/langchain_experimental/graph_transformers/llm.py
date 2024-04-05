@@ -347,18 +347,22 @@ class LLMGraphTransformer:
         # Strict mode filtering
         if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
             if self.allowed_nodes:
-                nodes = [node for node in nodes if node.type in self.allowed_nodes]
+                lower_allowed_nodes = [el.lower() for el in self.allowed_nodes]
+                nodes = [
+                    node for node in nodes if node.type.lower() in lower_allowed_nodes
+                ]
                 relationships = [
                     rel
                     for rel in relationships
-                    if rel.source.type in self.allowed_nodes
-                    and rel.target.type in self.allowed_nodes
+                    if rel.source.type.lower() in lower_allowed_nodes
+                    and rel.target.type.lower() in lower_allowed_nodes
                 ]
             if self.allowed_relationships:
                 relationships = [
                     rel
                     for rel in relationships
-                    if rel.type in self.allowed_relationships
+                    if rel.type.lower()
+                    in [el.lower() for el in self.allowed_relationships]
                 ]
 
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
@@ -389,18 +393,22 @@ class LLMGraphTransformer:
 
         if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
             if self.allowed_nodes:
-                nodes = [node for node in nodes if node.type in self.allowed_nodes]
+                lower_allowed_nodes = [el.lower() for el in self.allowed_nodes]
+                nodes = [
+                    node for node in nodes if node.type.lower() in lower_allowed_nodes
+                ]
                 relationships = [
                     rel
                     for rel in relationships
-                    if rel.source.type in self.allowed_nodes
-                    and rel.target.type in self.allowed_nodes
+                    if rel.source.type.lower() in lower_allowed_nodes
+                    and rel.target.type.lower() in lower_allowed_nodes
                 ]
             if self.allowed_relationships:
                 relationships = [
                     rel
                     for rel in relationships
-                    if rel.type in self.allowed_relationships
+                    if rel.type.lower()
+                    in [el.lower() for el in self.allowed_relationships]
                 ]
 
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
