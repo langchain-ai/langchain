@@ -39,6 +39,8 @@ Docs: https://docs.uptrain.ai/getting-started/introduction
 
 """
 
+import logging
+import sys
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -58,6 +60,9 @@ from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.messages.base import BaseMessage
 
+logging.basicConfig(format='%(message)s', stream=sys.stdout)
+logger = logging.getLogger(__name__)
+
 
 def import_uptrain() -> Any:
     try:
@@ -74,7 +79,26 @@ def import_uptrain() -> Any:
 
 
 class UpTrainDataSchema:
-    """UpTrain Data Schema"""
+    """The UpTrain data schema for tracking evaluation results.
+
+    Args:
+        project_name_prefix (str): Prefix for the project name.
+
+    Attributes:
+        project_name_prefix (str): Prefix for the project name.
+        uptrain_results (DefaultDict[str, Any]): Dictionary to store the results of the evaluations.
+        eval_types (Set[str]): Set to store the types of evaluations.
+        query (str): Query for the RAG evaluation.
+        context (str): Context for the RAG evaluation.
+        response (str): Response for the RAG evaluation.
+        old_context (list[str]): List of old context nodes for the Context Conciseness evaluation.
+        new_context (list[str]): List of new context nodes for the Context Conciseness evaluation.
+        context_conciseness_run_id (str): Run ID for the Context Conciseness evaluation.
+        multi_queries (List[str]): List of multi queries for the Multi Query evaluation.
+        multi_query_run_id (str): Run ID for the Multi Query evaluation.
+        multi_query_daugher_run_id (str): Run ID for the Multi Query daughter evaluation.
+    
+    """
 
     def __init__(self, project_name_prefix: str) -> None:
         """Initialize the UpTrain data schema."""
@@ -146,6 +170,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         project_name: str,
         data: List[Dict[str, str]],
         checks: List[str],
+        log_results: bool = True,
     ) -> None:
         """Run an evaluation on the UpTrain server using UpTrain client."""
         if self.uptrain_client.__class__.__name__ == "APIClient":
@@ -171,29 +196,36 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             "score_multi_query_accuracy": "Multi Query Accuracy Score",
         }
 
+        if self.log_results:
+            # Set logger level to INFO to print the evaluation results
+            logger.setLevel(logging.INFO)
+
         for row in uptrain_result:
             columns = list(row.keys())
             for column in columns:
                 if column == "question":
-                    print(f"\nQuestion: {row[column]}")
+                    logger.info(f"\nQuestion: {row[column]}")
                     self.first_score_printed_flag = False
                 elif column == "response":
-                    print(f"Response: {row[column]}")
+                    logger.info(f"Response: {row[column]}")
                     self.first_score_printed_flag = False
                 elif column == "variants":
-                    print(f"Multi Queries:")
+                    logger.info("Multi Queries:")
                     for variant in row[column]:
-                        print(f"  {variant}")
+                        logger.info(f"  {variant}")
                     self.first_score_printed_flag = False
                 elif column.startswith("score"):
                     if not self.first_score_printed_flag:
-                        print()
+                        logger.info("")
                         self.first_score_printed_flag = True
                     if column in score_name_map:
-                        print(f"{score_name_map[column]}: {row[column]}")
+                        logger.info(f"{score_name_map[column]}: {row[column]}")
                     else:
-                        print(f"{column}: {row[column]}")
-            print()
+                        logger.info(f"{column}: {row[column]}")
+        
+        if self.log_results:
+            # Set logger level back to WARNING (We are doing this to avoid printing the logs from HTTP requests)
+            logger.setLevel(logging.WARNING)
 
 
     def on_llm_end(
