@@ -148,7 +148,16 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
                         [tc.dict() for tc in self.tool_call_chunks or []],
                         [tc.dict() for tc in other.tool_call_chunks or []],
                     )
-                    tool_call_chunks = [ToolCallChunk(**rtc) for rtc in raw_tool_calls]
+                    if raw_tool_calls:
+                        tool_call_chunks = [
+                            ToolCallChunk(**rtc) for rtc in raw_tool_calls
+                        ]
+                    else:
+                        tool_call_chunks = None
+            else:
+                tool_call_chunks = self.tool_call_chunks or getattr(
+                    other, "tool_call_chunks", None
+                )
 
             return self.__class__(
                 example=self.example,
