@@ -122,8 +122,11 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
     if not isinstance(chunk, BaseMessageChunk):
         return chunk
     # chunk classes always have the equivalent non-chunk class as their first parent
+    ignore_keys = ["type"]
+    if isinstance(chunk, AIMessageChunk):
+        ignore_keys.append("tool_call_chunks")
     return chunk.__class__.__mro__[1](
-        **{k: v for k, v in chunk.__dict__.items() if k != "type"}
+        **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
     )
 
 
