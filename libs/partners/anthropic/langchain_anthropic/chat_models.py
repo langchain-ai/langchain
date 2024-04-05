@@ -220,8 +220,8 @@ class ChatAnthropic(BaseChatModel):
 
         allow_population_by_field_name = True
 
-    _client: anthropic.Client = Field(default=None)
-    _async_client: anthropic.AsyncClient = Field(default=None)
+    client: anthropic.Client = Field(default=None)
+    async_client: anthropic.AsyncClient = Field(default=None)
 
     model: str = Field(alias="model_name")
     """Model name to use."""
@@ -280,12 +280,12 @@ class ChatAnthropic(BaseChatModel):
             or "https://api.anthropic.com"
         )
         values["anthropic_api_url"] = api_url
-        values["_client"] = anthropic.Client(
+        values["client"] = anthropic.Client(
             api_key=api_key,
             base_url=api_url,
             default_headers=values.get("default_headers"),
         )
-        values["_async_client"] = anthropic.AsyncClient(
+        values["async_client"] = anthropic.AsyncClient(
             api_key=api_key,
             base_url=api_url,
             default_headers=values.get("default_headers"),
@@ -332,7 +332,7 @@ class ChatAnthropic(BaseChatModel):
             )
             yield cast(ChatGenerationChunk, result.generations[0])
             return
-        with self._client.messages.stream(**params) as stream:
+        with self.client.messages.stream(**params) as stream:
             for text in stream.text_stream:
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
                 if run_manager:
@@ -354,7 +354,7 @@ class ChatAnthropic(BaseChatModel):
             )
             yield cast(ChatGenerationChunk, result.generations[0])
             return
-        async with self._async_client.messages.stream(**params) as stream:
+        async with self.async_client.messages.stream(**params) as stream:
             async for text in stream.text_stream:
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
                 if run_manager:
@@ -395,9 +395,9 @@ class ChatAnthropic(BaseChatModel):
                 )
                 return generate_from_stream(stream_iter)
         if _tools_in_params(params):
-            data = self._client.beta.tools.messages.create(**params)
+            data = self.client.beta.tools.messages.create(**params)
         else:
-            data = self._client.messages.create(**params)
+            data = self.client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -419,9 +419,9 @@ class ChatAnthropic(BaseChatModel):
                 )
                 return await agenerate_from_stream(stream_iter)
         if _tools_in_params(params):
-            data = await self._async_client.beta.tools.messages.create(**params)
+            data = await self.async_client.beta.tools.messages.create(**params)
         else:
-            data = await self._async_client.messages.create(**params)
+            data = await self.async_client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
     @beta()
