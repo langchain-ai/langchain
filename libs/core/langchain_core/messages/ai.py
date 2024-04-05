@@ -1,3 +1,4 @@
+from json import JSONDecodeError
 from typing import Any, List, Literal, Optional
 
 from langchain_core.load import Serializable
@@ -6,7 +7,9 @@ from langchain_core.messages.base import (
     BaseMessageChunk,
     merge_content,
 )
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
+from langchain_core.utils.json import parse_partial_json
 
 
 class AIMessage(BaseMessage):
@@ -103,6 +106,33 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
     type: Literal["AIToolCallsMessageChunk"] = "AIToolCallsMessageChunk"  # type: ignore[assignment] # noqa: E501
     tool_call_chunks: Optional[List[ToolCallChunk]] = None
 
+    @root_validator()
+    def init_tool_calls(cls, values: dict) -> dict:
+        if values["tool_calls"] is not None:
+            raise ValueError(
+                "tool_calls cannot be set on AIToolCallsMessageChunk, it is derived "
+                "from tool_call_chunks."
+            )
+        if not values["tool_call_chunks"]:
+            values["tool_calls"] = values["tool_call_chunks"]
+            return values
+        tool_calls = []
+        for chunk in values["tool_call_chunks"]:
+            try:
+                args_ = parse_partial_json(chunk.args)
+                args_ = args_ if isinstance(args_, dict) else {}
+            except (JSONDecodeError, TypeError):  # None args raise TypeError
+                args_ = {}
+            if not isinstance(args_, dict):
+                raise ValueError(f"{args_=}")
+            tool_calls.append(
+                ToolCall(
+                    name=chunk.name or "", args=args_, index=chunk.index, id=chunk.id
+                )
+            )
+        values["tool_calls"] = tool_calls
+        return values
+
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
             if self.example != other.example:
@@ -111,19 +141,19 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
                     "with different example values."
                 )
 
-            if (
-                isinstance(other, AIToolCallsMessageChunk)
-                and other.tool_call_chunks
-                and self.tool_call_chunks
-            ):
-                raw_tool_calls = merge_lists(
-                    [tc.dict() for tc in self.tool_call_chunks],
-                    [tc.dict() for tc in other.tool_call_chunks],
-                )
-                if raw_tool_calls:
-                    tool_call_chunks = [ToolCallChunk(**rtc) for rtc in raw_tool_calls]
-                else:
-                    tool_call_chunks = None
+            tool_call_chunks: Optional[List] = None
+            if isinstance(other, AIToolCallsMessageChunk):
+                if self.tool_call_chunks or other.tool_call_chunks:
+                    raw_tool_calls = merge_lists(
+                        [tc.dict() for tc in self.tool_call_chunks or []],
+                        [tc.dict() for tc in other.tool_call_chunks or []],
+                    )
+                    if raw_tool_calls:
+                        tool_call_chunks = [
+                            ToolCallChunk(**rtc) for rtc in raw_tool_calls
+                        ]
+                    else:
+                        tool_call_chunks = None
             else:
                 tool_call_chunks = self.tool_call_chunks or getattr(
                     other, "tool_call_chunks", None

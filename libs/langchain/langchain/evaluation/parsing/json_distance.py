@@ -1,8 +1,9 @@
 import json
 from typing import Any, Callable, Optional, Union
 
+from langchain_core.utils.json import parse_json_markdown
+
 from langchain.evaluation.schema import StringEvaluator
-from langchain.output_parsers.json import parse_json_markdown
 
 
 class JsonEditDistanceEvaluator(StringEvaluator):
