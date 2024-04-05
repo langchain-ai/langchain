@@ -4,7 +4,7 @@ from json import JSONDecodeError
 from typing import Any, List, Type
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import AIToolCallsMessage
+from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
@@ -84,10 +84,12 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
                 "This output parser can only be used with a chat generation."
             )
         message = generation.message
-        if type(message) is AIToolCallsMessage:
-            tool_calls = (
-                [tc.dict() for tc in message.tool_calls] if message.tool_calls else []
-            )
+        if isinstance(message, AIMessage) and message.tool_calls is not None:
+            tool_calls = [tc.dict() for tc in message.tool_calls]
+            for tool_call in tool_calls:
+                _ = tool_call.pop("index")
+                if not self.return_id:
+                    _ = tool_call.pop("id")
         else:
             try:
                 raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])

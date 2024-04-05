@@ -38,8 +38,6 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -103,12 +101,11 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                 tool_calls = parse_tool_calls(raw_tool_calls, return_id=True)
             except Exception:
                 tool_calls = None
-            return AIToolCallsMessage(
-                content=content,
-                additional_kwargs=additional_kwargs,
-                tool_calls=tool_calls,
-            )
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+        else:
+            tool_calls = None
+        return AIMessage(
+            content=content, additional_kwargs=additional_kwargs, tool_calls=tool_calls
+        )
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
@@ -200,16 +197,17 @@ def _convert_delta_to_message_chunk(
             ]
         except KeyError:
             tool_call_chunks = None
-        return AIToolCallsMessageChunk(
-            content=content,
-            additional_kwargs=additional_kwargs,
-            tool_call_chunks=tool_call_chunks,
-        )
+    else:
+        tool_call_chunks = None
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:

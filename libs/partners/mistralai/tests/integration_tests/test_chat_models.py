@@ -4,9 +4,8 @@ import json
 from typing import Any
 
 from langchain_core.messages import (
+    AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     HumanMessage,
     ToolCall,
     ToolCallChunk,
@@ -168,7 +167,7 @@ def test_tool_call() -> None:
     tool_llm = llm.bind_tools([Person])
 
     result = tool_llm.invoke("Erick, 27 years old")
-    assert isinstance(result, AIToolCallsMessage)
+    assert isinstance(result, AIMessage)
     assert result.tool_calls == [
         ToolCall(name="Person", args={"name": "Erick", "age": 27})
     ]
@@ -188,7 +187,7 @@ def test_streaming_tool_call() -> None:
 
     additional_kwargs = None
     for chunk in strm:
-        assert type(chunk) in (AIMessageChunk, AIToolCallsMessageChunk)
+        assert isinstance(chunk, AIMessageChunk)
         assert chunk.content == ""
         additional_kwargs = chunk.additional_kwargs
 
@@ -201,7 +200,7 @@ def test_streaming_tool_call() -> None:
         "age": 27,
     }
 
-    assert isinstance(chunk, AIToolCallsMessageChunk)
+    assert isinstance(chunk, AIMessageChunk)
     assert chunk.tool_call_chunks == [
         ToolCallChunk(name="Person", args='{"name": "Erick", "age": 27}')
     ]

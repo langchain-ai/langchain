@@ -37,8 +37,6 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -291,7 +289,7 @@ class ChatGroq(BaseChatModel):
                 for rtc in message.additional_kwargs["tool_calls"]
             ]
             chunk_ = ChatGenerationChunk(
-                message=AIToolCallsMessageChunk(
+                message=AIMessageChunk(
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
                     tool_call_chunks=tool_call_chunks,
@@ -362,7 +360,7 @@ class ChatGroq(BaseChatModel):
                 for rtc in message.additional_kwargs["tool_calls"]
             ]
             chunk_ = ChatGenerationChunk(
-                message=AIToolCallsMessageChunk(
+                message=AIMessageChunk(
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
                     tool_call_chunks=tool_call_chunks,
@@ -914,13 +912,14 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                 tool_calls = parse_tool_calls(raw_tool_calls, return_id=True)
             except Exception:
                 tool_calls = None
-            return AIToolCallsMessage(
-                content=content,
-                additional_kwargs=additional_kwargs,
-                id=id_,
-                tool_calls=tool_calls,
-            )
-        return AIMessage(content=content, id=id_, additional_kwargs=additional_kwargs)
+        else:
+            tool_calls = None
+        return AIMessage(
+            content=content,
+            id=id_,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+        )
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
