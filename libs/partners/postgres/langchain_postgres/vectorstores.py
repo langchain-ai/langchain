@@ -20,8 +20,8 @@ from typing import (
 
 import sqlalchemy
 from langchain_core._api import warn_deprecated
-from sqlalchemy import SQLColumnExpression, delete, func
-from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
+from sqlalchemy import SQLColumnExpression, cast, delete, func
+from sqlalchemy.dialects.postgresql import JSON, JSONB, JSONPATH, UUID
 from sqlalchemy.orm import Session, relationship
 
 try:
@@ -323,9 +323,9 @@ class PGVector(VectorStore):
         self.create_tables_if_not_exists()
         self.create_collection()
 
-    def __del__(self) -> None:
-        if isinstance(self._bind, sqlalchemy.engine.Connection):
-            self._bind.close()
+    # def __del__(self) -> None:
+    #     if isinstance(self._bind, sqlalchemy.engine.Connection):
+    #         self._bind.close()
 
     @property
     def embeddings(self) -> Embeddings:
@@ -669,8 +669,8 @@ class PGVector(VectorStore):
             native = COMPARISONS_TO_NATIVE[operator]
             return func.jsonb_path_match(
                 self.EmbeddingStore.cmetadata,
-                f"$.{field} {native} $value",
-                json.dumps({"value": filter_value}),
+                cast(f"$.{field} {native} $value", JSONPATH),
+                cast({"value": filter_value}, JSONB),
             )
         elif operator == "$between":
             # Use AND with two comparisons
@@ -678,13 +678,13 @@ class PGVector(VectorStore):
 
             lower_bound = func.jsonb_path_match(
                 self.EmbeddingStore.cmetadata,
-                f"$.{field} >= $value",
-                json.dumps({"value": low}),
+                cast(f"$.{field} >= $value", JSONPATH),
+                cast({"value": low}, JSONB),
             )
             upper_bound = func.jsonb_path_match(
                 self.EmbeddingStore.cmetadata,
-                f"$.{field} <= $value",
-                json.dumps({"value": high}),
+                cast(f"$.{field} <= $value", JSONPATH),
+                cast({"value": high}, JSONB),
             )
             return sqlalchemy.and_(lower_bound, upper_bound)
         elif operator in {"$in", "$nin", "$like", "$ilike"}:
