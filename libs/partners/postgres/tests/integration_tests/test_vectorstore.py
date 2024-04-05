@@ -1,11 +1,10 @@
 """Test PGVector functionality."""
 import os
-from typing import Any, Dict, Generator, List, Type, Union
+from typing import Any, Dict, Generator, List
 
 import pytest
 import sqlalchemy
 from langchain_core.documents import Document
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
 from langchain_postgres.vectorstores import (
