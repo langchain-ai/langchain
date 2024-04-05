@@ -60,9 +60,11 @@ from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.messages.base import BaseMessage
 
-logging.basicConfig(format='%(message)s', stream=sys.stdout)
 logger = logging.getLogger(__name__)
-
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter('%(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 def import_uptrain() -> Any:
     try:
@@ -126,7 +128,7 @@ class UpTrainDataSchema:
 
 
 class UpTrainCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that logs evalution results to uptrain and the console.
+    """Callback Handler that logs evaluation results to uptrain and the console.
 
     Args:
         project_name_prefix (str): Prefix for the project name.
@@ -146,11 +148,14 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         key_type: str = "openai",
         api_key: str = "sk-****************", # The API key to use for evaluation
         model: str = "gpt-3.5-turbo", # The model to use for evaluation
+        log_results: bool = True,
     ) -> None:
         """Initializes the `UpTrainCallbackHandler`."""
         super().__init__()
 
         uptrain = import_uptrain()
+
+        self.log_results = log_results
 
         # Set uptrain variables
         self.schema = UpTrainDataSchema(project_name_prefix=project_name_prefix)
@@ -170,7 +175,6 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         project_name: str,
         data: List[Dict[str, str]],
         checks: List[str],
-        log_results: bool = True,
     ) -> None:
         """Run an evaluation on the UpTrain server using UpTrain client."""
         if self.uptrain_client.__class__.__name__ == "APIClient":
