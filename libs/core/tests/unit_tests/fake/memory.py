@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence
 
 from langchain_core.chat_history import (
     BaseChatMessageHistory,
@@ -18,6 +18,9 @@ class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
     def add_message(self, message: BaseMessage) -> None:
         """Add a self-created message to the store"""
         self.messages.append(message)
+
+    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
+        self.messages.extend(messages)
 
     def clear(self) -> None:
         self.messages = []
