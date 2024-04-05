@@ -107,7 +107,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
     Args:
         project_name_prefix (str): Prefix for the project name.
         key_type (str): Type of key to use. Must be 'uptrain' or 'openai'.
-        api_key (str): API key for the UpTrain or OpenAI API.
+        api_key (str): API key for the UpTrain or OpenAI API. This key is required to perform evaluations using GPT.
 
     Raises:
         ValueError: If the key type is invalid.
@@ -117,9 +117,11 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
+        *,
         project_name_prefix: str = "langchain",
         key_type: str = "openai",
-        api_key: str = "sk-****************",
+        api_key: str = "sk-****************", # The API key to use for evaluation
+        model: str = "gpt-3.5-turbo", # The model to use for evaluation
     ) -> None:
         """Initializes the `UpTrainCallbackHandler`."""
         super().__init__()
@@ -131,10 +133,10 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         self.first_score_printed_flag = False
 
         if key_type == "uptrain":
-            settings = uptrain.Settings(uptrain_access_token=api_key)
+            settings = uptrain.Settings(uptrain_access_token=api_key, model=model)
             self.uptrain_client = uptrain.APIClient(settings=settings)
         elif key_type == "openai":
-            settings = uptrain.Settings(openai_api_key=api_key, evaluate_locally=False)
+            settings = uptrain.Settings(openai_api_key=api_key, evaluate_locally=False, model=model)
             self.uptrain_client = uptrain.EvalLLM(settings=settings)
         else:
             raise ValueError("Invalid key type: Must be 'uptrain' or 'openai'")
