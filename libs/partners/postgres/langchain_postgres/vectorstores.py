@@ -18,7 +18,6 @@ from typing import (
 )
 
 import sqlalchemy
-from langchain_core._api import warn_deprecated
 from sqlalchemy import SQLColumnExpression, cast, delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, JSONPATH, UUID
 from sqlalchemy.orm import Session, relationship
@@ -89,7 +88,7 @@ SUPPORTED_OPERATORS = (
 )
 
 
-def _get_embedding_collection_store(vector_dimension: int) -> Any:
+def _get_embedding_collection_store(*, vector_dimension: Optional[int] = None) -> Any:
     """Get the Embedding and Collection store classes."""
     global _classes
     if _classes is not None:
@@ -186,7 +185,7 @@ class PGVector(VectorStore):
 
     Args:
         connection_string: Postgres connection string.
-        embedding_function: Any embedding function implementing
+        embeddings: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
         embedding_length: The length of the embedding vector. (default: None)
             NOTE: This is not mandatory. Defining it will prevent vectors of
@@ -197,8 +196,6 @@ class PGVector(VectorStore):
             The tables will be created when initializing the store (if not exists)
             So, make sure the user has the right permissions to create tables.
         distance_strategy: The distance strategy to use. (default: COSINE)
-        pre_delete_collection: If True, will delete the collection if it exists.
-            (default: False). Useful for testing.
         engine_args: SQLAlchemy's create engine arguments.
         create_extension: If True, will create the vector extension if it doesn't exist.
             disabling creation is useful when using ReadOnly Databases.
@@ -223,32 +220,35 @@ class PGVector(VectorStore):
     def __init__(
         self,
         connection_string: str,
-        embedding_function: Embeddings,
+        embeddings: Embeddings,
+        *,
         embedding_length: Optional[int] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         collection_metadata: Optional[dict] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
-        pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
-        *,
         connection: Optional[sqlalchemy.engine.Connection] = None,
         engine_args: Optional[dict[str, Any]] = None,
         create_extension: bool = True,
     ) -> None:
         """Initialize the PGVector store."""
         self.connection_string = connection_string
-        self.embedding_function = embedding_function
+        self._embeddings = embeddings
         self._embedding_length = embedding_length
-        self.collection_name = collection_name
-        self.collection_metadata = collection_metadata
+        self._collection_name = collection_name
+        self._collection_metadata = collection_metadata
         self._distance_strategy = distance_strategy
-        self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
         self.engine_args = engine_args or {}
         self._bind = connection if connection else self._create_engine()
         self.create_extension = create_extension
+        EmbeddingStore, CollectionStore = _get_embedding_collection_store(
+            vector_dimension=self._embedding_length
+        )
+        self.CollectionStore = CollectionStore
+        self.EmbeddingStore = EmbeddingStore
 
         self.__post_init__()
 
@@ -258,24 +258,15 @@ class PGVector(VectorStore):
         """Initialize the store."""
         if self.create_extension:
             self.create_vector_extension()
-
-        EmbeddingStore, CollectionStore = _get_embedding_collection_store(
-            self._embedding_length
-        )
-        self.CollectionStore = CollectionStore
-        self.EmbeddingStore = EmbeddingStore
         self.create_tables_if_not_exists()
         self.create_collection()
 
-    # def __del__(self) -> None:
-    #     if isinstance(self._bind, sqlalchemy.engine.Connection):
-    #         self._bind.close()
-
     @property
     def embeddings(self) -> Embeddings:
-        return self.embedding_function
+        return self._embeddings
 
     def _create_engine(self) -> sqlalchemy.engine.Engine:
+        """Create a new engine."""
         return sqlalchemy.create_engine(url=self.connection_string, **self.engine_args)
 
     def create_vector_extension(self) -> None:
@@ -306,11 +297,9 @@ class PGVector(VectorStore):
             Base.metadata.drop_all(session.get_bind())
 
     def create_collection(self) -> None:
-        if self.pre_delete_collection:
-            self.delete_collection()
         with Session(self._bind) as session:  # type: ignore[arg-type]
             self.CollectionStore.get_or_create(
-                session, self.collection_name, cmetadata=self.collection_metadata
+                session, self._collection_name, cmetadata=self._collection_metadata
             )
 
     def delete_collection(self) -> None:
@@ -364,7 +353,7 @@ class PGVector(VectorStore):
             session.commit()
 
     def get_collection(self, session: Session) -> Any:
-        return self.CollectionStore.get_by_name(session, self.collection_name)
+        return self.CollectionStore.get_by_name(session, self._collection_name)
 
     @classmethod
     def __from(
@@ -377,7 +366,6 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         connection_string: Optional[str] = None,
-        pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         if ids is None:
@@ -391,9 +379,8 @@ class PGVector(VectorStore):
         store = cls(
             connection_string=connection_string,
             collection_name=collection_name,
-            embedding_function=embedding,
+            embeddings=embedding,
             distance_strategy=distance_strategy,
-            pre_delete_collection=pre_delete_collection,
             **kwargs,
         )
 
@@ -461,7 +448,7 @@ class PGVector(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        embeddings = self.embedding_function.embed_documents(list(texts))
+        embeddings = self._embeddings.embed_documents(list(texts))
         return self.add_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
@@ -483,7 +470,7 @@ class PGVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self.embedding_function.embed_query(text=query)
+        embedding = self._embeddings.embed_query(text=query)
         return self.similarity_search_by_vector(
             embedding=embedding,
             k=k,
@@ -506,7 +493,7 @@ class PGVector(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each.
         """
-        embedding = self.embedding_function.embed_query(query)
+        embedding = self._embeddings.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, filter=filter
         )
@@ -544,7 +531,7 @@ class PGVector(VectorStore):
                     page_content=result.EmbeddingStore.document,
                     metadata=result.EmbeddingStore.cmetadata,
                 ),
-                result.distance if self.embedding_function is not None else None,
+                result.distance if self._embeddings is not None else None,
             )
             for result in results
         ]
@@ -806,7 +793,6 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
-        pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -825,7 +811,6 @@ class PGVector(VectorStore):
             ids=ids,
             collection_name=collection_name,
             distance_strategy=distance_strategy,
-            pre_delete_collection=pre_delete_collection,
             **kwargs,
         )
 
@@ -838,7 +823,6 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
-        pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """Construct PGVector wrapper from raw documents and pre-
@@ -870,7 +854,6 @@ class PGVector(VectorStore):
             ids=ids,
             collection_name=collection_name,
             distance_strategy=distance_strategy,
-            pre_delete_collection=pre_delete_collection,
             **kwargs,
         )
 
@@ -880,7 +863,6 @@ class PGVector(VectorStore):
         embedding: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
-        pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -894,9 +876,8 @@ class PGVector(VectorStore):
         store = cls(
             connection_string=connection_string,
             collection_name=collection_name,
-            embedding_function=embedding,
+            embeddings=embedding,
             distance_strategy=distance_strategy,
-            pre_delete_collection=pre_delete_collection,
         )
 
         return store
@@ -926,7 +907,6 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
-        pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -944,7 +924,6 @@ class PGVector(VectorStore):
 
         return cls.from_texts(
             texts=texts,
-            pre_delete_collection=pre_delete_collection,
             embedding=embedding,
             distance_strategy=distance_strategy,
             metadatas=metadatas,
