@@ -77,11 +77,12 @@ class AIMessage(BaseMessage):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "messages"]
+
     @root_validator
     def _backwards_compat_tool_calls(cls, values: dict) -> dict:
-        old_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
-        new_tool_calls = values.get("tool_calls")
-        if old_tool_calls and not new_tool_calls:
+        raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
+        tool_calls = values.get("tool_calls") or values.get("tool_call_chunks")
+        if raw_tool_calls and not tool_calls:
             warnings.warn(
                 "You appear to be using an old tool calling model, please upgrade "
                 "your packages to versions that set message tool calls."

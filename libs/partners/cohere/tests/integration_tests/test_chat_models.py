@@ -5,9 +5,8 @@ from typing import Any
 
 import pytest
 from langchain_core.messages import (
+    AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     ToolCall,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -88,7 +87,7 @@ def test_invoke_tool_calls() -> None:
     # where it calls the tool
     result = tool_llm.invoke("Erick, 27 years old")
 
-    assert isinstance(result, AIToolCallsMessage)
+    assert isinstance(result, AIMessage)
     additional_kwargs = result.additional_kwargs
     assert "tool_calls" in additional_kwargs
     assert len(additional_kwargs["tool_calls"]) == 1
@@ -128,7 +127,7 @@ def test_streaming_tool_call() -> None:
         "name": "Erick",
         "age": 27,
     }
-    assert isinstance(chunk, AIToolCallsMessageChunk)
+    assert isinstance(chunk, AIMessageChunk)
     assert isinstance(chunk.tool_call_chunks, list)
     assert len(chunk.tool_call_chunks) == 1
     tool_call_chunk = chunk.tool_call_chunks[0]

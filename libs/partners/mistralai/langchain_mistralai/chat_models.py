@@ -35,8 +35,6 @@ from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -91,12 +89,11 @@ def _convert_mistral_chat_message_to_message(
             tool_calls = parse_tool_calls(raw_tool_calls, return_id=False)
         except Exception:
             tool_calls = None
-        return AIToolCallsMessage(
-            content=content,
-            additional_kwargs=additional_kwargs,
-            tool_calls=tool_calls,
-        )
-    return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    else:
+        tool_calls = None
+    return AIMessage(
+        content=content, additional_kwargs=additional_kwargs, tool_calls=tool_calls
+    )
 
 
 async def _aiter_sse(
@@ -159,12 +156,13 @@ def _convert_delta_to_message_chunk(
                 ]
             except KeyError:
                 tool_call_chunks = None
-            return AIToolCallsMessageChunk(
-                content=content,
-                additional_kwargs=additional_kwargs,
-                tool_call_chunks=tool_call_chunks,
-            )
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        else:
+            tool_call_chunks = None
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:

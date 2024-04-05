@@ -7,8 +7,6 @@ import pytest
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
@@ -239,7 +237,7 @@ def test_tool_choice() -> None:
     with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
 
     resp = with_tool.invoke("Who was the 27 year old named Erick?")
-    assert isinstance(resp, AIToolCallsMessage)
+    assert isinstance(resp, AIMessage)
     assert resp.content == ""  # should just be tool call
     tool_calls = resp.additional_kwargs["tool_calls"]
     assert len(tool_calls) == 1
@@ -312,7 +310,7 @@ def test_streaming_tool_call() -> None:
     }
     assert tool_call["type"] == "function"
 
-    assert isinstance(chunk, AIToolCallsMessageChunk)
+    assert isinstance(chunk, AIMessageChunk)
     assert isinstance(chunk.tool_call_chunks, list)
     assert len(chunk.tool_call_chunks) == 1
     tool_call_chunk = chunk.tool_call_chunks[0]
@@ -350,7 +348,7 @@ async def test_astreaming_tool_call() -> None:
     }
     assert tool_call["type"] == "function"
 
-    assert isinstance(chunk, AIToolCallsMessageChunk)
+    assert isinstance(chunk, AIMessageChunk)
     assert isinstance(chunk.tool_call_chunks, list)
     assert len(chunk.tool_call_chunks) == 1
     tool_call_chunk = chunk.tool_call_chunks[0]

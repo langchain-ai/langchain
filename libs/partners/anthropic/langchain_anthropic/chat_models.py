@@ -35,8 +35,6 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     BaseMessage,
     HumanMessage,
     SystemMessage,
@@ -340,7 +338,7 @@ class ChatAnthropic(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             message = result.generations[0].message
-            if isinstance(message, AIToolCallsMessage):
+            if isinstance(message, AIMessage) and message.tool_calls is not None:
                 if message.tool_calls is None:
                     tool_call_chunks = None
                 else:
@@ -353,7 +351,7 @@ class ChatAnthropic(BaseChatModel):
                         }
                         for tool_call in message.tool_calls
                     ]
-                message_chunk = AIToolCallsMessageChunk(
+                message_chunk = AIMessageChunk(
                     content=message.content,
                     tool_call_chunks=tool_call_chunks,
                 )
@@ -382,7 +380,7 @@ class ChatAnthropic(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             message = result.generations[0].message
-            if isinstance(message, AIToolCallsMessage):
+            if isinstance(message, AIMessage) and message.tool_calls is not None:
                 if message.tool_calls is None:
                     tool_call_chunks = None
                 else:
@@ -395,7 +393,7 @@ class ChatAnthropic(BaseChatModel):
                         }
                         for tool_call in message.tool_calls
                     ]
-                message_chunk = AIToolCallsMessageChunk(
+                message_chunk = AIMessageChunk(
                     content=message.content,
                     tool_call_chunks=tool_call_chunks,
                 )
@@ -420,7 +418,7 @@ class ChatAnthropic(BaseChatModel):
             msg = AIMessage(content=content[0]["text"])
         elif any(block["type"] == "tool_use" for block in content):
             tool_calls = extract_tool_calls(content)
-            msg = AIToolCallsMessage(
+            msg = AIMessage(
                 content=content,
                 tool_calls=tool_calls,
             )

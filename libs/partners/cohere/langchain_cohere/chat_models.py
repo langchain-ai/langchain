@@ -27,8 +27,6 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     BaseMessage,
     ChatMessage,
     HumanMessage,
@@ -268,15 +266,13 @@ class ChatCohere(BaseChatModel, BaseCohere):
                         ]
                     except KeyError:
                         tool_call_chunks = None
-                    message: AIMessageChunk = AIToolCallsMessageChunk(
-                        content="",
-                        additional_kwargs=generation_info,
-                        tool_call_chunks=tool_call_chunks,
-                    )
                 else:
-                    message = AIMessageChunk(
-                        content="", additional_kwargs=generation_info
-                    )
+                    tool_call_chunks = None
+                message = AIMessageChunk(
+                    content="",
+                    additional_kwargs=generation_info,
+                    tool_call_chunks=tool_call_chunks,
+                )
                 yield ChatGenerationChunk(
                     message=message,
                     generation_info=generation_info,
@@ -320,15 +316,13 @@ class ChatCohere(BaseChatModel, BaseCohere):
                         ]
                     except KeyError:
                         tool_call_chunks = None
-                    message: AIMessageChunk = AIToolCallsMessageChunk(
-                        content="",
-                        additional_kwargs=generation_info,
-                        tool_call_chunks=tool_call_chunks,
-                    )
                 else:
-                    message = AIMessageChunk(
-                        content="", additional_kwargs=generation_info
-                    )
+                    tool_call_chunks = None
+                message = AIMessageChunk(
+                    content="",
+                    additional_kwargs=generation_info,
+                    tool_call_chunks=tool_call_chunks,
+                )
                 yield ChatGenerationChunk(
                     message=message,
                     generation_info=generation_info,
@@ -381,15 +375,13 @@ class ChatCohere(BaseChatModel, BaseCohere):
                 ]
             except Exception:
                 tool_calls = None
-            message: AIMessage = AIToolCallsMessage(
-                content=response.text,
-                additional_kwargs=generation_info,
-                tool_calls=tool_calls,
-            )
         else:
-            message = AIMessage(
-                content=response.text, additional_kwargs=generation_info
-            )
+            tool_calls = None
+        message = AIMessage(
+            content=response.text,
+            additional_kwargs=generation_info,
+            tool_calls=tool_calls,
+        )
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)
@@ -423,15 +415,13 @@ class ChatCohere(BaseChatModel, BaseCohere):
                 ]
             except Exception:
                 tool_calls = None
-            message: AIMessage = AIToolCallsMessage(
-                content=response.text,
-                additional_kwargs=generation_info,
-                tool_calls=tool_calls,
-            )
         else:
-            message = AIMessage(
-                content=response.text, additional_kwargs=generation_info
-            )
+            tool_calls = None
+        message = AIMessage(
+            content=response.text,
+            additional_kwargs=generation_info,
+            tool_calls=tool_calls,
+        )
         return ChatResult(
             generations=[
                 ChatGeneration(message=message, generation_info=generation_info)
