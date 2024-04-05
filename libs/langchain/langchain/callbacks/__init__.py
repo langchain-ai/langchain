@@ -79,5 +79,4 @@ __all__ = [
     "SageMakerCallbackHandler",
     "LabelStudioCallbackHandler",
     "TrubricsCallbackHandler",
-    "UpTrainCallbackHanlder",
 ]
