@@ -1165,6 +1165,22 @@
     {
       "source": "/docs/contributing/documentation(/?)",
       "destination": "/docs/contributing/documentation/technical_logistics"
+    },
+    {
+      "source": "/docs/modules/agents/tools/custom_tools(/?)",
+      "destination": "/docs/modules/tools/custom_tools/"
+    },
+    {
+      "source": "/docs/expression_language/cookbook(/?)",
+      "destination": "/docs/expression_language/"
+    },
+    {
+      "source": "/docs/guides/evaluation(/?)",
+      "destination": "/docs/guides/productionization/evaluation/"
+    },
+    {
+      "source": "/docs/guides/evaluation/:path",
+      "destination": "/docs/guides/productionization/evaluation/:path"
     }
   ]
 }
