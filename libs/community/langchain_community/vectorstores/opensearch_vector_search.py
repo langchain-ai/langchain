@@ -676,6 +676,12 @@ class OpenSearchVectorSearch(VectorStore):
             List of Documents most similar to the query.
 
         Optional Args:
+            search_type: The type of search to perform. Can be one of:
+                - "approximate_search" (default)
+                - "script_scoring"
+                - "painless_scripting"
+                - "hybrid_search"
+
             vector_field: Document field embeddings are stored in. Defaults to
             "vector_field".
 
@@ -718,6 +724,9 @@ class OpenSearchVectorSearch(VectorStore):
 
             pre_filter: script_score query to pre-filter documents before identifying
             nearest neighbors; default: {"match_all": {}}
+
+        Optional Args for Hybrid Search:
+            hybrid_search_weights: a tuple for the weighting of the keyword search and the KNN search respectively; default: (0.7, 0.3)
         """
         docs_with_scores = self.similarity_search_with_score(query, k, **kwargs)
         return [doc[0] for doc in docs_with_scores]
