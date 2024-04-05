@@ -7,8 +7,7 @@ from abc import ABC
 from string import Formatter
 from typing import Any, Callable, Dict, List, Set, Tuple, Type
 
-import chevron
-
+import langchain_core.utils.mustache as mustache
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, create_model
@@ -90,7 +89,7 @@ def _get_jinja2_variables_from_template(template: str) -> Set[str]:
 
 def mustache_formatter(template: str, **kwargs: Any) -> str:
     """Format a template using mustache."""
-    return chevron.render(template, kwargs, partials_path=None)
+    return mustache.render(template, kwargs)
 
 
 def mustache_template_vars(
@@ -99,7 +98,7 @@ def mustache_template_vars(
     """Get the variables from a mustache template."""
     vars: Set[str] = set()
     in_section = False
-    for type, key in chevron.tokenizer.tokenize(template):
+    for type, key in mustache.tokenize(template):
         if type == "end":
             in_section = False
         elif in_section:
@@ -120,7 +119,7 @@ def mustache_schema(
     """Get the variables from a mustache template."""
     fields = set()
     prefix: Tuple[str, ...] = ()
-    for type, key in chevron.tokenizer.tokenize(template):
+    for type, key in mustache.tokenize(template):
         if key == ".":
             continue
         if type == "end":
