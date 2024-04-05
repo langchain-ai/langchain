@@ -121,7 +121,7 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
             try:
                 args_ = parse_partial_json(chunk.args)
                 args_ = args_ if isinstance(args_, dict) else {}
-            except JSONDecodeError:
+            except (JSONDecodeError, TypeError):  # None args raise TypeError
                 args_ = {}
             if not isinstance(args_, dict):
                 raise ValueError(f"{args_=}")
