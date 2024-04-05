@@ -6,8 +6,6 @@ import pytest
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
@@ -75,21 +73,21 @@ def test_message_chunks() -> None:
 
     # Test tool calls
     assert (
-        AIToolCallsMessageChunk(
+        AIMessageChunk(
             content="",
             tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
         )
-        + AIToolCallsMessageChunk(
+        + AIMessageChunk(
             content="",
             tool_call_chunks=[
                 ToolCallChunk(name=None, args='{"arg1": "val', id=None, index=0)
             ],
         )
-        + AIToolCallsMessageChunk(
+        + AIMessageChunk(
             content="",
             tool_call_chunks=[ToolCallChunk(name=None, args='ue}"', id=None, index=0)],
         )
-    ) == AIToolCallsMessageChunk(
+    ) == AIMessageChunk(
         content="",
         tool_call_chunks=[
             ToolCallChunk(name="tool1", args='{"arg1": "value}"', id="1", index=0)
@@ -97,16 +95,16 @@ def test_message_chunks() -> None:
     )
 
     assert (
-        AIToolCallsMessageChunk(
+        AIMessageChunk(
             content="",
             tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
         )
-        + AIToolCallsMessageChunk(
+        + AIMessageChunk(
             content="",
             tool_call_chunks=[ToolCallChunk(name="tool1", args="a", id=None, index=1)],
         )
         # Don't merge if `index` field does not match.
-    ) == AIToolCallsMessageChunk(
+    ) == AIMessageChunk(
         content="",
         tool_call_chunks=[
             ToolCallChunk(name="tool1", args="", id="1", index=0),
@@ -114,9 +112,8 @@ def test_message_chunks() -> None:
         ],
     )
 
-    # Test AIMessageChunk + AIToolCallsMessageChunk
     ai_msg_chunk = AIMessageChunk(content="")
-    tool_calls_msg_chunk = AIToolCallsMessageChunk(
+    tool_calls_msg_chunk = AIMessageChunk(
         content="",
         tool_call_chunks=[ToolCallChunk(name="tool1", args="a", id=None, index=1)],
     )
@@ -183,7 +180,7 @@ class TestGetBufferString(unittest.TestCase):
         self.func_msg = FunctionMessage(name="func", content="function")
         self.tool_msg = ToolMessage(tool_call_id="tool_id", content="tool")
         self.chat_msg = ChatMessage(role="Chat", content="chat")
-        self.tool_calls_msg = AIToolCallsMessage(content="tool")
+        self.tool_calls_msg = AIMessage(content="tool")
 
     def test_empty_input(self) -> None:
         self.assertEqual(get_buffer_string([]), "")
@@ -252,8 +249,8 @@ def test_multiple_msg() -> None:
 
     # Test with tool calls
     msgs = [
-        AIToolCallsMessage(content="", tool_calls=[ToolCall(name="a", args={"b": 1})]),
-        AIToolCallsMessage(content="", tool_calls=[ToolCall(name="c", args={"c": 2})]),
+        AIMessage(content="", tool_calls=[ToolCall(name="a", args={"b": 1})]),
+        AIMessage(content="", tool_calls=[ToolCall(name="c", args={"c": 2})]),
     ]
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
 

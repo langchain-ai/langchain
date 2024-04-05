@@ -5,8 +5,6 @@ EXPECTED_ALL = [
     "_message_from_dict",
     "AIMessage",
     "AIMessageChunk",
-    "AIToolCallsMessage",
-    "AIToolCallsMessageChunk",
     "AnyMessage",
     "BaseMessage",
     "BaseMessageChunk",

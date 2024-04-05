@@ -2,7 +2,6 @@ from typing import Any, AsyncIterator, Iterator, List
 
 from langchain_core.messages import (
     AIMessageChunk,
-    AIToolCallsMessageChunk,
     BaseMessage,
     ToolCallChunk,
 )
@@ -302,7 +301,7 @@ STREAMED_MESSAGES: list = [
         },
     ),
     AIMessageChunk(content=""),
-    AIToolCallsMessageChunk(
+    AIMessageChunk(
         content="",
         additional_kwargs={
             "tool_calls": [
@@ -323,7 +322,7 @@ STREAMED_MESSAGES: list = [
             )
         ],
     ),
-    AIToolCallsMessageChunk(
+    AIMessageChunk(
         content="",
         additional_kwargs={
             "tool_calls": [
@@ -339,7 +338,7 @@ STREAMED_MESSAGES: list = [
             ToolCallChunk(name=None, args='{"word": "chr', id=None, index=1)
         ],
     ),
-    AIToolCallsMessageChunk(
+    AIMessageChunk(
         content="",
         additional_kwargs={
             "tool_calls": [
