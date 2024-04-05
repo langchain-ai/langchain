@@ -1179,8 +1179,8 @@
       "destination": "/docs/guides/productionization/evaluation/"
     },
     {
-      "source": "/docs/guides/evaluation/:path",
-      "destination": "/docs/guides/productionization/evaluation/:path"
+      "source": "/docs/guides/evaluation/:path*",
+      "destination": "/docs/guides/productionization/evaluation/:path*"
     }
   ]
 }
