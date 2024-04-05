@@ -75,7 +75,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
         .. code-block:: python
 
             from psycopg_pool import ConnectionPool
-            from langchain_postgres.checkpoint import (
+            from langchain_postgres import (
                 PostgresCheckpoint, PickleCheckpointSerializer
             )
 
@@ -102,7 +102,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
         .. code-block:: python
 
             from psycopg_pool import AsyncConnectionPool
-            from langchain_postgres.checkpoint import (
+            from langchain_postgres import (
                 PostgresCheckpoint, PickleCheckpointSerializer
             )
 
@@ -129,7 +129,7 @@ class PostgresCheckpoint(BaseCheckpointSaver):
         .. code-block:: python
 
             from psycopg import AsyncConnection
-            from langchain_postgres.checkpoint import (
+            from langchain_postgres import (
                 PostgresCheckpoint, PickleCheckpointSerializer
             )
 
