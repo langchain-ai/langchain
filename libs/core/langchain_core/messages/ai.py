@@ -127,7 +127,7 @@ class AIToolCallsMessageChunk(AIToolCallsMessage, AIMessageChunk):
     """AIMessageChunk containing tool calls.
 
     AIToolCallsMessageChunks have an additional tool_call_chunks attribute,
-    representing a list of ToolCallChunk. When addding two AIToolCallsMessageChunks,
+    representing a list of ToolCallChunk. When adding two AIToolCallsMessageChunks,
     their corresponding ToolCallChunks are merged if their values of `index` are
     equal and not None.
 
