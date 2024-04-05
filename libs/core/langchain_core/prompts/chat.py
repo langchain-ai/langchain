@@ -609,6 +609,18 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """
         return self.format_prompt(**kwargs).to_string()
 
+    async def aformat(self, **kwargs: Any) -> str:
+        """Format the chat template into a string.
+
+        Args:
+            **kwargs: keyword arguments to use for filling in template variables
+                      in all the template messages in this chat template.
+
+        Returns:
+            formatted string
+        """
+        return (await self.aformat_prompt(**kwargs)).to_string()
+
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """
         Format prompt. Should return a PromptValue.
@@ -619,6 +631,10 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
             PromptValue.
         """
         messages = self.format_messages(**kwargs)
+        return ChatPromptValue(messages=messages)
+
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        messages = await self.aformat_messages(**kwargs)
         return ChatPromptValue(messages=messages)
 
     @abstractmethod

@@ -37,8 +37,10 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         return ["langchain", "prompts", "image"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
         return ImagePromptValue(image_url=self.format(**kwargs))
+
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        return ImagePromptValue(image_url=await self.aformat(**kwargs))
 
     def format(
         self,
