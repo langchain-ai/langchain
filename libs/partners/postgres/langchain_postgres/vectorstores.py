@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import enum
+import json
 import logging
 import uuid
 from typing import (
@@ -14,14 +15,13 @@ from typing import (
     Optional,
     Tuple,
     Type,
-    cast,
 )
 
 import numpy as np
 import sqlalchemy
 from langchain_core._api import warn_deprecated
 from sqlalchemy import SQLColumnExpression, delete, func
-from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID, JSONPATH
+from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
 
 try:
@@ -34,6 +34,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
+
 from langchain_postgres._utils import maximal_marginal_relevance
 
 
@@ -259,7 +260,6 @@ class PGVector(VectorStore):
         self,
         connection_string: str,
         embedding_function: Embeddings,
-        *,
         embedding_length: Optional[int] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         collection_metadata: Optional[dict] = None,
@@ -267,6 +267,7 @@ class PGVector(VectorStore):
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        *,
         connection: Optional[sqlalchemy.engine.Connection] = None,
         engine_args: Optional[dict[str, Any]] = None,
         use_jsonb: bool = False,
@@ -671,8 +672,8 @@ class PGVector(VectorStore):
             native = COMPARISONS_TO_NATIVE[operator]
             return func.jsonb_path_match(
                 self.EmbeddingStore.cmetadata,
-                cast(f"$.{field} {native} $value", JSONPATH),
-                cast({"value": filter_value}, JSONB),
+                f"$.{field} {native} $value",
+                json.dumps({"value": filter_value}),
             )
         elif operator == "$between":
             # Use AND with two comparisons
@@ -680,13 +681,13 @@ class PGVector(VectorStore):
 
             lower_bound = func.jsonb_path_match(
                 self.EmbeddingStore.cmetadata,
-                cast(f"$.{field} >= $value", JSONPATH),
-                cast({"value": low}, JSONB),
+                f"$.{field} >= $value",
+                json.dumps({"value": low}),
             )
             upper_bound = func.jsonb_path_match(
                 self.EmbeddingStore.cmetadata,
-                cast(f"$.{field} <= $value", JSONPATH),
-                cast({"value": high}, JSONB),
+                f"$.{field} <= $value",
+                json.dumps({"value": high}),
             )
             return sqlalchemy.and_(lower_bound, upper_bound)
         elif operator in {"$in", "$nin", "$like", "$ilike"}:

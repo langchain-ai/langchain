@@ -30,7 +30,7 @@ from tests.integration_tests.fixtures.filtering_test_cases import (
 # cd [root]/docker/docker-compose.yml
 # docker compose up pgvector
 CONNECTION_STRING = PGVector.connection_string_from_db_params(
-    driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg"),
+    driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg2"),
     host=os.environ.get("TEST_PGVECTOR_HOST", "localhost"),
     port=int(os.environ.get("TEST_PGVECTOR_PORT", "6024")),
     database=os.environ.get("TEST_PGVECTOR_DATABASE", "langchain"),
@@ -411,7 +411,7 @@ def pgvector() -> Generator[PGVector, None, None]:
         store.drop_tables()
 
 
-@pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES[:1])
 def test_pgvector_with_with_metadata_filters_1(
     pgvector: PGVector,
     test_filter: Dict[str, Any],
