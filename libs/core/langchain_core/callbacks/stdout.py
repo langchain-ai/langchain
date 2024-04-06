@@ -35,7 +35,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when a LLM starts running."""
         llm_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
-        print(f"\n\n\033[1m> Entering {llm_name} with prompt: {prompts} ...\033[0m")  # noqa: T201
+        print(f"\n\n\033[1m> Entering {llm_name} chain with prompt: {prompts} ...\033[0m")  # noqa: T201
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""

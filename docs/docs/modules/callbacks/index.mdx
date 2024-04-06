@@ -8,7 +8,7 @@ sidebar_class_name: hidden
 Head to [Integrations](/docs/integrations/callbacks/) for documentation on built-in callbacks integrations with 3rd-party tools.
 :::
 
-LangChain provides a callbacks system that provides a set of hooks to allow you entry into various stages of your application. This is useful for loggging, tracing and monitoring.
+LangChain provides a callbacks system that provides a set of hooks to allow you entry into various stages of your application. This is useful for logging, tracing and monitoring.
 
 ## Concepts
 Concepts include the hooks or events that provide entry to the application and the callbacks handler object which subscribes to one or more of these events.
@@ -22,7 +22,7 @@ Concepts include the hooks or events that provide entry to the application and t
 | LLM errors  | When a llm errors | `on_llm_error`|
 | Chat model start  | When a chat model starts | `on_chat_model_start`|
 | Chain start  | When a chain starts running | `on_chain_start`|
-| Chain end  | When a chain ends runnning | `on_chain_end`|
+| Chain end  | When a chain ends running | `on_chain_end`|
 | Chain error  | When a chain errors | `on_chain_error`|
 | Tool start  | When a tool starts running | `on_tool_start`|
 | Tool end  | When a tool ends running | `on_tool_end`|
@@ -44,7 +44,7 @@ Callbacks handlers are objects that implement the associated method (see table a
 
 The callbacks are available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
 
-- **Constructor callbacks**: Defined in the constructor, e.g. `LLMChain(callbacks=[handler], tags=['a-tag'])`. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the `LLMChain` constructor, it will not be used by the Model attached to that chain.
+- **Constructor callbacks**: Defined in the constructor. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the `LLMChain` constructor, it will not be used by the Model attached to that chain.
 - **Request callbacks**: Defined in the `invoke` method used for issuing a request. In this case, the callbacks will be used for that specific request (and all sub-requests that it contains (e.g. defining in the `invoke` method of a LCEL chain triggers a call to all entities in the chain, using the same handler). The same approach can be used for the `ainvoke`, `batch` and `abatch` methods.):
 
 #### When do you want to use each of these?
@@ -75,7 +75,6 @@ chain.invoke({"number": 20})
 chain = prompt.with_config({"callbacks": [handler]}) | model
 chain.invoke({"number": 25})
 
-
 # Request callbacks: we set the request callback on the chain and see it propagated to all subrequests
 chain = prompt | model
 chain.invoke({"number": 32}, config = config)
@@ -83,9 +82,6 @@ chain.invoke({"number": 32}, config = config)
 
 ## tmp
 
-LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. This is useful for logging, monitoring, streaming, and other tasks.
-
-You can subscribe to these events by using the `callbacks` argument available throughout the API. This argument is a list of handler objects, which are expected to implement one or more of the methods described below in more detail.
 
 ## Callback handlers
 
@@ -158,25 +154,28 @@ class BaseCallbackHandler:
 <CodeOutputBlock lang="python">
 
 ```
-> Entering new LLMChain chain...
-Prompt after formatting:
-1 + 2 = 
+> Entering new PromptTemplate chain...
 
 > Finished chain.
 
 
-> Entering new LLMChain chain...
-Prompt after formatting:
-1 + 2 = 
+> Entering OpenAI with prompt: ['what is 1 + 25?'] ...
+
+> Finished llm chain.
+
+
+> Entering new RunnableSequence chain...
+
+> Entering new PromptTemplate chain...
 
 > Finished chain.
 
+> Entering OpenAI with prompt: ['what is 1 + 40?'] ...
 
-> Entering new LLMChain chain...
-Prompt after formatting:
-1 + 2 = 
+> Finished llm chain.
 
 > Finished chain.
+
 ```
 
 </CodeOutputBlock>
