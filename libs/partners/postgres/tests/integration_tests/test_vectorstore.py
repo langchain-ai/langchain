@@ -330,6 +330,8 @@ def test_pgvector_with_custom_engine_args() -> None:
 @pytest.fixture
 def pgvector() -> Generator[PGVector, None, None]:
     """Create a PGVector instance."""
+    connection = CONNECTION_STRING
+    PGVector.my_drop_tables(connection)
     store = PGVector.from_documents(
         documents=DOCUMENTS,
         collection_name="test_collection",
@@ -342,6 +344,12 @@ def pgvector() -> Generator[PGVector, None, None]:
     # Do clean up
     finally:
         store.drop_tables()
+
+
+def test_something():
+    PGVector.my_drop_tables(CONNECTION_STRING)
+    PGVector.my_drop_tables(CONNECTION_STRING)
+    PGVector.create_tables(CONNECTION_STRING)
 
 
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)

@@ -269,6 +269,14 @@ class PGVector(VectorStore):
         """Create a new engine."""
         return sqlalchemy.create_engine(url=self.connection_string, **self.engine_args)
 
+    @staticmethod
+    def create_tables(connection: str) -> None:
+        """Create all the relevant schema."""
+        engine = sqlalchemy.create_engine(connection)
+        Base.metadata.create_all(engine)
+        with Session(bind=engine) as session:
+            Base.metadata.create_all(session.get_bind())
+
     def create_vector_extension(self) -> None:
         try:
             with self._make_session() as session:
@@ -291,6 +299,15 @@ class PGVector(VectorStore):
     def create_tables_if_not_exists(self) -> None:
         with self._make_session() as session:
             Base.metadata.create_all(session.get_bind())
+
+    @staticmethod
+    def my_drop_tables(connection: str) -> None:
+        """Drop all the relevant schema."""
+        engine = sqlalchemy.create_engine(connection)
+        Base.metadata.drop_all(engine)
+
+    @staticmethod
+    def my_create_tables(connection: str) -> None:
 
     def drop_tables(self) -> None:
         with self._make_session() as session:
