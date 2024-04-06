@@ -17,7 +17,9 @@ prompt = ChatPromptTemplate.from_messages(
 )
 prompt = prompt.partial(retriever_description=retriever_description)
 
-model = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0, max_tokens_to_sample=1000)
+model = ChatAnthropic(
+    model="claude-3-sonnet-20240229", temperature=0, max_tokens_to_sample=1000
+)
 
 chain = (
     RunnablePassthrough.assign(

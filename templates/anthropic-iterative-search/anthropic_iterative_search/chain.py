@@ -9,7 +9,9 @@ from .retriever_agent import executor
 
 prompt = ChatPromptTemplate.from_template(answer_prompt)
 
-model = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0, max_tokens_to_sample=1000)
+model = ChatAnthropic(
+    model="claude-3-sonnet-20240229", temperature=0, max_tokens_to_sample=1000
+)
 
 chain = (
     {"query": lambda x: x["query"], "information": executor | (lambda x: x["output"])}
