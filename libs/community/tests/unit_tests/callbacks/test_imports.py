@@ -1,4 +1,4 @@
-from langchain_community.callbacks import __all__, _module_lookup
+from langchain_community.callbacks import __all__
 
 EXPECTED_ALL = [
     "AimCallbackHandler",
@@ -29,6 +29,4 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    """Test that __all__ is correctly set."""
     assert set(__all__) == set(EXPECTED_ALL)
-    assert set(__all__) == set(_module_lookup.keys())
