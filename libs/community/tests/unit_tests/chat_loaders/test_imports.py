@@ -1,4 +1,4 @@
-from langchain_community.chat_loaders import _module_lookup
+from langchain_community.chat_loaders import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "BaseChatLoader",
@@ -15,4 +15,6 @@ EXPECTED_ALL = [
 
 
 def test_all_imports() -> None:
-    assert set(_module_lookup.keys()) == set(EXPECTED_ALL)
+    """Test that __all__ is correctly set."""
+    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__) == set(_module_lookup.keys())
