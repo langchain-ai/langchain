@@ -1,14 +1,63 @@
 import copy
 import json
 from json import JSONDecodeError
-from typing import Any, List, Type
+from typing import Any, Dict, List, Optional, Type
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, InvalidToolCall
 from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
 from langchain_core.utils.json import parse_partial_json
+
+
+def parse_tool_call(
+    raw_tool_call: Dict[str, Any],
+    *,
+    partial: bool = False,
+    strict: bool = False,
+    return_id: bool = True,
+) -> Optional[Dict[str, Any]]:
+    """Parse a single tool call."""
+    if "function" not in raw_tool_call:
+        return None
+    if partial:
+        try:
+            function_args = parse_partial_json(
+                raw_tool_call["function"]["arguments"], strict=strict
+            )
+        except (JSONDecodeError, TypeError):  # None args raise TypeError
+            return None
+    else:
+        try:
+            function_args = json.loads(
+                raw_tool_call["function"]["arguments"], strict=strict
+            )
+        except JSONDecodeError as e:
+            raise OutputParserException(
+                f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                f"{raw_tool_call['function']['arguments']}\n\nare not valid JSON. "
+                f"Received JSONDecodeError {e}"
+            )
+    parsed = {
+        "name": raw_tool_call["function"]["name"] or "",
+        "args": function_args or {},
+    }
+    if return_id:
+        parsed["id"] = raw_tool_call["id"]
+    return parsed
+
+
+def make_invalid_tool_call(
+    raw_tool_call: Dict[str, Any], error_msg: Optional[str],
+) -> InvalidToolCall:
+    """Create an InvalidToolCall from a raw tool call."""
+    return InvalidToolCall(
+        name=raw_tool_call["function"]["name"],
+        args=raw_tool_call["function"]["arguments"],
+        id=raw_tool_call.get("id"),
+        error=error_msg,
+    )
 
 
 def parse_tool_calls(
@@ -18,37 +67,19 @@ def parse_tool_calls(
     strict: bool = False,
     return_id: bool = True,
 ) -> List[dict]:
+    """Parse a list of tool calls."""
     final_tools = []
     exceptions = []
     for tool_call in raw_tool_calls:
-        if "function" not in tool_call:
+        try:
+            parsed = parse_tool_call(
+                tool_call, partial=partial, strict=strict, return_id=return_id
+            )
+            if parsed:
+                final_tools.append(parsed)
+        except OutputParserException as e:
+            exceptions.append(str(e))
             continue
-        if partial:
-            try:
-                function_args = parse_partial_json(
-                    tool_call["function"]["arguments"], strict=strict
-                )
-            except (JSONDecodeError, TypeError):  # None args raise TypeError
-                continue
-        else:
-            try:
-                function_args = json.loads(
-                    tool_call["function"]["arguments"], strict=strict
-                )
-            except JSONDecodeError as e:
-                exceptions.append(
-                    f"Function {tool_call['function']['name']} arguments:\n\n"
-                    f"{tool_call['function']['arguments']}\n\nare not valid JSON. "
-                    f"Received JSONDecodeError {e}"
-                )
-                continue
-        parsed = {
-            "name": tool_call["function"]["name"] or "",
-            "args": function_args or {},
-        }
-        if return_id:
-            parsed["id"] = tool_call["id"]
-        final_tools.append(parsed)
     if exceptions:
         raise OutputParserException("\n\n".join(exceptions))
     return final_tools

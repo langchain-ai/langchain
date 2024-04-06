@@ -192,9 +192,7 @@ def default_tool_parser(raw_tool_calls: List[dict]) -> List[dict]:
         if "function" not in tool_call:
             continue
         else:
-            function_args = json.loads(
-                tool_call["function"]["arguments"]
-            )
+            function_args = json.loads(tool_call["function"]["arguments"])
         parsed = {
             "name": tool_call["function"]["name"] or "",
             "args": function_args or {},

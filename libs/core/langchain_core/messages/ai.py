@@ -1,6 +1,6 @@
 import warnings
 from json import JSONDecodeError
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain_core.load import Serializable
 from langchain_core.messages.base import (
@@ -60,6 +60,19 @@ class ToolCallChunk(Serializable):
     index: Optional[int] = None
 
 
+class InvalidToolCall(Serializable):
+    """Allowance for errors made by LLM.
+
+    Here we add an `error` key to surface errors made during generation
+    (e.g., invalid JSON arguments.)
+    """
+
+    name: Optional[str] = None
+    args: Optional[str] = None
+    id: Optional[str] = None
+    error: Optional[str] = None
+
+
 class AIMessage(BaseMessage):
     """Message from an AI."""
 
@@ -68,7 +81,7 @@ class AIMessage(BaseMessage):
         conversation.
     """
 
-    tool_calls: Optional[List[ToolCall]] = None
+    tool_calls: Optional[List[Union[ToolCall, InvalidToolCall]]] = None
     """If provided, tool calls associated with the message."""
 
     type: Literal["ai"] = "ai"
@@ -85,12 +98,14 @@ class AIMessage(BaseMessage):
         if raw_tool_calls and not tool_calls:
             warnings.warn(
                 "You appear to be using an old tool calling model, please upgrade "
-                "your packages to versions that set message tool calls."
+                "your packages to versions that set message tool calls. e.g., "
+                "`pip install --upgrade langchain-anthropic`, `pip install --upgrade "
+                "langchain-openai`, etc."
             )
-        try:
-            values["tool_calls"] = default_tool_parser(raw_tool_calls)
-        except Exception:
-            pass
+        # try:
+        #     values["tool_calls"] = default_tool_parser(raw_tool_calls)
+        # except Exception:
+        #     pass
         return values
 
 

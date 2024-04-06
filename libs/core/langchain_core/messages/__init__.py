@@ -18,6 +18,7 @@
 from langchain_core.messages.ai import (
     AIMessage,
     AIMessageChunk,
+    InvalidToolCall,
     ToolCall,
     ToolCallChunk,
 )
@@ -55,6 +56,7 @@ __all__ = [
     "FunctionMessageChunk",
     "HumanMessage",
     "HumanMessageChunk",
+    "InvalidToolCall",
     "MessageLikeRepresentation",
     "SystemMessage",
     "SystemMessageChunk",
