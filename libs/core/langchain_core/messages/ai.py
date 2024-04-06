@@ -45,10 +45,10 @@ class AIMessage(BaseMessage):
         tool_calls = values.get("tool_calls") or values.get("tool_call_chunks")
         if raw_tool_calls and not tool_calls:
             warnings.warn(
-                "You appear to be using an old tool calling model, please upgrade "
-                "your packages to versions that set message tool calls. e.g., "
-                "`pip install --upgrade langchain-anthropic`, `pip install --upgrade "
-                "langchain-openai`, etc."
+                "New langchain packages are available that more efficiently handle "
+                "tool calling. Please upgrade your packages to versions that set "
+                "message tool calls. e.g., `pip install --upgrade langchain-anthropic"
+                "`, pip install--upgrade langchain-openai`, etc."
             )
         try:
             if issubclass(cls, AIMessageChunk):  # type: ignore
