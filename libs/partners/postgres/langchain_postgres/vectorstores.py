@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import enum
-import json
 import logging
 import uuid
 from typing import (

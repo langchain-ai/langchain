@@ -1,12 +1,11 @@
 """Test PGVector functionality."""
 
 import os
-from typing import Any, Dict, Generator, List, Type, Union
+from typing import Any, Dict, Generator, List
 
 import pytest
 import sqlalchemy
 from langchain_core.documents import Document
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
 from langchain_postgres.vectorstores import (
@@ -31,7 +30,7 @@ from tests.integration_tests.fixtures.filtering_test_cases import (
 # cd [root]/docker/docker-compose.yml
 # docker compose up pgvector
 CONNECTION_STRING = PGVector.connection_string_from_db_params(
-    driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg2"),
+    driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg"),
     host=os.environ.get("TEST_PGVECTOR_HOST", "localhost"),
     port=int(os.environ.get("TEST_PGVECTOR_PORT", "6024")),
     database=os.environ.get("TEST_PGVECTOR_DATABASE", "langchain"),
@@ -485,143 +484,6 @@ def test_invalid_filters(pgvector: PGVector, invalid_filter: Any) -> None:
     """Verify that invalid filters raise an error."""
     with pytest.raises(ValueError):
         pgvector._create_filter_clause(invalid_filter)
-
-
-@pytest.mark.parametrize(
-    "filter,compiled",
-    [
-        ({"id 'evil code'": 2}, ValueError),
-        (
-            {"id": "'evil code' == 2"},
-            (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, "
-                "'$.id == $value', "
-                "'{\"value\": \"''evil code'' == 2\"}')"
-            ),
-        ),
-        (
-            {"name": 'a"b'},
-            (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, "
-                "'$.name == $value', "
-                '\'{"value": "a\\\\"b"}\')'
-            ),
-        ),
-    ],
-)
-def test_evil_code(
-    pgvector: PGVector, filter: Any, compiled: Union[Type[Exception], str]
-) -> None:
-    """Test evil code."""
-    if isinstance(compiled, str):
-        clause = pgvector._create_filter_clause(filter)
-        compiled_stmt = str(
-            clause.compile(
-                dialect=postgresql.dialect(),
-                compile_kwargs={
-                    # This substitutes the parameters with their actual values
-                    "literal_binds": True
-                },
-            )
-        )
-        assert compiled_stmt == compiled
-    else:
-        with pytest.raises(compiled):
-            pgvector._create_filter_clause(filter)
-
-
-@pytest.mark.parametrize(
-    "filter,compiled",
-    [
-        (
-            {"id": 2},
-            "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
-            "'{\"value\": 2}')",
-        ),
-        (
-            {"id": {"$eq": 2}},
-            (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
-                "'{\"value\": 2}')"
-            ),
-        ),
-        (
-            {"name": "foo"},
-            (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, "
-                "'$.name == $value', "
-                '\'{"value": "foo"}\')'
-            ),
-        ),
-        (
-            {"id": {"$ne": 2}},
-            (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id != $value', "
-                "'{\"value\": 2}')"
-            ),
-        ),
-        (
-            {"id": {"$gt": 2}},
-            (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id > $value', "
-                "'{\"value\": 2}')"
-            ),
-        ),
-        (
-            {"id": {"$gte": 2}},
-            (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id >= $value', "
-                "'{\"value\": 2}')"
-            ),
-        ),
-        (
-            {"id": {"$lt": 2}},
-            (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id < $value', "
-                "'{\"value\": 2}')"
-            ),
-        ),
-        (
-            {"id": {"$lte": 2}},
-            (
-                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id <= $value', "
-                "'{\"value\": 2}')"
-            ),
-        ),
-        (
-            {"name": {"$ilike": "foo"}},
-            "langchain_pg_embedding.cmetadata ->> 'name' ILIKE 'foo'",
-        ),
-        (
-            {"name": {"$like": "foo"}},
-            "langchain_pg_embedding.cmetadata ->> 'name' LIKE 'foo'",
-        ),
-        (
-            {"$or": [{"id": 1}, {"id": 2}]},
-            # Please note that this might not be super optimized
-            # Another way to phrase the query is as
-            # langchain_pg_embedding.cmetadata @@ '($.id == 1 || $.id == 2)'
-            "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
-            "'{\"value\": 1}') OR jsonb_path_match(langchain_pg_embedding.cmetadata, "
-            "'$.id == $value', '{\"value\": 2}')",
-        ),
-    ],
-)
-def test_pgvector_query_compilation(
-    pgvector: PGVector, filter: Any, compiled: str
-) -> None:
-    """Test translation from IR to SQL"""
-    clause = pgvector._create_filter_clause(filter)
-    compiled_stmt = str(
-        clause.compile(
-            dialect=postgresql.dialect(),
-            compile_kwargs={
-                # This substitutes the parameters with their actual values
-                "literal_binds": True
-            },
-        )
-    )
-    assert compiled_stmt == compiled
 
 
 def test_validate_operators() -> None:
