@@ -122,6 +122,7 @@ class InvalidToolCall(Serializable):
     name: Optional[str] = None
     args: Optional[str] = None
     id: Optional[str] = None
+    index: Optional[int] = None
     error: Optional[str] = None
 
 

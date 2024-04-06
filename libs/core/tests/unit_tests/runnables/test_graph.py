@@ -226,6 +226,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                 "name": {"title": "Name", "type": "string"},
                                 "args": {"title": "Args", "type": "string"},
                                 "id": {"title": "Id", "type": "string"},
+                                "index": {"title": "Index", "type": "integer"},
                                 "error": {"title": "Error", "type": "string"},
                             },
                         },

@@ -155,15 +155,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
             system = message.content
             continue
 
-        if isinstance(message, AIMessage):
-            role = "assistant"
-        elif isinstance(message, HumanMessage):
-            role = "user"
-        else:
-            raise ValueError(
-                f"Unknown message type does not correspond to user or assistant roles: "
-                f"{message=}"
-            )
+        role = _message_type_lookups[message.type]
         content: Union[str, List[Dict]]
 
         if not isinstance(message.content, str):
@@ -346,18 +338,15 @@ class ChatAnthropic(BaseChatModel):
             )
             message = result.generations[0].message
             if isinstance(message, AIMessage) and message.tool_calls is not None:
-                if message.tool_calls is None:
-                    tool_call_chunks = None
-                else:
-                    tool_call_chunks = [
-                        {
-                            "name": tool_call.name,
-                            "args": json.dumps(tool_call.args),
-                            "id": tool_call.id,
-                            "index": tool_call.index,
-                        }
-                        for tool_call in message.tool_calls
-                    ]
+                tool_call_chunks = [
+                    {
+                        "name": tool_call.name,
+                        "args": json.dumps(tool_call.args),
+                        "id": tool_call.id,
+                        "index": tool_call.index,
+                    }
+                    for tool_call in message.tool_calls
+                ]
                 message_chunk = AIMessageChunk(
                     content=message.content,
                     tool_call_chunks=tool_call_chunks,
@@ -388,18 +377,15 @@ class ChatAnthropic(BaseChatModel):
             )
             message = result.generations[0].message
             if isinstance(message, AIMessage) and message.tool_calls is not None:
-                if message.tool_calls is None:
-                    tool_call_chunks = None
-                else:
-                    tool_call_chunks = [
-                        {
-                            "name": tool_call.name,
-                            "args": json.dumps(tool_call.args),
-                            "id": tool_call.id,
-                            "index": tool_call.index,
-                        }
-                        for tool_call in message.tool_calls
-                    ]
+                tool_call_chunks = [
+                    {
+                        "name": tool_call.name,
+                        "args": json.dumps(tool_call.args),
+                        "id": tool_call.id,
+                        "index": tool_call.index,
+                    }
+                    for tool_call in message.tool_calls
+                ]
                 message_chunk = AIMessageChunk(
                     content=message.content,
                     tool_call_chunks=tool_call_chunks,

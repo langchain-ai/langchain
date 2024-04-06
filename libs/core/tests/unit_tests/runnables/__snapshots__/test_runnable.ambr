@@ -5579,6 +5579,10 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6123,6 +6127,10 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6603,6 +6611,10 @@
           'id': dict({
             'title': 'Id',
             'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
           }),
           'name': dict({
             'title': 'Name',
@@ -7097,6 +7109,10 @@
           'id': dict({
             'title': 'Id',
             'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
           }),
           'name': dict({
             'title': 'Name',
@@ -7614,6 +7630,10 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8122,6 +8142,10 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8620,6 +8644,10 @@
           'id': dict({
             'title': 'Id',
             'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
           }),
           'name': dict({
             'title': 'Name',
