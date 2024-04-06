@@ -1,5 +1,6 @@
 import csv
-from typing import List
+from pathlib import Path
+from typing import List, Union
 
 from langchain_core.documents import Document
 
@@ -9,7 +10,7 @@ from langchain_community.document_loaders.base import BaseLoader
 class CoNLLULoader(BaseLoader):
     """Load `CoNLL-U` files."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: Union[str, Path]):
         """Initialize with a file path."""
         self.file_path = file_path
 
@@ -29,5 +30,5 @@ class CoNLLULoader(BaseLoader):
             else:
                 text += line[1] + " "
 
-        metadata = {"source": self.file_path}
+        metadata = {"source": str(self.file_path)}
         return [Document(page_content=text, metadata=metadata)]
