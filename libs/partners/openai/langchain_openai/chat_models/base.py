@@ -112,7 +112,9 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
                 except Exception as e:
-                    tool_calls.append(make_invalid_tool_call(raw_tool_call, str(e)))
+                    tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e)).dict()
+                    )
         else:
             tool_calls = None
         return AIMessage(
