@@ -87,6 +87,7 @@ _module_lookup = {
     "XinferenceEmbeddings": "langchain_community.embeddings.xinference",
     "PremAIEmbeddings": "langchain_community.embeddings.premai",
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
+    "AscendEmbeddings": "langchain_community.embeddings.ascend",
 }
 
 
