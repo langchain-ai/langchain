@@ -5309,7 +5309,14 @@
           }),
           'tool_calls': dict({
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -5550,6 +5557,34 @@
           'content',
         ]),
         'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
         'type': 'object',
       }),
       'StringPromptValue': dict({
@@ -5818,7 +5853,14 @@
           }),
           'tool_calls': dict({
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -6059,6 +6101,34 @@
           'content',
         ]),
         'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
         'type': 'object',
       }),
       'StringPromptValue': dict({
@@ -6311,7 +6381,14 @@
           }),
           'tool_calls': dict({
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -6505,6 +6582,34 @@
           'content',
         ]),
         'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
         'type': 'object',
       }),
       'SystemMessage': dict({
@@ -6723,7 +6828,14 @@
           }),
           'tool_calls': dict({
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -6964,6 +7076,34 @@
           'content',
         ]),
         'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
         'type': 'object',
       }),
       'StringPromptValue': dict({
@@ -7204,7 +7344,14 @@
           }),
           'tool_calls': dict({
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -7445,6 +7592,34 @@
           'content',
         ]),
         'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
         'type': 'object',
       }),
       'StringPromptValue': dict({
@@ -7677,7 +7852,14 @@
           }),
           'tool_calls': dict({
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -7918,6 +8100,34 @@
           'content',
         ]),
         'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
         'type': 'object',
       }),
       'PromptTemplateOutput': dict({
@@ -8188,7 +8398,14 @@
           }),
           'tool_calls': dict({
             'items': dict({
-              '$ref': '#/definitions/ToolCall',
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -8382,6 +8599,34 @@
           'content',
         ]),
         'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
         'type': 'object',
       }),
       'SystemMessage': dict({

@@ -1,63 +1,24 @@
 import warnings
 from json import JSONDecodeError
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, List, Literal, Optional, Union
 
-from langchain_core.load import Serializable
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
     merge_content,
 )
+from langchain_core.messages.tool import (
+    InvalidToolCall,
+    ToolCall,
+    ToolCallChunk,
+    default_tool_chunk_parser,
+    default_tool_parser,
+)
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
-from langchain_core.utils.json import parse_partial_json
-
-
-class ToolCall(Serializable):
-    """A call to a tool.
-
-    Attributes:
-        name: (str) the name of the tool to be called
-        args: (dict) the arguments to the tool call
-        id: (str) if provided, an identifier associated with the tool call
-        index: (int) if provided, the index of the tool call in a sequence
-            of content
-    """
-
-    name: str
-    args: Dict[str, Any]
-    id: Optional[str] = None
-    index: Optional[int] = None
-
-
-class ToolCallChunk(Serializable):
-    """A chunk of a tool call (e.g., as part of a stream).
-
-    When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
-    all string attributes are concatenated. Chunks are only merged if their
-    values of `index` are equal and not None.
-
-    Example:
-
-    .. code-block:: python
-        left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-        right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
-        (
-            AIMessageChunk(content="", tool_call_chunks=left_chunks)
-            + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-        ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
-
-    Attributes:
-        name: (str) if provided, a substring of the name of the tool to be called
-        args: (str) if provided, a JSON substring of the arguments to the tool call
-        id: (str) if provided, a substring of an identifier for the tool call
-        index: (int) if provided, the index of the tool call in a sequence
-    """
-
-    name: Optional[str] = None
-    args: Optional[str] = None
-    id: Optional[str] = None
-    index: Optional[int] = None
+from langchain_core.utils.json import (
+    parse_partial_json,
+)
 
 
 class AIMessage(BaseMessage):
@@ -68,7 +29,7 @@ class AIMessage(BaseMessage):
         conversation.
     """
 
-    tool_calls: Optional[List[ToolCall]] = None
+    tool_calls: Optional[List[Union[ToolCall, InvalidToolCall]]] = None
     """If provided, tool calls associated with the message."""
 
     type: Literal["ai"] = "ai"
@@ -84,10 +45,18 @@ class AIMessage(BaseMessage):
         tool_calls = values.get("tool_calls") or values.get("tool_call_chunks")
         if raw_tool_calls and not tool_calls:
             warnings.warn(
-                "You appear to be using an old tool calling model, please upgrade "
-                "your packages to versions that set message tool calls."
+                "New langchain packages are available that more efficiently handle "
+                "tool calling. Please upgrade your packages to versions that set "
+                "message tool calls. e.g., `pip install --upgrade langchain-anthropic"
+                "`, pip install--upgrade langchain-openai`, etc."
             )
-        # TODO: best-effort parsing
+        try:
+            if issubclass(cls, AIMessageChunk):  # type: ignore
+                values["tool_call_chunks"] = default_tool_chunk_parser(raw_tool_calls)
+            else:
+                values["tool_calls"] = default_tool_parser(raw_tool_calls)
+        except Exception:
+            pass
         return values
 
 
