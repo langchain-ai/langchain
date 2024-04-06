@@ -183,19 +183,3 @@ def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
                 f"to be present, but got {json_obj}"
             )
     return json_obj
-
-
-def default_tool_parser(raw_tool_calls: List[dict]) -> List[dict]:
-    """Best-effort parsing of tools."""
-    tool_calls = []
-    for tool_call in raw_tool_calls:
-        if "function" not in tool_call:
-            continue
-        else:
-            function_args = json.loads(tool_call["function"]["arguments"])
-        parsed = {
-            "name": tool_call["function"]["name"] or "",
-            "args": function_args or {},
-        }
-        tool_calls.append(parsed)
-    return tool_calls

@@ -208,14 +208,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                     "definitions": {
                         "ToolCall": {
                             "title": "ToolCall",
-                            "description": (
-                                "A call to a tool.\n\nAttributes:\n    name: (str)"
-                                " the name of the tool to be called\n    args: (dict) "
-                                "the arguments to the tool call\n    id: (str) if "
-                                "provided, an identifier associated with the tool call"
-                                "\n    index: (int) if provided, the index of the tool "
-                                "call in a sequence\n        of content"
-                            ),
+                            "description": "A call to a tool.\n\nAttributes:\n    name: (str) the name of the tool to be called\n    args: (dict) the arguments to the tool call\n    id: (str) if provided, an identifier associated with the tool call\n    index: (int) if provided, the index of the tool call in a sequence\n        of content",  # noqa: E501
                             "type": "object",
                             "properties": {
                                 "name": {"title": "Name", "type": "string"},
@@ -224,6 +217,17 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                 "index": {"title": "Index", "type": "integer"},
                             },
                             "required": ["name", "args"],
+                        },
+                        "InvalidToolCall": {
+                            "title": "InvalidToolCall",
+                            "description": "Allowance for errors made by LLM.\n\nHere we add an `error` key to surface errors made during generation\n(e.g., invalid JSON arguments.)",  # noqa: E501
+                            "type": "object",
+                            "properties": {
+                                "name": {"title": "Name", "type": "string"},
+                                "args": {"title": "Args", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
+                                "error": {"title": "Error", "type": "string"},
+                            },
                         },
                         "AIMessage": {
                             "title": "AIMessage",
@@ -269,7 +273,12 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                 "tool_calls": {
                                     "title": "Tool Calls",
                                     "type": "array",
-                                    "items": {"$ref": "#/definitions/ToolCall"},
+                                    "items": {
+                                        "anyOf": [
+                                            {"$ref": "#/definitions/ToolCall"},
+                                            {"$ref": "#/definitions/InvalidToolCall"},
+                                        ]
+                                    },
                                 },
                             },
                             "required": ["content"],
@@ -320,10 +329,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "ChatMessage": {
                             "title": "ChatMessage",
-                            "description": (
-                                "Message that can be assigned an arbitrary speaker "
-                                "(i.e. role)."
-                            ),
+                            "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -363,11 +369,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "SystemMessage": {
                             "title": "SystemMessage",
-                            "description": (
-                                "Message for priming AI behavior, usually "
-                                "passed in as the first of a sequence\nof input "
-                                "messages."
-                            ),
+                            "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -406,10 +408,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "FunctionMessage": {
                             "title": "FunctionMessage",
-                            "description": (
-                                "Message for passing the result of executing a "
-                                "function back to a model."
-                            ),
+                            "description": "Message for passing the result of executing a function back to a model.",  # noqa: E501
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -448,10 +447,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "ToolMessage": {
                             "title": "ToolMessage",
-                            "description": (
-                                "Message for passing the result of executing a "
-                                "tool back to a model."
-                            ),
+                            "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
                             "type": "object",
                             "properties": {
                                 "content": {

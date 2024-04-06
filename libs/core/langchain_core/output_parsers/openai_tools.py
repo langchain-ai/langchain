@@ -49,7 +49,8 @@ def parse_tool_call(
 
 
 def make_invalid_tool_call(
-    raw_tool_call: Dict[str, Any], error_msg: Optional[str],
+    raw_tool_call: Dict[str, Any],
+    error_msg: Optional[str],
 ) -> InvalidToolCall:
     """Create an InvalidToolCall from a raw tool call."""
     return InvalidToolCall(
