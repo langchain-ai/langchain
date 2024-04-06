@@ -289,9 +289,13 @@ class VikingDB(VectorStore):
 
         ret = []
         for item in res:
-            item.fields.pop("primary_key")
-            item.fields.pop("vector")
-            page_content = item.fields.pop("text")
+            if "primary_key" in item.fields:
+                item.fields.pop("primary_key")
+            if "vector" in item.fields:
+                item.fields.pop("vector")
+            page_content = ""
+            if "text" in item.fields:
+                page_content = item.fields.pop("text")
             doc = Document(page_content=page_content, metadata=item.fields)
             pair = (doc, item.score)
             ret.append(pair)
@@ -351,6 +355,12 @@ class VikingDB(VectorStore):
         documents = []
         ordered_result_embeddings = []
         for item in res:
+            if (
+                "vector" not in item.fields
+                or "primary_key" not in item.fields
+                or "text" not in item.fields
+            ):
+                continue
             ordered_result_embeddings.append(item.fields.pop("vector"))
             item.fields.pop("primary_key")
             page_content = item.fields.pop("text")

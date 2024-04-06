@@ -84,10 +84,11 @@ from langchain.document_loaders import AzureAIDataLoader
 
 >[Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known
 > as `Azure Form Recognizer`) is machine-learning
-> based service that extracts text (including handwriting), tables or key-value-pairs
-> from scanned documents or images.
+> based service that extracts texts (including handwriting), tables, document structures, 
+> and key-value-pairs
+> from digital or scanned PDFs, images, Office and HTML files.
 >
->Document Intelligence supports `PDF`, `JPEG`, `PNG`, `BMP`, or `TIFF`.
+> Document Intelligence supports `PDF`, `JPEG/JPG`, `PNG`, `BMP`, `TIFF`, `HEIF`, `DOCX`, `XLSX`, `PPTX` and `HTML`.
 
 First, you need to install a python package.
 
@@ -272,19 +273,20 @@ from langchain.retrievers import AzureCognitiveSearchRetriever
 
 ## Toolkits
 
-### Azure Cognitive Services
+### Azure AI Services
 
 We need to install several python packages.
 
 ```bash
-pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision-imageanalysis
 ```
 
-See a [usage example](/docs/integrations/toolkits/azure_cognitive_services).
+See a [usage example](/docs/integrations/toolkits/azure_ai_services).
 
 ```python
-from langchain_community.agent_toolkits import O365Toolkit
+from langchain_community.agent_toolkits import azure_ai_services
 ```
+
 ### Microsoft Office 365 email and calendar
 
 We need to install `O365` python package.
@@ -344,7 +346,7 @@ pip install langchain-experimental openai presidio-analyzer presidio-anonymizer 
 python -m spacy download en_core_web_lg
 ```
 
-See [usage examples](/docs/guides/privacy/presidio_data_anonymization/).
+See [usage examples](/docs/guides/productionization/safety/presidio_data_anonymization/).
 
 ```python
 from langchain_experimental.data_anonymizer import PresidioAnonymizer, PresidioReversibleAnonymizer

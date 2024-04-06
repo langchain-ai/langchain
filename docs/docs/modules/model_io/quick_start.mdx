@@ -4,7 +4,7 @@ sidebar_position: 0
 
 # Quickstart
 
-The quick start will cover the basics of working with language models. It will introduce the two different types of models - LLMs and ChatModels. It will then cover how to use PromptTemplates to format the inputs to these models, and how to use Output Parsers to work with the outputs. For a deeper conceptual guide into these topics - please see [this documentation](./concepts)
+The quick start will cover the basics of working with language models. It will introduce the two different types of models - LLMs and ChatModels. It will then cover how to use PromptTemplates to format the inputs to these models, and how to use Output Parsers to work with the outputs.
 
 ## Models
 For this getting started guide, we will provide a few options: using an API like Anthropic or OpenAI, or using a local open source model via Ollama.
@@ -99,7 +99,7 @@ chat_model = ChatAnthropic(anthropic_api_key="...")
 First we'll need to install their partner package:
 
 ```shell
-pip install cohere
+pip install langchain-cohere
 ```
 
 Accessing the API requires an API key, which you can get by creating an account and heading [here](https://dashboard.cohere.com/api-keys). Once we have a key we'll want to set it as an environment variable by running:
@@ -111,7 +111,7 @@ export COHERE_API_KEY="..."
 We can then initialize the model:
 
 ```python
-from langchain_community.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 
 chat_model = ChatCohere()
 ```
@@ -119,7 +119,7 @@ chat_model = ChatCohere()
 If you'd prefer not to set an environment variable you can pass the key in directly via the `cohere_api_key` named parameter when initiating the Cohere LLM class:
 
 ```python
-from langchain_community.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 
 chat_model = ChatCohere(cohere_api_key="...")
 ```
@@ -132,7 +132,6 @@ You can initialize them with parameters like `temperature` and others, and pass 
 The main difference between them is their input and output schemas.
 The LLM objects take string as input and output string.
 The ChatModel objects take a list of messages as input and output a message.
-For a deeper conceptual explanation of this difference please see [this documentation](./concepts)
 
 We can see the difference between an LLM and a ChatModel when we invoke it.
 
@@ -247,14 +246,13 @@ chain.invoke({"text": "colors"})
 
 Note that we are using the `|` syntax to join these components together.
 This `|` syntax is powered by the LangChain Expression Language (LCEL) and relies on the universal `Runnable` interface that all of these objects implement.
-To learn more about LCEL, read the documentation [here](/docs/expression_language).
+To learn more about LCEL, read the documentation [here](/docs/expression_language/).
 
 ## Conclusion
 
 That's it for getting started with prompts, models, and output parsers! This just covered the surface of what there is to learn. For more information, check out:
 
-- The [conceptual guide](./concepts) for information about the concepts presented here
-- The [prompt section](./prompts) for information on how to work with prompt templates
-- The [LLM section](./llms) for more information on the LLM interface
-- The [ChatModel section](./chat) for more information on the ChatModel interface
-- The [output parser section](./output_parsers) for information about the different types of output parsers.
+- The [prompt section](/docs/modules/model_io/prompts/) for information on how to work with prompt templates
+- The [LLM section](/docs/modules/model_io/llms/) for more information on the LLM interface
+- The [ChatModel section](/docs/modules/model_io/chat/) for more information on the ChatModel interface
+- The [output parser section](/docs/modules/model_io/output_parsers/) for information about the different types of output parsers.

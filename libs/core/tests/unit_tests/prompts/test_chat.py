@@ -28,7 +28,8 @@ from langchain_core.prompts.chat import (
 )
 
 
-def create_messages() -> List[BaseMessagePromptTemplate]:
+@pytest.fixture
+def messages() -> List[BaseMessagePromptTemplate]:
     """Create messages."""
     system_message_prompt = SystemMessagePromptTemplate(
         prompt=PromptTemplate(
@@ -63,11 +64,14 @@ def create_messages() -> List[BaseMessagePromptTemplate]:
     ]
 
 
-def create_chat_prompt_template() -> ChatPromptTemplate:
+@pytest.fixture
+def chat_prompt_template(
+    messages: List[BaseMessagePromptTemplate],
+) -> ChatPromptTemplate:
     """Create a chat prompt template."""
     return ChatPromptTemplate(
         input_variables=["foo", "bar", "context"],
-        messages=create_messages(),  # type: ignore[arg-type]
+        messages=messages,  # type: ignore[arg-type]
     )
 
 
@@ -110,10 +114,9 @@ def test_message_prompt_template_from_template_file() -> None:
     assert expected == actual
 
 
-def test_chat_prompt_template() -> None:
+async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) -> None:
     """Test chat prompt template."""
-    prompt_template = create_chat_prompt_template()
-    prompt = prompt_template.format_prompt(foo="foo", bar="bar", context="context")
+    prompt = chat_prompt_template.format_prompt(foo="foo", bar="bar", context="context")
     assert isinstance(prompt, ChatPromptValue)
     messages = prompt.to_messages()
     assert len(messages) == 4
@@ -121,6 +124,12 @@ def test_chat_prompt_template() -> None:
     assert messages[1].content == "Hello foo, I'm bar. Thanks for the context"
     assert messages[2].content == "I'm an AI. I'm foo. I'm bar."
     assert messages[3].content == "I'm a generic message. I'm foo. I'm bar."
+
+    async_prompt = await chat_prompt_template.aformat_prompt(
+        foo="foo", bar="bar", context="context"
+    )
+
+    assert async_prompt.to_messages() == messages
 
     string = prompt.to_string()
     expected = (
@@ -131,13 +140,15 @@ def test_chat_prompt_template() -> None:
     )
     assert string == expected
 
-    string = prompt_template.format(foo="foo", bar="bar", context="context")
+    string = chat_prompt_template.format(foo="foo", bar="bar", context="context")
     assert string == expected
 
 
-def test_chat_prompt_template_from_messages() -> None:
+def test_chat_prompt_template_from_messages(
+    messages: List[BaseMessagePromptTemplate],
+) -> None:
     """Test creating a chat prompt template from messages."""
-    chat_prompt_template = ChatPromptTemplate.from_messages(create_messages())
+    chat_prompt_template = ChatPromptTemplate.from_messages(messages)
     assert sorted(chat_prompt_template.input_variables) == sorted(
         ["context", "foo", "bar"]
     )
@@ -171,11 +182,12 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
     ]
 
 
-def test_chat_prompt_template_with_messages() -> None:
-    messages: List[Union[BaseMessagePromptTemplate, BaseMessage]] = (
-        create_messages() + [HumanMessage(content="foo")]
+def test_chat_prompt_template_with_messages(
+    messages: List[BaseMessagePromptTemplate],
+) -> None:
+    chat_prompt_template = ChatPromptTemplate.from_messages(
+        messages + [HumanMessage(content="foo")]
     )
-    chat_prompt_template = ChatPromptTemplate.from_messages(messages)
     assert sorted(chat_prompt_template.input_variables) == sorted(
         ["context", "foo", "bar"]
     )
@@ -533,3 +545,35 @@ def test_chat_prompt_message_placeholder_partial() -> None:
     assert prompt.format_messages() == []
     prompt = prompt.partial(history=[("system", "foo")])
     assert prompt.format_messages() == [SystemMessage(content="foo")]
+
+
+def test_chat_prompt_message_placeholder_tuple() -> None:
+    prompt = ChatPromptTemplate.from_messages([("placeholder", "{convo}")])
+    assert prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+
+    assert prompt.format_messages() == []
+
+    # Is optional = True
+    optional_prompt = ChatPromptTemplate.from_messages(
+        [("placeholder", ["{convo}", False])]
+    )
+    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+    with pytest.raises(KeyError):
+        assert optional_prompt.format_messages() == []
+
+
+def test_messages_prompt_accepts_list() -> None:
+    prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
+    value = prompt.invoke([("user", "Hi there")])  # type: ignore
+    assert value.to_messages() == [HumanMessage(content="Hi there")]
+
+    # Assert still raises a nice error
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", "You are a {foo}"), MessagesPlaceholder("history")]
+    )
+    with pytest.raises(TypeError):
+        prompt.invoke([("user", "Hi there")])  # type: ignore
