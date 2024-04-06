@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import enum
-import json
 import logging
 import uuid
 from typing import (
@@ -20,8 +19,8 @@ from typing import (
 import numpy as np
 import sqlalchemy
 from langchain_core._api import warn_deprecated
-from sqlalchemy import SQLColumnExpression, delete, func
-from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
+from sqlalchemy import SQLColumnExpression, cast, delete, func
+from sqlalchemy.dialects.postgresql import JSON, JSONB, JSONPATH, UUID
 from sqlalchemy.orm import Session, relationship
 
 try:
@@ -100,7 +99,7 @@ def _get_embedding_collection_store(
     if _classes is not None:
         return _classes
 
-    from pgvector.sqlalchemy import Vector
+    from pgvector.sqlalchemy import Vector  # type: ignore
 
     class CollectionStore(BaseModel):
         """Collection store."""
@@ -214,34 +213,10 @@ class PGVector(VectorStore):
 
     To use, you should have the ``pgvector`` python package installed.
 
-    Args:
-        connection_string: Postgres connection string.
-        embedding_function: Any embedding function implementing
-            `langchain.embeddings.base.Embeddings` interface.
-        embedding_length: The length of the embedding vector. (default: None)
-            NOTE: This is not mandatory. Defining it will prevent vectors of
-            any other size to be added to the embeddings table but, without it,
-            the embeddings can't be indexed.
-        collection_name: The name of the collection to use. (default: langchain)
-            NOTE: This is not the name of the table, but the name of the collection.
-            The tables will be created when initializing the store (if not exists)
-            So, make sure the user has the right permissions to create tables.
-        distance_strategy: The distance strategy to use. (default: COSINE)
-        pre_delete_collection: If True, will delete the collection if it exists.
-            (default: False). Useful for testing.
-        engine_args: SQLAlchemy's create engine arguments.
-        use_jsonb: Use JSONB instead of JSON for metadata. (default: True)
-            Strongly discouraged from using JSON as it's not as efficient
-            for querying.
-            It's provided here for backwards compatibility with older versions,
-            and will be removed in the future.
-        create_extension: If True, will create the vector extension if it doesn't exist.
-            disabling creation is useful when using ReadOnly Databases.
-
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import PGVector
+            from langchain_postgres.vectorstores import PGVector
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
@@ -273,7 +248,33 @@ class PGVector(VectorStore):
         use_jsonb: bool = False,
         create_extension: bool = True,
     ) -> None:
-        """Initialize the PGVector store."""
+        """Initialize the PGVector store.
+
+        Args:
+            connection_string: Postgres connection string.
+            embedding_function: Any embedding function implementing
+                `langchain.embeddings.base.Embeddings` interface.
+            embedding_length: The length of the embedding vector. (default: None)
+                NOTE: This is not mandatory. Defining it will prevent vectors of
+                any other size to be added to the embeddings table but, without it,
+                the embeddings can't be indexed.
+            collection_name: The name of the collection to use. (default: langchain)
+                NOTE: This is not the name of the table, but the name of the collection.
+                The tables will be created when initializing the store (if not exists)
+                So, make sure the user has the right permissions to create tables.
+            distance_strategy: The distance strategy to use. (default: COSINE)
+            pre_delete_collection: If True, will delete the collection if it exists.
+                (default: False). Useful for testing.
+            engine_args: SQLAlchemy's create engine arguments.
+            use_jsonb: Use JSONB instead of JSON for metadata. (default: True)
+                Strongly discouraged from using JSON as it's not as efficient
+                for querying.
+                It's provided here for backwards compatibility with older versions,
+                and will be removed in the future.
+            create_extension: If True, will create the vector extension if it
+                doesn't exist. disabling creation is useful when using ReadOnly
+                Databases.
+        """
         self.connection_string = connection_string
         self.embedding_function = embedding_function
         self._embedding_length = embedding_length
@@ -672,8 +673,8 @@ class PGVector(VectorStore):
             native = COMPARISONS_TO_NATIVE[operator]
             return func.jsonb_path_match(
                 self.EmbeddingStore.cmetadata,
-                f"$.{field} {native} $value",
-                json.dumps({"value": filter_value}),
+                cast(f"$.{field} {native} $value", JSONPATH),
+                cast({"value": filter_value}, JSONB),
             )
         elif operator == "$between":
             # Use AND with two comparisons
@@ -681,13 +682,13 @@ class PGVector(VectorStore):
 
             lower_bound = func.jsonb_path_match(
                 self.EmbeddingStore.cmetadata,
-                f"$.{field} >= $value",
-                json.dumps({"value": low}),
+                cast(f"$.{field} >= $value", JSONPATH),
+                cast({"value": low}, JSONB),
             )
             upper_bound = func.jsonb_path_match(
                 self.EmbeddingStore.cmetadata,
-                f"$.{field} <= $value",
-                json.dumps({"value": high}),
+                cast(f"$.{field} <= $value", JSONPATH),
+                cast({"value": high}, JSONB),
             )
             return sqlalchemy.and_(lower_bound, upper_bound)
         elif operator in {"$in", "$nin", "$like", "$ilike"}:

@@ -30,7 +30,7 @@ from tests.integration_tests.fixtures.filtering_test_cases import (
 # cd [root]/docker/docker-compose.yml
 # docker compose up pgvector
 CONNECTION_STRING = PGVector.connection_string_from_db_params(
-    driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg2"),
+    driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg"),
     host=os.environ.get("TEST_PGVECTOR_HOST", "localhost"),
     port=int(os.environ.get("TEST_PGVECTOR_PORT", "6024")),
     database=os.environ.get("TEST_PGVECTOR_DATABASE", "langchain"),
