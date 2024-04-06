@@ -1,10 +1,10 @@
 from typing import Any, List, Sequence
 
 from langchain_core.documents import Document
+from langchain_text_splitters.character import CharacterTextSplitter
 
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.storage import InMemoryStore
-from langchain.text_splitter import CharacterTextSplitter
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 

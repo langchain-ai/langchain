@@ -36,7 +36,7 @@ langchain app add openai-functions-tool-retrieval-agent
 
 And add the following code to your `server.py` file:
 ```python
-from openai_functions_tool_retrieval_agent import chain as openai_functions_tool_retrieval_agent_chain
+from openai_functions_tool_retrieval_agent import agent_executor as openai_functions_tool_retrieval_agent_chain
 
 add_routes(app, openai_functions_tool_retrieval_agent_chain, path="/openai-functions-tool-retrieval-agent")
 ```

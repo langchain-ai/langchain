@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Iterator, Optional, Union
 
 import requests
 from langchain_core.documents import Document
@@ -44,7 +45,7 @@ class AssemblyAIAudioTranscriptLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, Path],
         *,
         transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
         config: Optional[assemblyai.TranscriptionConfig] = None,
@@ -71,11 +72,11 @@ class AssemblyAIAudioTranscriptLoader(BaseLoader):
         if api_key is not None:
             assemblyai.settings.api_key = api_key
 
-        self.file_path = file_path
+        self.file_path = str(file_path)
         self.transcript_format = transcript_format
         self.transcriber = assemblyai.Transcriber(config=config)
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Transcribes the audio file and loads the transcript into documents.
 
         It uses the AssemblyAI API to transcribe the audio file and blocks until
@@ -88,27 +89,21 @@ class AssemblyAIAudioTranscriptLoader(BaseLoader):
             raise ValueError(f"Could not transcribe file: {transcript.error}")
 
         if self.transcript_format == TranscriptFormat.TEXT:
-            return [
-                Document(
-                    page_content=transcript.text, metadata=transcript.json_response
-                )
-            ]
+            yield Document(
+                page_content=transcript.text, metadata=transcript.json_response
+            )
         elif self.transcript_format == TranscriptFormat.SENTENCES:
             sentences = transcript.get_sentences()
-            return [
-                Document(page_content=s.text, metadata=s.dict(exclude={"text"}))
-                for s in sentences
-            ]
+            for s in sentences:
+                yield Document(page_content=s.text, metadata=s.dict(exclude={"text"}))
         elif self.transcript_format == TranscriptFormat.PARAGRAPHS:
             paragraphs = transcript.get_paragraphs()
-            return [
-                Document(page_content=p.text, metadata=p.dict(exclude={"text"}))
-                for p in paragraphs
-            ]
+            for p in paragraphs:
+                yield Document(page_content=p.text, metadata=p.dict(exclude={"text"}))
         elif self.transcript_format == TranscriptFormat.SUBTITLES_SRT:
-            return [Document(page_content=transcript.export_subtitles_srt())]
+            yield Document(page_content=transcript.export_subtitles_srt())
         elif self.transcript_format == TranscriptFormat.SUBTITLES_VTT:
-            return [Document(page_content=transcript.export_subtitles_vtt())]
+            yield Document(page_content=transcript.export_subtitles_vtt())
         else:
             raise ValueError("Unknown transcript format.")
 
@@ -140,7 +135,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
         self.transcript_id = transcript_id
         self.transcript_format = transcript_format
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load data into Document objects."""
         HEADERS = {"authorization": self.api_key}
 
@@ -157,9 +152,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
             transcript = transcript_response.json()["text"]
 
-            return [
-                Document(page_content=transcript, metadata=transcript_response.json())
-            ]
+            yield Document(page_content=transcript, metadata=transcript_response.json())
         elif self.transcript_format == TranscriptFormat.PARAGRAPHS:
             try:
                 paragraphs_response = requests.get(
@@ -173,7 +166,8 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
             paragraphs = paragraphs_response.json()["paragraphs"]
 
-            return [Document(page_content=p["text"], metadata=p) for p in paragraphs]
+            for p in paragraphs:
+                yield Document(page_content=p["text"], metadata=p)
 
         elif self.transcript_format == TranscriptFormat.SENTENCES:
             try:
@@ -188,7 +182,8 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
             sentences = sentences_response.json()["sentences"]
 
-            return [Document(page_content=s["text"], metadata=s) for s in sentences]
+            for s in sentences:
+                yield Document(page_content=s["text"], metadata=s)
 
         elif self.transcript_format == TranscriptFormat.SUBTITLES_SRT:
             try:
@@ -203,7 +198,7 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
             srt = srt_response.text
 
-            return [Document(page_content=srt)]
+            yield Document(page_content=srt)
 
         elif self.transcript_format == TranscriptFormat.SUBTITLES_VTT:
             try:
@@ -218,6 +213,6 @@ class AssemblyAIAudioLoaderById(BaseLoader):
 
             vtt = vtt_response.text
 
-            return [Document(page_content=vtt)]
+            yield Document(page_content=vtt)
         else:
             raise ValueError("Unknown transcript format.")

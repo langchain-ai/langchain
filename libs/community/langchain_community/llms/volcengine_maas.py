@@ -175,6 +175,6 @@ class VolcEngineMaasLLM(LLM, VolcEngineMaasBase):
                 chunk = GenerationChunk(
                     text=res.get("choice", {}).get("message", {}).get("content", "")
                 )
-                yield chunk
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                yield chunk

@@ -66,7 +66,7 @@ def _unique_list(lst: List[T], key: Callable[[T], U]) -> List[T]:
 
 
 @deprecated(
-    since="0.1.23",
+    since="0.0.21",
     removal="0.2.0",
     alternative_import="langchain_astradb.AstraDBVectorStore",
 )
