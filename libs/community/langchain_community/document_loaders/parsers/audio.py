@@ -398,7 +398,8 @@ class FasterWhisperParser(BaseBlobParser):
                 self.model_size = "large-v3"
         # If the user has assigned a model size, then use the assigned size
         if model_size is not None:
-            self.model_size = model_size
+            if model_size in ["base", "small", "medium", "large-v3"]:
+                self.model_size = model_size
         
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
