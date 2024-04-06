@@ -57,6 +57,13 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_anthropic.output_parsers import ToolsOutputParser, extract_tool_calls
 
+_message_type_lookups = {
+    "human": "user",
+    "ai": "assistant",
+    "AIMessageChunk": "assistant",
+    "HumanMessageChunk": "user",
+}
+
 
 def _format_image(image_url: str) -> Dict:
     """
