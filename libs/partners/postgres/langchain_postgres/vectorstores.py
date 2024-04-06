@@ -1,8 +1,8 @@
-"""Postgres vectorstore."""
 from __future__ import annotations
 
 import contextlib
 import enum
+import json
 import logging
 import uuid
 from typing import (
@@ -15,11 +15,14 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    cast,
 )
 
+import numpy as np
 import sqlalchemy
-from sqlalchemy import SQLColumnExpression, cast, delete, func
-from sqlalchemy.dialects.postgresql import JSON, JSONB, JSONPATH, UUID
+from langchain_core._api import warn_deprecated
+from sqlalchemy import SQLColumnExpression, delete, func
+from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID, JSONPATH
 from sqlalchemy.orm import Session, relationship
 
 try:
@@ -29,8 +32,10 @@ except ImportError:
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
+from langchain_postgres._utils import maximal_marginal_relevance
 
 
 class DistanceStrategy(str, enum.Enum):
@@ -88,8 +93,9 @@ SUPPORTED_OPERATORS = (
 )
 
 
-def _get_embedding_collection_store(*, vector_dimension: Optional[int] = None) -> Any:
-    """Get the Embedding and Collection store classes."""
+def _get_embedding_collection_store(
+    vector_dimension: Optional[int] = None, *, use_jsonb: bool = True
+) -> Any:
     global _classes
     if _classes is not None:
         return _classes
@@ -138,35 +144,60 @@ def _get_embedding_collection_store(*, vector_dimension: Optional[int] = None) -
             created = True
             return collection, created
 
-    class EmbeddingStore(BaseModel):
-        """Embedding store."""
+    if use_jsonb:
+        # TODO(PRIOR TO LANDING): Create a gin index on the cmetadata field
+        class EmbeddingStore(BaseModel):
+            """Embedding store."""
 
-        __tablename__ = "langchain_pg_embedding"
+            __tablename__ = "langchain_pg_embedding"
 
-        collection_id = sqlalchemy.Column(
-            UUID(as_uuid=True),
-            sqlalchemy.ForeignKey(
-                f"{CollectionStore.__tablename__}.uuid",
-                ondelete="CASCADE",
-            ),
-        )
-        collection = relationship(CollectionStore, back_populates="embeddings")
+            collection_id = sqlalchemy.Column(
+                UUID(as_uuid=True),
+                sqlalchemy.ForeignKey(
+                    f"{CollectionStore.__tablename__}.uuid",
+                    ondelete="CASCADE",
+                ),
+            )
+            collection = relationship(CollectionStore, back_populates="embeddings")
 
-        embedding: Vector = sqlalchemy.Column(Vector(vector_dimension))
-        document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-        cmetadata = sqlalchemy.Column(JSONB, nullable=True)
+            embedding: Vector = sqlalchemy.Column(Vector(vector_dimension))
+            document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+            cmetadata = sqlalchemy.Column(JSONB, nullable=True)
 
-        # custom_id : any user defined id
-        custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+            # custom_id : any user defined id
+            custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 
-        __table_args__ = (
-            sqlalchemy.Index(
-                "ix_cmetadata_gin",
-                "cmetadata",
-                postgresql_using="gin",
-                postgresql_ops={"cmetadata": "jsonb_path_ops"},
-            ),
-        )
+            __table_args__ = (
+                sqlalchemy.Index(
+                    "ix_cmetadata_gin",
+                    "cmetadata",
+                    postgresql_using="gin",
+                    postgresql_ops={"cmetadata": "jsonb_path_ops"},
+                ),
+            )
+    else:
+        # For backwards comaptibilty with older versions of pgvector
+        # This should be removed in the future (remove during migration)
+        class EmbeddingStore(BaseModel):  # type: ignore[no-redef]
+            """Embedding store."""
+
+            __tablename__ = "langchain_pg_embedding"
+
+            collection_id = sqlalchemy.Column(
+                UUID(as_uuid=True),
+                sqlalchemy.ForeignKey(
+                    f"{CollectionStore.__tablename__}.uuid",
+                    ondelete="CASCADE",
+                ),
+            )
+            collection = relationship(CollectionStore, back_populates="embeddings")
+
+            embedding: Vector = sqlalchemy.Column(Vector(vector_dimension))
+            document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+            cmetadata = sqlalchemy.Column(JSON, nullable=True)
+
+            # custom_id : any user defined id
+            custom_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 
     _classes = (EmbeddingStore, CollectionStore)
 
@@ -185,7 +216,7 @@ class PGVector(VectorStore):
 
     Args:
         connection_string: Postgres connection string.
-        embeddings: Any embedding function implementing
+        embedding_function: Any embedding function implementing
             `langchain.embeddings.base.Embeddings` interface.
         embedding_length: The length of the embedding vector. (default: None)
             NOTE: This is not mandatory. Defining it will prevent vectors of
@@ -196,7 +227,14 @@ class PGVector(VectorStore):
             The tables will be created when initializing the store (if not exists)
             So, make sure the user has the right permissions to create tables.
         distance_strategy: The distance strategy to use. (default: COSINE)
+        pre_delete_collection: If True, will delete the collection if it exists.
+            (default: False). Useful for testing.
         engine_args: SQLAlchemy's create engine arguments.
+        use_jsonb: Use JSONB instead of JSON for metadata. (default: True)
+            Strongly discouraged from using JSON as it's not as efficient
+            for querying.
+            It's provided here for backwards compatibility with older versions,
+            and will be removed in the future.
         create_extension: If True, will create the vector extension if it doesn't exist.
             disabling creation is useful when using ReadOnly Databases.
 
@@ -209,47 +247,68 @@ class PGVector(VectorStore):
             CONNECTION_STRING = "postgresql+psycopg2://hwc@localhost:5432/test3"
             COLLECTION_NAME = "state_of_the_union_test"
             embeddings = OpenAIEmbeddings()
-            vectorstore = PGVector.from_documents(
+            vectorestore = PGVector.from_documents(
                 embedding=embeddings,
                 documents=docs,
                 collection_name=COLLECTION_NAME,
                 connection_string=CONNECTION_STRING,
+                use_jsonb=True,
             )
     """
 
     def __init__(
         self,
         connection_string: str,
-        embeddings: Embeddings,
+        embedding_function: Embeddings,
         *,
         embedding_length: Optional[int] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         collection_metadata: Optional[dict] = None,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
+        pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         connection: Optional[sqlalchemy.engine.Connection] = None,
         engine_args: Optional[dict[str, Any]] = None,
+        use_jsonb: bool = False,
         create_extension: bool = True,
     ) -> None:
         """Initialize the PGVector store."""
         self.connection_string = connection_string
-        self._embeddings = embeddings
+        self.embedding_function = embedding_function
         self._embedding_length = embedding_length
-        self._collection_name = collection_name
-        self._collection_metadata = collection_metadata
+        self.collection_name = collection_name
+        self.collection_metadata = collection_metadata
         self._distance_strategy = distance_strategy
+        self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
         self.engine_args = engine_args or {}
         self._bind = connection if connection else self._create_engine()
+        self.use_jsonb = use_jsonb
         self.create_extension = create_extension
-        EmbeddingStore, CollectionStore = _get_embedding_collection_store(
-            vector_dimension=self._embedding_length
-        )
-        self.CollectionStore = CollectionStore
-        self.EmbeddingStore = EmbeddingStore
 
+        if not use_jsonb:
+            # Replace with a deprecation warning.
+            warn_deprecated(
+                "0.0.29",
+                pending=True,
+                message=(
+                    "Please use JSONB instead of JSON for metadata. "
+                    "This change will allow for more efficient querying that "
+                    "involves filtering based on metadata."
+                    "Please note that filtering operators have been changed "
+                    "when using JSOB metadata to be prefixed with a $ sign "
+                    "to avoid name collisions with columns. "
+                    "If you're using an existing database, you will need to create a"
+                    "db migration for your metadata column to be JSONB and update your "
+                    "queries to use the new operators. "
+                ),
+                alternative=(
+                    "Instantiate with use_jsonb=True to use JSONB instead "
+                    "of JSON for metadata."
+                ),
+            )
         self.__post_init__()
 
     def __post_init__(
@@ -258,28 +317,29 @@ class PGVector(VectorStore):
         """Initialize the store."""
         if self.create_extension:
             self.create_vector_extension()
+
+        EmbeddingStore, CollectionStore = _get_embedding_collection_store(
+            self._embedding_length, use_jsonb=self.use_jsonb
+        )
+        self.CollectionStore = CollectionStore
+        self.EmbeddingStore = EmbeddingStore
         self.create_tables_if_not_exists()
         self.create_collection()
 
+    def __del__(self) -> None:
+        if isinstance(self._bind, sqlalchemy.engine.Connection):
+            self._bind.close()
+
     @property
     def embeddings(self) -> Embeddings:
-        return self._embeddings
+        return self.embedding_function
 
     def _create_engine(self) -> sqlalchemy.engine.Engine:
-        """Create a new engine."""
         return sqlalchemy.create_engine(url=self.connection_string, **self.engine_args)
-
-    @staticmethod
-    def create_tables(connection: str) -> None:
-        """Create all the relevant schema."""
-        engine = sqlalchemy.create_engine(connection)
-        Base.metadata.create_all(engine)
-        with Session(bind=engine) as session:
-            Base.metadata.create_all(session.get_bind())
 
     def create_vector_extension(self) -> None:
         try:
-            with self._make_session() as session:
+            with Session(self._bind) as session:  # type: ignore[arg-type]
                 # The advisor lock fixes issue arising from concurrent
                 # creation of the vector extension.
                 # https://github.com/langchain-ai/langchain/issues/12933
@@ -297,31 +357,24 @@ class PGVector(VectorStore):
             raise Exception(f"Failed to create vector extension: {e}") from e
 
     def create_tables_if_not_exists(self) -> None:
-        with self._make_session() as session:
+        with Session(self._bind) as session, session.begin():  # type: ignore[arg-type]
             Base.metadata.create_all(session.get_bind())
 
-    @staticmethod
-    def my_drop_tables(connection: str) -> None:
-        """Drop all the relevant schema."""
-        engine = sqlalchemy.create_engine(connection)
-        Base.metadata.drop_all(engine)
-
-    @staticmethod
-    def my_create_tables(connection: str) -> None:
-
     def drop_tables(self) -> None:
-        with self._make_session() as session:
+        with Session(self._bind) as session, session.begin():  # type: ignore[arg-type]
             Base.metadata.drop_all(session.get_bind())
 
     def create_collection(self) -> None:
-        with self._make_session() as session:
+        if self.pre_delete_collection:
+            self.delete_collection()
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             self.CollectionStore.get_or_create(
-                session, self._collection_name, cmetadata=self._collection_metadata
+                session, self.collection_name, cmetadata=self.collection_metadata
             )
 
     def delete_collection(self) -> None:
         self.logger.debug("Trying to delete collection")
-        with self._make_session() as session:
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             collection = self.get_collection(session)
             if not collection:
                 self.logger.warning("Collection not found")
@@ -346,7 +399,7 @@ class PGVector(VectorStore):
             ids: List of ids to delete.
             collection_only: Only delete ids in the collection.
         """
-        with self._make_session() as session:
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             if ids is not None:
                 self.logger.debug(
                     "Trying to delete vectors by ids (represented by the model "
@@ -370,7 +423,7 @@ class PGVector(VectorStore):
             session.commit()
 
     def get_collection(self, session: Session) -> Any:
-        return self.CollectionStore.get_by_name(session, self._collection_name)
+        return self.CollectionStore.get_by_name(session, self.collection_name)
 
     @classmethod
     def __from(
@@ -383,6 +436,9 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         connection_string: Optional[str] = None,
+        pre_delete_collection: bool = False,
+        *,
+        use_jsonb: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         if ids is None:
@@ -396,8 +452,10 @@ class PGVector(VectorStore):
         store = cls(
             connection_string=connection_string,
             collection_name=collection_name,
-            embeddings=embedding,
+            embedding_function=embedding,
             distance_strategy=distance_strategy,
+            pre_delete_collection=pre_delete_collection,
+            use_jsonb=use_jsonb,
             **kwargs,
         )
 
@@ -429,7 +487,7 @@ class PGVector(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        with self._make_session() as session:
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
@@ -465,7 +523,7 @@ class PGVector(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        embeddings = self._embeddings.embed_documents(list(texts))
+        embeddings = self.embedding_function.embed_documents(list(texts))
         return self.add_embeddings(
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
@@ -487,7 +545,7 @@ class PGVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        embedding = self._embeddings.embed_query(text=query)
+        embedding = self.embedding_function.embed_query(text=query)
         return self.similarity_search_by_vector(
             embedding=embedding,
             k=k,
@@ -510,7 +568,7 @@ class PGVector(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each.
         """
-        embedding = self._embeddings.embed_query(query)
+        embedding = self.embedding_function.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, filter=filter
         )
@@ -548,7 +606,7 @@ class PGVector(VectorStore):
                     page_content=result.EmbeddingStore.document,
                     metadata=result.EmbeddingStore.cmetadata,
                 ),
-                result.distance if self._embeddings is not None else None,
+                result.distance if self.embedding_function is not None else None,
             )
             for result in results
         ]
@@ -656,6 +714,99 @@ class PGVector(VectorStore):
         else:
             raise NotImplementedError()
 
+    def _create_filter_clause_deprecated(self, key, value):  # type: ignore[no-untyped-def]
+        """Deprecated functionality.
+
+        This is for backwards compatibility with the JSON based schema for metadata.
+        It uses incorrect operator syntax (operators are not prefixed with $).
+
+        This implementation is not efficient, and has bugs associated with
+        the way that it handles numeric filter clauses.
+        """
+        IN, NIN, BETWEEN, GT, LT, NE = "in", "nin", "between", "gt", "lt", "ne"
+        EQ, LIKE, CONTAINS, OR, AND = "eq", "like", "contains", "or", "and"
+
+        value_case_insensitive = {k.lower(): v for k, v in value.items()}
+        if IN in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.in_(
+                value_case_insensitive[IN]
+            )
+        elif NIN in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.not_in(
+                value_case_insensitive[NIN]
+            )
+        elif BETWEEN in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.between(
+                str(value_case_insensitive[BETWEEN][0]),
+                str(value_case_insensitive[BETWEEN][1]),
+            )
+        elif GT in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext > str(
+                value_case_insensitive[GT]
+            )
+        elif LT in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext < str(
+                value_case_insensitive[LT]
+            )
+        elif NE in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext != str(
+                value_case_insensitive[NE]
+            )
+        elif EQ in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext == str(
+                value_case_insensitive[EQ]
+            )
+        elif LIKE in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.like(
+                value_case_insensitive[LIKE]
+            )
+        elif CONTAINS in map(str.lower, value):
+            filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext.contains(
+                value_case_insensitive[CONTAINS]
+            )
+        elif OR in map(str.lower, value):
+            or_clauses = [
+                self._create_filter_clause(key, sub_value)
+                for sub_value in value_case_insensitive[OR]
+            ]
+            filter_by_metadata = sqlalchemy.or_(*or_clauses)
+        elif AND in map(str.lower, value):
+            and_clauses = [
+                self._create_filter_clause(key, sub_value)
+                for sub_value in value_case_insensitive[AND]
+            ]
+            filter_by_metadata = sqlalchemy.and_(*and_clauses)
+
+        else:
+            filter_by_metadata = None
+
+        return filter_by_metadata
+
+    def _create_filter_clause_json_deprecated(
+        self, filter: Any
+    ) -> List[SQLColumnExpression]:
+        """Convert filters from IR to SQL clauses.
+
+        **DEPRECATED** This functionality will be deprecated in the future.
+
+        It implements translation of filters for a schema that uses JSON
+        for metadata rather than the JSONB field which is more efficient
+        for querying.
+        """
+        filter_clauses = []
+        for key, value in filter.items():
+            if isinstance(value, dict):
+                filter_by_metadata = self._create_filter_clause_deprecated(key, value)
+
+                if filter_by_metadata is not None:
+                    filter_clauses.append(filter_by_metadata)
+            else:
+                filter_by_metadata = self.EmbeddingStore.cmetadata[key].astext == str(
+                    value
+                )
+                filter_clauses.append(filter_by_metadata)
+        return filter_clauses
+
     def _create_filter_clause(self, filters: Any) -> Any:
         """Convert LangChain IR filter representation to matching SQLAlchemy clauses.
 
@@ -749,16 +900,21 @@ class PGVector(VectorStore):
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Any]:
         """Query the collection."""
-        with self._make_session() as session:
+        with Session(self._bind) as session:  # type: ignore[arg-type]
             collection = self.get_collection(session)
             if not collection:
                 raise ValueError("Collection not found")
 
             filter_by = [self.EmbeddingStore.collection_id == collection.uuid]
             if filter:
-                filter_clauses = self._create_filter_clause(filter)
-                if filter_clauses is not None:
-                    filter_by.append(filter_clauses)
+                if self.use_jsonb:
+                    filter_clauses = self._create_filter_clause(filter)
+                    if filter_clauses is not None:
+                        filter_by.append(filter_clauses)
+                else:
+                    # Old way of doing things
+                    filter_clauses = self._create_filter_clause_json_deprecated(filter)
+                    filter_by.extend(filter_clauses)
 
             _type = self.EmbeddingStore
 
@@ -810,6 +966,9 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
+        pre_delete_collection: bool = False,
+        *,
+        use_jsonb: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -828,6 +987,8 @@ class PGVector(VectorStore):
             ids=ids,
             collection_name=collection_name,
             distance_strategy=distance_strategy,
+            pre_delete_collection=pre_delete_collection,
+            use_jsonb=use_jsonb,
             **kwargs,
         )
 
@@ -840,6 +1001,7 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
+        pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """Construct PGVector wrapper from raw documents and pre-
@@ -871,6 +1033,7 @@ class PGVector(VectorStore):
             ids=ids,
             collection_name=collection_name,
             distance_strategy=distance_strategy,
+            pre_delete_collection=pre_delete_collection,
             **kwargs,
         )
 
@@ -880,6 +1043,7 @@ class PGVector(VectorStore):
         embedding: Embeddings,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
+        pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -891,10 +1055,11 @@ class PGVector(VectorStore):
         connection_string = cls.get_connection_string(kwargs)
 
         store = cls(
-            connection=connection_string,
+            connection_string=connection_string,
             collection_name=collection_name,
-            embeddings=embedding,
+            embedding_function=embedding,
             distance_strategy=distance_strategy,
+            pre_delete_collection=pre_delete_collection,
         )
 
         return store
@@ -924,6 +1089,9 @@ class PGVector(VectorStore):
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
+        pre_delete_collection: bool = False,
+        *,
+        use_jsonb: bool = False,
         **kwargs: Any,
     ) -> PGVector:
         """
@@ -941,11 +1109,13 @@ class PGVector(VectorStore):
 
         return cls.from_texts(
             texts=texts,
+            pre_delete_collection=pre_delete_collection,
             embedding=embedding,
             distance_strategy=distance_strategy,
             metadatas=metadatas,
             ids=ids,
             collection_name=collection_name,
+            use_jsonb=use_jsonb,
             **kwargs,
         )
 
@@ -988,3 +1158,191 @@ class PGVector(VectorStore):
                 f" for distance_strategy of {self._distance_strategy}."
                 "Consider providing relevance_score_fn to PGVector constructor."
             )
+
+    def max_marginal_relevance_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance with score
+            to embedding vector.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of Documents selected by maximal marginal
+                relevance to the query and score for each.
+        """
+        results = self.__query_collection(embedding=embedding, k=fetch_k, filter=filter)
+
+        embedding_list = [result.EmbeddingStore.embedding for result in results]
+
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            embedding_list,
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+
+        candidates = self._results_to_docs_and_scores(results)
+
+        return [r for i, r in enumerate(candidates) if i in mmr_selected]
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Document]: List of Documents selected by maximal marginal relevance.
+        """
+        embedding = self.embedding_function.embed_query(query)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+
+    def max_marginal_relevance_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
+        """Return docs selected using the maximal marginal relevance with score.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Tuple[Document, float]]: List of Documents selected by maximal marginal
+                relevance to the query and score for each.
+        """
+        embedding = self.embedding_function.embed_query(query)
+        docs = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding=embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+        return docs
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance
+            to embedding vector.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+            among selected documents.
+
+        Args:
+            embedding (str): Text to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List[Document]: List of Documents selected by maximal marginal relevance.
+        """
+        docs_and_scores = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )
+
+        return _results_to_docs(docs_and_scores)
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance."""
+
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        return await run_in_executor(
+            None,
+            self.max_marginal_relevance_search_by_vector,
+            embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs,
+        )

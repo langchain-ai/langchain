@@ -1,10 +1,12 @@
 """Test PGVector functionality."""
+
 import os
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Generator, List, Type, Union
 
 import pytest
 import sqlalchemy
 from langchain_core.documents import Document
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
 from langchain_postgres.vectorstores import (
@@ -29,7 +31,7 @@ from tests.integration_tests.fixtures.filtering_test_cases import (
 # cd [root]/docker/docker-compose.yml
 # docker compose up pgvector
 CONNECTION_STRING = PGVector.connection_string_from_db_params(
-    driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg"),
+    driver=os.environ.get("TEST_PGVECTOR_DRIVER", "psycopg2"),
     host=os.environ.get("TEST_PGVECTOR_HOST", "localhost"),
     port=int(os.environ.get("TEST_PGVECTOR_PORT", "6024")),
     database=os.environ.get("TEST_PGVECTOR_DATABASE", "langchain"),
@@ -62,6 +64,7 @@ def test_pgvector(pgvector: PGVector) -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -77,6 +80,7 @@ def test_pgvector_embeddings() -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
@@ -92,6 +96,7 @@ def test_pgvector_with_metadatas() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
@@ -107,6 +112,7 @@ def test_pgvector_with_metadatas_with_scores() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
@@ -122,6 +128,7 @@ def test_pgvector_with_filter_match() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "0"})
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
@@ -137,6 +144,7 @@ def test_pgvector_with_filter_distant_match() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "2"})
     assert output == [
@@ -154,6 +162,7 @@ def test_pgvector_with_filter_no_match() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "5"})
     assert output == []
@@ -164,8 +173,9 @@ def test_pgvector_collection_with_metadata() -> None:
     pgvector = PGVector(
         collection_name="test_collection",
         collection_metadata={"foo": "bar"},
-        embeddings=FakeEmbeddingsWithAdaDimension(),
+        embedding_function=FakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     session = Session(pgvector._create_engine())
     collection = pgvector.get_collection(session)
@@ -186,9 +196,31 @@ def test_pgvector_with_filter_in_set() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score(
         "foo", k=2, filter={"page": {"IN": ["0", "2"]}}
+    )
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 0.0),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406),
+    ]
+
+
+def test_pgvector_with_filter_nin_set() -> None:
+    """Test end to end construction and search."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection_filter",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        metadatas=metadatas,
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search_with_score(
+        "foo", k=2, filter={"page": {"NIN": ["1"]}}
     )
     assert output == [
         (Document(page_content="foo", metadata={"page": "0"}), 0.0),
@@ -207,6 +239,7 @@ def test_pgvector_delete_docs() -> None:
         metadatas=metadatas,
         ids=["1", "2", "3"],
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
     docsearch.delete(["1", "2"])
     with docsearch._make_session() as session:
@@ -233,6 +266,7 @@ def test_pgvector_relevance_score() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
 
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
@@ -253,6 +287,7 @@ def test_pgvector_retriever_search_threshold() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
     )
 
     retriever = docsearch.as_retriever(
@@ -276,6 +311,7 @@ def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
         embedding=FakeEmbeddingsWithAdaDimension(),
         metadatas=metadatas,
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
         relevance_score_fn=lambda d: d * 0,
     )
 
@@ -285,6 +321,34 @@ def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
     )
     output = retriever.get_relevant_documents("foo")
     assert output == []
+
+
+def test_pgvector_max_marginal_relevance_search() -> None:
+    """Test max marginal relevance search."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.max_marginal_relevance_search("foo", k=1, fetch_k=3)
+    assert output == [Document(page_content="foo")]
+
+
+def test_pgvector_max_marginal_relevance_search_with_score() -> None:
+    """Test max marginal relevance search with relevance scores."""
+    texts = ["foo", "bar", "baz"]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.max_marginal_relevance_search_with_score("foo", k=1, fetch_k=3)
+    assert output == [(Document(page_content="foo"), 0.0)]
 
 
 def test_pgvector_with_custom_connection() -> None:
@@ -297,6 +361,7 @@ def test_pgvector_with_custom_connection() -> None:
             collection_name="test_collection",
             embedding=FakeEmbeddingsWithAdaDimension(),
             connection_string=CONNECTION_STRING,
+            pre_delete_collection=True,
             connection=connection,
         )
         output = docsearch.similarity_search("foo", k=1)
@@ -319,6 +384,7 @@ def test_pgvector_with_custom_engine_args() -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
         engine_args=engine_args,
     )
     output = docsearch.similarity_search("foo", k=1)
@@ -330,26 +396,20 @@ def test_pgvector_with_custom_engine_args() -> None:
 @pytest.fixture
 def pgvector() -> Generator[PGVector, None, None]:
     """Create a PGVector instance."""
-    connection = CONNECTION_STRING
-    PGVector.my_drop_tables(connection)
     store = PGVector.from_documents(
         documents=DOCUMENTS,
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
         relevance_score_fn=lambda d: d * 0,
+        use_jsonb=True,
     )
     try:
         yield store
     # Do clean up
     finally:
         store.drop_tables()
-
-
-def test_something():
-    PGVector.my_drop_tables(CONNECTION_STRING)
-    PGVector.my_drop_tables(CONNECTION_STRING)
-    PGVector.create_tables(CONNECTION_STRING)
 
 
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
@@ -425,6 +485,143 @@ def test_invalid_filters(pgvector: PGVector, invalid_filter: Any) -> None:
     """Verify that invalid filters raise an error."""
     with pytest.raises(ValueError):
         pgvector._create_filter_clause(invalid_filter)
+
+
+@pytest.mark.parametrize(
+    "filter,compiled",
+    [
+        ({"id 'evil code'": 2}, ValueError),
+        (
+            {"id": "'evil code' == 2"},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, "
+                "'$.id == $value', "
+                "'{\"value\": \"''evil code'' == 2\"}')"
+            ),
+        ),
+        (
+            {"name": 'a"b'},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, "
+                "'$.name == $value', "
+                '\'{"value": "a\\\\"b"}\')'
+            ),
+        ),
+    ],
+)
+def test_evil_code(
+    pgvector: PGVector, filter: Any, compiled: Union[Type[Exception], str]
+) -> None:
+    """Test evil code."""
+    if isinstance(compiled, str):
+        clause = pgvector._create_filter_clause(filter)
+        compiled_stmt = str(
+            clause.compile(
+                dialect=postgresql.dialect(),
+                compile_kwargs={
+                    # This substitutes the parameters with their actual values
+                    "literal_binds": True
+                },
+            )
+        )
+        assert compiled_stmt == compiled
+    else:
+        with pytest.raises(compiled):
+            pgvector._create_filter_clause(filter)
+
+
+@pytest.mark.parametrize(
+    "filter,compiled",
+    [
+        (
+            {"id": 2},
+            "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
+            "'{\"value\": 2}')",
+        ),
+        (
+            {"id": {"$eq": 2}},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
+                "'{\"value\": 2}')"
+            ),
+        ),
+        (
+            {"name": "foo"},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, "
+                "'$.name == $value', "
+                '\'{"value": "foo"}\')'
+            ),
+        ),
+        (
+            {"id": {"$ne": 2}},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id != $value', "
+                "'{\"value\": 2}')"
+            ),
+        ),
+        (
+            {"id": {"$gt": 2}},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id > $value', "
+                "'{\"value\": 2}')"
+            ),
+        ),
+        (
+            {"id": {"$gte": 2}},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id >= $value', "
+                "'{\"value\": 2}')"
+            ),
+        ),
+        (
+            {"id": {"$lt": 2}},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id < $value', "
+                "'{\"value\": 2}')"
+            ),
+        ),
+        (
+            {"id": {"$lte": 2}},
+            (
+                "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id <= $value', "
+                "'{\"value\": 2}')"
+            ),
+        ),
+        (
+            {"name": {"$ilike": "foo"}},
+            "langchain_pg_embedding.cmetadata ->> 'name' ILIKE 'foo'",
+        ),
+        (
+            {"name": {"$like": "foo"}},
+            "langchain_pg_embedding.cmetadata ->> 'name' LIKE 'foo'",
+        ),
+        (
+            {"$or": [{"id": 1}, {"id": 2}]},
+            # Please note that this might not be super optimized
+            # Another way to phrase the query is as
+            # langchain_pg_embedding.cmetadata @@ '($.id == 1 || $.id == 2)'
+            "jsonb_path_match(langchain_pg_embedding.cmetadata, '$.id == $value', "
+            "'{\"value\": 1}') OR jsonb_path_match(langchain_pg_embedding.cmetadata, "
+            "'$.id == $value', '{\"value\": 2}')",
+        ),
+    ],
+)
+def test_pgvector_query_compilation(
+    pgvector: PGVector, filter: Any, compiled: str
+) -> None:
+    """Test translation from IR to SQL"""
+    clause = pgvector._create_filter_clause(filter)
+    compiled_stmt = str(
+        clause.compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={
+                # This substitutes the parameters with their actual values
+                "literal_binds": True
+            },
+        )
+    )
+    assert compiled_stmt == compiled
 
 
 def test_validate_operators() -> None:
