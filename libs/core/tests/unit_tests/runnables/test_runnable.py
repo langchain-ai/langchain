@@ -1,4 +1,5 @@
 import sys
+import uuid
 from functools import partial
 from operator import itemgetter
 from typing import (
@@ -28,6 +29,11 @@ from langchain_core.callbacks.manager import (
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
+from langchain_core.language_models import (
+    FakeListChatModel,
+    FakeListLLM,
+    FakeStreamingListLLM,
+)
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -35,6 +41,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.messages.base import BaseMessage
 from langchain_core.output_parsers import (
     BaseOutputParser,
     CommaSeparatedListOutputParser,
@@ -80,8 +87,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from tests.unit_tests.fake.chat_model import FakeListChatModel
-from tests.unit_tests.fake.llm import FakeListLLM, FakeStreamingListLLM
+from tests.unit_tests.stubs import AnyStr
 
 
 class FakeTracer(BaseTracer):
@@ -101,6 +107,12 @@ class FakeTracer(BaseTracer):
         if uuid not in self.uuids_map:
             self.uuids_map[uuid] = next(self.uuids_generator)
         return self.uuids_map[uuid]
+
+    def _replace_message_id(self, maybe_message: Any) -> Any:
+        if isinstance(maybe_message, BaseMessage):
+            maybe_message.id = AnyStr()
+
+        return maybe_message
 
     def _copy_run(self, run: Run) -> Run:
         if run.dotted_order:
@@ -125,6 +137,16 @@ class FakeTracer(BaseTracer):
                 "child_execution_order": None,
                 "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
                 "dotted_order": new_dotted_order,
+                "inputs": {
+                    k: self._replace_message_id(v) for k, v in run.inputs.items()
+                }
+                if isinstance(run.inputs, dict)
+                else run.inputs,
+                "outputs": {
+                    k: self._replace_message_id(v) for k, v in run.outputs.items()
+                }
+                if isinstance(run.outputs, dict)
+                else run.outputs,
             }
         )
 
@@ -132,6 +154,22 @@ class FakeTracer(BaseTracer):
         """Persist a run."""
 
         self.runs.append(self._copy_run(run))
+
+    def flattened_runs(self) -> List[Run]:
+        q = [] + self.runs
+        result = []
+        while q:
+            parent = q.pop()
+            result.append(parent)
+            if parent.child_runs:
+                q.extend(parent.child_runs)
+        return result
+
+    @property
+    def run_ids(self) -> List[Optional[uuid.UUID]]:
+        runs = self.flattened_runs()
+        uuids_map = {v: k for k, v in self.uuids_map.items()}
+        return [uuids_map.get(r.id) for r in runs]
 
 
 class FakeRunnable(Runnable[str, int]):
@@ -1364,6 +1402,7 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             recursion_limit=25,
             configurable={"hello": "there"},
             metadata={"hello": "there", "bye": "now"},
+            run_id=None,
         ),
     )
     spy.reset_mock()
@@ -1428,6 +1467,30 @@ async def test_with_config(mocker: MockerFixture) -> None:
 
     spy.reset_mock()
 
+    assert sorted(
+        c
+        for c in fake.with_config(recursion_limit=5).batch_as_completed(
+            ["hello", "wooorld"],
+            [dict(tags=["a-tag"]), dict(metadata={"key": "value"})],
+        )
+    ) == [(0, 5), (1, 7)]
+
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(
+        sorted(spy.call_args_list, key=lambda x: 0 if x.args[0] == "hello" else 1)
+    ):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        if i == 0:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == ["a-tag"]
+            assert call.args[1].get("metadata") == {}
+        else:
+            assert call.args[1].get("recursion_limit") == 5
+            assert call.args[1].get("tags") == []
+            assert call.args[1].get("metadata") == {"key": "value"}
+
+    spy.reset_mock()
+
     assert fake.with_config(metadata={"a": "b"}).batch(
         ["hello", "wooorld"], dict(tags=["a-tag"])
     ) == [5, 7]
@@ -1436,6 +1499,15 @@ async def test_with_config(mocker: MockerFixture) -> None:
         assert call.args[0] == ("hello" if i == 0 else "wooorld")
         assert call.args[1].get("tags") == ["a-tag"]
         assert call.args[1].get("metadata") == {"a": "b"}
+    spy.reset_mock()
+
+    assert sorted(
+        c for c in fake.batch_as_completed(["hello", "wooorld"], dict(tags=["a-tag"]))
+    ) == [(0, 5), (1, 7)]
+    assert len(spy.call_args_list) == 2
+    for i, call in enumerate(spy.call_args_list):
+        assert call.args[0] == ("hello" if i == 0 else "wooorld")
+        assert call.args[1].get("tags") == ["a-tag"]
     spy.reset_mock()
 
     handler = ConsoleCallbackHandler()
@@ -1472,6 +1544,7 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                run_id=None,
             ),
         ),
         mocker.call(
@@ -1481,9 +1554,46 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
+                run_id=None,
             ),
         ),
     ]
+    spy.reset_mock()
+
+    assert sorted(
+        [
+            c
+            async for c in fake.with_config(
+                recursion_limit=5, tags=["c"]
+            ).abatch_as_completed(["hello", "wooorld"], dict(metadata={"key": "value"}))
+        ]
+    ) == [
+        (0, 5),
+        (1, 7),
+    ]
+    assert len(spy.call_args_list) == 2
+    first_call = next(call for call in spy.call_args_list if call.args[0] == "hello")
+    assert first_call == mocker.call(
+        "hello",
+        dict(
+            metadata={"key": "value"},
+            tags=["c"],
+            callbacks=None,
+            recursion_limit=5,
+            run_id=None,
+        ),
+    )
+    second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
+    assert second_call == mocker.call(
+        "wooorld",
+        dict(
+            metadata={"key": "value"},
+            tags=["c"],
+            callbacks=None,
+            recursion_limit=5,
+            run_id=None,
+        ),
+    )
 
 
 async def test_default_method_implementations(mocker: MockerFixture) -> None:
@@ -1550,6 +1660,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 recursion_limit=25,
+                run_id=None,
             ),
         ),
         mocker.call(
@@ -1559,6 +1670,7 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
                 tags=[],
                 callbacks=None,
                 recursion_limit=25,
+                run_id=None,
             ),
         ),
     ]
@@ -1828,7 +1940,7 @@ def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo")
+    ) == AIMessage(content="foo", id=AnyStr())
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1853,8 +1965,8 @@ def test_prompt_with_chat_model(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo"),
-        AIMessage(content="foo"),
+        AIMessage(content="foo", id=AnyStr()),
+        AIMessage(content="foo", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -1894,9 +2006,9 @@ def test_prompt_with_chat_model(
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
     ] == [
-        AIMessageChunk(content="f"),
-        AIMessageChunk(content="o"),
-        AIMessageChunk(content="o"),
+        AIMessageChunk(content="f", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -1932,7 +2044,7 @@ async def test_prompt_with_chat_model_async(
     tracer = FakeTracer()
     assert await chain.ainvoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo")
+    ) == AIMessage(content="foo", id=AnyStr())
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1957,8 +2069,8 @@ async def test_prompt_with_chat_model_async(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo"),
-        AIMessage(content="foo"),
+        AIMessage(content="foo", id=AnyStr()),
+        AIMessage(content="foo", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -2001,9 +2113,9 @@ async def test_prompt_with_chat_model_async(
             {"question": "What is your name?"}, dict(callbacks=[tracer])
         )
     ] == [
-        AIMessageChunk(content="f"),
-        AIMessageChunk(content="o"),
-        AIMessageChunk(content="o"),
+        AIMessageChunk(content="f", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2668,7 +2780,7 @@ def test_prompt_with_chat_model_and_parser(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
+    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
 
     assert tracer.runs == snapshot
 
@@ -2801,7 +2913,7 @@ What is your name?"""
             ),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
+    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
     assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 4
@@ -2847,7 +2959,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot"),
+        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
         "llm": "i'm a textbot",
     }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -3057,7 +3169,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot"),
+        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
         "llm": "i'm a textbot",
         "passthrough": ChatPromptValue(
             messages=[
@@ -3266,12 +3378,13 @@ async def test_map_astream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": AIMessageChunk(content="i", id=AnyStr())},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
     assert final_value.get("chat").content == "i'm a chatbot"
+    final_value["chat"].id = AnyStr()
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == prompt.invoke(
         {"question": "What is your name?"}
@@ -4752,27 +4865,45 @@ async def test_runnable_gen_context_config() -> None:
     }
 
     tracer = FakeTracer()
-    assert runnable.invoke(None, {"callbacks": [tracer]}) == 6
+    run_id = uuid.uuid4()
+    assert runnable.invoke(None, {"callbacks": [tracer], "run_id": run_id}) == 6
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
 
     assert list(runnable.stream(None)) == [1, 2, 3]
     assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
 
     tracer = FakeTracer()
-    assert list(runnable.stream(None, {"callbacks": [tracer]})) == [1, 2, 3]
+    run_id = uuid.uuid4()
+    assert list(runnable.stream(None, {"callbacks": [tracer], "run_id": run_id})) == [
+        1,
+        2,
+        3,
+    ]
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
+    tracer.runs.clear()
 
     tracer = FakeTracer()
-    assert runnable.batch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    run_id = uuid.uuid4()
+
+    with pytest.warns(RuntimeWarning):
+        assert runnable.batch(
+            [None, None], {"callbacks": [tracer], "run_id": run_id}
+        ) == [6, 6]
     assert len(tracer.runs) == 2
     assert tracer.runs[0].outputs == {"output": 6}
     assert tracer.runs[1].outputs == {"output": 6}
@@ -4795,19 +4926,30 @@ async def test_runnable_gen_context_config() -> None:
     arunnable = RunnableGenerator(agen)
 
     tracer = FakeTracer()
-    assert await arunnable.ainvoke(None, {"callbacks": [tracer]}) == 6
+
+    run_id = uuid.uuid4()
+    assert await arunnable.ainvoke(None, {"callbacks": [tracer], "run_id": run_id}) == 6
     assert len(tracer.runs) == 1
     assert tracer.runs[0].outputs == {"output": 6}
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
     tracer.runs.clear()
 
     assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
     assert len(tracer.runs) == 0, "callbacks doesn't persist from previous call"
 
     tracer = FakeTracer()
-    assert [p async for p in arunnable.astream(None, {"callbacks": [tracer]})] == [
+    run_id = uuid.uuid4()
+    assert [
+        p
+        async for p in arunnable.astream(
+            None, {"callbacks": [tracer], "run_id": run_id}
+        )
+    ] == [
         1,
         2,
         3,
@@ -4817,9 +4959,16 @@ async def test_runnable_gen_context_config() -> None:
     assert len(tracer.runs[0].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[0].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[0].child_runs] == [1, 2, 3]
+    run_ids = tracer.run_ids
+    assert run_id in run_ids
+    assert len(run_ids) == len(set(run_ids))
 
     tracer = FakeTracer()
-    assert await arunnable.abatch([None, None], {"callbacks": [tracer]}) == [6, 6]
+    run_id = uuid.uuid4()
+    with pytest.warns(RuntimeWarning):
+        assert await arunnable.abatch(
+            [None, None], {"callbacks": [tracer], "run_id": run_id}
+        ) == [6, 6]
     assert len(tracer.runs) == 2
     assert tracer.runs[0].outputs == {"output": 6}
     assert tracer.runs[1].outputs == {"output": 6}
@@ -5257,7 +5406,7 @@ def test_default_transform_with_dicts() -> None:
     assert list(runnable.transform(chunks)) == [{"foo": "an"}]
 
 
-async def test_defualt_atransform_with_dicts() -> None:
+async def test_default_atransform_with_dicts() -> None:
     """Test that default transform works with dicts."""
 
     class CustomRunnable(RunnableSerializable[Input, Output]):
@@ -5275,3 +5424,22 @@ async def test_defualt_atransform_with_dicts() -> None:
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
 
     assert chunks == [{"foo": "an"}]
+
+
+def test_passthrough_transform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+    runnable = RunnablePassthrough(lambda x: x)
+    chunks = [chunk for chunk in runnable.transform(iter([{"foo": "a"}, {"foo": "n"}]))]
+    assert chunks == [{"foo": "a"}, {"foo": "n"}]
+
+
+async def test_passthrough_atransform_with_dicts() -> None:
+    """Test that default transform works with dicts."""
+    runnable = RunnablePassthrough(lambda x: x)
+
+    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+        yield {"foo": "a"}
+        yield {"foo": "n"}
+
+    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "a"}, {"foo": "n"}]

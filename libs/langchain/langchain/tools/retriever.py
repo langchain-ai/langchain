@@ -4,7 +4,12 @@ from typing import Optional
 from langchain_core.callbacks.manager import (
     Callbacks,
 )
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
+from langchain_core.prompts import (
+    BasePromptTemplate,
+    PromptTemplate,
+    aformat_document,
+    format_document,
+)
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.retrievers import BaseRetriever
 
@@ -39,7 +44,7 @@ async def _aget_relevant_documents(
 ) -> str:
     docs = await retriever.aget_relevant_documents(query, callbacks=callbacks)
     return document_separator.join(
-        format_document(doc, document_prompt) for doc in docs
+        [await aformat_document(doc, document_prompt) for doc in docs]
     )
 
 

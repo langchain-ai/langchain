@@ -114,6 +114,12 @@ def _import_bedrock() -> Type[BaseLLM]:
     return Bedrock
 
 
+def _import_bigdlllm() -> Type[BaseLLM]:
+    from langchain_community.llms.bigdl_llm import BigdlLLM
+
+    return BigdlLLM
+
+
 def _import_bittensor() -> Type[BaseLLM]:
     from langchain_community.llms.bittensor import NIBittensorLLM
 
@@ -162,6 +168,7 @@ def _import_databricks() -> Type[BaseLLM]:
     return Databricks
 
 
+# deprecated / only for back compat - do not add to __all__
 def _import_databricks_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
@@ -277,6 +284,12 @@ def _import_human() -> Type[BaseLLM]:
     return HumanInputLLM
 
 
+def _import_ipex_llm() -> Type[BaseLLM]:
+    from langchain_community.llms.ipex_llm import IpexLLM
+
+    return IpexLLM
+
+
 def _import_javelin_ai_gateway() -> Type[BaseLLM]:
     from langchain_community.llms.javelin_ai_gateway import JavelinAIGateway
 
@@ -325,6 +338,7 @@ def _import_mlflow() -> Type[BaseLLM]:
     return Mlflow
 
 
+# deprecated / only for back compat - do not add to __all__
 def _import_mlflow_chat() -> Any:
     warn_deprecated(
         since="0.0.22",
@@ -576,6 +590,14 @@ def _import_watsonxllm() -> Type[BaseLLM]:
     return WatsonxLLM
 
 
+def _import_weight_only_quantization() -> Any:
+    from langchain_community.llms.weight_only_quantization import (
+        WeightOnlyQuantPipeline,
+    )
+
+    return WeightOnlyQuantPipeline
+
+
 def _import_writer() -> Type[BaseLLM]:
     from langchain_community.llms.writer import Writer
 
@@ -631,7 +653,7 @@ def __getattr__(name: str) -> Any:
         return _import_aviary()
     elif name == "AzureMLOnlineEndpoint":
         return _import_azureml_endpoint()
-    elif name == "Baichuan":
+    elif name == "BaichuanLLM" or name == "Baichuan":
         return _import_baichuan()
     elif name == "QianfanLLMEndpoint":
         return _import_baidu_qianfan_endpoint()
@@ -643,6 +665,8 @@ def __getattr__(name: str) -> Any:
         return _import_beam()
     elif name == "Bedrock":
         return _import_bedrock()
+    elif name == "BigdlLLM":
+        return _import_bigdlllm()
     elif name == "NIBittensorLLM":
         return _import_bittensor()
     elif name == "CerebriumAI":
@@ -693,6 +717,8 @@ def __getattr__(name: str) -> Any:
         return _import_huggingface_text_gen_inference()
     elif name == "HumanInputLLM":
         return _import_human()
+    elif name == "IpexLLM":
+        return _import_ipex_llm()
     elif name == "JavelinAIGateway":
         return _import_javelin_ai_gateway()
     elif name == "KoboldApiLLM":
@@ -701,6 +727,8 @@ def __getattr__(name: str) -> Any:
         return _import_konko()
     elif name == "LlamaCpp":
         return _import_llamacpp()
+    elif name == "Llamafile":
+        return _import_llamafile()
     elif name == "ManifestWrapper":
         return _import_manifest()
     elif name == "Minimax":
@@ -785,6 +813,8 @@ def __getattr__(name: str) -> Any:
         return _import_vllm_openai()
     elif name == "WatsonxLLM":
         return _import_watsonxllm()
+    elif name == "WeightOnlyQuantPipeline":
+        return _import_weight_only_quantization()
     elif name == "Writer":
         return _import_writer()
     elif name == "Xinference":
@@ -818,6 +848,7 @@ __all__ = [
     "Aviary",
     "AzureMLOnlineEndpoint",
     "AzureOpenAI",
+    "BaichuanLLM",
     "Banana",
     "Baseten",
     "Beam",
@@ -836,8 +867,8 @@ __all__ = [
     "Fireworks",
     "ForefrontAI",
     "Friendli",
-    "GigaChat",
     "GPT4All",
+    "GigaChat",
     "GooglePalm",
     "GooseAI",
     "GradientLLM",
@@ -846,22 +877,27 @@ __all__ = [
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
+    "IpexLLM",
+    "JavelinAIGateway",
     "KoboldApiLLM",
     "Konko",
     "LlamaCpp",
-    "TextGen",
+    "Llamafile",
     "ManifestWrapper",
     "Minimax",
+    "Mlflow",
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
-    "Nebula",
     "NIBittensorLLM",
     "NLPCloud",
+    "Nebula",
+    "OCIGenAI",
     "OCIModelDeploymentTGI",
     "OCIModelDeploymentVLLM",
-    "OCIGenAI",
+    "OctoAIEndpoint",
     "Ollama",
+    "OpaquePrompts",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -873,30 +909,30 @@ __all__ = [
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
-    "OpaquePrompts",
+    "QianfanLLMEndpoint",
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
+    "SparkLLM",
     "StochasticAI",
+    "TextGen",
     "TitanTakeoff",
     "TitanTakeoffPro",
+    "Together",
     "Tongyi",
-    "VertexAI",
-    "VertexAIModelGarden",
     "VLLM",
     "VLLMOpenAI",
+    "VertexAI",
+    "VertexAIModelGarden",
+    "VolcEngineMaasLLM",
     "WatsonxLLM",
+    "WeightOnlyQuantPipeline",
     "Writer",
-    "OctoAIEndpoint",
     "Xinference",
-    "JavelinAIGateway",
-    "QianfanLLMEndpoint",
     "YandexGPT",
     "Yuan2",
-    "VolcEngineMaasLLM",
-    "SparkLLM",
 ]
 
 
@@ -912,6 +948,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "aviary": _import_aviary,
         "azure": _import_azure_openai,
         "azureml_endpoint": _import_azureml_endpoint,
+        "baichuan": _import_baichuan,
         "bananadev": _import_bananadev,
         "baseten": _import_baseten,
         "beam": _import_beam,
@@ -922,7 +959,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "ctransformers": _import_ctransformers,
         "ctranslate2": _import_ctranslate2,
         "databricks": _import_databricks,
-        "databricks-chat": _import_databricks_chat,
+        "databricks-chat": _import_databricks_chat,  # deprecated / only for back compat
         "deepinfra": _import_deepinfra,
         "deepsparse": _import_deepsparse,
         "edenai": _import_edenai,
@@ -942,10 +979,11 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "koboldai": _import_koboldai,
         "konko": _import_konko,
         "llamacpp": _import_llamacpp,
+        "llamafile": _import_llamafile,
         "textgen": _import_textgen,
         "minimax": _import_minimax,
         "mlflow": _import_mlflow,
-        "mlflow-chat": _import_mlflow_chat,
+        "mlflow-chat": _import_mlflow_chat,  # deprecated / only for back compat
         "mlflow-ai-gateway": _import_mlflow_ai_gateway,
         "modal": _import_modal,
         "mosaic": _import_mosaicml,
@@ -980,6 +1018,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
         "watsonxllm": _import_watsonxllm,
+        "weight_only_quantization": _import_weight_only_quantization,
         "writer": _import_writer,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,

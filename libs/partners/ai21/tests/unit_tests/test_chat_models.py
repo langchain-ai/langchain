@@ -22,6 +22,7 @@ from langchain_ai21.chat_models import (
 )
 from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_LLM_PARAMETERS,
+    BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
     DUMMY_API_KEY,
     temporarily_unset_api_key,
 )
@@ -46,7 +47,7 @@ def test_initialization__when_custom_parameters_in_init() -> None:
     min_tokens = 20
     temperature = 0.1
     top_p = 0.1
-    top_k_returns = 0
+    top_k_return = 0
     frequency_penalty = Penalty(scale=0.2, apply_to_numbers=True)
     presence_penalty = Penalty(scale=0.2, apply_to_stopwords=True)
     count_penalty = Penalty(scale=0.2, apply_to_punctuation=True, apply_to_emojis=True)
@@ -59,7 +60,7 @@ def test_initialization__when_custom_parameters_in_init() -> None:
         min_tokens=min_tokens,
         temperature=temperature,
         top_p=top_p,
-        top_k_returns=top_k_returns,
+        top_k_return=top_k_return,
         frequency_penalty=frequency_penalty,
         presence_penalty=presence_penalty,
         count_penalty=count_penalty,
@@ -70,7 +71,7 @@ def test_initialization__when_custom_parameters_in_init() -> None:
     assert llm.min_tokens == min_tokens
     assert llm.temperature == temperature
     assert llm.top_p == top_p
-    assert llm.top_k_return == top_k_returns
+    assert llm.top_k_return == top_k_return
     assert llm.frequency_penalty == frequency_penalty
     assert llm.presence_penalty == presence_penalty
     assert count_penalty == count_penalty
@@ -180,14 +181,14 @@ def test_invoke(mock_client_with_chat: Mock) -> None:
         client=mock_client_with_chat,
         **BASIC_EXAMPLE_LLM_PARAMETERS,
     )
-    llm.invoke(input=chat_input, config=dict(tags=["foo"]))
+    llm.invoke(input=chat_input, config=dict(tags=["foo"]), stop=["\n"])
 
     mock_client_with_chat.chat.create.assert_called_once_with(
         model="j2-ultra",
         messages=[ChatMessage(role=RoleType.USER, text=chat_input)],
         system="",
-        stop_sequences=None,
-        **BASIC_EXAMPLE_LLM_PARAMETERS,
+        stop_sequences=["\n"],
+        **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
     )
 
 
@@ -223,8 +224,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
                     ChatMessage(role=RoleType.USER, text=str(messages0[2].content)),
                 ],
                 system="",
-                stop_sequences=None,
-                **BASIC_EXAMPLE_LLM_PARAMETERS,
+                **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
             ),
             call(
                 model="j2-ultra",
@@ -232,8 +232,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
                     ChatMessage(role=RoleType.USER, text=str(messages1[1].content)),
                 ],
                 system="system message",
-                stop_sequences=None,
-                **BASIC_EXAMPLE_LLM_PARAMETERS,
+                **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
             ),
         ]
     )
