@@ -10,7 +10,7 @@ from langchain_core.messages.base import (
 )
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
-from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.json import default_tool_parser, parse_partial_json
 
 
 class ToolCall(Serializable):
@@ -87,7 +87,10 @@ class AIMessage(BaseMessage):
                 "You appear to be using an old tool calling model, please upgrade "
                 "your packages to versions that set message tool calls."
             )
-        # TODO: best-effort parsing
+        try:
+            values["tool_calls"] = default_tool_parser(raw_tool_calls)
+        except Exception:
+            pass
         return values
 
 
