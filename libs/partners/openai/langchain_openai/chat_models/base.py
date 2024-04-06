@@ -63,7 +63,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
-    parse_tool_calls,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -106,10 +107,12 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["function_call"] = dict(function_call)
         if raw_tool_calls := _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
-            try:
-                tool_calls = parse_tool_calls(raw_tool_calls, return_id=True)
-            except Exception:
-                tool_calls = None
+            tool_calls = []
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    tool_calls.append(make_invalid_tool_call(raw_tool_call, str(e)))
         else:
             tool_calls = None
         return AIMessage(
