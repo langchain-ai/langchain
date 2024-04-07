@@ -9,6 +9,7 @@ from langchain_community.cache import (
     GPTCache,
     InMemoryCache,
     MomentoCache,
+    OpenSearchSemanticCache,
     RedisCache,
     RedisSemanticCache,
     SQLAlchemyCache,
@@ -34,4 +35,5 @@ __all__ = [
     "AstraDBCache",
     "AstraDBSemanticCache",
     "AzureCosmosDBSemanticCache",
+    "OpenSearchSemanticCache",
 ]
