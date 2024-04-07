@@ -364,3 +364,66 @@ def test_using_custom_config_specs() -> None:
             ]
         ),
     }
+
+
+# def test_non_chain_runnable_input_messages() -> None:
+#     """Test that runnable that is not a chain can work with history."""
+#     from langchain_core.runnables import Runnable
+
+#     class NonChainRunnable(Runnable[Sequence[BaseMessage], str]):
+#         def invoke(self, messages: Any, config: RunnableConfig | None = None) -> Any:
+#             return "you said: " + "\n".join(
+#                 str(m.content) for m in messages if isinstance(m, HumanMessage)
+#             )
+
+#     runnable = NonChainRunnable()
+
+#     store: Dict = {}
+#     get_session_history = _get_get_session_history(store=store)
+#     with_history = RunnableWithMessageHistory(runnable, get_session_history)
+#     config: RunnableConfig = {"configurable": {"session_id": "1"}}
+#     output = with_history.invoke([HumanMessage(content="hello")], config)
+#     assert output == "you said: hello"
+#     output = with_history.invoke([HumanMessage(content="good bye")], config)
+#     assert output == "you said: hello\ngood bye"
+#     assert store == {
+#         "1": ChatMessageHistory(
+#             messages=[
+#                 HumanMessage(content="hello"),
+#                 AIMessage(content="you said: hello"),
+#                 HumanMessage(content="good bye"),
+#                 AIMessage(content="you said: hello\ngood bye"),
+#             ]
+#         )
+#     }
+
+
+def test_chain_runnable_input_messages() -> None:
+    """Test that runnable that is a chain can work with history."""
+    from langchain_core.runnables import RunnablePassthrough
+
+    runnable = {"input": RunnablePassthrough()} | RunnableLambda(
+        lambda input: "you said: "
+        + "\n".join(
+            str(m.content) for m in input["input"] if isinstance(m, HumanMessage)
+        )
+    )
+
+    store: Dict = {}
+    get_session_history = _get_get_session_history(store=store)
+    with_history = RunnableWithMessageHistory(runnable, get_session_history)
+    config: RunnableConfig = {"configurable": {"session_id": "1"}}
+    output = with_history.invoke([HumanMessage(content="hello")], config)
+    assert output == "you said: hello"
+    output = with_history.invoke([HumanMessage(content="good bye")], config)
+    assert output == "you said: hello\ngood bye"
+    assert store == {
+        "1": ChatMessageHistory(
+            messages=[
+                HumanMessage(content="hello"),
+                AIMessage(content="you said: hello"),
+                HumanMessage(content="good bye"),
+                AIMessage(content="you said: hello\ngood bye"),
+            ]
+        )
+    }

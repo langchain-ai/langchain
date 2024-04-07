@@ -39,6 +39,7 @@ class AsyncExitHistoryCallback(AsyncCallbackHandler):
 
     input_messages: List[BaseMessage]
     output_messages: List[BaseMessage]
+    root_run_id: Optional[UUID] = None
 
     history_messages_key: Optional[str] = None
     _get_input_messages: Callable[..., List[BaseMessage]]
@@ -67,6 +68,12 @@ class AsyncExitHistoryCallback(AsyncCallbackHandler):
         metadata: Dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
+        if self.root_run_id is not None:
+            return
+
+        # Set root run_id for user-defined runnable.
+        self.root_run_id = run_id
+
         # Get the input messages
         self.input_messages = self._get_input_messages(inputs)
 
@@ -75,8 +82,6 @@ class AsyncExitHistoryCallback(AsyncCallbackHandler):
         if not self.history_messages_key:
             historic_messages = self.message_history.messages
             self.input_messages = self.input_messages[len(historic_messages) :]
-
-        return
 
     async def on_chain_end(
         self,
@@ -87,13 +92,19 @@ class AsyncExitHistoryCallback(AsyncCallbackHandler):
         tags: List[str] | None = None,
         **kwargs: Any,
     ) -> None:
+        if self.root_run_id != run_id:
+            return
+
         # Get the output messages
         self.output_messages = self._get_output_messages(outputs)
 
         await self.message_history.aadd_messages(
             self.input_messages + self.output_messages
         )
-        return
+
+        # Reset the root run_id as we are reusing the callback handler
+        # through calls to the runnable.
+        self.root_run_id = None
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):
