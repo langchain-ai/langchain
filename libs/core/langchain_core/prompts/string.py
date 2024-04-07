@@ -160,8 +160,10 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         return ["langchain", "prompts", "base"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))
+
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        return StringPromptValue(text=await self.aformat(**kwargs))
 
     def pretty_repr(self, html: bool = False) -> str:
         # TODO: handle partials

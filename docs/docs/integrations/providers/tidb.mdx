@@ -1,81 +1,38 @@
 # TiDB
 
-> [TiDB Cloud](https://tidbcloud.com/), is a comprehensive Database-as-a-Service (DBaaS) solution, that provides dedicated and serverless options. TiDB Serverless is now integrating a built-in vector search into the MySQL landscape. With this enhancement, you can seamlessly develop AI applications using TiDB Serverless without the need for a new database or additional technical stacks. Be among the first to experience it by joining the waitlist for the private beta at https://tidb.cloud/ai.
-
-As part of our ongoing efforts to empower TiDB users in leveraging AI application development, we provide support for
-
-- Memory, enabling the storage of chat history messages directly within TiDB;
-- TiDB Loader  streamlining the process of loading data from TiDB using Langchain;
-- TiDB Vector Store, enabling the use of TiDB Cloud as a vector store, capitalizing on TiDB's robust database infrastructure.
+> [TiDB Cloud](https://tidbcloud.com/), is a comprehensive Database-as-a-Service (DBaaS) solution, 
+> that provides dedicated and serverless options. `TiDB Serverless` is now integrating 
+> a built-in vector search into the MySQL landscape. With this enhancement, you can seamlessly 
+> develop AI applications using `TiDB Serverless` without the need for a new database or additional 
+> technical stacks. Be among the first to experience it by joining the [waitlist for the private beta](https://tidb.cloud/ai).
 
 
-## Memory
+## Installation and Setup
 
-Utilize TiDB Cloud to store chat message history, leveraging the unlimited scalability of TiDB Cloud Serverless. This enables the storage of massive amounts of historical data without the need to maintain message retention windows.
+You have to get the connection details for the TiDB database. 
+Visit the [TiDB Cloud](https://tidbcloud.com/) to get the connection details.
 
-```python
-from langchain_community.chat_message_histories import TiDBChatMessageHistory
-from langchain_community.chat_message_histories import TiDBChatMessageHistory
-
-history = TiDBChatMessageHistory(
-    connection_string=tidb_connection_string,
-    session_id="code_gen",
-)
-
-history.add_user_message("How's our feature going?")
-history.add_ai_message(
-    "It's going well. We are working on testing now. It will be released in Feb."
-)
-```
-
-Please refer the details [here](/docs/integrations/memory/tidb_chat_message_history).
-
-## TiDB Loader
-
-Effortlessly load data from TiDB into other LangChain components using SQL. This simplifies the integration process, allowing for seamless data manipulation and utilization within your AI applications.
+```bash
+## Document loader
 
 ```python
 from langchain_community.document_loaders import TiDBLoader
-
-# Setup TiDBLoader to retrieve data
-loader = TiDBLoader(
-    connection_string=tidb_connection_string,
-    query=f"SELECT * FROM {table_name};",
-    page_content_columns=["name", "description"],
-    metadata_columns=["id"],
-)
-
-# Load data
-documents = loader.load()
 ```
 
 Please refer the details [here](/docs/integrations/document_loaders/tidb).
 
-## TiDB Vector Store
+## Vector store
 
-With TiDB's exceptional database capabilities, easily manage and store billions of vectorized data. This enhances the performance and scalability of AI applications, providing a robust foundation for your vector storage needs.
-
-```
-from typing import List, Tuple
-from langchain.docstore.document import Document
+```python
 from langchain_community.vectorstores import TiDBVectorStore
-from langchain_openai import OpenAIEmbeddings
+```
+Please refer the details [here](/docs/integrations/vectorstores/tidb_vector).
 
-db = TiDBVectorStore.from_texts(
-    embedding=embeddings,
-    texts=['Andrew like eating oranges', 'Alexandra is from England', 'Ketanji Brown Jackson is a judge'],
-    table_name="tidb_vector_langchain",
-    connection_string=tidb_connection_url,
-    distance_strategy="cosine",
-)
 
-query = "Can you tell me about Alexandra?"
-docs_with_score: List[Tuple[Document, float]] = db.similarity_search_with_score(query)
-for doc, score in docs_with_score:
-    print("-" * 80)
-    print("Score: ", score)
-    print(doc.page_content)
-    print("-" * 80)
+## Memory
+
+```python
+from langchain_community.chat_message_histories import TiDBChatMessageHistory
 ```
 
-Please refer the details [here](/docs/integrations/vectorstores/tidb_vector).
+Please refer the details [here](/docs/integrations/memory/tidb_chat_message_history).
