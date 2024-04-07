@@ -30,6 +30,6 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
             return json.dumps(to_json_not_implemented(obj), **kwargs)
 
 
-def dumpd(obj: Any) -> Dict[str, Any]:
+def dumpd(obj: Any) -> Any:
     """Return a json dict representation of an object."""
     return json.loads(dumps(obj))
