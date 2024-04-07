@@ -95,7 +95,7 @@ def test_embed_cached_query(cache_embeddings_with_query: CacheBackedEmbeddings) 
     vector = cache_embeddings_with_query.embed_query(text)
     expected_vector = [5.0, 6.0]
     assert vector == expected_vector
-    keys = list(cache_embeddings_with_query.query_embedding_store.yield_keys())
+    keys = list(cache_embeddings_with_query.query_embedding_store.yield_keys())  # type: ignore[union-attr]
     assert len(keys) == 1
     assert keys[0] == "test_namespace89ec3dae-a4d9-5636-a62e-ff3b56cdfa15"
 
@@ -144,6 +144,6 @@ async def test_aembed_query_cached(
 ) -> None:
     text = "query_text"
     await cache_embeddings_with_query.aembed_query(text)
-    keys = list(cache_embeddings_with_query.query_embedding_store.yield_keys())
+    keys = list(cache_embeddings_with_query.query_embedding_store.yield_keys())  # type: ignore[union-attr]
     assert len(keys) == 1
     assert keys[0] == "test_namespace89ec3dae-a4d9-5636-a62e-ff3b56cdfa15"
