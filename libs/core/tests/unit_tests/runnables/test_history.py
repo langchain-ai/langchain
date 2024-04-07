@@ -400,9 +400,9 @@ def test_using_custom_config_specs() -> None:
 
 def test_chain_runnable_input_messages() -> None:
     """Test that runnable that is a chain can work with history."""
-    from langchain_core.runnables import RunnablePassthrough
+    from langchain_core.runnables import Runnable, RunnablePassthrough
 
-    runnable = {"input": RunnablePassthrough()} | RunnableLambda(
+    runnable: Runnable = {"input": RunnablePassthrough()} | RunnableLambda(
         lambda input: "you said: "
         + "\n".join(
             str(m.content) for m in input["input"] if isinstance(m, HumanMessage)
