@@ -132,6 +132,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.promptlayer_openai import (
         PromptLayerChatOpenAI,  # noqa: F401
     )
+    from langchain_community.chat_models.solar import (
+        SolarChat,  # noqa: F401
+    )
     from langchain_community.chat_models.sparkllm import (
         ChatSparkLLM,  # noqa: F401
     )
@@ -197,6 +200,7 @@ __all__ = [
     "MiniMaxChat",
     "PaiEasChatEndpoint",
     "PromptLayerChatOpenAI",
+    "SolarChat",
     "QianfanChatEndpoint",
     "VolcEngineMaasChat",
 ]
@@ -244,6 +248,7 @@ _module_lookup = {
     "MiniMaxChat": "langchain_community.chat_models.minimax",
     "PaiEasChatEndpoint": "langchain_community.chat_models.pai_eas_endpoint",
     "PromptLayerChatOpenAI": "langchain_community.chat_models.promptlayer_openai",
+    "SolarChat": "langchain_community.chat_models.solar",
     "QianfanChatEndpoint": "langchain_community.chat_models.baidu_qianfan_endpoint",
     "VolcEngineMaasChat": "langchain_community.chat_models.volcengine_maas",
     "ChatPremAI": "langchain_community.chat_models.premai",
