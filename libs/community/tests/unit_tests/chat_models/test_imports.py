@@ -45,6 +45,7 @@ EXPECTED_ALL = [
     "MiniMaxChat",
     "PaiEasChatEndpoint",
     "PromptLayerChatOpenAI",
+    "SolarChat",
     "QianfanChatEndpoint",
     "VolcEngineMaasChat",
 ]
