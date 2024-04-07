@@ -378,7 +378,7 @@ def test_non_chain_runnable_input_messages() -> None:
             )
 
         def invoke(
-            self, input: Sequence[BaseMessage], config: RunnableConfig | None = None
+            self, input: Sequence[BaseMessage], config: Optional[RunnableConfig] = None
         ) -> str:
             return self._call_with_config(func=self._invoke, input=input, config=config)
 
