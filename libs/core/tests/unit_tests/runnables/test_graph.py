@@ -206,6 +206,30 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         {"$ref": "#/definitions/ToolMessage"},
                     ],
                     "definitions": {
+                        "ToolCall": {
+                            "title": "ToolCall",
+                            "description": "A call to a tool.\n\nAttributes:\n    name: (str) the name of the tool to be called\n    args: (dict) the arguments to the tool call\n    id: (str) if provided, an identifier associated with the tool call\n    index: (int) if provided, the index of the tool call in a sequence\n        of content",  # noqa: E501
+                            "type": "object",
+                            "properties": {
+                                "name": {"title": "Name", "type": "string"},
+                                "args": {"title": "Args", "type": "object"},
+                                "id": {"title": "Id", "type": "string"},
+                                "index": {"title": "Index", "type": "integer"},
+                            },
+                            "required": ["name", "args"],
+                        },
+                        "InvalidToolCall": {
+                            "title": "InvalidToolCall",
+                            "description": "Allowance for errors made by LLM.\n\nHere we add an `error` key to surface errors made during generation\n(e.g., invalid JSON arguments.)",  # noqa: E501
+                            "type": "object",
+                            "properties": {
+                                "name": {"title": "Name", "type": "string"},
+                                "args": {"title": "Args", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
+                                "index": {"title": "Index", "type": "integer"},
+                                "error": {"title": "Error", "type": "string"},
+                            },
+                        },
                         "AIMessage": {
                             "title": "AIMessage",
                             "description": "Message from an AI.",
@@ -240,12 +264,22 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["ai"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                                 "example": {
                                     "title": "Example",
                                     "default": False,
                                     "type": "boolean",
+                                },
+                                "tool_calls": {
+                                    "title": "Tool Calls",
+                                    "type": "array",
+                                    "items": {
+                                        "anyOf": [
+                                            {"$ref": "#/definitions/ToolCall"},
+                                            {"$ref": "#/definitions/InvalidToolCall"},
+                                        ]
+                                    },
                                 },
                             },
                             "required": ["content"],
@@ -284,8 +318,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["human"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                                 "example": {
                                     "title": "Example",
                                     "default": False,
@@ -328,8 +362,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["chat"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                                 "role": {"title": "Role", "type": "string"},
                             },
                             "required": ["content", "role"],
@@ -368,8 +402,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["system"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                             },
                             "required": ["content"],
                         },
@@ -407,8 +441,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["function"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                             },
                             "required": ["content", "name"],
                         },
@@ -446,8 +480,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["tool"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                                 "tool_call_id": {
                                     "title": "Tool Call Id",
                                     "type": "string",

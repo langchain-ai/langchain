@@ -7,8 +7,6 @@ from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     BaseMessage,
     HumanMessage,
 )
@@ -240,7 +238,7 @@ def test_tool_use() -> None:
         ]
     )
     response = llm_with_tools.invoke("what's the weather in san francisco, ca")
-    assert isinstance(response, AIToolCallsMessage)
+    assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
     assert isinstance(response.tool_calls, list)
     assert len(response.tool_calls) == 1
@@ -257,7 +255,7 @@ def test_tool_use() -> None:
             first = False
         else:
             gathered = gathered + chunk  # type: ignore
-    assert isinstance(gathered, AIToolCallsMessageChunk)
+    assert isinstance(gathered, AIMessageChunk)
     assert isinstance(gathered.tool_call_chunks, list)
     assert len(gathered.tool_call_chunks) == 1
     tool_call_chunk = gathered.tool_call_chunks[0]

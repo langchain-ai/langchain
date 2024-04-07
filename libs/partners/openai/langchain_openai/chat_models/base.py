@@ -42,8 +42,6 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     ChatMessage,
@@ -65,7 +63,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
-    parse_tool_calls,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -108,18 +107,22 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["function_call"] = dict(function_call)
         if raw_tool_calls := _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
-            try:
-                tool_calls = parse_tool_calls(raw_tool_calls, return_id=True)
-            except Exception:
-                tool_calls = None
-            return AIToolCallsMessage(
-                content=content,
-                additional_kwargs=additional_kwargs,
-                id=id_,
-                tool_calls=tool_calls,
-            )
+            tool_calls = []
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e)).dict()
+                    )
+        else:
+            tool_calls = None
         return AIMessage(
-            content=content, additional_kwargs=additional_kwargs, name=name, id=id_
+            content=content,
+            additional_kwargs=additional_kwargs,
+            name=name,
+            id=id_,
+            tool_calls=tool_calls,
         )
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
@@ -215,18 +218,17 @@ def _convert_delta_to_message_chunk(
             ]
         except KeyError:
             tool_call_chunks = None
-        return AIToolCallsMessageChunk(
-            content=content,
-            additional_kwargs=additional_kwargs,
-            id=id_,
-            tool_call_chunks=tool_call_chunks,
-        )
+    else:
+        tool_call_chunks = None
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(
-            content=content, additional_kwargs=additional_kwargs, id=id_
+            content=content,
+            additional_kwargs=additional_kwargs,
+            id=id_,
+            tool_call_chunks=tool_call_chunks,
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content, id=id_)

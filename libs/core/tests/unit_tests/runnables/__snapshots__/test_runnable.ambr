@@ -5307,6 +5307,20 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -5545,6 +5559,38 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'StringPromptValue': dict({
         'description': 'String prompt value.',
         'properties': dict({
@@ -5623,6 +5669,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -5773,6 +5855,20 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -6011,6 +6107,38 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'StringPromptValue': dict({
         'description': 'String prompt value.',
         'properties': dict({
@@ -6089,6 +6217,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -6223,6 +6387,20 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -6414,6 +6592,38 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'SystemMessage': dict({
         'description': '''
           Message for priming AI behavior, usually passed in as the first of a sequence
@@ -6470,6 +6680,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -6592,6 +6838,20 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -6830,6 +7090,38 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'StringPromptValue': dict({
         'description': 'String prompt value.',
         'properties': dict({
@@ -6908,6 +7200,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -7030,6 +7358,20 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -7268,6 +7610,38 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'StringPromptValue': dict({
         'description': 'String prompt value.',
         'properties': dict({
@@ -7346,6 +7720,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -7460,6 +7870,20 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -7698,6 +8122,38 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'PromptTemplateOutput': dict({
         'anyOf': list([
           dict({
@@ -7787,6 +8243,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -7928,6 +8420,20 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'tool_calls': dict({
+            'items': dict({
+              'anyOf': list([
+                dict({
+                  '$ref': '#/definitions/ToolCall',
+                }),
+                dict({
+                  '$ref': '#/definitions/InvalidToolCall',
+                }),
+              ]),
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
           'type': dict({
             'default': 'ai',
             'enum': list([
@@ -8119,6 +8625,38 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'description': '''
+          Allowance for errors made by LLM.
+          
+          Here we add an `error` key to surface errors made during generation
+          (e.g., invalid JSON arguments.)
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'SystemMessage': dict({
         'description': '''
           Message for priming AI behavior, usually passed in as the first of a sequence
@@ -8175,6 +8713,42 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'description': '''
+          A call to a tool.
+          
+          Attributes:
+              name: (str) the name of the tool to be called
+              args: (dict) the arguments to the tool call
+              id: (str) if provided, an identifier associated with the tool call
+              index: (int) if provided, the index of the tool call in a sequence
+                  of content
+        ''',
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({

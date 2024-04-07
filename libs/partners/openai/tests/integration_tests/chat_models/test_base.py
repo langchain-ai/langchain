@@ -5,8 +5,7 @@ import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
-    AIToolCallsMessage,
-    AIToolCallsMessageChunk,
+    AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
@@ -487,7 +486,7 @@ def test_tool_use() -> None:
     msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
 
-    assert isinstance(ai_msg, AIToolCallsMessage)
+    assert isinstance(ai_msg, AIMessage)
     assert isinstance(ai_msg.tool_calls, list)
     assert len(ai_msg.tool_calls) == 1
     tool_call = ai_msg.tool_calls[0]
@@ -502,7 +501,7 @@ def test_tool_use() -> None:
             first = False
         else:
             gathered = gathered + message  # type: ignore
-    assert isinstance(gathered, AIToolCallsMessageChunk)
+    assert isinstance(gathered, AIMessageChunk)
     assert isinstance(gathered.tool_call_chunks, list)
     assert len(gathered.tool_call_chunks) == 1
     tool_call_chunk = gathered.tool_call_chunks[0]
