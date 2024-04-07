@@ -102,6 +102,7 @@ _module_lookup = {
     "JoplinLoader": "langchain_community.document_loaders.joplin",
     "LakeFSLoader": "langchain_community.document_loaders.lakefs",
     "LarkSuiteDocLoader": "langchain_community.document_loaders.larksuite",
+    "LLMSherpaFileLoader": "langchain_community.document_loaders.llmsherpa",
     "MHTMLLoader": "langchain_community.document_loaders.mhtml",
     "MWDumpLoader": "langchain_community.document_loaders.mediawikidump",
     "MastodonTootsLoader": "langchain_community.document_loaders.mastodon",
@@ -121,6 +122,7 @@ _module_lookup = {
     "OneDriveLoader": "langchain_community.document_loaders.onedrive",
     "OnlinePDFLoader": "langchain_community.document_loaders.pdf",
     "OpenCityDataLoader": "langchain_community.document_loaders.open_city_data",
+    "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
     "OutlookMessageLoader": "langchain_community.document_loaders.email",
     "PDFMinerLoader": "langchain_community.document_loaders.pdf",
     "PDFMinerPDFasHTMLLoader": "langchain_community.document_loaders.pdf",
@@ -169,6 +171,7 @@ _module_lookup = {
     "TwitterTweetLoader": "langchain_community.document_loaders.twitter",
     "UnstructuredAPIFileIOLoader": "langchain_community.document_loaders.unstructured",
     "UnstructuredAPIFileLoader": "langchain_community.document_loaders.unstructured",
+    "UnstructuredCHMLoader": "langchain_community.document_loaders.chm",
     "UnstructuredCSVLoader": "langchain_community.document_loaders.csv_loader",
     "UnstructuredEPubLoader": "langchain_community.document_loaders.epub",
     "UnstructuredEmailLoader": "langchain_community.document_loaders.email",

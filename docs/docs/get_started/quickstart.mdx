@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Quickstart
 
 In this quickstart we'll show you how to:
@@ -14,7 +18,7 @@ That's a fair amount to cover! Let's dive in.
 
 ### Jupyter Notebook
 
-This guide (and most of the other guides in the documentation) use [Jupyter notebooks](https://jupyter.org/) and assume the reader is as well. Jupyter notebooks are perfect for learning how to work with LLM systems because often times things can go wrong (unexpected output, API down, etc) and going through guides in an interactive environment is a great way to better understand them.
+This guide (and most of the other guides in the documentation) uses [Jupyter notebooks](https://jupyter.org/) and assumes the reader is as well. Jupyter notebooks are perfect for learning how to work with LLM systems because oftentimes things can go wrong (unexpected output, API down, etc) and going through guides in an interactive environment is a great way to better understand them.
 
 You do not NEED to go through the guide in a Jupyter Notebook, but it is recommended. See [here](https://jupyter.org/install) for instructions on how to install.
 
@@ -149,7 +153,7 @@ llm = ChatAnthropic(anthropic_api_key="...")
 First we'll need to import the Cohere SDK package.
 
 ```shell
-pip install cohere
+pip install langchain-cohere
 ```
 
 Accessing the API requires an API key, which you can get by creating an account and heading [here](https://dashboard.cohere.com/api-keys). Once we have a key we'll want to set it as an environment variable by running:
@@ -161,7 +165,7 @@ export COHERE_API_KEY="..."
 We can then initialize the model:
 
 ```python
-from langchain_community.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 
 llm = ChatCohere()
 ```
@@ -169,7 +173,7 @@ llm = ChatCohere()
 If you'd prefer not to set an environment variable you can pass the key in directly via the `cohere_api_key` named parameter when initiating the Cohere LLM class:
 
 ```python
-from langchain_community.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 
 llm = ChatCohere(cohere_api_key="...")
 ```
@@ -184,8 +188,8 @@ Let's ask it what LangSmith is - this is something that wasn't present in the tr
 llm.invoke("how can langsmith help with testing?")
 ```
 
-We can also guide it's response with a prompt template.
-Prompt templates are used to convert raw user input to a better input to the LLM.
+We can also guide its response with a prompt template.
+Prompt templates convert raw user input to better input to the LLM.
 
 ```python
 from langchain_core.prompts import ChatPromptTemplate
@@ -234,7 +238,7 @@ We've now successfully set up a basic LLM chain. We only touched on the basics o
 
 ## Retrieval Chain
 
-In order to properly answer the original question ("how can langsmith help with testing?"), we need to provide additional context to the LLM.
+To properly answer the original question ("how can langsmith help with testing?"), we need to provide additional context to the LLM.
 We can do this via *retrieval*.
 Retrieval is useful when you have **too much data** to pass to the LLM directly.
 You can then use a retriever to fetch only the most relevant pieces and pass those in.
@@ -242,7 +246,7 @@ You can then use a retriever to fetch only the most relevant pieces and pass tho
 In this process, we will look up relevant documents from a *Retriever* and then pass them into the prompt.
 A Retriever can be backed by anything - a SQL table, the internet, etc - but in this instance we will populate a vector store and use that as a retriever. For more information on vectorstores, see [this documentation](/docs/modules/data_connection/vectorstores).
 
-First, we need to load the data that we want to index. In order to do this, we will use the WebBaseLoader. This requires installing [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/):
+First, we need to load the data that we want to index. To do this, we will use the WebBaseLoader. This requires installing [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/):
 
 ```shell
 pip install beautifulsoup4
@@ -349,7 +353,7 @@ document_chain.invoke({
 ```
 
 However, we want the documents to first come from the retriever we just set up.
-That way, for a given question we can use the retriever to dynamically select the most relevant documents and pass those in.
+That way, we can use the retriever to dynamically select the most relevant documents and pass those in for a given question.
 
 ```python
 from langchain.chains import create_retrieval_chain
@@ -395,12 +399,12 @@ from langchain_core.prompts import MessagesPlaceholder
 prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="chat_history"),
     ("user", "{input}"),
-    ("user", "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation")
+    ("user", "Given the above conversation, generate a search query to look up to get information relevant to the conversation")
 ])
 retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
 ```
 
-We can test this out by passing in an instance where the user is asking a follow up question.
+We can test this out by passing in an instance where the user asks a follow-up question.
 
 ```python
 from langchain_core.messages import HumanMessage, AIMessage
@@ -411,7 +415,7 @@ retriever_chain.invoke({
     "input": "Tell me how"
 })
 ```
-You should see that this returns documents about testing in LangSmith. This is because the LLM generated a new query, combining the chat history with the follow up question.
+You should see that this returns documents about testing in LangSmith. This is because the LLM generated a new query, combining the chat history with the follow-up question.
 
 Now that we have this new retriever, we can create a new chain to continue the conversation with these retrieved documents in mind.
 
@@ -439,7 +443,7 @@ We can see that this gives a coherent answer - we've successfully turned our ret
 
 ## Agent
 
-We've so far create examples of chains - where each step is known ahead of time.
+We've so far created examples of chains - where each step is known ahead of time.
 The final thing we will create is an agent - where the LLM decides what steps to take.
 
 **NOTE: for this example we will only show how to create an agent using OpenAI models, as local models are not reliable enough yet.**
@@ -448,7 +452,7 @@ One of the first things to do when building an agent is to decide what tools it 
 For this example, we will give the agent access to two tools:
 
 1. The retriever we just created. This will let it easily answer questions about LangSmith
-2. A search tool. This will let it easily answer questions that require up to date information.
+2. A search tool. This will let it easily answer questions that require up-to-date information.
 
 First, let's set up a tool for the retriever we just created:
 
@@ -488,6 +492,11 @@ Install langchain hub first
 ```bash
 pip install langchainhub
 ```
+Install the langchain-openai package
+To interact with OpenAI we need to use langchain-openai which connects with OpenAI SDK[https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai].  
+```bash
+pip install langchain-openai
+```
 
 Now we can use it to get a predefined prompt
 
@@ -499,6 +508,8 @@ from langchain.agents import AgentExecutor
 
 # Get the prompt to use - you can modify this!
 prompt = hub.pull("hwchase17/openai-functions-agent")
+
+# You need to set OPENAI_API_KEY environment variable or pass it as argument `openai_api_key`.
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 agent = create_openai_functions_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
