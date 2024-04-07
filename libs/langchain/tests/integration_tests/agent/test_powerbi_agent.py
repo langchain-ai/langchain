@@ -27,10 +27,10 @@ def test_daxquery() -> None:
 
     fast_llm = ChatOpenAI(
         temperature=0.5, max_tokens=1000, model_name="gpt-3.5-turbo", verbose=True
-    )
+    )  # type: ignore[call-arg]
     smart_llm = ChatOpenAI(
         temperature=0, max_tokens=100, model_name="gpt-4", verbose=True
-    )
+    )  # type: ignore[call-arg]
 
     toolkit = PowerBIToolkit(
         powerbi=PowerBIDataset(
