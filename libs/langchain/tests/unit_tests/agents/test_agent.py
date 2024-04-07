@@ -2,7 +2,7 @@
 
 import json
 from itertools import cycle
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from langchain_core.agents import (
     AgentAction,
@@ -946,7 +946,7 @@ def _make_tools_invocation(name_to_arguments: Dict[str, Dict[str, Any]]) -> AIMe
         {"function": {"name": name, "arguments": json.dumps(arguments)}, "id": idx}
         for idx, (name, arguments) in enumerate(name_to_arguments.items())
     ]
-    tool_calls = [
+    tool_calls: Sequence[ToolCall] = [
         ToolCall(name=name, args=args, id=str(idx))
         for idx, (name, args) in enumerate(name_to_arguments.items())
     ]
