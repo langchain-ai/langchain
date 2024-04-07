@@ -1,4 +1,4 @@
-from langchain_core.messages import AIMessage, AIToolCallsMessage, ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 
 from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
@@ -50,7 +50,7 @@ def test_calls_convert_agent_action_to_messages() -> None:
     message3 = AIMessage(content="", additional_kwargs=additional_kwargs3)
     actions3 = parse_ai_message_to_openai_tool_action(message3)
 
-    message4 = AIToolCallsMessage(
+    message4 = AIMessage(
         content="",
         tool_calls=[
             ToolCall(name="exponentiate", args={"a": 3, "b": 5}, id="call_abc02468")

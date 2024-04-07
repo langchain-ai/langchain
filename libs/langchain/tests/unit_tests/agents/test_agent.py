@@ -14,7 +14,6 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    AIToolCallsMessage,
     FunctionMessage,
     HumanMessage,
     ToolCall,
@@ -933,9 +932,7 @@ async def test_openai_agent_with_streaming() -> None:
     ]
 
 
-def _make_tools_invocation(
-    name_to_arguments: Dict[str, Dict[str, Any]],
-) -> AIToolCallsMessage:
+def _make_tools_invocation(name_to_arguments: Dict[str, Dict[str, Any]]) -> AIMessage:
     """Create an AIMessage that represents a tools invocation.
 
     Args:
@@ -952,7 +949,7 @@ def _make_tools_invocation(
         ToolCall(name=name, args=args, id=str(idx))
         for idx, (name, args) in enumerate(name_to_arguments.items())
     ]
-    return AIToolCallsMessage(
+    return AIMessage(
         content="",
         additional_kwargs={
             "tool_calls": raw_tool_calls,

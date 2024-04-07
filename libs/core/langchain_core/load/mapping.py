@@ -15,12 +15,6 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "ai",
         "AIMessageChunk",
     ),
-    ("langchain", "schema", "messages", "AIToolCallsMessage"): (
-        "langchain_core",
-        "messages",
-        "ai",
-        "AIToolCallsMessage",
-    ),
     ("langchain", "schema", "messages", "BaseMessage"): (
         "langchain_core",
         "messages",
@@ -132,12 +126,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "agents",
         "AgentActionMessageLog",
     ),
-    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+    ("langchain", "schema", "agent", "ToolAgentAction"): (
         "langchain",
         "agents",
         "output_parsers",
-        "openai_tools",
-        "OpenAIToolAgentAction",
+        "tools",
+        "ToolAgentAction",
     ),
     ("langchain", "prompts", "chat", "BaseMessagePromptTemplate"): (
         "langchain_core",
