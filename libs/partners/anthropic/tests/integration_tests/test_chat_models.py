@@ -254,3 +254,26 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+def test_configurable_fields() -> None:
+    from langchain_core.runnables import ConfigurableField, RunnableConfig
+
+    model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+        max_tokens=1024,
+    ).configurable_fields(
+        max_tokens=ConfigurableField(
+            id="max_tokens",
+            name="Max Number of LLM tokens",
+            description="Max Number of LLM tokens",
+        )
+    )
+
+    response = model.invoke(
+        "Write an essay on Tiger.",
+        config=RunnableConfig(configurable={"max_tokens": 100}),
+    )
+
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
