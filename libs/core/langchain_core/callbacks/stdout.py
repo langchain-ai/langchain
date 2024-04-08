@@ -25,6 +25,11 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Print out that we are entering a chain."""
         class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
         print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")  # noqa: T201
+        if serialized.get("id")[2] == "prompt":
+            prompt = serialized.get("kwargs", serialized.get(
+                "template", "<unknown>")).get("template", "<unknown>"
+            )
+            print(f"\033[1m> Template: {prompt}\033[0m")  # noqa: T201
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
@@ -34,8 +39,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Run when a LLM starts running."""
-        llm_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
-        print(f"\n\n\033[1m> Entering {llm_name} chain with prompt: {prompts} ...\033[0m")  # noqa: T201
+        llm_name = serialized.get("id", ["<unknown>"])[-1]
+        print(f"\n\n\033[1m> Entering {llm_name} chain...\033[0m")  # noqa: T201
+        print(f"\033[1m> Prompt: {prompts}\033[0m")  # noqa: T201
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends running."""

@@ -37,7 +37,7 @@ Concepts include the hooks or events that provide entry to the application and t
 
 ### Callbacks Handler
 
-Callbacks handlers are objects that implement the associated method (see table above) for each event you are interested in. Handlers register for these events using the `callbacks` argument available throughout the API. When the event is triggered, LangChain will call the appropriated method on every registered handler.
+Callbacks handlers are objects that implement the associated method (see table above) for each event you are interested in. Handlers register for these events using the `callbacks` argument available throughout the API. When the event is triggered, LangChain will call the appropriate method on every registered handler.
 
 
 ### Types
@@ -54,7 +54,7 @@ The callbacks are available on most objects throughout the API (Models, Tools, A
 
 ## Quick start
 
-Let us understand how to use callbacks by examining one of the built-in handlers provided by LangChain - the `StdOutCallbackHandler`, which simply logs all events to `stdout`.
+Let us understand how to use callbacks by examining one of the built-in handlers provided by LangChain - the `StdOutCallbackHandler`, which simply logs all events to `stdout`. This is useful for debugging, as it will log all events to the console.
 
 **Note**: when the `verbose` flag on the object is set to true, the `StdOutCallbackHandler` will be invoked even without being explicitly passed in.
 
@@ -67,132 +67,55 @@ handler = StdOutCallbackHandler()
 llm = OpenAI()
 prompt = PromptTemplate.from_template("1 + {number} = ")
 
-# Constructor callback: we set the callback when initializing the model
-chain = prompt | model.with_config({"callbacks": [handler]})
-chain.invoke({"number": 20})
-
 # Constructor callback: we set the callback when initializing the prompt
 chain = prompt.with_config({"callbacks": [handler]}) | model
+chain.invoke({"number": 20})
+
+# Constructor callback: we set the callback when initializing the model
+chain = prompt | model.with_config({"callbacks": [handler]})
 chain.invoke({"number": 25})
 
 # Request callbacks: we set the request callback on the chain and see it propagated to all subrequests
 chain = prompt | model
-chain.invoke({"number": 32}, config = config)
+chain.invoke({"number": 40}, config = config)
 ```
 
-## tmp
 
+<details> <summary>Console output</summary>
 
-## Callback handlers
-
-`CallbackHandlers` are objects that implement the `CallbackHandler` interface, which has a method for each event that can be subscribed to. The `CallbackManager` will call the appropriate method on each handler when the event is triggered.
-
-
-```python
-class BaseCallbackHandler:
-    """Base callback handler that can be used to handle callbacks from langchain."""
-
-    def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
-    ) -> Any:
-        """Run when LLM starts running."""
-
-    def on_chat_model_start(
-        self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs: Any
-    ) -> Any:
-        """Run when Chat Model starts running."""
-
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> Any:
-        """Run on new LLM token. Only available when streaming is enabled."""
-
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> Any:
-        """Run when LLM ends running."""
-
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> Any:
-        """Run when LLM errors."""
-
-    def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
-    ) -> Any:
-        """Run when chain starts running."""
-
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> Any:
-        """Run when chain ends running."""
-
-    def on_chain_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> Any:
-        """Run when chain errors."""
-
-    def on_tool_start(
-        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
-    ) -> Any:
-        """Run when tool starts running."""
-
-    def on_tool_end(self, output: Any, **kwargs: Any) -> Any:
-        """Run when tool ends running."""
-
-    def on_tool_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> Any:
-        """Run when tool errors."""
-
-    def on_text(self, text: str, **kwargs: Any) -> Any:
-        """Run on arbitrary text."""
-
-    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
-        """Run on agent action."""
-
-    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
-        """Run on agent end."""
-```
-
-```
 
 <CodeOutputBlock lang="python">
 
 ```
 > Entering new PromptTemplate chain...
+> Template: what is 1 + {number}?
 
 > Finished chain.
 
 
-> Entering OpenAI with prompt: ['what is 1 + 25?'] ...
+> Entering OpenAI chain...
+> Prompt: ['what is 1 + 25?']
 
 > Finished llm chain.
 
 
 > Entering new RunnableSequence chain...
 
+
 > Entering new PromptTemplate chain...
+> Template: what is 1 + {number}?
 
 > Finished chain.
 
-> Entering OpenAI with prompt: ['what is 1 + 40?'] ...
+
+> Entering OpenAI chain...
+> Prompt: ['what is 1 + 40?']
 
 > Finished llm chain.
 
 > Finished chain.
-
 ```
 
 </CodeOutputBlock>
 
-
-```python
-handler = StdOutCallbackHandler()
-llm = OpenAI()
-prompt = PromptTemplate.from_template("1 + {number} = ")
-
-config = {
-    'callbacks' : [handler]
-}
-
-chain = prompt | chain
-chain.invoke({"number":2}, config=config)
-```
-
-The `verbose` argument is available on most objects throughout the API (Chains, Models, Tools, Agents, etc.) as a constructor argument, e.g. `LLMChain(verbose=True)`, and it is equivalent to passing a `ConsoleCallbackHandler` to the `callbacks` argument of that object and all child objects. This is useful for debugging, as it will log all events to the console.
-
+</details>
