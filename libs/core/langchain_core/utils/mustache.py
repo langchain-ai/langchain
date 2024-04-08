@@ -5,7 +5,9 @@ MIT License
 
 import logging
 from collections.abc import Iterator, Sequence
-from typing import Any, Dict, List, Literal, Optional, Tuple, TypeAlias, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union, cast
+
+from typing_extensions import TypeAlias
 
 logger = logging.getLogger(__name__)
 
