@@ -51,6 +51,7 @@ ruff = "^0.1.5"
 mypy = "^0.991"
 langchain-core = { path = "../../core", develop = true }
 langchain-community = { path = "../../community", develop = true }
+types-requests = "^2.31.0.20240406"
 
 [tool.poetry.group.dev]
 optional = true

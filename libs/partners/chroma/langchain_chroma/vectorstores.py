@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import logging
 import uuid
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,16 +17,15 @@ from typing import (
     Union,
 )
 
+import chromadb
+import chromadb.config
 import numpy as np
-from chromadb import QueryResult
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
-    import chromadb
-    import chromadb.config
     from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
 
 logger = logging.getLogger()
@@ -136,14 +136,6 @@ class Chroma(VectorStore):
         relevance_score_fn: Optional[Callable[[float], float]] = None,
     ) -> None:
         """Initialize with a Chroma client."""
-        try:
-            import chromadb
-            import chromadb.config
-        except ImportError:
-            raise ImportError(
-                "Could not import chromadb python package. "
-                "Please install it with `pip install chromadb`."
-            )
 
         if client is not None:
             self._client_settings = client_settings
@@ -156,22 +148,10 @@ class Chroma(VectorStore):
                 client_settings.persist_directory = (
                     persist_directory or client_settings.persist_directory
                 )
-                if client_settings.persist_directory is not None:
-                    # Maintain backwards compatibility with chromadb < 0.4.0
-                    major, minor, _ = chromadb.__version__.split(".")
-                    if int(major) == 0 and int(minor) < 4:
-                        client_settings.chroma_db_impl = "duckdb+parquet"
 
                 _client_settings = client_settings
             elif persist_directory:
-                # Maintain backwards compatibility with chromadb < 0.4.0
-                major, minor, _ = chromadb.__version__.split(".")
-                if int(major) == 0 and int(minor) < 4:
-                    _client_settings = chromadb.config.Settings(
-                        chroma_db_impl="duckdb+parquet",
-                    )
-                else:
-                    _client_settings = chromadb.config.Settings(is_persistent=True)
+                _client_settings = chromadb.config.Settings(is_persistent=True)
                 _client_settings.persist_directory = persist_directory
             else:
                 _client_settings = chromadb.config.Settings()
@@ -202,15 +182,8 @@ class Chroma(VectorStore):
         where: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> Union[List[Document], QueryResult]:
+    ) -> Union[List[Document], chromadb.QueryResult]:
         """Query the chroma collection."""
-        try:
-            import chromadb  # noqa: F401
-        except ImportError:
-            raise ValueError(
-                "Could not import chromadb python package. "
-                "Please install it with `pip install chromadb`."
-            )
         return self._collection.query(
             query_texts=query_texts,
             query_embeddings=query_embeddings,  # type: ignore
@@ -680,12 +653,8 @@ class Chroma(VectorStore):
                 "You must specify a persist_directory on"
                 "creation to persist the collection."
             )
-        import chromadb
 
-        # Maintain backwards compatibility with chromadb < 0.4.0
-        major, minor, _ = chromadb.__version__.split(".")
-        if int(major) == 0 and int(minor) < 4:
-            self._client.persist()  # type: ignore
+        warnings.warn("chromadb^4 automatically persists when persist_directory is set")
 
     def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.
