@@ -63,11 +63,11 @@ llm = OpenAI()
 chat_model = ChatOpenAI(model="gpt-3.5-turbo-0125")
 ```
 
-If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+If you'd prefer not to set an environment variable you can pass the key in directly via the `api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
 from langchain_openai import ChatOpenAI
-llm = ChatOpenAI(openai_api_key="...")
+llm = ChatOpenAI(api_key="...")
 ```
 
 Both `llm` and `chat_model` are objects that represent configuration for a particular model. 
