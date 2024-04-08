@@ -42,7 +42,7 @@ def test_chat_openai_model() -> None:
     """Test ChatOpenAI wrapper handles model_name."""
     chat = ChatOpenAI(model="foo")
     assert chat.model_name == "foo"
-    chat = ChatOpenAI(model="bar")
+    chat = ChatOpenAI(model_name="bar")
     assert chat.model_name == "bar"
 
 
