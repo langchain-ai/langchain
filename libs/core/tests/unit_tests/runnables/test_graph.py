@@ -21,7 +21,8 @@ def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
     assert len(graph.edges) == 2
     assert graph.edges[0].source == first_node.id
     assert graph.edges[1].target == last_node.id
-    assert graph.draw_ascii() == snapshot
+    assert graph.draw_ascii() == snapshot(name="ascii")
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
 def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
@@ -32,6 +33,55 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
     sequence = prompt | fake_llm | list_parser
     graph = sequence.get_graph()
     assert graph.to_json() == {
+        "nodes": [
+            {
+                "id": 0,
+                "type": "schema",
+                "data": "PromptInput",
+            },
+            {
+                "id": 1,
+                "type": "runnable",
+                "data": {
+                    "id": ["langchain", "prompts", "prompt", "PromptTemplate"],
+                    "name": "PromptTemplate",
+                },
+            },
+            {
+                "id": 2,
+                "type": "runnable",
+                "data": {
+                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
+                    "name": "FakeListLLM",
+                },
+            },
+            {
+                "id": 3,
+                "type": "runnable",
+                "data": {
+                    "id": [
+                        "langchain",
+                        "output_parsers",
+                        "list",
+                        "CommaSeparatedListOutputParser",
+                    ],
+                    "name": "CommaSeparatedListOutputParser",
+                },
+            },
+            {
+                "id": 4,
+                "type": "schema",
+                "data": "CommaSeparatedListOutputParserOutput",
+            },
+        ],
+        "edges": [
+            {"source": 0, "target": 1},
+            {"source": 1, "target": 2},
+            {"source": 3, "target": 4},
+            {"source": 2, "target": 3},
+        ],
+    }
+    assert graph.to_json(with_schemas=True) == {
         "nodes": [
             {
                 "id": 0,
@@ -75,9 +125,9 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                 "id": 4,
                 "type": "schema",
                 "data": {
+                    "items": {"type": "string"},
                     "title": "CommaSeparatedListOutputParserOutput",
                     "type": "array",
-                    "items": {"type": "string"},
                 },
             },
         ],
@@ -88,7 +138,8 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
             {"source": 2, "target": 3},
         ],
     }
-    assert graph.draw_ascii() == snapshot
+    assert graph.draw_ascii() == snapshot(name="ascii")
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
 def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
@@ -113,7 +164,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
         }
     )
     graph = sequence.get_graph()
-    assert graph.to_json() == {
+    assert graph.to_json(with_schemas=True) == {
         "nodes": [
             {
                 "id": 0,
@@ -482,4 +533,97 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
             {"source": 2, "target": 3},
         ],
     }
-    assert graph.draw_ascii() == snapshot
+    assert graph.to_json() == {
+        "nodes": [
+            {
+                "id": 0,
+                "type": "schema",
+                "data": "PromptInput",
+            },
+            {
+                "id": 1,
+                "type": "runnable",
+                "data": {
+                    "id": ["langchain", "prompts", "prompt", "PromptTemplate"],
+                    "name": "PromptTemplate",
+                },
+            },
+            {
+                "id": 2,
+                "type": "runnable",
+                "data": {
+                    "id": ["langchain_core", "language_models", "fake", "FakeListLLM"],
+                    "name": "FakeListLLM",
+                },
+            },
+            {
+                "id": 3,
+                "type": "schema",
+                "data": "Parallel<as_list,as_str>Input",
+            },
+            {
+                "id": 4,
+                "type": "schema",
+                "data": "Parallel<as_list,as_str>Output",
+            },
+            {
+                "id": 5,
+                "type": "runnable",
+                "data": {
+                    "id": [
+                        "langchain",
+                        "output_parsers",
+                        "list",
+                        "CommaSeparatedListOutputParser",
+                    ],
+                    "name": "CommaSeparatedListOutputParser",
+                },
+            },
+            {
+                "id": 6,
+                "type": "schema",
+                "data": "conditional_str_parser_input",
+            },
+            {
+                "id": 7,
+                "type": "schema",
+                "data": "conditional_str_parser_output",
+            },
+            {
+                "id": 8,
+                "type": "runnable",
+                "data": {
+                    "id": ["langchain", "schema", "output_parser", "StrOutputParser"],
+                    "name": "StrOutputParser",
+                },
+            },
+            {
+                "id": 9,
+                "type": "runnable",
+                "data": {
+                    "id": [
+                        "langchain_core",
+                        "output_parsers",
+                        "xml",
+                        "XMLOutputParser",
+                    ],
+                    "name": "XMLOutputParser",
+                },
+            },
+        ],
+        "edges": [
+            {"source": 0, "target": 1},
+            {"source": 1, "target": 2},
+            {"source": 3, "target": 5},
+            {"source": 5, "target": 4},
+            {"source": 6, "target": 8},
+            {"source": 8, "target": 7},
+            {"source": 6, "target": 9},
+            {"source": 9, "target": 7},
+            {"source": 3, "target": 6},
+            {"source": 7, "target": 4},
+            {"source": 2, "target": 3},
+        ],
+    }
+    assert graph.draw_ascii() == snapshot(name="ascii")
+    assert graph.draw_mermaid() == snapshot(name="mermaid")

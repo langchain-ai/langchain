@@ -563,7 +563,8 @@ class Tool(BaseTool):
         all_args = list(args) + list(kwargs.values())
         if len(all_args) != 1:
             raise ToolException(
-                f"Too many arguments to single-input tool {self.name}."
+                f"""Too many arguments to single-input tool {self.name}.
+                Consider using StructuredTool instead."""
                 f" Args: {all_args}"
             )
         return tuple(all_args), {}

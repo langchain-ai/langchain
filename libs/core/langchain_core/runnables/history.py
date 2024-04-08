@@ -17,7 +17,6 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
-from langchain_core.runnables.config import run_in_executor
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
@@ -403,21 +402,30 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             raise ValueError()
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> List[BaseMessage]:
-        hist = config["configurable"]["message_history"]
-        # return only historic messages
-        if self.history_messages_key:
-            return hist.messages.copy()
-        # return all messages
-        else:
+        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+        messages = hist.messages.copy()
+
+        if not self.history_messages_key:
+            # return all messages
             input_val = (
                 input if not self.input_messages_key else input[self.input_messages_key]
             )
-            return hist.messages.copy() + self._get_input_messages(input_val)
+            messages += self._get_input_messages(input_val)
+        return messages
 
     async def _aenter_history(
         self, input: Dict[str, Any], config: RunnableConfig
     ) -> List[BaseMessage]:
-        return await run_in_executor(config, self._enter_history, input, config)
+        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+        messages = (await hist.aget_messages()).copy()
+
+        if not self.history_messages_key:
+            # return all messages
+            input_val = (
+                input if not self.input_messages_key else input[self.input_messages_key]
+            )
+            messages += self._get_input_messages(input_val)
+        return messages
 
     def _exit_history(self, run: Run, config: RunnableConfig) -> None:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
