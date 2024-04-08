@@ -103,7 +103,7 @@ class QianfanChatEndpoint(BaseChatModel):
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
 
-    request_timeout: Optional[int] = 60
+    timeout: Optional[int] = 60
     """request timeout for chat http requests"""
 
     top_p: Optional[float] = 0.8
@@ -184,7 +184,7 @@ class QianfanChatEndpoint(BaseChatModel):
             "model": self.model,
             "endpoint": self.endpoint,
             "stream": self.streaming,
-            "request_timeout": self.request_timeout,
+            "request_timeout": self.timeout,
             "top_p": self.top_p,
             "temperature": self.temperature,
             "penalty_score": self.penalty_score,
