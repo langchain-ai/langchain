@@ -515,6 +515,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         if run.status == "completed":
             import openai
 
+            major_version = int(openai.version.VERSION.split(".")[0])
+            minor_version = int(openai.version.VERSION.split(".")[1])
+            version_gte_1_14 = (major_version > 1) or (
+                major_version == 1 and minor_version >= 14
+            )
+
             messages = self.client.beta.threads.messages.list(
                 run.thread_id, order="asc"
             )
@@ -525,7 +531,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 msg_content for msg in new_messages for msg_content in msg.content
             ]
             if all(
-                isinstance(content, openai.types.beta.threads.MessageContentText)
+                (
+                    isinstance(content, openai.types.beta.threads.TextContentBlock)
+                    if version_gte_1_14
+                    else isinstance(
+                        content, openai.types.beta.threads.MessageContentText
+                    )
+                )
                 for content in answer
             ):
                 answer = "\n".join(content.text.value for content in answer)
@@ -631,6 +643,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         if run.status == "completed":
             import openai
 
+            major_version = int(openai.version.VERSION.split(".")[0])
+            minor_version = int(openai.version.VERSION.split(".")[1])
+            version_gte_1_14 = (major_version > 1) or (
+                major_version == 1 and minor_version >= 14
+            )
+
             messages = await self.async_client.beta.threads.messages.list(
                 run.thread_id, order="asc"
             )
@@ -641,7 +659,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 msg_content for msg in new_messages for msg_content in msg.content
             ]
             if all(
-                isinstance(content, openai.types.beta.threads.MessageContentText)
+                (
+                    isinstance(content, openai.types.beta.threads.TextContentBlock)
+                    if version_gte_1_14
+                    else isinstance(
+                        content, openai.types.beta.threads.MessageContentText
+                    )
+                )
                 for content in answer
             ):
                 answer = "\n".join(content.text.value for content in answer)

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 title: Function calling
 ---
 
@@ -12,32 +12,31 @@ etc., have a function-calling API that lets you describe functions and
 their arguments, and have the model return a JSON object with a function
 to invoke and the inputs to that function. Function-calling is extremely
 useful for building [tool-using chains and
-agents](../../../../docs/use_cases/tool_use/), and for getting
+agents](/docs/use_cases/tool_use/), and for getting
 structured outputs from models more generally.
 
 LangChain comes with a number of utilities to make function-calling
 easy. Namely, it comes with:
 
--   simple syntax for binding functions to models
--   converters for formatting various types of objects to the expected
-    function schemas
--   output parsers for extracting the function invocations from API
-    responses
--   chains for getting structured outputs from a model, built on top of
-    function calling
+- simple syntax for binding functions to models
+- converters for formatting various types of objects to the expected
+  function schemas
+- output parsers for extracting the function invocations from API
+  responses
+- chains for getting structured outputs from a model, built on top of
+  function calling
 
 We’ll focus here on the first two points. For a detailed guide on output
 parsing check out the [OpenAI Tools output
-parsers](../../../../docs/modules/model_io/output_parsers/types/openai_tools)
+parsers](/docs/modules/model_io/output_parsers/types/openai_tools/)
 and to see the structured output chains check out the [Structured output
-guide](../../../../docs/guides/structured_output).
+guide](/docs/modules/model_io/chat/structured_output/).
 
 Before getting started make sure you have `langchain-core` installed.
 
 ```python
 %pip install -qU langchain-core langchain-openai
 ```
-
 
 ```python
 import getpass
@@ -64,38 +63,28 @@ class Multiply(BaseModel):
     b: int = Field(..., description="Second integer")
 ```
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 
-<Tabs>
-<TabItem value="openai" label="OpenAI" default>
+import ChatModelTabs from "@theme/ChatModelTabs";
 
-Set up dependencies and API keys:
+<ChatModelTabs
+  customVarName="llm"
+  fireworksParams={`model="accounts/fireworks/models/firefunction-v1", temperature=0`}
+  hideGoogle={true}
+  hideAnthropic={true}
+/>
 
-```python
-%pip install -qU langchain-openai
-```
-
-
-```python
-os.environ["OPENAI_API_KEY"] = getpass.getpass()
-```
-
-We can use the `ChatOpenAI.bind_tools()` method to handle converting
-`Multiply` to an OpenAI function and binding it to the model (i.e.,
+We can use the `bind_tools()` method to handle converting
+`Multiply` to a "function" and binding it to the model (i.e.,
 passing it in each time the model is invoked).
 
-
-
 ```python
-from langchain_openai import ChatOpenAI
-
-llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
 llm_with_tools = llm.bind_tools([Multiply])
 llm_with_tools.invoke("what's 3 * 12")
 ```
 
-``` text
+```text
 AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Q8ZQ97Qrj5zalugSkYMGV1Uo', 'function': {'arguments': '{"a":3,"b":12}', 'name': 'Multiply'}, 'type': 'function'}]})
 ```
 
@@ -109,7 +98,7 @@ tool_chain = llm_with_tools | JsonOutputToolsParser()
 tool_chain.invoke("what's 3 * 12")
 ```
 
-``` text
+```text
 [{'type': 'Multiply', 'args': {'a': 3, 'b': 12}}]
 ```
 
@@ -122,55 +111,8 @@ tool_chain = llm_with_tools | PydanticToolsParser(tools=[Multiply])
 tool_chain.invoke("what's 3 * 12")
 ```
 
-``` text
+```text
 [Multiply(a=3, b=12)]
-```
-
-If we wanted to force that a tool is used (and that it is used only
-once), we can set the `tool_choice` argument:
-
-```python
-llm_with_multiply = llm.bind_tools([Multiply], tool_choice="Multiply")
-llm_with_multiply.invoke(
-    "make up some numbers if you really want but I'm not forcing you"
-)
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_f3DApOzb60iYjTfOhVFhDRMI', 'function': {'arguments': '{"a":5,"b":10}', 'name': 'Multiply'}, 'type': 'function'}]})
-```
-
-For more see the [ChatOpenAI API
-reference](https://api.python.langchain.com/en/latest/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html#langchain_openai.chat_models.base.ChatOpenAI.bind_tools).
-
-</TabItem>
-<TabItem value="fireworks" label="Fireworks">
-
-Install dependencies and set API keys:
-
-```python
-%pip install -qU langchain-fireworks
-```
-
-
-```python
-os.environ["FIREWORKS_API_KEY"] = getpass.getpass()
-```
-
-We can use the `ChatFireworks.bind_tools()` method to handle converting
-`Multiply` to a valid function schema and binding it to the model (i.e.,
-passing it in each time the model is invoked).
-
-```python
-from langchain_fireworks import ChatFireworks
-
-llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
-llm_with_tools = llm.bind_tools([Multiply])
-llm_with_tools.invoke("what's 3 * 12")
-```
-
-``` text
-AIMessage(content='Three multiplied by twelve is 36.')
 ```
 
 If our model isn’t using the tool, as is the case here, we can force
@@ -182,175 +124,12 @@ llm_with_tools = llm.bind_tools([Multiply], tool_choice="Multiply")
 llm_with_tools.invoke("what's 3 * 12")
 ```
 
-``` text
+```text
 AIMessage(content='', additional_kwargs={'tool_calls': [{'index': 0, 'id': 'call_qIP2bJugb67LGvc6Zhwkvfqc', 'type': 'function', 'function': {'name': 'Multiply', 'arguments': '{"a": 3, "b": 12}'}}]})
 ```
 
-We can add a tool parser to extract the tool calls from the generated
-message to JSON:
-
-```python
-from langchain_core.output_parsers.openai_tools import JsonOutputToolsParser
-
-tool_chain = llm_with_tools | JsonOutputToolsParser()
-tool_chain.invoke("what's 3 * 12")
-```
-
-``` text
-[{'type': 'Multiply', 'args': {'a': 3, 'b': 12}}]
-```
-
-Or back to the original Pydantic class:
-
-```python
-from langchain_core.output_parsers.openai_tools import PydanticToolsParser
-
-tool_chain = llm_with_tools | PydanticToolsParser(tools=[Multiply])
-tool_chain.invoke("what's 3 * 12")
-```
-
-``` text
-[Multiply(a=3, b=12)]
-```
-
-For more see the [ChatFireworks](https://api.python.langchain.com/en/latest/chat_models/langchain_fireworks.chat_models.ChatFireworks.html#langchain_fireworks.chat_models.ChatFireworks.bind_tools) reference.
-
-</TabItem>
-<TabItem value="mistral" label="Mistral">
-
-Install dependencies and set API keys:
-
-```python
-%pip install -qU langchain-mistralai
-```
-
-
-```python
-os.environ["MISTRAL_API_KEY"] = getpass.getpass()
-```
-
-We can use the `ChatMistralAI.bind_tools()` method to handle converting
-`Multiply` to a valid function schema and binding it to the model (i.e.,
-passing it in each time the model is invoked).
-
-```python
-from langchain_mistralai import ChatMistralAI
-
-llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-llm_with_tools = llm.bind_tools([Multiply])
-llm_with_tools.invoke("what's 3 * 12")
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'null', 'type': <ToolType.function: 'function'>, 'function': {'name': 'Multiply', 'arguments': '{"a": 3, "b": 12}'}}]})
-```
-
-We can add a tool parser to extract the tool calls from the generated
-message to JSON:
-
-```python
-from langchain_core.output_parsers.openai_tools import JsonOutputToolsParser
-
-tool_chain = llm_with_tools | JsonOutputToolsParser()
-tool_chain.invoke("what's 3 * 12")
-```
-
-``` text
-[{'type': 'Multiply', 'args': {'a': 3, 'b': 12}}]
-```
-
-Or back to the original Pydantic class:
-
-```python
-from langchain_core.output_parsers.openai_tools import PydanticToolsParser
-
-tool_chain = llm_with_tools | PydanticToolsParser(tools=[Multiply])
-tool_chain.invoke("what's 3 * 12")
-```
-
-``` text
-[Multiply(a=3, b=12)]
-```
-
-We can force tool usage by specifying `tool_choice="any"`:
-
-```python
-llm_with_tools = llm.bind_tools([Multiply], tool_choice="any")
-llm_with_tools.invoke("I don't even want you to use the tool")
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'null', 'type': <ToolType.function: 'function'>, 'function': {'name': 'Multiply', 'arguments': '{"a": 5, "b": 7}'}}]})
-```
-
-For more see the [ChatMistralAI API reference](https://api.python.langchain.com/en/latest/chat_models/langchain_mistralai.chat_models.ChatMistralAI.html#langchain_mistralai.chat_models.ChatMistralAI).
-
-</TabItem>
-<TabItem value="together" label="Together">
-
-Since TogetherAI is a drop-in replacement for OpenAI, we can just use
-the OpenAI integration.
-
-Install dependencies and set API keys:
-
-```python
-%pip install -qU langchain-openai
-```
-
-
-```python
-os.environ["TOGETHER_API_KEY"] = getpass.getpass()
-```
-
-We can use the `ChatOpenAI.bind_tools()` method to handle converting
-`Multiply` to a valid function schema and binding it to the model (i.e.,
-passing it in each time the model is invoked).
-
-```python
-from langchain_openai import ChatOpenAI
-
-llm = ChatOpenAI(
-    base_url="https://api.together.xyz/v1",
-    api_key=os.environ["TOGETHER_API_KEY"],
-    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-)
-llm_with_tools = llm.bind_tools([Multiply])
-llm_with_tools.invoke("what's 3 * 12")
-```
-
-``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_4tc61dp0478zafqe33hfriee', 'function': {'arguments': '{"a":3,"b":12}', 'name': 'Multiply'}, 'type': 'function'}]})
-```
-
-We can add a tool parser to extract the tool calls from the generated
-message to JSON:
-
-```python
-from langchain_core.output_parsers.openai_tools import JsonOutputToolsParser
-
-tool_chain = llm_with_tools | JsonOutputToolsParser()
-tool_chain.invoke("what's 3 * 12")
-```
-
-``` text
-[{'type': 'Multiply', 'args': {'a': 3, 'b': 12}}]
-```
-
-Or back to the original Pydantic class:
-
-```python
-from langchain_core.output_parsers.openai_tools import PydanticToolsParser
-
-tool_chain = llm_with_tools | PydanticToolsParser(tools=[Multiply])
-tool_chain.invoke("what's 3 * 12")
-```
-
-``` text
-[Multiply(a=3, b=12)]
-```
-
 If we wanted to force that a tool is used (and that it is used only
-once), we can set the `tool_choice` argument:
+once), we can set the `tool_choice` argument to the name of the tool:
 
 ```python
 llm_with_multiply = llm.bind_tools([Multiply], tool_choice="Multiply")
@@ -359,15 +138,12 @@ llm_with_multiply.invoke(
 )
 ```
 
-``` text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_6k6d0gr3jhqil2kqf7sgeusl', 'function': {'arguments': '{"a":5,"b":7}', 'name': 'Multiply'}, 'type': 'function'}]})
+```text
+AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_f3DApOzb60iYjTfOhVFhDRMI', 'function': {'arguments': '{"a":5,"b":10}', 'name': 'Multiply'}, 'type': 'function'}]})
 ```
 
 For more see the [ChatOpenAI API
 reference](https://api.python.langchain.com/en/latest/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html#langchain_openai.chat_models.base.ChatOpenAI.bind_tools).
-
-</TabItem>
-</Tabs>
 
 ## Defining functions schemas
 
@@ -395,7 +171,7 @@ def multiply(a: int, b: int) -> int:
 print(json.dumps(convert_to_openai_tool(multiply), indent=2))
 ```
 
-``` text
+```text
 {
   "type": "function",
   "function": {
@@ -438,7 +214,7 @@ class multiply(BaseModel):
 print(json.dumps(convert_to_openai_tool(multiply), indent=2))
 ```
 
-``` text
+```text
 {
   "type": "function",
   "function": {
@@ -493,7 +269,7 @@ class Multiply(BaseTool):
 print(json.dumps(convert_to_openai_tool(Multiply()), indent=2))
 ```
 
-``` text
+```text
 {
   "type": "function",
   "function": {
@@ -522,14 +298,14 @@ print(json.dumps(convert_to_openai_tool(Multiply()), indent=2))
 
 ## Next steps
 
--   **Output parsing**: See [OpenAI Tools output
-    parsers](../../../../docs/modules/model_io/output_parsers/types/openai_tools)
+- **Output parsing**: See [OpenAI Tools output
+    parsers](/docs/modules/model_io/output_parsers/types/openai_tools/)
     and [OpenAI Functions output
-    parsers](../../../../docs/modules/model_io/output_parsers/types/openai_functions)
+    parsers](/docs/modules/model_io/output_parsers/types/openai_functions/)
     to learn about extracting the function calling API responses into
     various formats.
--   **Structured output chains**: [Some models have constructors](../../../../docs/guides/structured_output) that
+- **Structured output chains**: [Some models have constructors](/docs/modules/model_io/chat/structured_output/) that
     handle creating a structured output chain for you.
--   **Tool use**: See how to construct chains and agents that actually
+- **Tool use**: See how to construct chains and agents that actually
     call the invoked tools in [these
-    guides](../../../../docs/use_cases/tool_use/).
+    guides](/docs/use_cases/tool_use/).

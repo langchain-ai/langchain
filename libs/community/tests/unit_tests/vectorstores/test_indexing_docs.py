@@ -84,11 +84,13 @@ def test_compatible_vectorstore_documentation() -> None:
         "TimescaleVector",
         "EcloudESVectorStore",
         "Vald",
+        "VDMS",
         "Vearch",
         "VespaStore",
         "Weaviate",
         "ZepVectorStore",
         "Zilliz",
         "Lantern",
+        "OpenSearchVectorSearch",
     }
     assert compatible == documented

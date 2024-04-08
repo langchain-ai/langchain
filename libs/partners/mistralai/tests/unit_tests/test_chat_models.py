@@ -1,7 +1,7 @@
 """Test MistralAI Chat API wrapper."""
 
 import os
-from typing import Any, AsyncGenerator, Dict, Generator
+from typing import Any, AsyncGenerator, Dict, Generator, cast
 from unittest.mock import patch
 
 import pytest
@@ -13,6 +13,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
@@ -31,7 +32,11 @@ def test_mistralai_initialization() -> None:
     """Test ChatMistralAI initialization."""
     # Verify that ChatMistralAI can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
-    ChatMistralAI(model="test", mistral_api_key="test")
+    for model in [
+        ChatMistralAI(model="test", mistral_api_key="test"),
+        ChatMistralAI(model="test", api_key="test"),
+    ]:
+        assert cast(SecretStr, model.mistral_api_key).get_secret_value() == "test"
 
 
 @pytest.mark.parametrize(
