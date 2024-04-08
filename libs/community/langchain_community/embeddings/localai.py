@@ -123,8 +123,8 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     uses the ``openai`` Python package's ``openai.Embedding`` as its client.
     Thus, you should have the ``openai`` python package installed, and defeat
     the environment variable ``OPENAI_API_KEY`` by setting to a random string.
-    You also need to specify ``OPENAI_API_BASE`` to point to your LocalAI
-    service endpoint.
+    You also need to specify ``OPENAI_API_BASE`` or ``OPENAI_BASE_URL``
+    to point to your LocalAI service endpoint.
 
     Example:
         .. code-block:: python
@@ -203,6 +203,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             values,
             "openai_api_base",
             "OPENAI_API_BASE",
+            "OPENAI_BASE_URL",
             default="",
         )
         values["openai_proxy"] = get_from_dict_or_env(

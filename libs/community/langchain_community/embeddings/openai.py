@@ -157,7 +157,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             openai = OpenAIEmbeddings(openai_api_key="my-api-key")
 
     In order to use the library with Microsoft Azure endpoints, you need to set
-    the OPENAI_API_TYPE, OPENAI_API_BASE, OPENAI_API_KEY and OPENAI_API_VERSION.
+    the OPENAI_API_TYPE, OPENAI_API_BASE or OPENAI_BASE_URL, OPENAI_API_KEY
+    and OPENAI_API_VERSION.
     The OPENAI_API_TYPE must be set to 'azure' and the others correspond to
     the properties of your endpoint.
     In addition, the deployment name must be passed as the model parameter.
@@ -288,8 +289,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_base"] = (
+            values["openai_api_base"]
+            or os.getenv("OPENAI_API_BASE")
+            or os.getenv("OPENAI_BASE_URL")
         )
         values["openai_api_type"] = get_from_dict_or_env(
             values,

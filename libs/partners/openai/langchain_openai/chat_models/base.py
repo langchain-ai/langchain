@@ -394,8 +394,10 @@ class ChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_base"] = (
+            values["openai_api_base"]
+            or os.getenv("OPENAI_API_BASE")
+            or os.getenv("OPENAI_BASE_URL")
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,

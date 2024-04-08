@@ -53,3 +53,12 @@ def test_model_name_set_on_chat_result_when_present_in_response(
         chat_result.llm_output is not None
         and chat_result.llm_output["model_name"] == model_name
     )
+
+    os.environ["OPENAI_BASE_URL"] = os.environ["OPENAI_API_BASE"]
+    os.environ.pop("OPENAI_API_BASE", None)
+    mock_chat = AzureChatOpenAI()
+    chat_result = mock_chat._create_chat_result(sample_response)
+    assert (
+        chat_result.llm_output is not None
+        and chat_result.llm_output["model_name"] == model_name
+    )

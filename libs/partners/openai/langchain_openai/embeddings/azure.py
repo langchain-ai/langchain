@@ -75,8 +75,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         values["openai_api_key"] = (
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_base"] = (
+            values["openai_api_base"]
+            or os.getenv("OPENAI_API_BASE")
+            or os.getenv("OPENAI_BASE_URL")
         )
         values["openai_api_version"] = values["openai_api_version"] or os.getenv(
             "OPENAI_API_VERSION", default="2023-05-15"

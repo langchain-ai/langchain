@@ -101,8 +101,10 @@ class AzureOpenAI(BaseOpenAI):
         values["azure_ad_token"] = (
             convert_to_secret_str(azure_ad_token) if azure_ad_token else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_base"] = (
+            values["openai_api_base"]
+            or os.getenv("OPENAI_API_BASE")
+            or os.getenv("OPENAI_BASE_URL")
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,

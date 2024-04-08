@@ -282,8 +282,10 @@ class BaseOpenAI(BaseLLM):
         values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_base"] = (
+            values["openai_api_base"]
+            or os.getenv("OPENAI_API_BASE")
+            or os.getenv("OPENAI_BASE_URL")
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,
@@ -841,8 +843,10 @@ class AzureOpenAI(BaseOpenAI):
         values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
             "AZURE_OPENAI_AD_TOKEN"
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_base"] = (
+            values["openai_api_base"]
+            or os.getenv("OPENAI_API_BASE")
+            or os.getenv("OPENAI_BASE_URL")
         )
         values["openai_proxy"] = get_from_dict_or_env(
             values,
@@ -1033,6 +1037,7 @@ class OpenAIChat(BaseLLM):
             values,
             "openai_api_base",
             "OPENAI_API_BASE",
+            "OPENAI_BASE_URL",
             default="",
         )
         openai_proxy = get_from_dict_or_env(

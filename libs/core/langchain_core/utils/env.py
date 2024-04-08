@@ -22,19 +22,30 @@ def env_var_is_set(env_var: str) -> bool:
 
 
 def get_from_dict_or_env(
-    data: Dict[str, Any], key: str, env_key: str, default: Optional[str] = None
+    data: Dict[str, Any],
+    key: str,
+    env_key: str,
+    env_key_alias: Optional[str] = None,
+    default: Optional[str] = None,
 ) -> str:
     """Get a value from a dictionary or an environment variable."""
     if key in data and data[key]:
         return data[key]
     else:
-        return get_from_env(key, env_key, default=default)
+        return get_from_env(key, env_key, env_key_alias=env_key_alias, default=default)
 
 
-def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
+def get_from_env(
+    key: str,
+    env_key: str,
+    env_key_alias: Optional[str] = None,
+    default: Optional[str] = None,
+) -> str:
     """Get a value from a dictionary or an environment variable."""
     if env_key in os.environ and os.environ[env_key]:
         return os.environ[env_key]
+    elif env_key_alias and os.environ.get(env_key_alias):
+        return os.environ[env_key_alias]
     elif default is not None:
         return default
     else:
