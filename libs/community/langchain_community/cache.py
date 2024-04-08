@@ -403,7 +403,7 @@ class _RedisCacheBase(BaseCache, ABC):
         if results:
             for _, text in results.items():
                 try:
-                    generations.append(loads(text))
+                    generations.append(loads(cast(str, text)))
                 except Exception:
                     logger.warning(
                         "Retrieving a cache value that could not be deserialized "
@@ -811,11 +811,7 @@ class GPTCache(BaseCache):
         _gptcache = self._get_gptcache(llm_string)
 
         res = get(prompt, cache_obj=_gptcache)
-        if res:
-            return [
-                Generation(**generation_dict) for generation_dict in json.loads(res)
-            ]
-        return None
+        return _loads_generations(res) if res is not None else None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache.
@@ -831,7 +827,7 @@ class GPTCache(BaseCache):
         from gptcache.adapter.api import put
 
         _gptcache = self._get_gptcache(llm_string)
-        handled_data = json.dumps([generation.dict() for generation in return_val])
+        handled_data = _dumps_generations(return_val)
         put(prompt, handled_data, cache_obj=_gptcache)
         return None
 
@@ -1879,6 +1875,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         ef_construction: int = 64,
         ef_search: int = 40,
         score_threshold: Optional[float] = None,
+        application_name: str = "LANGCHAIN_CACHING_PYTHON",
     ):
         """
         Args:
@@ -1920,6 +1917,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
                        (40 by default). A higher value provides better
                        recall at the cost of speed.
             score_threshold: Maximum score used to filter the vector search documents.
+            application_name: Application name for the client for tracking and logging
         """
 
         self._validate_enum_value(similarity, CosmosDBSimilarityType)
@@ -1942,6 +1940,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         self.ef_search = ef_search
         self.score_threshold = score_threshold
         self._cache_dict: Dict[str, AzureCosmosDBVectorSearch] = {}
+        self.application_name = application_name
 
     def _index_name(self, llm_string: str) -> str:
         hashed_index = _hash(llm_string)
@@ -1972,6 +1971,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
                 namespace=namespace,
                 embedding=self.embedding,
                 index_name=index_name,
+                application_name=self.application_name,
             )
 
         # create index for the vectorstore

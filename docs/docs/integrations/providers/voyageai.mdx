@@ -3,7 +3,6 @@
 All functionality related to VoyageAI
 
 >[VoyageAI](https://www.voyageai.com/) Voyage AI builds embedding models, customized for your domain and company, for better retrieval quality.
-> customized for your domain and company, for better retrieval quality.
 
 ## Installation and Setup
 
@@ -12,7 +11,7 @@ Install the integration package with
 pip install langchain-voyageai
 ```
 
-Get an VoyageAI api key and set it as an environment variable (`VOYAGE_API_KEY`)
+Get a VoyageAI API key and set it as an environment variable (`VOYAGE_API_KEY`)
 
 
 ## Text Embedding Model
@@ -21,4 +20,13 @@ See a [usage example](/docs/integrations/text_embedding/voyageai)
 
 ```python
 from langchain_voyageai import VoyageAIEmbeddings
+```
+
+
+## Reranking
+
+See a [usage example](/docs/integrations/document_transformers/voyageai-reranker)
+
+```python
+from langchain_voyageai import VoyageAIRerank
 ```

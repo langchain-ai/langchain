@@ -1,13 +1,14 @@
 [tool.poetry]
 name = "langchain-ai21"
-version = "0.1.2"
+version = "0.1.3"
 description = "An integration package connecting AI21 and LangChain"
 authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.22"
+langchain-core = "^0.1.28"
+langchain-text-splitters = "^0.0.1"
 ai21 = "^2.1.2"
 
 [tool.poetry.group.test]

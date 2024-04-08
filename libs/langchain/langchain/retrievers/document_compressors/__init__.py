@@ -6,6 +6,9 @@ from langchain.retrievers.document_compressors.chain_filter import (
     LLMChainFilter,
 )
 from langchain.retrievers.document_compressors.cohere_rerank import CohereRerank
+from langchain.retrievers.document_compressors.cross_encoder_rerank import (
+    CrossEncoderReranker,
+)
 from langchain.retrievers.document_compressors.embeddings_filter import (
     EmbeddingsFilter,
 )
@@ -18,6 +21,7 @@ __all__ = [
     "LLMChainExtractor",
     "LLMChainFilter",
     "CohereRerank",
+    "CrossEncoderReranker",
     "FlashrankRerank",
     "JinaRerank",
 ]

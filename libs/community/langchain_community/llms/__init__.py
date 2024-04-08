@@ -114,6 +114,12 @@ def _import_bedrock() -> Type[BaseLLM]:
     return Bedrock
 
 
+def _import_bigdlllm() -> Type[BaseLLM]:
+    from langchain_community.llms.bigdl_llm import BigdlLLM
+
+    return BigdlLLM
+
+
 def _import_bittensor() -> Type[BaseLLM]:
     from langchain_community.llms.bittensor import NIBittensorLLM
 
@@ -276,6 +282,12 @@ def _import_human() -> Type[BaseLLM]:
     from langchain_community.llms.human import HumanInputLLM
 
     return HumanInputLLM
+
+
+def _import_ipex_llm() -> Type[BaseLLM]:
+    from langchain_community.llms.ipex_llm import IpexLLM
+
+    return IpexLLM
 
 
 def _import_javelin_ai_gateway() -> Type[BaseLLM]:
@@ -578,6 +590,14 @@ def _import_watsonxllm() -> Type[BaseLLM]:
     return WatsonxLLM
 
 
+def _import_weight_only_quantization() -> Any:
+    from langchain_community.llms.weight_only_quantization import (
+        WeightOnlyQuantPipeline,
+    )
+
+    return WeightOnlyQuantPipeline
+
+
 def _import_writer() -> Type[BaseLLM]:
     from langchain_community.llms.writer import Writer
 
@@ -645,6 +665,8 @@ def __getattr__(name: str) -> Any:
         return _import_beam()
     elif name == "Bedrock":
         return _import_bedrock()
+    elif name == "BigdlLLM":
+        return _import_bigdlllm()
     elif name == "NIBittensorLLM":
         return _import_bittensor()
     elif name == "CerebriumAI":
@@ -695,6 +717,8 @@ def __getattr__(name: str) -> Any:
         return _import_huggingface_text_gen_inference()
     elif name == "HumanInputLLM":
         return _import_human()
+    elif name == "IpexLLM":
+        return _import_ipex_llm()
     elif name == "JavelinAIGateway":
         return _import_javelin_ai_gateway()
     elif name == "KoboldApiLLM":
@@ -789,6 +813,8 @@ def __getattr__(name: str) -> Any:
         return _import_vllm_openai()
     elif name == "WatsonxLLM":
         return _import_watsonxllm()
+    elif name == "WeightOnlyQuantPipeline":
+        return _import_weight_only_quantization()
     elif name == "Writer":
         return _import_writer()
     elif name == "Xinference":
@@ -851,6 +877,7 @@ __all__ = [
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
+    "IpexLLM",
     "JavelinAIGateway",
     "KoboldApiLLM",
     "Konko",
@@ -901,6 +928,7 @@ __all__ = [
     "VertexAIModelGarden",
     "VolcEngineMaasLLM",
     "WatsonxLLM",
+    "WeightOnlyQuantPipeline",
     "Writer",
     "Xinference",
     "YandexGPT",
@@ -990,6 +1018,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
         "watsonxllm": _import_watsonxllm,
+        "weight_only_quantization": _import_weight_only_quantization,
         "writer": _import_writer,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,
