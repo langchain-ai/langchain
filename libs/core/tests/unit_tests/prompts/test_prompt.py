@@ -351,3 +351,22 @@ def test_prompt_invoke_with_metadata() -> None:
     assert len(tracer.traced_runs) == 1
     assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
     assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
+
+
+async def test_prompt_ainvoke_with_metadata() -> None:
+    """Test prompt can be invoked with metadata."""
+    template = "This is a {foo} test."
+    prompt = PromptTemplate(
+        input_variables=["foo"],
+        template=template,
+        metadata={"version": "1"},
+        tags=["tag1", "tag2"],
+    )
+    tracer = RunCollectorCallbackHandler()
+    result = await prompt.ainvoke(
+        {"foo": "bar"}, {"metadata": {"foo": "bar"}, "callbacks": [tracer]}
+    )
+    assert result.to_string() == "This is a bar test."
+    assert len(tracer.traced_runs) == 1
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
