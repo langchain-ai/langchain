@@ -50,7 +50,9 @@ if __name__ == "__main__":
         elif file.startswith("libs/basetests"):
             # TODO: update to include all packages that rely on basetests (all partner packages)
             # note: won't run on external repo partners
+            dirs_to_run["lint"].add("libs/basetests")
             dirs_to_run["test"].add("libs/partners/mistralai")
+
         elif file.startswith("libs/cli"):
             # todo: add cli makefile
             pass
