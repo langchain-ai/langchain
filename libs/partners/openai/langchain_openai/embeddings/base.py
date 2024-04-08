@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import logging
 import os
 import warnings
@@ -57,6 +58,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    encoder: Optional[Any] = Field(default=None)  #: :meta private:
     model: str = "text-embedding-ada-002"
     dimensions: Optional[int] = None
     """The number of dimensions the resulting output embeddings should have.
@@ -123,11 +125,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     retry_max_seconds: int = 20
     """Max number of seconds to wait between retries"""
     http_client: Union[Any, None] = None
-    """Optional httpx.Client. Only used for sync invocations. Must specify 
+    """Optional httpx.Client. Only used for sync invocations. Must specify
         http_async_client as well if you'd like a custom client for async invocations.
     """
     http_async_client: Union[Any, None] = None
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
         http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
@@ -158,6 +160,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
                 f"Instead they were passed in as part of `model_kwargs` parameter."
             )
+        if extra.get("encoding_format") == "base64":
+            try:
+                import numpy as np
+            except ImportError:
+                raise ValueError(
+                    "Could not import numpy python package. "
+                    "This is needed necessary to decode base64 embeddings in the results. "
+                    "Please install it with `pip install numpy`. "
+                )
 
         values["model_kwargs"] = extra
         return values
@@ -234,6 +245,27 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             values["async_client"] = openai.AsyncOpenAI(
                 **client_params, **async_specific
             ).embeddings
+
+        model_name = values["tiktoken_model_name"] or values["model"]
+        # If tiktoken flag set to False
+        if not values.get("tiktoken_enabled"):
+            try:
+                from transformers import AutoTokenizer  # noqa: F401
+            except ImportError:
+                raise ValueError(
+                    "Could not import transformers python package. "
+                    "This is needed in order to for OpenAIEmbeddings without "
+                    "`tiktoken`. Please install it with `pip install transformers`. "
+                )
+
+            values["encoder"] = AutoTokenizer.from_pretrained(
+                pretrained_model_name_or_path=model_name
+            )
+        else:
+            try:
+                values["encoder"] = tiktoken.encoding_for_model(model_name)
+            except KeyError:
+                values["encoder"] = tiktoken.get_encoding("cl100k_base")
         return values
 
     @property
@@ -266,40 +298,23 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         tokens = []
         indices = []
-        model_name = self.tiktoken_model_name or self.model
         _chunk_size = chunk_size or self.chunk_size
 
         # If tiktoken flag set to False
         if not self.tiktoken_enabled:
-            try:
-                from transformers import AutoTokenizer  # noqa: F401
-            except ImportError:
-                raise ValueError(
-                    "Could not import transformers python package. "
-                    "This is needed in order to for OpenAIEmbeddings without "
-                    "`tiktoken`. Please install it with `pip install transformers`. "
-                )
-
-            tokenizer = AutoTokenizer.from_pretrained(
-                pretrained_model_name_or_path=model_name
-            )
             for i, text in enumerate(texts):
                 # Tokenize the text using HuggingFace transformers
-                tokenized = tokenizer.encode(text, add_special_tokens=False)
+                tokenized = self.encoder.encode(text, add_special_tokens=False)
 
                 # Split tokens into chunks respecting the embedding_ctx_length
                 for j in range(0, len(tokenized), self.embedding_ctx_length):
                     token_chunk = tokenized[j : j + self.embedding_ctx_length]
 
                     # Convert token IDs back to a string
-                    chunk_text = tokenizer.decode(token_chunk)
+                    chunk_text = self.encoder.decode(token_chunk)
                     tokens.append(chunk_text)
                     indices.append(i)
         else:
-            try:
-                encoding = tiktoken.encoding_for_model(model_name)
-            except KeyError:
-                encoding = tiktoken.get_encoding("cl100k_base")
             for i, text in enumerate(texts):
                 if self.model.endswith("001"):
                     # See: https://github.com/openai/openai-python/
@@ -307,7 +322,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     # replace newlines, which can negatively affect performance.
                     text = text.replace("\n", " ")
 
-                token = encoding.encode(
+                token = self.encoder.encode(
                     text=text,
                     allowed_special=self.allowed_special,
                     disallowed_special=self.disallowed_special,
@@ -335,7 +350,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
             if not isinstance(response, dict):
                 response = response.model_dump()
-            batched_embeddings.extend(r["embedding"] for r in response["data"])
+            if response["data"] and isinstance(response["data"][0]["embedding"], str):
+                import numpy as np
+                batched_embeddings.extend(
+                    np.frombuffer(base64.b64decode(r["embedding"]), dtype=np.float32).tolist()
+                    for r in response["data"])
+            else:
+                batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]
@@ -398,42 +419,23 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         tokens = []
         indices = []
-        model_name = self.tiktoken_model_name or self.model
         _chunk_size = chunk_size or self.chunk_size
 
         # If tiktoken flag set to False
         if not self.tiktoken_enabled:
-            try:
-                from transformers import AutoTokenizer
-            except ImportError:
-                raise ValueError(
-                    "Could not import transformers python package. "
-                    "This is needed in order to for OpenAIEmbeddings without "
-                    " `tiktoken`. Please install it with `pip install transformers`."
-                )
-
-            tokenizer = AutoTokenizer.from_pretrained(
-                pretrained_model_name_or_path=model_name
-            )
             for i, text in enumerate(texts):
                 # Tokenize the text using HuggingFace transformers
-                tokenized = tokenizer.encode(text, add_special_tokens=False)
+                tokenized = self.encoder.encode(text, add_special_tokens=False)
 
                 # Split tokens into chunks respecting the embedding_ctx_length
                 for j in range(0, len(tokenized), self.embedding_ctx_length):
                     token_chunk = tokenized[j : j + self.embedding_ctx_length]
 
                     # Convert token IDs back to a string
-                    chunk_text = tokenizer.decode(token_chunk)
+                    chunk_text = self.encoder.decode(token_chunk)
                     tokens.append(chunk_text)
                     indices.append(i)
         else:
-            try:
-                encoding = tiktoken.encoding_for_model(model_name)
-            except KeyError:
-                logger.warning("Warning: model not found. Using cl100k_base encoding.")
-                model = "cl100k_base"
-                encoding = tiktoken.get_encoding(model)
             for i, text in enumerate(texts):
                 if self.model.endswith("001"):
                     # See: https://github.com/openai/openai-python/
@@ -441,7 +443,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     # replace newlines, which can negatively affect performance.
                     text = text.replace("\n", " ")
 
-                token = encoding.encode(
+                token = self.encoder.encode(
                     text=text,
                     allowed_special=self.allowed_special,
                     disallowed_special=self.disallowed_special,
@@ -461,7 +463,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             if not isinstance(response, dict):
                 response = response.model_dump()
-            batched_embeddings.extend(r["embedding"] for r in response["data"])
+            if response["data"] and isinstance(response["data"][0]["embedding"], str):
+                import numpy as np
+                batched_embeddings.extend(
+                    np.frombuffer(base64.b64decode(r["embedding"]), dtype=np.float32).tolist()
+                    for r in response["data"])
+            else:
+                batched_embeddings.extend(r["embedding"] for r in response["data"])
 
         results: List[List[List[float]]] = [[] for _ in range(len(texts))]
         num_tokens_in_batch: List[List[int]] = [[] for _ in range(len(texts))]

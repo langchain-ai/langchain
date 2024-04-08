@@ -26,3 +26,22 @@ def test_langchain_openai_embeddings_dimensions() -> None:
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 128
+
+
+def test_langchain_openai_embeddings_base64() -> None:
+    """Test openai embeddings."""
+    documents = ["foo bar"]
+    embedding = OpenAIEmbeddings(model_kwargs={"encoding_format": "base64"})
+    output = embedding.embed_documents(documents)
+    assert len(output) == 1
+    assert len(output[0]) > 0
+
+
+async def test_async_langchain_openai_embeddings_base64() -> None:
+    """Test openai embeddings."""
+    documents = ["foo bar"]
+    embedding = OpenAIEmbeddings(model_kwargs={"encoding_format": "base64"})
+    output = await embedding.aembed_documents(documents)
+    assert len(output) == 1
+    assert len(output[0]) > 0
+
