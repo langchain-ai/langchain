@@ -12,32 +12,32 @@ class EventData(TypedDict, total=False):
     input: Any
     """The input passed to the runnable that generated the event.
     
-    Inputs will sometimes be available at the *START* of the runnable, and 
-    sometimes at the *END* of the runnable.
+    Inputs will sometimes be available at the *START* of the Runnable, and 
+    sometimes at the *END* of the Runnable.
     
-    If a runnable is able to stream its inputs, then its input by definition
-    won't be known until the *END* of the runnable when it has finished streaming
+    If a Runnable is able to stream its inputs, then its input by definition
+    won't be known until the *END* of the Runnable when it has finished streaming
     its inputs.
     """
     output: Any
-    """The output of the runnable that generated the event.
+    """The output of the Runnable that generated the event.
     
-    Outputs will only be available at the *END* of the runnable.
+    Outputs will only be available at the *END* of the Runnable.
     
-    For most runnables, this field can be inferred from the `chunk` field,
-    though there might be some exceptions for special cased runnables (e.g., like
+    For most Runnables, this field can be inferred from the `chunk` field,
+    though there might be some exceptions for special cased Runnables (e.g., like
     chat models), which may return more information.
     """
     chunk: Any
     """A streaming chunk from the output that generated the event.
     
     chunks support addition in general, and adding them up should result
-    in the output of the runnable that generated the event.
+    in the output of the Runnable that generated the event.
     """
 
 
 class StreamEvent(TypedDict):
-    """A streaming event.
+    """Streaming event.
 
     Schema of a streaming event which is produced from the astream_events method.
 

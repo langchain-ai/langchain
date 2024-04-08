@@ -157,7 +157,7 @@ class LLMSummarizationCheckerChain(Chain):
                 break
 
             if self.verbose:
-                print(output["revised_summary"])
+                print(output["revised_summary"])  # noqa: T201
 
             chain_input = output["revised_summary"]
 

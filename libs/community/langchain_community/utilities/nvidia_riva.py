@@ -1,4 +1,5 @@
 """A common module for NVIDIA Riva Runnables."""
+
 import asyncio
 import logging
 import pathlib
@@ -73,7 +74,7 @@ class RivaAudioEncoding(str, Enum):
     with the following commands:
     ```python
     import riva.client
-    print(riva.client.AudioEncoding.keys())
+    print(riva.client.AudioEncoding.keys())  # noqa: T201
     ```
     """
 
@@ -664,3 +665,9 @@ class RivaTTS(
 
         await producer
         await consumer
+
+
+# Backwards compatibility:
+NVIDIARivaASR = RivaASR
+NVIDIARivaTTS = RivaTTS
+NVIDIARivaStream = AudioStream

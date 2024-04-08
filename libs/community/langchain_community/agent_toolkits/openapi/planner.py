@@ -191,7 +191,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
 
 
 class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
-    """A tool that sends a DELETE request and parses the response."""
+    """Tool that sends a DELETE request and parses the response."""
 
     name: str = "requests_delete"
     """The name of the tool."""

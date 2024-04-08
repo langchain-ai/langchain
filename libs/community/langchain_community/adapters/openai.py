@@ -40,25 +40,33 @@ async def aenumerate(
 
 
 class IndexableBaseModel(BaseModel):
-    """Allows a BaseModel to return its fields by string variable indexing"""
+    """Allows a BaseModel to return its fields by string variable indexing."""
 
     def __getitem__(self, item: str) -> Any:
         return getattr(self, item)
 
 
 class Choice(IndexableBaseModel):
+    """Choice."""
+
     message: dict
 
 
 class ChatCompletions(IndexableBaseModel):
+    """Chat completions."""
+
     choices: List[Choice]
 
 
 class ChoiceChunk(IndexableBaseModel):
+    """Choice chunk."""
+
     delta: dict
 
 
 class ChatCompletionChunk(IndexableBaseModel):
+    """Chat completion chunk."""
+
     choices: List[ChoiceChunk]
 
 
@@ -301,7 +309,7 @@ def convert_messages_for_finetuning(
 
 
 class Completions:
-    """Completion."""
+    """Completions."""
 
     @overload
     @staticmethod
@@ -399,6 +407,8 @@ class Completions:
 
 
 class Chat:
+    """Chat."""
+
     def __init__(self) -> None:
         self.completions = Completions()
 

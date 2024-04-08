@@ -69,7 +69,7 @@ from functools import partial
 from typing import Dict, Optional, Callable, List
 from langserve import RemoteRunnable
 from langchain.callbacks.manager import tracing_v2_enabled
-from langchain.schema import BaseMessage, AIMessage, HumanMessage
+from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
 
 # Update with the URL provided by your LangServe server
 chain = RemoteRunnable("http://127.0.0.1:8031/chat-bot-feedback")

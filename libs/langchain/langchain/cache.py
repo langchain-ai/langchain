@@ -1,7 +1,7 @@
 from langchain_community.cache import (
     AstraDBCache,
     AstraDBSemanticCache,
-    AsyncRedisCache,
+    AzureCosmosDBSemanticCache,
     CassandraCache,
     CassandraSemanticCache,
     FullLLMCache,
@@ -23,7 +23,6 @@ __all__ = [
     "SQLAlchemyCache",
     "SQLiteCache",
     "UpstashRedisCache",
-    "AsyncRedisCache",
     "RedisCache",
     "RedisSemanticCache",
     "GPTCache",
@@ -34,4 +33,5 @@ __all__ = [
     "SQLAlchemyMd5Cache",
     "AstraDBCache",
     "AstraDBSemanticCache",
+    "AzureCosmosDBSemanticCache",
 ]

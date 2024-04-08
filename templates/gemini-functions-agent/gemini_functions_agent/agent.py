@@ -32,19 +32,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-llm_with_tools = llm.bind(
-    functions=[
-        {
-            "name": tavily_tool.name,
-            "description": tavily_tool.description,
-            "parameters": {
-                "type": "object",
-                "properties": {"query": {"type": "string"}},
-                "required": ["query"],
-            },
-        }
-    ]
-)
+llm_with_tools = llm.bind(functions=tools)
 
 
 def _format_chat_history(chat_history: List[Tuple[str, str]]):

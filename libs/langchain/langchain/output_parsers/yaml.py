@@ -43,7 +43,8 @@ class YamlOutputParser(BaseOutputParser[T]):
             raise OutputParserException(msg, llm_output=text) from e
 
     def get_format_instructions(self) -> str:
-        schema = self.pydantic_object.schema()
+        # Copy schema to avoid altering original Pydantic schema.
+        schema = {k: v for k, v in self.pydantic_object.schema().items()}
 
         # Remove extraneous fields.
         reduced_schema = schema

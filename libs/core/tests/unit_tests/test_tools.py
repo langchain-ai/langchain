@@ -738,7 +738,7 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]]
+    handler: Union[bool, str, Callable[[ValidationError], str]],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -758,7 +758,7 @@ def test_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
     with pytest.raises(NotImplementedError):
         _tool.run({})
 
@@ -800,7 +800,7 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
-    handler: Union[bool, str, Callable[[ValidationError], str]]
+    handler: Union[bool, str, Callable[[ValidationError], str]],
 ) -> None:
     """Test that validation errors are handled correctly."""
 
@@ -820,7 +820,7 @@ async def test_async_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
     with pytest.raises(NotImplementedError):
         await _tool.arun({})
 

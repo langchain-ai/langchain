@@ -21,7 +21,7 @@ def test_get_nfts_valid_contract() -> None:
     )
     result = BlockchainDocumentLoader(contract_address).load()
 
-    print("Tokens returned for valid contract: ", len(result))
+    print("Tokens returned for valid contract: ", len(result))  # noqa: T201
 
     assert len(result) == max_alchemy_tokens, (
         f"Wrong number of NFTs returned.  "
@@ -43,7 +43,7 @@ def test_get_nfts_with_pagination() -> None:
         startToken=startToken,
     ).load()
 
-    print("Tokens returned for contract with offset: ", len(result))
+    print("Tokens returned for contract with offset: ", len(result))  # noqa: T201
 
     assert len(result) > 0, "No NFTs returned"
 
@@ -57,7 +57,7 @@ def test_get_nfts_polygon() -> None:
         contract_address, BlockchainType.POLYGON_MAINNET
     ).load()
 
-    print("Tokens returned for contract on Polygon: ", len(result))
+    print("Tokens returned for contract on Polygon: ", len(result))  # noqa: T201
 
     assert len(result) > 0, "No NFTs returned"
 
@@ -94,7 +94,7 @@ def test_get_all() -> None:
 
     end_time = time.time()
 
-    print(
+    print(  # noqa: T201
         f"Tokens returned for {contract_address} "
         f"contract: {len(result)} in {end_time - start_time} seconds"
     )
@@ -121,4 +121,4 @@ def test_get_all_10sec_timeout() -> None:
 
     end_time = time.time()
 
-    print("Execution took ", end_time - start_time, " seconds")
+    print("Execution took ", end_time - start_time, " seconds")  # noqa: T201

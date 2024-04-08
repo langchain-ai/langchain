@@ -35,18 +35,18 @@ And to start it again:
 docker start langchain-redis
 ```
 
-## Wrappers
+### Connections
 
-All wrappers need a redis url connection string to connect to the database support either a stand alone Redis server
+We need a redis url connection string to connect to the database support either a stand alone Redis server
 or a High-Availability setup with Replication and Redis Sentinels.
 
-### Redis Standalone connection url
+#### Redis Standalone connection url
 For standalone `Redis` server, the official redis connection url formats can be used as describe in the python redis modules
 "from_url()" method [Redis.from_url](https://redis-py.readthedocs.io/en/stable/connections.html#redis.Redis.from_url)
 
 Example: `redis_url = "redis://:secret-pass@localhost:6379/0"`
 
-### Redis Sentinel connection url
+#### Redis Sentinel connection url
 
 For [Redis sentinel setups](https://redis.io/docs/management/sentinel/) the connection scheme is "redis+sentinel". 
 This is an unofficial extensions to the official IANA registered protocol schemes as long as there is no connection url
@@ -61,20 +61,19 @@ The service-name is the redis server monitoring group name as configured within 
 The current url format limits the connection string to one sentinel host only (no list can be given) and
 booth Redis server and sentinel must have the same password set (if used).
 
-### Redis Cluster connection url
+#### Redis Cluster connection url
 
 Redis cluster is not supported right now for all methods requiring a "redis_url" parameter.
 The only way to use a Redis Cluster is with LangChain classes accepting a preconfigured Redis client like `RedisCache`
 (example below).
 
-### Cache
+## Cache
 
 The Cache wrapper allows for [Redis](https://redis.io) to be used as a remote, low-latency, in-memory cache for LLM prompts and responses.
 
-#### Standard Cache
+### Standard Cache
 The standard cache is the Redis bread & butter of use case in production for both [open-source](https://redis.io) and [enterprise](https://redis.com) users globally.
 
-To import this cache:
 ```python
 from langchain.cache import RedisCache
 ```
@@ -88,10 +87,9 @@ redis_client = redis.Redis.from_url(...)
 set_llm_cache(RedisCache(redis_client))
 ```
 
-#### Semantic Cache
+### Semantic Cache
 Semantic caching allows users to retrieve cached prompts based on semantic similarity between the user input and previously cached results. Under the hood it blends Redis as both a cache and a vectorstore.
 
-To import this cache:
 ```python
 from langchain.cache import RedisSemanticCache
 ```
@@ -112,27 +110,29 @@ set_llm_cache(RedisSemanticCache(
 ))
 ```
 
-### VectorStore
+## VectorStore
 
 The vectorstore wrapper turns Redis into a low-latency [vector database](https://redis.com/solutions/use-cases/vector-database/) for semantic search or LLM content retrieval.
 
-To import this vectorstore:
 ```python
 from langchain_community.vectorstores import Redis
 ```
 
 For a more detailed walkthrough of the Redis vectorstore wrapper, see [this notebook](/docs/integrations/vectorstores/redis).
 
-### Retriever
+## Retriever
 
-The Redis vector store retriever wrapper generalizes the vectorstore class to perform low-latency document retrieval. To create the retriever, simply call `.as_retriever()` on the base vectorstore class.
+The Redis vector store retriever wrapper generalizes the vectorstore class to perform 
+low-latency document retrieval. To create the retriever, simply 
+call `.as_retriever()` on the base vectorstore class.
 
-### Memory
+## Memory
+
 Redis can be used to persist LLM conversations.
 
-#### Vector Store Retriever Memory
+### Vector Store Retriever Memory
 
 For a more detailed walkthrough of the `VectorStoreRetrieverMemory` wrapper, see [this notebook](/docs/modules/memory/types/vectorstore_retriever_memory).
 
-#### Chat Message History Memory
+### Chat Message History Memory
 For a detailed example of Redis to cache conversation message history, see [this notebook](/docs/integrations/memory/redis_chat_message_history).

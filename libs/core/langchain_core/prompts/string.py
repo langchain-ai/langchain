@@ -1,4 +1,5 @@
 """BasePrompt schema definition."""
+
 from __future__ import annotations
 
 import warnings
@@ -159,8 +160,10 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         return ["langchain", "prompts", "base"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))
+
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        return StringPromptValue(text=await self.aformat(**kwargs))
 
     def pretty_repr(self, html: bool = False) -> str:
         # TODO: handle partials
@@ -174,4 +177,4 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         return self.format(**dummy_vars)
 
     def pretty_print(self) -> None:
-        print(self.pretty_repr(html=is_interactive_env()))
+        print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201

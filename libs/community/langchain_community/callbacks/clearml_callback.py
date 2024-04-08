@@ -243,8 +243,9 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         if self.stream_logs:
             self.logger.report_text(resp)
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        output = str(output)
         self.step += 1
         self.tool_ends += 1
         self.ends += 1
@@ -509,8 +510,8 @@ class ClearMLCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     target_filename=name,
                 )
             except NotImplementedError as e:
-                print("Could not save model.")
-                print(repr(e))
+                print("Could not save model.")  # noqa: T201
+                print(repr(e))  # noqa: T201
                 pass
 
         # Cleanup after adding everything to ClearML

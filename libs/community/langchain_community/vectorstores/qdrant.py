@@ -417,8 +417,9 @@ class Qdrant(VectorStore):
         Returns:
             List of documents most similar to the query text and distance for each.
         """
+        query_embedding = await self._aembed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
-            self._embed_query(query),
+            query_embedding,
             k,
             filter=filter,
             search_params=search_params,
@@ -841,7 +842,7 @@ class Qdrant(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        query_embedding = self._embed_query(query)
+        query_embedding = await self._aembed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
             query_embedding,
             k=k,
@@ -2015,6 +2016,26 @@ class Qdrant(VectorStore):
         """
         if self.embeddings is not None:
             embedding = self.embeddings.embed_query(query)
+        else:
+            if self._embeddings_function is not None:
+                embedding = self._embeddings_function(query)
+            else:
+                raise ValueError("Neither of embeddings or embedding_function is set")
+        return embedding.tolist() if hasattr(embedding, "tolist") else embedding
+
+    async def _aembed_query(self, query: str) -> List[float]:
+        """Embed query text asynchronously.
+
+        Used to provide backward compatibility with `embedding_function` argument.
+
+        Args:
+            query: Query text.
+
+        Returns:
+            List of floats representing the query embedding.
+        """
+        if self.embeddings is not None:
+            embedding = await self.embeddings.aembed_query(query)
         else:
             if self._embeddings_function is not None:
                 embedding = self._embeddings_function(query)
