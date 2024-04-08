@@ -16,6 +16,9 @@ langchain-core = "^0.1"
 psycopg = "^3.1.18"
 langgraph = "^0.0.32"
 psycopg-pool = "^3.2.1"
+sqlalchemy = "^2.0.29"
+pgvector = "^0.2.5"
+numpy = "^1.26.4"
 
 [tool.poetry.group.test]
 optional = true
