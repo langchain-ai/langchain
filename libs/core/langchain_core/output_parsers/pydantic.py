@@ -1,34 +1,64 @@
 import json
-from typing import Generic, List, Type, TypeVar
+from typing import Generic, List, Type, TypeVar, Union
+
+import pydantic  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
-TBaseModel = TypeVar("TBaseModel", bound=BaseModel)
+if PYDANTIC_MAJOR_VERSION < 2:
+    PydanticBaseModel = pydantic.BaseModel
+
+else:
+    from pydantic.v1 import BaseModel  # pydantic: ignore
+
+    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
+
+TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Type[TBaseModel]
-    """The pydantic model to parse.
-    
-    Attention: To avoid potential compatibility issues, it's recommended to use
-        pydantic <2 or leverage the v1 namespace in pydantic >= 2.
-    """
+    pydantic_object: Type[TBaseModel]  # type: ignore
+    """The pydantic model to parse."""
+
+    def _parse_obj(self, obj: dict) -> TBaseModel:
+        if PYDANTIC_MAJOR_VERSION == 2:
+            try:
+                if issubclass(self.pydantic_object, pydantic.BaseModel):
+                    return self.pydantic_object.model_validate(obj)
+                elif issubclass(self.pydantic_object, pydantic.v1.BaseModel):
+                    return self.pydantic_object.parse_obj(obj)
+                else:
+                    raise OutputParserException(
+                        f"Unsupported model version for PydanticOutputParser: \
+                            {self.pydantic_object.__class__}"
+                    )
+            except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
+                raise self._parser_exception(e, obj)
+        else:  # pydantic v1
+            try:
+                return self.pydantic_object.parse_obj(obj)
+            except pydantic.ValidationError as e:
+                raise self._parser_exception(e, obj)
+
+    def _parser_exception(
+        self, e: Exception, json_object: dict
+    ) -> OutputParserException:
+        json_string = json.dumps(json_object)
+        name = self.pydantic_object.__name__
+        msg = f"Failed to parse {name} from completion {json_string}. Got: {e}"
+        return OutputParserException(msg, llm_output=json_string)
 
     def parse_result(
         self, result: List[Generation], *, partial: bool = False
     ) -> TBaseModel:
         json_object = super().parse_result(result)
-        try:
-            return self.pydantic_object.parse_obj(json_object)
-        except ValidationError as e:
-            name = self.pydantic_object.__name__
-            msg = f"Failed to parse {name} from completion {json_object}. Got: {e}"
-            raise OutputParserException(msg, llm_output=json_object)
+        return self._parse_obj(json_object)
 
     def parse(self, text: str) -> TBaseModel:
         return super().parse(text)
