@@ -355,10 +355,9 @@ class CassandraDatabase:
             keyspace_list = self._fetch_keyspaces()
 
         tables_data, columns_data, indexes_data = self._fetch_schema_data(keyspace_list)
-            
+
         keyspace_dict: dict = {}
         for table_data in tables_data:
-
             keyspace = table_data.keyspace_name
             table_name = table_data.table_name
             comment = table_data.comment

@@ -27,10 +27,11 @@ and rules:
    for showing the steps provided by the query path.
  - You will use best practices for querying Apache Cassandra using partition keys 
    and clustering columns.
+ - Avoid using ALLOW FILTERING in the query.
  - The goal is to find a query path, so it may take querying other tables to get 
    to the final answer. 
 
- The output of the query paths should only be in JSON and in this form:
+The following is an example of a query path in JSON format:
 
  {
   "query_paths": [
