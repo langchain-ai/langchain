@@ -11,9 +11,11 @@ license = "MIT"
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/postgres"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = "^3.9"
 langchain-core = "^0.1"
 psycopg = "^3.1.18"
+langgraph = "^0.0.32"
+psycopg-pool = "^3.2.1"
 
 [tool.poetry.group.test]
 optional = true
