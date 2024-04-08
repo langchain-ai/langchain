@@ -346,7 +346,9 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
         if configurable:
             init_params = {
-                k: v for k, v in self.default.__dict__ if k in self.default.__fields__
+                k: v
+                for k, v in self.default.__dict__.items()
+                if k in self.default.__fields__
             }
             return (
                 self.default.__class__(**init_params, **configurable),
