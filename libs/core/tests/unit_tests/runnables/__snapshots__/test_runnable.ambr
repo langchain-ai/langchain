@@ -5560,12 +5560,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -5588,6 +5582,13 @@
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'index',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -5672,16 +5673,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -5703,6 +5694,8 @@
         'required': list([
           'name',
           'args',
+          'id',
+          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -6108,12 +6101,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -6136,6 +6123,13 @@
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'index',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -6220,16 +6214,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -6251,6 +6235,8 @@
         'required': list([
           'name',
           'args',
+          'id',
+          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -6593,12 +6579,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -6621,6 +6601,13 @@
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'index',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -6683,16 +6670,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -6714,6 +6691,8 @@
         'required': list([
           'name',
           'args',
+          'id',
+          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -7091,12 +7070,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -7119,6 +7092,13 @@
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'index',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -7203,16 +7183,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -7234,6 +7204,8 @@
         'required': list([
           'name',
           'args',
+          'id',
+          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -7611,12 +7583,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -7639,6 +7605,13 @@
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'index',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -7723,16 +7696,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -7754,6 +7717,8 @@
         'required': list([
           'name',
           'args',
+          'id',
+          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -8123,12 +8088,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -8151,6 +8110,13 @@
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'index',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -8246,16 +8212,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -8277,6 +8233,8 @@
         'required': list([
           'name',
           'args',
+          'id',
+          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -8626,12 +8584,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -8654,6 +8606,13 @@
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'index',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -8716,16 +8675,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -8747,6 +8696,8 @@
         'required': list([
           'name',
           'args',
+          'id',
+          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',

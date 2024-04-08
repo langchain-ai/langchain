@@ -92,13 +92,16 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         tool_calls = []
         for chunk in values["tool_call_chunks"]:
             try:
-                args_ = parse_partial_json(chunk.args)
+                args_ = parse_partial_json(chunk["args"])
                 args_ = args_ if isinstance(args_, dict) else {}
             except (JSONDecodeError, TypeError):  # None args raise TypeError
                 args_ = {}
             tool_calls.append(
                 ToolCall(
-                    name=chunk.name or "", args=args_, index=chunk.index, id=chunk.id
+                    name=chunk["name"] or "",
+                    args=args_,
+                    index=chunk["index"],
+                    id=chunk["id"],
                 )
             )
         values["tool_calls"] = tool_calls
@@ -122,11 +125,19 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             # Merge tool call chunks
             if self.tool_call_chunks or other.tool_call_chunks:
                 raw_tool_calls = merge_lists(
-                    [tc.dict() for tc in self.tool_call_chunks or []],
-                    [tc.dict() for tc in other.tool_call_chunks or []],
+                    [tc for tc in self.tool_call_chunks or []],
+                    [tc for tc in other.tool_call_chunks or []],
                 )
                 if raw_tool_calls:
-                    tool_call_chunks = [ToolCallChunk(**rtc) for rtc in raw_tool_calls]
+                    tool_call_chunks = [
+                        ToolCallChunk(
+                            name=rtc.get("name"),
+                            args=rtc.get("args"),
+                            index=rtc.get("index"),
+                            id=rtc.get("id"),
+                        )
+                        for rtc in raw_tool_calls
+                    ]
                 else:
                     tool_call_chunks = None
             else:

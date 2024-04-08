@@ -1,7 +1,6 @@
 import json
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 
-from langchain_core.load import Serializable
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
@@ -65,7 +64,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
-class ToolCall(Serializable):
+class ToolCall(TypedDict):
     """A call to a tool.
 
     Attributes:
@@ -78,11 +77,11 @@ class ToolCall(Serializable):
 
     name: str
     args: Dict[str, Any]
-    id: Optional[str] = None
-    index: Optional[int] = None
+    id: Optional[str]
+    index: Optional[int]
 
 
-class ToolCallChunk(Serializable):
+class ToolCallChunk(TypedDict):
     """A chunk of a tool call (e.g., as part of a stream).
 
     When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
@@ -107,24 +106,24 @@ class ToolCallChunk(Serializable):
         index: (int) if provided, the index of the tool call in a sequence
     """
 
-    name: Optional[str] = None
-    args: Optional[str] = None
-    id: Optional[str] = None
-    index: Optional[int] = None
+    name: Optional[str]
+    args: Optional[str]
+    id: Optional[str]
+    index: Optional[int]
 
 
-class InvalidToolCall(Serializable):
+class InvalidToolCall(TypedDict):
     """Allowance for errors made by LLM.
 
     Here we add an `error` key to surface errors made during generation
     (e.g., invalid JSON arguments.)
     """
 
-    name: Optional[str] = None
-    args: Optional[str] = None
-    id: Optional[str] = None
-    index: Optional[int] = None
-    error: Optional[str] = None
+    name: Optional[str]
+    args: Optional[str]
+    id: Optional[str]
+    index: Optional[int]
+    error: Optional[str]
 
 
 def default_tool_parser(raw_tool_calls: List[dict]) -> List[ToolCall]:
