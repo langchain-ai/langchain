@@ -1,7 +1,7 @@
 from typing import Any
 
 
-def __getattr__(name) -> Any:
+def __getattr__(name: str) -> Any:
     if name == "ChatMistralAI":
         from langchain_mistralai.chat_models import ChatMistralAI
 
