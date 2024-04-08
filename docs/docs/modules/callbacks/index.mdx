@@ -14,6 +14,7 @@ LangChain provides a callbacks system that provides a set of hooks to allow you 
 Concepts include the hooks or events that provide entry to the application and the callbacks handler object which subscribes to one or more of these events.
 
 ### Events
+
 | Event Name | Event Trigger | Associated Method |
 | --- | --- | --- |
 | LLM start  | When a llm starts | `on_llm_start`|
@@ -35,6 +36,7 @@ Concepts include the hooks or events that provide entry to the application and t
 | Text  | When arbitrary text is run | `on_text`|
 | Retry  | When a retry event is run | `on_retry`|
 
+
 ### Callbacks Handler
 
 Callbacks handlers are objects that implement the associated method (see table above) for each event you are interested in. Handlers register for these events using the `callbacks` argument available throughout the API. When the event is triggered, LangChain will call the appropriate method on every registered handler.
@@ -50,13 +52,12 @@ The callbacks are available on most objects throughout the API (Models, Tools, A
 #### When do you want to use each of these?
 
 - Constructor callbacks are most useful for use cases such as logging, monitoring, etc., which are _not specific to a single request_, but rather to the entire chain. For example, if you want to log all the requests made to an entire chain, you would pass a handler to the constructor.
-- Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the `invoke()` method through the `config` option.
+- Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the `invoke` method through the `config` option.
 
 ## Quick start
 
 Let us understand how to use callbacks by examining one of the built-in handlers provided by LangChain - the `StdOutCallbackHandler`, which simply logs all events to `stdout`. This is useful for debugging, as it will log all events to the console.
 
-**Note**: when the `verbose` flag on the object is set to true, the `StdOutCallbackHandler` will be invoked even without being explicitly passed in.
 
 ```python
 from langchain_core.callbacks import StdOutCallbackHandler
@@ -74,12 +75,7 @@ chain.invoke({"number": 20})
 # Constructor callback: we set the callback when initializing the model
 chain = prompt | model.with_config({"callbacks": [handler]})
 chain.invoke({"number": 25})
-
-# Request callbacks: we set the request callback on the chain and see it propagated to all subrequests
-chain = prompt | model
-chain.invoke({"number": 40}, config = config)
 ```
-
 
 <details> <summary>Console output</summary>
 
@@ -93,12 +89,31 @@ chain.invoke({"number": 40}, config = config)
 > Finished chain.
 
 
-> Entering OpenAI chain...
+> Entering OpenAI...
 > Prompt: ['what is 1 + 25?']
 
-> Finished llm chain.
+> Finished llm.
+```
+
+</CodeOutputBlock>
+
+</details>
 
 
+We can also request the callback in the `invoke` method for the chain, i.e. a "requests" callback. This will be propagated to all objects in the chain.
+
+```
+# Request callbacks: we set the request callback on the chain and see it propagated to all subrequests
+chain = prompt | model
+chain.invoke({"number": 40}, config = config)
+```
+
+
+<details> <summary>Console output</summary>
+
+<CodeOutputBlock lang="python">
+
+```
 > Entering new RunnableSequence chain...
 
 
@@ -108,10 +123,10 @@ chain.invoke({"number": 40}, config = config)
 > Finished chain.
 
 
-> Entering OpenAI chain...
+> Entering OpenAI...
 > Prompt: ['what is 1 + 40?']
 
-> Finished llm chain.
+> Finished llm.
 
 > Finished chain.
 ```
@@ -119,3 +134,61 @@ chain.invoke({"number": 40}, config = config)
 </CodeOutputBlock>
 
 </details>
+
+In the above examples, the prints are due to the `StdOutCallbackHandler` implementing the `on_chain_start`, `on_chain_end`, `on_llm_start` and `on_llm_end` methods to provide helpful debugging information.
+
+In the example below, we show how the `StdOutCallbackHandler` can be used with a retriever (implementing the `on_retriever_start` and `on_retriever_end` methods).
+
+```
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.document_loaders.text import TextLoader
+from langchain_community.vectorstores.faiss import FAISS
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+handler = StdOutCallbackHandler()
+
+documents = TextLoader("state_of_the_union.txt", encoding="utf-8").load()
+
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+texts = text_splitter.split_documents(documents)
+
+embeddings_model = OpenAIEmbeddings()
+
+db = FAISS.from_documents(texts, embeddings_model)
+
+retriever = db.as_retriever(search_kwargs={"k": 2})
+docs = retriever.get_relevant_documents("what did he say about ketanji brown jackson", callbacks = [handler])
+```
+
+
+<details> <summary>Console output</summary>
+
+<CodeOutputBlock lang="python">
+
+```
+> Entering VectorStoreRetriever...
+
+> Finished retriever.
+
+```
+
+</CodeOutputBlock>
+
+</details>
+
+
+## More topics
+
+This was a quick introduction to callbacks in LangChain, but there is a lot more to explore.
+
+**Callbacks integration with 3rd-party tools:** For documentation on built-in callbacks integrations with 3rd-party tools, see [this page](https://python.langchain.com/docs/integrations/callbacks/)
+
+**Async callbacks:** If you are planning to use the async API, it is recommended to use the `AsyncCallbackHandler `, [this page](https://python.langchain.com/docs/modules/callbacks/async_callbacks/)
+
+**Logging to a file:** LangChain provides a built-in callback handler to log events to a file, see [this page](http://localhost:3021/docs/modules/callbacks/filecallbackhandler/)
+
+**Multiple callback handlers:** We saw a simple example of the difference between the two types of callback handlers. For a more elaborate example with agents see [this page](http://localhost:3021/docs/modules/callbacks/multiple_callbacks/) 
+
+**Custom callback handlers:** Although built-in handlers are useful, it’s highly likely that you’ll have to define your own handlers. See [this guide](https://python.langchain.com/docs/modules/callbacks/custom_callbacks/) for instructions on how to do so.
+
+**Token counting:** Token counting (for Open AI models) is accomplished through the the context manager `get_openai_callback`, that uses a callback handler under the hood, see [this page](https://python.langchain.com/docs/modules/callbacks/token_counting/)
