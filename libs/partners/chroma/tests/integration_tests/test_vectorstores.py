@@ -2,10 +2,11 @@
 
 import uuid
 
+import chromadb
 import pytest
 import requests
-from langchain_community.embeddings import FakeEmbeddings as Fak
 from langchain_core.documents import Document
+from langchain_core.embeddings.fake import FakeEmbeddings as Fak
 
 from langchain_chroma.vectorstores import Chroma
 from tests.integration_tests.fake_embeddings import (
@@ -21,9 +22,10 @@ def test_chroma() -> None:
         collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
 
     docsearch.delete_collection()
+
+    assert output == [Document(page_content="foo")]
 
 
 async def test_chroma_async() -> None:
@@ -33,9 +35,9 @@ async def test_chroma_async() -> None:
         collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
     )
     output = await docsearch.asimilarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
 
     docsearch.delete_collection()
+    assert output == [Document(page_content="foo")]
 
 
 def test_chroma_with_metadatas() -> None:
@@ -49,9 +51,8 @@ def test_chroma_with_metadatas() -> None:
         metadatas=metadatas,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", metadata={"page": "0"})]
-
     docsearch.delete_collection()
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
 def test_chroma_with_metadatas_with_scores() -> None:
@@ -65,9 +66,8 @@ def test_chroma_with_metadatas_with_scores() -> None:
         metadatas=metadatas,
     )
     output = docsearch.similarity_search_with_score("foo", k=1)
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
-
     docsearch.delete_collection()
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
 def test_chroma_with_metadatas_with_scores_using_vector() -> None:
@@ -86,9 +86,8 @@ def test_chroma_with_metadatas_with_scores_using_vector() -> None:
     output = docsearch.similarity_search_by_vector_with_relevance_scores(
         embedding=embedded_query, k=1
     )
-    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
-
     docsearch.delete_collection()
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
 def test_chroma_search_filter() -> None:
@@ -101,12 +100,11 @@ def test_chroma_search_filter() -> None:
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
-    output = docsearch.similarity_search("far", k=1, filter={"first_letter": "f"})
-    assert output == [Document(page_content="far", metadata={"first_letter": "f"})]
-    output = docsearch.similarity_search("far", k=1, filter={"first_letter": "b"})
-    assert output == [Document(page_content="bar", metadata={"first_letter": "b"})]
-
+    output1 = docsearch.similarity_search("far", k=1, filter={"first_letter": "f"})
+    output2 = docsearch.similarity_search("far", k=1, filter={"first_letter": "b"})
     docsearch.delete_collection()
+    assert output1 == [Document(page_content="far", metadata={"first_letter": "f"})]
+    assert output2 == [Document(page_content="bar", metadata={"first_letter": "b"})]
 
 
 def test_chroma_search_filter_with_scores() -> None:
@@ -119,20 +117,19 @@ def test_chroma_search_filter_with_scores() -> None:
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
     )
-    output = docsearch.similarity_search_with_score(
+    output1 = docsearch.similarity_search_with_score(
         "far", k=1, filter={"first_letter": "f"}
     )
-    assert output == [
-        (Document(page_content="far", metadata={"first_letter": "f"}), 0.0)
-    ]
-    output = docsearch.similarity_search_with_score(
+    output2 = docsearch.similarity_search_with_score(
         "far", k=1, filter={"first_letter": "b"}
     )
-    assert output == [
+    docsearch.delete_collection()
+    assert output1 == [
+        (Document(page_content="far", metadata={"first_letter": "f"}), 0.0)
+    ]
+    assert output2 == [
         (Document(page_content="bar", metadata={"first_letter": "b"}), 1.0)
     ]
-
-    docsearch.delete_collection()
 
 
 def test_chroma_with_persistence() -> None:
@@ -175,9 +172,8 @@ def test_chroma_mmr() -> None:
         collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
     )
     output = docsearch.max_marginal_relevance_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
-
     docsearch.delete_collection()
+    assert output == [Document(page_content="foo")]
 
 
 def test_chroma_mmr_by_vector() -> None:
@@ -189,9 +185,8 @@ def test_chroma_mmr_by_vector() -> None:
     )
     embedded_query = embeddings.embed_query("foo")
     output = docsearch.max_marginal_relevance_search_by_vector(embedded_query, k=1)
-    assert output == [Document(page_content="foo")]
-
     docsearch.delete_collection()
+    assert output == [Document(page_content="foo")]
 
 
 def test_chroma_with_include_parameter() -> None:
@@ -200,12 +195,11 @@ def test_chroma_with_include_parameter() -> None:
     docsearch = Chroma.from_texts(
         collection_name="test_collection", texts=texts, embedding=FakeEmbeddings()
     )
-    output = docsearch.get(include=["embeddings"])
-    assert output["embeddings"] is not None
-    output = docsearch.get()
-    assert output["embeddings"] is None
-
+    output1 = docsearch.get(include=["embeddings"])
+    output2 = docsearch.get()
     docsearch.delete_collection()
+    assert output1["embeddings"] is not None
+    assert output2["embeddings"] is None
 
 
 def test_chroma_update_document() -> None:
@@ -243,17 +237,18 @@ def test_chroma_update_document() -> None:
     # Perform a similarity search with the updated content
     output = docsearch.similarity_search(updated_content, k=1)
 
-    # Assert that the updated document is returned by the search
-    assert output == [Document(page_content=updated_content, metadata={"page": "0"})]
-
     # Assert that the new embedding is correct
     new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore
         docsearch._collection.peek()["ids"].index(document_id)
     ]
-    assert new_embedding == embedding.embed_documents([updated_content])[0]
-    assert new_embedding != old_embedding
 
     docsearch.delete_collection()
+
+    # Assert that the updated document is returned by the search
+    assert output == [Document(page_content=updated_content, metadata={"page": "0"})]
+
+    assert new_embedding == embedding.embed_documents([updated_content])[0]
+    assert new_embedding != old_embedding
 
 
 # TODO: RELEVANCE SCORE IS BROKEN. FIX TEST
@@ -269,13 +264,12 @@ def test_chroma_with_relevance_score() -> None:
         collection_metadata={"hnsw:space": "l2"},
     )
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+    docsearch.delete_collection()
     assert output == [
         (Document(page_content="foo", metadata={"page": "0"}), 1.0),
         (Document(page_content="bar", metadata={"page": "1"}), 0.8),
         (Document(page_content="baz", metadata={"page": "2"}), 0.5),
     ]
-
-    docsearch.delete_collection()
 
 
 # TODO: RELEVANCE SCORE IS BROKEN. FIX TEST
@@ -292,13 +286,12 @@ def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
         collection_metadata={"hnsw:space": "l2"},
     )
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
+    docsearch.delete_collection()
     assert output == [
         (Document(page_content="foo", metadata={"page": "0"}), 0.0),
         (Document(page_content="bar", metadata={"page": "1"}), 0.0),
         (Document(page_content="baz", metadata={"page": "2"}), 0.0),
     ]
-
-    docsearch.delete_collection()
 
 
 def test_init_from_client() -> None:
@@ -330,13 +323,13 @@ def test_chroma_add_documents_mixed_metadata() -> None:
     ]
     ids = ["0", "1"]
     actual_ids = db.add_documents(docs, ids=ids)
-    assert actual_ids == ids
     search = db.similarity_search("foo bar")
+    db.delete_collection()
+
+    assert actual_ids == ids
     assert sorted(search, key=lambda d: d.page_content) == sorted(
         docs, key=lambda d: d.page_content
     )
-
-    db.delete_collection()
 
 
 def is_api_accessible(url: str) -> bool:
@@ -348,11 +341,6 @@ def is_api_accessible(url: str) -> bool:
 
 
 def batch_support_chroma_version() -> bool:
-    try:
-        import chromadb
-    except Exception:
-        return False
-
     major, minor, patch = chromadb.__version__.split(".")
     if int(major) == 0 and int(minor) >= 4 and int(patch) >= 10:
         return True
@@ -369,8 +357,6 @@ def batch_support_chroma_version() -> bool:
     reason="ChromaDB version does not support batching",
 )
 def test_chroma_large_batch() -> None:
-    import chromadb
-
     client = chromadb.HttpClient()
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
@@ -399,8 +385,6 @@ def test_chroma_large_batch() -> None:
     reason="ChromaDB version does not support batching",
 )
 def test_chroma_large_batch_update() -> None:
-    import chromadb
-
     client = chromadb.HttpClient()
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
@@ -437,8 +421,6 @@ def test_chroma_large_batch_update() -> None:
     batch_support_chroma_version(), reason="ChromaDB version does not support batching"
 )
 def test_chroma_legacy_batching() -> None:
-    import chromadb
-
     client = chromadb.HttpClient()
     embedding_function = Fak(size=255)
     col = client.get_or_create_collection(
