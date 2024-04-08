@@ -13,9 +13,9 @@ pip install -U langchain-chroma
 The `ChromaVectorStore` class exposes the connection to the Chroma vector store.
 
 ```python
-from langchain_chroma import ChromaVectorStore
+from langchain_chroma import Chroma
 
 embeddings = ... # use a LangChain Embeddings class
 
-vectorstore = ChromaVectorStore(embeddings=embeddings)
+vectorstore = Chroma(embeddings=embeddings)
 ```
