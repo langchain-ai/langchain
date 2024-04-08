@@ -20,7 +20,6 @@ def test_api_key_masked_when_passed_via_constructor(
     assert captured.out == "**********"
 
 
-@pytest.mark.requires("predibase")
 def test_specifying_adapter_id_argument() -> None:
     llm = Predibase(model="my_llm", predibase_api_key="secret-api-key")
     assert not llm.adapter_id
