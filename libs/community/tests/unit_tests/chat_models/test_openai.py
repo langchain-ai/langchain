@@ -19,7 +19,7 @@ from langchain_community.chat_models.openai import ChatOpenAI
 def test_openai_model_param() -> None:
     llm = ChatOpenAI(model="foo", openai_api_key="foo")
     assert llm.model_name == "foo"
-    llm = ChatOpenAI(model_name="foo", openai_api_key="foo")
+    llm = ChatOpenAI(model="foo", openai_api_key="foo")
     assert llm.model_name == "foo"
 
 
