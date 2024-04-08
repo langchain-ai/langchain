@@ -1,10 +1,8 @@
 import logging
-from typing import Any, Dict, Iterator, List, Mapping, Optional, cast
+from typing import cast, Any, Dict, Iterator, List, Mapping, Optional
 from urllib.parse import urlparse
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.base import LanguageModelInput
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
@@ -15,7 +13,6 @@ from langchain_core.messages import (
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
-    FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
