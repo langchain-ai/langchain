@@ -96,8 +96,6 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 args_ = args_ if isinstance(args_, dict) else {}
             except (JSONDecodeError, TypeError):  # None args raise TypeError
                 args_ = {}
-            if not isinstance(args_, dict):
-                raise ValueError(f"{args_=}")
             tool_calls.append(
                 ToolCall(
                     name=chunk.name or "", args=args_, index=chunk.index, id=chunk.id

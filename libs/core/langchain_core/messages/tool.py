@@ -92,6 +92,7 @@ class ToolCallChunk(Serializable):
     Example:
 
     .. code-block:: python
+
         left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
         right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
         (
