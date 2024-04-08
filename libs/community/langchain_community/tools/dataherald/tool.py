@@ -30,8 +30,7 @@ class DataheraldTextToSQL(BaseTool):
     def _run(
         self,
         prompt: str,
-        db_connection_id: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the Dataherald tool."""
-        return self.api_wrapper.run(prompt, db_connection_id)
+        return self.api_wrapper.run(prompt)

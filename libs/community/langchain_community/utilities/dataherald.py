@@ -18,6 +18,7 @@ class DataheraldAPIWrapper(BaseModel):
     """
 
     dataherald_client: Any  #: :meta private:
+    db_connection_id: str
     dataherald_api_key: Optional[str] = None
 
     class Config:
@@ -47,11 +48,11 @@ class DataheraldAPIWrapper(BaseModel):
 
         return values
 
-    def run(self, prompt: str, db_connection_id: str) -> str:
+    def run(self, prompt: str) -> str:
         """Generate a sql query through Dataherald and parse result."""
         from dataherald.types.sql_generation_create_params import Prompt
 
-        prompt_obj = Prompt(text=prompt, db_connection_id=db_connection_id)
+        prompt_obj = Prompt(text=prompt, db_connection_id=self.db_connection_id)
         res = self.dataherald_client.sql_generations.create(prompt=prompt_obj)
 
         try:
