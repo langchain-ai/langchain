@@ -10,7 +10,7 @@ pip install -U langchain-chroma
 
 ## Usage
 
-The `ChromaVectorStore` class exposes the connection to the Chroma vector store.
+The `Chroma` class exposes the connection to the Chroma vector store.
 
 ```python
 from langchain_chroma import Chroma
