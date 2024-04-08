@@ -192,7 +192,7 @@ class ChatMistralAI(BaseChatModel):
 
     _client: Optional[httpx.Client] = None
     _async_client: Optional[httpx.AsyncClient] = None
-    mistral_api_key: Optional[SecretStr] = None
+    mistral_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     endpoint: str = "https://api.mistral.ai/v1"
     max_retries: int = 5
     timeout: int = 120
@@ -284,6 +284,12 @@ class ChatMistralAI(BaseChatModel):
             },
             timeout=self.timeout,
         )
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @property
     def _default_params(self) -> Dict[str, Any]:
