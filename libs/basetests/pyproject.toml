@@ -11,7 +11,7 @@ license = "MIT"
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/basetests"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.40"
 pytest = ">=7,<9"
 

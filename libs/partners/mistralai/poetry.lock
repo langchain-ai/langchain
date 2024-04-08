@@ -387,8 +387,25 @@ files = [
 ]
 
 [[package]]
+name = "langchain-basetests"
+version = "0.1.0"
+description = "Standard tests for LangChain implementations"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+langchain-core = "^0.1.40"
+pytest = ">=7,<9"
+
+[package.source]
+type = "directory"
+url = "../../basetests"
+
+[[package]]
 name = "langchain-core"
-version = "0.1.33"
+version = "0.1.40"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -396,13 +413,11 @@ files = []
 develop = true
 
 [package.dependencies]
-anyio = ">=3,<5"
 jsonpatch = "^1.33"
 langsmith = "^0.1.0"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
-requests = "^2"
 tenacity = "^8.1.0"
 
 [package.extras]
@@ -1045,4 +1060,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "706b13139d3f36b3fffb311155ec5bba970f24a692146f7deed08cb8cfe5c962"
+content-hash = "211507bb52abd47054b5c859a07decd84f861c66f3ddeddccdf725ba91bea1ed"

@@ -8,8 +8,7 @@ from langchain_core.language_models import BaseChatModel
 class BaseUnitTests(ABC):
     @abstractmethod
     @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        ...
+    def chat_model_class(self) -> Type[BaseChatModel]: ...
 
     @pytest.fixture
     def chat_model_params(self) -> dict:
