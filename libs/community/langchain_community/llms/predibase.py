@@ -21,7 +21,7 @@ class Predibase(LLM):
 
     model: str
     predibase_api_key: SecretStr
-    adapter_id: Optional[str]
+    adapter_id: Optional[str] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     default_options_for_generation: dict = Field(
         {
