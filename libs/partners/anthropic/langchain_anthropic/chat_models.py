@@ -243,12 +243,13 @@ class ChatAnthropic(BaseChatModel):
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
 
-    default_request_timeout: Optional[float] = None
+    default_request_timeout: Optional[float] = Field(None, alias="timeout")
     """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
 
     anthropic_api_url: str = "https://api.anthropic.com"
 
-    anthropic_api_key: Optional[SecretStr] = None
+    anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
