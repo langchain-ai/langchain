@@ -4,9 +4,13 @@ MIT License
 """
 
 import logging
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypeAlias, Union, cast
 
 logger = logging.getLogger(__name__)
+
+
+Scopes: TypeAlias = List[Union[Literal[False, 0], Dict[str, Any]]]
 
 
 # Globals
@@ -23,7 +27,7 @@ class ChevronError(SyntaxError):
 #
 
 
-def grab_literal(template, l_del):
+def grab_literal(template: str, l_del: str) -> Tuple[str, str]:
     """Parse a literal from the template"""
 
     global _CURRENT_LINE
@@ -40,7 +44,7 @@ def grab_literal(template, l_del):
         return (template, "")
 
 
-def l_sa_check(template, literal, is_standalone):
+def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
     """Do a preliminary check to see if a tag could be a standalone"""
 
     # If there is a newline, or the previous tag was a standalone
@@ -54,9 +58,11 @@ def l_sa_check(template, literal, is_standalone):
         else:
             # Otherwise it can't be
             return False
+    else:
+        return False
 
 
-def r_sa_check(template, tag_type, is_standalone):
+def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
     """Do a final checkto see if a tag could be a standalone"""
 
     # Check right side if we might be a standalone
@@ -74,7 +80,7 @@ def r_sa_check(template, tag_type, is_standalone):
         return False
 
 
-def parse_tag(template, l_del, r_del):
+def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], str]:
     """Parse a tag from a template"""
     global _CURRENT_LINE
     global _LAST_TAG_LINE
@@ -136,7 +142,9 @@ def parse_tag(template, l_del, r_del):
 #
 
 
-def tokenize(template, def_ldel="{{", def_rdel="}}"):
+def tokenize(
+    template: str, def_ldel: str = "{{", def_rdel: str = "}}"
+) -> Iterator[Tuple[str, str]]:
     """Tokenize a mustache template
 
     Tokenizes a mustache template in a generator fashion,
@@ -176,11 +184,6 @@ def tokenize(template, def_ldel="{{", def_rdel="}}"):
     global _CURRENT_LINE, _LAST_TAG_LINE
     _CURRENT_LINE = 1
     _LAST_TAG_LINE = None
-    # If the template is a file-like object then read it
-    try:
-        template = template.read()
-    except AttributeError:
-        pass
 
     is_standalone = True
     open_sections = []
@@ -274,7 +277,7 @@ def tokenize(template, def_ldel="{{", def_rdel="}}"):
 #
 
 
-def _html_escape(string):
+def _html_escape(string: str) -> str:
     """HTML escape all of these " & < >"""
 
     html_codes = {
@@ -290,7 +293,14 @@ def _html_escape(string):
     return string
 
 
-def _get_key(key, scopes, warn, keep, def_ldel, def_rdel):
+def _get_key(
+    key: str,
+    scopes: Scopes,
+    warn: bool,
+    keep: bool,
+    def_ldel: str,
+    def_rdel: str,
+) -> Any:
     """Get a key from the current scope"""
 
     # If the key is a dot
@@ -301,28 +311,32 @@ def _get_key(key, scopes, warn, keep, def_ldel, def_rdel):
     # Loop through the scopes
     for scope in scopes:
         try:
-            # For every dot seperated key
-            for child in key.split("."):
-                # Move into the scope
-                try:
-                    # Try subscripting (Normal dictionaries)
-                    scope = scope[child]
-                except (TypeError, AttributeError):
-                    try:
-                        scope = getattr(scope, child)
-                    except (TypeError, AttributeError):
-                        # Try as a list
-                        scope = scope[int(child)]
-
             # Return an empty string if falsy, with two exceptions
             # 0 should return 0, and False should return False
             if scope in (0, False):
                 return scope
 
+            # For every dot seperated key
+            for child in key.split("."):
+                # Return an empty string if falsy, with two exceptions
+                # 0 should return 0, and False should return False
+                if scope in (0, False):
+                    return scope
+                # Move into the scope
+                try:
+                    # Try subscripting (Normal dictionaries)
+                    scope = cast(Dict[str, Any], scope)[child]
+                except (TypeError, AttributeError):
+                    try:
+                        scope = getattr(scope, child)
+                    except (TypeError, AttributeError):
+                        # Try as a list
+                        scope = scope[int(child)]  # type: ignore
+
             try:
                 # This allows for custom falsy data types
                 # https://github.com/noahmorrison/chevron/issues/35
-                if scope._CHEVRON_return_scope_when_falsy:
+                if scope._CHEVRON_return_scope_when_falsy:  # type: ignore
                     return scope
             except AttributeError:
                 return scope or ""
@@ -342,7 +356,7 @@ def _get_key(key, scopes, warn, keep, def_ldel, def_rdel):
     return ""
 
 
-def _get_partial(name, partials_dict):
+def _get_partial(name: str, partials_dict: Dict[str, str]) -> str:
     """Load a partial"""
     try:
         # Maybe the partial is in the dictionary
@@ -354,20 +368,20 @@ def _get_partial(name, partials_dict):
 #
 # The main rendering function
 #
-g_token_cache = {}
+g_token_cache: Dict[str, List[Tuple[str, str]]] = {}
 
 
 def render(
-    template="",
-    data={},
-    partials_dict={},
-    padding="",
-    def_ldel="{{",
-    def_rdel="}}",
-    scopes=None,
-    warn=False,
-    keep=False,
-):
+    template: Union[str, List[Tuple[str, str]]] = "",
+    data: Dict[str, Any] = {},
+    partials_dict: Dict[str, str] = {},
+    padding: str = "",
+    def_ldel: str = "{{",
+    def_rdel: str = "}}",
+    scopes: Optional[Scopes] = None,
+    warn: bool = False,
+    keep: bool = False,
+) -> str:
     """Render a mustache template.
 
     Renders a mustache template with a data scope and inline partial capability.
@@ -415,7 +429,7 @@ def render(
     if isinstance(template, Sequence) and not isinstance(template, str):
         # Then we don't need to tokenize it
         # But it does need to be a generator
-        tokens = (token for token in template)
+        tokens: Iterator[Tuple[str, str]] = (token for token in template)
     else:
         if template in g_token_cache:
             tokens = (token for token in g_token_cache[template])
@@ -442,7 +456,6 @@ def render(
         elif not current_scope and len(scopes) != 1:
             if tag in ["section", "inverted section"]:
                 # Set the most recent scope to a falsy value
-                # (I heard False is a good one)
                 scopes.insert(0, False)
 
         # If we're a literal tag
@@ -484,16 +497,16 @@ def render(
 
             # If the scope is a callable (as described in
             # https://mustache.github.io/mustache.5.html)
-            if isinstance(scope, Callable):
+            if callable(scope):
                 # Generate template text from tags
                 text = ""
-                tags = []
-                for tag in tokens:
-                    if tag == ("end", key):
+                tags: List[Tuple[str, str]] = []
+                for token in tokens:
+                    if token == ("end", key):
                         break
 
-                    tags.append(tag)
-                    tag_type, tag_key = tag
+                    tags.append(token)
+                    tag_type, tag_key = token
                     if tag_type == "literal":
                         text += tag_key
                     elif tag_type == "no escape":
@@ -544,14 +557,14 @@ def render(
                 # TODO: This feels like it still has edge cases, no?
                 tags = []
                 tags_with_same_key = 0
-                for tag in tokens:
-                    if tag == ("section", key):
+                for token in tokens:
+                    if token == ("section", key):
                         tags_with_same_key += 1
-                    if tag == ("end", key):
+                    if token == ("end", key):
                         tags_with_same_key -= 1
                         if tags_with_same_key < 0:
                             break
-                    tags.append(tag)
+                    tags.append(token)
 
                 # For every item in the scope
                 for thing in scope:
@@ -580,7 +593,7 @@ def render(
             scope = _get_key(
                 key, scopes, warn=warn, keep=keep, def_ldel=def_ldel, def_rdel=def_rdel
             )
-            scopes.insert(0, not scope)
+            scopes.insert(0, cast(Literal[False], not scope))
 
         # If we're a partial
         elif tag == "partial":
