@@ -349,9 +349,23 @@ class ChatAnthropic(BaseChatModel):
             )
             yield cast(ChatGenerationChunk, result.generations[0])
             return
+        full_generation_info = {}
         with self._client.messages.stream(**params) as stream:
             for text in stream.text_stream:
-                chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
+                generation_info = {}
+                for k, v in stream.current_message_snapshot.model_dump().items():
+                    if k in ("content", "role", "type") or (k in full_generation_info and k not in ("usage", "stop_reason")):
+                        continue
+                    elif k in full_generation_info and k == "usage":
+                        full_generation_info[k]["output_tokens"] += v["output_tokens"]
+                        generation_info[k] = {"output_tokens": [v["output_tokens"]]}
+                    elif k == "usage":
+                        full_generation_info[k] = v
+                        generation_info[k] = {**v, "output_tokens": [v["output_tokens"]]}
+                    else:
+                        full_generation_info[k] = v
+                        generation_info[k] = v
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=text), generation_info=generation_info)
                 if run_manager:
                     run_manager.on_llm_new_token(text, chunk=chunk)
                 yield chunk
@@ -373,7 +387,8 @@ class ChatAnthropic(BaseChatModel):
             return
         async with self._async_client.messages.stream(**params) as stream:
             async for text in stream.text_stream:
-                chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
+                generation_info = {k: v for k, v in stream.current_message_snapshot.model_dump().items() if k not in ("content", "role", "type")}
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=text), generation_info=generation_info)
                 if run_manager:
                     await run_manager.on_llm_new_token(text, chunk=chunk)
                 yield chunk
