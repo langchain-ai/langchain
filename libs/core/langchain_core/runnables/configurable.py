@@ -351,7 +351,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 if k in self.default.__fields__
             }
             return (
-                self.default.__class__(**init_params, **configurable),
+                self.default.__class__(**{**init_params, **configurable}),
                 config,
             )
         else:
