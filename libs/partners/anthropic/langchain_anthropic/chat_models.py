@@ -244,11 +244,7 @@ class ChatAnthropic(BaseChatModel):
     """Total probability mass of tokens to consider at each step."""
 
     default_request_timeout: Optional[float] = Field(None, alias="timeout")
-    """Timeout for requests to Anthropic Completion API.
-    
-    A value <= 0 indicates the timeout param should not be passed to Anthropic 
-        client. Anything else is passed through, including None.
-    """
+    """Timeout for requests to Anthropic Completion API."""
 
     # sdk default = 2: https://github.com/anthropics/anthropic-sdk-python?tab=readme-ov-file#retries
     max_retries: int = 2
