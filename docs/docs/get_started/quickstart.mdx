@@ -94,12 +94,12 @@ from langchain_openai import ChatOpenAI
 llm = ChatOpenAI()
 ```
 
-If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+If you'd prefer not to set an environment variable you can pass the key in directly via the `api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
 from langchain_openai import ChatOpenAI
 
-llm = ChatOpenAI(openai_api_key="...")
+llm = ChatOpenAI(api_key="...")
 ```
 
   </TabItem>
@@ -509,7 +509,7 @@ from langchain.agents import AgentExecutor
 # Get the prompt to use - you can modify this!
 prompt = hub.pull("hwchase17/openai-functions-agent")
 
-# You need to set OPENAI_API_KEY environment variable or pass it as argument `openai_api_key`.
+# You need to set OPENAI_API_KEY environment variable or pass it as argument `api_key`.
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 agent = create_openai_functions_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
