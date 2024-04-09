@@ -160,7 +160,7 @@ class ChatOpenAI(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatOpenAI
-            openai = ChatOpenAI(model_name="gpt-3.5-turbo")
+            openai = ChatOpenAI(model="gpt-3.5-turbo")
     """
 
     @property
