@@ -1,4 +1,5 @@
 """Test ElasticSearch functionality."""
+
 import logging
 import os
 import re
@@ -88,9 +89,9 @@ class TestElasticsearch:
             for pipeline_id, _ in response.items():
                 try:
                     es.ingest.delete_pipeline(id=pipeline_id)
-                    print(f"Deleted pipeline: {pipeline_id}")
+                    print(f"Deleted pipeline: {pipeline_id}")  # noqa: T201
                 except Exception as e:
-                    print(f"Pipeline error: {e}")
+                    print(f"Pipeline error: {e}")  # noqa: T201
         except Exception:
             pass
 

@@ -85,7 +85,7 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
     def _handle_request(self, payload: EmbaasEmbeddingsPayload) -> List[List[float]]:
         """Sends a request to the Embaas API and handles the response."""
         headers = {
-            "Authorization": f"Bearer {self.embaas_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {self.embaas_api_key.get_secret_value()}",  # type: ignore[union-attr]
             "Content-Type": "application/json",
         }
 

@@ -1,12 +1,12 @@
 """A simple progress bar for the console."""
+
 import threading
 from typing import Any, Dict, Optional, Sequence
 from uuid import UUID
 
+from langchain_core.callbacks import base as base_callbacks
 from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
-
-from langchain.callbacks import base as base_callbacks
 
 
 class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
@@ -36,7 +36,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         progress = self.counter / self.total
         arrow = "-" * int(round(progress * self.ncols) - 1) + ">"
         spaces = " " * (self.ncols - len(arrow))
-        print(f"\r[{arrow + spaces}] {self.counter}/{self.total}", end="")
+        print(f"\r[{arrow + spaces}] {self.counter}/{self.total}", end="")  # noqa: T201
 
     def on_chain_error(
         self,

@@ -1,7 +1,7 @@
 """**Prompt** is the input to the model.
 
 Prompt is often constructed
-from multiple components. Prompt classes and functions make constructing
+from multiple components and prompt values. Prompt classes and functions make constructing
  and working with prompts easy.
 
 **Class hierarchy:**
@@ -24,7 +24,11 @@ from multiple components. Prompt classes and functions make constructing
                                                                       SystemMessagePromptTemplate
 
 """  # noqa: E501
-from langchain_core.prompts.base import BasePromptTemplate, format_document
+from langchain_core.prompts.base import (
+    BasePromptTemplate,
+    aformat_document,
+    format_document,
+)
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseChatPromptTemplate,
@@ -67,6 +71,7 @@ __all__ = [
     "SystemMessagePromptTemplate",
     "load_prompt",
     "format_document",
+    "aformat_document",
     "check_valid_template",
     "get_template_variables",
     "jinja2_formatter",

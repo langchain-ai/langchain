@@ -133,7 +133,7 @@ class PGVecto_rs(VectorStore):
             Record.from_text(text, embedding, meta)
             for text, embedding, meta in zip(texts, embeddings, metadatas or [])
         ]
-        self._store.insert(records)
+        self._store.insert(records)  # type: ignore[union-attr]
         return [str(record.id) for record in records]
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
@@ -177,7 +177,7 @@ class PGVecto_rs(VectorStore):
             real_filter = meta_contains(filter)
         else:
             real_filter = filter
-        results = self._store.search(
+        results = self._store.search(  # type: ignore[union-attr]
             query_vector,
             distance_func_map[distance_func],
             k,

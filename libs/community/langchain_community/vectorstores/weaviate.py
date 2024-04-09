@@ -25,12 +25,12 @@ if TYPE_CHECKING:
     import weaviate
 
 
-def _default_schema(index_name: str) -> Dict:
+def _default_schema(index_name: str, text_key: str) -> Dict:
     return {
         "class": index_name,
         "properties": [
             {
-                "name": "text",
+                "name": text_key,
                 "dataType": ["text"],
             }
         ],
@@ -460,7 +460,7 @@ class Weaviate(VectorStore):
             client.batch.configure(batch_size=batch_size)
 
         index_name = index_name or f"LangChain_{uuid4().hex}"
-        schema = _default_schema(index_name)
+        schema = _default_schema(index_name, text_key)
         # check whether the index already exists
         if not client.schema.exists(index_name):
             client.schema.create_class(schema)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.utils import get_from_env
 
 if TYPE_CHECKING:
@@ -11,6 +12,9 @@ if TYPE_CHECKING:
 from langchain_core.embeddings import Embeddings
 
 
+@deprecated(
+    "0.1.11", alternative="Use class in langchain-elasticsearch package", pending=True
+)
 class ElasticsearchEmbeddings(Embeddings):
     """Elasticsearch embedding models.
 

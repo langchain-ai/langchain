@@ -40,7 +40,7 @@ class TiDBChatMessageHistory(BaseChatMessageHistory):
         self.session_id = session_id
         self.table_name = table_name
         self.earliest_time = earliest_time
-        self.cache = []
+        self.cache: List = []
 
         # Set up SQLAlchemy engine and session
         self.engine = create_engine(connection_string)
@@ -102,7 +102,7 @@ class TiDBChatMessageHistory(BaseChatMessageHistory):
             logger.error(f"Error loading messages to cache: {e}")
 
     @property
-    def messages(self) -> List[BaseMessage]:
+    def messages(self) -> List[BaseMessage]:  # type: ignore[override]
         """returns all messages"""
         if len(self.cache) == 0:
             self.reload_cache()

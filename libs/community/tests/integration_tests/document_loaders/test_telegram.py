@@ -33,7 +33,7 @@ def test_telegram_channel_loader_parsing() -> None:
     docs = loader.load()
 
     assert len(docs) == 1
-    print(docs[0].page_content)
+    print(docs[0].page_content)  # noqa: T201
     assert docs[0].page_content == (
         "Hello, world!.\nLLMs are awesome! Langchain is great. Telegram is the best!."
     )

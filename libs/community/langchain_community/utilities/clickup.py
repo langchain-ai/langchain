@@ -1,4 +1,5 @@
 """Util that calls clickup."""
+
 import json
 import warnings
 from dataclasses import asdict, dataclass, fields
@@ -308,10 +309,10 @@ class ClickupAPIWrapper(BaseModel):
         data = response.json()
 
         if "access_token" not in data:
-            print(f"Error: {data}")
+            print(f"Error: {data}")  # noqa: T201
             if "ECODE" in data and data["ECODE"] == "OAUTH_014":
                 url = ClickupAPIWrapper.get_access_code_url(oauth_client_id)
-                print(
+                print(  # noqa: T201
                     "You already used this code once. Generate a new one.",
                     f"Our best guess for the url to get a new code is:\n{url}",
                 )

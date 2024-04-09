@@ -1,4 +1,5 @@
 """Use to load blobs from the local file system."""
+
 from pathlib import Path
 from typing import Callable, Iterable, Iterator, Optional, Sequence, TypeVar, Union
 
@@ -11,6 +12,7 @@ def _make_iterator(
     length_func: Callable[[], int], show_progress: bool = False
 ) -> Callable[[Iterable[T]], Iterator[T]]:
     """Create a function that optionally wraps an iterable in tqdm."""
+    iterator: Callable[[Iterable[T]], Iterator[T]]
     if show_progress:
         try:
             from tqdm.auto import tqdm
@@ -28,7 +30,7 @@ def _make_iterator(
 
         iterator = _with_tqdm
     else:
-        iterator = iter  # type: ignore
+        iterator = iter
 
     return iterator
 
@@ -46,7 +48,7 @@ class FileSystemBlobLoader(BlobLoader):
         from langchain_community.document_loaders.blob_loaders import FileSystemBlobLoader
         loader = FileSystemBlobLoader("/path/to/directory")
         for blob in loader.yield_blobs():
-            print(blob)
+            print(blob)  # noqa: T201
     """  # noqa: E501
 
     def __init__(

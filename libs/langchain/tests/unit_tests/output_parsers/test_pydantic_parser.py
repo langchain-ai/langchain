@@ -1,4 +1,5 @@
 """Test PydanticOutputParser"""
+
 from enum import Enum
 from typing import Optional
 
@@ -53,26 +54,26 @@ DEF_EXPECTED_RESULT = TestModel(
 def test_pydantic_output_parser() -> None:
     """Test PydanticOutputParser."""
 
-    pydantic_parser: PydanticOutputParser[TestModel] = PydanticOutputParser(
+    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 
     result = pydantic_parser.parse(DEF_RESULT)
-    print("parse_result:", result)
+    print("parse_result:", result)  # noqa: T201
     assert DEF_EXPECTED_RESULT == result
 
 
 def test_pydantic_output_parser_fail() -> None:
     """Test PydanticOutputParser where completion result fails schema validation."""
 
-    pydantic_parser: PydanticOutputParser[TestModel] = PydanticOutputParser(
+    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 
     try:
         pydantic_parser.parse(DEF_RESULT_FAIL)
     except OutputParserException as e:
-        print("parse_result:", e)
+        print("parse_result:", e)  # noqa: T201
         assert "Failed to parse TestModel from completion" in str(e)
     else:
         assert False, "Expected OutputParserException"

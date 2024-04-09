@@ -21,6 +21,23 @@ from langchain_community.chat_models.baichuan import (
 )
 
 
+def test_initialization() -> None:
+    """Test chat model initialization."""
+
+    for model in [
+        ChatBaichuan(
+            model="Baichuan2-Turbo-192K", baichuan_api_key="test-api-key", timeout=40
+        ),
+        ChatBaichuan(
+            model="Baichuan2-Turbo-192K",
+            baichuan_api_key="test-api-key",
+            request_timeout=40,
+        ),
+    ]:
+        assert model.model == "Baichuan2-Turbo-192K"
+        assert model.request_timeout == 40
+
+
 def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
     result = _convert_message_to_dict(message)
@@ -91,7 +108,7 @@ def test_baichuan_key_masked_when_passed_from_env(
     monkeypatch.setenv("BAICHUAN_API_KEY", "test-api-key")
 
     chat = ChatBaichuan()
-    print(chat.baichuan_api_key, end="")
+    print(chat.baichuan_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
@@ -101,7 +118,7 @@ def test_baichuan_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     chat = ChatBaichuan(baichuan_api_key="test-api-key")
-    print(chat.baichuan_api_key, end="")
+    print(chat.baichuan_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 

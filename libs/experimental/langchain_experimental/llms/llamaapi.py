@@ -76,6 +76,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatLlamaAPI(BaseChatModel):
+    """Chat model using the Llama API."""
+
     client: Any  #: :meta private:
 
     def _generate(

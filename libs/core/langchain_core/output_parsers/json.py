@@ -3,15 +3,27 @@ from __future__ import annotations
 import json
 import re
 from json import JSONDecodeError
-from typing import Any, Callable, List, Optional, Type
+from typing import Any, Callable, List, Optional, Type, TypeVar, Union
 
 import jsonpatch  # type: ignore[import]
+import pydantic  # pydantic: ignore
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
+
+if PYDANTIC_MAJOR_VERSION < 2:
+    PydanticBaseModel = pydantic.BaseModel
+
+else:
+    from pydantic.v1 import BaseModel  # pydantic: ignore
+
+    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
+    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
+
+TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
@@ -35,7 +47,7 @@ def _custom_parser(multiline_string: str) -> str:
         multiline_string = multiline_string.decode()
 
     multiline_string = re.sub(
-        r'("action_input"\:\s*")(.*)(")',
+        r'("action_input"\:\s*")(.*?)(")',
         _replace_new_line,
         multiline_string,
         flags=re.DOTALL,
@@ -44,7 +56,7 @@ def _custom_parser(multiline_string: str) -> str:
     return multiline_string
 
 
-# Adapted from https://github.com/KillianLucas/open-interpreter/blob/main/interpreter/utils/parse_partial_json.py
+# Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
 # MIT License
 def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     """Parse a JSON string that may be missing closing braces.
@@ -137,26 +149,32 @@ def parse_json_markdown(
     Returns:
         The parsed JSON object as a Python dictionary.
     """
-    # Try to find JSON string within triple backticks
-    match = re.search(r"```(json)?(.*)```", json_string, re.DOTALL)
+    try:
+        return _parse_json(json_string, parser=parser)
+    except json.JSONDecodeError:
+        # Try to find JSON string within triple backticks
+        match = re.search(r"```(json)?(.*)", json_string, re.DOTALL)
 
-    # If no match found, assume the entire string is a JSON string
-    if match is None:
-        json_str = json_string
-    else:
-        # If match found, use the content within the backticks
-        json_str = match.group(2)
+        # If no match found, assume the entire string is a JSON string
+        if match is None:
+            json_str = json_string
+        else:
+            # If match found, use the content within the backticks
+            json_str = match.group(2)
+    return _parse_json(json_str, parser=parser)
 
+
+def _parse_json(
+    json_str: str, *, parser: Callable[[str], Any] = parse_partial_json
+) -> dict:
     # Strip whitespace and newlines from the start and end
-    json_str = json_str.strip()
+    json_str = json_str.strip().strip("`")
 
     # handle newlines and other special characters inside the returned value
     json_str = _custom_parser(json_str)
 
     # Parse the JSON string into a Python dictionary
-    parsed = parser(json_str)
-
-    return parsed
+    return parser(json_str)
 
 
 def parse_and_check_json_markdown(text: str, expected_keys: List[str]) -> dict:
@@ -194,10 +212,18 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Optional[Type[BaseModel]] = None
+    pydantic_object: Optional[Type[TBaseModel]] = None  # type: ignore
 
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
+
+    def _get_schema(self, pydantic_object: Type[TBaseModel]) -> dict[str, Any]:
+        if PYDANTIC_MAJOR_VERSION == 2:
+            if issubclass(pydantic_object, pydantic.BaseModel):
+                return pydantic_object.model_json_schema()
+            elif issubclass(pydantic_object, pydantic.v1.BaseModel):
+                return pydantic_object.schema()
+        return pydantic_object.schema()
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         text = result[0].text
@@ -211,7 +237,8 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             try:
                 return parse_json_markdown(text)
             except JSONDecodeError as e:
-                raise OutputParserException(f"Invalid json output: {text}") from e
+                msg = f"Invalid json output: {text}"
+                raise OutputParserException(msg, llm_output=text) from e
 
     def parse(self, text: str) -> Any:
         return self.parse_result([Generation(text=text)])
@@ -220,7 +247,8 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         if self.pydantic_object is None:
             return "Return a JSON object."
         else:
-            schema = self.pydantic_object.schema()
+            # Copy schema to avoid altering original Pydantic schema.
+            schema = {k: v for k, v in self._get_schema(self.pydantic_object).items()}
 
             # Remove extraneous fields.
             reduced_schema = schema

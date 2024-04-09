@@ -39,6 +39,7 @@ def import_mlflow() -> Any:
 
 
 def mlflow_callback_metrics() -> List[str]:
+    """Get the metrics to log to MLFlow."""
     return [
         "step",
         "starts",
@@ -59,6 +60,7 @@ def mlflow_callback_metrics() -> List[str]:
 
 
 def get_text_complexity_metrics() -> List[str]:
+    """Get the text complexity metrics from textstat."""
     return [
         "flesch_reading_ease",
         "flesch_kincaid_grade",
@@ -82,36 +84,34 @@ def get_text_complexity_metrics() -> List[str]:
 def analyze_text(
     text: str,
     nlp: Any = None,
+    textstat: Any = None,
 ) -> dict:
     """Analyze text using textstat and spacy.
 
     Parameters:
         text (str): The text to analyze.
         nlp (spacy.lang): The spacy language model to use for visualization.
+        textstat: The textstat library to use for complexity metrics calculation.
 
     Returns:
         (dict): A dictionary containing the complexity metrics and visualization
             files serialized to  HTML string.
     """
     resp: Dict[str, Any] = {}
-    textstat = import_textstat()
-    spacy = import_spacy()
-    text_complexity_metrics = {
-        key: getattr(textstat, key)(text) for key in get_text_complexity_metrics()
-    }
-    resp.update({"text_complexity_metrics": text_complexity_metrics})
-    resp.update(text_complexity_metrics)
+    if textstat is not None:
+        text_complexity_metrics = {
+            key: getattr(textstat, key)(text) for key in get_text_complexity_metrics()
+        }
+        resp.update({"text_complexity_metrics": text_complexity_metrics})
+        resp.update(text_complexity_metrics)
 
     if nlp is not None:
+        spacy = import_spacy()
         doc = nlp(text)
 
-        dep_out = spacy.displacy.render(  # type: ignore
-            doc, style="dep", jupyter=False, page=True
-        )
+        dep_out = spacy.displacy.render(doc, style="dep", jupyter=False, page=True)
 
-        ent_out = spacy.displacy.render(  # type: ignore
-            doc, style="ent", jupyter=False, page=True
-        )
+        ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
 
         text_visualizations = {
             "dependency_tree": dep_out,
@@ -229,7 +229,7 @@ class MlflowLogger:
             data, os.path.join(self.dir, f"{filename}.json"), run_id=self.run_id
         )
 
-    def table(self, name: str, dataframe) -> None:  # type: ignore
+    def table(self, name: str, dataframe: Any) -> None:
         """To log the input pandas dataframe as a html table"""
         self.html(dataframe.to_html(), f"table_{name}")
 
@@ -279,9 +279,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
     ) -> None:
         """Initialize callback handler."""
         import_pandas()
-        import_textstat()
         import_mlflow()
-        spacy = import_spacy()
         super().__init__()
 
         self.name = name
@@ -303,14 +301,25 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
 
         self.action_records: list = []
+        self.nlp = None
         try:
-            self.nlp = spacy.load("en_core_web_sm")
-        except OSError:
-            logger.warning(
-                "Run `python -m spacy download en_core_web_sm` "
-                "to download en_core_web_sm model for text visualization."
-            )
-            self.nlp = None
+            spacy = import_spacy()
+        except ImportError as e:
+            logger.warning(e.msg)
+        else:
+            try:
+                self.nlp = spacy.load("en_core_web_sm")
+            except OSError:
+                logger.warning(
+                    "Run `python -m spacy download en_core_web_sm` "
+                    "to download en_core_web_sm model for text visualization."
+                )
+
+        try:
+            self.textstat = import_textstat()
+        except ImportError as e:
+            logger.warning(e.msg)
+            self.textstat = None
 
         self.metrics = {key: 0 for key in mlflow_callback_metrics()}
 
@@ -400,15 +409,17 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                     analyze_text(
                         generation.text,
                         nlp=self.nlp,
+                        textstat=self.textstat,
                     )
                 )
-                complexity_metrics: Dict[str, float] = generation_resp.pop(
-                    "text_complexity_metrics"
-                )  # type: ignore  # noqa: E501
-                self.mlflg.metrics(
-                    complexity_metrics,
-                    step=self.metrics["step"],
-                )
+                if "text_complexity_metrics" in generation_resp:
+                    complexity_metrics: Dict[str, float] = generation_resp.pop(
+                        "text_complexity_metrics"
+                    )
+                    self.mlflg.metrics(
+                        complexity_metrics,
+                        step=self.metrics["step"],
+                    )
                 self.records["on_llm_end_records"].append(generation_resp)
                 self.records["action_records"].append(generation_resp)
                 self.mlflg.jsonf(resp, f"llm_end_{llm_ends}_generation_{idx}")
@@ -507,8 +518,9 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.records["action_records"].append(resp)
         self.mlflg.jsonf(resp, f"tool_start_{tool_starts}")
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        output = str(output)
         self.metrics["step"] += 1
         self.metrics["tool_ends"] += 1
         self.metrics["ends"] += 1
@@ -635,9 +647,11 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             {
                 "page_content": doc.page_content,
                 "metadata": {
-                    k: str(v)
-                    if not isinstance(v, list)
-                    else ",".join(str(x) for x in v)
+                    k: (
+                        str(v)
+                        if not isinstance(v, list)
+                        else ",".join(str(x) for x in v)
+                    )
                     for k, v in doc.metadata.items()
                 },
             }
@@ -678,7 +692,9 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             .dropna(axis=1)
             .rename({"step": "prompt_step"}, axis=1)
         )
-        complexity_metrics_columns = get_text_complexity_metrics()
+        complexity_metrics_columns = (
+            get_text_complexity_metrics() if self.textstat is not None else []
+        )
         visualizations_columns = (
             ["dependency_tree", "entities"] if self.nlp is not None else []
         )
@@ -716,7 +732,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         )
         return session_analysis_df
 
-    def _contain_llm_records(self):
+    def _contain_llm_records(self) -> bool:
         return bool(self.records["on_llm_start_records"])
 
     def flush_tracker(self, langchain_asset: Any = None, finish: bool = False) -> None:
@@ -744,15 +760,15 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                         langchain_asset.save_agent(langchain_asset_path)
                         self.mlflg.artifact(langchain_asset_path)
                     except AttributeError:
-                        print("Could not save model.")
+                        print("Could not save model.")  # noqa: T201
                         traceback.print_exc()
                         pass
                     except NotImplementedError:
-                        print("Could not save model.")
+                        print("Could not save model.")  # noqa: T201
                         traceback.print_exc()
                         pass
                 except NotImplementedError:
-                    print("Could not save model.")
+                    print("Could not save model.")  # noqa: T201
                     traceback.print_exc()
                     pass
         if finish:

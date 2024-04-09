@@ -5,13 +5,17 @@ from langchain_core.messages.base import (
     BaseMessageChunk,
     merge_content,
 )
+from langchain_core.utils._merge import merge_dicts
 
 
 class ToolMessage(BaseMessage):
-    """A Message for passing the result of executing a tool back to a model."""
+    """Message for passing the result of executing a tool back to a model."""
 
     tool_call_id: str
     """Tool call that this message is responding to."""
+    # TODO: Add is_error param?
+    # is_error: bool = False
+    # """Whether the tool errored."""
 
     type: Literal["tool"] = "tool"
 
@@ -25,7 +29,7 @@ ToolMessage.update_forward_refs()
 
 
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):
-    """A Tool Message chunk."""
+    """Tool Message chunk."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
@@ -47,9 +51,13 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
             return self.__class__(
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
+                additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
+                response_metadata=merge_dicts(
+                    self.response_metadata, other.response_metadata
+                ),
+                id=self.id,
             )
 
         return super().__add__(other)

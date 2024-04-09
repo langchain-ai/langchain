@@ -365,7 +365,6 @@ class BaseOpenAI(BaseLLM):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.dict()
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
@@ -375,6 +374,7 @@ class BaseOpenAI(BaseLLM):
                     if chunk.generation_info
                     else None,
                 )
+            yield chunk
 
     async def _astream(
         self,
@@ -391,7 +391,6 @@ class BaseOpenAI(BaseLLM):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.dict()
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
@@ -401,6 +400,7 @@ class BaseOpenAI(BaseLLM):
                     if chunk.generation_info
                     else None,
                 )
+            yield chunk
 
     def _generate(
         self,
@@ -770,6 +770,7 @@ class AzureOpenAI(BaseOpenAI):
         .. code-block:: python
 
             from langchain_community.llms import AzureOpenAI
+
             openai = AzureOpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 
@@ -1112,9 +1113,9 @@ class OpenAIChat(BaseLLM):
                 stream_resp = stream_resp.dict()
             token = stream_resp["choices"][0]["delta"].get("content", "")
             chunk = GenerationChunk(text=token)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(token, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -1132,9 +1133,9 @@ class OpenAIChat(BaseLLM):
                 stream_resp = stream_resp.dict()
             token = stream_resp["choices"][0]["delta"].get("content", "")
             chunk = GenerationChunk(text=token)
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(token, chunk=chunk)
+            yield chunk
 
     def _generate(
         self,

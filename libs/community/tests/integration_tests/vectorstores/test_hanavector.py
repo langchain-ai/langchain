@@ -1,4 +1,5 @@
 """Test HANA vectorstore functionality."""
+
 import os
 import random
 from typing import List
@@ -38,7 +39,7 @@ embedding = NormalizedFakeEmbeddings()
 
 
 class ConfigData:
-    def __init__(self):
+    def __init__(self):  # type: ignore[no-untyped-def]
         self.conn = None
         self.schema_name = ""
 
@@ -46,7 +47,7 @@ class ConfigData:
 test_setup = ConfigData()
 
 
-def generateSchemaName(cursor):
+def generateSchemaName(cursor):  # type: ignore[no-untyped-def]
     cursor.execute(
         "SELECT REPLACE(CURRENT_UTCDATE, '-', '') || '_' || BINTOHEX(SYSUUID) FROM "
         "DUMMY;"
@@ -59,7 +60,7 @@ def generateSchemaName(cursor):
     return f"VEC_{uid}"
 
 
-def setup_module(module):
+def setup_module(module):  # type: ignore[no-untyped-def]
     test_setup.conn = dbapi.connect(
         address=os.environ.get("HANA_DB_ADDRESS"),
         port=os.environ.get("HANA_DB_PORT"),
@@ -81,7 +82,7 @@ def setup_module(module):
         cur.close()
 
 
-def teardown_module(module):
+def teardown_module(module):  # type: ignore[no-untyped-def]
     try:
         cur = test_setup.conn.cursor()
         sql_str = f"DROP SCHEMA {test_setup.schema_name} CASCADE"
@@ -100,13 +101,13 @@ def texts() -> List[str]:
 @pytest.fixture
 def metadatas() -> List[str]:
     return [
-        {"start": 0, "end": 100, "quality": "good", "ready": True},
-        {"start": 100, "end": 200, "quality": "bad", "ready": False},
-        {"start": 200, "end": 300, "quality": "ugly", "ready": True},
+        {"start": 0, "end": 100, "quality": "good", "ready": True},  # type: ignore[list-item]
+        {"start": 100, "end": 200, "quality": "bad", "ready": False},  # type: ignore[list-item]
+        {"start": 200, "end": 300, "quality": "ugly", "ready": True},  # type: ignore[list-item]
     ]
 
 
-def drop_table(connection, table_name):
+def drop_table(connection, table_name):  # type: ignore[no-untyped-def]
     try:
         cur = connection.cursor()
         sql_str = f"DROP TABLE {table_name}"
@@ -230,7 +231,7 @@ def test_hanavector_table_with_wrong_typed_columns() -> None:
         )
         exception_occured = False
     except AttributeError as err:
-        print(err)
+        print(err)  # noqa: T201
         exception_occured = True
     assert exception_occured
 
@@ -825,7 +826,7 @@ def test_hanavector_filter_prepared_statement_params(
     rows = cur.fetchall()
     assert len(rows) == 1
 
-    query_value = "good"
+    query_value = "good"  # type: ignore[assignment]
     sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.quality') = ?"
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
@@ -839,14 +840,14 @@ def test_hanavector_filter_prepared_statement_params(
     assert len(rows) == 1
 
     # query_value = True
-    query_value = "true"
+    query_value = "true"  # type: ignore[assignment]
     sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
     assert len(rows) == 2
 
     # query_value = False
-    query_value = "false"
+    query_value = "false"  # type: ignore[assignment]
     sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
@@ -889,3 +890,37 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
     except ValueError:
         exception_occured = True
     assert exception_occured
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_table_mixed_case_names(texts: List[str]) -> None:
+    table_name = "MyTableName"
+    content_column = "TextColumn"
+    metadata_column = "MetaColumn"
+    vector_column = "VectorColumn"
+
+    vectordb = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        distance_strategy=DistanceStrategy.COSINE,
+        table_name=table_name,
+        content_column=content_column,
+        metadata_column=metadata_column,
+        vector_column=vector_column,
+    )
+
+    vectordb.add_texts(texts=texts)
+
+    # check that embeddings have been created in the table
+    number_of_texts = len(texts)
+    number_of_rows = -1
+    sql_str = f'SELECT COUNT(*) FROM "{table_name}"'
+    cur = test_setup.conn.cursor()
+    cur.execute(sql_str)
+    if cur.has_result_set():
+        rows = cur.fetchall()
+        number_of_rows = rows[0][0]
+    assert number_of_rows == number_of_texts
+
+    # check results of similarity search
+    assert texts[0] == vectordb.similarity_search(texts[0], 1)[0].page_content

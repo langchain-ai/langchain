@@ -5,13 +5,18 @@ EXPECTED_ALL = [
     "NetworkxEntityGraph",
     "Neo4jGraph",
     "NebulaGraph",
+    "BaseNeptuneGraph",
+    "NeptuneAnalyticsGraph",
     "NeptuneGraph",
+    "NeptuneRdfGraph",
     "KuzuGraph",
     "HugeGraph",
     "RdfGraph",
     "ArangoGraph",
     "FalkorDBGraph",
     "TigerGraph",
+    "OntotextGraphDBGraph",
+    "GremlinGraph",
 ]
 
 

@@ -71,9 +71,9 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
 
             from langchain_community.embeddings import SelfHostedHuggingFaceEmbeddings
             import runhouse as rh
-            model_name = "sentence-transformers/all-mpnet-base-v2"
+            model_id = "sentence-transformers/all-mpnet-base-v2"
             gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
-            hf = SelfHostedHuggingFaceEmbeddings(model_name=model_name, hardware=gpu)
+            hf = SelfHostedHuggingFaceEmbeddings(model_id=model_id, hardware=gpu)
     """
 
     client: Any  #: :meta private:

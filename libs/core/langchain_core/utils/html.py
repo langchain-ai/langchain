@@ -1,6 +1,9 @@
+import logging
 import re
 from typing import List, Optional, Sequence, Union
 from urllib.parse import urljoin, urlparse
+
+logger = logging.getLogger(__name__)
 
 PREFIXES_TO_IGNORE = ("javascript:", "mailto:", "#")
 SUFFIXES_TO_IGNORE = (
@@ -52,6 +55,7 @@ def extract_sub_links(
     pattern: Union[str, re.Pattern, None] = None,
     prevent_outside: bool = True,
     exclude_prefixes: Sequence[str] = (),
+    continue_on_failure: bool = False,
 ) -> List[str]:
     """Extract all links from a raw html string and convert into absolute paths.
 
@@ -63,25 +67,34 @@ def extract_sub_links(
         prevent_outside: If True, ignore external links which are not children
             of the base url.
         exclude_prefixes: Exclude any URLs that start with one of these prefixes.
-
+        continue_on_failure: If True, continue if parsing a specific link raises an
+            exception. Otherwise, raise the exception.
     Returns:
         List[str]: sub links
     """
     base_url_to_use = base_url if base_url is not None else url
     parsed_base_url = urlparse(base_url_to_use)
+    parsed_url = urlparse(url)
     all_links = find_all_links(raw_html, pattern=pattern)
     absolute_paths = set()
     for link in all_links:
-        parsed_link = urlparse(link)
-        # Some may be absolute links like https://to/path
-        if parsed_link.scheme == "http" or parsed_link.scheme == "https":
-            absolute_path = link
-        # Some may have omitted the protocol like //to/path
-        elif link.startswith("//"):
-            absolute_path = f"{urlparse(url).scheme}:{link}"
-        else:
-            absolute_path = urljoin(url, parsed_link.path)
-        absolute_paths.add(absolute_path)
+        try:
+            parsed_link = urlparse(link)
+            # Some may be absolute links like https://to/path
+            if parsed_link.scheme == "http" or parsed_link.scheme == "https":
+                absolute_path = link
+            # Some may have omitted the protocol like //to/path
+            elif link.startswith("//"):
+                absolute_path = f"{parsed_url.scheme}:{link}"
+            else:
+                absolute_path = urljoin(url, parsed_link.path)
+            absolute_paths.add(absolute_path)
+        except Exception as e:
+            if continue_on_failure:
+                logger.warning(f"Unable to load link {link}. Raised exception:\n\n{e}")
+                continue
+            else:
+                raise e
 
     results = []
     for path in absolute_paths:

@@ -10,7 +10,7 @@ from langchain_community.utilities.arcee import ArceeWrapper, DALMFilter
 
 
 class ArceeRetriever(BaseRetriever):
-    """Document retriever for Arcee's Domain Adapted Language Models (DALMs).
+    """Retriever for Arcee's Domain Adapted Language Models (DALMs).
 
     To use, set the ``ARCEE_API_KEY`` environment variable with your Arcee API key,
     or pass ``arcee_api_key`` as a named parameter.

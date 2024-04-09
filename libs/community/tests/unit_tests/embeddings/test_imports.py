@@ -2,7 +2,9 @@ from langchain_community.embeddings import __all__
 
 EXPECTED_ALL = [
     "OpenAIEmbeddings",
+    "AnyscaleEmbeddings",
     "AzureOpenAIEmbeddings",
+    "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
     "CohereEmbeddings",
     "DatabricksEmbeddings",
@@ -11,9 +13,12 @@ EXPECTED_ALL = [
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "InfinityEmbeddings",
+    "InfinityEmbeddingsLocal",
     "GradientEmbeddings",
     "JinaEmbeddings",
+    "LaserEmbeddings",
     "LlamaCppEmbeddings",
+    "LlamafileEmbeddings",
     "LLMRailsEmbeddings",
     "HuggingFaceHubEmbeddings",
     "MlflowAIGatewayEmbeddings",
@@ -44,6 +49,7 @@ EXPECTED_ALL = [
     "SpacyEmbeddings",
     "NLPCloudEmbeddings",
     "GPT4AllEmbeddings",
+    "GigaChatEmbeddings",
     "XinferenceEmbeddings",
     "LocalAIEmbeddings",
     "AwaEmbeddings",
@@ -57,6 +63,15 @@ EXPECTED_ALL = [
     "BookendEmbeddings",
     "VolcanoEmbeddings",
     "OCIGenAIEmbeddings",
+    "QuantizedBiEncoderEmbeddings",
+    "NeMoEmbeddings",
+    "SparkLLMTextEmbeddings",
+    "QuantizedBgeEmbeddings",
+    "PremAIEmbeddings",
+    "YandexGPTEmbeddings",
+    "OpenVINOEmbeddings",
+    "OpenVINOBgeEmbeddings",
+    "SolarEmbeddings",
 ]
 
 

@@ -109,6 +109,12 @@ class Bagel(VectorStore):
             import bagel  # noqa: F401
         except ImportError:
             raise ImportError("Please install bagel `pip install betabageldb`.")
+
+        if self._embedding_function and query_embeddings is None and query_texts:
+            texts = list(query_texts)
+            query_embeddings = self._embedding_function.embed_documents(texts)
+            query_texts = None
+
         return self._cluster.find(
             query_texts=query_texts,
             query_embeddings=query_embeddings,

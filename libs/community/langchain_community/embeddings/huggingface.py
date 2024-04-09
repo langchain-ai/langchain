@@ -44,11 +44,18 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Path to store models. 
     Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass to the model."""
+    """Keyword arguments to pass to the Sentence Transformer model, such as `device`,
+    `prompts`, `default_prompt_name`, `revision`, `trust_remote_code`, or `token`.
+    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer"""
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass when calling the `encode` method of the model."""
+    """Keyword arguments to pass when calling the `encode` method of the Sentence
+    Transformer model, such as `prompt_name`, `prompt`, `batch_size`, `precision`,
+    `normalize_embeddings`, and more.
+    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
     multi_process: bool = False
     """Run encode() on multiple GPUs."""
+    show_progress: bool = False
+    """Whether to show a progress bar."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -88,7 +95,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             embeddings = self.client.encode_multi_process(texts, pool)
             sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
         else:
-            embeddings = self.client.encode(texts, **self.encode_kwargs)
+            embeddings = self.client.encode(
+                texts, show_progress_bar=self.show_progress, **self.encode_kwargs
+            )
 
         return embeddings.tolist()
 
@@ -185,11 +194,12 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 
 
 class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
-    """HuggingFace BGE sentence_transformers embedding models.
+    """HuggingFace sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers`` python package installed.
+    To use Nomic, make sure the version of ``sentence_transformers`` >= 2.3.0.
 
-    Example:
+    Bge Example:
         .. code-block:: python
 
             from langchain_community.embeddings import HuggingFaceBgeEmbeddings
@@ -201,6 +211,24 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
                 model_name=model_name,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs
+            )
+     Nomic Example:
+        .. code-block:: python
+
+            from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+
+            model_name = "nomic-ai/nomic-embed-text-v1"
+            model_kwargs = {
+                'device': 'cpu',
+                'trust_remote_code':True
+                }
+            encode_kwargs = {'normalize_embeddings': True}
+            hf = HuggingFaceBgeEmbeddings(
+                model_name=model_name,
+                model_kwargs=model_kwargs,
+                encode_kwargs=encode_kwargs,
+                query_instruction = "search_query:",
+                embed_instruction = "search_document:"
             )
     """
 
@@ -216,6 +244,8 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """Keyword arguments to pass when calling the `encode` method of the model."""
     query_instruction: str = DEFAULT_QUERY_BGE_INSTRUCTION_EN
     """Instruction to use for embedding query."""
+    embed_instruction: str = ""
+    """Instruction to use for embedding document."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -249,7 +279,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        texts = [t.replace("\n", " ") for t in texts]
+        texts = [self.embed_instruction + t.replace("\n", " ") for t in texts]
         embeddings = self.client.encode(texts, **self.encode_kwargs)
         return embeddings.tolist()
 

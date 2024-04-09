@@ -146,7 +146,7 @@ class SemaDB(VectorStore):
                 headers=self.headers,
             )
             if response.status_code != 200:
-                print("HERE--", batch)
+                print("HERE--", batch)  # noqa: T201
                 raise ValueError(f"Error adding points: {response.text}")
             failed_ranges = response.json()["failedRanges"]
             if len(failed_ranges) > 0:

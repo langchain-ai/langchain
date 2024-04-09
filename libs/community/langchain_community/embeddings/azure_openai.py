@@ -1,4 +1,5 @@
 """Azure OpenAI embeddings wrapper."""
+
 from __future__ import annotations
 
 import os
@@ -14,7 +15,7 @@ from langchain_community.utils.openai import is_openai_v1
 
 
 @deprecated(
-    since="0.1.0",
+    since="0.0.9",
     removal="0.2.0",
     alternative_import="langchain_openai.AzureOpenAIEmbeddings",
 )

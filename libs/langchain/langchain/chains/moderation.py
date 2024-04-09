@@ -52,7 +52,7 @@ class OpenAIModerationChain(Chain):
             openai.api_key = openai_api_key
             if openai_organization:
                 openai.organization = openai_organization
-            values["client"] = openai.Moderation
+            values["client"] = openai.Moderation  # type: ignore
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

@@ -1,4 +1,5 @@
 """Test azure openai embeddings."""
+
 import os
 from typing import Any
 
@@ -22,7 +23,7 @@ def _get_embeddings(**kwargs: Any) -> AzureOpenAIEmbeddings:
     return AzureOpenAIEmbeddings(
         azure_deployment=DEPLOYMENT_NAME,
         api_version=OPENAI_API_VERSION,
-        openai_api_base=OPENAI_API_BASE,
+        azure_endpoint=OPENAI_API_BASE,
         openai_api_key=OPENAI_API_KEY,
         **kwargs,
     )
@@ -59,8 +60,8 @@ def test_azure_openai_embedding_documents_chunk_size() -> None:
     embedding = _get_embeddings()
     embedding.embedding_ctx_length = 8191
     output = embedding.embed_documents(documents)
-    # Max 16 chunks per batch on Azure OpenAI embeddings
-    assert embedding.chunk_size == 16
+    # Max 2048 chunks per batch on Azure OpenAI embeddings
+    assert embedding.chunk_size == 2048
     assert len(output) == 20
     assert all([len(out) == 1536 for out in output])
 
@@ -109,7 +110,7 @@ def test_azure_openai_embedding_with_empty_string() -> None:
         openai.AzureOpenAI(
             api_version=OPENAI_API_VERSION,
             api_key=OPENAI_API_KEY,
-            base_url=embedding.openai_api_base,
+            azure_endpoint=OPENAI_API_BASE,
             azure_deployment=DEPLOYMENT_NAME,
         )  # type: ignore
         .embeddings.create(input="", model="text-embedding-ada-002")

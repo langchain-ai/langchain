@@ -1,4 +1,5 @@
 """Test yamlOutputParser"""
+
 from enum import Enum
 from typing import Optional
 
@@ -74,7 +75,7 @@ def test_yaml_output_parser(result: str) -> None:
     )
 
     model = yaml_parser.parse(result)
-    print("parse_result:", result)
+    print("parse_result:", result)  # noqa: T201
     assert DEF_EXPECTED_RESULT == model
 
 
@@ -88,7 +89,7 @@ def test_yaml_output_parser_fail() -> None:
     try:
         yaml_parser.parse(DEF_RESULT_FAIL)
     except OutputParserException as e:
-        print("parse_result:", e)
+        print("parse_result:", e)  # noqa: T201
         assert "Failed to parse TestModel from completion" in str(e)
     else:
         assert False, "Expected OutputParserException"

@@ -19,8 +19,8 @@ def test_load_success() -> None:
 
     docs = loader.load()
     assert len(docs) == 1
-    print(docs[0].metadata)
-    print(docs[0].page_content)
+    print(docs[0].metadata)  # noqa: T201
+    print(docs[0].page_content)  # noqa: T201
     assert_docs(docs)
 
 
@@ -53,7 +53,7 @@ def test_load_returns_full_set_of_metadata() -> None:
         assert set(doc.metadata).issuperset(
             {"Published", "Title", "Authors", "Summary"}
         )
-        print(doc.metadata)
+        print(doc.metadata)  # noqa: T201
         assert len(set(doc.metadata)) > 4
 
 

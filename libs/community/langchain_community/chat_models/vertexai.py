@@ -120,11 +120,10 @@ def _parse_chat_history_gemini(
                 image = load_image_from_gcs(path=path, project=project)
             elif path.startswith("data:image/"):
                 # extract base64 component from image uri
-                try:
-                    encoded = re.search(r"data:image/\w{2,4};base64,(.*)", path).group(
-                        1
-                    )
-                except AttributeError:
+                encoded: Any = re.search(r"data:image/\w{2,4};base64,(.*)", path)
+                if encoded:
+                    encoded = encoded.group(1)
+                else:
                     raise ValueError(
                         "Invalid image uri. It should be in the format "
                         "data:image/<image_type>;base64,<base64_encoded_image>."
@@ -377,9 +376,10 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             chat = self._start_chat(history, **params)
             responses = chat.send_message_streaming(question.content, **params)
         for response in responses:
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=response.text))
             if run_manager:
-                run_manager.on_llm_new_token(response.text)
-            yield ChatGenerationChunk(message=AIMessageChunk(content=response.text))
+                run_manager.on_llm_new_token(response.text, chunk=chunk)
+            yield chunk
 
     def _start_chat(
         self, history: _ChatHistory, **kwargs: Any

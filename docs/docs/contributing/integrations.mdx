@@ -3,7 +3,7 @@ sidebar_position: 5
 ---
 # Contribute Integrations
 
-To begin, make sure you have all the dependencies outlined in guide on [Contributing Code](./code).
+To begin, make sure you have all the dependencies outlined in guide on [Contributing Code](/docs/contributing/code/).
 
 There are a few different places you can contribute integrations for LangChain:
 
@@ -14,19 +14,20 @@ For the most part, new integrations should be added to the Community package. Pa
 
 In the following sections, we'll walk through how to contribute to each of these packages from a fake company, `Parrot Link AI`.
 
-## Community Package
+## Community package
 
 The `langchain-community` package is in `libs/community` and contains most integrations.
 
-It is installed by users with `pip install langchain-community`, and exported members can be imported with code like 
+It can be installed with `pip install langchain-community`, and exported members can be imported with code like 
 
 ```python
-from langchain_community.chat_models import ParrotLinkLLM
-from langchain_community.llms import ChatParrotLink
+from langchain_community.chat_models import ChatParrotLink
+from langchain_community.llms import ParrotLinkLLM
 from langchain_community.vectorstores import ParrotLinkVectorStore
 ```
 
-The community package relies on manually-installed dependent packages, so you will see errors if you try to import a package that is not installed. In our fake example, if you tried to import `ParrotLinkLLM` without installing `parrot-link-sdk`, you will see an `ImportError` telling you to install it when trying to use it.
+The `community` package relies on manually-installed dependent packages, so you will see errors 
+if you try to import a package that is not installed. In our fake example, if you tried to import `ParrotLinkLLM` without installing `parrot-link-sdk`, you will see an `ImportError` telling you to install it when trying to use it.
 
 Let's say we wanted to implement a chat model for Parrot Link AI. We would create a new file in `libs/community/langchain_community/chat_models/parrot_link.py` with the following code:
 
@@ -39,7 +40,7 @@ class ChatParrotLink(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_parrot_link import ChatParrotLink
+            from langchain_community.chat_models import ChatParrotLink
 
             model = ChatParrotLink()
     """
@@ -56,9 +57,16 @@ And add documentation to:
 
 - `docs/docs/integrations/chat/parrot_link.ipynb`
 
-## Partner Packages
+## Partner package in LangChain repo
 
-Partner packages are in `libs/partners/*` and are installed by users with `pip install langchain-{partner}`, and exported members can be imported with code like 
+Partner packages can be hosted in the `LangChain` monorepo or in an external repo.
+
+Partner package in the `LangChain` repo is placed in `libs/partners/{partner}` 
+and the package source code is in `libs/partners/{partner}/langchain_{partner}`.
+
+A package is 
+installed by users with `pip install langchain-{partner}`, and the package members 
+can be imported with code like:
 
 ```python
 from langchain_{partner} import X
@@ -123,13 +131,49 @@ By default, this will include stubs for a Chat Model, an LLM, and/or a Vector St
 
 ### Write Unit and Integration Tests
 
-Some basic tests are generated in the tests/ directory. You should add more tests to cover your package's functionality.
+Some basic tests are presented in the `tests/` directory. You should add more tests to cover your package's functionality.
 
-For information on running and implementing tests, see the [Testing guide](./testing).
+For information on running and implementing tests, see the [Testing guide](/docs/contributing/testing/).
 
 ### Write documentation
 
-Documentation is generated from Jupyter notebooks in the `docs/` directory. You should move the generated notebooks to the relevant `docs/docs/integrations` directory in the monorepo root.
+Documentation is generated from Jupyter notebooks in the `docs/` directory. You should place the notebooks with examples
+to the relevant `docs/docs/integrations` directory in the monorepo root.
+
+### (If Necessary) Deprecate community integration
+
+Note: this is only necessary if you're migrating an existing community integration into 
+a partner package. If the component you're integrating is net-new to LangChain (i.e. 
+not already in the `community` package), you can skip this step.
+
+Let's pretend we migrated our `ChatParrotLink` chat model from the community package to 
+the partner package. We would need to deprecate the old model in the community package.
+
+We would do that by adding a `@deprecated` decorator to the old model as follows, in
+`libs/community/langchain_community/chat_models/parrot_link.py`.
+
+Before our change, our chat model might look like this:
+
+```python
+class ChatParrotLink(BaseChatModel):
+  ...
+```
+
+After our change, it would look like this:
+
+```python
+from langchain_core._api.deprecation import deprecated
+
+@deprecated(
+    since="0.0.<next community version>", 
+    removal="0.2.0", 
+    alternative_import="langchain_parrot_link.ChatParrotLink"
+)
+class ChatParrotLink(BaseChatModel):
+  ...
+```
+
+You should do this for *each* component that you're migrating to the partner package.
 
 ### Additional steps
 
@@ -143,3 +187,15 @@ Maintainer steps (Contributors should **not** do these):
 - [ ] set up pypi and test pypi projects
 - [ ] add credential secrets to Github Actions
 - [ ] add package to conda-forge
+
+## Partner package in external repo
+
+If you are creating a partner package in an external repo, you should follow the same steps as above, 
+but you will need to set up your own CI/CD and package management.
+
+Name your package as `langchain-{partner}-{integration}`.
+
+Still, you have to create the `libs/partners/{partner}-{integration}` folder in the `LangChain` monorepo
+and add a `README.md` file with a link to the external repo. 
+See this [example](https://github.com/langchain-ai/langchain/tree/master/libs/partners/google-genai).
+This allows keeping track of all the partner packages in the `LangChain` documentation.

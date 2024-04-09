@@ -9,7 +9,7 @@ from langchain_core.language_models import BaseLanguageModel
 
 
 class SyntheticDataGenerator(BaseModel):
-    """Generates synthetic data using the given LLM and few-shot template.
+    """Generate synthetic data using the given LLM and few-shot template.
 
     Utilizes the provided LLM to produce synthetic data based on the
     few-shot prompt template.

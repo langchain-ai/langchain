@@ -137,13 +137,13 @@ class GenericRequestsWrapper(BaseModel):
         else:
             raise ValueError(f"Invalid return type: {self.response_content_type}")
 
-    def _aget_resp_content(
+    async def _aget_resp_content(
         self, response: aiohttp.ClientResponse
     ) -> Union[str, Dict[str, Any]]:
         if self.response_content_type == "text":
-            return response.text()
+            return await response.text()
         elif self.response_content_type == "json":
-            return response.json()
+            return await response.json()
         else:
             raise ValueError(f"Invalid return type: {self.response_content_type}")
 

@@ -19,15 +19,15 @@ url = (
 )
 # Check if file is present in the current directory
 if not os.path.exists(file_name):
-    print(f"'{file_name}' not found. Downloading...")
+    print(f"'{file_name}' not found. Downloading...")  # noqa: T201
     # Download the file
     response = requests.get(url)
     response.raise_for_status()  # Raise an exception for HTTP errors
     with open(file_name, "wb") as f:
         f.write(response.content)
-    print(f"'{file_name}' has been downloaded.")
+    print(f"'{file_name}' has been downloaded.")  # noqa: T201
 else:
-    print(f"'{file_name}' already exists in the current directory.")
+    print(f"'{file_name}' already exists in the current directory.")  # noqa: T201
 
 # Add the LLM downloaded from HF
 model_path = file_name

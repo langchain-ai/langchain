@@ -465,13 +465,14 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         *,
         run_id: UUID,
         parent_run_id: Union[UUID, None] = None,
         tags: Union[List[str], None] = None,
         **kwargs: Any,
     ) -> None:
+        output = str(output)
         if self.__has_valid_config is False:
             return
         try:

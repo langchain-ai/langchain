@@ -1,4 +1,5 @@
 """ChatModel wrapper which returns user input as the response.."""
+
 from io import StringIO
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
@@ -30,9 +31,9 @@ def _display_messages(messages: List[BaseMessage]) -> None:
             width=10000,
             line_break=None,
         )
-        print("\n", "======= start of message =======", "\n\n")
-        print(yaml_string)
-        print("======= end of message =======", "\n\n")
+        print("\n", "======= start of message =======", "\n\n")  # noqa: T201
+        print(yaml_string)  # noqa: T201
+        print("======= end of message =======", "\n\n")  # noqa: T201
 
 
 def _collect_yaml_input(

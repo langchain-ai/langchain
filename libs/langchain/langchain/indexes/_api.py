@@ -109,8 +109,8 @@ class _HashedDocument(Document):
         cls, document: Document, *, uid: Optional[str] = None
     ) -> _HashedDocument:
         """Create a HashedDocument from a Document."""
-        return cls(
-            uid=uid,
+        return cls(  # type: ignore[call-arg]
+            uid=uid,  # type: ignore[arg-type]
             page_content=document.page_content,
             metadata=document.metadata,
         )
@@ -330,7 +330,7 @@ def index(
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
         if docs_to_index:
-            vector_store.add_documents(docs_to_index, ids=uids)
+            vector_store.add_documents(docs_to_index, ids=uids, batch_size=batch_size)
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
 
@@ -391,7 +391,7 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
 
 
 async def aindex(
-    docs_source: Union[Iterable[Document], AsyncIterator[Document]],
+    docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
     vector_store: VectorStore,
     *,
@@ -469,16 +469,22 @@ async def aindex(
         # implementation which just raises a NotImplementedError
         raise ValueError("Vectorstore has not implemented the delete method")
 
-    if isinstance(docs_source, BaseLoader):
-        raise NotImplementedError(
-            "Not supported yet. Please pass an async iterator of documents."
-        )
     async_doc_iterator: AsyncIterator[Document]
-
-    if hasattr(docs_source, "__aiter__"):
-        async_doc_iterator = docs_source  # type: ignore[assignment]
+    if isinstance(docs_source, BaseLoader):
+        try:
+            async_doc_iterator = docs_source.alazy_load()
+        except NotImplementedError:
+            # Exception triggered when neither lazy_load nor alazy_load are implemented.
+            # * The default implementation of alazy_load uses lazy_load.
+            # * The default implementation of lazy_load raises NotImplementedError.
+            # In such a case, we use the load method and convert it to an async
+            # iterator.
+            async_doc_iterator = _to_async_iterator(docs_source.load())
     else:
-        async_doc_iterator = _to_async_iterator(docs_source)
+        if hasattr(docs_source, "__aiter__"):
+            async_doc_iterator = docs_source  # type: ignore[assignment]
+        else:
+            async_doc_iterator = _to_async_iterator(docs_source)
 
     source_id_assigner = _get_source_id_assigner(source_id_key)
 
@@ -538,7 +544,9 @@ async def aindex(
         # Be pessimistic and assume that all vector store write will fail.
         # First write to vector store
         if docs_to_index:
-            await vector_store.aadd_documents(docs_to_index, ids=uids)
+            await vector_store.aadd_documents(
+                docs_to_index, ids=uids, batch_size=batch_size
+            )
             num_added += len(docs_to_index) - len(seen_docs)
             num_updated += len(seen_docs)
 
