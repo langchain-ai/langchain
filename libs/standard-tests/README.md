@@ -17,7 +17,7 @@ Pip:
 Poetry:
     
     ```bash
-    poetry add git+hhttps://github.com/langchain-ai/langchain.git#subdirectory=libs/standard-tests
+    poetry add git+https://github.com/langchain-ai/langchain.git#subdirectory=libs/standard-tests
     ```
 
 ## Usage
