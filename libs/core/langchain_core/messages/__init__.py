@@ -15,7 +15,13 @@
 
 """  # noqa: E501
 
-from langchain_core.messages.ai import AIMessage, AIMessageChunk
+from langchain_core.messages.ai import (
+    AIMessage,
+    AIMessageChunk,
+    InvalidToolCall,
+    ToolCall,
+    ToolCallChunk,
+)
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
@@ -50,9 +56,12 @@ __all__ = [
     "FunctionMessageChunk",
     "HumanMessage",
     "HumanMessageChunk",
+    "InvalidToolCall",
     "MessageLikeRepresentation",
     "SystemMessage",
     "SystemMessageChunk",
+    "ToolCall",
+    "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
     "_message_from_dict",
