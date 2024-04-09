@@ -1,5 +1,7 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, TypedDict
+from typing import Any, Dict, List, Literal, Optional
+
+from typing_extensions import TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,
