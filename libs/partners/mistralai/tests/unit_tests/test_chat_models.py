@@ -50,7 +50,7 @@ def test_mistralai_initialization() -> None:
         ),
         (
             AIMessage(content="Hello"),
-            dict(role="assistant", content="Hello", tool_calls=None),
+            dict(role="assistant", content="Hello", tool_calls=[]),
         ),
         (
             ChatMessage(role="assistant", content="Hello"),

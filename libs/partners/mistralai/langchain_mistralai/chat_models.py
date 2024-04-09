@@ -90,22 +90,15 @@ def _convert_mistral_chat_message_to_message(
         additional_kwargs["tool_calls"] = raw_tool_calls
         for raw_tool_call in raw_tool_calls:
             try:
-                parsed = parse_tool_call(raw_tool_call, return_id=False)
-                if parsed is not None:
-                    tool_calls.append(
-                        {
-                            **parsed,
-                            **{"id": None},
-                        },
-                    )
-                else:
-                    invalid_tool_calls.append(
-                        dict(
-                            make_invalid_tool_call(
-                                raw_tool_call, f"Malformed tool call: {raw_tool_call}"
-                            )
-                        )
-                    )
+                parsed: dict = cast(
+                    dict, parse_tool_call(raw_tool_call, return_id=False)
+                )
+                tool_calls.append(
+                    {
+                        **parsed,
+                        **{"id": None},
+                    },
+                )
             except Exception as e:
                 invalid_tool_calls.append(
                     dict(make_invalid_tool_call(raw_tool_call, str(e)))

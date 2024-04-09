@@ -102,18 +102,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
-                    parsed = parse_tool_call(raw_tool_call, return_id=True)
-                    if parsed is not None:
-                        tool_calls.append(parsed)
-                    else:
-                        invalid_tool_calls.append(
-                            dict(
-                                make_invalid_tool_call(
-                                    raw_tool_call,
-                                    f"Malformed tool call: {raw_tool_call}",
-                                )
-                            )
-                        )
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
                 except Exception as e:
                     invalid_tool_calls.append(
                         dict(make_invalid_tool_call(raw_tool_call, str(e)))
