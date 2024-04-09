@@ -1374,6 +1374,26 @@ class Runnable(Generic[Input, Output], ABC):
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
+
+        Example:
+
+        .. code-block:: python
+            from langchain_core.runnables import RunnableLambda
+            import time
+
+            def test_runnable(time_to_sleep : int):
+                time.sleep(time_to_sleep)
+
+            def fn_start(run_obj : Runnable):
+                print("start_time:", run_obj.start_time)
+
+            def fn_end(run_obj : Runnable):
+                print("end_time:", run_obj.end_time)
+
+            RunnableLambda(test_runnable).with_listeners(
+                on_start=fn_start,
+                on_end=fn_end
+                ).invoke(2)
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
