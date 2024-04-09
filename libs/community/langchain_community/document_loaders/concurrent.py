@@ -23,7 +23,7 @@ class ConcurrentLoader(GenericLoader):
     """Load and pars Documents concurrently."""
 
     def __init__(
-        self, blob_loader: BlobLoader, blob_parser: BaseBlobParser, num_workers: int = 4
+        self, blob_loader: BlobLoader, blob_parser: BaseBlobParser, num_workers: int = 4  # type: ignore[valid-type]
     ) -> None:
         super().__init__(blob_loader, blob_parser)
         self.num_workers = num_workers
@@ -37,7 +37,7 @@ class ConcurrentLoader(GenericLoader):
         ) as executor:
             futures = {
                 executor.submit(self.blob_parser.lazy_parse, blob)
-                for blob in self.blob_loader.yield_blobs()
+                for blob in self.blob_loader.yield_blobs()  # type: ignore[attr-defined]
             }
             for future in concurrent.futures.as_completed(futures):
                 yield from future.result()
@@ -69,7 +69,7 @@ class ConcurrentLoader(GenericLoader):
             num_workers: Max number of concurrent workers to use.
             parser_kwargs: Keyword arguments to pass to the parser.
         """
-        blob_loader = FileSystemBlobLoader(
+        blob_loader = FileSystemBlobLoader(  # type: ignore[attr-defined]
             path,
             glob=glob,
             exclude=exclude,
