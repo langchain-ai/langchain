@@ -73,8 +73,6 @@ class ToolCall(TypedDict):
         name: (str) the name of the tool to be called
         args: (dict) the arguments to the tool call
         id: (str) if provided, an identifier associated with the tool call
-        index: (int) if provided, the index of the tool call in a sequence
-            of content
     """
 
     name: str
