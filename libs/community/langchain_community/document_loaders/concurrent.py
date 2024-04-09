@@ -24,7 +24,7 @@ class ConcurrentLoader(GenericLoader):
 
     def __init__(
         self,
-        blob_loader: BlobLoader,
+        blob_loader: BlobLoader,  # type: ignore[valid-type]
         blob_parser: BaseBlobParser,
         num_workers: int = 4,  # type: ignore[valid-type]
     ) -> None:
@@ -72,7 +72,7 @@ class ConcurrentLoader(GenericLoader):
             num_workers: Max number of concurrent workers to use.
             parser_kwargs: Keyword arguments to pass to the parser.
         """
-        blob_loader = FileSystemBlobLoader(  # type: ignore[attr-defined]
+        blob_loader = FileSystemBlobLoader(  # type: ignore[attr-defined, misc]
             path,
             glob=glob,
             exclude=exclude,

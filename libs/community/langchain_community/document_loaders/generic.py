@@ -159,7 +159,7 @@ class GenericLoader(BaseLoader):
         Returns:
             A generic document loader.
         """
-        blob_loader = FileSystemBlobLoader(  # type: ignore[attr-defined]
+        blob_loader = FileSystemBlobLoader(  # type: ignore[attr-defined, misc]
             path,
             glob=glob,
             exclude=exclude,
