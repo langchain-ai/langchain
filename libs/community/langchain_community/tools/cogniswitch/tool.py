@@ -1,10 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
+
+
+class CogniswitchKnowledgeRequestToolInput(BaseTool):
+    """Input for the CogniswitchKnowledgeRequest."""
+
+    query: str = Field(description="Query for CogniswitchKnowledgeRequest")
+
 
 
 class CogniswitchKnowledgeRequest(BaseTool):
@@ -25,6 +33,7 @@ class CogniswitchKnowledgeRequest(BaseTool):
     OAI_token: str
     apiKey: str
     api_url = "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeRequest"
+    args_schema: Type[BaseModel] = CogniswitchKnowledgeRequestToolInput
 
     def _run(
         self,

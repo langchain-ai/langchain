@@ -12,6 +12,14 @@ from langchain_core.tools import BaseTool
 from langchain_community.tools.connery.models import Action, Parameter
 
 
+class ConneryActionInput(BaseTool):
+    """Input for the ConneryAction."""
+
+    kwargs: Dict[str, str] = Field(description="The input dictionary expected by the action")
+
+
+
+
 class ConneryAction(BaseTool):
     """
     A LangChain Tool wrapping a Connery Action.
@@ -19,7 +27,7 @@ class ConneryAction(BaseTool):
 
     name: str
     description: str
-    args_schema: Type[BaseModel]
+    args_schema: Type[BaseModel] = ConneryActionInput
 
     action: Action
     connery_service: Any
