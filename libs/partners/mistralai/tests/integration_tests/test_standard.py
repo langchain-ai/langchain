@@ -3,13 +3,13 @@
 from typing import Type
 
 import pytest
-from langchain_basetests.unit_tests import ChatModelUnitTests
+from langchain_basetests.integration_tests import ChatModelIntegrationTests
 from langchain_core.language_models import BaseChatModel
 
 from langchain_mistralai import ChatMistralAI
 
 
-class TestMistralStandard(ChatModelUnitTests):
+class TestMistralStandard(ChatModelIntegrationTests):
     @pytest.fixture
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatMistralAI
