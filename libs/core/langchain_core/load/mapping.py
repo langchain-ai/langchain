@@ -314,7 +314,7 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "generation",
         "GenerationChunk",
     ),
-    ()("langchain", "llms", "openai", "BaseOpenAI"): (
+    ("langchain", "llms", "openai", "BaseOpenAI"): (
         "langchain",
         "llms",
         "openai",
