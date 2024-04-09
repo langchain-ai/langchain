@@ -26,13 +26,15 @@ _module_lookup = {
     "AmazonKnowledgeBasesRetriever": "langchain_community.retrievers.bedrock",
     "ArceeRetriever": "langchain_community.retrievers.arcee",
     "ArxivRetriever": "langchain_community.retrievers.arxiv",
-    "AzureCognitiveSearchRetriever": "langchain_community.retrievers.azure_cognitive_search",  # noqa: E501
+    "AzureAISearchRetriever": "langchain_community.retrievers.azure_ai_search",  # noqa: E501
+    "AzureCognitiveSearchRetriever": "langchain_community.retrievers.azure_ai_search",  # noqa: E501
     "BM25Retriever": "langchain_community.retrievers.bm25",
     "BreebsRetriever": "langchain_community.retrievers.breebs",
     "ChaindeskRetriever": "langchain_community.retrievers.chaindesk",
     "ChatGPTPluginRetriever": "langchain_community.retrievers.chatgpt_plugin_retriever",
     "CohereRagRetriever": "langchain_community.retrievers.cohere_rag_retriever",
     "DocArrayRetriever": "langchain_community.retrievers.docarray",
+    "DriaRetriever": "langchain_community.retrievers.dria_index",
     "ElasticSearchBM25Retriever": "langchain_community.retrievers.elastic_search_bm25",
     "EmbedchainRetriever": "langchain_community.retrievers.embedchain",
     "GoogleCloudEnterpriseSearchRetriever": "langchain_community.retrievers.google_vertex_ai_search",  # noqa: E501

@@ -13,6 +13,9 @@ class ToolMessage(BaseMessage):
 
     tool_call_id: str
     """Tool call that this message is responding to."""
+    # TODO: Add is_error param?
+    # is_error: bool = False
+    # """Whether the tool errored."""
 
     type: Literal["tool"] = "tool"
 
@@ -54,6 +57,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
+                id=self.id,
             )
 
         return super().__add__(other)
