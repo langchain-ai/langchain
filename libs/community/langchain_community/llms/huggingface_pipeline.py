@@ -236,11 +236,6 @@ class HuggingFacePipeline(BaseLLM):
             **kwargs,
         )
 
-    @classmethod
-    def update_pipeline_kwargs(self, pipeline_kwargs: Optional[dict] = None) -> None:
-        """Update pipeline_kwargs after pipeline built."""
-        self.pipeline_kwargs = pipeline_kwargs
-
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
@@ -263,7 +258,7 @@ class HuggingFacePipeline(BaseLLM):
     ) -> LLMResult:
         # List to hold all results
         text_generations: List[str] = []
-        pipeline_kwargs = kwargs.get("pipeline_kwargs", self.pipeline_kwargs)
+        pipeline_kwargs = self.pipeline_kwargs or kwargs.get("pipeline_kwargs", {})
 
         for i in range(0, len(prompts), self.batch_size):
             batch_prompts = prompts[i : i + self.batch_size]
