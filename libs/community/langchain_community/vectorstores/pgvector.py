@@ -19,7 +19,7 @@ from typing import (
 
 import numpy as np
 import sqlalchemy
-from langchain_core._api import warn_deprecated, deprecated
+from langchain_core._api import deprecated, warn_deprecated
 from sqlalchemy import SQLColumnExpression, delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
