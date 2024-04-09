@@ -12,6 +12,8 @@ _module_lookup = {
     "MemgraphGraph": "langchain_community.graphs.memgraph_graph",
     "NebulaGraph": "langchain_community.graphs.nebula_graph",
     "Neo4jGraph": "langchain_community.graphs.neo4j_graph",
+    "BaseNeptuneGraph": "langchain_community.graphs.neptune_graph",
+    "NeptuneAnalyticsGraph": "langchain_community.graphs.neptune_graph",
     "NeptuneGraph": "langchain_community.graphs.neptune_graph",
     "NeptuneRdfGraph": "langchain_community.graphs.neptune_rdf_graph",
     "NetworkxEntityGraph": "langchain_community.graphs.networkx_graph",
