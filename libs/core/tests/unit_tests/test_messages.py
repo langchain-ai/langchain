@@ -290,6 +290,17 @@ def test_message_chunk_to_message() -> None:
         FunctionMessageChunk(name="hello", content="I am")
     ) == FunctionMessage(name="hello", content="I am")
 
+    chunk = AIMessageChunk(
+        content="I am",
+        tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
+    )
+    expected = AIMessage(
+        content="I am",
+        tool_calls=[{"name": "tool1", "args": {}, "id": "1"}],
+    )
+    assert message_chunk_to_message(chunk) == expected
+    assert(AIMessage(**expected.dict()) == expected)
+
 
 def test_tool_calls_merge() -> None:
     chunks: List[dict] = [
