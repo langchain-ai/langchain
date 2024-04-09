@@ -29,7 +29,7 @@ def test_loads_openai_llm() -> None:
 
 @pytest.mark.requires("openai", "langchain_openai")
 def test_loads_llmchain() -> None:
-    from langchain_openai import ChatOpenAI, OpenAI
+    from langchain_openai import OpenAI
 
     llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
@@ -72,8 +72,6 @@ def test_loads_llmchain_env() -> None:
 
 @pytest.mark.requires("openai")
 def test_loads_llmchain_with_non_serializable_arg() -> None:
-    from langchain_community import __version__
-
     llm = CommunityOpenAI(  # type: ignore[call-arg]
         model="davinci",
         temperature=0.5,
