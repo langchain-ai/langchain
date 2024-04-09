@@ -83,11 +83,6 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @root_validator()
     def init_tool_calls(cls, values: dict) -> dict:
-        if values["tool_calls"]:
-            raise ValueError(
-                "tool_calls cannot be set on AIMessageChunk, it is derived "
-                "from tool_call_chunks."
-            )
         if not values["tool_call_chunks"]:
             values["tool_calls"] = values["tool_call_chunks"]
             return values

@@ -299,7 +299,8 @@ def test_message_chunk_to_message() -> None:
         tool_calls=[{"name": "tool1", "args": {}, "id": "1"}],
     )
     assert message_chunk_to_message(chunk) == expected
-    assert(AIMessage(**expected.dict()) == expected)
+    assert AIMessage(**expected.dict()) == expected
+    assert AIMessageChunk(**chunk.dict()) == chunk
 
 
 def test_tool_calls_merge() -> None:
