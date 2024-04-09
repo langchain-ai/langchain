@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
-from langchain_core._api import deprecated
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import (
     JsonKeyOutputFunctionsParser,
