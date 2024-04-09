@@ -24,10 +24,10 @@ There are two ways to authenticate using your Fireworks API key:
     os.environ["FIREWORKS_API_KEY"] = "<KEY>"
     ```
 
-2.  Setting `fireworks_api_key` field in the Fireworks LLM module.
+2.  Setting `api_key` field in the Fireworks LLM module.
 
     ```python
-    llm = Fireworks(fireworks_api_key="<KEY>")
+    llm = Fireworks(api_key="<KEY>")
     ```
 
 ## Using the Fireworks LLM module
@@ -39,7 +39,7 @@ will work the mixtral-8x7b-instruct model.
 from langchain_fireworks import Fireworks 
 
 llm = Fireworks(
-    fireworks_api_key="<KEY>",
+    api_key="<KEY>",
     model="accounts/fireworks/models/mixtral-8x7b-instruct",
     max_tokens=256)
 llm("Name 3 sports.")
