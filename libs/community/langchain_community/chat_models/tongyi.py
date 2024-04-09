@@ -32,6 +32,8 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
+    ToolMessageChunk,
 )
 from langchain_core.outputs import (
     ChatGeneration,
@@ -70,14 +72,36 @@ def convert_dict_to_message(
             else HumanMessage(content=content)
         )
     elif role == "assistant":
+        additional_kwargs: Dict = {}
+        if tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = tool_calls
         return (
-            AIMessageChunk(content=content) if is_chunk else AIMessage(content=content)
+            AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+            if is_chunk
+            else AIMessage(content=content, additional_kwargs=additional_kwargs)
         )
     elif role == "system":
         return (
             SystemMessageChunk(content=content)
             if is_chunk
             else SystemMessage(content=content)
+        )
+    elif role == "tool":
+        additional_kwargs = {}
+        if "name" in _dict:
+            additional_kwargs["name"] = _dict["name"]
+        return (
+            ToolMessageChunk(
+                content=_dict.get("content", ""),
+                tool_call_id=_dict.get("tool_call_id"),
+                additional_kwargs=additional_kwargs,
+            )
+            if is_chunk
+            else ToolMessage(
+                content=_dict.get("content", ""),
+                tool_call_id=_dict.get("tool_call_id"),
+                additional_kwargs=additional_kwargs,
+            )
         )
     else:
         return (
@@ -96,6 +120,12 @@ def convert_message_chunk_to_message(message_chunk: BaseMessageChunk) -> BaseMes
         return SystemMessage(content=message_chunk.content)
     elif isinstance(message_chunk, ChatMessageChunk):
         return ChatMessage(role=message_chunk.role, content=message_chunk.content)
+    elif isinstance(message_chunk, ToolMessageChunk):
+        return ToolMessage(
+            content=message_chunk.content,
+            tool_call_id=message_chunk.tool_call_id,
+            name=message_chunk.name,
+        )
     else:
         raise TypeError(f"Got unknown type {message_chunk}")
 
@@ -110,8 +140,16 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
+        }
     else:
         raise TypeError(f"Got unknown type {message}")
     return message_dict
@@ -342,9 +380,29 @@ class ChatTongyi(BaseChatModel):
         params: Dict[str, Any] = self._invocation_params(
             messages=messages, stop=stop, stream=True, **kwargs
         )
+        prev_msg_content = ''
+        
         for stream_resp, is_last_chunk in generate_with_last_element_mark(
             self.stream_completion_with_retry(**params)
         ):
+            choice = stream_resp["output"]["choices"][0]
+            message = choice["message"]
+            if (
+                choice["finish_reason"] == "null"
+                and message["content"] == ""
+                and not "tool_calls" in message
+            ):
+                continue
+            
+            # If it's a tool call response, wait until it's finished
+            if "tool_calls" in message and choice["finish_reason"] == "null":
+                continue
+
+            # If we are streaming without `incremental_output = True`, we need to chop off the previous message content
+            if(not params.get('incremental_output', False)):
+                message['content'] = message['content'].replace(prev_msg_content, '')
+                prev_msg_content += message['content']
+
             chunk = ChatGenerationChunk(
                 **self._chat_generation_from_qwen_resp(
                     stream_resp, is_chunk=True, is_last_chunk=is_last_chunk
@@ -382,14 +440,12 @@ class ChatTongyi(BaseChatModel):
         params = {**self._default_params, **kwargs}
         if stop is not None:
             params["stop"] = stop
-        if params.get("stream"):
+        # According to the Tongyi official docs, `incremental_output` with `tools` is not supported yet
+        if params.get("stream") and not params.get("tools"):
             params["incremental_output"] = True
 
         message_dicts = [convert_message_to_dict(m) for m in messages]
 
-        # According to the docs, the last message should be a `user` message
-        if message_dicts[-1]["role"] != "user":
-            raise ValueError("Last message should be user message.")
         # And the `system` message should be the first message if present
         system_message_indices = [
             i for i, m in enumerate(message_dicts) if m["role"] == "system"
