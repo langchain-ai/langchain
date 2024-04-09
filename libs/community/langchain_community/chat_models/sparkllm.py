@@ -141,7 +141,7 @@ class ChatSparkLLM(BaseChatModel):
     spark_llm_domain: Optional[str] = None
     spark_user_id: str = "lc_user"
     streaming: bool = False
-    request_timeout: int = 30
+    request_timeout: int = Field(30, alias="timeout")
     temperature: float = 0.5
     top_k: int = 4
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
