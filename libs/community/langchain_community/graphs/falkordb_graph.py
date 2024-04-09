@@ -93,7 +93,7 @@ class FalkorDBGraph(GraphStore):
         username: Optional[str] = None,
         password: Optional[str] = None,
         ssl: bool = False,
-    ):
+    ) -> None:
         from falkordb import FalkorDB
 
         try:
@@ -105,7 +105,7 @@ class FalkorDBGraph(GraphStore):
 
         self._graph = self._driver.select_graph(database)
 
-    @deprecated("0.0.3", alternative="__init_falkordb_connection")
+    @deprecated("0.0.31", alternative="__init_falkordb_connection")
     def __init_redis_connection(
         self,
         database: str,
@@ -114,7 +114,7 @@ class FalkorDBGraph(GraphStore):
         username: Optional[str] = None,
         password: Optional[str] = None,
         ssl: bool = False,
-    ):
+    ) -> None:
         import redis
         from redis.commands.graph import Graph
 
