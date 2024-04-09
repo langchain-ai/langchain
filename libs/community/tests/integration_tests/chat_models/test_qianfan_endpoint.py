@@ -94,7 +94,7 @@ def test_initialization() -> None:
         QianfanChatEndpoint(model="BLOOMZ-7B", request_timeout=40),
     ]:
         assert model.model == "BLOOMZ-7B"
-        assert model.timeout == 40
+        assert model.request_timeout == 40
 
 
 def test_default_call() -> None:
