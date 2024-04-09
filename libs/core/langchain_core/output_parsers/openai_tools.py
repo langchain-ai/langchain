@@ -116,7 +116,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
                 "This output parser can only be used with a chat generation."
             )
         message = generation.message
-        if isinstance(message, AIMessage) and message.tool_calls is not None:
+        if isinstance(message, AIMessage) and message.tool_calls:
             tool_calls = [dict(tc) for tc in message.tool_calls]
             for tool_call in tool_calls:
                 if not self.return_id:

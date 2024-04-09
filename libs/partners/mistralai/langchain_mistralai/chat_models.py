@@ -84,10 +84,10 @@ def _convert_mistral_chat_message_to_message(
     content = cast(str, _message["content"])
 
     additional_kwargs: Dict = {}
+    tool_calls = []
+    invalid_tool_calls = []
     if raw_tool_calls := _message.get("tool_calls"):
         additional_kwargs["tool_calls"] = raw_tool_calls
-        tool_calls: list = []
-        invalid_tool_calls: list = []
         for raw_tool_call in raw_tool_calls:
             try:
                 parsed = parse_tool_call(raw_tool_call, return_id=False)
@@ -110,14 +110,6 @@ def _convert_mistral_chat_message_to_message(
                 invalid_tool_calls.append(
                     dict(make_invalid_tool_call(raw_tool_call, str(e)))
                 )
-        ### TODO ###
-        if not invalid_tool_calls:
-            invalid_tool_calls = None  # type: ignore
-        if not tool_calls:
-            tool_calls = None  # type: ignore
-    else:
-        tool_calls = None  # type: ignore
-        invalid_tool_calls = None  # type: ignore
     return AIMessage(
         content=content,
         additional_kwargs=additional_kwargs,
@@ -185,9 +177,9 @@ def _convert_delta_to_message_chunk(
                     for rtc in raw_tool_calls
                 ]
             except KeyError:
-                tool_call_chunks = None
+                pass
         else:
-            tool_call_chunks = None
+            tool_call_chunks = []
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -220,7 +212,7 @@ def _convert_message_to_mistral_chat_message(
                 for tc in message.additional_kwargs["tool_calls"]
             ]
         else:
-            tool_calls = None
+            tool_calls = []
         return {
             "role": "assistant",
             "content": message.content,

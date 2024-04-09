@@ -1,6 +1,6 @@
 import warnings
 from json import JSONDecodeError
-from typing import Any, List, Literal, Optional
+from typing import Any, List, Literal
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -29,9 +29,9 @@ class AIMessage(BaseMessage):
         conversation.
     """
 
-    tool_calls: Optional[List[ToolCall]] = None
+    tool_calls: List[ToolCall] = []
     """If provided, tool calls associated with the message."""
-    invalid_tool_calls: Optional[List[InvalidToolCall]] = None
+    invalid_tool_calls: List[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
 
     type: Literal["ai"] = "ai"
@@ -73,7 +73,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # non-chunk variant.
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment] # noqa: E501
 
-    tool_call_chunks: Optional[List[ToolCallChunk]] = None
+    tool_call_chunks: List[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
     @classmethod
@@ -83,7 +83,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @root_validator()
     def init_tool_calls(cls, values: dict) -> dict:
-        if values["tool_calls"] is not None:
+        if values["tool_calls"]:
             raise ValueError(
                 "tool_calls cannot be set on AIMessageChunk, it is derived "
                 "from tool_call_chunks."
@@ -140,9 +140,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         for rtc in raw_tool_calls
                     ]
                 else:
-                    tool_call_chunks = None
+                    tool_call_chunks = []
             else:
-                tool_call_chunks = None
+                tool_call_chunks = []
 
             return self.__class__(
                 example=self.example,
