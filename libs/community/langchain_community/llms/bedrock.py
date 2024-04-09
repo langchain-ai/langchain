@@ -134,6 +134,9 @@ class LLMInputOutputAdapter:
         elif provider == "amazon":
             input_body = dict()
             input_body["inputText"] = prompt
+            if "amazon-bedrock-guardrailDetails" in model_kwargs:
+                input_body["amazon-bedrock-guardrailDetails"] = model_kwargs["amazon-bedrock-guardrailDetails"]
+                del  model_kwargs["amazon-bedrock-guardrailDetails"]
             input_body["textGenerationConfig"] = {**model_kwargs}
         else:
             input_body["inputText"] = prompt
