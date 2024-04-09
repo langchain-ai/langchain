@@ -907,23 +907,23 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
+        tool_calls = []
+        invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
-            tool_calls = []
             for raw_tool_call in raw_tool_calls:
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
                 except Exception as e:
-                    tool_calls.append(
-                        make_invalid_tool_call(raw_tool_call, str(e)).dict()
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
                     )
-        else:
-            tool_calls = None
         return AIMessage(
             content=content,
             id=id_,
             additional_kwargs=additional_kwargs,
             tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
         )
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
