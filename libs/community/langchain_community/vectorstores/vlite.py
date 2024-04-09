@@ -1,7 +1,9 @@
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 from uuid import uuid4
-from langchain.docstore.document import Document
+
+from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStore
+
 from vlite import VLite as Vlite
 from vlite.utils import process_file
 
