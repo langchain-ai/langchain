@@ -18,13 +18,13 @@ DEFAULT_URL_SUFFIX = "search.windows.net"
 """Default URL Suffix for endpoint connection - commercial cloud"""
 
 
-class AzureCognitiveSearchRetriever(BaseRetriever):
-    """`Azure Cognitive Search` service retriever."""
+class AzureAISearchRetriever(BaseRetriever):
+    """`Azure AI Search` service retriever."""
 
     service_name: str = ""
-    """Name of Azure Cognitive Search service"""
+    """Name of Azure AI Search service"""
     index_name: str = ""
-    """Name of Index inside Azure Cognitive Search service"""
+    """Name of Index inside Azure AI Search service"""
     api_key: str = ""
     """API Key. Both Admin and Query keys work, but for reading data it's
     recommended to use a Query key."""
@@ -45,27 +45,30 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that service name, index name and api key exists in environment."""
         values["service_name"] = get_from_dict_or_env(
-            values, "service_name", "AZURE_COGNITIVE_SEARCH_SERVICE_NAME"
+            values, "service_name", "AZURE_AI_SEARCH_SERVICE_NAME"
         )
         values["index_name"] = get_from_dict_or_env(
-            values, "index_name", "AZURE_COGNITIVE_SEARCH_INDEX_NAME"
+            values, "index_name", "AZURE_AI_SEARCH_INDEX_NAME"
         )
         values["api_key"] = get_from_dict_or_env(
-            values, "api_key", "AZURE_COGNITIVE_SEARCH_API_KEY"
+            values, "api_key", "AZURE_AI_SEARCH_API_KEY"
         )
         return values
 
     def _build_search_url(self, query: str) -> str:
-        url_suffix = get_from_env(
-            "", "AZURE_COGNITIVE_SEARCH_URL_SUFFIX", DEFAULT_URL_SUFFIX
-        )
+        url_suffix = get_from_env("", "AZURE_AI_SEARCH_URL_SUFFIX", DEFAULT_URL_SUFFIX)
         if url_suffix in self.service_name and "https://" in self.service_name:
             base_url = f"{self.service_name}/"
         elif url_suffix in self.service_name and "https://" not in self.service_name:
             base_url = f"https://{self.service_name}/"
         elif url_suffix not in self.service_name and "https://" in self.service_name:
             base_url = f"{self.service_name}.{url_suffix}/"
+        elif (
+            url_suffix not in self.service_name and "https://" not in self.service_name
+        ):
+            base_url = f"https://{self.service_name}.{url_suffix}/"
         else:
+            # pass to Azure to throw a specific error
             base_url = self.service_name
         endpoint_path = f"indexes/{self.index_name}/docs?api-version={self.api_version}"
         top_param = f"&$top={self.top_k}" if self.top_k else ""
@@ -119,3 +122,11 @@ class AzureCognitiveSearchRetriever(BaseRetriever):
             Document(page_content=result.pop(self.content_key), metadata=result)
             for result in search_results
         ]
+
+
+# For backwards compatibility
+class AzureCognitiveSearchRetriever(AzureAISearchRetriever):
+    """`Azure Cognitive Search` service retriever.
+    This version of the retriever will soon be
+    depreciated. Please switch to AzureAISearchRetriever
+    """

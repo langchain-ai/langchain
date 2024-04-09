@@ -17,3 +17,20 @@ def test_api_key_masked_when_passed_via_constructor(
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
+
+
+def test_specifying_adapter_id_argument() -> None:
+    llm = Predibase(model="my_llm", predibase_api_key="secret-api-key")
+    assert not llm.adapter_id
+
+    llm = Predibase(
+        model="my_llm", predibase_api_key="secret-api-key", adapter_id="my-hf-adapter"
+    )
+    assert llm.adapter_id == "my-hf-adapter"
+
+    llm = Predibase(
+        model="my_llm",
+        adapter_id="my-other-hf-adapter",
+        predibase_api_key="secret-api-key",
+    )
+    assert llm.adapter_id == "my-other-hf-adapter"
