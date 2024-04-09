@@ -114,6 +114,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.mlflow_ai_gateway import (
         ChatMLflowAIGateway,  # noqa: F401
     )
+    from langchain_community.chat_models.mlx import (
+        ChatMLX,  # noqa: F401
+    )
     from langchain_community.chat_models.ollama import (
         ChatOllama,  # noqa: F401
     )
@@ -177,6 +180,7 @@ __all__ = [
     "ChatKonko",
     "ChatLiteLLM",
     "ChatLiteLLMRouter",
+    "ChatMLX",
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
@@ -200,10 +204,11 @@ __all__ = [
     "MiniMaxChat",
     "PaiEasChatEndpoint",
     "PromptLayerChatOpenAI",
-    "SolarChat",
     "QianfanChatEndpoint",
+    "SolarChat",
     "VolcEngineMaasChat",
 ]
+
 
 _module_lookup = {
     "AzureChatOpenAI": "langchain_community.chat_models.azure_openai",
