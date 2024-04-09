@@ -1,6 +1,9 @@
 from typing import Any, Dict, Iterator, List, Optional
+
 from langchain_core.documents import Document
+
 from langchain_community.document_loaders.base import BaseLoader
+
 
 class GlueCatalogLoader(BaseLoader):
     """Load table schemas from AWS Glue.
@@ -14,12 +17,18 @@ class GlueCatalogLoader(BaseLoader):
     If a specific AWS profile is required, it can be specified and will be used to establish the session.
     """
 
-    def __init__(self, database: str, profile_name: Optional[str] = None, table_filter: Optional[List[str]] = None):
+    def __init__(
+        self,
+        database: str,
+        profile_name: Optional[str] = None,
+        table_filter: Optional[List[str]] = None,
+    ):
         """Initialize Glue database loader.
 
         Args:
             database: The name of the Glue database from which to load table schemas.
             profile_name: Optional. The name of the AWS profile to use for credentials.
+            table_filter: Optional. The list of the table to to filter.
         """
         self.database = database
         self.profile_name = profile_name
@@ -36,9 +45,14 @@ class GlueCatalogLoader(BaseLoader):
             ValueError: If there is an issue with AWS session/client initialization.
         """
         import boto3
+
         try:
-            session = boto3.Session(profile_name=self.profile_name) if self.profile_name else boto3.Session()
-            return session.client('glue')
+            session = (
+                boto3.Session(profile_name=self.profile_name)
+                if self.profile_name
+                else boto3.Session()
+            )
+            return session.client("glue")
         except Exception as e:
             raise ValueError("Issue with AWS session/client initialization.") from e
 
@@ -48,12 +62,12 @@ class GlueCatalogLoader(BaseLoader):
         Returns:
             A list of table names.
         """
-        paginator = self.glue_client.get_paginator('get_tables')
+        paginator = self.glue_client.get_paginator("get_tables")
         table_names = []
         for page in paginator.paginate(DatabaseName=self.database):
-            for table in page['TableList']:
-                if self.table_filter is None or table['Name'] in self.table_filter:
-                    table_names.append(table['Name'])
+            for table in page["TableList"]:
+                if self.table_filter is None or table["Name"] in self.table_filter:
+                    table_names.append(table["Name"])
         return table_names
 
     def _fetch_table_schema(self, table_name: str) -> Dict[str, str]:
@@ -65,9 +79,11 @@ class GlueCatalogLoader(BaseLoader):
         Returns:
             A dictionary mapping column names to their data types.
         """
-        response = self.glue_client.get_table(DatabaseName=self.database, Name=table_name)
-        columns = response['Table']['StorageDescriptor']['Columns']
-        return {col['Name']: col['Type'] for col in columns}
+        response = self.glue_client.get_table(
+            DatabaseName=self.database, Name=table_name
+        )
+        columns = response["Table"]["StorageDescriptor"]["Columns"]
+        return {col["Name"]: col["Type"] for col in columns}
 
     def lazy_load(self) -> Iterator[Document]:
         """Lazily load table schemas as Document objects.
@@ -78,6 +94,10 @@ class GlueCatalogLoader(BaseLoader):
         table_names = self._fetch_tables()
         for table_name in table_names:
             schema = self._fetch_table_schema(table_name)
-            page_content = f"Table: {table_name}\nSchema:\n" + "\n".join(f"{col}: {dtype}" for col, dtype in schema.items())
-            doc = Document(page_content=page_content, metadata={"table_name": table_name})
+            page_content = f"Table: {table_name}\nSchema:\n" + "\n".join(
+                f"{col}: {dtype}" for col, dtype in schema.items()
+            )
+            doc = Document(
+                page_content=page_content, metadata={"table_name": table_name}
+            )
             yield doc
