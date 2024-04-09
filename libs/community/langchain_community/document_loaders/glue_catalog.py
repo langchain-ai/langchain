@@ -14,7 +14,7 @@ class GlueCatalogLoader(BaseLoader):
     If a specific AWS profile is required, it can be specified and will be used to establish the session.
     """
 
-    def __init__(self, database: str, profile_name: Optional[str] = None):
+    def __init__(self, database: str, profile_name: Optional[str] = None, table_filter: Optional[List[str]] = None):
         """Initialize Glue database loader.
 
         Args:
@@ -23,6 +23,7 @@ class GlueCatalogLoader(BaseLoader):
         """
         self.database = database
         self.profile_name = profile_name
+        self.table_filter = table_filter
         self.glue_client = self._initialize_glue_client()
 
     def _initialize_glue_client(self) -> Any:
@@ -51,7 +52,8 @@ class GlueCatalogLoader(BaseLoader):
         table_names = []
         for page in paginator.paginate(DatabaseName=self.database):
             for table in page['TableList']:
-                table_names.append(table['Name'])
+                if self.table_filter is None or table['Name'] in self.table_filter:
+                    table_names.append(table['Name'])
         return table_names
 
     def _fetch_table_schema(self, table_name: str) -> Dict[str, str]:
