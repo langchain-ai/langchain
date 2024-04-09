@@ -60,7 +60,7 @@ class OpenAIModerationChain(Chain):
         if is_openai_v1():
             values["client"] = openai.moderations
         else:
-            values["client"] = openai.Moderate
+            values["client"] = openai.Moderation
         return values
 
     @property
