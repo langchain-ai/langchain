@@ -87,6 +87,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "VDMS",
         "Vearch",
         "VespaStore",
+        "VLite",
         "Weaviate",
         "ZepVectorStore",
         "Zilliz",
