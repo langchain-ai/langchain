@@ -2,7 +2,7 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
-class GlueDatabaseLoader(BaseLoader):
+class GlueCatalogLoader(BaseLoader):
     """Load table schemas from AWS Glue.
 
     This loader fetches the schema of each table within a specified AWS Glue database.
@@ -76,6 +76,6 @@ class GlueDatabaseLoader(BaseLoader):
         table_names = self._fetch_tables()
         for table_name in table_names:
             schema = self._fetch_table_schema(table_name)
-            page_content = f"Table: {table_name}\n" + "\n".join(f"{col}: {dtype}" for col, dtype in schema.items())
+            page_content = f"Table: {table_name}\nSchema:\n" + "\n".join(f"{col}: {dtype}" for col, dtype in schema.items())
             doc = Document(page_content=page_content, metadata={"table_name": table_name})
             yield doc
