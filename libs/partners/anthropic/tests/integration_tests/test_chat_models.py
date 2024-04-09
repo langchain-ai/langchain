@@ -212,3 +212,45 @@ async def test_astreaming() -> None:
     response = await llm.agenerate([[HumanMessage(content="I'm Pickle Rick")]])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, LLMResult)
+
+
+def test_tool_use() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-opus-20240229",
+    )
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "name": "get_weather",
+                "description": "Get weather report for a city",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"location": {"type": "string"}},
+                },
+            }
+        ]
+    )
+    response = llm_with_tools.invoke("what's the weather in san francisco, ca")
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, list)
+
+
+def test_with_structured_output() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-opus-20240229",
+    )
+
+    structured_llm = llm.with_structured_output(
+        {
+            "name": "get_weather",
+            "description": "Get weather report for a city",
+            "input_schema": {
+                "type": "object",
+                "properties": {"location": {"type": "string"}},
+            },
+        }
+    )
+    response = structured_llm.invoke("what's the weather in san francisco, ca")
+    assert isinstance(response, dict)
+    assert response["location"]
