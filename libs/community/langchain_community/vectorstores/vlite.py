@@ -1,82 +1,98 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from __future__ import annotations
+
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
-from langchain_core.documents import Document
-from langchain_core.vectorstores import VectorStore
+from langchain.docstore.document import Document
+from langchain.embeddings.base import Embeddings
+from langchain.vectorstores.base import VectorStore
 
 from vlite import VLite as Vlite
 from vlite.utils import process_file
 
 class VLite(VectorStore):
-    """
-    VLite is a simple and fast vector database for semantic search.
+    """VLite is a simple and fast vector database for semantic search."""
 
-    Methods:
-    - add_texts: Add text data to the vectorstore.
-    - add_documents: Add documents to the vectorstore.
-    - similarity_search: Perform a similarity search on the vectorstore.
-    - similarity_search_with_score: Perform a similarity search with scores.
-    - max_marginal_relevance_search: Perform a max marginal relevance search.
-    - delete: Delete documents from the vectorstore.
-    - update_document: Update a document in the vectorstore.
-    - get: Retrieve documents from the vectorstore based on IDs and/or metadata.
-    """
     def __init__(
         self,
+        embedding_function: Embeddings,
         collection: Optional[str] = None,
         **kwargs: Any,
     ):
         super().__init__()
-        self.collection = collection
-        self.vlite = Vlite(collection=collection, **kwargs)
+        self.embedding_function = embedding_function
+        self.collection = collection or f"vlite_{uuid4().hex}"
+        self.vlite = Vlite(collection=self.collection, **kwargs)
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        if metadatas is None:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            kwargs: vectorstore specific parameters
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        texts = list(texts)
+        ids = kwargs.pop("ids", [str(uuid4()) for _ in texts])
+        embeddings = self.embedding_function.embed_documents(texts)
+
+        if not metadatas:
             metadatas = [{} for _ in texts]
-        if ids is None:
-            ids = [str(uuid4()) for _ in texts]
-        data = [{"text": text, "metadata": metadata, "id": id}
-                for text, metadata, id in zip(texts, metadatas, ids)]
-        results = self.vlite.add(data, **kwargs)
+
+        data_points = [
+            {"text": text, "metadata": metadata, "id": id, "embedding": embedding}
+            for text, metadata, id, embedding in zip(texts, metadatas, ids, embeddings)
+        ]
+
+        results = self.vlite.add(data_points)
         return [result[0] for result in results]
 
     def add_documents(
         self,
         documents: List[Document],
-        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        if ids is None:
-            ids = [str(uuid4()) for _ in documents]
-        data = []
+        ids = kwargs.pop("ids", [str(uuid4()) for _ in documents])
+        texts = []
+        metadatas = []
+
         for doc, id in zip(documents, ids):
-            if doc.path is not None:
+            if doc.path:
                 processed_data = process_file(doc.path)
-                data.extend([{"text": chunk, "metadata": doc.metadata, "id": f"{id}_{i}"}
-                             for i, chunk in enumerate(processed_data)])
+                texts.extend(processed_data)
+                metadatas.extend([doc.metadata] * len(processed_data))
+                ids.extend([f"{id}_{i}" for i in range(len(processed_data))])
             else:
-                data.append({"text": doc.page_content, "metadata": doc.metadata, "id": id})
-        results = self.vlite.add(data, **kwargs)
-        return [result[0] for result in results]
+                texts.append(doc.page_content)
+                metadatas.append(doc.metadata)
+
+        return self.add_texts(texts, metadatas, ids=ids)
 
     def similarity_search(
         self,
         query: str,
         k: int = 4,
-        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        metadata = filter or {}
-        results = self.vlite.retrieve(text=query, top_k=k, metadata=metadata, **kwargs)
-        documents = [Document(page_content=text, metadata=metadata)
-                     for text, _, metadata in results]
-        return documents
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_with_score(
         self,
@@ -85,84 +101,94 @@ class VLite(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Tuples of (doc, score), where score is the similarity score.
+        """
         metadata = filter or {}
-        results = self.vlite.retrieve(text=query, top_k=k, metadata=metadata, return_scores=True, **kwargs)
-        documents_with_scores = [(Document(page_content=text, metadata=metadata), score)
-                                 for text, score, metadata in results]
+        embedding = self.embedding_function.embed_query(query)
+        results = self.vlite.retrieve(
+            text=query,
+            top_k=k,
+            metadata=metadata,
+            return_scores=True,
+            embedding=embedding,
+        )
+        documents_with_scores = [
+            (Document(page_content=text, metadata=metadata), score)
+            for text, score, metadata in results
+        ]
         return documents_with_scores
 
-    def max_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        filter: Optional[Dict[str, str]] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        metadata = filter or {}
-        results = self.vlite.max_marginal_relevance_search(
-            query, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, metadata=metadata, **kwargs
-        )
-        documents = [Document(page_content=text, metadata=metadata) for text, metadata in results]
-        return documents
-
     def delete(self, ids: List[str], **kwargs: Any):
+        """Delete by ids."""
         self.vlite.delete(ids, **kwargs)
-
-    def update_document(self, document_id: str, document: Document, **kwargs: Any):
-        metadata = document.metadata or {}
-        self.vlite.update(document_id, text=document.page_content, metadata=metadata, **kwargs)
-
-    def get(
-        self,
-        ids: Optional[List[str]] = None,
-        where: Optional[Dict[str, str]] = None,
-        **kwargs: Any,
-    ) -> List[Document]:
-        results = self.vlite.get(ids=ids, where=where, **kwargs)
-        documents = [Document(page_content=text, metadata=metadata) for text, metadata in results]
-        return documents
-
-    def get_relevant_documents(self, query: str) -> List[Document]:
-        return self.similarity_search(query)
-
-    def get_relevant_documents_with_score(self, query: str) -> List[Tuple[Document, float]]:
-        return self.similarity_search_with_score(query)
-
-    def as_retriever(self, **kwargs: Any) -> VLite:
-        return self
 
     @classmethod
     def from_texts(
-        cls: Type["VLite"],
+        cls,
         texts: List[str],
+        embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[List[str]] = None,
         collection: Optional[str] = None,
         **kwargs: Any,
-    ) -> "VLite":
-        vlite = cls(collection=collection, **kwargs)
-        vlite.add_texts(texts, metadatas=metadatas, ids=ids, **kwargs)
+    ) -> VLite:
+        """Construct VLite wrapper from raw documents.
+
+        This is a user-friendly interface that:
+            1. Embeds documents.
+            2. Adds the documents to the vectorstore.
+
+        This is intended to be a quick way to get started.
+
+        Example:
+            .. code-block:: python
+
+                from langchain import VLite
+                from langchain.embeddings import OpenAIEmbeddings
+
+                embeddings = OpenAIEmbeddings()
+                vlite = VLite.from_texts(texts, embeddings)
+        """
+        vlite = cls(
+            embedding_function=embedding, collection=collection, **kwargs
+        )
+        vlite.add_texts(texts, metadatas, **kwargs)
         return vlite
 
     @classmethod
     def from_documents(
-        cls: Type["VLite"],
+        cls,
         documents: List[Document],
-        ids: Optional[List[str]] = None,
+        embedding: Embeddings,
         collection: Optional[str] = None,
         **kwargs: Any,
-    ) -> "VLite":
-        vlite = cls(collection=collection, **kwargs)
-        vlite.add_documents(documents, ids=ids, **kwargs)
-        return vlite
+    ) -> VLite:
+        """Construct VLite wrapper from a list of documents.
 
-    @classmethod
-    def from_existing_index(
-        cls: Type["VLite"],
-        collection: str,
-        **kwargs: Any,
-    ) -> "VLite":
-        vlite = cls(collection=collection, **kwargs)
+        This is a user-friendly interface that:
+            1. Embeds documents.
+            2. Adds the documents to the vectorstore.
+
+        This is intended to be a quick way to get started.
+
+        Example:
+            .. code-block:: python
+
+                from langchain import VLite
+                from langchain.embeddings import OpenAIEmbeddings
+
+                embeddings = OpenAIEmbeddings()
+                vlite = VLite.from_documents(documents, embeddings)
+        """
+        vlite = cls(
+            embedding_function=embedding, collection=collection, **kwargs
+        )
+        vlite.add_documents(documents, **kwargs)
         return vlite
