@@ -85,8 +85,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     @root_validator()
     def init_tool_calls(cls, values: dict) -> dict:
         if not values["tool_call_chunks"]:
-            values["tool_calls"] = values["tool_call_chunks"]
-            values["invalid_tool_calls"] = values["tool_call_chunks"]
+            values["tool_calls"] = []
+            values["invalid_tool_calls"] = []
             return values
         tool_calls = []
         invalid_tool_calls = []
