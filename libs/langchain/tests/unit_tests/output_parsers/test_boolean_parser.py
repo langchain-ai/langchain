@@ -1,3 +1,5 @@
+import pytest
+
 from langchain.output_parsers.boolean import BooleanOutputParser
 
 
@@ -29,15 +31,11 @@ def test_boolean_output_parser_parse() -> None:
     assert result is True
 
     # Test ambiguous input
-    try:
-        parser.parse("yes and no")
-        assert False, "Should have raised ValueError"
-    except ValueError:
-        pass
+    with pytest.raises(ValueError):
+        parser.parse("YES NO")
 
-    # Test invalid input
-    try:
-        parser.parse("INVALID")
-        assert False, "Should have raised ValueError"
-    except ValueError:
-        pass
+    with pytest.raises(ValueError):
+        parser.parse("NO YES")
+    # Bad input
+    with pytest.raises(ValueError):
+        parser.parse("BOOM")

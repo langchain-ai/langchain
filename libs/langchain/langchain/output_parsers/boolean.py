@@ -19,14 +19,12 @@ class BooleanOutputParser(BaseOutputParser[bool]):
 
         Returns:
             boolean
-
         """
+        regexp = rf"\b({self.true_val}|{self.false_val})\b"
+
         truthy = {
-            val.upper() for val in re.findall(
-                rf"\b({self.true_val}|{self.false_val})\b",
-                text,
-                flags=re.IGNORECASE | re.MULTILINE
-            )
+            val.upper()
+            for val in re.findall(regexp, text, flags=re.IGNORECASE | re.MULTILINE)
         }
         if self.true_val.upper() in truthy:
             if self.false_val.upper() in truthy:
@@ -36,6 +34,11 @@ class BooleanOutputParser(BaseOutputParser[bool]):
                 )
             return True
         elif self.false_val.upper() in truthy:
+            if self.true_val.upper() in truthy:
+                raise ValueError(
+                    f"Ambiguous response. Both {self.true_val} and {self.false_val} "
+                    f"in received: {text}."
+                )
             return False
         raise ValueError(
             f"BooleanOutputParser expected output value to include either "
