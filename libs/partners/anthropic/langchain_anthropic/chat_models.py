@@ -292,6 +292,8 @@ class ChatAnthropic(BaseChatModel):
             "top_p": self.top_p,
             "model_kwargs": self.model_kwargs,
             "streaming": self.streaming,
+            "max_retries": self.max_retries,
+            "default_request_timeout": self.default_request_timeout,
         }
 
     @root_validator(pre=True)

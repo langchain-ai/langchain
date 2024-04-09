@@ -197,6 +197,8 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             "top_p": self.top_p,
             "model_kwargs": self.model_kwargs,
             "streaming": self.streaming,
+            "default_request_timeout": self.default_request_timeout,
+            "max_retries": self.max_retries,
         }
 
     def _wrap_prompt(self, prompt: str) -> str:
