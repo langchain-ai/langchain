@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-anthropic"
-version = "0.1.4"
+version = "0.1.6"
 description = "An integration package connecting AnthropicMessages and LangChain"
 authors = []
 readme = "README.md"
@@ -12,8 +12,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1"
-anthropic = ">=0.17.0,<1"
+langchain-core = "^0.1.33"
+anthropic = ">=0.23.0,<1"
 defusedxml = { version = "^0.7.1", optional = true }
 
 [tool.poetry.group.test]
