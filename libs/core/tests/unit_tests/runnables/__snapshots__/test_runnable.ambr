@@ -5299,6 +5299,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -5308,15 +5317,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -5573,10 +5577,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -5586,7 +5586,6 @@
           'name',
           'args',
           'id',
-          'index',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -5682,10 +5681,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -5695,7 +5690,6 @@
           'name',
           'args',
           'id',
-          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -5840,6 +5834,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -5849,15 +5852,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -6114,10 +6112,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6127,7 +6121,6 @@
           'name',
           'args',
           'id',
-          'index',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -6223,10 +6216,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6236,7 +6225,6 @@
           'name',
           'args',
           'id',
-          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -6365,6 +6353,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6374,15 +6371,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -6592,10 +6584,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6605,7 +6593,6 @@
           'name',
           'args',
           'id',
-          'index',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -6679,10 +6666,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6692,7 +6675,6 @@
           'name',
           'args',
           'id',
-          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -6809,6 +6791,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6818,15 +6809,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -7083,10 +7069,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7096,7 +7078,6 @@
           'name',
           'args',
           'id',
-          'index',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -7192,10 +7173,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7205,7 +7182,6 @@
           'name',
           'args',
           'id',
-          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -7322,6 +7298,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7331,15 +7316,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -7596,10 +7576,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7609,7 +7585,6 @@
           'name',
           'args',
           'id',
-          'index',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -7705,10 +7680,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7718,7 +7689,6 @@
           'name',
           'args',
           'id',
-          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -7827,6 +7797,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7836,15 +7815,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -8101,10 +8075,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8114,7 +8084,6 @@
           'name',
           'args',
           'id',
-          'index',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -8221,10 +8190,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8234,7 +8199,6 @@
           'name',
           'args',
           'id',
-          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -8370,6 +8334,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8379,15 +8352,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -8597,10 +8565,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8610,7 +8574,6 @@
           'name',
           'args',
           'id',
-          'index',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -8684,10 +8647,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8697,7 +8656,6 @@
           'name',
           'args',
           'id',
-          'index',
         ]),
         'title': 'ToolCall',
         'type': 'object',

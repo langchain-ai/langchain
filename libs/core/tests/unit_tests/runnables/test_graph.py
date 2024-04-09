@@ -213,9 +213,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                 "name": {"title": "Name", "type": "string"},
                                 "args": {"title": "Args", "type": "object"},
                                 "id": {"title": "Id", "type": "string"},
-                                "index": {"title": "Index", "type": "integer"},
                             },
-                            "required": ["name", "args", "id", "index"],
+                            "required": ["name", "args", "id"],
                         },
                         "InvalidToolCall": {
                             "title": "InvalidToolCall",
@@ -224,10 +223,9 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                 "name": {"title": "Name", "type": "string"},
                                 "args": {"title": "Args", "type": "string"},
                                 "id": {"title": "Id", "type": "string"},
-                                "index": {"title": "Index", "type": "integer"},
                                 "error": {"title": "Error", "type": "string"},
                             },
-                            "required": ["name", "args", "id", "index", "error"],
+                            "required": ["name", "args", "id", "error"],
                         },
                         "AIMessage": {
                             "title": "AIMessage",
@@ -272,13 +270,15 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                 },
                                 "tool_calls": {
                                     "title": "Tool Calls",
+                                    "default": [],
                                     "type": "array",
-                                    "items": {
-                                        "anyOf": [
-                                            {"$ref": "#/definitions/ToolCall"},
-                                            {"$ref": "#/definitions/InvalidToolCall"},
-                                        ]
-                                    },
+                                    "items": {"$ref": "#/definitions/ToolCall"},
+                                },
+                                "invalid_tool_calls": {
+                                    "title": "Invalid Tool Calls",
+                                    "default": [],
+                                    "type": "array",
+                                    "items": {"$ref": "#/definitions/InvalidToolCall"},
                                 },
                             },
                             "required": ["content"],

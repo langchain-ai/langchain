@@ -126,8 +126,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             # Merge tool call chunks
             if self.tool_call_chunks or other.tool_call_chunks:
                 raw_tool_calls = merge_lists(
-                    [tc for tc in self.tool_call_chunks or []],
-                    [tc for tc in other.tool_call_chunks or []],
+                    self.tool_call_chunks,
+                    other.tool_call_chunks,
                 )
                 if raw_tool_calls:
                     tool_call_chunks = [
