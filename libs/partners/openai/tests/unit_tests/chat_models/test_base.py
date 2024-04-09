@@ -149,13 +149,15 @@ def test__convert_dict_to_message_tool_call() -> None:
     expected_output = AIMessage(
         content="",
         additional_kwargs={"tool_calls": raw_tool_calls},
-        tool_calls=[
+        invalid_tool_calls=[
             InvalidToolCall(
                 name="GenerateUsername",
                 args="oops",
                 id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
                 error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
             ),
+        ],
+        tool_calls=[
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},

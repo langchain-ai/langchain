@@ -78,7 +78,6 @@ class ToolCall(TypedDict):
     name: str
     args: Dict[str, Any]
     id: Optional[str]
-    index: Optional[int]
 
 
 class ToolCallChunk(TypedDict):
@@ -122,7 +121,6 @@ class InvalidToolCall(TypedDict):
     name: Optional[str]
     args: Optional[str]
     id: Optional[str]
-    index: Optional[int]
     error: Optional[str]
 
 
@@ -140,7 +138,6 @@ def default_tool_parser(raw_tool_calls: List[dict]) -> List[ToolCall]:
             name=function_name or "",
             args=function_args or {},
             id=tool_call.get("id"),
-            index=tool_call.get("index"),
         )
         tool_calls.append(parsed)
     return tool_calls

@@ -57,7 +57,6 @@ def make_invalid_tool_call(
         name=raw_tool_call["function"]["name"],
         args=raw_tool_call["function"]["arguments"],
         id=raw_tool_call.get("id"),
-        index=raw_tool_call.get("index"),
         error=error_msg,
     )
 
@@ -120,7 +119,6 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         if isinstance(message, AIMessage) and message.tool_calls is not None:
             tool_calls = [dict(tc) for tc in message.tool_calls]
             for tool_call in tool_calls:
-                _ = tool_call.pop("index")
                 if not self.return_id:
                     _ = tool_call.pop("id")
         else:

@@ -1,6 +1,6 @@
 import warnings
 from json import JSONDecodeError
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -29,8 +29,10 @@ class AIMessage(BaseMessage):
         conversation.
     """
 
-    tool_calls: Optional[List[Union[ToolCall, InvalidToolCall]]] = None
+    tool_calls: Optional[List[ToolCall]] = None
     """If provided, tool calls associated with the message."""
+    invalid_tool_calls: Optional[List[InvalidToolCall]] = None
+    """If provided, tool calls with parsing errors associated with the message."""
 
     type: Literal["ai"] = "ai"
 
@@ -100,7 +102,6 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 ToolCall(
                     name=chunk["name"] or "",
                     args=args_,
-                    index=chunk["index"],
                     id=chunk["id"],
                 )
             )

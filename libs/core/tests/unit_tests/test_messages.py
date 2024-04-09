@@ -251,11 +251,11 @@ def test_multiple_msg() -> None:
     msgs = [
         AIMessage(
             content="",
-            tool_calls=[ToolCall(name="a", args={"b": 1}, id=None, index=None)],
+            tool_calls=[ToolCall(name="a", args={"b": 1}, id=None)],
         ),
         AIMessage(
             content="",
-            tool_calls=[ToolCall(name="c", args={"c": 2}, id=None, index=None)],
+            tool_calls=[ToolCall(name="c", args={"c": 2}, id=None)],
         ),
     ]
     assert messages_from_dict(messages_to_dict(msgs)) == msgs

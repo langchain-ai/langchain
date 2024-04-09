@@ -86,16 +86,43 @@ def _convert_mistral_chat_message_to_message(
     additional_kwargs: Dict = {}
     if raw_tool_calls := _message.get("tool_calls"):
         additional_kwargs["tool_calls"] = raw_tool_calls
-        tool_calls = []
+        tool_calls: list = []
+        invalid_tool_calls: list = []
         for raw_tool_call in raw_tool_calls:
             try:
-                tool_calls.append(parse_tool_call(raw_tool_call, return_id=False))
+                parsed = parse_tool_call(raw_tool_call, return_id=False)
+                if parsed is not None:
+                    tool_calls.append(
+                        {
+                            **parsed,
+                            **{"id": None},
+                        },
+                    )
+                else:
+                    invalid_tool_calls.append(
+                        dict(
+                            make_invalid_tool_call(
+                                raw_tool_call, f"Malformed tool call: {raw_tool_call}"
+                            )
+                        )
+                    )
             except Exception as e:
-                tool_calls.append(make_invalid_tool_call(raw_tool_call, str(e)).dict())
+                invalid_tool_calls.append(
+                    dict(make_invalid_tool_call(raw_tool_call, str(e)))
+                )
+        ### TODO ###
+        if not invalid_tool_calls:
+            invalid_tool_calls = None  # type: ignore
+        if not tool_calls:
+            tool_calls = None  # type: ignore
     else:
-        tool_calls = None
+        tool_calls = None  # type: ignore
+        invalid_tool_calls = None  # type: ignore
     return AIMessage(
-        content=content, additional_kwargs=additional_kwargs, tool_calls=tool_calls
+        content=content,
+        additional_kwargs=additional_kwargs,
+        tool_calls=tool_calls,
+        invalid_tool_calls=invalid_tool_calls,
     )
 
 

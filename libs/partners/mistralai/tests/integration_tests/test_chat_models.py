@@ -169,7 +169,7 @@ def test_tool_call() -> None:
     result = tool_llm.invoke("Erick, 27 years old")
     assert isinstance(result, AIMessage)
     assert result.tool_calls == [
-        ToolCall(name="Person", args={"name": "Erick", "age": 27})
+        ToolCall(name="Person", args={"name": "Erick", "age": 27}, id=None)
     ]
 
 
@@ -202,7 +202,9 @@ def test_streaming_tool_call() -> None:
 
     assert isinstance(chunk, AIMessageChunk)
     assert chunk.tool_call_chunks == [
-        ToolCallChunk(name="Person", args='{"name": "Erick", "age": 27}')
+        ToolCallChunk(
+            name="Person", args='{"name": "Erick", "age": 27}', id=None, index=None
+        )
     ]
 
     # where it doesn't call the tool
