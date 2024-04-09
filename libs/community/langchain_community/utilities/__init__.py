@@ -4,7 +4,11 @@ Other LangChain classes use **Utilities** to interact with third-part systems
 and packages.
 """
 import importlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_community.utilities.outline import OutlineAPIWrapper  # noqa: F401
+
 
 _module_lookup = {
     "AlphaVantageAPIWrapper": "langchain_community.utilities.alpha_vantage",
