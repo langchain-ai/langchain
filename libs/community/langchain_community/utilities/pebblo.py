@@ -13,8 +13,12 @@ from langchain_community.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
-PLUGIN_VERSION = "0.1.0"
+PLUGIN_VERSION = "0.1.1"
 CLASSIFIER_URL = os.getenv("PEBBLO_CLASSIFIER_URL", "http://localhost:8000")
+PEBBLO_CLOUD_URL = os.getenv("PEBBLO_CLOUD_URL", "https://api.daxa.ai")
+
+LOADER_DOC_URL = "/v1/loader/doc"
+APP_DISCOVER_URL = "/v1/app/discover"
 
 # Supported loaders for Pebblo safe data loading
 file_loader = [
