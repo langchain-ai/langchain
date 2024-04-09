@@ -51,15 +51,17 @@ class AIMessage(BaseMessage):
                 "message tool calls. e.g., `pip install --upgrade langchain-anthropic"
                 "`, pip install--upgrade langchain-openai`, etc."
             )
-        try:
-            if issubclass(cls, AIMessageChunk):  # type: ignore
-                values["tool_call_chunks"] = default_tool_chunk_parser(raw_tool_calls)
-            else:
-                tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
-                values["tool_calls"] = tool_calls
-                values["invalid_tool_calls"] = invalid_tool_calls
-        except Exception:
-            pass
+            try:
+                if issubclass(cls, AIMessageChunk):  # type: ignore
+                    values["tool_call_chunks"] = default_tool_chunk_parser(
+                        raw_tool_calls
+                    )
+                else:
+                    tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
+                    values["tool_calls"] = tool_calls
+                    values["invalid_tool_calls"] = invalid_tool_calls
+            except Exception:
+                pass
         return values
 
 
