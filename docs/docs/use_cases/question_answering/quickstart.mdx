@@ -5,8 +5,6 @@ title: Quickstart
 
 # Quickstart
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/langchain-ai/langchain/blob/master/docs/docs/use_cases/question_answering/quickstart.ipynb)
-
 LangChain has a number of components designed to help build
 question-answering applications, and RAG applications more generally. To
 familiarize ourselves with these, we’ll build a simple Q&A application
@@ -20,7 +18,7 @@ complexity.
 ## Architecture
 
 We’ll create a typical RAG application as outlined in the [Q&A
-introduction](../../../docs/use_cases/question_answering/), which has
+introduction](/docs/use_cases/question_answering/), which has
 two main components:
 
 **Indexing**: a pipeline for ingesting data from a source and indexing
@@ -32,31 +30,31 @@ passes that to the model.
 
 The full sequence from raw data to answer will look like:
 
-#### Indexing
+### Indexing
 
 1.  **Load**: First we need to load our data. We’ll use
-    [DocumentLoaders](../../../docs/modules/data_connection/document_loaders/)
+    [DocumentLoaders](/docs/modules/data_connection/document_loaders/)
     for this.
 2.  **Split**: [Text
-    splitters](../../../docs/modules/data_connection/document_transformers/)
+    splitters](/docs/modules/data_connection/document_transformers/)
     break large `Documents` into smaller chunks. This is useful both for
     indexing data and for passing it in to a model, since large chunks
     are harder to search over and won’t fit in a model’s finite context
     window.
 3.  **Store**: We need somewhere to store and index our splits, so that
     they can later be searched over. This is often done using a
-    [VectorStore](../../../docs/modules/data_connection/vectorstores/)
+    [VectorStore](/docs/modules/data_connection/vectorstores/)
     and
-    [Embeddings](../../../docs/modules/data_connection/text_embedding/)
+    [Embeddings](/docs/modules/data_connection/text_embedding/)
     model.
 
-#### Retrieval and generation
+### Retrieval and generation
 
 1.  **Retrieve**: Given a user input, relevant splits are retrieved from
     storage using a
-    [Retriever](../../../docs/modules/data_connection/retrievers/).
-2.  **Generate**: A [ChatModel](../../../docs/modules/model_io/chat/) /
-    [LLM](../../../docs/modules/model_io/llms/) produces an answer using
+    [Retriever](/docs/modules/data_connection/retrievers/).
+2.  **Generate**: A [ChatModel](/docs/modules/model_io/chat/) /
+    [LLM](/docs/modules/model_io/llms/) produces an answer using
     a prompt that includes the question and the retrieved data
 
 ## Setup
@@ -65,11 +63,11 @@ The full sequence from raw data to answer will look like:
 
 We’ll use an OpenAI chat model and embeddings and a Chroma vector store
 in this walkthrough, but everything shown here works with any
-[ChatModel](../../../docs/modules/model_io/chat/) or
-[LLM](../../../docs/modules/model_io/llms/),
-[Embeddings](../../../docs/modules/data_connection/text_embedding/), and
-[VectorStore](../../../docs/modules/data_connection/vectorstores/) or
-[Retriever](../../../docs/modules/data_connection/retrievers/).
+[ChatModel](/docs/modules/model_io/chat/) or
+[LLM](/docs/modules/model_io/llms/),
+[Embeddings](/docs/modules/data_connection/text_embedding/), and
+[VectorStore](/docs/modules/data_connection/vectorstores/) or
+[Retriever](/docs/modules/data_connection/retrievers/).
 
 We’ll use the following packages:
 
@@ -189,7 +187,7 @@ going on.
 ## 1. Indexing: Load {#indexing-load}
 
 We need to first load the blog post contents. We can use
-[DocumentLoaders](../../../docs/modules/data_connection/document_loaders/)
+[DocumentLoaders](/docs/modules/data_connection/document_loaders/)
 for this, which are objects that load in data from a source and return a
 list of
 [Documents](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html).
@@ -197,7 +195,7 @@ A `Document` is an object with some `page_content` (str) and `metadata`
 (dict).
 
 In this case we’ll use the
-[WebBaseLoader](../../../docs/integrations/document_loaders/web_base),
+[WebBaseLoader](/docs/integrations/document_loaders/web_base),
 which uses `urllib` to load HTML from web URLs and `BeautifulSoup` to
 parse it to text. We can customize the HTML -\> text parsing by passing
 in parameters to the `BeautifulSoup` parser via `bs_kwargs` (see
@@ -249,9 +247,9 @@ In
 `DocumentLoader`: Object that loads data from a source as list of
 `Documents`.
 
-- [Docs](../../../docs/modules/data_connection/document_loaders/):
+- [Docs](/docs/modules/data_connection/document_loaders/):
   Detailed documentation on how to use `DocumentLoaders`.
-- [Integrations](../../../docs/integrations/document_loaders/): 160+
+- [Integrations](/docs/integrations/document_loaders/): 160+
   integrations to choose from.
 - [Interface](https://api.python.langchain.com/en/latest/document_loaders/langchain_core.document_loaders.base.BaseLoader.html):
   API reference  for the base interface.
@@ -271,7 +269,7 @@ In this case we’ll split our documents into chunks of 1000 characters
 with 200 characters of overlap between chunks. The overlap helps
 mitigate the possibility of separating a statement from important
 context related to it. We use the
-[RecursiveCharacterTextSplitter](../../../docs/modules/data_connection/document_transformers/recursive_text_splitter),
+[RecursiveCharacterTextSplitter](/docs/modules/data_connection/document_transformers/recursive_text_splitter),
 which will recursively split the document using common separators like
 new lines until each chunk is the appropriate size. This is the
 recommended text splitter for generic text use cases.
@@ -321,16 +319,16 @@ chunks. Subclass of `DocumentTransformer`s.
 
 - Explore `Context-aware splitters`, which keep the location (“context”) of each
   split in the original `Document`: - [Markdown
-  files](../../../docs/modules/data_connection/document_transformers/markdown_header_metadata)
-- [Code (py or js)](../../../docs/integrations/document_loaders/source_code)
-- [Scientific papers](../../../docs/integrations/document_loaders/grobid)
+  files](/docs/modules/data_connection/document_transformers/markdown_header_metadata)
+- [Code (py or js)](/docs/integrations/document_loaders/source_code)
+- [Scientific papers](/docs/integrations/document_loaders/grobid)
 - [Interface](https://api.python.langchain.com/en/latest/base/langchain_text_splitters.base.TextSplitter.html): API reference for the base interface.
 
 `DocumentTransformer`: Object that performs a transformation on a list
 of `Document`s.
 
-- [Docs](../../../docs/modules/data_connection/document_transformers/): Detailed documentation on how to use `DocumentTransformers`
-- [Integrations](../../../docs/integrations/document_transformers/)
+- [Docs](/docs/modules/data_connection/document_transformers/): Detailed documentation on how to use `DocumentTransformers`
+- [Integrations](/docs/integrations/document_transformers/)
 - [Interface](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.transformers.BaseDocumentTransformer.html): API reference for the base interface.
 
 ## 3. Indexing: Store {#indexing-store}
@@ -346,9 +344,9 @@ similarity — we measure the cosine of the angle between each pair of
 embeddings (which are high dimensional vectors).
 
 We can embed and store all of our document splits in a single command
-using the [Chroma](../../../docs/integrations/vectorstores/chroma)
+using the [Chroma](/docs/integrations/vectorstores/chroma)
 vector store and
-[OpenAIEmbeddings](../../../docs/integrations/text_embedding/openai)
+[OpenAIEmbeddings](/docs/integrations/text_embedding/openai)
 model.
 
 ```python
@@ -363,15 +361,15 @@ vectorstore = Chroma.from_documents(documents=all_splits, embedding=OpenAIEmbedd
 `Embeddings`: Wrapper around a text embedding model, used for converting
 text to embeddings.
 
-- [Docs](../../../docs/modules/data_connection/text_embedding): Detailed documentation on how to use embeddings.
-- [Integrations](../../../docs/integrations/text_embedding/): 30+ integrations to choose from.
+- [Docs](/docs/modules/data_connection/text_embedding): Detailed documentation on how to use embeddings.
+- [Integrations](/docs/integrations/text_embedding/): 30+ integrations to choose from.
 - [Interface](https://api.python.langchain.com/en/latest/embeddings/langchain_core.embeddings.Embeddings.html): API reference for the base interface.
 
 `VectorStore`: Wrapper around a vector database, used for storing and
 querying embeddings.
 
-- [Docs](../../../docs/modules/data_connection/vectorstores/): Detailed documentation on how to use vector stores.
-- [Integrations](../../../docs/integrations/vectorstores/): 40+ integrations to choose from.
+- [Docs](/docs/modules/data_connection/vectorstores/): Detailed documentation on how to use vector stores.
+- [Integrations](/docs/integrations/vectorstores/): 40+ integrations to choose from.
 - [Interface](https://api.python.langchain.com/en/latest/vectorstores/langchain_core.vectorstores.VectorStore.html): API reference for the base interface.
 
 This completes the **Indexing** portion of the pipeline. At this point
@@ -388,12 +386,12 @@ a model, and returns an answer.
 
 First we need to define our logic for searching over documents.
 LangChain defines a
-[Retriever](../../../docs/modules/data_connection/retrievers/) interface
+[Retriever](/docs/modules/data_connection/retrievers/) interface
 which wraps an index that can return relevant `Documents` given a string
 query.
 
 The most common type of `Retriever` is the
-[VectorStoreRetriever](../../../docs/modules/data_connection/retrievers/vectorstore),
+[VectorStoreRetriever](/docs/modules/data_connection/retrievers/vectorstore),
 which uses the similarity search capabilities of a vector store to
 facilitate retrieval. Any `VectorStore` can easily be turned into a
 `Retriever` with `VectorStore.as_retriever()`:
@@ -430,15 +428,15 @@ to do retrieval, too.
 
 `Retriever`: An object that returns `Document`s given a text query
 
-- [Docs](../../../docs/modules/data_connection/retrievers/): Further
+- [Docs](/docs/modules/data_connection/retrievers/): Further
   documentation on the interface and built-in retrieval techniques.
   Some of which include:
   - `MultiQueryRetriever` [generates variants of the input
-    question](../../../docs/modules/data_connection/retrievers/MultiQueryRetriever)
+    question](/docs/modules/data_connection/retrievers/MultiQueryRetriever)
     to improve retrieval hit rate.
   - `MultiVectorRetriever` (diagram below) instead generates
     [variants of the
-    embeddings](../../../docs/modules/data_connection/retrievers/multi_vector),
+    embeddings](/docs/modules/data_connection/retrievers/multi_vector),
     also in order to improve retrieval hit rate.
   - `Max marginal relevance` selects for [relevance and
     diversity](https://www.cs.cmu.edu/~jgc/publication/The_Use_MMR_Diversity_Based_LTMIR_1998.pdf)
@@ -446,8 +444,8 @@ to do retrieval, too.
     context.
   - Documents can be filtered during vector store retrieval using
     metadata filters, such as with a [Self Query
-    Retriever](../../../docs/modules/data_connection/retrievers/self_query).
-- [Integrations](../../../docs/integrations/retrievers/): Integrations
+    Retriever](/docs/modules/data_connection/retrievers/self_query).
+- [Integrations](/docs/integrations/retrievers/): Integrations
   with retrieval services.
 - [Interface](https://api.python.langchain.com/en/latest/retrievers/langchain_core.retrievers.BaseRetriever.html):
   API reference for the base interface.
@@ -500,7 +498,7 @@ Context: filler context
 Answer:
 ```
 
-We’ll use the [LCEL Runnable](../../../docs/expression_language/)
+We’ll use the [LCEL Runnable](/docs/expression_language/)
 protocol to define the chain, allowing us to - pipe together components
 and functions in a transparent way - automatically trace our chain in
 LangSmith - get streaming, async, and batched calling out of the box
@@ -541,18 +539,18 @@ trace](https://smith.langchain.com/public/1799e8db-8a6d-4eb2-84d5-46e8d7d5a99b/r
 `ChatModel`: An LLM-backed chat model. Takes in a sequence of messages
 and returns a message.
 
-- [Docs](../../../docs/modules/model_io/chat/)
-- [Integrations](../../../docs/integrations/chat/): 25+ integrations to choose from.
+- [Docs](/docs/modules/model_io/chat/)
+- [Integrations](/docs/integrations/chat/): 25+ integrations to choose from.
 - [Interface](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.chat_models.BaseChatModel.html): API reference for the base interface.
 
 `LLM`: A text-in-text-out LLM. Takes in a string and returns a string.
 
-- [Docs](../../../docs/modules/model_io/llms)
-- [Integrations](../../../docs/integrations/llms): 75+ integrations to choose from.
+- [Docs](/docs/modules/model_io/llms)
+- [Integrations](/docs/integrations/llms): 75+ integrations to choose from.
 - [Interface](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.llms.BaseLLM.html): API reference for the base interface.
 
 See a guide on RAG with locally-running models
-[here](../../../docs/use_cases/question_answering/local_retrieval_qa).
+[here](/docs/use_cases/question_answering/local_retrieval_qa).
 
 #### Customizing the prompt
 
@@ -600,10 +598,10 @@ the above sections. Along from the **Go deeper** sources mentioned
 above, good next steps include:
 
 - [Return
-  sources](../../../docs/use_cases/question_answering/sources): Learn
+  sources](/docs/use_cases/question_answering/sources): Learn
   how to return source documents
-- [Streaming](../../../docs/use_cases/question_answering/streaming):
+- [Streaming](/docs/use_cases/question_answering/streaming):
   Learn how to stream outputs and intermediate steps
 - [Add chat
-  history](../../../docs/use_cases/question_answering/chat_history):
+  history](/docs/use_cases/question_answering/chat_history):
   Learn how to add chat history to your app
