@@ -10,8 +10,6 @@ from langchain_core.messages import (
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
-    ToolCall,
-    ToolCallChunk,
     ToolMessage,
 )
 from langchain_core.outputs import (
@@ -490,7 +488,7 @@ def test_tool_use() -> None:
     assert isinstance(ai_msg.tool_calls, list)
     assert len(ai_msg.tool_calls) == 1
     tool_call = ai_msg.tool_calls[0]
-    assert isinstance(tool_call, ToolCall)
+    assert "args" in tool_call
 
     # Test streaming
     ai_messages = llm_with_tool.stream(msgs)
@@ -505,7 +503,7 @@ def test_tool_use() -> None:
     assert isinstance(gathered.tool_call_chunks, list)
     assert len(gathered.tool_call_chunks) == 1
     tool_call_chunk = gathered.tool_call_chunks[0]
-    assert isinstance(tool_call_chunk, ToolCallChunk)
+    assert "args" in tool_call_chunk
 
     tool_msg = ToolMessage(
         "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]

@@ -31,7 +31,14 @@ class ToolsOutputParser(BaseGenerationOutputParser):
             tool_calls: List = []
         else:
             content: List = message.content
-            tool_calls = [tool_call.dict() for tool_call in extract_tool_calls(content)]
+            _tool_calls = [dict(tc) for tc in extract_tool_calls(content)]
+            # Map tool call id to index
+            id_to_index = {
+                block["id"]: i
+                for i, block in enumerate(content)
+                if block["type"] == "tool_use"
+            }
+            tool_calls = [{**tc, "index": id_to_index[tc["id"]]} for tc in _tool_calls]
         if self.pydantic_schemas:
             tool_calls = [self._pydantic_parse(tc) for tc in tool_calls]
         elif self.args_only:
@@ -53,10 +60,10 @@ class ToolsOutputParser(BaseGenerationOutputParser):
 
 def extract_tool_calls(content: List[dict]) -> List[ToolCall]:
     tool_calls = []
-    for i, block in enumerate(content):
+    for block in content:
         if block["type"] != "tool_use":
             continue
         tool_calls.append(
-            ToolCall(name=block["name"], args=block["input"], id=block["id"], index=i)
+            ToolCall(name=block["name"], args=block["input"], id=block["id"])
         )
     return tool_calls

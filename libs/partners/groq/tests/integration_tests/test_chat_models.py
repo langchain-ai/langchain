@@ -11,8 +11,6 @@ from langchain_core.messages import (
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
-    ToolCall,
-    ToolCallChunk,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -252,9 +250,8 @@ def test_tool_choice() -> None:
     assert isinstance(resp.tool_calls, list)
     assert len(resp.tool_calls) == 1
     tool_call = resp.tool_calls[0]
-    assert isinstance(tool_call, ToolCall)
-    assert tool_call.name == "MyTool"
-    assert tool_call.args == {"name": "Erick", "age": 27}
+    assert tool_call["name"] == "MyTool"
+    assert tool_call["args"] == {"name": "Erick", "age": 27}
 
 
 @pytest.mark.scheduled
@@ -314,10 +311,9 @@ def test_streaming_tool_call() -> None:
     assert isinstance(chunk.tool_call_chunks, list)
     assert len(chunk.tool_call_chunks) == 1
     tool_call_chunk = chunk.tool_call_chunks[0]
-    assert isinstance(tool_call_chunk, ToolCallChunk)
-    assert tool_call_chunk.name == "MyTool"
-    assert isinstance(tool_call_chunk.args, str)
-    assert json.loads(tool_call_chunk.args) == {"name": "Erick", "age": 27}
+    assert tool_call_chunk["name"] == "MyTool"
+    assert isinstance(tool_call_chunk["args"], str)
+    assert json.loads(tool_call_chunk["args"]) == {"name": "Erick", "age": 27}
 
 
 async def test_astreaming_tool_call() -> None:
@@ -352,10 +348,9 @@ async def test_astreaming_tool_call() -> None:
     assert isinstance(chunk.tool_call_chunks, list)
     assert len(chunk.tool_call_chunks) == 1
     tool_call_chunk = chunk.tool_call_chunks[0]
-    assert isinstance(tool_call_chunk, ToolCallChunk)
-    assert tool_call_chunk.name == "MyTool"
-    assert isinstance(tool_call_chunk.args, str)
-    assert json.loads(tool_call_chunk.args) == {"name": "Erick", "age": 27}
+    assert tool_call_chunk["name"] == "MyTool"
+    assert isinstance(tool_call_chunk["args"], str)
+    assert json.loads(tool_call_chunk["args"]) == {"name": "Erick", "age": 27}
 
 
 @pytest.mark.scheduled

@@ -5299,6 +5299,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -5308,15 +5317,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -5560,12 +5564,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -5579,15 +5577,17 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -5672,16 +5672,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -5691,10 +5681,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -5703,6 +5689,7 @@
         'required': list([
           'name',
           'args',
+          'id',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -5847,6 +5834,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -5856,15 +5852,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -6108,12 +6099,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -6127,15 +6112,17 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -6220,16 +6207,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -6239,10 +6216,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6251,6 +6224,7 @@
         'required': list([
           'name',
           'args',
+          'id',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -6379,6 +6353,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6388,15 +6371,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -6593,12 +6571,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -6612,15 +6584,17 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -6683,16 +6657,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -6702,10 +6666,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6714,6 +6674,7 @@
         'required': list([
           'name',
           'args',
+          'id',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -6830,6 +6791,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6839,15 +6809,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -7091,12 +7056,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -7110,15 +7069,17 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -7203,16 +7164,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -7222,10 +7173,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7234,6 +7181,7 @@
         'required': list([
           'name',
           'args',
+          'id',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -7350,6 +7298,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7359,15 +7316,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -7611,12 +7563,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -7630,15 +7576,17 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -7723,16 +7671,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -7742,10 +7680,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7754,6 +7688,7 @@
         'required': list([
           'name',
           'args',
+          'id',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -7862,6 +7797,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7871,15 +7815,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -8123,12 +8062,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -8142,15 +8075,17 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -8246,16 +8181,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -8265,10 +8190,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8277,6 +8198,7 @@
         'required': list([
           'name',
           'args',
+          'id',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -8412,6 +8334,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8421,15 +8352,10 @@
             'type': 'object',
           }),
           'tool_calls': dict({
+            'default': list([
+            ]),
             'items': dict({
-              'anyOf': list([
-                dict({
-                  '$ref': '#/definitions/ToolCall',
-                }),
-                dict({
-                  '$ref': '#/definitions/InvalidToolCall',
-                }),
-              ]),
+              '$ref': '#/definitions/ToolCall',
             }),
             'title': 'Tool Calls',
             'type': 'array',
@@ -8626,12 +8552,6 @@
         'type': 'object',
       }),
       'InvalidToolCall': dict({
-        'description': '''
-          Allowance for errors made by LLM.
-          
-          Here we add an `error` key to surface errors made during generation
-          (e.g., invalid JSON arguments.)
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -8645,15 +8565,17 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
           }),
         }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
         'title': 'InvalidToolCall',
         'type': 'object',
       }),
@@ -8716,16 +8638,6 @@
         'type': 'object',
       }),
       'ToolCall': dict({
-        'description': '''
-          A call to a tool.
-          
-          Attributes:
-              name: (str) the name of the tool to be called
-              args: (dict) the arguments to the tool call
-              id: (str) if provided, an identifier associated with the tool call
-              index: (int) if provided, the index of the tool call in a sequence
-                  of content
-        ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
@@ -8735,10 +8647,6 @@
             'title': 'Id',
             'type': 'string',
           }),
-          'index': dict({
-            'title': 'Index',
-            'type': 'integer',
-          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8747,6 +8655,7 @@
         'required': list([
           'name',
           'args',
+          'id',
         ]),
         'title': 'ToolCall',
         'type': 'object',

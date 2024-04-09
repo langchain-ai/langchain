@@ -1,7 +1,8 @@
 import json
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
-from langchain_core.load import Serializable
+from typing_extensions import TypedDict
+
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
@@ -65,24 +66,21 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
-class ToolCall(Serializable):
+class ToolCall(TypedDict):
     """A call to a tool.
 
     Attributes:
         name: (str) the name of the tool to be called
         args: (dict) the arguments to the tool call
         id: (str) if provided, an identifier associated with the tool call
-        index: (int) if provided, the index of the tool call in a sequence
-            of content
     """
 
     name: str
     args: Dict[str, Any]
-    id: Optional[str] = None
-    index: Optional[int] = None
+    id: Optional[str]
 
 
-class ToolCallChunk(Serializable):
+class ToolCallChunk(TypedDict):
     """A chunk of a tool call (e.g., as part of a stream).
 
     When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
@@ -92,6 +90,7 @@ class ToolCallChunk(Serializable):
     Example:
 
     .. code-block:: python
+
         left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
         right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
         (
@@ -106,44 +105,54 @@ class ToolCallChunk(Serializable):
         index: (int) if provided, the index of the tool call in a sequence
     """
 
-    name: Optional[str] = None
-    args: Optional[str] = None
-    id: Optional[str] = None
-    index: Optional[int] = None
+    name: Optional[str]
+    args: Optional[str]
+    id: Optional[str]
+    index: Optional[int]
 
 
-class InvalidToolCall(Serializable):
+class InvalidToolCall(TypedDict):
     """Allowance for errors made by LLM.
 
     Here we add an `error` key to surface errors made during generation
     (e.g., invalid JSON arguments.)
     """
 
-    name: Optional[str] = None
-    args: Optional[str] = None
-    id: Optional[str] = None
-    index: Optional[int] = None
-    error: Optional[str] = None
+    name: Optional[str]
+    args: Optional[str]
+    id: Optional[str]
+    error: Optional[str]
 
 
-def default_tool_parser(raw_tool_calls: List[dict]) -> List[ToolCall]:
+def default_tool_parser(
+    raw_tool_calls: List[dict],
+) -> Tuple[List[ToolCall], List[InvalidToolCall]]:
     """Best-effort parsing of tools."""
     tool_calls = []
+    invalid_tool_calls = []
     for tool_call in raw_tool_calls:
         if "function" not in tool_call:
-            function_args = None
-            function_name = None
+            continue
         else:
-            function_args = json.loads(tool_call["function"]["arguments"])
             function_name = tool_call["function"]["name"]
-        parsed = ToolCall(
-            name=function_name or "",
-            args=function_args or {},
-            id=tool_call.get("id"),
-            index=tool_call.get("index"),
-        )
-        tool_calls.append(parsed)
-    return tool_calls
+            try:
+                function_args = json.loads(tool_call["function"]["arguments"])
+                parsed = ToolCall(
+                    name=function_name or "",
+                    args=function_args or {},
+                    id=tool_call.get("id"),
+                )
+                tool_calls.append(parsed)
+            except json.JSONDecodeError:
+                invalid_tool_calls.append(
+                    InvalidToolCall(
+                        name=function_name,
+                        args=tool_call["function"]["arguments"],
+                        id=tool_call.get("id"),
+                        error="Malformed args.",
+                    )
+                )
+    return tool_calls, invalid_tool_calls
 
 
 def default_tool_chunk_parser(raw_tool_calls: List[dict]) -> List[ToolCallChunk]:
