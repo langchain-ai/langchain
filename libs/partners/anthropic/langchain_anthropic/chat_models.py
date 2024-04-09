@@ -340,12 +340,12 @@ class ChatAnthropic(BaseChatModel):
             if isinstance(message, AIMessage) and message.tool_calls is not None:
                 tool_call_chunks = [
                     {
-                        "name": tool_call.name,
-                        "args": json.dumps(tool_call.args),
-                        "id": tool_call.id,
-                        "index": tool_call.index,
+                        "name": tool_call["name"],
+                        "args": json.dumps(tool_call["args"]),
+                        "id": tool_call["id"],
+                        "index": idx,
                     }
-                    for tool_call in message.tool_calls
+                    for idx, tool_call in enumerate(message.tool_calls)
                 ]
                 message_chunk = AIMessageChunk(
                     content=message.content,
@@ -379,12 +379,12 @@ class ChatAnthropic(BaseChatModel):
             if isinstance(message, AIMessage) and message.tool_calls is not None:
                 tool_call_chunks = [
                     {
-                        "name": tool_call.name,
-                        "args": json.dumps(tool_call.args),
-                        "id": tool_call.id,
-                        "index": tool_call.index,
+                        "name": tool_call["name"],
+                        "args": json.dumps(tool_call["args"]),
+                        "id": tool_call["id"],
+                        "index": idx,
                     }
-                    for tool_call in message.tool_calls
+                    for idx, tool_call in enumerate(message.tool_calls)
                 ]
                 message_chunk = AIMessageChunk(
                     content=message.content,

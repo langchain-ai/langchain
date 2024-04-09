@@ -243,9 +243,9 @@ def test_tool_use() -> None:
     assert isinstance(response.tool_calls, list)
     assert len(response.tool_calls) == 1
     tool_call = response.tool_calls[0]
-    assert tool_call.name == "get_weather"
-    assert isinstance(tool_call.args, dict)
-    assert "location" in tool_call.args
+    assert tool_call["name"] == "get_weather"
+    assert isinstance(tool_call["args"], dict)
+    assert "location" in tool_call["args"]
 
     # Test streaming
     first = True
@@ -259,9 +259,9 @@ def test_tool_use() -> None:
     assert isinstance(gathered.tool_call_chunks, list)
     assert len(gathered.tool_call_chunks) == 1
     tool_call_chunk = gathered.tool_call_chunks[0]
-    assert tool_call_chunk.name == "get_weather"
-    assert isinstance(tool_call_chunk.args, str)
-    assert "location" in json.loads(tool_call_chunk.args)
+    assert tool_call_chunk["name"] == "get_weather"
+    assert isinstance(tool_call_chunk["args"], str)
+    assert "location" in json.loads(tool_call_chunk["args"])
 
 
 def test_with_structured_output() -> None:
