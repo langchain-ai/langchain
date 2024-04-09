@@ -41,6 +41,7 @@ _module_lookup = {
     "ChatLiteLLM": "langchain_community.chat_models.litellm",
     "ChatLiteLLMRouter": "langchain_community.chat_models.litellm_router",
     "ChatMLflowAIGateway": "langchain_community.chat_models.mlflow_ai_gateway",
+    "ChatMLX": "langchain_community.chat_models.mlx",
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
     "ChatOllama": "langchain_community.chat_models.ollama",
