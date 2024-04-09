@@ -63,3 +63,61 @@ chat_history.add_messages([
 
 print(chat_history.messages)
 ```
+
+
+### PostgresCheckpoint
+
+An implementation of the `Checkpoint` abstraction in LangGraph using Postgres.
+
+
+Async Usage: 
+
+```python
+from psycopg_pool import AsyncConnectionPool
+from langchain_postgres import (
+    PostgresCheckpoint, PickleCheckpointSerializer
+)
+
+pool = AsyncConnectionPool(
+    # Example configuration
+    conninfo="postgresql://user:password@localhost:5432/dbname",
+    max_size=20,
+)
+
+# Uses the pickle module for serialization
+# Make sure that you're only de-serializing trusted data
+# (e.g., payloads that you have serialized yourself).
+# Or implement a custom serializer.
+checkpoint = PostgresCheckpoint(
+    serializer=PickleCheckpointSerializer(),
+    async_connection=pool,
+)
+
+# Use the checkpoint object to put, get, list checkpoints, etc.
+```
+
+Sync Usage:
+
+```python
+from psycopg_pool import ConnectionPool
+from langchain_postgres import (
+    PostgresCheckpoint, PickleCheckpointSerializer
+)
+
+pool = ConnectionPool(
+    # Example configuration
+    conninfo="postgresql://user:password@localhost:5432/dbname",
+    max_size=20,
+)
+
+# Uses the pickle module for serialization
+# Make sure that you're only de-serializing trusted data
+# (e.g., payloads that you have serialized yourself).
+# Or implement a custom serializer.
+checkpoint = PostgresCheckpoint(
+    serializer=PickleCheckpointSerializer(),
+    sync_connection=pool,
+)
+
+# Use the checkpoint object to put, get, list checkpoints, etc.
+```
