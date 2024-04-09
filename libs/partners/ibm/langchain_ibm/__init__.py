@@ -1,3 +1,4 @@
-from langchain_ibm.llms import WatsonxLLM
+from langchain_ibm.embeddings.embeddings import WatsonxEmbeddings
+from langchain_ibm.llms.llms import WatsonxLLM
 
-__all__ = ["WatsonxLLM"]
+__all__ = ["WatsonxLLM", "WatsonxEmbeddings"]
