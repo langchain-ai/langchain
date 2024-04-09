@@ -3,13 +3,20 @@ from __future__ import annotations
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
 
-from vlite import VLite as Vlite
-from vlite.utils import process_file
 
+try:
+    from vlite import VLite as Vlite
+    from vlite.utils import process_file
+except ImportError:
+    raise ImportError(
+        "Could not import vlite python package. "
+        "Please install it with `pip install vlite`."
+    )
+    
 class VLite(VectorStore):
     """VLite is a simple and fast vector database for semantic search."""
 
@@ -22,6 +29,12 @@ class VLite(VectorStore):
         super().__init__()
         self.embedding_function = embedding_function
         self.collection = collection or f"vlite_{uuid4().hex}"
+        
+        if Vlite is None:
+            raise ImportError(
+                "Could not import vlite python package. "
+                "Please install it with `pip install vlite` "
+            )
         self.vlite = Vlite(collection=self.collection, **kwargs)
 
     def add_texts(
@@ -66,6 +79,12 @@ class VLite(VectorStore):
 
         for doc, id in zip(documents, ids):
             if doc.path:
+                if process_file is None:
+                    raise ImportError(
+                        "Could not import process_file from vlite.utils. "
+                        "Please make sure vlite is installed correctly."
+                    )
+
                 processed_data = process_file(doc.path)
                 texts.extend(processed_data)
                 metadatas.extend([doc.metadata] * len(processed_data))
