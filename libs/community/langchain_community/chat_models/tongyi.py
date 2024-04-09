@@ -158,7 +158,7 @@ class ChatTongyi(BaseChatModel):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[SecretStr] = None
+    dashscope_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Dashscope api key provide by Alibaba Cloud."""
 
     streaming: bool = False
