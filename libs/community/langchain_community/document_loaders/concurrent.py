@@ -23,7 +23,10 @@ class ConcurrentLoader(GenericLoader):
     """Load and pars Documents concurrently."""
 
     def __init__(
-        self, blob_loader: BlobLoader, blob_parser: BaseBlobParser, num_workers: int = 4  # type: ignore[valid-type]
+        self,
+        blob_loader: BlobLoader,
+        blob_parser: BaseBlobParser,
+        num_workers: int = 4,  # type: ignore[valid-type]
     ) -> None:
         super().__init__(blob_loader, blob_parser)
         self.num_workers = num_workers
