@@ -243,12 +243,17 @@ class ChatAnthropic(BaseChatModel):
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
 
-    default_request_timeout: Optional[float] = None
-    """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
+    default_request_timeout: Optional[float] = Field(None, alias="timeout")
+    """Timeout for requests to Anthropic Completion API."""
+
+    # sdk default = 2: https://github.com/anthropics/anthropic-sdk-python?tab=readme-ov-file#retries
+    max_retries: int = 2
+    """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
     anthropic_api_url: str = "https://api.anthropic.com"
 
-    anthropic_api_key: Optional[SecretStr] = None
+    anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
@@ -285,16 +290,23 @@ class ChatAnthropic(BaseChatModel):
             or "https://api.anthropic.com"
         )
         values["anthropic_api_url"] = api_url
-        values["_client"] = anthropic.Client(
-            api_key=api_key,
-            base_url=api_url,
-            default_headers=values.get("default_headers"),
-        )
-        values["_async_client"] = anthropic.AsyncClient(
-            api_key=api_key,
-            base_url=api_url,
-            default_headers=values.get("default_headers"),
-        )
+        client_params = {
+            "api_key": api_key,
+            "base_url": api_url,
+            "max_retries": values["max_retries"],
+            "default_headers": values.get("default_headers"),
+        }
+        # value <= 0 indicates the param should be ignored. None is a meaningful value
+        # for Anthropic client and treated differently than not specifying the param at
+        # all.
+        if (
+            values["default_request_timeout"] is None
+            or values["default_request_timeout"] > 0
+        ):
+            client_params["timeout"] = values["default_request_timeout"]
+
+        values["_client"] = anthropic.Client(**client_params)
+        values["_async_client"] = anthropic.AsyncClient(**client_params)
         return values
 
     def _format_params(
