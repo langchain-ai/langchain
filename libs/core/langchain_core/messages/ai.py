@@ -1,6 +1,6 @@
 import warnings
 from json import JSONDecodeError
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, List, Literal
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -29,8 +29,10 @@ class AIMessage(BaseMessage):
         conversation.
     """
 
-    tool_calls: Optional[List[Union[ToolCall, InvalidToolCall]]] = None
+    tool_calls: List[ToolCall] = []
     """If provided, tool calls associated with the message."""
+    invalid_tool_calls: List[InvalidToolCall] = []
+    """If provided, tool calls with parsing errors associated with the message."""
 
     type: Literal["ai"] = "ai"
 
@@ -71,7 +73,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # non-chunk variant.
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment] # noqa: E501
 
-    tool_call_chunks: Optional[List[ToolCallChunk]] = None
+    tool_call_chunks: List[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
     @classmethod
@@ -81,24 +83,21 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @root_validator()
     def init_tool_calls(cls, values: dict) -> dict:
-        if values["tool_calls"] is not None:
-            raise ValueError(
-                "tool_calls cannot be set on AIMessageChunk, it is derived "
-                "from tool_call_chunks."
-            )
         if not values["tool_call_chunks"]:
             values["tool_calls"] = values["tool_call_chunks"]
             return values
         tool_calls = []
         for chunk in values["tool_call_chunks"]:
             try:
-                args_ = parse_partial_json(chunk.args)
+                args_ = parse_partial_json(chunk["args"])
                 args_ = args_ if isinstance(args_, dict) else {}
             except (JSONDecodeError, TypeError):  # None args raise TypeError
                 args_ = {}
             tool_calls.append(
                 ToolCall(
-                    name=chunk.name or "", args=args_, index=chunk.index, id=chunk.id
+                    name=chunk["name"] or "",
+                    args=args_,
+                    id=chunk["id"],
                 )
             )
         values["tool_calls"] = tool_calls
@@ -122,15 +121,23 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             # Merge tool call chunks
             if self.tool_call_chunks or other.tool_call_chunks:
                 raw_tool_calls = merge_lists(
-                    [tc.dict() for tc in self.tool_call_chunks or []],
-                    [tc.dict() for tc in other.tool_call_chunks or []],
+                    self.tool_call_chunks,
+                    other.tool_call_chunks,
                 )
                 if raw_tool_calls:
-                    tool_call_chunks = [ToolCallChunk(**rtc) for rtc in raw_tool_calls]
+                    tool_call_chunks = [
+                        ToolCallChunk(
+                            name=rtc.get("name"),
+                            args=rtc.get("args"),
+                            index=rtc.get("index"),
+                            id=rtc.get("id"),
+                        )
+                        for rtc in raw_tool_calls
+                    ]
                 else:
-                    tool_call_chunks = None
+                    tool_call_chunks = []
             else:
-                tool_call_chunks = None
+                tool_call_chunks = []
 
             return self.__class__(
                 example=self.example,

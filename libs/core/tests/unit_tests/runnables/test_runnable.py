@@ -359,27 +359,24 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "ToolCall": {
                 "title": "ToolCall",
-                "description": "A call to a tool.\n\nAttributes:\n    name: (str) the name of the tool to be called\n    args: (dict) the arguments to the tool call\n    id: (str) if provided, an identifier associated with the tool call\n    index: (int) if provided, the index of the tool call in a sequence\n        of content",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "name": {"title": "Name", "type": "string"},
                     "args": {"title": "Args", "type": "object"},
                     "id": {"title": "Id", "type": "string"},
-                    "index": {"title": "Index", "type": "integer"},
                 },
-                "required": ["name", "args"],
+                "required": ["name", "args", "id"],
             },
             "InvalidToolCall": {
                 "title": "InvalidToolCall",
-                "description": "Allowance for errors made by LLM.\n\nHere we add an `error` key to surface errors made during generation\n(e.g., invalid JSON arguments.)",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "name": {"title": "Name", "type": "string"},
                     "args": {"title": "Args", "type": "string"},
                     "id": {"title": "Id", "type": "string"},
-                    "index": {"title": "Index", "type": "integer"},
                     "error": {"title": "Error", "type": "string"},
                 },
+                "required": ["name", "args", "id", "error"],
             },
             "AIMessage": {
                 "title": "AIMessage",
@@ -421,13 +418,15 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                     },
                     "tool_calls": {
                         "title": "Tool Calls",
+                        "default": [],
                         "type": "array",
-                        "items": {
-                            "anyOf": [
-                                {"$ref": "#/definitions/ToolCall"},
-                                {"$ref": "#/definitions/InvalidToolCall"},
-                            ]
-                        },
+                        "items": {"$ref": "#/definitions/ToolCall"},
+                    },
+                    "invalid_tool_calls": {
+                        "title": "Invalid Tool Calls",
+                        "default": [],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/InvalidToolCall"},
                     },
                 },
                 "required": ["content"],

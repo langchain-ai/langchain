@@ -50,7 +50,7 @@ def test_mistralai_initialization() -> None:
         ),
         (
             AIMessage(content="Hello"),
-            dict(role="assistant", content="Hello", tool_calls=None),
+            dict(role="assistant", content="Hello", tool_calls=[]),
         ),
         (
             ChatMessage(role="assistant", content="Hello"),
@@ -137,6 +137,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
+                id=None,
             )
         ],
     )
@@ -163,15 +164,19 @@ def test__convert_dict_to_message_tool_call() -> None:
     expected_output = AIMessage(
         content="",
         additional_kwargs={"tool_calls": raw_tool_calls},
-        tool_calls=[
+        invalid_tool_calls=[
             InvalidToolCall(
                 name="GenerateUsername",
                 args="oops",
                 error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
+                id=None,
             ),
+        ],
+        tool_calls=[
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
+                id=None,
             ),
         ],
     )
