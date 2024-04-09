@@ -52,6 +52,7 @@ if __name__ == "__main__":
             # note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/partners/mistralai")
+            dirs_to_run["test"].add("libs/partners/openai")
 
         elif file.startswith("libs/cli"):
             # todo: add cli makefile
