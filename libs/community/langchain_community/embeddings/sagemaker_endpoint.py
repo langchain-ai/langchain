@@ -142,7 +142,7 @@ class SagemakerEndpointEmbeddings(BaseModel, Embeddings):
                 raise ValueError(
                     "Could not load credentials to authenticate with AWS client. "
                     "Please check that credentials in the specified "
-                    "profile name are valid."
+                    f"profile name are valid. {e}"
                 ) from e
 
         except ImportError:

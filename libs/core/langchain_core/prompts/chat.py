@@ -66,6 +66,17 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             List of BaseMessages.
         """
 
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """Format messages from kwargs. Should return a list of BaseMessages.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            List of BaseMessages.
+        """
+        return self.format_messages(**kwargs)
+
     @property
     @abstractmethod
     def input_variables(self) -> List[str]:
@@ -286,6 +297,17 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
             Formatted message.
         """
 
+    async def aformat(self, **kwargs: Any) -> BaseMessage:
+        """Format the prompt template.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            Formatted message.
+        """
+        return self.format(**kwargs)
+
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
 
@@ -296,6 +318,9 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
             List of BaseMessages.
         """
         return [self.format(**kwargs)]
+
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        return [await self.aformat(**kwargs)]
 
     @property
     def input_variables(self) -> List[str]:
@@ -335,6 +360,12 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
             Formatted message.
         """
         text = self.prompt.format(**kwargs)
+        return ChatMessage(
+            content=text, role=self.role, additional_kwargs=self.additional_kwargs
+        )
+
+    async def aformat(self, **kwargs: Any) -> BaseMessage:
+        text = await self.prompt.aformat(**kwargs)
         return ChatMessage(
             content=text, role=self.role, additional_kwargs=self.additional_kwargs
         )
@@ -578,6 +609,18 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """
         return self.format_prompt(**kwargs).to_string()
 
+    async def aformat(self, **kwargs: Any) -> str:
+        """Format the chat template into a string.
+
+        Args:
+            **kwargs: keyword arguments to use for filling in template variables
+                      in all the template messages in this chat template.
+
+        Returns:
+            formatted string
+        """
+        return (await self.aformat_prompt(**kwargs)).to_string()
+
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """
         Format prompt. Should return a PromptValue.
@@ -590,9 +633,17 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         messages = self.format_messages(**kwargs)
         return ChatPromptValue(messages=messages)
 
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        messages = await self.aformat_messages(**kwargs)
+        return ChatPromptValue(messages=messages)
+
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages."""
+
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """Format kwargs into a list of messages."""
+        return self.format_messages(**kwargs)
 
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation."""
@@ -901,18 +952,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             partial_variables=partial_vars,
         )
 
-    def format(self, **kwargs: Any) -> str:
-        """Format the chat template into a string.
-
-        Args:
-            **kwargs: keyword arguments to use for filling in template variables
-                      in all the template messages in this chat template.
-
-        Returns:
-            formatted string
-        """
-        return self.format_prompt(**kwargs).to_string()
-
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format the chat template into a list of finalized messages.
 
@@ -932,6 +971,30 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
             ):
                 message = message_template.format_messages(**kwargs)
+                result.extend(message)
+            else:
+                raise ValueError(f"Unexpected input: {message_template}")
+        return result
+
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """Format the chat template into a list of finalized messages.
+
+        Args:
+            **kwargs: keyword arguments to use for filling in template variables
+                      in all the template messages in this chat template.
+
+        Returns:
+            list of formatted messages
+        """
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
+        result = []
+        for message_template in self.messages:
+            if isinstance(message_template, BaseMessage):
+                result.extend([message_template])
+            elif isinstance(
+                message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
+            ):
+                message = await message_template.aformat_messages(**kwargs)
                 result.extend(message)
             else:
                 raise ValueError(f"Unexpected input: {message_template}")
