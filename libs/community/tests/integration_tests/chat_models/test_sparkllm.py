@@ -9,7 +9,6 @@ def test_initialization() -> None:
         ChatSparkLLM(timeout=30),
         ChatSparkLLM(request_timeout=30),
     ]:
-        assert model.model == "claude-instant-1.2"
         assert model.request_timeout == 30
 
 
