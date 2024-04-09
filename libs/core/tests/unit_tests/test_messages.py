@@ -292,11 +292,23 @@ def test_message_chunk_to_message() -> None:
 
     chunk = AIMessageChunk(
         content="I am",
-        tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
+        tool_call_chunks=[
+            ToolCallChunk(name="tool1", args='{"a": 1}', id="1", index=0),
+            ToolCallChunk(name="tool2", args='{"b": ', id="2", index=0),
+            ToolCallChunk(name="tool3", args=None, id="3", index=0),
+            ToolCallChunk(name="tool4", args="abc", id="4", index=0),
+        ],
     )
     expected = AIMessage(
         content="I am",
-        tool_calls=[{"name": "tool1", "args": {}, "id": "1"}],
+        tool_calls=[
+            {"name": "tool1", "args": {"a": 1}, "id": "1"},
+            {"name": "tool2", "args": {}, "id": "2"},
+        ],
+        invalid_tool_calls=[
+            {"name": "tool3", "args": None, "id": "3", "error": "Malformed args."},
+            {"name": "tool4", "args": "abc", "id": "4", "error": "Malformed args."},
+        ],
     )
     assert message_chunk_to_message(chunk) == expected
     assert AIMessage(**expected.dict()) == expected

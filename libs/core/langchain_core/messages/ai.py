@@ -1,5 +1,4 @@
 import warnings
-from json import JSONDecodeError
 from typing import Any, List, Literal
 
 from langchain_core.messages.base import (
@@ -56,7 +55,9 @@ class AIMessage(BaseMessage):
             if issubclass(cls, AIMessageChunk):  # type: ignore
                 values["tool_call_chunks"] = default_tool_chunk_parser(raw_tool_calls)
             else:
-                values["tool_calls"] = default_tool_parser(raw_tool_calls)
+                tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
+                values["tool_calls"] = tool_calls
+                values["invalid_tool_calls"] = invalid_tool_calls
         except Exception:
             pass
         return values
@@ -85,22 +86,34 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     def init_tool_calls(cls, values: dict) -> dict:
         if not values["tool_call_chunks"]:
             values["tool_calls"] = values["tool_call_chunks"]
+            values["invalid_tool_calls"] = values["tool_call_chunks"]
             return values
         tool_calls = []
+        invalid_tool_calls = []
         for chunk in values["tool_call_chunks"]:
             try:
                 args_ = parse_partial_json(chunk["args"])
-                args_ = args_ if isinstance(args_, dict) else {}
-            except (JSONDecodeError, TypeError):  # None args raise TypeError
-                args_ = {}
-            tool_calls.append(
-                ToolCall(
-                    name=chunk["name"] or "",
-                    args=args_,
-                    id=chunk["id"],
+                if isinstance(args_, dict):
+                    tool_calls.append(
+                        ToolCall(
+                            name=chunk["name"] or "",
+                            args=args_,
+                            id=chunk["id"],
+                        )
+                    )
+                else:
+                    raise ValueError("Malformed args.")
+            except Exception:
+                invalid_tool_calls.append(
+                    InvalidToolCall(
+                        name=chunk["name"],
+                        args=chunk["args"],
+                        id=chunk["id"],
+                        error="Malformed args.",
+                    )
                 )
-            )
         values["tool_calls"] = tool_calls
+        values["invalid_tool_calls"] = invalid_tool_calls
         return values
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
