@@ -22,7 +22,8 @@ def my_adder_tool(a: int, b: int) -> int:
 class ChatModelIntegrationTests(ABC):
     @abstractmethod
     @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]: ...
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        ...
 
     @pytest.fixture
     def chat_model_params(self) -> dict:
