@@ -167,6 +167,11 @@ class ChatTongyi(BaseChatModel):
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
