@@ -108,10 +108,13 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             else:
                 if self.args_only:
                     try:
-                        return json.loads(
+                        res = json.loads(
                             _get_arguments_from_function_call(function_call),
                             strict=self.strict,
                         )
+                        if not isinstance(res, dict) or res == {}:
+                            raise OutputParserException("Expected arguments.")
+                        return res
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
                             f"Could not parse function call data: {exc}"

@@ -1336,6 +1336,37 @@ class Runnable(Generic[Input, Output], ABC):
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """
         Bind arguments to a Runnable, returning a new Runnable.
+
+        Useful when a runnable in a chain requires an argument that is not
+        in the output of the previous runnable or included in the user input.
+
+        Example:
+
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatOllama
+            from langchain_core.output_parsers import StrOutputParser
+
+            llm = ChatOllama(model='llama2')
+
+            # Without bind.
+            chain = (
+                llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two three four five.'
+
+            # With bind.
+            chain = (
+                llm.bind(stop=["three"])
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two'
+
         """
         return RunnableBinding(bound=self, kwargs=kwargs, config={})
 
@@ -2003,6 +2034,33 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
+        """Configure particular runnable fields at runtime.
+
+        .. code-block:: python
+
+            from langchain_core.runnables import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(max_tokens=20).configurable_fields(
+                max_tokens=ConfigurableField(
+                    id="output_token_number",
+                    name="Max tokens in the output",
+                    description="The maximum number of tokens in the output",
+                )
+            )
+
+            # max_tokens = 20
+            print(
+                "max_tokens_20: ",
+                model.invoke("tell me something about chess").content
+            )
+
+            # max_tokens = 200
+            print("max_tokens_200: ", model.with_config(
+                configurable={"output_token_number": 200}
+                ).invoke("tell me something about chess").content
+            )
+        """
         from langchain_core.runnables.configurable import RunnableConfigurableFields
 
         for key in kwargs:
@@ -2022,6 +2080,32 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         prefix_keys: bool = False,
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
+        """Configure alternatives for runnables that can be set at runtime.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.runnables.utils import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatAnthropic(
+                model_name="claude-3-sonnet-20240229"
+            ).configurable_alternatives(
+                ConfigurableField(id="llm"),
+                default_key="anthropic",
+                openai=ChatOpenAI()
+            )
+
+            # uses the default model ChatAnthropic
+            print(model.invoke("which organization created you?").content)
+
+            # uses ChatOpenaAI
+            print(
+                model.with_config(
+                    configurable={"llm": "openai"}
+                ).invoke("which organization created you?").content
+            )
+        """
         from langchain_core.runnables.configurable import (
             RunnableConfigurableAlternatives,
         )

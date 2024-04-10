@@ -1,3 +1,4 @@
+
 [tool.poetry]
 name = "anthropic-iterative-search"
 version = "0.0.1"
@@ -10,6 +11,7 @@ python = ">=3.8.1,<4.0"
 gigachain = ">=0.0.325"
 anthropic = "^0.5.0"
 wikipedia = "^1.4.0"
+langchain-anthropic = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
@@ -21,7 +23,5 @@ integrations = ["Anthropic", "Wikipedia"]
 tags = ["research", "agents"]
 
 [build-system]
-requires = [
-    "poetry-core",
-]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

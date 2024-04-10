@@ -1,6 +1,7 @@
+
 [tool.poetry]
 name = "gigachain-core"
-version = "0.1.34.1"
+version = "0.1.40"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -17,7 +18,6 @@ langsmith = "^0.1.0"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
-requests = "^2"
 packaging = "^23.2"
 jinja2 = { version = "^3", optional = true }
 
@@ -110,3 +110,4 @@ markers = [
   "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+

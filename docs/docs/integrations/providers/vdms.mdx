@@ -1,0 +1,62 @@
+# VDMS
+
+> [VDMS](https://github.com/IntelLabs/vdms/blob/master/README.md) is a storage solution for efficient access
+> of big-”visual”-data that aims to achieve cloud scale by searching for relevant visual data via visual metadata
+> stored as a graph and enabling machine friendly enhancements to visual data for faster access.
+
+## Installation and Setup
+
+### Install Client
+
+```bash
+pip install vdms
+```
+
+### Install Database
+
+There are two ways to get started with VDMS:
+
+#### Install VDMS on your local machine via docker
+```bash
+    docker run -d -p 55555:55555 intellabs/vdms:latest
+```
+
+#### Install VDMS directly on your local machine
+Please see [installation instructions](https://github.com/IntelLabs/vdms/blob/master/INSTALL.md).
+
+
+
+## VectorStore
+
+The vector store is a simple wrapper around VDMS. It provides a simple interface to store and retrieve data.
+
+```python
+from langchain_community.document_loaders import TextLoader
+from langchain.text_splitter import CharacterTextSplitter
+
+loader = TextLoader("./state_of_the_union.txt")
+documents = loader.load()
+text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
+docs = text_splitter.split_documents(documents)
+
+from langchain_community.vectorstores import VDMS
+from langchain_community.vectorstores.vdms import VDMS_Client
+from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
+
+client = VDMS_Client("localhost", 55555)
+vectorstore = VDMS.from_documents(
+    docs,
+    client=client,
+    collection_name="langchain-demo",
+    embedding_function=HuggingFaceEmbeddings(),
+    engine="FaissFlat"
+    distance_strategy="L2",
+)
+
+query = "What did the president say about Ketanji Brown Jackson"
+results = vectorstore.similarity_search(query)
+```
+
+For a more detailed walkthrough of the VDMS wrapper, see [this notebook](/docs/integrations/vectorstores/vdms)
+
+

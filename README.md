@@ -353,10 +353,17 @@ GigaChain — это проект с открытым исходным кодо�
 > Вы можете также пользоваться [документацией LangChain](https://python.langchain.com), поскольку GigaChain совместим с LangChain:
 
 - [Getting started](https://python.langchain.com/docs/get_started/introduction): installation, setting up the environment, simple examples
-- Overview of the [interfaces](https://python.langchain.com/docs/expression_language/), [modules](https://python.langchain.com/docs/modules/), and [integrations](https://python.langchain.com/docs/integrations/providers)
-- [Use case](https://python.langchain.com/docs/use_cases/qa_structured/sql) walkthroughs and best practice [guides](https://python.langchain.com/docs/guides/adapters/openai)
-- [LangSmith](https://python.langchain.com/docs/langsmith/), [LangServe](https://python.langchain.com/docs/langserve), and [LangChain Template](https://python.langchain.com/docs/templates/) overviews
-- [Reference](https://api.python.langchain.com): full API docs
+- [Use case](https://python.langchain.com/docs/use_cases/) walkthroughs and best practice [guides](https://python.langchain.com/docs/guides/)
+- Overviews of the [interfaces](https://python.langchain.com/docs/expression_language/), [components](https://python.langchain.com/docs/modules/), and [integrations](https://python.langchain.com/docs/integrations/providers)
+
+You can also check out the full [API Reference docs](https://api.python.langchain.com).
+
+## 🌐 Ecosystem
+
+- [🦜🛠️ LangSmith](https://python.langchain.com/docs/langsmith/): Tracing and evaluating your language model applications and intelligent agents to help you move from prototype to production.
+- [🦜🕸️ LangGraph](https://python.langchain.com/docs/langgraph): Creating stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain primitives.
+- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploying LangChain runnables and chains as REST APIs.
+  - [LangChain Templates](https://python.langchain.com/docs/templates/): Example applications hosted with LangServe.
 
 ## Лицензия
 

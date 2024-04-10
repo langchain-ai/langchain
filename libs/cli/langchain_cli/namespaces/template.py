@@ -122,7 +122,7 @@ def serve(
     host_str = host if host is not None else "127.0.0.1"
 
     script = (
-        "gigachain_cli.dev_scripts:create_demo_server_chat_playground"
+        "gigachain.dev_scripts:create_demo_server_chat"
         if chat_playground
         else (
             "gigachain_cli.dev_scripts:create_demo_server_configurable"

@@ -187,3 +187,4 @@ docs/docs/templates
 developer_utils/
 prof
 *.epub
+smart_merge.py

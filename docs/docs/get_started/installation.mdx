@@ -1,8 +1,12 @@
+---
+sidebar_position: 2
+---
+
 # Installation
 
 ## Official release
 
-To install LangChain run:
+To install GigaChain run:
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -13,12 +17,12 @@ import CodeBlock from "@theme/CodeBlock";
     <CodeBlock language="bash">pip install gigachain</CodeBlock>
   </TabItem>
   <TabItem value="conda" label="Conda">
-    <CodeBlock language="bash">conda install langchain -c conda-forge</CodeBlock>
+    <CodeBlock language="bash">conda install gigachain -c conda-forge</CodeBlock>
   </TabItem>
 </Tabs>
 
-This will install the bare minimum requirements of LangChain.
-A lot of the value of LangChain comes when integrating it with various model providers, datastores, etc.
+This will install the bare minimum requirements of GigaChain.
+A lot of the value of GigaChain comes when integrating it with various model providers, datastores, etc.
 By default, the dependencies needed to do that are NOT installed. You will need to install the dependencies for specific integrations separately.
 
 ## From source
@@ -29,40 +33,52 @@ If you want to install from source, you can do so by cloning the repo and be sur
 pip install -e .
 ```
 
-## LangChain community
-The `langchain-community` package contains third-party integrations. It is automatically installed by `langchain`, but can also be used separately. Install with:
-
-```bash
-pip install langchain-community
-```
-
 ## GigaChain core
-The `gigachain-core` package contains base abstractions that the rest of the LangChain ecosystem uses, along with the LangChain Expression Language. It is automatically installed by `langchain`, but can also be used separately. Install with:
+The `gigachain-core` package contains base abstractions that the rest of the GigaChain ecosystem uses, along with the GigaChain Expression Language. It is automatically installed by `gigachain`, but can also be used separately. Install with:
 
 ```bash
 pip install gigachain-core
 ```
 
+## GigaChain core
+The `gigachain-core` package contains base abstractions that the rest of the GigaChain ecosystem uses, along with the GigaChain Expression Language. It is automatically installed by `gigachain`, but can also be used separately. Install with:
+
+```bash
+pip install gigachain-core
+## GigaChain community
+The `gigachain-community` package contains third-party integrations. It is automatically installed by `gigachain`, but can also be used separately. Install with:
+
+```bash
+pip install gigachain-community
+```
+
 ## GigaChain experimental
-The `langchain-experimental` package holds experimental LangChain code, intended for research and experimental uses.
+The `gigachain-experimental` package holds experimental GigaChain code, intended for research and experimental uses.
 Install with:
 
 ```bash
 pip install gigachain-experimental
 ```
 
+## GigaGraph
+`gigagraph` is a library for building stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) GigaChain.
+Install with:
+
+```bash
+pip install gigagraph
+```
 ## GigaServe
-LangServe helps developers deploy LangChain runnables and chains as a REST API.
-LangServe is automatically installed by LangChain CLI.
-If not using LangChain CLI, install with:
+GigaServe helps developers deploy GigaChain runnables and chains as a REST API.
+GigaServe is automatically installed by GigaChain CLI.
+If not using GigaChain CLI, install with:
 
 ```bash
 pip install "gigaserve[all]"
 ```
-for both client and server dependencies. Or `pip install "langserve[client]"` for client code, and `pip install "langserve[server]"` for server code.
+for both client and server dependencies. Or `pip install "gigaserve[client]"` for client code, and `pip install "gigaserve[server]"` for server code.
 
-## LangChain CLI
-The LangChain CLI is useful for working with LangChain templates and other LangServe projects.
+## GigaChain CLI
+The GigaChain CLI is useful for working with GigaChain templates and other GigaServe projects.
 Install with:
 
 ```bash
@@ -70,8 +86,8 @@ pip install gigachain-cli
 ```
 
 ## LangSmith SDK
-The LangSmith SDK is automatically installed by LangChain.
-If not using LangChain, install with:
+The LangSmith SDK is automatically installed by GigaChain.
+If not using GigaChain, install with:
 
 ```bash
 pip install langsmith
