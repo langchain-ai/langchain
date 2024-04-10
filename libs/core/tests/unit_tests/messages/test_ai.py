@@ -10,7 +10,7 @@ from langchain_core.messages import (
 
 def test_serdes_message() -> None:
     msg = AIMessage(
-        [{"text": "blah", "type": "text"}],
+        content=[{"text": "blah", "type": "text"}],
         tool_calls=[ToolCall(name="foo", args={"bar": 1}, id="baz")],
         invalid_tool_calls=[
             InvalidToolCall(name="foobad", args="blah", id="booz", error="bad")
@@ -35,7 +35,7 @@ def test_serdes_message() -> None:
 
 def test_serdes_message_chunk() -> None:
     chunk = AIMessageChunk(
-        [{"text": "blah", "type": "text"}],
+        content=[{"text": "blah", "type": "text"}],
         tool_call_chunks=[
             ToolCallChunk(name="foo", args='{"bar": 1}', id="baz", index=0),
             ToolCallChunk(name="foobad", args="blah", id="booz", index=1),
