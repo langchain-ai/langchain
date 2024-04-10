@@ -61,6 +61,7 @@ logger = logging.getLogger(__name__)
 def convert_dict_to_message(
     _dict: Mapping[str, Any], is_chunk: bool = False
 ) -> Union[BaseMessage, BaseMessageChunk]:
+    """Convert a dict to a message."""
     role = _dict["role"]
     content = _dict["content"]
     if role == "user":
@@ -88,6 +89,7 @@ def convert_dict_to_message(
 
 
 def convert_message_chunk_to_message(message_chunk: BaseMessageChunk) -> BaseMessage:
+    """Convert a message chunk to a message."""
     if isinstance(message_chunk, HumanMessageChunk):
         return HumanMessage(content=message_chunk.content)
     elif isinstance(message_chunk, AIMessageChunk):

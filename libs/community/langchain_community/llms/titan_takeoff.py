@@ -10,7 +10,7 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 
 class TitanTakeoff(LLM):
-    """Wrapper around Titan Takeoff APIs."""
+    """Titan Takeoff API LLMs."""
 
     base_url: str = "http://localhost:8000"
     """Specifies the baseURL to use for the Titan Takeoff API. 
