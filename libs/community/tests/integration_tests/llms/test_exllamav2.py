@@ -3,7 +3,6 @@ import os
 
 import pytest
 import torch.cuda
-from exllamav2.generator import ExLlamaV2Sampler
 from huggingface_hub import snapshot_download
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
 from langchain_core.prompts import PromptTemplate
@@ -41,6 +40,8 @@ def download_GPTQ_model(model_name: str, models_dir: str = "./models/") -> str:
     reason="CUDA is not available. ExllamaV2 requires CUDA.",
 )
 def test_exllamav2_inference():
+    from exllamav2.generator import ExLlamaV2Sampler
+
     model_path = download_GPTQ_model("TheBloke/Mistral-7B-Instruct-v0.2-GPTQ")
 
     template = """Question: {question}
@@ -78,6 +79,8 @@ def test_exllamav2_inference():
     reason="CUDA is not available. ExllamaV2 requires CUDA.",
 )
 def test_exllamav2_streaming():
+    from exllamav2.generator import ExLlamaV2Sampler
+
     model_path = download_GPTQ_model("TheBloke/Mistral-7B-Instruct-v0.2-GPTQ")
 
     callbacks = [StreamingStdOutCallbackHandler()]
