@@ -223,7 +223,7 @@ def test_system_message() -> None:
     assert isinstance(response.content, str)
 
 
-@pytest.mark.scheduled
+@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_tool_choice() -> None:
     """Test that tool choice is respected."""
     llm = ChatGroq()
@@ -254,7 +254,7 @@ def test_tool_choice() -> None:
     assert tool_call["args"] == {"name": "Erick", "age": 27}
 
 
-@pytest.mark.scheduled
+@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
     llm = ChatGroq()
@@ -279,6 +279,7 @@ def test_tool_choice_bool() -> None:
     assert tool_call["type"] == "function"
 
 
+@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_streaming_tool_call() -> None:
     """Test that tool choice is respected."""
     llm = ChatGroq()
@@ -316,6 +317,7 @@ def test_streaming_tool_call() -> None:
     assert json.loads(tool_call_chunk["args"]) == {"name": "Erick", "age": 27}
 
 
+@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 async def test_astreaming_tool_call() -> None:
     """Test that tool choice is respected."""
     llm = ChatGroq()

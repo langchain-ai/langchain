@@ -528,6 +528,13 @@ _OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "image",
         "ImagePromptTemplate",
     ),
+    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+        "langchain",
+        "agents",
+        "output_parsers",
+        "openai_tools",
+        "OpenAIToolAgentAction",
+    ),
 }
 
 # Needed for backwards compatibility for a few versions where we serialized
