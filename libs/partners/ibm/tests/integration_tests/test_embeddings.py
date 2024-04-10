@@ -6,6 +6,7 @@ You'll need to set WATSONX_APIKEY and WATSONX_PROJECT_ID environment variables.
 import os
 
 from ibm_watsonx_ai import APIClient  # type: ignore
+from ibm_watsonx_ai.metanames import EmbedTextParamsMetaNames  # type: ignore
 from langchain_community.vectorstores.chroma import Chroma
 
 from langchain_ibm import WatsonxEmbeddings
@@ -40,7 +41,19 @@ def test_02_generate_embed_query() -> None:
     )
 
 
-def test_10_pass_client() -> None:
+def test_03_generate_embed_documents_with_param() -> None:
+    embed_params = {
+        EmbedTextParamsMetaNames.TRUNCATE_INPUT_TOKENS: 3,
+    }
+    watsonx_embedding = WatsonxEmbeddings(
+        model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID, params=embed_params
+    )
+    generate_embedding = watsonx_embedding.embed_documents(texts=DOCUMENTS)
+    assert len(generate_embedding) == len(DOCUMENTS)
+    assert all(isinstance(el, float) for el in generate_embedding[0])
+
+
+def test_10_generate_embed_query_with_client_initialization() -> None:
     watsonx_client = APIClient(
         wml_credentials={
             "url": URL,
