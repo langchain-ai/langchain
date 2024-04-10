@@ -64,8 +64,7 @@ class TestDirectoryLoader:
         expected_docs = sorted(expected_docs, key=lambda doc: doc.metadata["source"])
 
         for i, doc in enumerate(loaded_docs):
-            assert doc.page_content == expected_docs[i].page_content
-            assert doc.metadata == expected_docs[i].metadata
+            assert doc == expected_docs[i]
 
     # Tests that lazy loading a CSV file with multiple documents is successful.
     def test_directory_loader_lazy_load_single_file_multiple_docs(self) -> None:
