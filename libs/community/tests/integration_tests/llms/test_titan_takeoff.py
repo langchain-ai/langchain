@@ -1,29 +1,21 @@
 """Test Titan Takeoff wrapper."""
 import json
+from typing import Any, Union
 
 import pytest
-import responses
 
-from langchain_community.llms.titan_takeoff import TitanTakeoff
-
-
-@responses.activate
-def test_titan_takeoff_pro_call() -> None:
-    """Test valid call to Titan Takeoff."""
-    url = "http://localhost:3000/generate"
-    responses.add(responses.POST, url, json={"message": "2 + 2 is 4"}, status=200)
-
-    # response = requests.post(url)
-    llm = TitanTakeoff()
-    output = llm("What is 2 + 2?")
-    assert isinstance(output, str)
+from langchain_community.llms import TitanTakeoff, TitanTakeoffPro
 
 
 @pytest.mark.requires("takeoff_client")
 @pytest.mark.requires("pytest_httpx")
 @pytest.mark.parametrize("streaming", [True, False])
-@pytest.mark.parametrize("takeoff_object", [TitanTakeoff])
-def test_titan_takeoff_call(httpx_mock, streaming, takeoff_object) -> None:
+@pytest.mark.parametrize("takeoff_object", [TitanTakeoff, TitanTakeoffPro])
+def test_titan_takeoff_call(
+    httpx_mock: Any,
+    streaming: bool,
+    takeoff_object: Union[TitanTakeoff, TitanTakeoffPro],
+) -> None:
     """Test valid call to Titan Takeoff."""
     from pytest_httpx import IteratorStream
 
@@ -73,8 +65,12 @@ def test_titan_takeoff_call(httpx_mock, streaming, takeoff_object) -> None:
 @pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
 @pytest.mark.parametrize("streaming", [True, False])
-@pytest.mark.parametrize("takeoff_object", [TitanTakeoff])
-def test_titan_takeoff_bad_call(httpx_mock, streaming, takeoff_object) -> None:
+@pytest.mark.parametrize("takeoff_object", [TitanTakeoff, TitanTakeoffPro])
+def test_titan_takeoff_bad_call(
+    httpx_mock: Any,
+    streaming: bool,
+    takeoff_object: Union[TitanTakeoff, TitanTakeoffPro],
+) -> None:
     """Test valid call to Titan Takeoff."""
     from takeoff_client import TakeoffException
 
@@ -97,8 +93,11 @@ def test_titan_takeoff_bad_call(httpx_mock, streaming, takeoff_object) -> None:
 
 @pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
-@pytest.mark.parametrize("takeoff_object", [TitanTakeoff])
-def test_titan_takeoff_model_initialisation(httpx_mock, takeoff_object) -> None:
+@pytest.mark.parametrize("takeoff_object", [TitanTakeoff, TitanTakeoffPro])
+def test_titan_takeoff_model_initialisation(
+    httpx_mock: Any,
+    takeoff_object: Union[TitanTakeoff, TitanTakeoffPro],
+) -> None:
     """Test valid call to Titan Takeoff."""
     mgnt_port = 36452
     inf_port = 46253

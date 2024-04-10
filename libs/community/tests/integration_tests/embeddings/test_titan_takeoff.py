@@ -2,6 +2,7 @@
 
 
 import json
+from typing import Any
 
 import pytest
 
@@ -11,7 +12,7 @@ from langchain_community.embeddings.titan_takeoff import MissingConsumerGroup
 
 @pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
-def test_titan_takeoff_call(httpx_mock) -> None:
+def test_titan_takeoff_call(httpx_mock: Any) -> None:
     """Test valid call to Titan Takeoff."""
     port = 2345
 
@@ -39,7 +40,7 @@ def test_titan_takeoff_call(httpx_mock) -> None:
 
 @pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
-def test_no_consumer_group_fails(httpx_mock) -> None:
+def test_no_consumer_group_fails(httpx_mock: Any) -> None:
     """Test that not specifying a consumer group fails."""
     port = 2345
 
@@ -63,7 +64,7 @@ def test_no_consumer_group_fails(httpx_mock) -> None:
 
 @pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
-def test_takeoff_initialization(httpx_mock) -> None:
+def test_takeoff_initialization(httpx_mock: Any) -> None:
     """Test valid call to Titan Takeoff."""
     mgnt_port = 36452
     inf_port = 46253
@@ -117,7 +118,9 @@ def test_takeoff_initialization(httpx_mock) -> None:
 
 @pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
-def test_takeoff_initialization_with_more_than_one_consumer_group(httpx_mock) -> None:
+def test_takeoff_initialization_with_more_than_one_consumer_group(
+    httpx_mock: Any
+) -> None:
     """Test valid call to Titan Takeoff."""
     mgnt_port = 36452
     inf_port = 46253
