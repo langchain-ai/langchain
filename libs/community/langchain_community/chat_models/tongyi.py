@@ -380,8 +380,8 @@ class ChatTongyi(BaseChatModel):
         params: Dict[str, Any] = self._invocation_params(
             messages=messages, stop=stop, stream=True, **kwargs
         )
-        prev_msg_content = ''
-        
+        prev_msg_content = ""
+
         for stream_resp, is_last_chunk in generate_with_last_element_mark(
             self.stream_completion_with_retry(**params)
         ):
@@ -393,15 +393,15 @@ class ChatTongyi(BaseChatModel):
                 and not "tool_calls" in message
             ):
                 continue
-            
+
             # If it's a tool call response, wait until it's finished
             if "tool_calls" in message and choice["finish_reason"] == "null":
                 continue
 
             # If we are streaming without `incremental_output = True`, we need to chop off the previous message content
-            if(not params.get('incremental_output', False)):
-                message['content'] = message['content'].replace(prev_msg_content, '')
-                prev_msg_content += message['content']
+            if not params.get("incremental_output", False):
+                message["content"] = message["content"].replace(prev_msg_content, "")
+                prev_msg_content += message["content"]
 
             chunk = ChatGenerationChunk(
                 **self._chat_generation_from_qwen_resp(
