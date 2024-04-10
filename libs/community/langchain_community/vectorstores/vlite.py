@@ -22,7 +22,6 @@ class VLite(VectorStore):
         super().__init__()
         self.embedding_function = embedding_function
         self.collection = collection or f"vlite_{uuid4().hex}"
-
         # Third-party imports
         try:
             from vlite import VLite
@@ -40,25 +39,24 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
+
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             kwargs: vectorstore specific parameters
+
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
         texts = list(texts)
         ids = kwargs.pop("ids", [str(uuid4()) for _ in texts])
         embeddings = self.embedding_function.embed_documents(texts)
-
         if not metadatas:
             metadatas = [{} for _ in texts]
-
         data_points = [
             {"text": text, "metadata": metadata, "id": id, "embedding": embedding}
             for text, metadata, id, embedding in zip(texts, metadatas, ids, embeddings)
         ]
-
         results = self.vlite.add(data_points)
         return [result[0] for result in results]
 
@@ -71,7 +69,8 @@ class VLite(VectorStore):
 
         Args:
             documents: List of documents to add to the vectorstore.
-            kwargs: vectorstore specific parameters
+            kwargs: vectorstore specific parameters such as "file_path" for processing
+                    directly with vlite.
 
         Returns:
             List of ids from adding the documents into the vectorstore.
@@ -79,9 +78,8 @@ class VLite(VectorStore):
         ids = kwargs.pop("ids", [str(uuid4()) for _ in documents])
         texts = []
         metadatas = []
-
         for doc, id in zip(documents, ids):
-            if doc.path:
+            if "file_path" in kwargs:
                 # Third-party imports
                 try:
                     from vlite.utils import process_file
@@ -90,14 +88,13 @@ class VLite(VectorStore):
                         "Could not import vlite python package. "
                         "Please install it with `pip install vlite`."
                     )
-                processed_data = process_file(doc.path)
+                processed_data = process_file(kwargs["file_path"])
                 texts.extend(processed_data)
                 metadatas.extend([doc.metadata] * len(processed_data))
                 ids.extend([f"{id}_{i}" for i in range(len(processed_data))])
             else:
                 texts.append(doc.page_content)
                 metadatas.append(doc.metadata)
-
         return self.add_texts(texts, metadatas, ids=ids)
 
     def similarity_search(
@@ -107,9 +104,11 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
+
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+
         Returns:
             List of Documents most similar to the query.
         """
@@ -124,10 +123,12 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
+
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
+
         Returns:
             List of Tuples of (doc, score), where score is the similarity score.
         """
@@ -146,9 +147,12 @@ class VLite(VectorStore):
         ]
         return documents_with_scores
 
-    def delete(self, ids: List[str], **kwargs: Any):
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by ids."""
-        self.vlite.delete(ids, **kwargs)
+        if ids is not None:
+            self.vlite.delete(ids, **kwargs)
+            return True
+        return None
 
     @classmethod
     def from_texts(
@@ -160,16 +164,21 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> VLite:
         """Construct VLite wrapper from raw documents.
+
         This is a user-friendly interface that:
-            1. Embeds documents.
-            2. Adds the documents to the vectorstore.
+        1. Embeds documents.
+        2. Adds the documents to the vectorstore.
+
         This is intended to be a quick way to get started.
+
         Example:
-            .. code-block:: python
-                from langchain import VLite
-                from langchain.embeddings import OpenAIEmbeddings
-                embeddings = OpenAIEmbeddings()
-                vlite = VLite.from_texts(texts, embeddings)
+        .. code-block:: python
+
+            from langchain import VLite
+            from langchain.embeddings import OpenAIEmbeddings
+
+            embeddings = OpenAIEmbeddings()
+            vlite = VLite.from_texts(texts, embeddings)
         """
         vlite = cls(embedding_function=embedding, collection=collection, **kwargs)
         vlite.add_texts(texts, metadatas, **kwargs)
@@ -184,16 +193,21 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> VLite:
         """Construct VLite wrapper from a list of documents.
+
         This is a user-friendly interface that:
-            1. Embeds documents.
-            2. Adds the documents to the vectorstore.
+        1. Embeds documents.
+        2. Adds the documents to the vectorstore.
+
         This is intended to be a quick way to get started.
+
         Example:
-            .. code-block:: python
-                from langchain import VLite
-                from langchain.embeddings import OpenAIEmbeddings
-                embeddings = OpenAIEmbeddings()
-                vlite = VLite.from_documents(documents, embeddings)
+        .. code-block:: python
+
+            from langchain import VLite
+            from langchain.embeddings import OpenAIEmbeddings
+
+            embeddings = OpenAIEmbeddings()
+            vlite = VLite.from_documents(documents, embeddings)
         """
         vlite = cls(embedding_function=embedding, collection=collection, **kwargs)
         vlite.add_documents(documents, **kwargs)
