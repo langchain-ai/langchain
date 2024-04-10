@@ -22,6 +22,7 @@ class GlueCatalogLoader(BaseLoader):
     def __init__(
         self,
         database: str,
+        *,
         session: Optional[Session] = None,
         profile_name: Optional[str] = None,
         table_filter: Optional[List[str]] = None,
