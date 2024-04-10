@@ -479,7 +479,7 @@ class GenerateUsername(BaseModel):
 
 
 def test_tool_use() -> None:
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
     msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
@@ -489,6 +489,12 @@ def test_tool_use() -> None:
     assert len(ai_msg.tool_calls) == 1
     tool_call = ai_msg.tool_calls[0]
     assert "args" in tool_call
+
+    tool_msg = ToolMessage(
+        "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
+    )
+    msgs.extend([ai_msg, tool_msg])
+    llm_with_tool.invoke(msgs)
 
     # Test streaming
     ai_messages = llm_with_tool.stream(msgs)
@@ -505,10 +511,11 @@ def test_tool_use() -> None:
     tool_call_chunk = gathered.tool_call_chunks[0]
     assert "args" in tool_call_chunk
 
-    tool_msg = ToolMessage(
-        "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
+    streaming_tool_msg = ToolMessage(
+        "sally_green_hair",
+        tool_call_id=gathered.additional_kwargs["tool_calls"][0]["id"],
     )
-    msgs.extend([ai_msg, tool_msg])
+    msgs.extend([gathered, streaming_tool_msg])
     llm_with_tool.invoke(msgs)
 
 
