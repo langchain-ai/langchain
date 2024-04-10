@@ -1,11 +1,19 @@
 """Tool for the Golden API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_community.utilities.golden_query import GoldenQueryAPIWrapper
+
+
+class GoldenQueryRunToolInput(BaseModel):
+    """Input for the GoldenQueryRun tool."""
+
+    query: str = Field(description="Query for GoldenQueryRun tool")
+
 
 
 class GoldenQueryRun(BaseTool):
@@ -24,6 +32,7 @@ class GoldenQueryRun(BaseTool):
         " in JSON format."
     )
     api_wrapper: GoldenQueryAPIWrapper
+    args_schema: Type[BaseModel] = GoldenQueryRunToolInput
 
     def _run(
         self,
