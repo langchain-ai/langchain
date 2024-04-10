@@ -1,36 +1,32 @@
+from typing import Union
+
+import pytest
+
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration
 
 
-def test_msg_with_text() -> None:
-    msgs = [
-        AIMessage("foo"),
-        AIMessage(["foo"]),
-        AIMessage([{"text": "foo", "type": "text"}]),
-        AIMessage(
-            [
-                {"tool_use": {}, "type": "tool_use"},
-                {"text": "foo", "type": "text"},
-                "bar",
-            ]
-        ),
-    ]
+@pytest.mark.parametrize(
+    "content",
+    [
+        "foo",
+        ["foo"],
+        [{"text": "foo", "type": "text"}],
+        [
+            {"tool_use": {}, "type": "tool_use"},
+            {"text": "foo", "type": "text"},
+            "bar",
+        ],
+    ],
+)
+def test_msg_with_text(content: Union[str, list]) -> None:
     expected = "foo"
-    for msg in msgs:
-        actual = ChatGeneration(message=msg).text
-        assert actual == expected
+    actual = ChatGeneration(message=AIMessage(content=content)).text
+    assert actual == expected
 
 
-def test_msg_no_text() -> None:
-    msgs = [
-        AIMessage([]),
-        AIMessage(
-            [
-                {"tool_use": {}, "type": "tool_use"},
-            ]
-        ),
-    ]
+@pytest.mark.parametrize("content", [[], [{"tool_use": {}, "type": "tool_use"}]])
+def test_msg_no_text(content: Union[str, list]) -> None:
     expected = ""
-    for msg in msgs:
-        actual = ChatGeneration(message=msg).text
-        assert actual == expected
+    actual = ChatGeneration(message=AIMessage(content=content)).text
+    assert actual == expected
