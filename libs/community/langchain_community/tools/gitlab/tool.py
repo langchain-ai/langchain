@@ -7,13 +7,19 @@ To use this tool, you must first set as environment variables:
     GITLAB_REPOSITORY -> format: {owner}/{repo}
 
 """
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.gitlab import GitLabAPIWrapper
+
+
+class GitLabActionToolInput(BaseModel):
+    """Input for the GitHub Action tool."""
+
+    instructions: Optional[str] = Field(description="Query for GitLab Actions Tool")
 
 
 class GitLabAction(BaseTool):
@@ -23,6 +29,7 @@ class GitLabAction(BaseTool):
     mode: str
     name: str = ""
     description: str = ""
+    args_schema: Optional[Type[BaseModel]] = GitLabActionToolInput
 
     def _run(
         self,

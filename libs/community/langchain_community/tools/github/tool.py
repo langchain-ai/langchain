@@ -16,7 +16,6 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.github import GitHubAPIWrapper
 
 
-
 class GitHubActionToolInput(BaseModel):
     """Input for the GitHub Action tool."""
 
