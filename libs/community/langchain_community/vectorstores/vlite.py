@@ -147,7 +147,7 @@ class VLite(VectorStore):
         ]
         return documents_with_scores
 
-    def update_document(self, document_id: str, document: Document):
+    def update_document(self, document_id: str, document: Document) -> None:
         """Update an existing document in the vectorstore."""
         self.vlite.update(
             document_id, text=document.page_content, metadata=document.metadata
