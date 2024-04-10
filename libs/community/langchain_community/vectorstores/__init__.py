@@ -265,6 +265,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.vespa import (
         VespaStore,  # noqa: F401
     )
+    from langchain_community.vectorstores.vlite import (
+        VLite,  # noqa: F401
+    )
     from langchain_community.vectorstores.weaviate import (
         Weaviate,  # noqa: F401
     )
@@ -364,6 +367,7 @@ __all__ = [
     "Vectara",
     "VectorStore",
     "VespaStore",
+    "VLite",
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
