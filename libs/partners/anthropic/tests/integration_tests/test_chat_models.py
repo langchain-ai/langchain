@@ -1,9 +1,15 @@
 """Test ChatAnthropic chat model."""
 
+import json
 from typing import List
 
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+)
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -234,6 +240,28 @@ def test_tool_use() -> None:
     response = llm_with_tools.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
+    assert isinstance(response.tool_calls, list)
+    assert len(response.tool_calls) == 1
+    tool_call = response.tool_calls[0]
+    assert tool_call["name"] == "get_weather"
+    assert isinstance(tool_call["args"], dict)
+    assert "location" in tool_call["args"]
+
+    # Test streaming
+    first = True
+    for chunk in llm_with_tools.stream("what's the weather in san francisco, ca"):
+        if first:
+            gathered = chunk
+            first = False
+        else:
+            gathered = gathered + chunk  # type: ignore
+    assert isinstance(gathered, AIMessageChunk)
+    assert isinstance(gathered.tool_call_chunks, list)
+    assert len(gathered.tool_call_chunks) == 1
+    tool_call_chunk = gathered.tool_call_chunks[0]
+    assert tool_call_chunk["name"] == "get_weather"
+    assert isinstance(tool_call_chunk["args"], str)
+    assert "location" in json.loads(tool_call_chunk["args"])
 
 
 def test_with_structured_output() -> None:
