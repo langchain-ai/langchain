@@ -262,6 +262,13 @@ class PebbloSafeLoader(BaseLoader):
             pebblo_resp = requests.post(
                 app_discover_url, headers=headers, json=payload, timeout=20
             )
+            pebblo_resp_docs = json.loads(pebblo_resp.text).get("docs")
+            payload.update(
+                {
+                    "pebbloServerVersion": pebblo_resp_docs.get("pebbloServerVersion"),
+                    "pebbloClientVersion": pebblo_resp_docs.get("pebbloClientVersion"),
+                }
+            )
             logger.debug(
                 "send_discover[local]: request url %s, body %s len %s\
                     response status %s body %s",
