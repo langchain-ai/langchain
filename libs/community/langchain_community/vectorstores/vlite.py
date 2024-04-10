@@ -26,7 +26,6 @@ class VLite(VectorStore):
         # Third-party imports
         try:
             from vlite import VLite as Vlite
-            from vlite.utils import process_file
         except ImportError:
             raise ImportError(
                 "Could not import vlite python package. "
