@@ -146,6 +146,11 @@ class ChatSparkLLM(BaseChatModel):
     top_k: int = 4
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
