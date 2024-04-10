@@ -18,9 +18,9 @@ to the LLM to include available tools and their schemas, and for responses to in
 calls to these tools. For instance, given a search engine tool, an LLM might handle a 
 query by first issuing a call to the search engine. The system calling the LLM can 
 receive the tool call, execute it, and return the output to the LLM to inform its 
-response. LangChain includes a suite of [built-in tools](https://python.langchain.com/docs/integrations/tools/) 
-and supports several methods for defining your own [custom tools](docs/modules/tools/custom_tools). 
-Tool-calling is extremely useful for building [tool-using chains and agents](docs/use_cases/tool_use), 
+response. LangChain includes a suite of [built-in tools](/docs/integrations/tools/) 
+and supports several methods for defining your own [custom tools](/docs/modules/tools/custom_tools). 
+Tool-calling is extremely useful for building [tool-using chains and agents](/docs/use_cases/tool_use), 
 and for getting structured outputs from models more generally.
 
 Providers adopt different conventions for formatting tool schemas and tool calls. 
@@ -165,7 +165,7 @@ of [InvalidToolCall](https://api.python.langchain.com/en/latest/messages/langcha
 are populated in the `.invalid_tool_calls` attribute. An `InvalidToolCall` can have 
 a name, string arguments, identifier, and error message.
 
-If desired, [output parsers](docs/modules/model_io/output_parsers) can further 
+If desired, [output parsers](/docs/modules/model_io/output_parsers) can further 
 process the output. For example, we can convert back to the original Pydantic class:
 
 ```python
@@ -194,6 +194,8 @@ Because message chunks inherit from their parent message class, an
 with tool call chunks will also include `.tool_calls` and `.invalid_tool_calls` fields. 
 These fields are parsed best-effort from the message's tool call chunks.
 
+Note that not all providers currently support streaming for tool calls.
+
 Example:
 
 ```python
@@ -216,7 +218,7 @@ async for chunk in llm_with_tools.astream(query):
 []
 ```
 
-Note that adding message chunks will merge their corresponding tool call chunks. This is the principle by which LangChain's various [tool output parsers](https://python.langchain.com/docs/modules/model_io/output_parsers/types/openai_tools/) support streaming.
+Note that adding message chunks will merge their corresponding tool call chunks. This is the principle by which LangChain's various [tool output parsers](/docs/modules/model_io/output_parsers/types/openai_tools/) support streaming.
 
 For example, below we accumulate tool call chunks:
 
