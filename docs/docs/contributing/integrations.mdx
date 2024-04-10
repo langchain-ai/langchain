@@ -190,12 +190,9 @@ Maintainer steps (Contributors should **not** do these):
 
 ## Partner package in external repo
 
-If you are creating a partner package in an external repo, you should follow the same steps as above, 
-but you will need to set up your own CI/CD and package management.
+Partner packages in external repos must be coordinated between the LangChain team and
+the partner organization to ensure that they are maintained and updated.
 
-Name your package as `langchain-{partner}-{integration}`.
-
-Still, you have to create the `libs/partners/{partner}-{integration}` folder in the `LangChain` monorepo
-and add a `README.md` file with a link to the external repo. 
-See this [example](https://github.com/langchain-ai/langchain/tree/master/libs/partners/google-genai).
-This allows keeping track of all the partner packages in the `LangChain` documentation.
+If you're interested in creating a partner package in an external repo, please start
+with one in the LangChain repo, and then reach out to the LangChain team to discuss
+how to move it to an external repo.
