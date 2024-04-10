@@ -110,7 +110,7 @@ class ZeroShotAgent(Agent):
             format_instructions=format_instructions,
             input_variables=input_variables,
         )
-        llm_chain = LLMChain(
+        llm_chain = LLMChain(  # type: ignore[misc]
             llm=llm,
             prompt=prompt,
             callback_manager=callback_manager,

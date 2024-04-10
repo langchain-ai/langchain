@@ -126,12 +126,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "agents",
         "AgentActionMessageLog",
     ),
-    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+    ("langchain", "schema", "agent", "ToolAgentAction"): (
         "langchain",
         "agents",
         "output_parsers",
-        "openai_tools",
-        "OpenAIToolAgentAction",
+        "tools",
+        "ToolAgentAction",
     ),
     ("langchain", "prompts", "chat", "BaseMessagePromptTemplate"): (
         "langchain_core",
@@ -481,6 +481,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "retry",
         "RunnableRetry",
     ),
+    ("langchain_core", "prompts", "structured", "StructuredPrompt"): (
+        "langchain_core",
+        "prompts",
+        "structured",
+        "StructuredPrompt",
+    ),
 }
 
 # Needed for backwards compatibility for old versions of LangChain where things
@@ -521,6 +527,13 @@ _OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "prompts",
         "image",
         "ImagePromptTemplate",
+    ),
+    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+        "langchain",
+        "agents",
+        "output_parsers",
+        "openai_tools",
+        "OpenAIToolAgentAction",
     ),
 }
 
@@ -964,5 +977,11 @@ _JS_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "messages",
         "tool",
         "ToolMessageChunk",
+    ),
+    ("langchain_core", "prompts", "image", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
     ),
 }

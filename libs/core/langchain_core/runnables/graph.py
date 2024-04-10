@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     NamedTuple,
@@ -51,6 +53,46 @@ class Node(NamedTuple):
     data: Union[Type[BaseModel], RunnableType]
 
 
+class Branch(NamedTuple):
+    """Branch in a graph."""
+
+    condition: Callable[..., str]
+    ends: Optional[dict[str, str]]
+
+
+class CurveStyle(Enum):
+    """Enum for different curve styles supported by Mermaid"""
+
+    BASIS = "basis"
+    BUMP_X = "bumpX"
+    BUMP_Y = "bumpY"
+    CARDINAL = "cardinal"
+    CATMULL_ROM = "catmullRom"
+    LINEAR = "linear"
+    MONOTONE_X = "monotoneX"
+    MONOTONE_Y = "monotoneY"
+    NATURAL = "natural"
+    STEP = "step"
+    STEP_AFTER = "stepAfter"
+    STEP_BEFORE = "stepBefore"
+
+
+@dataclass
+class NodeColors:
+    """Schema for Hexadecimal color codes for different node types"""
+
+    start: str = "#ffdfba"
+    end: str = "#baffc9"
+    other: str = "#fad7de"
+
+
+class MermaidDrawMethod(Enum):
+    """Enum for different draw methods supported by Mermaid"""
+
+    PYPPETEER = "pyppeteer"  # Uses Pyppeteer to render the graph
+    API = "api"  # Uses Mermaid.INK API to render the graph
+
+
 def node_data_str(node: Node) -> str:
     from langchain_core.runnables.base import Runnable
 
@@ -74,7 +116,9 @@ def node_data_str(node: Node) -> str:
     return data if not data.startswith("Runnable") else data[8:]
 
 
-def node_data_json(node: Node) -> Dict[str, Union[str, Dict[str, Any]]]:
+def node_data_json(
+    node: Node, *, with_schemas: bool = False
+) -> Dict[str, Union[str, Dict[str, Any]]]:
     from langchain_core.load.serializable import to_json_not_implemented
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 
@@ -95,10 +139,17 @@ def node_data_json(node: Node) -> Dict[str, Union[str, Dict[str, Any]]]:
             },
         }
     elif inspect.isclass(node.data) and issubclass(node.data, BaseModel):
-        return {
-            "type": "schema",
-            "data": node.data.schema(),
-        }
+        return (
+            {
+                "type": "schema",
+                "data": node.data.schema(),
+            }
+            if with_schemas
+            else {
+                "type": "schema",
+                "data": node_data_str(node),
+            }
+        )
     else:
         return {
             "type": "unknown",
@@ -112,8 +163,9 @@ class Graph:
 
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
+    branches: Optional[Dict[str, List[Branch]]] = field(default_factory=dict)
 
-    def to_json(self) -> Dict[str, List[Dict[str, Any]]]:
+    def to_json(self, *, with_schemas: bool = False) -> Dict[str, List[Dict[str, Any]]]:
         """Convert the graph to a JSON-serializable format."""
         stable_node_ids = {
             node.id: i if is_uuid(node.id) else node.id
@@ -122,7 +174,10 @@ class Graph:
 
         return {
             "nodes": [
-                {"id": stable_node_ids[node.id], **node_data_json(node)}
+                {
+                    "id": stable_node_ids[node.id],
+                    **node_data_json(node, with_schemas=with_schemas),
+                }
                 for node in self.nodes.values()
             ],
             "edges": [
@@ -277,3 +332,59 @@ class Graph:
                 edges=labels["edges"] if labels is not None else {},
             ),
         ).draw(self, output_file_path)
+
+    def draw_mermaid(
+        self,
+        curve_style: CurveStyle = CurveStyle.LINEAR,
+        node_colors: NodeColors = NodeColors(
+            start="#ffdfba", end="#baffc9", other="#fad7de"
+        ),
+        wrap_label_n_words: int = 9,
+    ) -> str:
+        from langchain_core.runnables.graph_mermaid import draw_mermaid
+
+        nodes = {node.id: node_data_str(node) for node in self.nodes.values()}
+
+        first_node = self.first_node()
+        first_label = node_data_str(first_node) if first_node is not None else None
+
+        last_node = self.last_node()
+        last_label = node_data_str(last_node) if last_node is not None else None
+
+        return draw_mermaid(
+            nodes=nodes,
+            edges=self.edges,
+            branches=self.branches,
+            first_node_label=first_label,
+            last_node_label=last_label,
+            curve_style=curve_style,
+            node_colors=node_colors,
+            wrap_label_n_words=wrap_label_n_words,
+        )
+
+    def draw_mermaid_png(
+        self,
+        curve_style: CurveStyle = CurveStyle.LINEAR,
+        node_colors: NodeColors = NodeColors(
+            start="#ffdfba", end="#baffc9", other="#fad7de"
+        ),
+        wrap_label_n_words: int = 9,
+        output_file_path: Optional[str] = None,
+        draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
+        background_color: str = "white",
+        padding: int = 10,
+    ) -> bytes:
+        from langchain_core.runnables.graph_mermaid import draw_mermaid_png
+
+        mermaid_syntax = self.draw_mermaid(
+            curve_style=curve_style,
+            node_colors=node_colors,
+            wrap_label_n_words=wrap_label_n_words,
+        )
+        return draw_mermaid_png(
+            mermaid_syntax=mermaid_syntax,
+            output_file_path=output_file_path,
+            draw_method=draw_method,
+            background_color=background_color,
+            padding=padding,
+        )
