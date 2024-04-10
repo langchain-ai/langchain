@@ -328,7 +328,7 @@ def _get_key(
             if scope in (0, False):
                 return scope
 
-            # For every dot seperated key
+            # For every dot separated key
             for child in key.split("."):
                 # Return an empty string if falsy, with two exceptions
                 # 0 should return 0, and False should return False
@@ -437,7 +437,7 @@ def render(
     A string containing the rendered template.
     """
 
-    # If the template is a seqeuence but not derived from a string
+    # If the template is a sequence but not derived from a string
     if isinstance(template, Sequence) and not isinstance(template, str):
         # Then we don't need to tokenize it
         # But it does need to be a generator
@@ -527,7 +527,7 @@ def render(
                         text += "%s%s %s%s" % (
                             def_ldel,
                             {
-                                "commment": "!",
+                                "comment": "!",
                                 "section": "#",
                                 "inverted section": "^",
                                 "end": "/",
@@ -635,7 +635,7 @@ def render(
                 # then remove the spaces from the end
                 part_out = part_out.rstrip(" \t")
 
-            # Add the partials output to the ouput
+            # Add the partials output to the output
             output += part_out
 
     return output
