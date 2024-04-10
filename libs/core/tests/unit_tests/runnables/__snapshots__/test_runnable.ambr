@@ -5299,6 +5299,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -5306,6 +5315,15 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
           }),
           'type': dict({
             'default': 'ai',
@@ -5545,6 +5563,34 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'StringPromptValue': dict({
         'description': 'String prompt value.',
         'properties': dict({
@@ -5623,6 +5669,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -5765,6 +5834,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -5772,6 +5850,15 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
           }),
           'type': dict({
             'default': 'ai',
@@ -6011,6 +6098,34 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'StringPromptValue': dict({
         'description': 'String prompt value.',
         'properties': dict({
@@ -6089,6 +6204,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -6215,6 +6353,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6222,6 +6369,15 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
           }),
           'type': dict({
             'default': 'ai',
@@ -6414,6 +6570,34 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'SystemMessage': dict({
         'description': '''
           Message for priming AI behavior, usually passed in as the first of a sequence
@@ -6470,6 +6654,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -6584,6 +6791,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6591,6 +6807,15 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
           }),
           'type': dict({
             'default': 'ai',
@@ -6830,6 +7055,34 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'StringPromptValue': dict({
         'description': 'String prompt value.',
         'properties': dict({
@@ -6908,6 +7161,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -7022,6 +7298,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7029,6 +7314,15 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
           }),
           'type': dict({
             'default': 'ai',
@@ -7268,6 +7562,34 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'StringPromptValue': dict({
         'description': 'String prompt value.',
         'properties': dict({
@@ -7346,6 +7668,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -7452,6 +7797,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7459,6 +7813,15 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
           }),
           'type': dict({
             'default': 'ai',
@@ -7698,6 +8061,34 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'PromptTemplateOutput': dict({
         'anyOf': list([
           dict({
@@ -7787,6 +8178,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
@@ -7920,6 +8334,15 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -7927,6 +8350,15 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
           }),
           'type': dict({
             'default': 'ai',
@@ -8119,6 +8551,34 @@
         'title': 'HumanMessage',
         'type': 'object',
       }),
+      'InvalidToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
       'SystemMessage': dict({
         'description': '''
           Message for priming AI behavior, usually passed in as the first of a sequence
@@ -8175,6 +8635,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+        ]),
+        'title': 'ToolCall',
         'type': 'object',
       }),
       'ToolMessage': dict({
