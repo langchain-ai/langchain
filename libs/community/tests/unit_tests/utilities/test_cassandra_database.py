@@ -1,8 +1,8 @@
-import unittest
 from collections import namedtuple
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
 from cassandra.cluster import ResultSet
 
 from langchain_community.utilities.cassandra_database import (
@@ -15,8 +15,8 @@ from langchain_community.utilities.cassandra_database import (
 MockRow = namedtuple("MockRow", ["col1", "col2"])
 
 
-class TestCassandraDatabase(unittest.TestCase):
-    def setUp(self) -> None:
+class TestCassandraDatabase(object):
+    def __init__(self) -> None:
         self.mock_session = MagicMock()
         self.cassandra_db = CassandraDatabase(session=self.mock_session)
 
@@ -89,5 +89,4 @@ class TestCassandraDatabase(unittest.TestCase):
         self.assertIn("## Keyspace: keyspace2", markdown)
 
 
-if __name__ == "__main__":
-    unittest.main()
+pytest.main()
