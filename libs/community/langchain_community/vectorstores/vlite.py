@@ -4,20 +4,11 @@ from __future__ import annotations
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
-# Third-party imports
-try:
-    from vlite import VLite as Vlite
-    from vlite.utils import process_file
-except ImportError:
-    raise ImportError(
-        "Could not import vlite python package. "
-        "Please install it with `pip install vlite`."
-    )
-
 # LangChain imports
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+
 
 class VLite(VectorStore):
     """VLite is a simple and fast vector database for semantic search."""
@@ -31,11 +22,15 @@ class VLite(VectorStore):
         super().__init__()
         self.embedding_function = embedding_function
         self.collection = collection or f"vlite_{uuid4().hex}"
-        
-        if Vlite is None:
+
+        # Third-party imports
+        try:
+            from vlite import VLite as Vlite
+            from vlite.utils import process_file
+        except ImportError:
             raise ImportError(
                 "Could not import vlite python package. "
-                "Please install it with `pip install vlite` "
+                "Please install it with `pip install vlite`."
             )
         self.vlite = Vlite(collection=self.collection, **kwargs)
 
@@ -46,12 +41,10 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
-
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             kwargs: vectorstore specific parameters
-
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
@@ -90,12 +83,14 @@ class VLite(VectorStore):
 
         for doc, id in zip(documents, ids):
             if doc.path:
-                if process_file is None:
+                # Third-party imports
+                try:
+                    from vlite.utils import process_file
+                except ImportError:
                     raise ImportError(
-                        "Could not import process_file from vlite.utils. "
-                        "Please make sure vlite is installed correctly."
+                        "Could not import vlite python package. "
+                        "Please install it with `pip install vlite`."
                     )
-
                 processed_data = process_file(doc.path)
                 texts.extend(processed_data)
                 metadatas.extend([doc.metadata] * len(processed_data))
@@ -113,11 +108,9 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
-
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-
         Returns:
             List of Documents most similar to the query.
         """
@@ -132,12 +125,10 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
-
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-
         Returns:
             List of Tuples of (doc, score), where score is the similarity score.
         """
@@ -170,19 +161,14 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> VLite:
         """Construct VLite wrapper from raw documents.
-
         This is a user-friendly interface that:
             1. Embeds documents.
             2. Adds the documents to the vectorstore.
-
         This is intended to be a quick way to get started.
-
         Example:
             .. code-block:: python
-
                 from langchain import VLite
                 from langchain.embeddings import OpenAIEmbeddings
-
                 embeddings = OpenAIEmbeddings()
                 vlite = VLite.from_texts(texts, embeddings)
         """
@@ -201,19 +187,14 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> VLite:
         """Construct VLite wrapper from a list of documents.
-
         This is a user-friendly interface that:
             1. Embeds documents.
             2. Adds the documents to the vectorstore.
-
         This is intended to be a quick way to get started.
-
         Example:
             .. code-block:: python
-
                 from langchain import VLite
                 from langchain.embeddings import OpenAIEmbeddings
-
                 embeddings = OpenAIEmbeddings()
                 vlite = VLite.from_documents(documents, embeddings)
         """
