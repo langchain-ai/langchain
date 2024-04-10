@@ -1,5 +1,7 @@
 from typing import Any, Dict, Iterator, List, Optional
 
+from boto3.session import Session
+
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -20,6 +22,7 @@ class GlueCatalogLoader(BaseLoader):
     def __init__(
         self,
         database: str,
+        session: Optional[Session] = None,
         profile_name: Optional[str] = None,
         table_filter: Optional[List[str]] = None,
     ):
@@ -27,13 +30,17 @@ class GlueCatalogLoader(BaseLoader):
 
         Args:
             database: The name of the Glue database from which to load table schemas.
+            session: Optional. A boto3 Session object. If not provided, a new session will be created.
             profile_name: Optional. The name of the AWS profile to use for credentials.
             table_filter: Optional. The list of the table to to filter.
         """
         self.database = database
         self.profile_name = profile_name
         self.table_filter = table_filter
-        self.glue_client = self._initialize_glue_client()
+        if session:
+            self.glue_client = session.client("glue")
+        else:
+            self.glue_client = self._initialize_glue_client()
 
     def _initialize_glue_client(self) -> Any:
         """Initialize the AWS Glue client.
