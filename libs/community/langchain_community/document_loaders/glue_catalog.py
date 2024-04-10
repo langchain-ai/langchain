@@ -101,8 +101,9 @@ class GlueCatalogLoader(BaseLoader):
         table_names = self._fetch_tables()
         for table_name in table_names:
             schema = self._fetch_table_schema(table_name)
-            page_content = f"Table: {table_name}\nSchema:\n" + "\n".join(
-                f"{col}: {dtype}" for col, dtype in schema.items()
+            page_content = (
+                f"Database: {self.database}\nTable: {table_name}\nSchema:\n"
+                + "\n".join(f"{col}: {dtype}" for col, dtype in schema.items())
             )
             doc = Document(
                 page_content=page_content, metadata={"table_name": table_name}
