@@ -390,7 +390,7 @@ class ChatTongyi(BaseChatModel):
             if (
                 choice["finish_reason"] == "null"
                 and message["content"] == ""
-                and not "tool_calls" in message
+                and "tool_calls" not in message
             ):
                 continue
 
@@ -398,7 +398,8 @@ class ChatTongyi(BaseChatModel):
             if "tool_calls" in message and choice["finish_reason"] == "null":
                 continue
 
-            # If we are streaming without `incremental_output = True`, we need to chop off the previous message content
+            # If we are streaming without `incremental_output = True`,
+            # we need to chop off the previous message content
             if not params.get("incremental_output", False):
                 message["content"] = message["content"].replace(prev_msg_content, "")
                 prev_msg_content += message["content"]
@@ -440,7 +441,8 @@ class ChatTongyi(BaseChatModel):
         params = {**self._default_params, **kwargs}
         if stop is not None:
             params["stop"] = stop
-        # According to the Tongyi official docs, `incremental_output` with `tools` is not supported yet
+        # According to the Tongyi official docs,
+        # `incremental_output` with `tools` is not supported yet
         if params.get("stream") and not params.get("tools"):
             params["incremental_output"] = True
 
