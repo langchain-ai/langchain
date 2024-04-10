@@ -181,8 +181,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                         "name": tc["name"],
                         "arguments": tc["args"],
                     },
+                    "index": i
                 }
-                for tc in message.tool_calls
+                for i, tc in enumerate(message.tool_calls)
             ]
         elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
