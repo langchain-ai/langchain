@@ -32,6 +32,8 @@ class _SolarClient(BaseModel):
 
 
 class SolarCommon(BaseModel):
+    """Common configuration for Solar LLMs."""
+
     _client: _SolarClient
     base_url: str = SOLAR_SERVICE_URL_BASE
     solar_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
@@ -92,6 +94,7 @@ class SolarCommon(BaseModel):
 
 class Solar(SolarCommon, LLM):
     """Solar large language models.
+
     To use, you should have the environment variable
     ``SOLAR_API_KEY`` set with your API key.
     Referenced from https://console.upstage.ai/services/solar
