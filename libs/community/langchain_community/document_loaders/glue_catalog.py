@@ -1,7 +1,6 @@
 from typing import Any, Dict, Iterator, List, Optional
 
 from boto3.session import Session
-
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
