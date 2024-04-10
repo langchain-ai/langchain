@@ -172,11 +172,25 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             # If function call only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
-        if "tool_calls" in message.additional_kwargs:
+        if message.tool_calls:
+            message_dict["tool_calls"] = [
+                {
+                    "type": "function",
+                    "id": tc["id"],
+                    "function": {
+                        "name": tc["name"],
+                        "arguments": tc["args"],
+                    },
+                }
+                for tc in message.tool_calls
+            ]
+        elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
             # If tool calls only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
+        else:
+            pass
     elif isinstance(message, SystemMessage):
         message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
