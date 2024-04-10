@@ -5,7 +5,6 @@ import re
 import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import cassio.config
 from cassandra.cluster import ResultSet, Session
 
 IGNORED_KEYSPACES = [
@@ -441,9 +440,19 @@ class CassandraDatabase:
         - ValueError: If `cassio_init_kwargs` is provided but is not a dictionary of
           keyword arguments.
         """
+
         # Prefer given session
         if session:
             return session
+
+        # If a session is not provided, create one using cassio if available
+        # dynamically import cassio to avoid circular imports
+        try:
+            import cassio.config  # noqa: F401
+        except ImportError:
+            raise ValueError(
+                "cassio package not found, please install with" " `pip install cassio`"
+            )
 
         # Use pre-existing session on cassio
         s = cassio.config.resolve_session()
@@ -531,6 +540,24 @@ class Table:
             self._partition = partition
             self._clustering = clustering or []
             self._indexes = indexes or []
+
+    @classmethod
+    def from_database(
+        cls, keyspace: str, table_name: str, db: CassandraDatabase
+    ) -> Table:
+        """
+        Creates a Table instance by resolving the schema details from the database.
+
+        Args:
+            keyspace (str): The keyspace in which the table exists.
+            table_name (str): The name of the table.
+            db (CassandraDatabase): A database connection to resolve the table schema.
+
+        Returns:
+            Table: A Table instance representing the specified table.
+        """
+        table = cls(keyspace, table_name, db)
+        return table
 
     def as_markdown(
         self, include_keyspace: bool = True, header_level: Optional[int] = None
