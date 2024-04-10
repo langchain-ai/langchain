@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List
+from typing import List, Optional
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -25,6 +25,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
             of a single chat session.
         database_name: name of the database to use
         collection_name: name of the collection to use
+        history_size: maximum number of messages to store, must be positive or None (unlimited)
     """
 
     def __init__(
@@ -33,6 +34,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         database_name: str = DEFAULT_DBNAME,
         collection_name: str = DEFAULT_COLLECTION_NAME,
+        history_size: Optional[int] = None,
     ):
         self.connection_string = connection_string
         self.session_id = session_id
@@ -47,6 +49,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
         self.collection.create_index("SessionId")
+        self.history_size = history_size
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
@@ -75,6 +78,15 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
             )
         except errors.WriteError as err:
             logger.error(err)
+
+        if self.history_size:
+            try:
+                old_documents = (self.collection.find({"SessionId": self.session_id}, projection={"_id": True})
+                                 .sort("_id", -1).skip(self.history_size))
+                old_documents_ids = [doc['_id'] for doc in old_documents]
+                self.collection.delete_many({"_id": {"$in": old_documents_ids}})
+            except errors.OperationFailure as error:
+                logger.error(error)
 
     def clear(self) -> None:
         """Clear session memory from MongoDB"""
