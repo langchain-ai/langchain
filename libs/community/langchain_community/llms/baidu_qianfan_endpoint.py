@@ -180,6 +180,7 @@ class QianfanLLMEndpoint(LLM):
                 completion += chunk.text
             return completion
         params = self._convert_prompt_msg_params(prompt, **kwargs)
+        params["stop"] = stop
         response_payload = self.client.do(**params)
 
         return response_payload["result"]
@@ -198,6 +199,7 @@ class QianfanLLMEndpoint(LLM):
             return completion
 
         params = self._convert_prompt_msg_params(prompt, **kwargs)
+        params["stop"] = stop
         response_payload = await self.client.ado(**params)
 
         return response_payload["result"]
@@ -210,6 +212,7 @@ class QianfanLLMEndpoint(LLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = self._convert_prompt_msg_params(prompt, **{**kwargs, "stream": True})
+        params["stop"] = stop
         for res in self.client.do(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])
@@ -225,6 +228,7 @@ class QianfanLLMEndpoint(LLM):
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         params = self._convert_prompt_msg_params(prompt, **{**kwargs, "stream": True})
+        params["stop"] = stop
         async for res in await self.client.ado(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])

@@ -155,7 +155,7 @@ class XMLOutputParser(BaseTransformOutputParser):
     def get_format_instructions(self) -> str:
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> Dict[str, List[Any]]:
+    def parse(self, text: str) -> Dict[str, Union[str, List[Any]]]:
         # Try to find XML string within triple backticks
         # Imports are temporarily placed here to avoid issue with caching on CI
         # likely if you're reading this you can move them to the top of the file
@@ -207,9 +207,13 @@ class XMLOutputParser(BaseTransformOutputParser):
                 yield output
         streaming_parser.close()
 
-    def _root_to_dict(self, root: ET.Element) -> Dict[str, List[Any]]:
+    def _root_to_dict(self, root: ET.Element) -> Dict[str, Union[str, List[Any]]]:
         """Converts xml tree to python dictionary."""
-        result: Dict[str, List[Any]] = {root.tag: []}
+        if root.text and bool(re.search(r"\S", root.text)):
+            # If root text contains any non-whitespace character it
+            # returns {root.tag: root.text}
+            return {root.tag: root.text}
+        result: Dict = {root.tag: []}
         for child in root:
             if len(child) == 0:
                 result[root.tag].append({child.tag: child.text})

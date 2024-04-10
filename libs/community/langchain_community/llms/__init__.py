@@ -356,6 +356,12 @@ def _import_mlflow_ai_gateway() -> Type[BaseLLM]:
     return MlflowAIGateway
 
 
+def _import_mlx_pipeline() -> Type[BaseLLM]:
+    from langchain_community.llms.mlx_pipeline import MLXPipeline
+
+    return MLXPipeline
+
+
 def _import_modal() -> Type[BaseLLM]:
     from langchain_community.llms.modal import Modal
 
@@ -590,6 +596,14 @@ def _import_watsonxllm() -> Type[BaseLLM]:
     return WatsonxLLM
 
 
+def _import_weight_only_quantization() -> Any:
+    from langchain_community.llms.weight_only_quantization import (
+        WeightOnlyQuantPipeline,
+    )
+
+    return WeightOnlyQuantPipeline
+
+
 def _import_writer() -> Type[BaseLLM]:
     from langchain_community.llms.writer import Writer
 
@@ -729,6 +743,8 @@ def __getattr__(name: str) -> Any:
         return _import_mlflow()
     elif name == "MlflowAIGateway":
         return _import_mlflow_ai_gateway()
+    elif name == "MLXPipeline":
+        return _import_mlx_pipeline()
     elif name == "Modal":
         return _import_modal()
     elif name == "MosaicML":
@@ -805,6 +821,8 @@ def __getattr__(name: str) -> Any:
         return _import_vllm_openai()
     elif name == "WatsonxLLM":
         return _import_watsonxllm()
+    elif name == "WeightOnlyQuantPipeline":
+        return _import_weight_only_quantization()
     elif name == "Writer":
         return _import_writer()
     elif name == "Xinference":
@@ -877,6 +895,7 @@ __all__ = [
     "Minimax",
     "Mlflow",
     "MlflowAIGateway",
+    "MLXPipeline",
     "Modal",
     "MosaicML",
     "NIBittensorLLM",
@@ -918,6 +937,7 @@ __all__ = [
     "VertexAIModelGarden",
     "VolcEngineMaasLLM",
     "WatsonxLLM",
+    "WeightOnlyQuantPipeline",
     "Writer",
     "Xinference",
     "YandexGPT",
@@ -974,6 +994,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "mlflow": _import_mlflow,
         "mlflow-chat": _import_mlflow_chat,  # deprecated / only for back compat
         "mlflow-ai-gateway": _import_mlflow_ai_gateway,
+        "mlx_pipeline": _import_mlx_pipeline,
         "modal": _import_modal,
         "mosaic": _import_mosaicml,
         "nebula": _import_symblai_nebula,
@@ -1007,6 +1028,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
         "watsonxllm": _import_watsonxllm,
+        "weight_only_quantization": _import_weight_only_quantization,
         "writer": _import_writer,
         "xinference": _import_xinference,
         "javelin-ai-gateway": _import_javelin_ai_gateway,

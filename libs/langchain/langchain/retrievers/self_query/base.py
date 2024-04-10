@@ -1,4 +1,5 @@
 """Retriever that generates and executes structured queries over its own data source."""
+
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
@@ -8,7 +9,6 @@ from langchain_community.vectorstores import (
     DashVector,
     DeepLake,
     Dingo,
-    ElasticsearchStore,
     Milvus,
     MongoDBAtlasVectorSearch,
     MyScale,
@@ -18,9 +18,13 @@ from langchain_community.vectorstores import (
     Qdrant,
     Redis,
     SupabaseVectorStore,
+    TencentVectorDB,
     TimescaleVector,
     Vectara,
     Weaviate,
+)
+from langchain_community.vectorstores import (
+    ElasticsearchStore as ElasticsearchStoreCommunity,
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
@@ -51,6 +55,7 @@ from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.redis import RedisTranslator
 from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
+from langchain.retrievers.self_query.tencentvectordb import TencentVectorDBTranslator
 from langchain.retrievers.self_query.timescalevector import TimescaleVectorTranslator
 from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
@@ -73,7 +78,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
-        ElasticsearchStore: ElasticsearchTranslator,
+        ElasticsearchStoreCommunity: ElasticsearchTranslator,
         Milvus: MilvusTranslator,
         SupabaseVectorStore: SupabaseVectorTranslator,
         TimescaleVector: TimescaleVectorTranslator,
@@ -87,6 +92,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
     elif isinstance(vectorstore, Redis):
         return RedisTranslator.from_vectorstore(vectorstore)
+    elif isinstance(vectorstore, TencentVectorDB):
+        fields = [
+            field.name for field in (vectorstore.meta_fields or []) if field.index
+        ]
+        return TencentVectorDBTranslator(fields)
     elif vectorstore.__class__ in BUILTIN_TRANSLATORS:
         return BUILTIN_TRANSLATORS[vectorstore.__class__]()
     else:
@@ -95,6 +105,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
             if isinstance(vectorstore, AstraDBVectorStore):
                 return AstraDBTranslator()
+        except ImportError:
+            pass
+
+        try:
+            from langchain_elasticsearch.vectorstores import ElasticsearchStore
+
+            if isinstance(vectorstore, ElasticsearchStore):
+                return ElasticsearchTranslator()
         except ImportError:
             pass
 

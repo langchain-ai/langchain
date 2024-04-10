@@ -49,6 +49,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -82,9 +84,31 @@ def _convert_mistral_chat_message_to_message(
     content = cast(str, _message["content"])
 
     additional_kwargs: Dict = {}
-    if tool_calls := _message.get("tool_calls"):
-        additional_kwargs["tool_calls"] = tool_calls
-    return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    tool_calls = []
+    invalid_tool_calls = []
+    if raw_tool_calls := _message.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        for raw_tool_call in raw_tool_calls:
+            try:
+                parsed: dict = cast(
+                    dict, parse_tool_call(raw_tool_call, return_id=False)
+                )
+                tool_calls.append(
+                    {
+                        **parsed,
+                        **{"id": None},
+                    },
+                )
+            except Exception as e:
+                invalid_tool_calls.append(
+                    dict(make_invalid_tool_call(raw_tool_call, str(e)))
+                )
+    return AIMessage(
+        content=content,
+        additional_kwargs=additional_kwargs,
+        tool_calls=tool_calls,
+        invalid_tool_calls=invalid_tool_calls,
+    )
 
 
 async def _aiter_sse(
@@ -133,9 +157,27 @@ def _convert_delta_to_message_chunk(
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
-        if tool_calls := _delta.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        if raw_tool_calls := _delta.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            try:
+                tool_call_chunks = [
+                    {
+                        "name": rtc["function"].get("name"),
+                        "args": rtc["function"].get("arguments"),
+                        "id": rtc.get("id"),
+                        "index": rtc.get("index"),
+                    }
+                    for rtc in raw_tool_calls
+                ]
+            except KeyError:
+                pass
+        else:
+            tool_call_chunks = []
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
@@ -163,7 +205,7 @@ def _convert_message_to_mistral_chat_message(
                 for tc in message.additional_kwargs["tool_calls"]
             ]
         else:
-            tool_calls = None
+            tool_calls = []
         return {
             "role": "assistant",
             "content": message.content,
@@ -186,7 +228,7 @@ class ChatMistralAI(BaseChatModel):
 
     client: httpx.Client = Field(default=None)  #: :meta private:
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
-    mistral_api_key: Optional[SecretStr] = None
+    mistral_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     endpoint: str = "https://api.mistral.ai/v1"
     max_retries: int = 5
     timeout: int = 120
@@ -201,6 +243,12 @@ class ChatMistralAI(BaseChatModel):
     random_seed: Optional[int] = None
     safe_mode: bool = False
     streaming: bool = False
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -249,6 +297,22 @@ class ChatMistralAI(BaseChatModel):
 
         rtn = _completion_with_retry(**kwargs)
         return rtn
+
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        overall_token_usage: dict = {}
+        for output in llm_outputs:
+            if output is None:
+                # Happens in streaming
+                continue
+            token_usage = output["token_usage"]
+            if token_usage is not None:
+                for k, v in token_usage.items():
+                    if k in overall_token_usage:
+                        overall_token_usage[k] += v
+                    else:
+                        overall_token_usage[k] = v
+        combined = {"token_usage": overall_token_usage, "model_name": self.model}
+        return combined
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
