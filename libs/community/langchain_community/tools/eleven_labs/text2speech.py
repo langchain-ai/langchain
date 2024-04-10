@@ -19,7 +19,7 @@ def _import_elevenlabs() -> Any:
 
 
 class ElevenLabsText2SpeechToolInput(BaseModel):
-    """Input for the EdenaiTool tool."""
+    """Input for the ElevenLabsModel tool."""
 
     query: str = Field(description="Text for ElevenLabs tool that needs to be converted to speech")
 
