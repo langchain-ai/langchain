@@ -68,11 +68,11 @@ class VLite(VectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """Add a list of documents to the vectorstore.
-        
+
         Args:
             documents: List of documents to add to the vectorstore.
             kwargs: vectorstore specific parameters
-            
+
         Returns:
             List of ids from adding the documents into the vectorstore.
         """
@@ -171,9 +171,7 @@ class VLite(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 vlite = VLite.from_texts(texts, embeddings)
         """
-        vlite = cls(
-            embedding_function=embedding, collection=collection, **kwargs
-        )
+        vlite = cls(embedding_function=embedding, collection=collection, **kwargs)
         vlite.add_texts(texts, metadatas, **kwargs)
         return vlite
 
@@ -197,8 +195,6 @@ class VLite(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 vlite = VLite.from_documents(documents, embeddings)
         """
-        vlite = cls(
-            embedding_function=embedding, collection=collection, **kwargs
-        )
+        vlite = cls(embedding_function=embedding, collection=collection, **kwargs)
         vlite.add_documents(documents, **kwargs)
         return vlite
