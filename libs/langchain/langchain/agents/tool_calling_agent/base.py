@@ -11,7 +11,7 @@ from langchain.agents.format_scratchpad.tools import (
 from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 
 
-def create_tools_agent(
+def create_tool_calling_agent(
     llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
 ) -> Runnable:
     """Create an agent that uses tools.
@@ -31,9 +31,9 @@ def create_tools_agent(
 
         .. code-block:: python
 
+            from langchain.agents import AgentExecutor, create_tool_calling_agent, tool
             from langchain_anthropic import ChatAnthropic
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-            from langchain.agents import AgentExecutor, create_tools_agent, tool
 
             prompt = ChatPromptTemplate.from_messages(
                 [
@@ -52,7 +52,7 @@ def create_tools_agent(
 
             tools = [magic_function]
 
-            agent = create_tools_agent(model, tools, prompt)
+            agent = create_tool_calling_agent(model, tools, prompt)
             agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
             agent_executor.invoke({"input": "what is the value of magic_function(3)?"})

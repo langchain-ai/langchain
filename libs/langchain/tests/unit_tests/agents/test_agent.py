@@ -28,7 +28,7 @@ from langchain.agents import (
     AgentType,
     create_openai_functions_agent,
     create_openai_tools_agent,
-    create_tools_agent,
+    create_tool_calling_agent,
     initialize_agent,
 )
 from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
@@ -1005,12 +1005,12 @@ async def test_openai_agent_tools_agent() -> None:
         [find_pet],  # type: ignore[list-item]
         template,
     )
-    tools_agent = create_tools_agent(
+    tool_calling_agent = create_tool_calling_agent(
         model,
         [find_pet],  # type: ignore[list-item]
         template,
     )
-    for agent in [openai_agent, tools_agent]:
+    for agent in [openai_agent, tool_calling_agent]:
         executor = AgentExecutor(agent=agent, tools=[find_pet])  # type: ignore[arg-type, list-item]
 
         # Invoke
