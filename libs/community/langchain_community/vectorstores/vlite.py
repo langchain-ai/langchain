@@ -25,13 +25,13 @@ class VLite(VectorStore):
 
         # Third-party imports
         try:
-            from vlite import VLite as Vlite
+            from vlite import VLite
         except ImportError:
             raise ImportError(
                 "Could not import vlite python package. "
                 "Please install it with `pip install vlite`."
             )
-        self.vlite = Vlite(collection=self.collection, **kwargs)
+        self.vlite = VLite(collection=self.collection, **kwargs)
 
     def add_texts(
         self,
