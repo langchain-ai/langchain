@@ -1,7 +1,8 @@
 """Test VLite functionality."""
 from typing import List
-from langchain.docstore.document import Document
-from langchain.embeddings.fake import FakeEmbeddings
+
+from langchain_core.documents import Document
+from langchain_community.embeddings import FakeEmbeddings
 
 from langchain_community.vectorstores.vlite import Vlite as VLite
 
