@@ -44,7 +44,7 @@ def parse_tool_call(
         "args": function_args or {},
     }
     if return_id:
-        parsed["id"] = raw_tool_call["id"]
+        parsed["id"] = raw_tool_call.get("id")
     return parsed
 
 
