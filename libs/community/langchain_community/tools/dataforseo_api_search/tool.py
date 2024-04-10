@@ -1,12 +1,12 @@
 """Tool for the DataForSeo SERP API."""
 
-from typing import Optional,Type
+from typing import Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field,BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper

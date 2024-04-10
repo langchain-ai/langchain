@@ -2,15 +2,21 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
+
+
+class EdenaiToolInput(BaseModel):
+    """Input for the EdenaiTool tool."""
+
+    query: str = Field(description="Query for the EdenAI Tool being used")
 
 
 class EdenaiTool(BaseTool):
@@ -29,7 +35,7 @@ class EdenaiTool(BaseTool):
 
     providers: List[str]
     """provider to use for the API call."""
-
+    args_schema: Type[BaseModel] = EdenaiToolInput
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
