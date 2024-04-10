@@ -148,6 +148,17 @@ def _convert_delta_to_message_chunk(
     return default_class(content=content)
 
 
+def _truncate_temperature(payload: Dict[str, Any]):
+    """Truncate temperature parameter between [0.01, 0.99].
+
+    ZhipuAI only support temperature between (0, 1) open interval,
+    so we tuncate temperature parameter between [0.01, 0.99].
+    """
+    temperature = payload.get("temperature")
+    if temperature is not None:
+        payload["temperature"] = max(0.01, min(0.99, temperature))
+
+
 class ChatZhipuAI(BaseChatModel):
     """
     `ZhipuAI` large language chat models API.
@@ -309,6 +320,7 @@ class ChatZhipuAI(BaseChatModel):
             "messages": message_dicts,
             "stream": False,
         }
+        _truncate_temperature(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
@@ -334,6 +346,7 @@ class ChatZhipuAI(BaseChatModel):
             raise ValueError("Did not find zhipu_api_base.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {**params, **kwargs, "messages": message_dicts, "stream": True}
+        _truncate_temperature(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
@@ -394,6 +407,7 @@ class ChatZhipuAI(BaseChatModel):
             "messages": message_dicts,
             "stream": False,
         }
+        _truncate_temperature(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
@@ -418,6 +432,7 @@ class ChatZhipuAI(BaseChatModel):
             raise ValueError("Did not find zhipu_api_base.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {**params, **kwargs, "messages": message_dicts, "stream": True}
+        _truncate_temperature(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
