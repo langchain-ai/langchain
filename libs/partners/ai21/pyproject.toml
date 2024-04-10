@@ -1,13 +1,14 @@
+
 [tool.poetry]
-name = "langchain-ai21"
-version = "0.1.2"
-description = "An integration package connecting AI21 and LangChain"
+name = "gigachain-ai21"
+version = "0.1.3"
+description = "An integration package connecting AI21 and GigaChain"
 authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1.22"
+gigachain-core = "^0.1.28"
 gigachain-text-splitters = "^0.0.1"
 ai21 = "^2.1.2"
 
@@ -87,3 +88,4 @@ markers = [
   "scheduled: mark tests to run in scheduled testing",
 ]
 asyncio_mode = "auto"
+

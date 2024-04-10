@@ -1,4 +1,5 @@
 """Functionality for loading agents."""
+
 import json
 import logging
 from pathlib import Path
@@ -8,7 +9,6 @@ import yaml
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import Tool
-from langchain_core.utils.loading import try_load_from_hub
 
 from langchain.agents.agent import BaseMultiActionAgent, BaseSingleActionAgent
 from langchain.agents.types import AGENT_TO_CLASS
@@ -100,13 +100,13 @@ def load_agent(
     Returns:
         An agent executor.
     """
-    valid_suffixes = {"json", "yaml"}
-    if hub_result := try_load_from_hub(
-        path, _load_agent_from_file, "agents", valid_suffixes
-    ):
-        return hub_result
-    else:
-        return _load_agent_from_file(path, **kwargs)
+    if isinstance(path, str) and path.startswith("lc://"):
+        raise RuntimeError(
+            "Loading from the deprecated github-based Hub is no longer supported. "
+            "Please use the new LangChain Hub at https://smith.langchain.com/hub "
+            "instead."
+        )
+    return _load_agent_from_file(path, **kwargs)
 
 
 def _load_agent_from_file(

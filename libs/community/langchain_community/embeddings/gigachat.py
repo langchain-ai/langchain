@@ -60,6 +60,10 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
     key_file_password: Optional[str] = None
     # Support for connection to GigaChat through SSL certificates
 
+    prefix_query: str = (
+        "Дано предложение, необходимо найти его парафраз \nпредложение: "
+    )
+
     @cached_property
     def _client(self) -> Any:
         """Returns GigaChat API client"""
@@ -177,7 +181,7 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self.embed_documents(texts=[text])[0]
+        return self.embed_documents(texts=[self.prefix_query + text])[0]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Embed a query using a GigaChat embeddings models.
@@ -188,5 +192,5 @@ class GigaChatEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        docs = await self.aembed_documents(texts=[text])
+        docs = await self.aembed_documents(texts=[self.prefix_query + text])
         return docs[0]

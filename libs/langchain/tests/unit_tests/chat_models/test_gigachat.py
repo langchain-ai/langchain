@@ -33,6 +33,8 @@ from ..callbacks.fake_callback_handler import (
     FakeCallbackHandler,
 )
 
+from tests.unit_tests.stubs import AnyStr
+
 
 def test__convert_dict_to_message_system() -> None:
     message = Messages(role=MessagesRole.SYSTEM, content="foo")
@@ -243,8 +245,10 @@ async def test_gigachat_apredict_stream(patch_gigachat_astream: None) -> None:
 
 def test_gigachat_stream(patch_gigachat: None) -> None:
     expected = [
-        AIMessageChunk(content="Bar Baz"),
-        AIMessageChunk(content=" Stream", response_metadata={"finish_reason": "stop"}),
+        AIMessageChunk(content="Bar Baz", id=AnyStr()),
+        AIMessageChunk(
+            content=" Stream", response_metadata={"finish_reason": "stop"}, id=AnyStr()
+        ),
     ]
 
     llm = GigaChat()
@@ -256,8 +260,10 @@ def test_gigachat_stream(patch_gigachat: None) -> None:
 @pytest.mark.asyncio()
 async def test_gigachat_astream(patch_gigachat_astream: None) -> None:
     expected = [
-        AIMessageChunk(content="Bar Baz"),
-        AIMessageChunk(content=" Stream", response_metadata={"finish_reason": "stop"}),
+        AIMessageChunk(content="Bar Baz", id=AnyStr()),
+        AIMessageChunk(
+            content=" Stream", response_metadata={"finish_reason": "stop"}, id=AnyStr()
+        ),
     ]
 
     llm = GigaChat()

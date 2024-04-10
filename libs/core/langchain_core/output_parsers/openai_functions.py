@@ -108,10 +108,13 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             else:
                 if self.args_only:
                     try:
-                        return json.loads(
+                        res = json.loads(
                             _get_arguments_from_function_call(function_call),
                             strict=self.strict,
                         )
+                        if not isinstance(res, dict) or res == {}:
+                            raise OutputParserException("Expected arguments.")
+                        return res
                     except (json.JSONDecodeError, TypeError) as exc:
                         raise OutputParserException(
                             f"Could not parse function call data: {exc}"
@@ -216,6 +219,8 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         _result = super().parse_result(result)
         if self.args_only:
+            if isinstance(_result, dict):  # Also support gigachat model
+                _result = json.dumps(_result, ensure_ascii=False)
             pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
         else:
             fn_name = _result["name"]

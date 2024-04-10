@@ -23,15 +23,16 @@ from langchain_core.messages import (
 
 
 def test_message_chunks() -> None:
-    assert AIMessageChunk(content="I am") + AIMessageChunk(
+    assert AIMessageChunk(content="I am", id="ai3") + AIMessageChunk(
         content=" indeed."
     ) == AIMessageChunk(
-        content="I am indeed."
+        content="I am indeed.", id="ai3"
     ), "MessageChunk + MessageChunk should be a MessageChunk"
 
     assert (
-        AIMessageChunk(content="I am") + HumanMessageChunk(content=" indeed.")
-        == AIMessageChunk(content="I am indeed.")
+        AIMessageChunk(content="I am", id="ai2")
+        + HumanMessageChunk(content=" indeed.", id="human1")
+        == AIMessageChunk(content="I am indeed.", id="ai2")
     ), "MessageChunk + MessageChunk should be a MessageChunk of same class as the left side"  # noqa: E501
 
     assert (
@@ -69,10 +70,10 @@ def test_message_chunks() -> None:
 
 
 def test_chat_message_chunks() -> None:
-    assert ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
+    assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(
         role="User", content=" indeed."
     ) == ChatMessageChunk(
-        role="User", content="I am indeed."
+        id="ai4", role="User", content="I am indeed."
     ), "ChatMessageChunk + ChatMessageChunk should be a ChatMessageChunk"
 
     with pytest.raises(ValueError):
@@ -94,10 +95,10 @@ def test_chat_message_chunks() -> None:
 
 
 def test_function_message_chunks() -> None:
-    assert FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
-        name="hello", content=" indeed."
-    ) == FunctionMessageChunk(
-        name="hello", content="I am indeed."
+    assert FunctionMessageChunk(
+        name="hello", content="I am", id="ai5"
+    ) + FunctionMessageChunk(name="hello", content=" indeed.") == FunctionMessageChunk(
+        id="ai5", name="hello", content="I am indeed."
     ), "FunctionMessageChunk + FunctionMessageChunk should be a FunctionMessageChunk"
 
     with pytest.raises(ValueError):

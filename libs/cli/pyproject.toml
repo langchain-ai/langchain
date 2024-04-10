@@ -1,3 +1,4 @@
+```
 [tool.poetry]
 name = "gigachain-cli"
 version = "0.0.22rc1"
@@ -74,3 +75,5 @@ _lint_fix = "poetry run ruff . --fix"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+```

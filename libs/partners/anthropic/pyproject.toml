@@ -1,19 +1,20 @@
+
 [tool.poetry]
-name = "langchain-anthropic"
-version = "0.1.4"
-description = "An integration package connecting AnthropicMessages and LangChain"
+name = "gigachain-anthropic"
+version = "0.1.6"
+description = "An integration package connecting AnthropicMessages and GigaChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
+repository = "https://github.com/gigachain-ai/gigachain"
 license = "MIT"
 
 [tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
+"Source Code" = "https://github.com/gigachain-ai/gigachain/tree/master/libs/partners/anthropic"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1"
-anthropic = ">=0.17.0,<1"
+gigachain-core = "^0.1.33"
+anthropic = ">=0.23.0,<1"
 defusedxml = { version = "^0.7.1", optional = true }
 
 [tool.poetry.group.test]
@@ -95,3 +96,4 @@ markers = [
   "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+

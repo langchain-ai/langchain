@@ -114,20 +114,6 @@ class PromptTemplate(StringPromptTemplate):
         return "prompt"
 
     def format(self, **kwargs: Any) -> str:
-        """Format the prompt with the inputs.
-
-        Args:
-            kwargs: Any arguments to be passed to the prompt template.
-
-        Returns:
-            A formatted string.
-
-        Example:
-
-            .. code-block:: python
-
-                prompt.format(variable1="foo")
-        """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
