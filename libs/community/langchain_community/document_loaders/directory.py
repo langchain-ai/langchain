@@ -174,7 +174,8 @@ class DirectoryLoader(BaseLoader):
                         )
                     )
                 for future in concurrent.futures.as_completed(futures):
-                    yield future.result()
+                    for item in future.result():
+                        yield item
         else:
             for i in items:
                 yield from self._lazy_load_file(i, p, pbar)
