@@ -94,3 +94,4 @@ def test_vlite_from_existing_index() -> None:
     )
     output = new_docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
+    
