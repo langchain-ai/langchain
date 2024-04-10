@@ -33,8 +33,10 @@ class SharePointLoader(O365BaseLoader):
         """Return required scopes."""
         return ["sharepoint", "basic"]
 
-    def lazy_load(self) -> Iterator[Document]:
-        """Load documents lazily. Use this when working at a large scale."""
+    def lazy_load(self, folder_id=None, recursive=True) -> Iterator[Document]:
+        """Load documents lazily. Use this when working at a large scale.
+           If folder_id is passed, run recursively on all subfolders.
+        """
         try:
             from O365.drive import Drive, Folder
         except ImportError:
@@ -54,3 +56,15 @@ class SharePointLoader(O365BaseLoader):
         if self.object_ids:
             for blob in self._load_from_object_ids(drive, self.object_ids):
                 yield from blob_parser.lazy_parse(blob)
+        if not(self.folder_path or self.object_ids):
+            """ Neither folder_path nor object_ids were passed in. Load either folder
+                defined by folder_id or just load root folder
+            """
+            target_folder = folder_id or drive.get_root_folder()
+            if not isinstance(target_folder, Folder):
+                raise ValueError("Unable to fetch root folder")
+            for blob in self._load_from_folder(target_folder):
+                yield from blob_parser.lazy_parse(blob)
+            if recursive:
+                for subfolder in target_folder.get_child_folders():
+                    yield from self.lazy_load(subfolder)
