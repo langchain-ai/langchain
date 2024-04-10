@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import warnings
@@ -54,9 +55,14 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-from langchain_anthropic.output_parsers import ToolsOutputParser
+from langchain_anthropic.output_parsers import ToolsOutputParser, extract_tool_calls
 
-_message_type_lookups = {"human": "user", "ai": "assistant"}
+_message_type_lookups = {
+    "human": "user",
+    "ai": "assistant",
+    "AIMessageChunk": "assistant",
+    "HumanMessageChunk": "user",
+}
 
 
 def _format_image(image_url: str) -> Dict:
@@ -238,12 +244,17 @@ class ChatAnthropic(BaseChatModel):
     top_p: Optional[float] = None
     """Total probability mass of tokens to consider at each step."""
 
-    default_request_timeout: Optional[float] = None
-    """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
+    default_request_timeout: Optional[float] = Field(None, alias="timeout")
+    """Timeout for requests to Anthropic Completion API."""
+
+    # sdk default = 2: https://github.com/anthropics/anthropic-sdk-python?tab=readme-ov-file#retries
+    max_retries: int = 2
+    """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
     anthropic_api_url: str = "https://api.anthropic.com"
 
-    anthropic_api_key: Optional[SecretStr] = None
+    anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
@@ -280,16 +291,23 @@ class ChatAnthropic(BaseChatModel):
             or "https://api.anthropic.com"
         )
         values["anthropic_api_url"] = api_url
-        values["_client"] = anthropic.Client(
-            api_key=api_key,
-            base_url=api_url,
-            default_headers=values.get("default_headers"),
-        )
-        values["_async_client"] = anthropic.AsyncClient(
-            api_key=api_key,
-            base_url=api_url,
-            default_headers=values.get("default_headers"),
-        )
+        client_params = {
+            "api_key": api_key,
+            "base_url": api_url,
+            "max_retries": values["max_retries"],
+            "default_headers": values.get("default_headers"),
+        }
+        # value <= 0 indicates the param should be ignored. None is a meaningful value
+        # for Anthropic client and treated differently than not specifying the param at
+        # all.
+        if (
+            values["default_request_timeout"] is None
+            or values["default_request_timeout"] > 0
+        ):
+            client_params["timeout"] = values["default_request_timeout"]
+
+        values["_client"] = anthropic.Client(**client_params)
+        values["_async_client"] = anthropic.AsyncClient(**client_params)
         return values
 
     def _format_params(
@@ -330,7 +348,24 @@ class ChatAnthropic(BaseChatModel):
             result = self._generate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            yield cast(ChatGenerationChunk, result.generations[0])
+            message = result.generations[0].message
+            if isinstance(message, AIMessage) and message.tool_calls is not None:
+                tool_call_chunks = [
+                    {
+                        "name": tool_call["name"],
+                        "args": json.dumps(tool_call["args"]),
+                        "id": tool_call["id"],
+                        "index": idx,
+                    }
+                    for idx, tool_call in enumerate(message.tool_calls)
+                ]
+                message_chunk = AIMessageChunk(
+                    content=message.content,
+                    tool_call_chunks=tool_call_chunks,
+                )
+                yield ChatGenerationChunk(message=message_chunk)
+            else:
+                yield cast(ChatGenerationChunk, result.generations[0])
             return
         with self._client.messages.stream(**params) as stream:
             for text in stream.text_stream:
@@ -352,7 +387,24 @@ class ChatAnthropic(BaseChatModel):
             result = await self._agenerate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            yield cast(ChatGenerationChunk, result.generations[0])
+            message = result.generations[0].message
+            if isinstance(message, AIMessage) and message.tool_calls is not None:
+                tool_call_chunks = [
+                    {
+                        "name": tool_call["name"],
+                        "args": json.dumps(tool_call["args"]),
+                        "id": tool_call["id"],
+                        "index": idx,
+                    }
+                    for idx, tool_call in enumerate(message.tool_calls)
+                ]
+                message_chunk = AIMessageChunk(
+                    content=message.content,
+                    tool_call_chunks=tool_call_chunks,
+                )
+                yield ChatGenerationChunk(message=message_chunk)
+            else:
+                yield cast(ChatGenerationChunk, result.generations[0])
             return
         async with self._async_client.messages.stream(**params) as stream:
             async for text in stream.text_stream:
@@ -369,6 +421,12 @@ class ChatAnthropic(BaseChatModel):
         }
         if len(content) == 1 and content[0]["type"] == "text":
             msg = AIMessage(content=content[0]["text"])
+        elif any(block["type"] == "tool_use" for block in content):
+            tool_calls = extract_tool_calls(content)
+            msg = AIMessage(
+                content=content,
+                tool_calls=tool_calls,
+            )
         else:
             msg = AIMessage(content=content)
         return ChatResult(
@@ -438,7 +496,31 @@ class ChatAnthropic(BaseChatModel):
                 models, callables, and BaseTools will be automatically converted to
                 their schema dictionary representation.
             **kwargs: Any additional parameters to bind.
-        """
+
+        Example:
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.pydantic_v1 import BaseModel, Field
+
+                class GetWeather(BaseModel):
+                    '''Get the current weather in a given location'''
+
+                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm_with_tools = llm.bind_tools([GetWeather])
+                llm_with_tools.invoke("what is the weather like in San Francisco",)
+                # -> AIMessage(
+                #     content=[
+                #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
+                #         {'text': None, 'type': 'tool_use', 'id': 'toolu_01SCgExKzQ7eqSkMHfygvYuu', 'name': 'GetWeather', 'input': {'location': 'San Francisco, CA'}}
+                #     ],
+                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-opus-20240229', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
+                #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
+                # )
+        """  # noqa: E501
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
         return self.bind(tools=formatted_tools, **kwargs)
 
@@ -450,6 +532,102 @@ class ChatAnthropic(BaseChatModel):
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input. The output type depends on
+            include_raw and schema.
+
+            If include_raw is True then output is a dict with keys:
+                raw: BaseMessage,
+                parsed: Optional[_DictOrPydantic],
+                parsing_error: Optional[BaseException],
+
+            If include_raw is False and schema is a Dict then the runnable outputs a Dict.
+            If include_raw is False and schema is a Type[BaseModel] then the runnable
+            outputs a BaseModel.
+
+        Example: Pydantic schema (include_raw=False):
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
+
+        Example:  Pydantic schema (include_raw=True):
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+                #     'parsing_error': None
+                # }
+
+        Example: Dict schema (include_raw=False):
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+
+                schema = {
+                    "name": "AnswerWithJustification",
+                    "description": "An answer to the user question along with justification for the answer.",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "answer": {"type": "string"},
+                            "justification": {"type": "string"},
+                        },
+                        "required": ["answer", "justification"]
+                    }
+                }
+                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                structured_llm = llm.with_structured_output(schema)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+
+        """  # noqa: E501
         llm = self.bind_tools([schema])
         if isinstance(schema, type) and issubclass(schema, BaseModel):
             output_parser = ToolsOutputParser(
