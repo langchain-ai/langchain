@@ -385,7 +385,6 @@ class ChatMistralAI(BaseChatModel):
         response = self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         )
-        import pdb; pdb.set_trace()
         return self._create_chat_result(response)
 
     def _create_chat_result(self, response: Dict) -> ChatResult:
