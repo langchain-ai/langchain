@@ -11,12 +11,14 @@ from langchain.agents.format_scratchpad.openai_functions import (
     format_to_openai_function_messages,
     format_to_openai_functions,
 )
+from langchain.agents.format_scratchpad.tools import format_to_tool_messages
 from langchain.agents.format_scratchpad.xml import format_xml
 
 __all__ = [
     "format_xml",
     "format_to_openai_function_messages",
     "format_to_openai_functions",
+    "format_to_tool_messages",
     "format_log_to_str",
     "format_log_to_messages",
 ]
