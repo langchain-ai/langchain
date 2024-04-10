@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, List, Literal
+from typing import Any, Dict, List, Literal
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -40,7 +40,15 @@ class AIMessage(BaseMessage):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "messages"]
 
-    @root_validator
+    @property
+    def lc_attributes(self) -> Dict:
+        """Attrs to be serialized even if they are derived from other init args."""
+        return {
+            "tool_calls": self.tool_calls,
+            "invalid_tool_calls": self.invalid_tool_calls,
+        }
+
+    @root_validator()
     def _backwards_compat_tool_calls(cls, values: dict) -> dict:
         raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
         tool_calls = (
@@ -87,6 +95,14 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "messages"]
+
+    @property
+    def lc_attributes(self) -> Dict:
+        """Attrs to be serialized even if they are derived from other init args."""
+        return {
+            "tool_calls": self.tool_calls,
+            "invalid_tool_calls": self.invalid_tool_calls,
+        }
 
     @root_validator()
     def init_tool_calls(cls, values: dict) -> dict:
