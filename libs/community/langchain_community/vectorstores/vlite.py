@@ -147,12 +147,45 @@ class VLite(VectorStore):
         ]
         return documents_with_scores
 
+    def update_document(self, document_id: str, document: Document):
+        """Update an existing document in the vectorstore."""
+        self.vlite.update(
+            document_id, text=document.page_content, metadata=document.metadata
+        )
+
+    def get(self, ids: List[str]) -> List[Document]:
+        """Get documents by their IDs."""
+        results = self.vlite.get(ids)
+        documents = [
+            Document(page_content=text, metadata=metadata) for text, metadata in results
+        ]
+        return documents
+
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by ids."""
         if ids is not None:
             self.vlite.delete(ids, **kwargs)
             return True
         return None
+
+    @classmethod
+    def from_existing_index(
+        cls,
+        embedding: Embeddings,
+        collection: str,
+        **kwargs: Any,
+    ) -> VLite:
+        """Load an existing VLite index.
+
+        Args:
+            embedding: Embedding function
+            collection: Name of the collection to load.
+
+        Returns:
+            VLite vector store.
+        """
+        vlite = cls(embedding_function=embedding, collection=collection, **kwargs)
+        return vlite
 
     @classmethod
     def from_texts(

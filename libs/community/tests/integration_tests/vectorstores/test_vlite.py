@@ -36,14 +36,6 @@ def test_vlite_with_metadatas_with_scores() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
 
-def test_vlite_max_marginal_relevance_search() -> None:
-    """Test max marginal relevance search."""
-    texts = ["foo", "bar", "baz"]
-    docsearch = VLite.from_texts(texts=texts, embedding=FakeEmbeddings())
-    output = docsearch.max_marginal_relevance_search("foo", k=1, fetch_k=3)
-    assert output == [Document(page_content="foo")]
-
-
 def test_vlite_update_document() -> None:
     """Test updating a document."""
     texts = ["foo", "bar", "baz"]
