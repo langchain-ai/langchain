@@ -177,6 +177,12 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             # If tool calls only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
+
+            tool_call_supported_props = {"id", "type", "function"}
+            message_dict["tool_calls"] = [
+                {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
+                for tool_call in message_dict["tool_calls"]
+            ]
     elif isinstance(message, SystemMessage):
         message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
@@ -808,7 +814,10 @@ class ChatOpenAI(BaseChatModel):
                         "function": {"name": tool_choice},
                     }
             elif isinstance(tool_choice, bool):
-                tool_choice = formatted_tools[0]
+                tool_choice = {
+                    "type": "function",
+                    "function": {"name": formatted_tools[0]["function"]["name"]},
+                }
             elif isinstance(tool_choice, dict):
                 if (
                     formatted_tools[0]["function"]["name"]
