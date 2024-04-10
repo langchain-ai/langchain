@@ -3,7 +3,7 @@ from typing import List
 from langchain.docstore.document import Document
 from langchain.embeddings.fake import FakeEmbeddings
 
-from langchain_community.vectorstores.vlite import Vlite
+from langchain_community.vectorstores.vlite import Vlite as VLite
 
 
 def test_vlite() -> None:
