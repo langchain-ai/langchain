@@ -10,10 +10,18 @@ class Predibase(LLM):
 
     To use, you should have the ``predibase`` python package installed,
     and have your Predibase API key.
+
+    The `model` parameter is the Predibase "serverless" base_model ID
+    (see https://docs.predibase.com/user-guide/inference/models for the catalog).
+
+    An optional `adapter_id` parameter is the HuggingFace ID of a fine-tuned LLM
+    adapter, whose base model is the `model` parameter; the fine-tuned adapter
+    must be compatible with its base model; otherwise, an error is raised.
     """
 
     model: str
     predibase_api_key: SecretStr
+    adapter_id: Optional[str] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     default_options_for_generation: dict = Field(
         {
@@ -38,7 +46,10 @@ class Predibase(LLM):
             from predibase import PredibaseClient
             from predibase.pql import get_session
             from predibase.pql.api import Session
-            from predibase.resource.llm.interface import LLMDeployment
+            from predibase.resource.llm.interface import (
+                HuggingFaceLLM,
+                LLMDeployment,
+            )
             from predibase.resource.llm.response import GeneratedResponse
 
             session: Session = get_session(
@@ -55,15 +66,23 @@ class Predibase(LLM):
         except ValueError as e:
             raise ValueError("Your API key is not correct. Please try again") from e
         options: Dict[str, Union[str, float]] = (
-            kwargs or self.default_options_for_generation
+            self.model_kwargs or self.default_options_for_generation
         )
         base_llm_deployment: LLMDeployment = pc.LLM(
             uri=f"pb://deployments/{self.model}"
         )
-        result: GeneratedResponse = base_llm_deployment.generate(
-            prompt=prompt,
-            options=options,
-        )
+        result: GeneratedResponse
+        if self.adapter_id:
+            adapter_model: HuggingFaceLLM = pc.LLM(uri=f"hf://{self.adapter_id}")
+            result = base_llm_deployment.with_adapter(model=adapter_model).generate(
+                prompt=prompt,
+                options=options,
+            )
+        else:
+            result = base_llm_deployment.generate(
+                prompt=prompt,
+                options=options,
+            )
         return result.response
 
     @property

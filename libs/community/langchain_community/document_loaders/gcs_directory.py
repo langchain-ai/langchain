@@ -65,10 +65,6 @@ class GCSDirectoryLoader(BaseLoader):
             # intermediate directories on the fly
             if blob.name.endswith("/"):
                 continue
-            loader = GCSFileLoader(
-                self.project_name, self.bucket, blob.name, loader_func=self._loader_func
-            )
-            docs.extend(loader.load())
             # Use the try-except block here
             try:
                 loader = GCSFileLoader(
