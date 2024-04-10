@@ -18,6 +18,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 
     Embeddings, Document
 """  # noqa: E501
+
 from __future__ import annotations
 
 import logging
@@ -39,6 +40,7 @@ from typing import (
     TypeVar,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
@@ -184,6 +186,11 @@ class VectorStore(ABC):
     ) -> List[Document]:
         """Return docs most similar to query."""
 
+    @deprecated(
+        since="0.1.43",
+        removal="0.2",
+        alternative="euclidean_distance_to_relevance_score",
+    )
     @staticmethod
     def _euclidean_relevance_score_fn(distance: float) -> float:
         """Return a similarity score on a scale [0, 1]."""
@@ -199,12 +206,22 @@ class VectorStore(ABC):
         # to a similarity function (0 to 1)
         return 1.0 - distance / math.sqrt(2)
 
+    @deprecated(
+        since="0.1.43",
+        removal="0.2",
+        alternative="cosine_to_relevance_score",
+    )
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
         """Normalize the distance to a score on a scale [0, 1]."""
 
         return 1.0 - distance
 
+    @deprecated(
+        since="0.1.43",
+        removal="0.2",
+        message="Max inner product relevance scoring is not recommended.",
+    )
     @staticmethod
     def _max_inner_product_relevance_score_fn(distance: float) -> float:
         """Normalize the distance to a score on a scale [0, 1]."""
@@ -213,6 +230,15 @@ class VectorStore(ABC):
 
         return -1.0 * distance
 
+    @deprecated(
+        since="0.1.43",
+        removal="0.2",
+        message=(
+            "Relevance scoring is no longer implemented on the VectorStore - "
+            "please use external helper methods such as "
+            "euclidean_distance_to_relevance_score instead."
+        ),
+    )
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
         The 'correct' relevance function
@@ -244,6 +270,16 @@ class VectorStore(ABC):
             None, self.similarity_search_with_score, *args, **kwargs
         )
 
+    @deprecated(
+        since="0.1.43",
+        removal="0.2",
+        message=(
+            "Relevance scoring is no longer implemented on the VectorStore - "
+            "please use retrieve documents with similarity_search_with_score"
+            " and convert scores with external helper methods such as "
+            "euclidean_distance_to_relevance_score instead."
+        ),
+    )
     def _similarity_search_with_relevance_scores(
         self,
         query: str,
@@ -271,6 +307,16 @@ class VectorStore(ABC):
         docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
         return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
+    @deprecated(
+        since="0.1.43",
+        removal="0.2",
+        message=(
+            "Relevance scoring is no longer implemented on the VectorStore - "
+            "please use retrieve documents with similarity_search_with_score"
+            " and convert scores with external helper methods such as "
+            "euclidean_distance_to_relevance_score instead."
+        ),
+    )
     async def _asimilarity_search_with_relevance_scores(
         self,
         query: str,
@@ -298,6 +344,16 @@ class VectorStore(ABC):
         docs_and_scores = await self.asimilarity_search_with_score(query, k, **kwargs)
         return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
+    @deprecated(
+        since="0.1.43",
+        removal="0.2",
+        message=(
+            "Relevance scoring is no longer implemented on the VectorStore - "
+            "please use retrieve documents with similarity_search_with_score"
+            " and convert scores with external helper methods such as "
+            "euclidean_distance_to_relevance_score instead."
+        ),
+    )
     def similarity_search_with_relevance_scores(
         self,
         query: str,
@@ -345,6 +401,16 @@ class VectorStore(ABC):
                 )
         return docs_and_similarities
 
+    @deprecated(
+        since="0.1.43",
+        removal="0.2",
+        message=(
+            "Relevance scoring is no longer implemented on the VectorStore - "
+            "please use retrieve documents with similarity_search_with_score"
+            " and convert scores with external helper methods such as "
+            "euclidean_distance_to_relevance_score instead."
+        ),
+    )
     async def asimilarity_search_with_relevance_scores(
         self,
         query: str,
@@ -740,3 +806,27 @@ class VectorStoreRetriever(BaseRetriever):
     ) -> List[str]:
         """Add documents to vectorstore."""
         return await self.vectorstore.aadd_documents(documents, **kwargs)
+
+
+def euclidean_distance_to_relevance_score(score: float) -> float:
+    """
+    Takes a euclidean distance score and returns a relevance score on a scale [0, 1].
+
+    Assumptions:
+    - The embeddings are normalized length 1 (unit normed)
+    - Each unit of the vector is [-1, 1]
+    - input scores therefore are in [0, 2], where 0 is most similar and 2 is
+      most dissimilar
+    """
+    return 1 - (score / 2)
+
+
+def cosine_to_relevance_score(score: float) -> float:
+    """
+    Takes a cosine similarity score and returns a relevance score on a scale [0, 1].
+
+    Assumptions:
+    - The input cosine scores are in [-1, 1], where 1 is most similar and -1 is
+      most dissimilar
+    """
+    return (score + 1) / 2
