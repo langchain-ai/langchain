@@ -642,20 +642,6 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)  # type: ignore
 
-    def persist(self) -> None:
-        """Persist the collection.
-
-        This can be used to explicitly persist the data to disk.
-        It will also be called automatically when the object is destroyed.
-        """
-        if self._persist_directory is None:
-            raise ValueError(
-                "You must specify a persist_directory on"
-                "creation to persist the collection."
-            )
-
-        warnings.warn("chromadb^4 automatically persists when persist_directory is set")
-
     def update_document(self, document_id: str, document: Document) -> None:
         """Update a document in the collection.
 
