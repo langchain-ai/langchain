@@ -43,7 +43,11 @@ class AIMessage(BaseMessage):
     @root_validator
     def _backwards_compat_tool_calls(cls, values: dict) -> dict:
         raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
-        tool_calls = values.get("tool_calls") or values.get("tool_call_chunks")
+        tool_calls = (
+            values.get("tool_calls")
+            or values.get("invalid_tool_calls")
+            or values.get("tool_call_chunks")
+        )
         if raw_tool_calls and not tool_calls:
             warnings.warn(
                 "New langchain packages are available that more efficiently handle "

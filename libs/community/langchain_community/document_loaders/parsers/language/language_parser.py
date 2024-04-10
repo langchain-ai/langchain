@@ -18,6 +18,7 @@ from langchain_community.document_loaders.parsers.language.javascript import (
 from langchain_community.document_loaders.parsers.language.kotlin import KotlinSegmenter
 from langchain_community.document_loaders.parsers.language.lua import LuaSegmenter
 from langchain_community.document_loaders.parsers.language.perl import PerlSegmenter
+from langchain_community.document_loaders.parsers.language.php import PHPSegmenter
 from langchain_community.document_loaders.parsers.language.python import PythonSegmenter
 from langchain_community.document_loaders.parsers.language.ruby import RubySegmenter
 from langchain_community.document_loaders.parsers.language.rust import RustSegmenter
@@ -42,6 +43,7 @@ LANGUAGE_EXTENSIONS: Dict[str, str] = {
     "pl": "perl",
     "ts": "ts",
     "java": "java",
+    "php": "php",
 }
 
 LANGUAGE_SEGMENTERS: Dict[str, Any] = {
@@ -60,6 +62,7 @@ LANGUAGE_SEGMENTERS: Dict[str, Any] = {
     "perl": PerlSegmenter,
     "ts": TypeScriptSegmenter,
     "java": JavaSegmenter,
+    "php": PHPSegmenter,
 }
 
 Language = Literal[
