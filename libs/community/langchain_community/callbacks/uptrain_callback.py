@@ -8,29 +8,38 @@ resolving them.
 
 This module contains a callback handler for integrating UpTrain seamlessly into your 
 pipeline and facilitating diverse evaluations. The callback handler automates various 
-evaluations to assess the performance and effectiveness of the components within the pipeline.
+evaluations to assess the performance and effectiveness of the components within the
+pipeline.
 
 The evaluations conducted include:
 
 1. RAG:
-   - Context Relevance: Determines the relevance of the context extracted from the query to the response.
-   - Factual Accuracy: Assesses if the Language Model (LLM) is providing accurate information or hallucinating.
-   - Response Completeness: Checks if the response contains all the information requested by the query.
+   - Context Relevance: Determines the relevance of the context extracted from the query
+   to the response.
+   - Factual Accuracy: Assesses if the Language Model (LLM) is providing accurate
+   information or hallucinating.
+   - Response Completeness: Checks if the response contains all the information
+   requested by the query.
 
 2. Multi Query Generation:
-   MultiQueryRetriever generates multiple variants of a question with similar meanings to the original question. 
-   This evaluation includes previous assessments and adds:
-   - Multi Query Accuracy: Ensures that the multi-queries generated convey the same meaning as the original query.
+   MultiQueryRetriever generates multiple variants of a question with similar meanings
+   to the original question. This evaluation includes previous assessments and adds:
+   - Multi Query Accuracy: Ensures that the multi-queries generated convey the same
+   meaning as the original query.
 
 3. Context Compression and Reranking:
-   Re-ranking involves reordering nodes based on relevance to the query and selecting top n nodes. 
-   Due to the potential reduction in the number of nodes after re-ranking, the following evaluations
+   Re-ranking involves reordering nodes based on relevance to the query and selecting
+   top n nodes. 
+   Due to the potential reduction in the number of nodes after re-ranking, the following
+   evaluations
    are performed in addition to the RAG evaluations:
-   - Context Reranking: Determines if the order of re-ranked nodes is more relevant to the query than the original order.
-   - Context Conciseness: Examines whether the reduced number of nodes still provides all the required information.
+   - Context Reranking: Determines if the order of re-ranked nodes is more relevant to
+   the query than the original order.
+   - Context Conciseness: Examines whether the reduced number of nodes still provides
+   all the required information.
 
-These evaluations collectively ensure the robustness and effectiveness of the RAG query engine, 
-MultiQueryRetriever, and the re-ranking process within the pipeline.
+These evaluations collectively ensure the robustness and effectiveness of the RAG query
+engine, MultiQueryRetriever, and the re-ranking process within the pipeline.
 
 Useful links:
 Github: https://github.com/uptrain-ai/uptrain
@@ -43,7 +52,6 @@ import logging
 import sys
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING,
     Any,
     DefaultDict,
     Dict,
@@ -55,16 +63,17 @@ from typing import (
 )
 from uuid import UUID
 
-from langchain.schema import AgentAction, AgentFinish, LLMResult
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.messages.base import BaseMessage
+from langchain_core.outputs import LLMResult
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter('%(message)s')
+formatter = logging.Formatter("%(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
 
 def import_uptrain() -> Any:
     try:
@@ -88,18 +97,18 @@ class UpTrainDataSchema:
 
     Attributes:
         project_name_prefix (str): Prefix for the project name.
-        uptrain_results (DefaultDict[str, Any]): Dictionary to store the results of the evaluations.
+        uptrain_results (DefaultDict[str, Any]): Dictionary to store evaluation results.
         eval_types (Set[str]): Set to store the types of evaluations.
         query (str): Query for the RAG evaluation.
         context (str): Context for the RAG evaluation.
         response (str): Response for the RAG evaluation.
-        old_context (list[str]): List of old context nodes for the Context Conciseness evaluation.
-        new_context (list[str]): List of new context nodes for the Context Conciseness evaluation.
-        context_conciseness_run_id (str): Run ID for the Context Conciseness evaluation.
-        multi_queries (List[str]): List of multi queries for the Multi Query evaluation.
-        multi_query_run_id (str): Run ID for the Multi Query evaluation.
-        multi_query_daugher_run_id (str): Run ID for the Multi Query daughter evaluation.
-    
+        old_context (list[str]): Old context nodes for Context Conciseness evaluation.
+        new_context (list[str]): New context nodes for Context Conciseness evaluation.
+        context_conciseness_run_id (str): Run ID for Context Conciseness evaluation.
+        multi_queries (List[str]): List of multi queries for Multi Query evaluation.
+        multi_query_run_id (str): Run ID for Multi Query evaluation.
+        multi_query_daugher_run_id (str): Run ID for Multi Query daughter evaluation.
+
     """
 
     def __init__(self, project_name_prefix: str) -> None:
@@ -119,12 +128,12 @@ class UpTrainDataSchema:
         ## CONTEXT CONCISENESS
         self.old_context: list[str] = []
         self.new_context: list[str] = []
-        self.context_conciseness_run_id: str = ""
+        self.context_conciseness_run_id: UUID = UUID(int=0)
 
         # MULTI QUERY
         self.multi_queries: List[str] = []
-        self.multi_query_run_id: str = ""
-        self.multi_query_daugher_run_id: str = ""
+        self.multi_query_run_id: UUID = UUID(int=0)
+        self.multi_query_daugher_run_id: UUID = UUID(int=0)
 
 
 class UpTrainCallbackHandler(BaseCallbackHandler):
@@ -133,7 +142,8 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
     Args:
         project_name_prefix (str): Prefix for the project name.
         key_type (str): Type of key to use. Must be 'uptrain' or 'openai'.
-        api_key (str): API key for the UpTrain or OpenAI API. This key is required to perform evaluations using GPT.
+        api_key (str): API key for the UpTrain or OpenAI API.
+        (This key is required to perform evaluations using GPT.)
 
     Raises:
         ValueError: If the key type is invalid.
@@ -146,8 +156,8 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         *,
         project_name_prefix: str = "langchain",
         key_type: str = "openai",
-        api_key: str = "sk-****************", # The API key to use for evaluation
-        model: str = "gpt-3.5-turbo", # The model to use for evaluation
+        api_key: str = "sk-****************",  # The API key to use for evaluation
+        model: str = "gpt-3.5-turbo",  # The model to use for evaluation
         log_results: bool = True,
     ) -> None:
         """Initializes the `UpTrainCallbackHandler`."""
@@ -165,7 +175,9 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             settings = uptrain.Settings(uptrain_access_token=api_key, model=model)
             self.uptrain_client = uptrain.APIClient(settings=settings)
         elif key_type == "openai":
-            settings = uptrain.Settings(openai_api_key=api_key, evaluate_locally=False, model=model)
+            settings = uptrain.Settings(
+                openai_api_key=api_key, evaluate_locally=False, model=model
+            )
             self.uptrain_client = uptrain.EvalLLM(settings=settings)
         else:
             raise ValueError("Invalid key type: Must be 'uptrain' or 'openai'")
@@ -173,7 +185,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
     def uptrain_evaluate(
         self,
         project_name: str,
-        data: List[Dict[str, str]],
+        data: List[Dict[str, Any]],
         checks: List[str],
     ) -> None:
         """Run an evaluation on the UpTrain server using UpTrain client."""
@@ -216,7 +228,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 elif column == "variants":
                     logger.info("Multi Queries:")
                     for variant in row[column]:
-                        logger.info(f"  {variant}")
+                        logger.info(f"  - {variant}")
                     self.first_score_printed_flag = False
                 elif column.startswith("score"):
                     if not self.first_score_printed_flag:
@@ -226,11 +238,11 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                         logger.info(f"{score_name_map[column]}: {row[column]}")
                     else:
                         logger.info(f"{column}: {row[column]}")
-        
-        if self.log_results:
-            # Set logger level back to WARNING (We are doing this to avoid printing the logs from HTTP requests)
-            logger.setLevel(logging.WARNING)
 
+        if self.log_results:
+            # Set logger level back to WARNING
+            # (We are doing this to avoid printing the logs from HTTP requests)
+            logger.setLevel(logging.WARNING)
 
     def on_llm_end(
         self,
