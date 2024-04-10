@@ -16,6 +16,13 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.github import GitHubAPIWrapper
 
 
+
+class GitHubActionToolInput(BaseModel):
+    """Input for the GitHub Action tool."""
+
+    instructions: Optional[str] = Field(description="Query for Github Actions Tool")
+
+
 class GitHubAction(BaseTool):
     """Tool for interacting with the GitHub API."""
 
@@ -23,7 +30,7 @@ class GitHubAction(BaseTool):
     mode: str
     name: str = ""
     description: str = ""
-    args_schema: Optional[Type[BaseModel]] = None
+    args_schema: Optional[Type[BaseModel]] = GitHubActionToolInput
 
     def _run(
         self,
