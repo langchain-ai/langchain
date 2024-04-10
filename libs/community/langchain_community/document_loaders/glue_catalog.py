@@ -32,7 +32,7 @@ class GlueCatalogLoader(BaseLoader):
             database: The name of the Glue database from which to load table schemas.
             session: Optional. A boto3 Session object. If not provided, a new session will be created.
             profile_name: Optional. The name of the AWS profile to use for credentials.
-            table_filter: Optional. The list of the table to to filter.
+            table_filter: Optional. List of table names to fetch schemas for, fetching all if None.
         """
         self.database = database
         self.profile_name = profile_name
