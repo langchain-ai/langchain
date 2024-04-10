@@ -2,7 +2,9 @@
 from typing import List
 from langchain.docstore.document import Document
 from langchain.embeddings.fake import FakeEmbeddings
-from langchain.vectorstores import VLite
+
+from langchain_community.vectorstores.vlite import Vlite
+
 
 def test_vlite() -> None:
     """Test end to end construction and search."""
