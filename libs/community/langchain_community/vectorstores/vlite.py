@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple
-from uuid import uuid4
-
-from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
-
-
 try:
     from vlite import VLite as Vlite
     from vlite.utils import process_file
@@ -16,7 +8,14 @@ except ImportError:
         "Could not import vlite python package. "
         "Please install it with `pip install vlite`."
     )
-    
+
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+from uuid import uuid4
+
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+
 class VLite(VectorStore):
     """VLite is a simple and fast vector database for semantic search."""
 
