@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+# Standard library imports
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+from uuid import uuid4
+
+# Third-party imports
 try:
     from vlite import VLite as Vlite
     from vlite.utils import process_file
@@ -9,9 +14,7 @@ except ImportError:
         "Please install it with `pip install vlite`."
     )
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple
-from uuid import uuid4
-
+# LangChain imports
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -72,6 +75,15 @@ class VLite(VectorStore):
         documents: List[Document],
         **kwargs: Any,
     ) -> List[str]:
+        """Add a list of documents to the vectorstore.
+        
+        Args:
+            documents: List of documents to add to the vectorstore.
+            kwargs: vectorstore specific parameters
+            
+        Returns:
+            List of ids from adding the documents into the vectorstore.
+        """
         ids = kwargs.pop("ids", [str(uuid4()) for _ in documents])
         texts = []
         metadatas = []
