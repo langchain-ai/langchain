@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import tempfile
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -65,7 +65,8 @@ class GoogleCloudTextToSpeechTool(BaseTool):
     )
 
     _client: Any
-
+    args_schema: Type[BaseModel] = GoogleCloudTextToSpeechToolInput
+    
     def __init__(self, **kwargs: Any) -> None:
         """Initializes private fields."""
         texttospeech = _import_google_cloud_texttospeech()
