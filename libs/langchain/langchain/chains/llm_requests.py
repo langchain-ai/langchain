@@ -27,7 +27,7 @@ class LLMRequestsChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    llm_chain: LLMChain
+    llm_chain: LLMChain  # type: ignore[valid-type]
     requests_wrapper: TextRequestsWrapper = Field(
         default_factory=lambda: TextRequestsWrapper(headers=DEFAULT_HEADERS),
         exclude=True,
@@ -87,7 +87,7 @@ class LLMRequestsChain(Chain):
         # extract the text from the html
         soup = BeautifulSoup(res, "html.parser")
         other_keys[self.requests_key] = soup.get_text()[: self.text_length]
-        result = self.llm_chain.predict(
+        result = self.llm_chain.predict(  # type: ignore[attr-defined]
             callbacks=_run_manager.get_child(), **other_keys
         )
         return {self.output_key: result}
