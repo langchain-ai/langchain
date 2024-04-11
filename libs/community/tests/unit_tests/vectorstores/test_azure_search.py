@@ -35,7 +35,7 @@ DEFAULT_KEY = "mykey"
 DEFAULT_EMBEDDING_MODEL = FakeEmbeddingsWithDimension()
 
 
-def mock_default_index(*args, **kwargs): # type: ignore[no-untyped-def]
+def mock_default_index(*args, **kwargs):  # type: ignore[no-untyped-def]
     from azure.search.documents.indexes.models import (
         ExhaustiveKnnAlgorithmConfiguration,
         ExhaustiveKnnParameters,
@@ -150,12 +150,12 @@ def test_init_new_index() -> None:
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import SearchIndex
 
-    def no_index(self, name: str): # type: ignore[no-untyped-def]
+    def no_index(self, name: str):  # type: ignore[no-untyped-def]
         raise ResourceNotFoundError
 
     created_index: Optional[SearchIndex] = None
 
-    def mock_create_index(self, index): # type: ignore[no-untyped-def]
+    def mock_create_index(self, index):  # type: ignore[no-untyped-def]
         nonlocal created_index
         created_index = index
 
