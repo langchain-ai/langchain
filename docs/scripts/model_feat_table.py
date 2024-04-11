@@ -16,13 +16,13 @@ LLM_FEAT_TABLE_CORRECTION = {
 }
 CHAT_MODEL_IGNORE = ("FakeListChatModel", "HumanInputChatModel")
 
-
 CHAT_MODEL_FEAT_TABLE_CORRECTION = {
     "ChatMLflowAIGateway": {"_agenerate": False},
     "PromptLayerChatOpenAI": {"_stream": False, "_astream": False},
     "ChatKonko": {"_astream": False, "_agenerate": False},
     "ChatOpenAI": {"tool_calling": True},
     "ChatAnthropic": {"tool_calling": True},
+    "ChatMistralAI": {"tool_calling": True},
 }
 
 
