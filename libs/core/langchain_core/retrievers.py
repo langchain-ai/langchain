@@ -70,22 +70,22 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
     Example: A retriever that returns the first 5 documents from a list of documents
 
-    .. code-block:: python
+        .. code-block:: python
 
-        from langchain_core import Document, BaseRetriever
-        from typing import List
+            from langchain_core import Document, BaseRetriever
+            from typing import List
 
-        class SimpleRetriever(BaseRetriever):
-            docs: List[Document]
-            k: int = 5
+            class SimpleRetriever(BaseRetriever):
+                docs: List[Document]
+                k: int = 5
 
-            def _get_relevant_documents(self, query: str) -> List[Document]:
-                \"\"\"Return the first k documents from the list of documents\"\"\"
-                return self.docs[:self.k]
+                def _get_relevant_documents(self, query: str) -> List[Document]:
+                    \"\"\"Return the first k documents from the list of documents\"\"\"
+                    return self.docs[:self.k]
 
-            async def _aget_relevant_documents(self, query: str) -> List[Document]:
-                \"\"\"(Optional) async native implementation.\"\"\"
-                return self.docs[:self.k]
+                async def _aget_relevant_documents(self, query: str) -> List[Document]:
+                    \"\"\"(Optional) async native implementation.\"\"\"
+                    return self.docs[:self.k]
 
     Example: A simple retriever based on a scitkit learn vectorizer
     
