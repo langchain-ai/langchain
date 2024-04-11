@@ -6,7 +6,7 @@ authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
 license = "MIT"
 packages = [
-    {include = "langchain-standard-tests"}
+    {include = "langchain_standard_tests"}
 ]
 
 [tool.poetry.urls]
