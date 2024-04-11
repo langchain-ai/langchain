@@ -19,7 +19,7 @@ from typing import (
 
 import numpy as np
 import sqlalchemy
-from langchain_core._api import warn_deprecated
+from langchain_core._api import deprecated, warn_deprecated
 from sqlalchemy import SQLColumnExpression, delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
@@ -209,8 +209,37 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
     return [doc for doc, _ in docs_and_scores]
 
 
+@deprecated(
+    since="0.0.31",
+    message=(
+        "This class is pending deprecation and may be removed in a future version. "
+        "You can swap to using the `PGVector`"
+        " implementation in `langchain_postgres`. "
+        "Please read the guidelines in the doc-string of this class "
+        "to follow prior to migrating as there are some differences "
+        "between the implementations. "
+        "See https://github.com/langchain-ai/langchain-postgres for details about"
+        "the new implementation."
+    ),
+    alternative="from langchain_postgres import PGVector;",
+    pending=True,
+)
 class PGVector(VectorStore):
     """`Postgres`/`PGVector` vector store.
+
+    **DEPRECATED**: This class is pending deprecation and will likely receive
+        no updates. An improved version of this class is available in
+        `langchain_postgres` as `PGVector`. Please use that class instead.
+
+        When migrating please keep in mind that:
+            * The new implementation works with psycopg3, not with psycopg2
+              (This implementation does not work with psycopg3).
+            * Filtering syntax has changed to use $ prefixed operators for JSONB
+              metadata fields. (New implementation only uses JSONB field for metadata)
+            * The new implementation made some schema changes to address issues
+              with the existing implementation. So you will need to re-create
+              your tables and re-index your data or else carry out a manual
+              migration.
 
     To use, you should have the ``pgvector`` python package installed.
 

@@ -3,7 +3,129 @@ various services and APIs.
 """
 
 import importlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.ainetwork.toolkit import (
+        AINetworkToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.amadeus.toolkit import (
+        AmadeusToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.azure_ai_services import (
+        AzureAiServicesToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.azure_cognitive_services import (
+        AzureCognitiveServicesToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.cogniswitch.toolkit import (
+        CogniswitchToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.connery import (
+        ConneryToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.file_management.toolkit import (
+        FileManagementToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.gmail.toolkit import (
+        GmailToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.jira.toolkit import (
+        JiraToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.json.base import (
+        create_json_agent,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.json.toolkit import (
+        JsonToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.multion.toolkit import (
+        MultionToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.nasa.toolkit import (
+        NasaToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.nla.toolkit import (
+        NLAToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.office365.toolkit import (
+        O365Toolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.openapi.base import (
+        create_openapi_agent,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.openapi.toolkit import (
+        OpenAPIToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.playwright.toolkit import (
+        PlayWrightBrowserToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.polygon.toolkit import (
+        PolygonToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.powerbi.base import (
+        create_pbi_agent,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.powerbi.chat_base import (
+        create_pbi_chat_agent,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.powerbi.toolkit import (
+        PowerBIToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.slack.toolkit import (
+        SlackToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.spark_sql.base import (
+        create_spark_sql_agent,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.spark_sql.toolkit import (
+        SparkSQLToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.sql.base import (
+        create_sql_agent,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.sql.toolkit import (
+        SQLDatabaseToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.steam.toolkit import (
+        SteamToolkit,  # noqa: F401
+    )
+    from langchain_community.agent_toolkits.zapier.toolkit import (
+        ZapierToolkit,  # noqa: F401
+    )
+
+__all__ = [
+    "AINetworkToolkit",
+    "AmadeusToolkit",
+    "AzureAiServicesToolkit",
+    "AzureCognitiveServicesToolkit",
+    "CogniswitchToolkit",
+    "ConneryToolkit",
+    "FileManagementToolkit",
+    "GmailToolkit",
+    "JiraToolkit",
+    "JsonToolkit",
+    "MultionToolkit",
+    "NLAToolkit",
+    "NasaToolkit",
+    "O365Toolkit",
+    "OpenAPIToolkit",
+    "PlayWrightBrowserToolkit",
+    "PolygonToolkit",
+    "PowerBIToolkit",
+    "SQLDatabaseToolkit",
+    "SlackToolkit",
+    "SparkSQLToolkit",
+    "SteamToolkit",
+    "ZapierToolkit",
+    "create_json_agent",
+    "create_openapi_agent",
+    "create_pbi_agent",
+    "create_pbi_chat_agent",
+    "create_spark_sql_agent",
+    "create_sql_agent",
+]
+
 
 _module_lookup = {
     "AINetworkToolkit": "langchain_community.agent_toolkits.ainetwork.toolkit",
