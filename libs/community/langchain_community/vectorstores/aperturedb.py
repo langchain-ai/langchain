@@ -28,7 +28,7 @@ class ApertureDB(VectorStore):
         super().__init__(**kwargs)
         self.logger = logging.getLogger(__name__)
 
-        self.myembeddings = embeddings
+        self.embedding_function = embeddings
         self.descriptor_set = descriptor_set
         self.dimensions = dimensions
         self.engine = engine
@@ -83,7 +83,7 @@ class ApertureDB(VectorStore):
         # TODO: Could check that dimensions, engine and metric are the same
         if r[0]["FindDescriptorSet"]["count"] == 0:
             if self.dimensions is None:
-                self.dimensions = len(self.myembeddings.embed_query("test"))
+                self.dimensions = len(self.embedding_function.embed_query("test"))
             success = self.utils.add_descriptorset(descriptor_set, self.dimensions, engine=self.engine, metric=[self.metric])
             assert success, self.connection.get_last_response_str()
             self.utils.create_entity_index("_Descriptor", "_uniqueid")
@@ -94,7 +94,7 @@ class ApertureDB(VectorStore):
         if metadatas is not None:
             assert len(texts) == len(metadatas), "Length of texts and metadatas should be the same"
 
-        embeddings = self.myembeddings.embed_documents(texts)
+        embeddings = self.embedding_function.embed_documents(texts)
         if metadatas is None:
             metadatas = repeat({})
         refs = cycle(range(1,100000))
@@ -175,13 +175,13 @@ class ApertureDB(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, *args: Any, **kwargs: Any
     ) -> List[Document]:
-        embedding = self.myembeddings.embed_query(query)
+        embedding = self.embedding_function.embed_query(query)
         return self.similarity_search_by_vector(embedding, k, *args, **kwargs)
 
     def similarity_search_with_score(
         self, query: str, *args: Any, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        embedding = self.myembeddings.embed_query(query)
+        embedding = self.embedding_function.embed_query(query)
         return self._similarity_search_with_score_by_vector(embedding, *args, **kwargs)
 
     def _similarity_search_with_score_by_vector(
@@ -205,14 +205,14 @@ class ApertureDB(VectorStore):
                 "blobs": True,
             }
         }]
-        blobs_in = [np.array(embedding).tobytes()]
+        blobs_in = [np.array(embedding, dtype=np.float32).tobytes()]
         responses, blobs_out = self.connection.query(query, blobs_in)
         assert self.connection.last_query_ok(), self.connection.get_last_response_str()
         results = []
         for i in range(0, len(responses), 2):
-            unique_ids = responses[i]["FindDescriptor"]["results"]["_uniqueid"]
+            unique_ids = [d["_uniqueid"] for d in responses[i]["FindDescriptor"]["entities"]]
             metadata = responses[i+1]["FindBlob"]["entities"][0]
-            distance = metadata["_distance"]
+            distance = responses[i]["FindDescriptor"]["entities"][0]["_distance"]
             blob_index = metadata["_blob_index"]
             text = blobs_out[blob_index].decode()
             # consider filtering internal properties out of metadata
@@ -221,7 +221,7 @@ class ApertureDB(VectorStore):
                 vector = np.frombuffer(blobs_out[vector_blob_index], dtype=np.float32)
                 results.append((Document(page_content=text, _uniqueid=unique_ids, **metadata), distance, vector))
             else:
-                results.append((Document(page_content=text, _uniqueid=unique_ids, **metadata), distance))
+                results.append((Document(page_content=text, **metadata), distance))
         return results
 
     def similarity_search_by_vector(
@@ -238,7 +238,7 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        embedding = self.myembeddings.embed_query(query)
+        embedding = self.embedding_function.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k, lambda_mult, **kwargs)
 
     def _vector_similarity(self, vector1: List[float], vector2: List[float]) -> float:
