@@ -316,7 +316,7 @@ class ChatZhipuAI(BaseChatModel):
         import httpx
 
         with httpx.Client(headers=headers) as client:
-            response = client.post(self.zhipuai_api_base, json=payload)
+            response = client.post(self.zhipuai_api_base, json=payload)  # type: ignore
             response.raise_for_status()
         return self._create_chat_result(response.json())
 
@@ -401,7 +401,7 @@ class ChatZhipuAI(BaseChatModel):
         import httpx
 
         async with httpx.AsyncClient(headers=headers) as client:
-            response = await client.post(self.zhipuai_api_base, json=payload)
+            response = await client.post(self.zhipuai_api_base, json=payload)  # type: ignore
             response.raise_for_status()
         return self._create_chat_result(response.json())
 
