@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "gigachain-groq"
-version = "0.1.0"
-description = "An integration package connecting Groq and GigaChain"
+version = "0.1.1"
+description = "An integration package connecting Groq and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/gigachain-ai/gigachain"
@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1.40"
+gigachain-core = "^0.1.41"
 groq = ">=0.4.1,<1"
 
 [tool.poetry.group.test]
@@ -23,7 +23,7 @@ pytest = "^7.3.0"
 pytest-mock = "^3.10.0"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-gigachain-core = {path = "../../core", develop = true}
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true
@@ -39,19 +39,19 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-gigachain-core = {path = "../../core", develop = true}
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-gigachain-core = {path = "../../core", develop = true}
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.test_integration]
 optional = true
 
 [tool.poetry.group.test_integration.dependencies]
-gigachain-core = {path = "../../core", develop = true}
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.ruff]
 select = [

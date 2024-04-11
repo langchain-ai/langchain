@@ -15,7 +15,7 @@ tiktoken = "^0.5.1"
 weaviate-client = ">=3.24.2"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 
 [tool.gigaserve]
 export_module = "hybrid_search_weaviate"

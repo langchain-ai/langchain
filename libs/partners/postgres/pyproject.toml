@@ -7,6 +7,9 @@ authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
+packages = [
+    {include = "langchain_postgres"}
+]
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/postgres"
@@ -15,7 +18,7 @@ license = "MIT"
 python = ">=3.9,<4.0"
 gigachain-core = "^0.1.32"
 psycopg = "^3.1.18"
-gigagraph = "^0.0.32"
+gigagraph = "^0.0.34"
 psycopg-pool = "^3.2.1"
 sqlalchemy = "^2.0.29"
 pgvector = "^0.2.5"

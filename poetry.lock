@@ -991,7 +991,7 @@ dev = ["jsonref"]
 
 [[package]]
 name = "gigachain"
-version = "0.1.14"
+version = "0.1.15"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1002,8 +1002,8 @@ develop = true
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain-community = ">=0.0.30,<0.1"
-gigachain-core = "^0.1.37"
+gigachain-community = ">=0.0.32,<0.1"
+gigachain-core = "^0.1.41"
 gigachain-text-splitters = ">=0.0.1,<0.1"
 jsonpatch = "^1.33"
 langsmith = "^0.1.17"
@@ -1035,7 +1035,7 @@ url = "libs/langchain"
 
 [[package]]
 name = "gigachain-community"
-version = "0.0.31"
+version = "0.0.32"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1045,7 +1045,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain-core = "^0.1.37"
+gigachain-core = "^0.1.41"
 gigachat = "^0.1.22"
 langsmith = "^0.1.0"
 numpy = "^1"
@@ -1064,7 +1064,7 @@ url = "libs/community"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.40"
+version = "0.1.42rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1088,7 +1088,7 @@ url = "libs/core"
 
 [[package]]
 name = "gigachain-experimental"
-version = "0.0.56"
+version = "0.0.57"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1096,8 +1096,8 @@ files = []
 develop = true
 
 [package.dependencies]
-gigachain = "^0.1.14"
-gigachain-core = "^0.1.37"
+gigachain = "^0.1.15"
+gigachain-core = "^0.1.41"
 
 [package.extras]
 extended-testing = ["faker (>=19.3.1,<20.0.0)", "jinja2 (>=3,<4)", "pandas (>=2.0.1,<3.0.0)", "presidio-analyzer (>=2.2.352,<3.0.0)", "presidio-anonymizer (>=2.2.352,<3.0.0)", "sentence-transformers (>=2,<3)", "tabulate (>=0.9.0,<0.10.0)", "vowpal-wabbit-next (==0.6.0)"]
@@ -1108,7 +1108,7 @@ url = "libs/experimental"
 
 [[package]]
 name = "gigachain-openai"
-version = "0.1.1"
+version = "0.1.3rc1"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1116,7 +1116,7 @@ files = []
 develop = true
 
 [package.dependencies]
-gigachain-core = "^0.1.33"
+gigachain-core = "^0.1.42rc1"
 openai = "^1.10.0"
 tiktoken = ">=0.5.2,<1"
 
@@ -1137,7 +1137,7 @@ develop = true
 gigachain-core = "^0.1.28"
 
 [package.extras]
-extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=5.1.0,<6.0.0)"]
+extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
 
 [package.source]
 type = "directory"

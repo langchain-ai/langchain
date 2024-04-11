@@ -342,6 +342,25 @@ def convert_to_openai_function(
         )
 
 
+def flatten_all_of(schema: Any) -> Any:
+    """GigaChat не поддерживает allOf/anyOf, поэтому правим вложенную структуру"""
+    if isinstance(schema, dict):
+        obj_out: Any = {}
+        for k, v in schema.items():
+            if k == "allOf":
+                obj = flatten_all_of(v[0])
+                obj_out = {**obj_out, **obj}
+            elif isinstance(v, (list, dict)):
+                obj_out[k] = flatten_all_of(v)
+            else:
+                obj_out[k] = v
+        return obj_out
+    elif isinstance(schema, list):
+        return [flatten_all_of(el) for el in schema]
+    else:
+        return schema
+
+
 def convert_to_gigachat_function(
     function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> Dict[str, Any]:
@@ -361,16 +380,17 @@ def convert_to_gigachat_function(
     if isinstance(function, dict):
         return function
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        return cast(Dict, convert_pydantic_to_openai_function(function))
+        function = cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
-        return cast(Dict, format_tool_to_openai_function(function))
+        function = cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
-        return convert_python_function_to_openai_function(function)
+        function = convert_python_function_to_openai_function(function)
     else:
         raise ValueError(
             f"Unsupported function type {type(function)}. Functions must be passed in"
             f" as Dict, pydantic.BaseModel, or Callable."
         )
+    return flatten_all_of(function)
 
 
 def convert_to_openai_tool(

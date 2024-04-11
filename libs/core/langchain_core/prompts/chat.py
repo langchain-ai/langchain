@@ -506,6 +506,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """
         return [self.format(**kwargs)]
 
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        return [await self.aformat(**kwargs)]
+
     @property
     def input_variables(self) -> List[str]:
         """
@@ -541,6 +544,34 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     content.append({"type": "text", "text": formatted})
                 elif isinstance(prompt, ImagePromptTemplate):
                     formatted = prompt.format(**inputs)
+                    content.append({"type": "image_url", "image_url": formatted})
+            return self._msg_class(
+                content=content, additional_kwargs=self.additional_kwargs
+            )
+
+    async def aformat(self, **kwargs: Any) -> BaseMessage:
+        """Format the prompt template.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            Formatted message.
+        """
+        if isinstance(self.prompt, StringPromptTemplate):
+            text = await self.prompt.aformat(**kwargs)
+            return self._msg_class(
+                content=text, additional_kwargs=self.additional_kwargs
+            )
+        else:
+            content: List = []
+            for prompt in self.prompt:
+                inputs = {var: kwargs[var] for var in prompt.input_variables}
+                if isinstance(prompt, StringPromptTemplate):
+                    formatted: Union[str, ImageURL] = await prompt.aformat(**inputs)
+                    content.append({"type": "text", "text": formatted})
+                elif isinstance(prompt, ImagePromptTemplate):
+                    formatted = await prompt.aformat(**inputs)
                     content.append({"type": "image_url", "image_url": formatted})
             return self._msg_class(
                 content=content, additional_kwargs=self.additional_kwargs

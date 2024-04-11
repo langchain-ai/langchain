@@ -2311,7 +2311,7 @@ shapely = ">=1.7.1"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.40"
+version = "0.1.42rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -2346,7 +2346,7 @@ develop = true
 gigachain-core = "^0.1.28"
 
 [package.extras]
-extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=5.1.0,<6.0.0)"]
+extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
 
 [package.source]
 type = "directory"
@@ -9250,4 +9250,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "0d5777f30bbfaef0b46e0de2263b5adde06062399cb8cfe1fb06f3b491d3b474"
+content-hash = "f9f33e55080e7850b16e3fd5801b8e50821bf9aa7df087ab0eb154d8e4b4cf6d"

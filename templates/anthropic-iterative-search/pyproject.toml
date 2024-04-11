@@ -8,13 +8,12 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain = ">=0.0.325"
-anthropic = "^0.5.0"
+gigachain = "^0.1"
 wikipedia = "^1.4.0"
 langchain-anthropic = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "research"

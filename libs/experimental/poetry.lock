@@ -1001,7 +1001,7 @@ tqdm = ["tqdm"]
 
 [[package]]
 name = "gigachain"
-version = "0.1.14"
+version = "0.1.15"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1012,8 +1012,8 @@ develop = true
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain-community = ">=0.0.30,<0.1"
-gigachain-core = "^0.1.37"
+gigachain-community = ">=0.0.32,<0.1"
+gigachain-core = "^0.1.41"
 gigachain-text-splitters = ">=0.0.1,<0.1"
 jsonpatch = "^1.33"
 langsmith = "^0.1.17"
@@ -1045,7 +1045,7 @@ url = "../langchain"
 
 [[package]]
 name = "gigachain-community"
-version = "0.0.31"
+version = "0.0.32"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1055,7 +1055,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain-core = "^0.1.37"
+gigachain-core = "^0.1.41"
 gigachat = "^0.1.22"
 langsmith = "^0.1.0"
 numpy = "^1"
@@ -1074,7 +1074,7 @@ url = "../community"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.40"
+version = "0.1.42rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1098,19 +1098,21 @@ url = "../core"
 
 [[package]]
 name = "gigachain-openai"
-version = "0.1.1"
+version = "0.1.3rc1"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
-python-versions = "<4.0,>=3.8.1"
-files = [
-    {file = "gigachain_openai-0.1.1-py3-none-any.whl", hash = "sha256:cd69eb6629b53a044ae0d5f5085ad41f014346508d9605249aad15eea31a3817"},
-    {file = "gigachain_openai-0.1.1.tar.gz", hash = "sha256:f66bb6d5317a6182c225b906accc3e8895a5877c93100f84a8eb49937db97bbe"},
-]
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
 
 [package.dependencies]
-gigachain-core = ">=0.1.33,<0.2.0"
-openai = ">=1.10.0,<2.0.0"
+gigachain-core = "^0.1.42rc1"
+openai = "^1.10.0"
 tiktoken = ">=0.5.2,<1"
+
+[package.source]
+type = "directory"
+url = "../partners/openai"
 
 [[package]]
 name = "gigachain-text-splitters"
@@ -2559,13 +2561,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.16.2"
+version = "1.14.3"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.16.2-py3-none-any.whl", hash = "sha256:46a435380921e42dae218d04d6dd0e89a30d7f3b9d8a778d5887f78003cf9354"},
-    {file = "openai-1.16.2.tar.gz", hash = "sha256:c93d5efe5b73b6cb72c4cd31823852d2e7c84a138c0af3cbe4a8eb32b1164ab2"},
+    {file = "openai-1.14.3-py3-none-any.whl", hash = "sha256:7a465994a7ccf677a110c6cc2ef9d86229bad42c060b585b67049aa749f3b774"},
+    {file = "openai-1.14.3.tar.gz", hash = "sha256:37b514e9c0ff45383ec9b242abd0f7859b1080d4b54b61393ed341ecad1b8eb9"},
 ]
 
 [package.dependencies]
@@ -5441,4 +5443,4 @@ extended-testing = ["faker", "jinja2", "pandas", "presidio-analyzer", "presidio-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "45292b7fde301c20aa42e0d98ac0edcb64edce49af1f99cb1b4324c22308d6c2"
+content-hash = "191aea5e2654fd4819266f9365cfbc22d84093288d8aacde02274d42d007ef60"

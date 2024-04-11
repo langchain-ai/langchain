@@ -624,6 +624,8 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -643,9 +645,29 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
-
-        formatted_tools = [convert_to_gigachat_tool(tool) for tool in tools]
-        return super().bind(tools=formatted_tools, **kwargs)
+        formatted_tools = [convert_to_gigachat_function(tool) for tool in tools]
+        if tool_choice is not None and tool_choice:
+            if isinstance(tool_choice, str):
+                if tool_choice not in ("auto", "none"):
+                    tool_choice = {"name": tool_choice}
+            elif isinstance(tool_choice, bool):
+                tool_choice = formatted_tools[0]
+            elif isinstance(tool_choice, dict):
+                if (
+                    formatted_tools[0]["function"]["name"]
+                    != tool_choice["function"]["name"]
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tool was {formatted_tools[0]['function']['name']}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["function_call"] = tool_choice
+        return super().bind(functions=formatted_tools, **kwargs)
 
 
 def _is_pydantic_class(obj: Any) -> bool:

@@ -13,7 +13,7 @@ gigachain = ">=0.0.325"
 replicate = ">=0.15.4"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "sql"

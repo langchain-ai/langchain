@@ -716,7 +716,7 @@ python-dateutil = ">=2.7"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.40"
+version = "0.1.42rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3775,4 +3775,4 @@ extended-testing = ["beautifulsoup4", "lxml"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "ce770ab5a1540c04a39166fa7dd5808a03af0dc416cfbec52e4199ec6f9814a2"
+content-hash = "c933eef7e276a3d05e02bbd90628a3c0d8d512ef32d7ee9f26e2a1fed1afaa24"

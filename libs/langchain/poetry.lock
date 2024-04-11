@@ -2168,7 +2168,7 @@ shapely = ">=1.7.1"
 
 [[package]]
 name = "gigachain-community"
-version = "0.0.31"
+version = "0.0.32"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -2178,7 +2178,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-gigachain-core = "^0.1.37"
+gigachain-core = "^0.1.41"
 gigachat = "^0.1.22"
 langsmith = "^0.1.0"
 numpy = "^1"
@@ -2197,7 +2197,7 @@ url = "../community"
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.40"
+version = "0.1.42rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -2248,7 +2248,7 @@ develop = true
 gigachain-core = "^0.1.28"
 
 [package.extras]
-extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=5.1.0,<6.0.0)"]
+extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
 
 [package.source]
 type = "directory"
@@ -9422,4 +9422,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "91e1bff6205b80f54b3c514f1f0be62ed72d31a5509b8e750a8132eef300ae1b"
+content-hash = "7833a57364c0acfd76dbca24900513a7b455d77da58845e551d8168f0e318082"
