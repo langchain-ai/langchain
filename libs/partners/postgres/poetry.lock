@@ -203,17 +203,17 @@ url = "../../core"
 
 [[package]]
 name = "gigagraph"
-version = "0.0.26"
+version = "0.0.34"
 description = "gigagraph"
 optional = false
-python-versions = ">=3.9.0,<4.0"
+python-versions = "<4.0,>=3.9.0"
 files = [
-    {file = "gigagraph-0.0.26-py3-none-any.whl", hash = "sha256:df98cc945dfa9aad4db4a76c6d056d8ef0caafdaa5c5085d6634bc919879b14a"},
-    {file = "gigagraph-0.0.26.tar.gz", hash = "sha256:d8e4760ccc801766ee8ed1efd8c1cbba862484f26c0f0ea828c7d8c82c175d1c"},
+    {file = "gigagraph-0.0.34-py3-none-any.whl", hash = "sha256:b8ae28a5b0645feadcaaf0b83b9924ad3fc732ecdbc81270d3d12b8d28c2dfcd"},
+    {file = "gigagraph-0.0.34.tar.gz", hash = "sha256:19da4fcf22ca656c120fa4ca2041355c60a6d17122efdbee533514ec59f8d01d"},
 ]
 
 [package.dependencies]
-gigachain_core = ">=0.1.28,<0.2.0"
+gigachain-core = ">=0.1.38,<0.2.0"
 
 [[package]]
 name = "greenlet"
@@ -1110,4 +1110,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "8c048c3191a1255f172732941619320fe4e91c79cf434ef66d58a97b1d1a9e78"
+content-hash = "ce60895296c3f0838bf9fd3e210e37bb533ecf165064356a1b44d013d6f0f727"
