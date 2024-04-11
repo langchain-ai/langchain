@@ -88,7 +88,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                     return self.docs[:self.k]
 
     Example: A simple retriever based on a scitkit learn vectorizer
-    
+
         .. code-block:: python
 
             from sklearn.metrics.pairwise import cosine_similarity
