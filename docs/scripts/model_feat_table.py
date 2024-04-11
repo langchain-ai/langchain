@@ -20,9 +20,12 @@ CHAT_MODEL_FEAT_TABLE_CORRECTION = {
     "ChatMLflowAIGateway": {"_agenerate": False},
     "PromptLayerChatOpenAI": {"_stream": False, "_astream": False},
     "ChatKonko": {"_astream": False, "_agenerate": False},
-    "ChatOpenAI": {"tool_calling": True},
     "ChatAnthropic": {"tool_calling": True},
     "ChatMistralAI": {"tool_calling": True},
+    "ChatOpenAI": {"tool_calling": True},
+    "ChatVertexAI": {"tool_calling": True},
+    "ChatGroq": {"tool_calling": "partial"},
+    "ChatCohere": {"tool_calling": "partial"},
 }
 
 
@@ -61,7 +64,8 @@ All ChatModels implement the Runnable interface, which comes with default implem
 - *Batch* support defaults to calling the underlying ChatModel in parallel for each input by making use of a thread pool executor (in the sync batch case) or `asyncio.gather` (in the async batch case). The concurrency can be controlled with the `max_concurrency` key in `RunnableConfig`.
 
 Each ChatModel integration can optionally provide native implementations to truly enable async or streaming.
-The table shows, for each integration, which features have been implemented with native support.
+The table shows, for each integration, which features have been implemented with native support. 
+Yellow circles (🟡) indicates partial support - for example, if the model supports tool calling but not tool messages for agents.
 
 {table}
 
@@ -141,7 +145,13 @@ def get_chat_model_table() -> str:
         for k, v in {**feat_table, **CHAT_MODEL_FEAT_TABLE_CORRECTION}.items()
         if k not in CHAT_MODEL_IGNORE
     }
-    header = ["model", "_agenerate", "_stream", "_astream", "tool_calling"]
+    header = [
+        "model",
+        "_agenerate",
+        "_stream",
+        "_astream",
+        "tool_calling",
+    ]
     title = [
         "Model",
         "Invoke",
@@ -152,7 +162,17 @@ def get_chat_model_table() -> str:
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
-        rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
+        # Fields are in the order of the header
+        row = [llm, "✅"]
+        for h in header[1:]:
+            value = feats.get(h)
+            if value == "partial":
+                row[header.index(h)] = "🟡"
+            elif value is True:
+                row[header.index(h)] = "✅"
+            else:
+                row[header.index(h)] = "❌"
+        rows.append(row)
     return "\n".join(["|".join(row) for row in rows])
 
 
