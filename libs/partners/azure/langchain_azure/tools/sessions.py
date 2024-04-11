@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BufferedReader, BytesIO
+import os
 import re
 from typing import Any, Callable, Optional, Annotated
 from uuid import uuid4
@@ -136,16 +137,26 @@ class SessionsPythonREPLTool(BaseTool):
 
         return await run_in_executor(None, self.run, python_code)
 
-    def upload_file(self, *, data: BufferedReader, remote_filename: str) -> RemoteFileMetadata:
+    def upload_file(self, data: BufferedReader = None, remote_file_path: str = None, local_file_path: str = None) -> RemoteFileMetadata:
         """Upload a file to the session pool.
 
         Args:
-            data: The data to upload
-            remote_filename: The path to upload the file to, relative to `/mnt/data`
+            data: The data to upload.
+            remote_file_path: The path to upload the file to, relative to `/mnt/data`. If local_file_path is provided, this is defaulted to its filename.
+            local_file_path: The path to the local file to upload.
 
         Returns:
             RemoteFileMetadata: The metadata for the uploaded file
         """
+
+        if data and local_file_path:
+            raise ValueError("data and local_file_path cannot be provided together")
+
+        if local_file_path:
+            if not remote_file_path:
+                remote_file_path = os.path.basename(local_file_path)
+            data = open(local_file_path, "rb")
+
         access_token = self.access_token_provider()
         api_url = self._build_url(f"python/uploadFile?identifier={self.session_id}")
         headers = {
@@ -153,7 +164,7 @@ class SessionsPythonREPLTool(BaseTool):
         }
         payload = {}
         files=[
-            ('file',(remote_filename, data, 'application/octet-stream'))
+            ('file',(remote_file_path, data, 'application/octet-stream'))
         ]
 
         response = requests.request("POST", api_url, headers=headers, data=payload, files=files)
