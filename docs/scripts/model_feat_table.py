@@ -23,6 +23,9 @@ CHAT_MODEL_FEAT_TABLE_CORRECTION = {
     "ChatOpenAI": {"tool_calling": True},
     "ChatAnthropic": {"tool_calling": True},
     "ChatMistralAI": {"tool_calling": True},
+    "ChatVertexAI": {"tool_calling": True},
+    "ChatFireworks": {"tool_calling": True},
+    "ChatGroq": {"tool_calling": True},
 }
 
 
