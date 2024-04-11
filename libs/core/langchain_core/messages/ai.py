@@ -124,7 +124,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         name=chunk["name"],
                         args=chunk["args"],
                         id=chunk["id"],
-                        error="Malformed args.",
+                        error=None,
                     )
                 )
         values["tool_calls"] = tool_calls

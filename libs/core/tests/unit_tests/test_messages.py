@@ -306,8 +306,8 @@ def test_message_chunk_to_message() -> None:
             {"name": "tool2", "args": {}, "id": "2"},
         ],
         invalid_tool_calls=[
-            {"name": "tool3", "args": None, "id": "3", "error": "Malformed args."},
-            {"name": "tool4", "args": "abc", "id": "4", "error": "Malformed args."},
+            {"name": "tool3", "args": None, "id": "3", "error": None},
+            {"name": "tool4", "args": "abc", "id": "4", "error": None},
         ],
     )
     assert message_chunk_to_message(chunk) == expected
