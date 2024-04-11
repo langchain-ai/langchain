@@ -320,7 +320,10 @@ class BaseOpenAI(BaseLLM):
             if not values.get("async_client"):
                 values["async_client"] = openai.AsyncOpenAI(**client_params).completions
         elif not values.get("client"):
-            values["client"] = openai.Completion
+            if openai.__version__ >= '1.0.0':
+                values["client"] = openai
+            else:
+                values["client"] = openai.ChatCompletion
         else:
             pass
 
@@ -925,7 +928,10 @@ class AzureOpenAI(BaseOpenAI):
             ).completions
 
         else:
-            values["client"] = openai.Completion
+            if openai.__version__ >= '1.0.0':
+                values["client"] = openai
+            else:
+                values["client"] = openai.ChatCompletion
 
         return values
 
@@ -1060,7 +1066,10 @@ class OpenAIChat(BaseLLM):
                 "Please install it with `pip install openai`."
             )
         try:
-            values["client"] = openai.ChatCompletion
+            if openai.__version__ >= '1.0.0':
+                values["client"] = openai
+            else:
+                values["client"] = openai.ChatCompletion
         except AttributeError:
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
