@@ -2,11 +2,15 @@
 [tool.poetry]
 name = "gigachain-robocorp"
 version = "0.0.5"
-description = "An integration package connecting Robocorp Action Server and LangChain"
+description = "An integration package connecting Robocorp Action Server and GigaChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/gigachain-ai/gigachain"
 license = "MIT"
+packages = [
+    {include = "langchain_robocorp"}
+]
+
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/gigachain-ai/gigachain/tree/master/libs/partners/robocorp"

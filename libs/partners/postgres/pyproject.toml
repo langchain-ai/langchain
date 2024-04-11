@@ -7,6 +7,9 @@ authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
+packages = [
+    {include = "langchain_postgres"}
+]
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/postgres"
