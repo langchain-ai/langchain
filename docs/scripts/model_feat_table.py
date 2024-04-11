@@ -20,13 +20,13 @@ CHAT_MODEL_FEAT_TABLE_CORRECTION = {
     "ChatMLflowAIGateway": {"_agenerate": False},
     "PromptLayerChatOpenAI": {"_stream": False, "_astream": False},
     "ChatKonko": {"_astream": False, "_agenerate": False},
-    "ChatAnthropic": {"tool_calling": True},
-    "ChatMistralAI": {"tool_calling": True},
-    "ChatFireworks": {"tool_calling": True},
-    "ChatOpenAI": {"tool_calling": True},
-    "ChatVertexAI": {"tool_calling": True},
-    "ChatGroq": {"tool_calling": "partial"},
-    "ChatCohere": {"tool_calling": "partial"},
+    "ChatAnthropic": {"tool_calling": True, "package": "langchain-anthropic"},
+    "ChatMistralAI": {"tool_calling": True, "package": "langchain-mistralai"},
+    "ChatFireworks": {"tool_calling": True, "package": "langchain-fireworks"},
+    "ChatOpenAI": {"tool_calling": True, "package": "langchain-openai"},
+    "ChatVertexAI": {"tool_calling": True, "package": "langchain-vertexai"},
+    "ChatGroq": {"tool_calling": "partial", "package": "langchain-groq"},
+    "ChatCohere": {"tool_calling": "partial", "package": "langchain-cohere"},
 }
 
 
@@ -152,6 +152,7 @@ def get_chat_model_table() -> str:
         "_stream",
         "_astream",
         "tool_calling",
+        "package",
     ]
     title = [
         "Model",
@@ -160,6 +161,7 @@ def get_chat_model_table() -> str:
         "Stream",
         "Async stream",
         "Tool calling",
+        "Python Package",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
@@ -167,6 +169,8 @@ def get_chat_model_table() -> str:
         row = [llm, "✅"]
         for h in header[1:]:
             value = feats.get(h)
+            if h == "package":
+                row[header.index(h)] = value or "langchain-community"
             if value == "partial":
                 row[header.index(h)] = "🟡"
             elif value is True:
