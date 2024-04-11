@@ -5,14 +5,30 @@ title: Tool calling
 
 # Tool calling
 
+:::info
+We use the term tool calling interchangeably with function calling. Although
+function calling is sometimes meant to refer to invocations of a single function,
+we treat all models as though they can return multiple tool or function calls in 
+each message.
+:::
+
 # Calling Tools
 
-Tool calling is a common feature of LLM applications. A [tool call](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.tool.ToolCall.html#langchain_core.messages.tool.ToolCall) 
-represents a call to a specific tool, and includes a name, arguments dict, and 
-(optionally) an identifier. The arguments dict is structured 
-`{argument_name: argument_value}`.
+Tool calling allows a model to respond to a given prompt by generating output that 
+matches a user-defined schema. While the name implies that the model is performing 
+some action, this is actually not the case! The model is coming up with the 
+arguments to a tool, and actually running the tool (or not) is up to the user - 
+for example, if you want to [extract output matching some schema](/docs/use_cases/extraction/) 
+from unstructured text, you could give the model an "extraction" tool that takes 
+parameters matching the desired schema, then treat the generated output as your final 
+result.
 
-Many LLM providers, including Anthropic, Cohere, Google, Mistral, OpenAI, and others, 
+A tool call includes a name, arguments dict, and an optional identifier. The 
+arguments dict is structured `{argument_name: argument_value}`.
+
+Many LLM providers, including [Anthropic](https://www.anthropic.com/), 
+[Cohere](https://cohere.com/), [Google](https://cloud.google.com/vertex-ai), 
+[Mistral](https://mistral.ai/), [OpenAI](https://openai.com/), and others, 
 support variants of a tool calling feature. These features typically allow requests 
 to the LLM to include available tools and their schemas, and for responses to include 
 calls to these tools. For instance, given a search engine tool, an LLM might handle a 
@@ -294,156 +310,6 @@ print(type(gathered.tool_calls[0]["args"]))
 <class 'dict'>
 ```
 
-## Defining functions schemas
-
-In case you need to access function schemas directly, LangChain has a built-in converter that can turn
-Python functions, Pydantic classes, and LangChain Tools into the OpenAI format JSON schema:
-
-### Python function
-
-```python
-import json
-
-from langchain_core.utils.function_calling import convert_to_openai_tool
-
-
-def multiply(a: int, b: int) -> int:
-    """Multiply two integers together.
-
-    Args:
-        a: First integer
-        b: Second integer
-    """
-    return a * b
-
-
-print(json.dumps(convert_to_openai_tool(multiply), indent=2))
-```
-
-```text
-{
-  "type": "function",
-  "function": {
-    "name": "multiply",
-    "description": "Multiply two integers together.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "type": "integer",
-          "description": "First integer"
-        },
-        "b": {
-          "type": "integer",
-          "description": "Second integer"
-        }
-      },
-      "required": [
-        "a",
-        "b"
-      ]
-    }
-  }
-}
-```
-
-### Pydantic class
-
-```python
-from langchain_core.pydantic_v1 import BaseModel, Field
-
-
-class multiply(BaseModel):
-    """Multiply two integers together."""
-
-    a: int = Field(..., description="First integer")
-    b: int = Field(..., description="Second integer")
-
-
-print(json.dumps(convert_to_openai_tool(multiply), indent=2))
-```
-
-```text
-{
-  "type": "function",
-  "function": {
-    "name": "multiply",
-    "description": "Multiply two integers together.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "description": "First integer",
-          "type": "integer"
-        },
-        "b": {
-          "description": "Second integer",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "a",
-        "b"
-      ]
-    }
-  }
-}
-```
-
-### LangChain Tool
-
-```python
-from typing import Any, Type
-
-from langchain_core.tools import BaseTool
-
-
-class MultiplySchema(BaseModel):
-    """Multiply tool schema."""
-
-    a: int = Field(..., description="First integer")
-    b: int = Field(..., description="Second integer")
-
-
-class Multiply(BaseTool):
-    args_schema: Type[BaseModel] = MultiplySchema
-    name: str = "multiply"
-    description: str = "Multiply two integers together."
-
-    def _run(self, a: int, b: int, **kwargs: Any) -> Any:
-        return a * b
-
-
-# Note: we're passing in a Multiply object not the class itself.
-print(json.dumps(convert_to_openai_tool(Multiply()), indent=2))
-```
-
-```text
-{
-  "type": "function",
-  "function": {
-    "name": "multiply",
-    "description": "Multiply two integers together.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "description": "First integer",
-          "type": "integer"
-        },
-        "b": {
-          "description": "Second integer",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "a",
-        "b"
-      ]
-    }
-  }
-}
-```
 
 ## Next steps
 
