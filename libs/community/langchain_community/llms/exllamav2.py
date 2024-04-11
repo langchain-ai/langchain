@@ -157,7 +157,7 @@ class ExLlamaV2(LLM):
             for chunk in self._stream(
                 prompt=prompt, stop=stop, run_manager=run_manager, kwargs=kwargs
             ):
-                combined_text_output += chunk
+                combined_text_output += str(chunk)
             return combined_text_output
         else:
             output = generator.generate_simple(
