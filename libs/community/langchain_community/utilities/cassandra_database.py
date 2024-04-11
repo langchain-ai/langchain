@@ -6,6 +6,7 @@ import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from cassandra.cluster import ResultSet, Session
+from langchain_core.pydantic_v1 import BaseModel
 
 IGNORED_KEYSPACES = [
     "system",
@@ -484,7 +485,15 @@ class DatabaseError(Exception):
         super().__init__(self.message)
 
 
-class Table:
+class Table(BaseModel):
+    keyspace: str
+    table_name: str
+    comment: Optional[str] = None
+    columns: List[Tuple[str, str]] = []
+    partition: List[str] = []
+    clustering: List[Tuple[str, str]] = []
+    indexes: List[Tuple[str, str, str]] = []
+
     def __init__(
         self,
         keyspace: str,
@@ -612,34 +621,6 @@ class Table:
                 output += f"  - {name} : kind={kind}, options={options}\n"
 
         return output
-
-    @property
-    def table_name(self) -> str:
-        return self._table_name
-
-    @property
-    def comment(self) -> Optional[str]:
-        return self._comment
-
-    @property
-    def keyspace(self) -> str:
-        return self._keyspace
-
-    @property
-    def columns(self) -> List[Tuple[str, str]]:
-        return self._columns
-
-    @property
-    def partition(self) -> List[str]:
-        return self._partition
-
-    @property
-    def cluster(self) -> List[Tuple[str, str]]:
-        return self._clustering
-
-    @property
-    def indexes(self) -> List[Tuple[str, str, str]]:
-        return self._indexes
 
     def _resolve_comment(self, db: CassandraDatabase) -> Optional[str]:
         result = db.run(
