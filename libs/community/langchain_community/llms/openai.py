@@ -112,7 +112,10 @@ def completion_with_retry(
 ) -> Any:
     """Use tenacity to retry the completion call."""
     if is_openai_v1():
-        return llm.client.create(**kwargs)
+        if openai.__version__ >= '1.0.0':
+            return llm.client.chat.completions.create(**kwargs)
+        else:
+            return llm.client.create(**kwargs)
 
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
