@@ -1,18 +1,20 @@
 # Banana
 
-Banana provided serverless GPU inference for AI models, including a CI/CD build pipeline and a simple Python framework (Potassium) to server your models.
+>[Banana](https://www.banana.dev/) provided serverless GPU inference for AI models, 
+> a CI/CD build pipeline and a simple Python framework (`Potassium`) to server your models.
 
 This page covers how to use the [Banana](https://www.banana.dev) ecosystem within LangChain.
 
-It is broken into two parts: 
-* installation and setup, 
-* and then references to specific Banana wrappers.
-
 ## Installation and Setup
 
-- Install with `pip install banana-dev`
+- Install the python package `banana-dev`:
+
+```bash
+pip install banana-dev
+```
+
 - Get an Banana api key from the [Banana.dev dashboard](https://app.banana.dev) and set it as an environment variable (`BANANA_API_KEY`)
-- Get your model's key and url slug from the model's details page
+- Get your model's key and url slug from the model's details page.
 
 ## Define your Banana Template
 
@@ -24,7 +26,7 @@ Other starter repos are available [here](https://github.com/orgs/bananaml/reposi
 
 ## Build the Banana app
 
-To use Banana apps within Langchain, they must include the `outputs` key 
+To use Banana apps within Langchain, you must include the `outputs` key 
 in the returned json, and the value must be a string.
 
 ```python
@@ -55,18 +57,12 @@ def handler(context: dict, request: Request) -> Response:
 
 This example is from the `app.py` file in [CodeLlama-7B-Instruct-GPTQ](https://github.com/bananaml/demo-codellama-7b-instruct-gptq).
 
-## Wrappers
 
-### LLM
+## LLM
 
-Within Langchain, there exists a Banana LLM wrapper, which you can access with
 
 ```python
 from langchain_community.llms import Banana
 ```
 
-You need to provide a model key and model url slug, which you can get from the model's details page in the [Banana.dev dashboard](https://app.banana.dev).
-
-```python
-llm = Banana(model_key="YOUR_MODEL_KEY", model_url_slug="YOUR_MODEL_URL_SLUG")
-```
+See a [usage example](/docs/integrations/llms/banana).

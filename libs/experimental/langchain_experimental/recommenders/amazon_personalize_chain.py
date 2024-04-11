@@ -39,12 +39,12 @@ RESULT_OUTPUT_KEY = "result"
 
 
 class AmazonPersonalizeChain(Chain):
-    """Amazon Personalize Chain for retrieving recommendations
-                        from Amazon Personalize, and summarizing
-    the recommendations in natural language.
-                    It will only return recommendations if return_direct=True.
-    Can also be used in sequential chains for working with
-                                                the output of Amazon Personalize.
+    """Chain for retrieving recommendations from Amazon Personalize,
+     and summarizing them.
+
+    It only returns recommendations if return_direct=True.
+    It can also be used in sequential chains for working with
+    the output of Amazon Personalize.
 
     Example:
         .. code-block:: python

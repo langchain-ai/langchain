@@ -95,7 +95,7 @@ class ChatBaichuan(BaseChatModel):
     """[DEPRECATED, keeping it for for backward compatibility] Baichuan Secret Key"""
     streaming: bool = False
     """Whether to stream the results or not."""
-    request_timeout: int = 60
+    request_timeout: int = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
     model = "Baichuan2-Turbo-192K"
     """model name of Baichuan, default is `Baichuan2-Turbo-192K`,
@@ -219,9 +219,9 @@ class ChatBaichuan(BaseChatModel):
                 )
                 default_chunk_class = chunk.__class__
                 cg_chunk = ChatGenerationChunk(message=chunk)
-                yield cg_chunk
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
+                yield cg_chunk
 
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> requests.Response:
         parameters = {**self._default_params, **kwargs}

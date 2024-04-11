@@ -1,7 +1,6 @@
 import os
 
 from git import Repo
-from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
 from langchain_community.document_loaders.generic import GenericLoader
 from langchain_community.document_loaders.parsers import LanguageParser
 from langchain_community.embeddings import GPT4AllEmbeddings
@@ -11,6 +10,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 
 # Check API key
 if os.environ.get("FIREWORKS_API_KEY", None) is None:

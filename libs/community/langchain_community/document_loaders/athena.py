@@ -157,7 +157,3 @@ class AthenaLoader(BaseLoader):
             }
             doc = Document(page_content=page_content, metadata=metadata)
             yield doc
-
-    def load(self) -> List[Document]:
-        """Load data into document objects."""
-        return list(self.lazy_load())

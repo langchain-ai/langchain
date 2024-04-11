@@ -2,10 +2,10 @@ from langchain_community.llms.azureml_endpoint import (
     AzureMLEndpointClient,
     AzureMLOnlineEndpoint,
     ContentFormatterBase,
+    CustomOpenAIContentFormatter,
     DollyContentFormatter,
     GPT2ContentFormatter,
     HFContentFormatter,
-    LlamaContentFormatter,
     OSSContentFormatter,
 )
 
@@ -16,6 +16,6 @@ __all__ = [
     "OSSContentFormatter",
     "HFContentFormatter",
     "DollyContentFormatter",
-    "LlamaContentFormatter",
+    "CustomOpenAIContentFormatter",
     "AzureMLOnlineEndpoint",
 ]

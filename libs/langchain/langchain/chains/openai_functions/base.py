@@ -14,6 +14,9 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import (
     BaseLLMOutputParser,
 )
+from langchain_core.output_parsers.openai_functions import (
+    PydanticAttrOutputFunctionsParser,
+)
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import (
@@ -26,9 +29,6 @@ from langchain.chains.structured_output.base import (
     create_openai_fn_runnable,
     create_structured_output_runnable,
     get_openai_output_parser,
-)
-from langchain.output_parsers.openai_functions import (
-    PydanticAttrOutputFunctionsParser,
 )
 
 __all__ = [
@@ -52,7 +52,7 @@ def create_openai_fn_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLM chain that uses OpenAI functions.
 
     Args:
@@ -132,7 +132,7 @@ def create_openai_fn_chain(
     }
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
-    llm_chain = LLMChain(
+    llm_chain = LLMChain(  # type: ignore[misc]
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
@@ -154,7 +154,7 @@ def create_structured_output_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLMChain that uses an OpenAI function to get a structured output.
 
     Args:

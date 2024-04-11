@@ -5,6 +5,8 @@ from langchain_core.embeddings import Embeddings
 
 
 class OpenCLIPEmbeddings(BaseModel, Embeddings):
+    """OpenCLIP Embeddings model."""
+
     model: Any
     preprocess: Any
     tokenizer: Any

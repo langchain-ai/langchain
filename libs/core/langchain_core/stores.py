@@ -119,7 +119,7 @@ class BaseStore(Generic[K, V], ABC):
             item = await run_in_executor(None, lambda it: next(it, done), iterator)
             if item is done:
                 break
-            yield item
+            yield item  # type: ignore[misc]
 
 
 ByteStore = BaseStore[str, bytes]

@@ -2,8 +2,9 @@ from typing import Any, List, Mapping, Optional, Sequence
 
 
 class AmazonPersonalize:
-    """Amazon Personalize Runtime wrapper for executing real-time operations:
-    https://docs.aws.amazon.com/personalize/latest/dg/API_Operations_Amazon_Personalize_Runtime.html
+    """Amazon Personalize Runtime wrapper for executing real-time operations.
+
+    See [this link for more details](https://docs.aws.amazon.com/personalize/latest/dg/API_Operations_Amazon_Personalize_Runtime.html).
 
     Args:
         campaign_arn: str, Optional: The Amazon Resource Name (ARN) of the campaign
@@ -84,7 +85,9 @@ class AmazonPersonalize:
         metadata_columns: Optional[Mapping[str, Sequence[str]]] = None,
         **kwargs: Any,
     ) -> Mapping[str, Any]:
-        """Get recommendations from Amazon Personalize:
+        """Get recommendations from Amazon Personalize service.
+
+        See more details at:
         https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html
 
         Args:
@@ -151,6 +154,7 @@ class AmazonPersonalize:
         **kwargs: Any,
     ) -> Mapping[str, Any]:
         """Re-ranks a list of recommended items for the given user.
+
         https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetPersonalizedRanking.html
 
         Args:

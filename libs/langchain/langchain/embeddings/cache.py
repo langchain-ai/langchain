@@ -12,10 +12,11 @@ import hashlib
 import json
 import uuid
 from functools import partial
-from typing import Callable, List, Sequence, Union, cast
+from typing import Callable, List, Optional, Sequence, Union, cast
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.stores import BaseStore, ByteStore
+from langchain_core.utils.iter import batch_iterate
 
 from langchain.storage.encoder_backed import EncoderBackedStore
 
@@ -84,16 +85,20 @@ class CacheBackedEmbeddings(Embeddings):
         self,
         underlying_embeddings: Embeddings,
         document_embedding_store: BaseStore[str, List[float]],
+        *,
+        batch_size: Optional[int] = None,
     ) -> None:
         """Initialize the embedder.
 
         Args:
             underlying_embeddings: the embedder to use for computing embeddings.
             document_embedding_store: The store to use for caching document embeddings.
+            batch_size: The number of documents to embed between store updates.
         """
         super().__init__()
         self.document_embedding_store = document_embedding_store
         self.underlying_embeddings = underlying_embeddings
+        self.batch_size = batch_size
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of texts.
@@ -111,12 +116,12 @@ class CacheBackedEmbeddings(Embeddings):
         vectors: List[Union[List[float], None]] = self.document_embedding_store.mget(
             texts
         )
-        missing_indices: List[int] = [
+        all_missing_indices: List[int] = [
             i for i, vector in enumerate(vectors) if vector is None
         ]
-        missing_texts = [texts[i] for i in missing_indices]
 
-        if missing_texts:
+        for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
+            missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = self.underlying_embeddings.embed_documents(missing_texts)
             self.document_embedding_store.mset(
                 list(zip(missing_texts, missing_vectors))
@@ -144,12 +149,14 @@ class CacheBackedEmbeddings(Embeddings):
         vectors: List[
             Union[List[float], None]
         ] = await self.document_embedding_store.amget(texts)
-        missing_indices: List[int] = [
+        all_missing_indices: List[int] = [
             i for i, vector in enumerate(vectors) if vector is None
         ]
-        missing_texts = [texts[i] for i in missing_indices]
 
-        if missing_texts:
+        # batch_iterate supports None batch_size which returns all elements at once
+        # as a single batch.
+        for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
+            missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = await self.underlying_embeddings.aembed_documents(
                 missing_texts
             )
@@ -210,6 +217,7 @@ class CacheBackedEmbeddings(Embeddings):
         document_embedding_cache: ByteStore,
         *,
         namespace: str = "",
+        batch_size: Optional[int] = None,
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
 
@@ -220,6 +228,7 @@ class CacheBackedEmbeddings(Embeddings):
             namespace: The namespace to use for document cache.
                        This namespace is used to avoid collisions with other caches.
                        For example, set it to the name of the embedding model used.
+            batch_size: The number of documents to embed between store updates.
         """
         namespace = namespace
         key_encoder = _create_key_encoder(namespace)
@@ -229,4 +238,4 @@ class CacheBackedEmbeddings(Embeddings):
             _value_serializer,
             _value_deserializer,
         )
-        return cls(underlying_embeddings, encoder_backed_store)
+        return cls(underlying_embeddings, encoder_backed_store, batch_size=batch_size)

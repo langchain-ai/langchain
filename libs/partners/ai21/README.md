@@ -73,3 +73,49 @@ from langchain_ai21 import AI21Embeddings
 embeddings = AI21Embeddings()
 embeddings.embed_documents(["Hello! This is document 1", "And this is document 2!"])
 ```
+
+## Task Specific Models
+
+### Contextual Answers
+
+You can use AI21's contextual answers model to receives text or document, serving as a context,
+and a question and returns an answer based entirely on this context.
+
+This means that if the answer to your question is not in the document,
+the model will indicate it (instead of providing a false answer)
+
+```python
+from langchain_ai21 import AI21ContextualAnswers
+
+tsm = AI21ContextualAnswers()
+
+response = tsm.invoke(input={"context": "Your context", "question": "Your question"})
+```
+You can also use it with chains and output parsers and vector DBs:
+```python
+from langchain_ai21 import AI21ContextualAnswers
+from langchain_core.output_parsers import StrOutputParser
+
+tsm = AI21ContextualAnswers()
+chain = tsm | StrOutputParser()
+
+response = chain.invoke(
+    {"context": "Your context", "question": "Your question"},
+)
+```
+
+## Text Splitters
+
+### Semantic Text Splitter
+
+You can use AI21's semantic text splitter to split a text into segments.
+Instead of merely using punctuation and newlines to divide the text, it identifies distinct topics that will work well together and will form a coherent piece of text.
+
+For a list for examples, see [this page](https://github.com/langchain-ai/langchain/blob/master/docs/docs/modules/data_connection/document_transformers/semantic_text_splitter.ipynb).
+
+```python
+from langchain_ai21 import AI21SemanticTextSplitter
+
+splitter = AI21SemanticTextSplitter()
+response = splitter.split_text("Your text")
+```

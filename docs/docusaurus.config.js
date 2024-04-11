@@ -4,23 +4,23 @@
 // Note: type annotations allow type checking and IDEs autocompletion
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { ProvidePlugin } = require("webpack");
-const path = require("path");
+require("dotenv").config();
 
 const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
 const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "🦜️🔗 Langchain",
+  title: "🦜️🔗 LangChain",
   tagline: "LangChain Python Docs",
-  favicon: "img/favicon.ico",
+  favicon: "img/brand/favicon.png",
   // Set the production url of your site here
   url: "https://python.langchain.com",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
-
-  onBrokenLinks: "warn",
+  trailingSlash: true,
+  onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
 
   themes: ["@docusaurus/theme-mermaid"],
@@ -144,20 +144,14 @@ const config = {
           },
         },
       },
-      image: "img/parrot-chainlink-icon.png",
+      image: "img/brand/theme-image.png",
       navbar: {
-        title: "🦜️🔗 LangChain",
+        logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
           {
-            to: "/docs/get_started/introduction",
-            label: "Docs",
+            to: "/docs/modules",
+            label: "Components",
             position: "left",
-          },
-          {
-            type: "docSidebar",
-            position: "left",
-            sidebarId: "use_cases",
-            label: "Use cases",
           },
           {
             type: "docSidebar",
@@ -166,14 +160,13 @@ const config = {
             label: "Integrations",
           },
           {
-            type: "docSidebar",
-            position: "left",
-            sidebarId: "guides",
+            to: "/docs/guides",
             label: "Guides",
+            position: "left",
           },
           {
             href: "https://api.python.langchain.com",
-            label: "API",
+            label: "API Reference",
             position: "left",
           },
           {
@@ -188,11 +181,6 @@ const config = {
               {
                 to: "/docs/packages",
                 label: "Versioning",
-              },
-              {
-                type: "docSidebar",
-                sidebarId: "changelog",
-                label: "Changelog",
               },
               {
                 to: "/docs/contributing",
@@ -254,7 +242,7 @@ const config = {
           },
           {
             href: "https://chat.langchain.com",
-            label: "Chat",
+            label: "💬",
             position: "right",
           },
           // Please keep GitHub link to the right for consistency.
@@ -336,7 +324,11 @@ const config = {
       async: true,
     },
   ],
-  
+
+  customFields: {
+    supabasePublicKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  },
 };
 
 module.exports = config;
