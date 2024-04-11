@@ -345,7 +345,7 @@ def convert_to_openai_function(
 def flatten_all_of(schema: Any) -> Any:
     """GigaChat не поддерживает allOf/anyOf, поэтому правим вложенную структуру"""
     if isinstance(schema, dict):
-        obj_out = {}
+        obj_out: Any = {}
         for k, v in schema.items():
             if k == "allOf":
                 obj = flatten_all_of(v[0])
