@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
+from langchain_core.messages.tool import ToolCall
 from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
@@ -17,7 +18,7 @@ def parse_tool_call(
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> Optional[Dict[str, Any]]:
+) -> Optional[ToolCall]:
     """Parse a single tool call."""
     if "function" not in raw_tool_call:
         return None
@@ -67,9 +68,9 @@ def parse_tool_calls(
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> List[dict]:
+) -> List[ToolCall]:
     """Parse a list of tool calls."""
-    final_tools = []
+    final_tools: List[ToolCall] = []
     exceptions = []
     for tool_call in raw_tool_calls:
         try:
