@@ -43,12 +43,12 @@ class ApertureDB(VectorStore):
         self.connection = aperturedb.Utils.create_connector()
         self.utils = aperturedb.Utils.Utils(self.connection)
         try:
-            self.connection.status()
-            assert self.connection.last_query_ok(), self.connection.get_last_response_str()
+            self.utils.status()
+            utils_connector = self.utils.connector
+            assert utils_connector.last_query_ok(), utils_connector.get_last_response_str()
         except Exception:
             self.logger.exception(f"Failed to connect to ApertureDB")
             raise
-        # self.utils = aperturedb.Utils.Utils(self.connection)
 
         self._find_or_add_descriptor_set(descriptor_set, dimensions)
 
@@ -68,13 +68,23 @@ class ApertureDB(VectorStore):
 
     def _find_or_add_descriptor_set(self, descriptor_set:str, dimensions:Optional[int]=None):
         """Checks if the descriptor set exists, if not, creates it"""
-        r,b = self.connection.query([{ "FindDescriptorSet": { "with_name": descriptor_set } }])
+        find_ds_query = [{
+            "FindDescriptorSet": {
+                "_ref": 1,
+                "with_name": descriptor_set,
+                "results": {
+                    "count": True
+                }
+            }
+
+        }]
+        r,b = self.connection.query(find_ds_query)
         assert self.connection.last_query_ok(), self.connection.get_last_response_str()
         # TODO: Could check that dimensions, engine and metric are the same
-        if r[0]["FindDescriptorSet"]["returned"] == 0:
+        if r[0]["FindDescriptorSet"]["count"] == 0:
             if self.dimensions is None:
-                self.dimensions = len(self.embeddings.embed_query("test"))
-            success = self.utils.add_descriptor_set(descriptor_set, self.dimensions, engine=self.engine, metric=[self.metric])
+                self.dimensions = len(self.myembeddings.embed_query("test"))
+            success = self.utils.add_descriptorset(descriptor_set, self.dimensions, engine=self.engine, metric=[self.metric])
             assert success, self.connection.get_last_response_str()
             self.utils.create_entity_index("_Descriptor", "_uniqueid")
 
@@ -96,10 +106,7 @@ class ApertureDB(VectorStore):
             commands.append({
                 "AddDescriptor": {
                     "set": self.descriptor_set,
-                    "_ref": ref,
-                    "results": {
-                       "list": ["_uniqueid"]
-                    }
+                    "_ref": ref
                 }
             })
             npem = np.array(embedding, dtype=np.float32)
@@ -107,7 +114,7 @@ class ApertureDB(VectorStore):
 
             commands.append({
                 "AddBlob": {
-                    "_ref": ref,
+                    "_ref": ref+1,
                     "properties": metadata,
                     "connect": {
                         "class": "has_descriptor",
@@ -117,9 +124,21 @@ class ApertureDB(VectorStore):
             })
             blobs.append(text.encode())
 
+            commands.append({
+                "FindDescriptor": {
+                    "set": self.descriptor_set,
+                    "is_connected_to": {
+                        "ref": ref+1
+                    },
+                    "results": {
+                        "list": ["_uniqueid"]
+                    }
+                }
+            })
+
         status, responses, blobs = aperturedb.ParallelQuery.execute_batch(q=commands, blobs=blobs, db=self.connection, commands_per_query=2, blobs_per_query=2)
         assert status == 0, responses
-        unique_ids = [r["AddDescriptor"]["results"]["_uniqueid"] for r in responses[::2]]
+        unique_ids = [r["_uniqueid"] for r in responses[-1]["FindDescriptor"]["entities"]]
         return unique_ids
 
     def delete(self, ids: List[str]) -> Optional[bool]:
