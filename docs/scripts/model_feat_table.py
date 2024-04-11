@@ -24,7 +24,7 @@ CHAT_MODEL_FEAT_TABLE_CORRECTION = {
     "ChatMistralAI": {"tool_calling": True, "package": "langchain-mistralai"},
     "ChatFireworks": {"tool_calling": True, "package": "langchain-fireworks"},
     "ChatOpenAI": {"tool_calling": True, "package": "langchain-openai"},
-    "ChatVertexAI": {"tool_calling": True, "package": "langchain-vertexai"},
+    "ChatVertexAI": {"tool_calling": True, "package": "langchain-google-vertexai"},
     "ChatGroq": {"tool_calling": "partial", "package": "langchain-groq"},
     "ChatCohere": {"tool_calling": "partial", "package": "langchain-cohere"},
 }
