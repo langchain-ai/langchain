@@ -1,4 +1,4 @@
-from langchain_community.document_loaders import __all__
+from langchain_community.document_loaders import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "AcreomLoader",
@@ -156,6 +156,7 @@ EXPECTED_ALL = [
     "TwitterTweetLoader",
     "UnstructuredAPIFileIOLoader",
     "UnstructuredAPIFileLoader",
+    "UnstructuredCHMLoader",
     "UnstructuredCSVLoader",
     "UnstructuredEPubLoader",
     "UnstructuredEmailLoader",
@@ -189,3 +190,4 @@ EXPECTED_ALL = [
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__) == set(_module_lookup.keys())
