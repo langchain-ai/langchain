@@ -80,14 +80,16 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             k: int = 5
 
             def _get_relevant_documents(self, query: str) -> List[Document]:
-
+                \"\"\"Return the first k documents from the list of documents\"\"\"
                 return self.docs[:self.k]
 
             async def _aget_relevant_documents(self, query: str) -> List[Document]:
+                \"\"\"(Optional) async native implementation.\"\"\"
                 return self.docs[:self.k]
 
 
     Example: A simple retriever based on a scitkit learn vectorizer
+    
         .. code-block:: python
 
             from sklearn.metrics.pairwise import cosine_similarity
