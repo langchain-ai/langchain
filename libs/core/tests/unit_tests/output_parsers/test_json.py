@@ -239,7 +239,9 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar":', '{"foo": "bar"}'),
     ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
     ('{"foo": "bar", ', '{"foo": "bar"}'),
-    ('{"key":"val\\ue', '{"key":"value\\', '{"key":"\\value'),
+    ('{"key":"val\\ue', "{'key': 'val\\ue'}"),
+    ('{"key":"value\\', "{'key': 'value\\'}"),
+    ('{"key":"\\value', "{'key': '\\value'}"),
 ]
 
 
