@@ -117,6 +117,7 @@ class RdfGraph:
         standard: Optional[str] = "rdf",
         local_copy: Optional[str] = None,
         graph_kwargs: Optional[Dict] = None,
+        store_kwargs: Optional[Dict] = None,
     ) -> None:
         """
         Set up the RDFlib graph
@@ -176,10 +177,10 @@ class RdfGraph:
         if query_endpoint:
             self.mode = "store"
             if not update_endpoint:
-                self._store = sparqlstore.SPARQLStore()
+                self._store = sparqlstore.SPARQLStore(**store_kwargs)
                 self._store.open(query_endpoint)
             else:
-                self._store = sparqlstore.SPARQLUpdateStore()
+                self._store = sparqlstore.SPARQLUpdateStore(**store_kwargs)
                 self._store.open((query_endpoint, update_endpoint))
             graph_kwargs = graph_kwargs or {}
             self.graph = rdflib.Graph(self._store, **graph_kwargs)
