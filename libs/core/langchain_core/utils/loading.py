@@ -3,7 +3,18 @@
 import warnings
 from typing import Any
 
+from langchain_core._api.deprecation import deprecated
 
+
+@deprecated(
+    since="0.1.30",
+    removal="0.2",
+    message=(
+        "Using the hwchase17/langchain-hub "
+        "repo for prompts is deprecated. Please use "
+        "https://smith.langchain.com/hub instead."
+    ),
+)
 def try_load_from_hub(
     *args: Any,
     **kwargs: Any,

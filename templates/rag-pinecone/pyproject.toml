@@ -16,7 +16,7 @@ pinecone-client = ">=2.2.4"
 langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "rag"

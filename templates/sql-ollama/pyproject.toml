@@ -12,7 +12,7 @@ python = ">=3.8.1,<4.0"
 gigachain = ">=0.0.325"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "sql"

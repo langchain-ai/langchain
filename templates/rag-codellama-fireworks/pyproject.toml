@@ -17,7 +17,7 @@ fireworks-ai = ">=0.6.0"
 langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 
 [tool.gigaserve]
 export_module = "rag_codellama_fireworks"

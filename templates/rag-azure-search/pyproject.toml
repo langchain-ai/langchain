@@ -12,7 +12,7 @@ langchain-openai = ">=0.0.1"
 azure-search-documents = ">=11.4.0"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.4"
+gigachain-cli = ">=0.0.4"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 

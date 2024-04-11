@@ -25,7 +25,7 @@ extras = [
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.24.1"
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "intel_rag_xeon.chain"

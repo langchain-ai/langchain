@@ -13,7 +13,7 @@ gigachain = ">=0.0.325"
 llama-cpp-python = ">=0.1.79"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 
 [tool.templates-hub]
 use-case = "sql"

@@ -11,7 +11,7 @@ gigachain = ">=0.0.313, <0.1"
 openai = "<2"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"
 fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 

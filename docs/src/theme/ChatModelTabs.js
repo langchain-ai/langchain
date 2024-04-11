@@ -120,7 +120,7 @@ export default function ChatModelTabs(props) {
     {
       value: "TogetherAI",
       label: "TogetherAI",
-      text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = Together(${togetherParamsOrDefault})`,
+      text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${togetherParamsOrDefault})`,
       apiKeyName: "TOGETHER_API_KEY",
       packageName: "langchain-openai",
       default: false,

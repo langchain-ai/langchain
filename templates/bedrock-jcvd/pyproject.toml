@@ -24,4 +24,4 @@ integrations = ["AWS"]
 tags = ["conversation"]
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.21"
+gigachain-cli = ">=0.0.21"

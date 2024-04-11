@@ -15,7 +15,7 @@ tiktoken = ">=0.5.1"
 jaguar = ">=3.4"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+gigachain-cli = ">=0.0.15"
 
 [tool.langserve]
 export_module = "rag_jaguardb"
