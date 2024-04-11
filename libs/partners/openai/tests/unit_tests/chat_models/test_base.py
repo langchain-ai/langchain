@@ -104,7 +104,7 @@ def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_call = {
         "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
         "function": {
-            "arguments": '{"name":"Sally","hair_color":"green"}',
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
             "name": "GenerateUsername",
         },
         "type": "function",
