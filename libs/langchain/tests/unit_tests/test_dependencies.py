@@ -106,10 +106,10 @@ def test_imports() -> None:
         SerpAPIWrapper,  # noqa: F401
     )
     from langchain_community.vectorstores import FAISS  # noqa: F401
+    from langchain_community.callbacks import OpenAICallbackHandler  # noqa: F401
     from langchain_core.prompts import BasePromptTemplate  # noqa: F401
 
     from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
-    from langchain.callbacks import OpenAICallbackHandler  # noqa: F401
     from langchain.chains import LLMChain  # noqa: F401
     from langchain.retrievers import VespaRetriever  # noqa: F401
     from langchain.tools import DuckDuckGoSearchResults  # noqa: F401
