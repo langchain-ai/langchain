@@ -1,11 +1,19 @@
 """Tool for the Google Finance"""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
+
+
+class GoogleFinanceQueryRunInput(BaseModel):
+    """Input for the GoogleFinanceQueryRun tool."""
+
+    query: str = Field(description="Query for Google Finance")
+    
 
 
 class GoogleFinanceQueryRun(BaseTool):
@@ -19,6 +27,7 @@ class GoogleFinanceQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleFinanceAPIWrapper
+    args_schema: Type[BaseModel] = GoogleFinanceQueryRunInput
 
     def _run(
         self,
