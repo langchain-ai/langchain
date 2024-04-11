@@ -41,7 +41,7 @@ class ApertureDB(VectorStore):
         self.connection = aperturedb.Util.create_connector()
         try:
             self.connection.status()
-            assert self.connection.last_query_ok(), self.connection.last_error()
+            assert self.connection.last_query_ok(), self.connection.get_last_response_str()
         except Exception:
             self.logger.exception(f"Failed to connect to ApertureDB")
             raise
@@ -66,13 +66,13 @@ class ApertureDB(VectorStore):
     def _find_or_add_descriptor_set(self, descriptor_set:str, dimensions:Optional[int]=None):
         """Checks if the descriptor set exists, if not, creates it"""
         r,b = self.connection.query([{ "FindDescriptorSet": { "with_name": descriptor_set } }])
-        assert self.connection.last_query_ok(), self.connection.last_error()
+        assert self.connection.last_query_ok(), self.connection.get_last_response_str()
         # TODO: Could check that dimensions, engine and metric are the same
         if r[0]["FindDescriptorSet"]["returned"] == 0:
             if self.dimensions is None:
                 self.dimensions = len(self.embeddings.embed_query("test"))
             success = self.utils.add_descriptor_set(descriptor_set, self.dimensions, engine=self.engine, metric=[self.metric])
-            assert success, self.connection.last_error()
+            assert success, self.connection.get_last_response_str()
             self.utils.create_entity_index("_Descriptor", "_uniqueid")
 
     def add_texts(self, texts: Iterable[str],
@@ -184,7 +184,7 @@ class ApertureDB(VectorStore):
         }]   
         blobs_in = [np.array(embedding).tobytes()]
         responses, blobs_out = self.connection.query(query, blobs_in) 
-        assert self.connection.last_query_ok(), self.connection.last_error()
+        assert self.connection.last_query_ok(), self.connection.get_last_response_str()
         results = []
         for i in range(0, len(responses), 2):
             unique_ids = responses[i]["FindDescriptor"]["results"]["_uniqueid"]
@@ -242,7 +242,6 @@ class ApertureDB(VectorStore):
         query_similarity = [ self._vector_similarity(embedding, vector) for _, _, vector in results]
         document_similarity = {}
         for i, (_, _, vector) in enumerate(results):
-            document_similarity[(i,i)] = None
             for j, (_, _, vector2) in enumerate(results[i+1:]):
                 similarity = self._vector_similarity(vector, vector2)
                 document_similarity[(i,j)] = similarity
