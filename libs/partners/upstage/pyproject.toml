@@ -12,7 +12,9 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+openai = "^1.10.0"
 langchain-core = ">=0.0.12"
+langchain-openai = ">=0.1.0"
 
 [tool.poetry.group.test]
 optional = true
@@ -24,7 +26,11 @@ pytest-mock  = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
+langchain-openai = {path = "../openai", develop = true}
 langchain-core = {path = "../../core", develop = true}
+docarray = "^0.32.1"
+pydantic = "^1.10.9"
+langchain_community = {path = "../../community", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true

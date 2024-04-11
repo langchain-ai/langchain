@@ -4,7 +4,6 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
-
 from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator

@@ -1,16 +1,25 @@
-from typing import Any, AsyncIterator, Iterator, List, Optional
-
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
+import os
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage, BaseMessageChunk
-from langchain_core.outputs import ChatGenerationChunk, ChatResult
+
+import openai
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+)
+from langchain_openai import ChatOpenAI
 
 
-class ChatUpstage(BaseChatModel):
+class ChatUpstage(ChatOpenAI):
     """ChatUpstage chat model.
+
+    To use, you should have the environment variable `UPSTAGE_API_KEY`
+    set with your API key or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
@@ -22,47 +31,71 @@ class ChatUpstage(BaseChatModel):
     """
 
     @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"upstage_api_key": "UPSTAGE_API_KEY"}
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        return ["langchain", "chat_models", "upstage"]
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        if self.upstage_api_base:
+            attributes["upstage_api_base"] = self.upstage_api_base
+
+        return attributes
+
+    @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
-        return "chat-upstage"
+        return "upstage-chat"
 
-    def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-        raise NotImplementedError
+    model_name: str = Field(default="solar-1-mini-chat", alias="model")
+    """Model name to use."""
+    upstage_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    """Automatically inferred from env are `UPSTAGE_API_KEY` if not provided."""
+    upstage_api_base: Optional[str] = Field(
+        default="https://api.upstage.ai/v1/solar", alias="base_url"
+    )
 
-    async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        yield ChatGenerationChunk(
-            message=BaseMessageChunk(content="Yield chunks", type="ai"),
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate that api key and python package exists in environment."""
+        if values["n"] < 1:
+            raise ValueError("n must be at least 1.")
+        if values["n"] > 1 and values["streaming"]:
+            raise ValueError("n must be 1 when streaming.")
+
+        values["upstage_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "upstage_api_key", "UPSTAGE_API_KEY")
         )
-        yield ChatGenerationChunk(
-            message=BaseMessageChunk(content=" like this!", type="ai"),
+        values["upstage_api_base"] = values["upstage_api_base"] or os.getenv(
+            "UPSTAGE_API_BASE"
         )
 
-    def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        raise NotImplementedError
+        client_params = {
+            "api_key": (
+                values["upstage_api_key"].get_secret_value()
+                if values["upstage_api_key"]
+                else None
+            ),
+            "base_url": values["upstage_api_base"],
+            "timeout": values["request_timeout"],
+            "max_retries": values["max_retries"],
+            "default_headers": values["default_headers"],
+            "default_query": values["default_query"],
+        }
 
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        raise NotImplementedError
+        if not values.get("client"):
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.OpenAI(
+                **client_params, **sync_specific
+            ).chat.completions
+        if not values.get("async_client"):
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncOpenAI(
+                **client_params, **async_specific
+            ).chat.completions
+        return values

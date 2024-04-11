@@ -1,9 +1,7 @@
 from langchain_upstage import __all__
 
 EXPECTED_ALL = [
-    "UpstageLLM",
     "ChatUpstage",
-    "UpstageVectorStore",
     "UpstageEmbeddings",
 ]
 
