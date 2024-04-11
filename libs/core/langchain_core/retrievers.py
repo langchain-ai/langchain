@@ -87,7 +87,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 \"\"\"(Optional) async native implementation.\"\"\"
                 return self.docs[:self.k]
 
-
     Example: A simple retriever based on a scitkit learn vectorizer
     
         .. code-block:: python
