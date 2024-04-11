@@ -137,7 +137,7 @@ class SessionsPythonREPLTool(BaseTool):
 
         return await run_in_executor(None, self.run, python_code)
 
-    def upload_file(self, data: BufferedReader = None, remote_file_path: str = None, local_file_path: str = None) -> RemoteFileMetadata:
+    def upload_file(self, *, data: BufferedReader = None, remote_file_path: str = None, local_file_path: str = None) -> RemoteFileMetadata:
         """Upload a file to the session pool.
 
         Args:
@@ -173,23 +173,29 @@ class SessionsPythonREPLTool(BaseTool):
         response_json = response.json()
         return RemoteFileMetadata.from_dict(response_json)
     
-    def download_file(self, *, remote_filename: str) -> BufferedReader:
+    def download_file(self, *, remote_file_path: str, local_file_path: str = None) -> Optional[BufferedReader]:
         """Download a file from the session pool.
 
         Args:
-            remote_filename: The path to download the file from, relative to `/mnt/data`
+            remote_file_path: The path to download the file from, relative to `/mnt/data`.
+            local_file_path: The path to save the downloaded file to. If not provided, the file is returned as a BufferedReader.
 
         Returns:
-            BufferedReader: The data of the downloaded file
+            BufferedReader: The data of the downloaded file.
         """
         access_token = self.access_token_provider()
-        api_url = self._build_url(f"python/downloadFile?identifier={self.session_id}&filename={remote_filename}")
+        api_url = self._build_url(f"python/downloadFile?identifier={self.session_id}&filename={remote_file_path}")
         headers = {
             "Authorization": f"Bearer {access_token}",
         }
 
         response = requests.get(api_url, headers=headers)
         response.raise_for_status()
+
+        if local_file_path:
+            with open(local_file_path, "wb") as f:
+                f.write(response.content)
+            return None
 
         return BytesIO(response.content)
 
