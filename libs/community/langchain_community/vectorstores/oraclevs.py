@@ -398,22 +398,23 @@ class OracleVS(VectorStore):
         ids: Optional list of ids for the texts that are being added to the vector store.
         kwargs: vectorstore specific parameters
     """
-    if ids is not None:
+    if ids:
       # If ids are provided, hash them to maintain consistency
-      ids = [hashlib.sha256(_id.encode()).hexdigest()[:16].upper() for _id in ids]
+      processed_ids = [hashlib.sha256(_id.encode()).hexdigest()[:16].upper() for _id in ids]
     elif metadatas and all('id' in metadata for metadata in metadatas):
       # If no ids are provided but metadatas with ids are, generate ids from metadatas
-      ids = [hashlib.sha256(metadata['id'].encode()).hexdigest()[:16].upper() for metadata in metadatas]
+      processed_ids = [hashlib.sha256(metadata['id'].encode()).hexdigest()[:16].upper() for metadata in metadatas]
     else:
-      # Error if neither ids are provided nor metadatas with ids
-      raise ValueError("Either specify an 'ids' list or 'metadatas' with an 'id' attribute for each element.")
+      # Generate new ids if none are provided
+      generated_ids = [str(uuid.uuid4()) for _ in texts]  # uuid4 is more standard for random UUIDs
+      processed_ids = [hashlib.sha256(_id.encode()).hexdigest()[:16].upper() for _id in generated_ids]
 
     embeddings = self.embed_documents(texts)
     if not metadatas:
       metadatas = [{} for _ in texts]
     docs = [
       (id_, text, json.dumps(metadata), array.array('f', embedding))
-      for id_, text, metadata, embedding in zip(ids, texts, metadatas, embeddings)
+      for id_, text, metadata, embedding in zip(processed_ids, texts, metadatas, embeddings)
     ]
 
     with self.client.cursor() as cursor:
@@ -422,7 +423,7 @@ class OracleVS(VectorStore):
         docs
       )
       self.client.commit()
-    return ids
+    return processed_ids
 
 
   def similarity_search(self,
@@ -455,7 +456,7 @@ class OracleVS(VectorStore):
     return [doc for doc, _ in docs_and_scores]
 
 
-  def similarity_search_with_relevance_score(
+  def similarity_search_with_score(
     self,
     query: str,
     k: int = 4,
