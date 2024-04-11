@@ -3,7 +3,13 @@
 import json
 from typing import Any
 
-from langchain_core.messages import AIMessageChunk, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    ToolCall,
+    ToolCallChunk,
+)
 from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_mistralai.chat_models import ChatMistralAI
@@ -151,6 +157,22 @@ def test_streaming_structured_output() -> None:
         chunk_num += 1
 
 
+def test_tool_call() -> None:
+    llm = ChatMistralAI(model="mistral-large", temperature=0)
+
+    class Person(BaseModel):
+        name: str
+        age: int
+
+    tool_llm = llm.bind_tools([Person])
+
+    result = tool_llm.invoke("Erick, 27 years old")
+    assert isinstance(result, AIMessage)
+    assert result.tool_calls == [
+        ToolCall(name="Person", args={"name": "Erick", "age": 27}, id=None)
+    ]
+
+
 def test_streaming_tool_call() -> None:
     llm = ChatMistralAI(model="mistral-large", temperature=0)
 
@@ -177,6 +199,13 @@ def test_streaming_tool_call() -> None:
         "name": "Erick",
         "age": 27,
     }
+
+    assert isinstance(chunk, AIMessageChunk)
+    assert chunk.tool_call_chunks == [
+        ToolCallChunk(
+            name="Person", args='{"name": "Erick", "age": 27}', id=None, index=None
+        )
+    ]
 
     # where it doesn't call the tool
     strm = tool_llm.stream("What is 2+2?")
