@@ -430,7 +430,7 @@ tenacity = ">=8.1.0,<9.0.0"
 extended-testing = ["jinja2 (>=3,<4)"]
 
 [[package]]
-name = "langchain-standard-tests"
+name = "gigachain-standard-tests"
 version = "0.1.0"
 description = "Standard tests for LangChain implementations"
 optional = false
@@ -439,7 +439,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.1.40"
+gigachain-core = "^0.1.40"
 pytest = ">=7,<9"
 
 [package.source]
