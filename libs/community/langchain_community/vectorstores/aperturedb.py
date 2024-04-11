@@ -1,9 +1,11 @@
 # System imports
+from __future__ import annotations
 from itertools import cycle, islice, repeat
 import logging
-from typing import Any, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type
 
 # Third-party imports
+import aperturedb.Utils
 import numpy as np
 
 # Local imports
@@ -16,17 +18,17 @@ METRIC = "L2"
 DESCRIPTOR_SET = "langchain"
 
 class ApertureDB(VectorStore):
-    def __init__(self, 
-                 embeddings:Embeddings, 
-                 descriptor_set:str=DESCRIPTOR_SET, 
-                 dimensions:Optional[int]=None, 
+    def __init__(self,
+                 embeddings:Embeddings,
+                 descriptor_set:str=DESCRIPTOR_SET,
+                 dimensions:Optional[int]=None,
                  engine:str=ENGINE,
                  metric:str=METRIC,
                  **kwargs):
         super().__init__(**kwargs)
         self.logger = logging.getLogger(__name__)
 
-        self.embeddings = embeddings
+        self.myembeddings = embeddings
         self.descriptor_set = descriptor_set
         self.dimensions = dimensions
         self.engine = engine
@@ -38,20 +40,21 @@ class ApertureDB(VectorStore):
             self.logger.exception("ApertureDB is not installed. Please install it using 'pip install aperturedb'")
             raise
 
-        self.connection = aperturedb.Util.create_connector()
+        self.connection = aperturedb.Utils.create_connector()
+        self.utils = aperturedb.Utils.Utils(self.connection)
         try:
             self.connection.status()
             assert self.connection.last_query_ok(), self.connection.get_last_response_str()
         except Exception:
             self.logger.exception(f"Failed to connect to ApertureDB")
             raise
-        self.utils = aperturedb.Utils.Utils(self.connection)
+        # self.utils = aperturedb.Utils.Utils(self.connection)
 
         self._find_or_add_descriptor_set(descriptor_set, dimensions)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """Selects the relevance score function based on the metric.
-        
+
         This method is defined in order to make the base class implementation of similarity_search_with_relevance_scores work.
         """
         if self.metric == "L2":
@@ -81,14 +84,14 @@ class ApertureDB(VectorStore):
         if metadatas is not None:
             assert len(texts) == len(metadatas), "Length of texts and metadatas should be the same"
 
-        embeddings = self.embeddings.embed_documents(texts)
+        embeddings = self.myembeddings.embed_documents(texts)
         if metadatas is None:
             metadatas = repeat({})
         refs = cycle(range(1,100000))
-        data = zip(texts, embeddings, metadatas, refs) 
+        data = zip(texts, embeddings, metadatas, refs)
 
         commands = []
-        blobs = []        
+        blobs = []
         for text, embedding, metadata, ref in data:
             commands.append({
                 "AddDescriptor": {
@@ -99,8 +102,9 @@ class ApertureDB(VectorStore):
                     }
                 }
             })
-            blobs.append(embedding.tobytes())                
-        
+            npem = np.array(embedding, dtype=np.float32)
+            blobs.append(npem.tobytes())
+
             commands.append({
                 "AddBlob": {
                     "_ref": ref,
@@ -117,12 +121,12 @@ class ApertureDB(VectorStore):
         assert status == 0, responses
         unique_ids = [r["AddDescriptor"]["results"]["_uniqueid"] for r in responses[::2]]
         return unique_ids
-    
+
     def delete(self, ids: List[str]) -> Optional[bool]:
         refs = cycle(range(1,100000))
         commands = []
         for id, ref in zip(ids, refs):
-            commands.extend([{ 
+            commands.extend([{
                 "FindDescriptor": {
                     "_ref": ref,
                     "set": self.descriptor_set,
@@ -148,17 +152,17 @@ class ApertureDB(VectorStore):
         assert status == 0, responses
         results = [r["DeleteDescriptor"]["results"]["count"] == 1 for r in responses[1::3]]
         return results
-    
+
     def similarity_search(
         self, query: str, k: int = 4, *args: Any, **kwargs: Any
     ) -> List[Document]:
-        embedding = self.embeddings.embed_query(query)
+        embedding = self.myembeddings.embed_query(query)
         return self.similarity_search_by_vector(embedding, k, *args, **kwargs)
 
     def similarity_search_with_score(
         self, query: str, *args: Any, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        embedding = self.embeddings.embed_query(query)
+        embedding = self.myembeddings.embed_query(query)
         return self._similarity_search_with_score_by_vector(embedding, *args, **kwargs)
 
     def _similarity_search_with_score_by_vector(
@@ -177,13 +181,13 @@ class ApertureDB(VectorStore):
             "FindBlob": {
                 "is_connected_to": {
                     "ref": 1
-                }
+                },
                 "results": { "all_properties": True },
                 "blobs": True,
             }
-        }]   
+        }]
         blobs_in = [np.array(embedding).tobytes()]
-        responses, blobs_out = self.connection.query(query, blobs_in) 
+        responses, blobs_out = self.connection.query(query, blobs_in)
         assert self.connection.last_query_ok(), self.connection.get_last_response_str()
         results = []
         for i in range(0, len(responses), 2):
@@ -191,7 +195,7 @@ class ApertureDB(VectorStore):
             metadata = responses[i+1]["FindBlob"]["entities"][0]
             distance = metadata["_distance"]
             blob_index = metadata["_blob_index"]
-            text = blobs_out[blob_index].decode()            
+            text = blobs_out[blob_index].decode()
             # consider filtering internal properties out of metadata
             if vectors:
                 vector_blob_index = responses[i]["FindDescriptor"]["entities"][0]["_blob_index"]
@@ -200,12 +204,12 @@ class ApertureDB(VectorStore):
             else:
                 results.append((Document(page_content=text, _uniqueid=unique_ids, **metadata), distance))
         return results
-    
+
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         results = self._similarity_search_with_score_by_vector(embedding, k)
-        return [document for document, _ in results]    
+        return [document for document, _ in results]
 
     def max_marginal_relevance_search(
         self,
@@ -215,9 +219,9 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        embedding = self.embeddings.embed_query(query)
+        embedding = self.myembeddings.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k, lambda_mult, **kwargs)
-    
+
     def _vector_similarity(self, vector1: List[float], vector2: List[float]) -> float:
         if self.metric == "L2":
             distance = np.linalg.norm(np.array(vector1) - np.array(vector2))
@@ -225,7 +229,7 @@ class ApertureDB(VectorStore):
             distance = np.dot(vector1, vector2)
         elif self.metric == "CS":
             distance = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
-        else:       
+        else:
             raise ValueError(f"Unknown metric: {self.metric}")
         similarity = self._select_relevance_score_fn()(distance)
         return similarity
