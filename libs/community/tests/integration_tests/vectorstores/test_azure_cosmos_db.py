@@ -35,6 +35,7 @@ m = 16
 ef_construction = 64
 ef_search = 40
 score_threshold = 0.1
+application_name = "LANGCHAIN_PYTHON"
 
 
 def prepare_collection() -> Any:
@@ -108,6 +109,7 @@ class TestAzureCosmosDBVectorSearch:
             azure_openai_embeddings,
             collection=collection,
             index_name=INDEX_NAME,
+            application_name=application_name,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
@@ -911,6 +913,7 @@ class TestAzureCosmosDBVectorSearch:
                 NAMESPACE,
                 azure_openai_embeddings,
                 index_name=INDEX_NAME,
+                application_name=application_name,
             )
         )
 
@@ -926,6 +929,7 @@ class TestAzureCosmosDBVectorSearch:
                 NAMESPACE,
                 azure_openai_embeddings,
                 index_name=INDEX_NAME,
+                application_name=application_name,
             )
         )
 

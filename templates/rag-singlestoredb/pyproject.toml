@@ -2,9 +2,7 @@
 name = "rag-singlestoredb"
 version = "0.0.1"
 description = "RAG using SingleStoreDB"
-authors = [
-    "Alex Peng <apeng@singlestore.com>"
-]
+authors = ["Alex Peng <apeng@singlestore.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -17,7 +15,7 @@ langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
-fastapi = "^0.104.0"
+fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
