@@ -77,7 +77,6 @@ class ApertureDB(VectorStore):
 
     def add_texts(self, texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
     ) -> List[str]:
         if metadatas is not None:
             assert len(texts) == len(metadatas), "Length of texts and metadatas should be the same"
@@ -151,19 +150,19 @@ class ApertureDB(VectorStore):
         return results
     
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = 4, *args: Any, **kwargs: Any
     ) -> List[Document]:
         embedding = self.embeddings.embed_query(query)
-        return self.similarity_search_by_vector(embedding, k, **kwargs)
+        return self.similarity_search_by_vector(embedding, k, *args, **kwargs)
 
     def similarity_search_with_score(
-        self, query: str, **kwargs: Any
+        self, query: str, *args: Any, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         embedding = self.embeddings.embed_query(query)
-        self._similarity_search_with_score_by_vector(embedding, **kwargs)
+        return self._similarity_search_with_score_by_vector(embedding, *args, **kwargs)
 
     def _similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4
+        self, embedding: List[float], k: int = 4, vectors=False
     ) -> List[Tuple[Document, float]]:
         query = [ {
             "FindDescriptor": {
@@ -171,6 +170,7 @@ class ApertureDB(VectorStore):
                 "k_neighbors": k,
                 "_ref": 1,
                 "results": { "list": ["_uniqueid"] },
+                "blobs": vectors,
                 "distances": True,
             }
         }, {
@@ -191,16 +191,21 @@ class ApertureDB(VectorStore):
             metadata = responses[i+1]["FindBlob"]["entities"][0]
             distance = metadata["_distance"]
             blob_index = metadata["_blob_index"]
-            text = blobs_out[blob_index].decode()
-            # consider filtering internal properties out
-            results.append((Document(page_content=text, _uniqueid=unique_ids, **metadata), distance))
+            text = blobs_out[blob_index].decode()            
+            # consider filtering internal properties out of metadata
+            if vectors:
+                vector_blob_index = responses[i]["FindDescriptor"]["entities"][0]["_blob_index"]
+                vector = np.frombuffer(blobs_out[vector_blob_index], dtype=np.float32)
+                results.append((Document(page_content=text, _uniqueid=unique_ids, **metadata), distance, vector))
+            else:
+                results.append((Document(page_content=text, _uniqueid=unique_ids, **metadata), distance))
         return results
     
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         results = self._similarity_search_with_score_by_vector(embedding, k)
-        return [document for document, score in results]    
+        return [document for document, _ in results]    
 
     def max_marginal_relevance_search(
         self,
@@ -210,7 +215,20 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        raise NotImplementedError
+        embedding = self.embeddings.embed_query(query)
+        return self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k, lambda_mult, **kwargs)
+    
+    def _vector_similarity(self, vector1: List[float], vector2: List[float]) -> float:
+        if self.metric == "L2":
+            distance = np.linalg.norm(np.array(vector1) - np.array(vector2))
+        elif self.metric == "IP":
+            distance = np.dot(vector1, vector2)
+        elif self.metric == "CS":
+            distance = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+        else:       
+            raise ValueError(f"Unknown metric: {self.metric}")
+        similarity = self._select_relevance_score_fn()(distance)
+        return similarity
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -220,7 +238,33 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        raise NotImplementedError
+        results = self._similarity_search_with_score_by_vector(embedding, fetch_k, vectors=True)
+        query_similarity = [ self._vector_similarity(embedding, vector) for _, _, vector in results]
+        document_similarity = {}
+        for i, (_, _, vector) in enumerate(results):
+            document_similarity[(i,i)] = None
+            for j, (_, _, vector2) in enumerate(results[i+1:]):
+                similarity = self._vector_similarity(vector, vector2)
+                document_similarity[(i,j)] = similarity
+                document_similarity[(j,i)] = similarity
+
+        selected = []
+        unselected = list(range(len(results)))
+
+        while len(selected) < k and unselected:
+            if not selected:
+                selected.append(0)
+                unselected.remove(0)
+            else:
+                selected_unselected_similarity = np.array([[document_similarity[(i,j)] for j in unselected] for i in selected])
+                worst_similarity = np.max(selected_unselected_similarity, axis=0)
+                relevance_scores = [query_similarity[i] for i in unselected]
+                scores = (1 - lambda_mult) * worst_similarity + lambda_mult * relevance_scores
+                max_index = np.argmax(scores)
+                selected.append(max_index)
+                unselected.remove(max_index)
+        results2 = [results[i][0] for i in selected]
+        return results2
 
     @classmethod
     def from_texts(
