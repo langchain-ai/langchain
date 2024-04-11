@@ -2,6 +2,10 @@
   "trailingSlash": true,
   "redirects": [
     {
+      "source": "/docs/modules/tools/tool_as_openai_functions(/?)",
+      "destination": "/docs/modules/model_io/chat/function_calling/"
+    },
+    {
       "source": "/docs/integrations/providers/optimum_intel(/?)",
       "destination": "/docs/integrations/providers/intel/"
     },
