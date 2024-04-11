@@ -1,67 +1,132 @@
 ---
 sidebar_position: 2
-title: Function calling
+title: Tool/function calling
 ---
 
-# Function calling
+# Tool calling
 
-A growing number of chat models, like
-[OpenAI](https://platform.openai.com/docs/guides/function-calling),
-[Gemini](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/function-calling),
-etc., have a function-calling API that lets you describe functions and
-their arguments, and have the model return a JSON object with a function
-to invoke and the inputs to that function. Function-calling is extremely
-useful for building [tool-using chains and
-agents](/docs/use_cases/tool_use/), and for getting
-structured outputs from models more generally.
+:::info
+We use the term tool calling interchangeably with function calling. Although
+function calling is sometimes meant to refer to invocations of a single function,
+we treat all models as though they can return multiple tool or function calls in 
+each message.
+:::
 
-LangChain comes with a number of utilities to make function-calling
-easy. Namely, it comes with:
+# Calling Tools
 
-- simple syntax for binding functions to models
-- converters for formatting various types of objects to the expected
-  function schemas
-- output parsers for extracting the function invocations from API
-  responses
-- chains for getting structured outputs from a model, built on top of
-  function calling
+Tool calling allows a model to respond to a given prompt by generating output that 
+matches a user-defined schema. While the name implies that the model is performing 
+some action, this is actually not the case! The model is coming up with the 
+arguments to a tool, and actually running the tool (or not) is up to the user - 
+for example, if you want to [extract output matching some schema](/docs/use_cases/extraction/) 
+from unstructured text, you could give the model an "extraction" tool that takes 
+parameters matching the desired schema, then treat the generated output as your final 
+result.
 
-We’ll focus here on the first two points. For a detailed guide on output
-parsing check out the [OpenAI Tools output
-parsers](/docs/modules/model_io/output_parsers/types/openai_tools/)
-and to see the structured output chains check out the [Structured output
-guide](/docs/modules/model_io/chat/structured_output/).
+A tool call includes a name, arguments dict, and an optional identifier. The 
+arguments dict is structured `{argument_name: argument_value}`.
 
-Before getting started make sure you have `langchain-core` installed.
+Many LLM providers, including [Anthropic](https://www.anthropic.com/), 
+[Cohere](https://cohere.com/), [Google](https://cloud.google.com/vertex-ai), 
+[Mistral](https://mistral.ai/), [OpenAI](https://openai.com/), and others, 
+support variants of a tool calling feature. These features typically allow requests 
+to the LLM to include available tools and their schemas, and for responses to include 
+calls to these tools. For instance, given a search engine tool, an LLM might handle a 
+query by first issuing a call to the search engine. The system calling the LLM can 
+receive the tool call, execute it, and return the output to the LLM to inform its 
+response. LangChain includes a suite of [built-in tools](/docs/integrations/tools/) 
+and supports several methods for defining your own [custom tools](/docs/modules/tools/custom_tools). 
+Tool-calling is extremely useful for building [tool-using chains and agents](/docs/use_cases/tool_use), 
+and for getting structured outputs from models more generally.
+
+Providers adopt different conventions for formatting tool schemas and tool calls. 
+For instance, Anthropic returns tool calls as parsed structures within a larger content block:
+```
+[
+  {
+    "text": "<thinking>\nI should use a tool.\n</thinking>",
+    "type": "text"
+  },
+  {
+    "id": "id_value",
+    "input": {"arg_name": "arg_value"},
+    "name": "tool_name",
+    "type": "tool_use"
+  }
+]
+```
+whereas OpenAI separates tool calls into a distinct parameter, with arguments as JSON strings:
+```
+{
+  "tool_calls": [
+    {
+      "id": "id_value",
+      "function": {
+        "arguments": '{"arg_name": "arg_value"}',
+        "name": "tool_name"
+      },
+      "type": "function"
+    }
+  ]
+}
+```
+LangChain implements standard interfaces for defining tools, passing them to LLMs, 
+and representing tool calls.
+
+## Passing tools to LLMs
+
+Chat models supporting tool calling features implement a `.bind_tools` method, which 
+receives a list of LangChain [tool objects](https://api.python.langchain.com/en/latest/tools/langchain_core.tools.BaseTool.html#langchain_core.tools.BaseTool) 
+and binds them to the chat model in its expected format. Subsequent invocations of the 
+chat model will include tool schemas in its calls to the LLM.
+
+For example, we can define the schema for custom tools using the `@tool` decorator 
+on Python functions:
 
 ```python
-%pip install -qU langchain-core langchain-openai
+from langchain.tools import tool
+
+
+@tool
+def add(a: int, b: int) -> int:
+    """Adds a and b."""
+    return a + b
+
+
+@tool
+def multiply(a: int, b: int) -> int:
+    """Multiplies a and b."""
+    return a * b
+
+
+tools = [add, multiply]
 ```
 
-```python
-import getpass
-import os
-```
-
-## Binding functions
-
-A number of models implement helper methods that will take care of
-formatting and binding different function-like objects to the model.
-Let’s take a look at how we might take the following Pydantic function
-schema and get different models to invoke it:
-
+Or below, we define the schema using Pydantic:
 ```python
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 # Note that the docstrings here are crucial, as they will be passed along
 # to the model along with the class name.
+class Add(BaseModel):
+    """Add two integers together."""
+
+    a: int = Field(..., description="First integer")
+    b: int = Field(..., description="Second integer")
+
+
 class Multiply(BaseModel):
     """Multiply two integers together."""
 
     a: int = Field(..., description="First integer")
     b: int = Field(..., description="Second integer")
+
+
+tools = [Add, Multiply]
 ```
+
+We can bind them to chat models as follows:
 
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
@@ -72,229 +137,179 @@ import ChatModelTabs from "@theme/ChatModelTabs";
   customVarName="llm"
   fireworksParams={`model="accounts/fireworks/models/firefunction-v1", temperature=0`}
   hideGoogle={true}
-  hideAnthropic={true}
+  hideAnthropic={false}
 />
 
 We can use the `bind_tools()` method to handle converting
-`Multiply` to a "function" and binding it to the model (i.e.,
+`Multiply` to a "tool" and binding it to the model (i.e.,
 passing it in each time the model is invoked).
 
 ```python
-llm_with_tools = llm.bind_tools([Multiply])
-llm_with_tools.invoke("what's 3 * 12")
+llm_with_tools = llm.bind_tools(tools)
 ```
 
-```text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Q8ZQ97Qrj5zalugSkYMGV1Uo', 'function': {'arguments': '{"a":3,"b":12}', 'name': 'Multiply'}, 'type': 'function'}]})
-```
+## Tool calls
 
-We can add a tool parser to extract the tool calls from the generated
-message to JSON:
+If tool calls are included in a LLM response, they are attached to the corresponding 
+[message](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.ai.AIMessage.html#langchain_core.messages.ai.AIMessage) 
+or [message chunk](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.ai.AIMessageChunk.html#langchain_core.messages.ai.AIMessageChunk) 
+as a list of [tool call](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.tool.ToolCall.html#langchain_core.messages.tool.ToolCall) 
+objects in the `.tool_calls` attribute. A `ToolCall` is a typed dict that includes a 
+tool name, dict of argument values, and (optionally) an identifier. Messages with no 
+tool calls default to an empty list for this attribute.
+
+Example:
 
 ```python
-from langchain_core.output_parsers.openai_tools import JsonOutputToolsParser
+query = "What is 3 * 12? Also, what is 11 + 49?"
 
-tool_chain = llm_with_tools | JsonOutputToolsParser()
-tool_chain.invoke("what's 3 * 12")
+llm_with_tools.invoke(query).tool_calls
 ```
-
 ```text
-[{'type': 'Multiply', 'args': {'a': 3, 'b': 12}}]
+[{'name': 'Multiply',
+  'args': {'a': 3, 'b': 12},
+  'id': 'call_viACG45wBz9jYzljHIwHamXw'},
+ {'name': 'Add',
+  'args': {'a': 11, 'b': 49},
+  'id': 'call_JMFUqoi5L27rGeMuII4MJMWo'}]
 ```
 
-Or back to the original Pydantic class:
+The `.tool_calls` attribute should contain valid tool calls. Note that on occasion, 
+model providers may output malformed tool calls (e.g., arguments that are not 
+valid JSON). When parsing fails in these cases, instances 
+of [InvalidToolCall](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.tool.InvalidToolCall.html#langchain_core.messages.tool.InvalidToolCall) 
+are populated in the `.invalid_tool_calls` attribute. An `InvalidToolCall` can have 
+a name, string arguments, identifier, and error message.
+
+If desired, [output parsers](/docs/modules/model_io/output_parsers) can further 
+process the output. For example, we can convert back to the original Pydantic class:
 
 ```python
 from langchain_core.output_parsers.openai_tools import PydanticToolsParser
 
-tool_chain = llm_with_tools | PydanticToolsParser(tools=[Multiply])
-tool_chain.invoke("what's 3 * 12")
+chain = llm_with_tools | PydanticToolsParser(tools=[Multiply, Add])
+chain.invoke(query)
 ```
-
 ```text
-[Multiply(a=3, b=12)]
+[Multiply(a=3, b=12), Add(a=11, b=49)]
 ```
 
-If our model isn’t using the tool, as is the case here, we can force
-tool usage by specifying `tool_choice="any"` or by specifying the name
-of the specific tool we want used:
+### Streaming
+
+When tools are called in a streaming context, 
+[message chunks](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.ai.AIMessageChunk.html#langchain_core.messages.ai.AIMessageChunk) 
+will be populated with [tool call chunk](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.tool.ToolCallChunk.html#langchain_core.messages.tool.ToolCallChunk) 
+objects in a list via the `.tool_call_chunks` attribute. A `ToolCallChunk` includes 
+optional string fields for the tool `name`, `args`, and `id`, and includes an optional 
+integer field `index` that can be used to join chunks together. Fields are optional 
+because portions of a tool call may be streamed across different chunks (e.g., a chunk 
+that includes a substring of the arguments may have null values for the tool name and id).
+
+Because message chunks inherit from their parent message class, an 
+[AIMessageChunk](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.ai.AIMessageChunk.html#langchain_core.messages.ai.AIMessageChunk) 
+with tool call chunks will also include `.tool_calls` and `.invalid_tool_calls` fields. 
+These fields are parsed best-effort from the message's tool call chunks.
+
+Note that not all providers currently support streaming for tool calls.
+
+Example:
 
 ```python
-llm_with_tools = llm.bind_tools([Multiply], tool_choice="Multiply")
-llm_with_tools.invoke("what's 3 * 12")
+async for chunk in llm_with_tools.astream(query):
+    print(chunk.tool_call_chunks)
 ```
 
 ```text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'index': 0, 'id': 'call_qIP2bJugb67LGvc6Zhwkvfqc', 'type': 'function', 'function': {'name': 'Multiply', 'arguments': '{"a": 3, "b": 12}'}}]})
+[]
+[{'name': 'Multiply', 'args': '', 'id': 'call_Al2xpR4uFPXQUDzGTSawMOah', 'index': 0}]
+[{'name': None, 'args': '{"a"', 'id': None, 'index': 0}]
+[{'name': None, 'args': ': 3, ', 'id': None, 'index': 0}]
+[{'name': None, 'args': '"b": 1', 'id': None, 'index': 0}]
+[{'name': None, 'args': '2}', 'id': None, 'index': 0}]
+[{'name': 'Add', 'args': '', 'id': 'call_VV6ck8JSQ6joKtk2xGtNKgXf', 'index': 1}]
+[{'name': None, 'args': '{"a"', 'id': None, 'index': 1}]
+[{'name': None, 'args': ': 11,', 'id': None, 'index': 1}]
+[{'name': None, 'args': ' "b": ', 'id': None, 'index': 1}]
+[{'name': None, 'args': '49}', 'id': None, 'index': 1}]
+[]
 ```
 
-If we wanted to force that a tool is used (and that it is used only
-once), we can set the `tool_choice` argument to the name of the tool:
+Note that adding message chunks will merge their corresponding tool call chunks. This is the principle by which LangChain's various [tool output parsers](/docs/modules/model_io/output_parsers/types/openai_tools/) support streaming.
+
+For example, below we accumulate tool call chunks:
 
 ```python
-llm_with_multiply = llm.bind_tools([Multiply], tool_choice="Multiply")
-llm_with_multiply.invoke(
-    "make up some numbers if you really want but I'm not forcing you"
-)
+first = True
+async for chunk in llm_with_tools.astream(query):
+    if first:
+        gathered = chunk
+        first = False
+    else:
+        gathered = gathered + chunk
+
+    print(gathered.tool_call_chunks)
 ```
 
 ```text
-AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_f3DApOzb60iYjTfOhVFhDRMI', 'function': {'arguments': '{"a":5,"b":10}', 'name': 'Multiply'}, 'type': 'function'}]})
+[]
+[{'name': 'Multiply', 'args': '', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}]
+[{'name': 'Multiply', 'args': '{"a"', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}]
+[{'name': 'Multiply', 'args': '{"a": 3, ', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}]
+[{'name': 'Multiply', 'args': '{"a": 3, "b": 1', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}]
+[{'name': 'Multiply', 'args': '{"a": 3, "b": 12}', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}]
+[{'name': 'Multiply', 'args': '{"a": 3, "b": 12}', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}, {'name': 'Add', 'args': '', 'id': 'call_uGot9MOHDcz67Bj0h13c7QA5', 'index': 1}]
+[{'name': 'Multiply', 'args': '{"a": 3, "b": 12}', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}, {'name': 'Add', 'args': '{"a"', 'id': 'call_uGot9MOHDcz67Bj0h13c7QA5', 'index': 1}]
+[{'name': 'Multiply', 'args': '{"a": 3, "b": 12}', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}, {'name': 'Add', 'args': '{"a": 11,', 'id': 'call_uGot9MOHDcz67Bj0h13c7QA5', 'index': 1}]
+[{'name': 'Multiply', 'args': '{"a": 3, "b": 12}', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}, {'name': 'Add', 'args': '{"a": 11, "b": ', 'id': 'call_uGot9MOHDcz67Bj0h13c7QA5', 'index': 1}]
+[{'name': 'Multiply', 'args': '{"a": 3, "b": 12}', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}, {'name': 'Add', 'args': '{"a": 11, "b": 49}', 'id': 'call_uGot9MOHDcz67Bj0h13c7QA5', 'index': 1}]
+[{'name': 'Multiply', 'args': '{"a": 3, "b": 12}', 'id': 'call_2MG1IGft6WmgMooqZgJ07JX6', 'index': 0}, {'name': 'Add', 'args': '{"a": 11, "b": 49}', 'id': 'call_uGot9MOHDcz67Bj0h13c7QA5', 'index': 1}]
 ```
-
-For more see the [ChatOpenAI API
-reference](https://api.python.langchain.com/en/latest/chat_models/langchain_openai.chat_models.base.ChatOpenAI.html#langchain_openai.chat_models.base.ChatOpenAI.bind_tools).
-
-## Defining functions schemas
-
-In case you need to access function schemas directly, LangChain has a built-in converter that can turn
-Python functions, Pydantic classes, and LangChain Tools into the OpenAI format JSON schema:
-
-### Python function
 
 ```python
-import json
-
-from langchain_core.utils.function_calling import convert_to_openai_tool
-
-
-def multiply(a: int, b: int) -> int:
-    """Multiply two integers together.
-
-    Args:
-        a: First integer
-        b: Second integer
-    """
-    return a * b
-
-
-print(json.dumps(convert_to_openai_tool(multiply), indent=2))
+print(type(gathered.tool_call_chunks[0]["args"]))
 ```
 
 ```text
-{
-  "type": "function",
-  "function": {
-    "name": "multiply",
-    "description": "Multiply two integers together.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "type": "integer",
-          "description": "First integer"
-        },
-        "b": {
-          "type": "integer",
-          "description": "Second integer"
-        }
-      },
-      "required": [
-        "a",
-        "b"
-      ]
-    }
-  }
-}
+<class 'str'>
 ```
 
-### Pydantic class
+And below we accumulate tool calls to demonstrate partial parsing:
 
 ```python
-from langchain_core.pydantic_v1 import BaseModel, Field
+first = True
+async for chunk in llm_with_tools.astream(query):
+    if first:
+        gathered = chunk
+        first = False
+    else:
+        gathered = gathered + chunk
 
-
-class multiply(BaseModel):
-    """Multiply two integers together."""
-
-    a: int = Field(..., description="First integer")
-    b: int = Field(..., description="Second integer")
-
-
-print(json.dumps(convert_to_openai_tool(multiply), indent=2))
+    print(gathered.tool_calls)
 ```
 
 ```text
-{
-  "type": "function",
-  "function": {
-    "name": "multiply",
-    "description": "Multiply two integers together.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "description": "First integer",
-          "type": "integer"
-        },
-        "b": {
-          "description": "Second integer",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "a",
-        "b"
-      ]
-    }
-  }
-}
+[]
+[]
+[{'name': 'Multiply', 'args': {}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}]
+[{'name': 'Multiply', 'args': {'a': 3}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}]
+[{'name': 'Multiply', 'args': {'a': 3, 'b': 1}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}]
+[{'name': 'Multiply', 'args': {'a': 3, 'b': 12}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}]
+[{'name': 'Multiply', 'args': {'a': 3, 'b': 12}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}]
+[{'name': 'Multiply', 'args': {'a': 3, 'b': 12}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}, {'name': 'Add', 'args': {}, 'id': 'call_zPAyMWr8hN1q083GWGX2dSiB'}]
+[{'name': 'Multiply', 'args': {'a': 3, 'b': 12}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}, {'name': 'Add', 'args': {'a': 11}, 'id': 'call_zPAyMWr8hN1q083GWGX2dSiB'}]
+[{'name': 'Multiply', 'args': {'a': 3, 'b': 12}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}, {'name': 'Add', 'args': {'a': 11}, 'id': 'call_zPAyMWr8hN1q083GWGX2dSiB'}]
+[{'name': 'Multiply', 'args': {'a': 3, 'b': 12}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}, {'name': 'Add', 'args': {'a': 11, 'b': 49}, 'id': 'call_zPAyMWr8hN1q083GWGX2dSiB'}]
+[{'name': 'Multiply', 'args': {'a': 3, 'b': 12}, 'id': 'call_z3B4o82SQDY5NCnmrXIcVQo4'}, {'name': 'Add', 'args': {'a': 11, 'b': 49}, 'id': 'call_zPAyMWr8hN1q083GWGX2dSiB'}]
 ```
-
-### LangChain Tool
 
 ```python
-from typing import Any, Type
-
-from langchain_core.tools import BaseTool
-
-
-class MultiplySchema(BaseModel):
-    """Multiply tool schema."""
-
-    a: int = Field(..., description="First integer")
-    b: int = Field(..., description="Second integer")
-
-
-class Multiply(BaseTool):
-    args_schema: Type[BaseModel] = MultiplySchema
-    name: str = "multiply"
-    description: str = "Multiply two integers together."
-
-    def _run(self, a: int, b: int, **kwargs: Any) -> Any:
-        return a * b
-
-
-# Note: we're passing in a Multiply object not the class itself.
-print(json.dumps(convert_to_openai_tool(Multiply()), indent=2))
+print(type(gathered.tool_calls[0]["args"]))
 ```
 
 ```text
-{
-  "type": "function",
-  "function": {
-    "name": "multiply",
-    "description": "Multiply two integers together.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "description": "First integer",
-          "type": "integer"
-        },
-        "b": {
-          "description": "Second integer",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "a",
-        "b"
-      ]
-    }
-  }
-}
+<class 'dict'>
 ```
+
 
 ## Next steps
 

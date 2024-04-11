@@ -128,6 +128,7 @@ async def test_astream_with_callback() -> None:
 
 def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_call = {
+        "id": "abc123",
         "function": {
             "arguments": '{"name":"Sally","hair_color":"green"}',
             "name": "GenerateUsername",
@@ -142,7 +143,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
-                id=None,
+                id="abc123",
             )
         ],
     )
@@ -152,12 +153,14 @@ def test__convert_dict_to_message_tool_call() -> None:
     # Test malformed tool call
     raw_tool_calls = [
         {
+            "id": "abc123",
             "function": {
                 "arguments": "oops",
                 "name": "GenerateUsername",
             },
         },
         {
+            "id": "def456",
             "function": {
                 "arguments": '{"name":"Sally","hair_color":"green"}',
                 "name": "GenerateUsername",
@@ -174,14 +177,14 @@ def test__convert_dict_to_message_tool_call() -> None:
                 name="GenerateUsername",
                 args="oops",
                 error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
-                id=None,
+                id="abc123",
             ),
         ],
         tool_calls=[
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
-                id=None,
+                id="def456",
             ),
         ],
     )
