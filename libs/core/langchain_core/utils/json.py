@@ -135,15 +135,17 @@ def parse_json_markdown(
     try:
         return _parse_json(json_string, parser=parser)
     except json.JSONDecodeError:
-        # Try to find JSON string within triple backticks
-        match = re.search(r"```(json)?(.*)", json_string, re.DOTALL)
+        # Try to find the last JSON string within triple backticks
+        match = re.findall(
+            r"```(?:json)?([^`]+)(?:```)?\s*$", json_string, flags=re.IGNORECASE
+        )
 
         # If no match found, assume the entire string is a JSON string
         if match is None:
             json_str = json_string
         else:
             # If match found, use the content within the backticks
-            json_str = match.group(2)
+            json_str = match[-1]
     return _parse_json(json_str, parser=parser)
 
 
