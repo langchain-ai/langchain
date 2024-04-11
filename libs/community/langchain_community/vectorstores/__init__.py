@@ -437,6 +437,7 @@ _module_lookup = {
     "Pinecone": "langchain_community.vectorstores.pinecone",
     "Qdrant": "langchain_community.vectorstores.qdrant",
     "Redis": "langchain_community.vectorstores.redis",
+    "Relyt": "langchain_community.vectorstores.relyt",
     "Rockset": "langchain_community.vectorstores.rocksetdb",
     "SKLearnVectorStore": "langchain_community.vectorstores.sklearn",
     "SQLiteVSS": "langchain_community.vectorstores.sqlitevss",
