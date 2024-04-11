@@ -2,6 +2,7 @@
 
 from typing import Dict
 
+from langchain_core._api import deprecated
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -9,9 +10,11 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.solar import SOLAR_SERVICE_URL_BASE, SolarCommon
 
 
-class SolarChat(SolarCommon, ChatOpenAI):  # type: ignore[misc]
-    """Solar large language models.
-
+@deprecated(
+    since="0.0.32", removal="0.2.0", alternative_import="langchain_upstage.ChatUpstage"
+)
+class SolarChat(SolarCommon, ChatOpenAI):
+    """Wrapper around Solar large language models.
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``SOLAR_API_KEY`` set with your API key.
     (Solar's chat API is compatible with OpenAI's SDK.)
