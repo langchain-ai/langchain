@@ -169,15 +169,16 @@ def get_chat_model_table() -> str:
         row = [llm, "✅"]
         for h in header[1:]:
             value = feats.get(h)
+            index = header.index(h)
             if h == "package":
-                row[header.index(h)] = value or "langchain-community"
+                row.append(value or "langchain-community")
             else:
                 if value == "partial":
-                    row[header.index(h)] = "🟡"
+                    row.append("🟡")
                 elif value is True:
-                    row[header.index(h)] = "✅"
+                    row.append("✅")
                 else:
-                    row[header.index(h)] = "❌"
+                    row.append("❌")
         rows.append(row)
     return "\n".join(["|".join(row) for row in rows])
 
