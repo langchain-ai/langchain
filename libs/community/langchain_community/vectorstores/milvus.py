@@ -192,7 +192,8 @@ class Milvus(VectorStore):
         self.partition_names = partition_names
         self.replica_number = replica_number
         self.timeout = timeout
-        self.shards_num = shards_num    
+        self.shards_num = shards_num
+
         # Create the connection to the server
         if connection_args is None:
             connection_args = DEFAULT_MILVUS_CONNECTION
