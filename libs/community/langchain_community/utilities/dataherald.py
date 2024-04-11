@@ -57,7 +57,7 @@ class DataheraldAPIWrapper(BaseModel):
 
         try:
             answer = res.sql
-            if answer is None or answer == "":
+            if not answer:
                 # We don't want to return the assumption alone if answer is empty
                 return "No answer"
             else:
