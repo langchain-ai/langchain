@@ -32,7 +32,7 @@ logging.basicConfig(level=getattr(logging, log_level),
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def handle_exceptions(func):
+def _handle_exceptions(func):
   @functools.wraps(func)
   def wrapper(*args, **kwargs):
     try:
@@ -52,7 +52,7 @@ def handle_exceptions(func):
 
   return wrapper
 
-def table_exists(client: oracledb.Connection, table_name: str):
+def _table_exists(client: oracledb.Connection, table_name: str):
   try:
     with client.cursor() as cursor:
       cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
@@ -64,8 +64,8 @@ def table_exists(client: oracledb.Connection, table_name: str):
     raise
 
 
-@handle_exceptions
-def index_exists(client: oracledb.Connection, index_name: str) -> bool:
+@_handle_exceptions
+def _index_exists(client: oracledb.Connection, index_name: str) -> bool:
   # Check if the index exists
   query = "SELECT index_name FROM all_indexes WHERE upper(index_name) = upper(:idx_name)"
 
@@ -78,7 +78,7 @@ def index_exists(client: oracledb.Connection, index_name: str) -> bool:
   return result is not None
 
 
-def get_distance_function(distance_strategy: DistanceStrategy) -> str:
+def _get_distance_function(distance_strategy: DistanceStrategy) -> str:
   if distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
     distance_function = 'EUCLIDEAN'
   elif distance_strategy == DistanceStrategy.DOT_PRODUCT:
@@ -90,13 +90,13 @@ def get_distance_function(distance_strategy: DistanceStrategy) -> str:
   return distance_function
 
 
-def get_index_name(base_name: str):
+def _get_index_name(base_name: str):
   unique_id = str(uuid.uuid4()).replace('-', '')
   return f"{base_name}_{unique_id}"
 
 
-@handle_exceptions
-def create_table(client: oracledb.Connection, table_name: str, embedding_dim: int) -> None:
+@_handle_exceptions
+def _create_table(client: oracledb.Connection, table_name: str, embedding_dim: int) -> None:
   cols_dict = {
     'id': 'RAW(16) DEFAULT SYS_GUID() PRIMARY KEY',
     'text': 'CLOB',
@@ -104,7 +104,7 @@ def create_table(client: oracledb.Connection, table_name: str, embedding_dim: in
     'embedding': f'vector({embedding_dim}, FLOAT32)'
   }
 
-  if not table_exists(client, table_name):
+  if not _table_exists(client, table_name):
     with client.cursor() as cursor:
       ddl_body = ', '.join(f"{col_name} {col_type}" for col_name, col_type in cols_dict.items())
       ddl = f"CREATE TABLE {table_name} ({ddl_body})"
@@ -114,7 +114,7 @@ def create_table(client: oracledb.Connection, table_name: str, embedding_dim: in
     logger.info("Table already exists...")
 
 
-@handle_exceptions
+@_handle_exceptions
 def create_index(client: oracledb.Connection,
                  vector_store: OracleVS,
                  params: Optional[dict[str, Any]] = None) -> None:
@@ -142,7 +142,7 @@ def create_index(client: oracledb.Connection,
   return
 
 
-@handle_exceptions
+@_handle_exceptions
 def _create_hnsw_index(client: oracledb.Connection,
                        table_name: str,
                        distance_strategy: DistanceStrategy,
@@ -162,7 +162,7 @@ def _create_hnsw_index(client: oracledb.Connection,
     for compulsory_key in ["idx_name", "parallel"]:
       if compulsory_key not in config:
         if compulsory_key == "idx_name":
-          config[compulsory_key] = get_index_name(defaults[compulsory_key])
+          config[compulsory_key] = _get_index_name(defaults[compulsory_key])
         else:
           config[compulsory_key] = defaults[compulsory_key]
 
@@ -179,7 +179,7 @@ def _create_hnsw_index(client: oracledb.Connection,
 
   # Optional parts depending on parameters
   accuracy_part = " WITH TARGET ACCURACY {accuracy}" if "accuracy" in config else ""
-  distance_part = f" DISTANCE {get_distance_function(distance_strategy)}"
+  distance_part = f" DISTANCE {_get_distance_function(distance_strategy)}"
 
   parameters_part = ""
   if "neighbors" in config and "efConstruction" in config:
@@ -200,7 +200,7 @@ def _create_hnsw_index(client: oracledb.Connection,
   ddl = ddl_assembly.format(**config)
 
   # Check if the index exists
-  if not index_exists(client, config['idx_name']):
+  if not _index_exists(client, config['idx_name']):
     with client.cursor() as cursor:
       cursor.execute(ddl)
       logger.info("Index created successfully...")
@@ -208,7 +208,7 @@ def _create_hnsw_index(client: oracledb.Connection,
     logger.info("Index already exists...")
 
 
-@handle_exceptions
+@_handle_exceptions
 def _create_ivf_index(client: oracledb.Connection,
                       table_name: str,
                       distance_strategy: DistanceStrategy,
@@ -228,7 +228,7 @@ def _create_ivf_index(client: oracledb.Connection,
     for compulsory_key in ["idx_name", "parallel"]:
       if compulsory_key not in config:
         if compulsory_key == "idx_name":
-          config[compulsory_key] = get_index_name(defaults[compulsory_key])
+          config[compulsory_key] = _get_index_name(defaults[compulsory_key])
         else:
           config[compulsory_key] = defaults[compulsory_key]
 
@@ -245,7 +245,7 @@ def _create_ivf_index(client: oracledb.Connection,
 
   # Optional parts depending on parameters
   accuracy_part = " WITH TARGET ACCURACY {accuracy}" if "accuracy" in config else ""
-  distance_part = f" DISTANCE {get_distance_function(distance_strategy)}"
+  distance_part = f" DISTANCE {_get_distance_function(distance_strategy)}"
 
   parameters_part = ""
   if "idx_type" in config and "neighbor_part" in config:
@@ -260,7 +260,7 @@ def _create_ivf_index(client: oracledb.Connection,
   ddl = ddl_assembly.format(**config)
 
   # Check if the index exists
-  if not index_exists(client, config['idx_name']):
+  if not _index_exists(client, config['idx_name']):
     with client.cursor() as cursor:
       cursor.execute(ddl)
     logger.info("Index created successfully...")
@@ -268,9 +268,9 @@ def _create_ivf_index(client: oracledb.Connection,
     logger.info("Index already exists...")
 
 
-@handle_exceptions
+@_handle_exceptions
 def drop_table_purge(client: oracledb.Connection, table_name: str):
-  if table_exists(client, table_name):
+  if _table_exists(client, table_name):
     cursor = client.cursor()
     with cursor:
       ddl = f"DROP TABLE {table_name} PURGE"
@@ -280,9 +280,9 @@ def drop_table_purge(client: oracledb.Connection, table_name: str):
     logger.info("Table not found...")
 
 
-@handle_exceptions
+@_handle_exceptions
 def drop_index_if_exists(client: oracledb.Connection, index_name: str):
-  if index_exists(client, index_name):
+  if _index_exists(client, index_name):
     drop_query = f"DROP INDEX {index_name}"
     with client.cursor() as cursor:
       cursor.execute(drop_query)
@@ -343,7 +343,7 @@ class OracleVS(VectorStore):
       self.distance_strategy = distance_strategy
       self.params = params
 
-      create_table(client, table_name, embedding_dim)
+      _create_table(client, table_name, embedding_dim)
     except oracledb.DatabaseError as db_err:
       logger.exception(f"Database error occurred while create table: {db_err}")
       raise RuntimeError("Failed to create table due to a database error.") from db_err
@@ -364,26 +364,26 @@ class OracleVS(VectorStore):
 
   def get_embedding_dimension(self):
     # Embed the single document by wrapping it in a list
-    embedded_document = self.embed_documents([self.query])
+    embedded_document = self._embed_documents([self.query])
 
     # Get the first (and only) embedding's dimension
     embedding_dimension = len(embedded_document[0])
 
     return embedding_dimension
 
-  def embed_documents(self, texts: List[str]) -> List[List[float]]:
+  def _embed_documents(self, texts: List[str]) -> List[List[float]]:
     if isinstance(self.embedding_function, Embeddings):
       return self.embedding_function.embed_documents(texts)
     else:
       return [self.embedding_function(text) for text in texts]
 
-  def embed_query(self, text: str) -> List[float]:
+  def _embed_query(self, text: str) -> List[float]:
     if isinstance(self.embedding_function, Embeddings):
       return self.embedding_function.embed_query(text)
     else:
       return self.embedding_function(text)
 
-  @handle_exceptions
+  @_handle_exceptions
   def add_texts(
     self,
     texts: List[str],
@@ -409,7 +409,7 @@ class OracleVS(VectorStore):
       generated_ids = [str(uuid.uuid4()) for _ in texts]  # uuid4 is more standard for random UUIDs
       processed_ids = [hashlib.sha256(_id.encode()).hexdigest()[:16].upper() for _id in generated_ids]
 
-    embeddings = self.embed_documents(texts)
+    embeddings = self._embed_documents(texts)
     if not metadatas:
       metadatas = [{} for _ in texts]
     docs = [
@@ -472,8 +472,8 @@ class OracleVS(VectorStore):
     return docs_and_scores
 
 
-  @handle_exceptions
-  def get_clob_value(self, result: Any) -> str:
+  @_handle_exceptions
+  def _get_clob_value(self, result: Any) -> str:
     clob_value = ""
     if result:
       if isinstance(result, oracledb.LOB):
@@ -485,7 +485,7 @@ class OracleVS(VectorStore):
     return clob_value
 
 
-  @handle_exceptions
+  @_handle_exceptions
   def similarity_search_by_vector_with_relevance_scores(
     self,
     embedding: List[float],
@@ -500,9 +500,9 @@ class OracleVS(VectorStore):
         SELECT id, 
           text,
           metadata,
-          vector_distance(embedding, :embedding, {get_distance_function(self.distance_strategy)}) as distance
+          vector_distance(embedding, :embedding, {_get_distance_function(self.distance_strategy)}) as distance
         FROM {self.table_name}
-        ORDER BY vector_distance(embedding, :embedding, {get_distance_function(self.distance_strategy)})
+        ORDER BY vector_distance(embedding, :embedding, {_get_distance_function(self.distance_strategy)})
         FETCH APPROX FIRST :k ROWS ONLY
       """)
     # Execute the query
@@ -512,17 +512,17 @@ class OracleVS(VectorStore):
 
       # Filter results if filter is provided
       for result in results:
-        metadata = json.loads(self.get_clob_value(result[2]) if result[2] is not None else '{}')
+        metadata = json.loads(self._get_clob_value(result[2]) if result[2] is not None else '{}')
 
         # Apply filtering based on the 'filter' dictionary
         if filter:
           if all(metadata.get(key) == value for key, value in filter.items()):
-            doc = Document(page_content=self.get_clob_value(result[1]) if result[1] is not None else '',
+            doc = Document(page_content=self._get_clob_value(result[1]) if result[1] is not None else '',
                            metadata=metadata)
             distance = result[3]
             docs_and_scores.append((doc, distance))
         else:
-          doc = (Document(page_content=self.get_clob_value(result[1]) if result[1] is not None else '',
+          doc = (Document(page_content=self._get_clob_value(result[1]) if result[1] is not None else '',
                           metadata=metadata))
           distance = result[3]
           docs_and_scores.append((doc, distance))
@@ -530,7 +530,7 @@ class OracleVS(VectorStore):
     return docs_and_scores
 
 
-  @handle_exceptions
+  @_handle_exceptions
   def similarity_search_by_vector_returning_embeddings(
     self,
     embedding: List[float],
@@ -545,10 +545,10 @@ class OracleVS(VectorStore):
         SELECT id, 
           text,
           metadata,
-          vector_distance(embedding, :embedding, {get_distance_function(self.distance_strategy)}) as distance,
+          vector_distance(embedding, :embedding, {_get_distance_function(self.distance_strategy)}) as distance,
           embedding
         FROM {self.table_name}
-        ORDER BY vector_distance(embedding, :embedding, {get_distance_function(self.distance_strategy)})
+        ORDER BY vector_distance(embedding, :embedding, {_get_distance_function(self.distance_strategy)})
         FETCH APPROX FIRST :k ROWS ONLY
       """)
 
@@ -558,8 +558,8 @@ class OracleVS(VectorStore):
       results = cursor.fetchall()
 
       for result in results:
-        page_content_str = self.get_clob_value(result[1])
-        metadata_str = self.get_clob_value(result[2])
+        page_content_str = self._get_clob_value(result[1])
+        metadata_str = self._get_clob_value(result[2])
         metadata = json.loads(metadata_str)
 
         # Apply filter if provided and matches; otherwise, add all documents
@@ -575,6 +575,7 @@ class OracleVS(VectorStore):
     return documents
 
 
+  @_handle_exceptions
   def max_marginal_relevance_search_with_score_by_vector(
     self,
     embedding: List[float],
@@ -629,6 +630,7 @@ class OracleVS(VectorStore):
     return mmr_selected_documents_with_scores
 
 
+  @_handle_exceptions
   def max_marginal_relevance_search_by_vector(
     self,
     embedding: List[float],
@@ -663,6 +665,7 @@ class OracleVS(VectorStore):
     return [doc for doc, _ in docs_and_scores]
 
 
+  @_handle_exceptions
   def max_marginal_relevance_search(
     self,
     query: str,
@@ -694,7 +697,7 @@ class OracleVS(VectorStore):
     `max_marginal_relevance_search` requires that `query` returns matched
     embeddings alongside the match documents.
     """
-    embedding = self.embed_query(query)
+    embedding = self._embed_query(query)
     documents = self.max_marginal_relevance_search_by_vector(embedding,
                                                              k=k,
                                                              fetch_k=fetch_k,
@@ -704,7 +707,7 @@ class OracleVS(VectorStore):
     return documents
 
 
-  @handle_exceptions
+  @_handle_exceptions
   def delete(self,
              ids: Optional[List[str]] = None,
              **kwargs: Any) -> None:
@@ -734,6 +737,7 @@ class OracleVS(VectorStore):
 
 
   @classmethod
+  @_handle_exceptions
   def from_texts(cls: Type[OracleVS],
                  texts: Iterable[str],
                  embedding: Embeddings,
@@ -759,6 +763,7 @@ class OracleVS(VectorStore):
 
 
   @classmethod
+  @_handle_exceptions
   def from_documents(cls: Type[OracleVS],
                      docs: List[Document],
                      embedding: Embeddings,
