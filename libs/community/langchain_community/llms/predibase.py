@@ -4,28 +4,6 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Field, SecretStr
 
-import_error: Optional[ImportError] = None
-try:
-    from predibase import PredibaseClient
-    from predibase.pql import get_session
-    from predibase.pql.api import Session
-    from predibase.resource.llm.interface import (
-        HuggingFaceLLM,
-        LLMDeployment,
-    )
-    from predibase.resource.llm.response import GeneratedResponse
-    from predibase.resource.model import Model
-except ImportError as e:
-    import_error = e
-    # PredibaseClient = None
-    # get_session = None
-    # Sesson = None
-    # HuggingFaceLLM = None
-    # LLMDeployment = None
-    # GeneratedResponse = None
-    # Model = None
-
-
 
 class Predibase(LLM):
     """Use your Predibase models with Langchain.
@@ -68,21 +46,30 @@ class Predibase(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        if import_error is None:
-            try:
-                session: Session = get_session(
-                    token=self.predibase_api_key.get_secret_value(),
-                    gateway="https://api.app.predibase.com/v1",
-                    serving_endpoint="serving.app.predibase.com",
-                )
-                pc: PredibaseClient = PredibaseClient(session=session)
-            except ValueError as e:
-                raise ValueError("Your API key is not correct. Please try again") from e
-        else:
+        try:
+            from predibase import PredibaseClient
+            from predibase.pql import get_session
+            from predibase.pql.api import Session
+            from predibase.resource.llm.interface import (
+                HuggingFaceLLM,
+                LLMDeployment,
+            )
+            from predibase.resource.llm.response import GeneratedResponse
+            from predibase.resource.model import Model
+
+            session: Session = get_session(
+                token=self.predibase_api_key.get_secret_value(),
+                gateway="https://api.app.predibase.com/v1",
+                serving_endpoint="serving.app.predibase.com",
+            )
+            pc: PredibaseClient = PredibaseClient(session=session)
+        except ImportError as e:
             raise ImportError(
                 "Could not import Predibase Python package. "
                 "Please install it with `pip install predibase`."
-            ) from import_error
+            ) from e
+        except ValueError as e:
+            raise ValueError("Your API key is not correct. Please try again") from e
         options: Dict[str, Union[str, float]] = (
             self.model_kwargs or self.default_options_for_generation
         )
@@ -91,7 +78,24 @@ class Predibase(LLM):
         )
         result: GeneratedResponse
         if self.adapter_id:
-            adapter_model: Union[Model, HuggingFaceLLM] = self._get_adapter_model(pc=pc, adapter_id=self.adapter_id)
+            """
+            Attempt to retrieve the fine-tuned adapter from a Predibase repository.
+            If unsuccessful, then load the fine-tuned adapter from a HuggingFace repository.
+            """
+            adapter_model: Union[Model, HuggingFaceLLM]
+            try:
+                adapter_model = pc.get_model(
+                    name=self.adapter_id,
+                    version=self.adapter_version,
+                    model_id=None,
+                )
+            except Exception as e:
+                print(f'\n[ALEX_TEST] [LANGCHAIN:PREDIBASE] EXCEPTION:\n{e} ; TYPE: {str(type(e))}')
+            adapter_model = pc.LLM(uri=f"hf://{self.adapter_id}")
+            result = base_llm_deployment.with_adapter(model=adapter_model).generate(
+                prompt=prompt,
+                options=options,
+            )
             result = base_llm_deployment.with_adapter(model=adapter_model).generate(
                 prompt=prompt,
                 options=options,
@@ -103,20 +107,6 @@ class Predibase(LLM):
             )
         return result.response
     
-    def _get_adapter_model(
-        self,
-        pc: PredibaseClient,
-        adapter_id: str,
-    ) -> Union[Model, HuggingFaceLLM]:
-        """
-        Attempt to retrieve the fine-tuned adapter from a Predibase repository.
-        If unsuccessful, then load the fine-tuned adapter from a HuggingFace repository.
-        """
-        model: Model = pc.get_model(name=adapter_id, version=self.adapter_version, model_id=None)
-        if model:
-            return model
-        return pc.LLM(uri=f"hf://{adapter_id}")
-            
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
