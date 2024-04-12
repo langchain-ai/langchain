@@ -13,3 +13,9 @@ class TestFireworksStandard(ChatModelUnitTests):
     @pytest.fixture
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatFireworks
+
+    @pytest.fixture
+    def chat_model_params(self) -> dict:
+        return {
+            "api_key": "test_api_key",
+        }
