@@ -31,18 +31,14 @@ class ChatModelUnitTests(ABC):
     def chat_model_has_tool_calling(
         self, chat_model_class: Type[BaseChatModel]
     ) -> bool:
-        return (
-            hasattr(chat_model_class, "bind_tools")
-            and chat_model_class.bind_tools is not BaseChatModel.bind_tools
-        )
+        return hasattr(chat_model_class, "bind_tools")
 
     @pytest.fixture
     def chat_model_has_structured_output(
         self, chat_model_class: Type[BaseChatModel]
     ) -> bool:
         return (
-            hasattr(chat_model_class, "with_structured_output")
-            and chat_model_class.with_structured_output
+            chat_model_class.with_structured_output
             is not BaseChatModel.with_structured_output
         )
 
