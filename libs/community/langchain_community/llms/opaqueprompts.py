@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpaquePrompts(LLM):
-    """An LLM wrapper that uses OpaquePrompts to sanitize prompts.
+    """LLM that uses OpaquePrompts to sanitize prompts.
 
     Wraps another LLM and sanitizes prompts before passing it to the LLM, then
         de-sanitizes the response.
