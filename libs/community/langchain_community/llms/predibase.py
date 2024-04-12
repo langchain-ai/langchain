@@ -50,8 +50,8 @@ class Predibase(LLM):
             from predibase import PredibaseClient
             from predibase.pql import get_session
             from predibase.pql.api import (
-                Session,
                 ServerResponseError,
+                Session,
             )
             from predibase.resource.llm.interface import (
                 HuggingFaceLLM,
@@ -83,7 +83,7 @@ class Predibase(LLM):
         if self.adapter_id:
             """
             Attempt to retrieve the fine-tuned adapter from a Predibase repository.
-            If unsuccessful, then load the fine-tuned adapter from a HuggingFace repository.
+            If absent, then load the fine-tuned adapter from a HuggingFace repository.
             """
             adapter_model: Union[Model, HuggingFaceLLM]
             try:
@@ -92,7 +92,7 @@ class Predibase(LLM):
                     version=self.adapter_version,
                     model_id=None,
                 )
-            except ServerResponseError as e:
+            except ServerResponseError:
                 # Predibase does not recognize the adapter ID (query HuggingFace).
                 adapter_model = pc.LLM(uri=f"hf://{self.adapter_id}")
                 result = base_llm_deployment.with_adapter(model=adapter_model).generate(
@@ -109,11 +109,10 @@ class Predibase(LLM):
                 options=options,
             )
         return result.response
-    
+
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
             **{"model_kwargs": self.model_kwargs},
         }
-
