@@ -802,6 +802,51 @@ class FAISS(VectorStore):
         )
         return docs
 
+    def sentence_window_retrieval_search(
+        self,
+        query: str, 
+        window_size: int = 4,
+        **kwargs: Any
+    )->List[Document]:
+        """_summary_
+
+        Args:
+            query (str): Text to look up documents similar to.
+            window_size (int, optional): The number of neighboring indices to include to make up the final document. Defaults to 4.
+
+        Returns:
+            List[Document]: List of Documents selected by sentence window retrieval. Currently only outputs a single doc
+        """
+        
+        faiss = dependable_faiss_import()
+        vector = self._embed_query(query)
+
+        vector = np.array([vector], dtype=np.float32)
+        if self._normalize_L2:
+            faiss.normalize_L2(vector)
+
+        #Retrieve the top index that matches the query
+        scores, indices = self.index.search(vector, 1)
+        top_index  = indices[0][0]
+
+        
+        start_index = max(0, top_index - window_size)
+        end_index = min(top_index + window_size, len(self.index_to_docstore_id)-1)
+
+        #Retrieving content for neighboring indices
+        page_content = ""
+        pages = []
+        for index in range(start_index, end_index+1):
+            doc = self.docstore.search( self.index_to_docstore_id[index] )
+            page_content += doc.page_content
+            pages.append(doc.metadata['page'])
+
+        #Creating new output Document
+        metadata = {"source": doc.metadata['source'], 'primary_index':top_index, 'page':list(set(pages)), 'type':'sentence_window'}
+        output_doc = Document(page_content = page_content, metadata= metadata)
+
+        return [output_doc]
+
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by ID. These are the IDs in the vectorstore.
 
