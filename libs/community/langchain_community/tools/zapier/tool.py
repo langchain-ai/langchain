@@ -82,8 +82,9 @@ from langchain_community.utilities.zapier import ZapierNLAWrapper
 
 
 class ZapierNLARunAction(BaseTool):
-    """
-    Args:
+    """Tool to run a specific action from the user's exposed actions.
+
+    Params:
         action_id: a specific action ID (from list actions) of the action to execute
             (the set api_key must be associated with the action owner)
         instructions: a natural language instruction string for using the action
@@ -167,11 +168,7 @@ ZapierNLARunAction.__doc__ = (
 
 
 class ZapierNLAListActions(BaseTool):
-    """
-    Args:
-        None
-
-    """
+    """Tool to list all exposed actions for the user."""
 
     name: str = "ZapierNLA_list_actions"
     description: str = BASE_ZAPIER_TOOL_PROMPT + (

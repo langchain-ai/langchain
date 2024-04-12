@@ -89,7 +89,7 @@ def _convert_delta_to_message_chunk(
 
 
 class ChatSparkLLM(BaseChatModel):
-    """Wrapper around iFlyTek's Spark large language model.
+    """iFlyTek Spark large language model.
 
     To use, you should pass `app_id`, `api_key`, `api_secret`
     as a named parameter to the constructor OR set environment
