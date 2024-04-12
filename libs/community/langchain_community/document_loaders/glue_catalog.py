@@ -14,12 +14,15 @@ class GlueCatalogLoader(BaseLoader):
     """Load table schemas from AWS Glue.
 
     This loader fetches the schema of each table within a specified AWS Glue database.
-    The schema details include column names and their data types, similar to pandas dtype representation.
+    The schema details include column names and their data types, similar to pandas
+    dtype representation.
 
-    AWS credentials are automatically loaded using boto3, following the standard AWS method:
+    AWS credentials are automatically loaded using boto3, following the standard AWS
+    method:
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
 
-    If a specific AWS profile is required, it can be specified and will be used to establish the session.
+    If a specific AWS profile is required, it can be specified and will be used to
+    establish the session.
     """
 
     def __init__(
@@ -34,9 +37,11 @@ class GlueCatalogLoader(BaseLoader):
 
         Args:
             database: The name of the Glue database from which to load table schemas.
-            session: Optional. A boto3 Session object. If not provided, a new session will be created.
+            session: Optional. A boto3 Session object. If not provided, a new
+                session will be created.
             profile_name: Optional. The name of the AWS profile to use for credentials.
-            table_filter: Optional. List of table names to fetch schemas for, fetching all if None.
+            table_filter: Optional. List of table names to fetch schemas for,
+                fetching all if None.
         """
         self.database = database
         self.profile_name = profile_name
