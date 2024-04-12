@@ -1,11 +1,18 @@
 """Tool for the Google Trends"""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.google_jobs import GoogleJobsAPIWrapper
+
+
+class GoogleJobsQueryRunInput(BaseModel):
+    """Input for the GoogleJobsQueryRun tool."""
+
+    query: str = Field(description="Query for Google Jobs")
 
 
 class GoogleJobsQueryRun(BaseTool):
@@ -19,6 +26,7 @@ class GoogleJobsQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: GoogleJobsAPIWrapper
+    args_schema: Type[BaseModel] = GoogleJobsQueryRunInput
 
     def _run(
         self,
