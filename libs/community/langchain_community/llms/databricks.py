@@ -161,7 +161,7 @@ class _DatabricksClusterDriverProxyClient(_DatabricksClientBase):
 
 
 def get_repl_context() -> Any:
-    """Gets the notebook REPL context if running inside a Databricks notebook.
+    """Get the notebook REPL context if running inside a Databricks notebook.
     Returns None otherwise.
     """
     try:
@@ -175,7 +175,7 @@ def get_repl_context() -> Any:
 
 
 def get_default_host() -> str:
-    """Gets the default Databricks workspace hostname.
+    """Get the default Databricks workspace hostname.
     Raises an error if the hostname cannot be automatically determined.
     """
     host = os.getenv("DATABRICKS_HOST")
@@ -195,7 +195,7 @@ def get_default_host() -> str:
 
 
 def get_default_api_token() -> str:
-    """Gets the default Databricks personal access token.
+    """Get the default Databricks personal access token.
     Raises an error if the token cannot be automatically determined.
     """
     if api_token := os.getenv("DATABRICKS_TOKEN"):
