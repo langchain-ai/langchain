@@ -13,3 +13,9 @@ class TestAI21Standard(ChatModelIntegrationTests):
     @pytest.fixture
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatAI21
+
+    @pytest.fixture
+    def chat_model_params(self) -> dict:
+        return {
+            "model": "j2-ultra",
+        }
