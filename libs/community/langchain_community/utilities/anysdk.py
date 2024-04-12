@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List
 
-from langchain.pydantic_v1 import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel, Extra
 
 
 class AnySdkWrapper(BaseModel):
