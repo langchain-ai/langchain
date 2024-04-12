@@ -95,14 +95,10 @@ class Predibase(LLM):
             except ServerResponseError:
                 # Predibase does not recognize the adapter ID (query HuggingFace).
                 adapter_model = pc.LLM(uri=f"hf://{self.adapter_id}")
-                result = base_llm_deployment.with_adapter(model=adapter_model).generate(
-                    prompt=prompt,
-                    options=options,
-                )
-                result = base_llm_deployment.with_adapter(model=adapter_model).generate(
-                    prompt=prompt,
-                    options=options,
-                )
+            result = base_llm_deployment.with_adapter(model=adapter_model).generate(
+                prompt=prompt,
+                options=options,
+            )
         else:
             result = base_llm_deployment.generate(
                 prompt=prompt,
