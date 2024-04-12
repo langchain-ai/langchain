@@ -32,13 +32,16 @@ class ChatModelUnitTests(ABC):
     def chat_model_has_tool_calling(
         self, chat_model_class: Type[BaseChatModel]
     ) -> bool:
-        return hasattr(chat_model_class, "bind_tools")
+        return chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @pytest.fixture
     def chat_model_has_structured_output(
         self, chat_model_class: Type[BaseChatModel]
     ) -> bool:
-        return hasattr(chat_model_class, "with_structured_output")
+        return (
+            chat_model_class.with_structured_output
+            is not BaseChatModel.with_structured_output
+        )
 
     def test_chat_model_init(
         self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
@@ -49,7 +52,8 @@ class ChatModelUnitTests(ABC):
     def test_chat_model_init_api_key(
         self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
     ) -> None:
-        model = chat_model_class(api_key="test", **chat_model_params)  # type: ignore
+        params = {**chat_model_params, "api_key": "test"}
+        model = chat_model_class(**params)  # type: ignore
         assert model is not None
 
     def test_chat_model_init_streaming(
