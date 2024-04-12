@@ -255,12 +255,12 @@ def _create_collection(
 
 
 def _create_index(
-    col: "Collection",
+    col: Collection,
     collection_name: str,
     alias: str,
     vector_fields: List[str],
     sparse_vector_fields: List[str],
-    index_params: Optional[dict] = None,
+    index_params: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Create a index on the collection"""
     from pymilvus import MilvusException
@@ -320,7 +320,7 @@ def _create_index(
             raise e
 
 
-def _get_indexes(col: "Collection", field_names: List[str]) -> Dict[str, Any]:
+def _get_indexes(col: Collection, field_names: List[str]) -> Dict[str, Any]:
     """Return the vector index information if it exists"""
     indexes = {}
     for x in col.indexes:
@@ -338,7 +338,7 @@ def _extract_fields(col) -> None:
 
 
 def _create_search_and_rerank_params(
-    col: "Collection",
+    col: Collection,
     vector_fields: List[str],
     sparse_vector_fields: List[str],
     search_params: Optional[Dict[str, Dict[str, Any]]] = None,
@@ -352,7 +352,7 @@ def _create_search_and_rerank_params(
     indexes = _get_indexes(col, vector_fields)
     for vector_field, index in indexes.items():
         field_search_params = deepcopy(search_params.get(vector_field, {}))
-        if "param" not in field_search_params:
+        if not field_search_params:
             index_type: str = index["index_param"]["index_type"]
             metric_type: str = index["index_param"]["metric_type"]
             params = DEFAULT_DENSE_SEARCH_PARAMS[index_type]
@@ -364,7 +364,7 @@ def _create_search_and_rerank_params(
     for sparse_vector_field, index in sparse_indexes.items():
         field_search_params = deepcopy(search_params.get(sparse_vector_field, {}))
 
-        if "param" not in field_search_params:
+        if not field_search_params:
             index_type: str = index["index_param"]["index_type"]
             metric_type: str = index["index_param"]["metric_type"]
             params = DEFAULT_SPARSE_SEARCH_PARAMS[index_type]
@@ -399,7 +399,7 @@ def _get_reranker(rerank_params: Dict[str, Any], ann_search_fields: List[str]) -
 
 
 def _load(
-    col: "Collection",
+    col: Collection,
     collection_name: str,
     alias: str,
     partition_names: Optional[list] = None,
@@ -432,7 +432,7 @@ class MilvusHybridSearchRetriever(BaseRetriever):
     connection_args: Optional[Dict[str, Any]] = None
     consistency_level: str = "Session"
     collection_description: str = ""
-    index_params: Optional[List[Any]] = None
+    index_params: Optional[Dict[str, Any]] = None
     search_params: Optional[Dict[str, Dict[str, Any]]] = None
     rerank_params: Optional[Dict[str, Any]] = None
     text_field: str = "text"
@@ -445,7 +445,7 @@ class MilvusHybridSearchRetriever(BaseRetriever):
     alias: Optional[str] = None
     replica_number: int = 1
     timeout: Optional[float] = None
-    col: Optional["Collection"] = None  #: :meta private:
+    col: Optional[Any] = None  #: :meta private:
     vector_fields: List[str]  #: :meta private:
     sparse_vector_fields: List[str]  #: :meta private:
 
@@ -695,9 +695,9 @@ class MilvusHybridSearchRetriever(BaseRetriever):
         if include_other_fields:
             other_fields = available_vector_fields - set(search_params)
             for field in other_fields:
-                ann_search_dict[field] = deepcopy(self.search_params[field])
-                if "limit" not in ann_search_dict[field]:
-                    ann_search_dict[field]["limit"] = k
+                ann_search_dict[field] = {}
+                ann_search_dict[field]["param"] = deepcopy(self.search_params[field])
+                ann_search_dict[field]["limit"] = k
 
         if rerank_params is None:
             rerank_params = self.rerank_params
@@ -724,7 +724,13 @@ class MilvusHybridSearchRetriever(BaseRetriever):
 
         rerank = _get_reranker(rerank_params, ann_search_fields)
 
-        logger.debug("ann_search_fields:\n{ann_search_fields}\n" "rerank: {rerank}")
+        logger.debug(f"vector search reqs:")
+        for req in reqs:
+            logger.info(
+                f"anns_field: {req.anns_field}, param: {req.param}, "
+                f"limit: {req.limit}, expr: {req.expr}"
+            )         
+        logger.debug(f"rerank: {rerank}")
 
         res = self.col.hybrid_search(
             reqs=reqs,
