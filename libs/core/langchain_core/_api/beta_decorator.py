@@ -192,6 +192,8 @@ def beta(
         else:
             _name = _name or obj.__qualname__
             if not _obj_type:
+                # edge case: when a function is within another function
+                # within a test, this will call it a "method" not a "function"
                 _obj_type = "function" if "." not in _name else "method"
             wrapped = obj
             old_doc = wrapped.__doc__
