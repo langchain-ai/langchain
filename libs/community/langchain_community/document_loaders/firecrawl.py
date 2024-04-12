@@ -1,18 +1,18 @@
-from typing import Iterator, Optional
+from typing import Iterator, Literal, Optional
 
+from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
-
-from langchain_community.document_loaders.base import BaseLoader
 
 
 class FireCrawlLoader(BaseLoader):
-    """Load from `Firecrawl.dev`."""
+    """Load web pages as Documents using FireCrawl."""
 
     def __init__(
         self,
         api_key: str,
         url: str,
-        mode: Optional[str] = "crawl",
+        *,
+        mode: Literal["crawl", "scrape"] = "crawl",
         params: Optional[dict] = None,
     ):
         """Initialize with API key and url.
@@ -36,6 +36,10 @@ class FireCrawlLoader(BaseLoader):
             raise ImportError(
                 "`firecrawl` package not found, please run `pip install firecrawl-py`"
             )
+        if mode not in ("crawl", "scrape"):
+            raise ValueError(
+                f"Unrecognized mode '{mode}'. Expected one of 'crawl', 'scrape'."
+            )
         self.firecrawl = FirecrawlApp(api_key=api_key)
         self.url = url
         self.mode = mode
@@ -43,15 +47,15 @@ class FireCrawlLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         if self.mode == "scrape":
-            firecrawl_docs = self.firecrawl.scrape_url(self.url, params=self.params)
-            yield Document(
-                page_content=firecrawl_docs.get("markdown", ""),
-                metadata=firecrawl_docs.get("metadata", {}),
-            )
-        else:
+            firecrawl_docs = [self.firecrawl.scrape_url(self.url, params=self.params)]
+        elif self.mode == "crawl":
             firecrawl_docs = self.firecrawl.crawl_url(self.url, params=self.params)
-            for doc in firecrawl_docs:
-                yield Document(
-                    page_content=doc.get("markdown", ""),
-                    metadata=doc.get("metadata", {}),
-                )
+        else:
+            raise ValueError(
+                f"Unrecognized mode '{self.mode}'. Expected one of 'crawl', 'scrape'."
+            )
+        for doc in firecrawl_docs:
+            yield Document(
+                page_content=doc.get("markdown", ""),
+                metadata=doc.get("metadata", {}),
+            )
