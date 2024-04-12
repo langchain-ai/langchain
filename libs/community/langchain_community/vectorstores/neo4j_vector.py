@@ -139,7 +139,7 @@ def remove_lucene_chars(text: str) -> str:
 
 def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
     """
-    Converts a dictionary to a YAML-like string without using external libraries.
+    Convert a dictionary to a YAML-like string without using external libraries.
 
     Parameters:
     - input_dict (dict): The dictionary to convert.
@@ -165,6 +165,8 @@ def dict_to_yaml_str(input_dict: Dict, indent: int = 0) -> str:
 def combine_queries(
     input_queries: List[Tuple[str, Dict[str, Any]]], operator: str
 ) -> Tuple[str, Dict[str, Any]]:
+    """Combine multiple queries with an operator."""
+
     # Initialize variables to hold the combined query and parameters
     combined_query: str = ""
     combined_params: Dict = {}
@@ -197,8 +199,7 @@ def combine_queries(
 def collect_params(
     input_data: List[Tuple[str, Dict[str, str]]],
 ) -> Tuple[List[str], Dict[str, Any]]:
-    """
-    Transform the input data into the desired format.
+    """Transform the input data into the desired format.
 
     Args:
     - input_data (list of tuples): Input data to transform.
@@ -324,6 +325,15 @@ def _handle_field_filter(
 
 
 def construct_metadata_filter(filter: Dict[str, Any]) -> Tuple[str, Dict]:
+    """Construct a metadata filter.
+
+    Args:
+        filter: A dictionary representing the filter condition.
+
+    Returns:
+        Tuple[str, Dict]
+    """
+
     if isinstance(filter, dict):
         if len(filter) == 1:
             # The only operators allowed at the top level are $AND and $OR

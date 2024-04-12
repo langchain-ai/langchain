@@ -10,7 +10,7 @@ from langchain_community.llms.solar import SOLAR_SERVICE_URL_BASE, SolarCommon
 
 
 class SolarChat(SolarCommon, ChatOpenAI):  # type: ignore[misc]
-    """Wrapper around Solar large language models.
+    """Solar large language models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``SOLAR_API_KEY`` set with your API key.
