@@ -9,12 +9,12 @@ from langchain_community.utilities.openapi import OpenAPISpec
 
 class OpenAPISpecTestCase(unittest.TestCase):
     @pytest.mark.requires("openapi-pydantic")
-    def setUp(self):
+    def setUp(self) -> None:
         self.instance = OpenAPISpec(info=Info(title="test", version="1.0.0"))
 
     @patch("langchain_community.utilities.openapi.OpenAPISpec.get_referenced_schema")
     @pytest.mark.requires("openapi-pydantic")
-    def test_get_root_referenced_schema_with_obj_ref(self, mock_get_referenced_schema):
+    def test_get_root_referenced_schema_with_obj_ref(self, mock_get_referenced_schema):  # type: ignore[no-untyped-def]
         address_schema = Schema()
         address_schema.properties = {
             "address": Reference(ref="#/components/schemas/Address")
@@ -34,7 +34,7 @@ class OpenAPISpecTestCase(unittest.TestCase):
 
     @patch("langchain_community.utilities.openapi.OpenAPISpec.get_referenced_schema")
     @pytest.mark.requires("openapi-pydantic")
-    def test_get_root_referenced_schema_obj_arr_ref(self, mock_get_referenced_schema):
+    def test_get_root_referenced_schema_obj_arr_ref(self, mock_get_referenced_schema):  # type: ignore[no-untyped-def]
         hobby_schema = Schema()
         hobby_schema.properties = {"hobby": Reference(ref="#/components/schemas/Hobby")}
 
