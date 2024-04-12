@@ -42,7 +42,7 @@ GigaChain предоставляет компоненты для разрабо�
 Для работы с примером нужно установить пакеты:
 
 ```python
-%pip install --upgrade --quiet  gigachain langchainhub faiss-cpu bs4
+%pip install --upgrade --quiet  gigachain langchainhub chromadb bs4
 ```
 
 <!--
@@ -89,7 +89,7 @@ os.environ["LANGCHAIN_API_KEY"] = getpass.getpass()
 import bs4
 from langchain import hub
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain.chat_models.gigachat import GigaChat
@@ -115,7 +115,7 @@ docs = loader.load()
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 splits = text_splitter.split_documents(docs)
-vectorstore = FAISS.from_documents(documents=splits, embedding=GigaChatEmbeddings(credentials="<авторизационные_данные>", verify_ssl_certs=False))
+vectorstore = Chroma.from_documents(documents=splits, embedding=GigaChatEmbeddings(credentials="<авторизационные_данные>", verify_ssl_certs=False))
 
 # Извлечение данных и генерация с помощью релевантных фрагментов блога.
 retriever = vectorstore.as_retriever()
@@ -293,13 +293,13 @@ all_splits[10].metadata
 Поиск по полученным фрагментам выполняется на основе «сходства» эмбеддинга запроса и эмбеддингов в хранилище.
 Самая простая мера сходства — это сходство косинуса, при котором измеряется косинус угла между каждой парой эмбеддингов, представляющих собой высокоразмерные вектора.
 
-Создать эмбеддинги с помощью `GigaChatEmbeddings` и сохранить их в векторном хранилище FAISS можно с помощью одной команды.
+Создать эмбеддинги с помощью `GigaChatEmbeddings` и сохранить их в векторном хранилище Chroma можно с помощью одной команды.
 
 ```python
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings.gigachat import GigaChatEmbeddings
 
-vectorstore = FAISS.from_documents(documents=all_splits, embedding=GigaChatEmbeddings(credentials="<авторизационные_данные>", verify_ssl_certs=False))
+vectorstore = Chroma.from_documents(documents=all_splits, embedding=GigaChatEmbeddings(credentials="<авторизационные_данные>", verify_ssl_certs=False))
 ```
 
 ### Дополнительная информация
