@@ -183,7 +183,7 @@ class AnthropicFunctions(BaseChatModel):
                 raise ValueError(
                     "if `function_call` provided, `functions` must also be"
                 )
-        response = self.model.predict_messages(
+        response = self.model.invoke(
             messages, stop=stop, callbacks=run_manager, **kwargs
         )
         completion = cast(str, response.content)
