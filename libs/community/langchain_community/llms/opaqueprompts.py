@@ -95,7 +95,7 @@ class OpaquePrompts(LLM):
 
         # TODO: Add in callbacks once child runs for LLMs are supported by LangSmith.
         # call the LLM with the sanitized prompt and get the response
-        llm_response = self.base_llm.predict(
+        llm_response = self.base_llm.invoke(
             sanitized_prompt_value_str,
             stop=stop,
         )

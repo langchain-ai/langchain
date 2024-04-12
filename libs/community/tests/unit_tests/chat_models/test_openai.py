@@ -96,7 +96,7 @@ def test_openai_predict(mock_completion: dict) -> None:
         "client",
         mock_client,
     ):
-        res = llm.predict("bar")
+        res = llm.invoke("bar")
         assert res == "Bar Baz"
     assert completed
 
