@@ -96,6 +96,15 @@ export default function ChatModelTabs(props) {
       shouldHide: hideAnthropic,
     },
     {
+      value: "Google",
+      label: "Google",
+      text: `from langchain_google_vertexai import ChatVertexAI\n\n${llmVarName} = ChatVertexAI(${googleParamsOrDefault})`,
+      apiKeyName: "GOOGLE_API_KEY",
+      packageName: "langchain-google-vertexai",
+      default: false,
+      shouldHide: hideGoogle,
+    },
+    {
       value: "Cohere",
       label: "Cohere",
       text: `from langchain_cohere import ChatCohere\n\n${llmVarName} = ChatCohere(${cohereParamsOrDefault})`,
@@ -121,15 +130,6 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-mistralai",
       default: false,
       shouldHide: hideMistral,
-    },
-    {
-      value: "Google",
-      label: "Google",
-      text: `from langchain_google_vertexai import ChatVertexAI\n\n${llmVarName} = ChatVertexAI(${googleParamsOrDefault})`,
-      apiKeyName: "GOOGLE_API_KEY",
-      packageName: "langchain-google-vertexai",
-      default: false,
-      shouldHide: hideGoogle,
     },
     {
       value: "TogetherAI",
