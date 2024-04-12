@@ -141,10 +141,10 @@ from langchain_anthropic import ChatAnthropic
 llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2, max_tokens=1024)
 ```
 
-If you'd prefer not to set an environment variable you can pass the key in directly via the `anthropic_api_key` named parameter when initiating the Anthropic Chat Model class:
+If you'd prefer not to set an environment variable you can pass the key in directly via the `api_key` named parameter when initiating the Anthropic Chat Model class:
 
 ```python
-llm = ChatAnthropic(anthropic_api_key="...")
+llm = ChatAnthropic(api_key="...")
 ```
 
   </TabItem>

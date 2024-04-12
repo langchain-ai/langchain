@@ -320,7 +320,7 @@ def test_relevance_score() -> None:
     except ValueError:
         pass
 
-    docsearch_l2.drop_vectorstore()
+    docsearch_l2.drop_vectorstore()  # type: ignore[attr-defined]
 
 
 def test_retriever_search_threshold() -> None:
