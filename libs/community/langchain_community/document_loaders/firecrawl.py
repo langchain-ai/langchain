@@ -6,7 +6,11 @@ from langchain_core.utils import get_from_env
 
 
 class FireCrawlLoader(BaseLoader):
-    """Load web pages as Documents using FireCrawl."""
+    """Load web pages as Documents using FireCrawl.
+
+    Must have Python package `firecrawl` installed and a FireCrawl API key. See
+        https://www.firecrawl.dev/ for more.
+    """
 
     def __init__(
         self,
@@ -21,15 +25,13 @@ class FireCrawlLoader(BaseLoader):
         Args:
             url: The url to be crawled.
             api_key: The Firecrawl API key. If not specified will be read from env var
-                FIREWALL_API_KEY.
+                FIREWALL_API_KEY. Get an API key
             mode: The mode to run the loader in. Default is "crawl".
                  Options include "scrape" (single url) and
                  "crawl" (all accessible sub pages).
             params: The parameters to pass to the Firecrawl API.
-                    Examples include crawlerOptions.
-                    For more details, visit: https://github.com/mendableai/firecrawl-py
-            wait_until_done: If True, waits until the crawl is done, returns the docs.
-                             If False, returns jobId. Default is True.
+                Examples include crawlerOptions.
+                For more details, visit: https://github.com/mendableai/firecrawl-py
         """
 
         try:
