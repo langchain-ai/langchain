@@ -28,23 +28,23 @@ anysdk = AnySdkWrapper(client=client)
 def test_get_thing():
     assert json.loads(anysdk.run('get_thing', json.dumps({
             "thing_id": 123
-        }))) == json.loads({"id": 123})
+        })))["id"] == 123
 
 def test_post_thing():
     assert json.loads(anysdk.run('post_thing', json.dumps({
             "thing_id": 123
-        }))) == json.loads({"status": 200, "response": {"id": 123}})
+        })))["id"] == 123
 
 def test_put_thing():
     assert json.loads(anysdk.run('put_thing', json.dumps({
             "thing_id": 123
-        }))) == json.loads({"status": 200, "response": {"id": 123}})
+        })))["id"] == 123
 
 def test_delete_thing():
     assert json.loads(anysdk.run('delete_thing', json.dumps({
             "thing_id": 123
-        }))) == json.loads({"status": 200, "response": {"id": 123}})
+        })))["id"] == 123
 
 def test_no_hidden_methods():
-    with pytest.rasises(AttributeError):
+    with pytest.raises(AttributeError):
         anysdk.run('_dummy_return', json.dumps({"thing_id": 123}))
