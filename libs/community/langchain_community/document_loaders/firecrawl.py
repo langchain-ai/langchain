@@ -2,32 +2,36 @@ from typing import Iterator, Literal, Optional
 
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
+from langchain_core.utils import get_from_env
 
 
 class FireCrawlLoader(BaseLoader):
-    """Load web pages as Documents using FireCrawl."""
+    """Load web pages as Documents using FireCrawl.
+
+    Must have Python package `firecrawl` installed and a FireCrawl API key. See
+        https://www.firecrawl.dev/ for more.
+    """
 
     def __init__(
         self,
-        api_key: str,
         url: str,
         *,
+        api_key: Optional[str] = None,
         mode: Literal["crawl", "scrape"] = "crawl",
         params: Optional[dict] = None,
     ):
         """Initialize with API key and url.
 
         Args:
-            api_key: The Firecrawl API key.
             url: The url to be crawled.
+            api_key: The Firecrawl API key. If not specified will be read from env var
+                FIREWALL_API_KEY. Get an API key
             mode: The mode to run the loader in. Default is "crawl".
                  Options include "scrape" (single url) and
                  "crawl" (all accessible sub pages).
             params: The parameters to pass to the Firecrawl API.
-                    Examples include crawlerOptions.
-                    For more details, visit: https://github.com/mendableai/firecrawl-py
-            wait_until_done: If True, waits until the crawl is done, returns the docs.
-                             If False, returns jobId. Default is True.
+                Examples include crawlerOptions.
+                For more details, visit: https://github.com/mendableai/firecrawl-py
         """
 
         try:
@@ -40,6 +44,7 @@ class FireCrawlLoader(BaseLoader):
             raise ValueError(
                 f"Unrecognized mode '{mode}'. Expected one of 'crawl', 'scrape'."
             )
+        api_key = api_key or get_from_env("api_key", "FIREWALL_API_KEY")
         self.firecrawl = FirecrawlApp(api_key=api_key)
         self.url = url
         self.mode = mode
