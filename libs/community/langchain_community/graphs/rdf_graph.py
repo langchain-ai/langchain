@@ -131,6 +131,9 @@ class RdfGraph:
         :param graph_kwargs: Additional rdflib.Graph specific kwargs
         that will be used to initialize it,
         if query_endpoint is provided.
+        :param store_kwargs: Additional sparqlstore.SPARQLStore specific kwargs
+        that will be used to initialize it,
+        if query_endpoint is provided.
         """
         self.source_file = source_file
         self.serialization = serialization
