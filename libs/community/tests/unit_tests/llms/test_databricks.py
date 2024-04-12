@@ -81,6 +81,7 @@ def test_saving_loading_llm(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     assert_llm_equality(llm, loaded_llm)
 
 
+@pytest.mark.requires("cloudpickle")
 def test_saving_loading_llm_dangerous_serde_check(
     monkeypatch: MonkeyPatch, tmp_path: Path
 ) -> None:
