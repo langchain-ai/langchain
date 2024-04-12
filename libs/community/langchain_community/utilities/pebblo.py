@@ -13,8 +13,12 @@ from langchain_community.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
 
-PLUGIN_VERSION = "0.1.0"
+PLUGIN_VERSION = "0.1.1"
 CLASSIFIER_URL = os.getenv("PEBBLO_CLASSIFIER_URL", "http://localhost:8000")
+PEBBLO_CLOUD_URL = os.getenv("PEBBLO_CLOUD_URL", "https://api.daxa.ai")
+
+LOADER_DOC_URL = "/v1/loader/doc"
+APP_DISCOVER_URL = "/v1/app/discover"
 
 # Supported loaders for Pebblo safe data loading
 file_loader = [
@@ -29,11 +33,28 @@ file_loader = [
     "AmazonTextractPDFLoader",
     "CSVLoader",
     "UnstructuredExcelLoader",
+    "UnstructuredEmailLoader",
 ]
-dir_loader = ["DirectoryLoader", "S3DirLoader", "PyPDFDirectoryLoader"]
-in_memory = ["DataFrameLoader"]
+dir_loader = [
+    "DirectoryLoader",
+    "S3DirLoader",
+    "SlackDirectoryLoader",
+    "PyPDFDirectoryLoader",
+    "NotionDirectoryLoader",
+]
 
-LOADER_TYPE_MAPPING = {"file": file_loader, "dir": dir_loader, "in-memory": in_memory}
+in_memory = ["DataFrameLoader"]
+remote_db = [
+    "NotionDBLoader",
+    "GoogleDriveLoader",
+]
+
+LOADER_TYPE_MAPPING = {
+    "file": file_loader,
+    "dir": dir_loader,
+    "in-memory": in_memory,
+    "remote_db": remote_db,
+}
 
 SUPPORTED_LOADERS = (*file_loader, *dir_loader, *in_memory)
 
@@ -41,7 +62,7 @@ logger = logging.getLogger(__name__)
 
 
 class Runtime(BaseModel):
-    """This class represents a Runtime.
+    """Pebblo Runtime.
 
     Args:
         type (Optional[str]): Runtime type. Defaults to ""
@@ -69,7 +90,7 @@ class Runtime(BaseModel):
 
 
 class Framework(BaseModel):
-    """This class represents a Framework instance.
+    """Pebblo Framework instance.
 
     Args:
         name (str): Name of the Framework.
@@ -81,7 +102,7 @@ class Framework(BaseModel):
 
 
 class App(BaseModel):
-    """This class represents an AI application.
+    """Pebblo AI application.
 
     Args:
         name (str): Name of the app.
@@ -103,7 +124,7 @@ class App(BaseModel):
 
 
 class Doc(BaseModel):
-    """This class represents a pebblo document.
+    """Pebblo document.
 
     Args:
         name (str): Name of app originating this document.
@@ -127,8 +148,8 @@ class Doc(BaseModel):
 
 
 def get_full_path(path: str) -> str:
-    """Return absolute local path for a local file/directory,
-    for network related path, return as is.
+    """Return an absolute local path for a local file/directory,
+    for a network related path, return as is.
 
     Args:
         path (str): Relative path to be resolved.
@@ -159,11 +180,11 @@ def get_loader_type(loader: str) -> str:
     for loader_type, loaders in LOADER_TYPE_MAPPING.items():
         if loader in loaders:
             return loader_type
-    return "unknown"
+    return "unsupported"
 
 
 def get_loader_full_path(loader: BaseLoader) -> str:
-    """Return absolute source path of source of loader based on the
+    """Return an absolute source path of source of loader based on the
     keys present in Document object from loader.
 
     Args:
@@ -172,6 +193,7 @@ def get_loader_full_path(loader: BaseLoader) -> str:
     from langchain_community.document_loaders import (
         DataFrameLoader,
         GCSFileLoader,
+        NotionDBLoader,
         S3FileLoader,
     )
 
@@ -188,15 +210,25 @@ def get_loader_full_path(loader: BaseLoader) -> str:
                 location = f"gc://{loader.bucket}/{loader.blob}"
             elif isinstance(loader, S3FileLoader):
                 location = f"s3://{loader.bucket}/{loader.key}"
+        elif "source" in loader_dict:
+            location = loader_dict["source"]
+            if location and "channel" in loader_dict:
+                channel = loader_dict["channel"]
+                if channel:
+                    location = f"{location}/{channel}"
         elif "path" in loader_dict:
             location = loader_dict["path"]
         elif "file_path" in loader_dict:
             location = loader_dict["file_path"]
         elif "web_paths" in loader_dict:
-            location = loader_dict["web_paths"][0]
+            web_paths = loader_dict["web_paths"]
+            if web_paths and isinstance(web_paths, list) and len(web_paths) > 0:
+                location = web_paths[0]
         # For in-memory types:
         elif isinstance(loader, DataFrameLoader):
             location = "in-memory"
+        elif isinstance(loader, NotionDBLoader):
+            location = f"notiondb://{loader.database_id}"
     except Exception:
         pass
     return get_full_path(str(location))
@@ -234,7 +266,7 @@ def get_runtime() -> Tuple[Framework, Runtime]:
 
 
 def get_ip() -> str:
-    """Fetch local runtime ip address
+    """Fetch local runtime ip address.
 
     Returns:
         str: IP address

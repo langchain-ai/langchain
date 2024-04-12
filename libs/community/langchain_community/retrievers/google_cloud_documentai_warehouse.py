@@ -1,6 +1,7 @@
 """Retriever wrapper for Google Cloud Document AI Warehouse."""
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
@@ -20,6 +21,11 @@ if TYPE_CHECKING:
     )
 
 
+@deprecated(
+    since="0.0.32",
+    removal="0.2.0",
+    alternative_import="langchain_google_community.GoogleDriveLoader",
+)
 class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
     """A retriever based on Document AI Warehouse.
 
