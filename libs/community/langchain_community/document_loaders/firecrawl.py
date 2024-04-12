@@ -21,7 +21,7 @@ class FireCrawlLoader(BaseLoader):
             api_key: The Firecrawl API key.
             url: The url to be crawled.
             mode: The mode to run the loader in. Default is "crawl".
-                 Options include "scrape" (single url) and 
+                 Options include "scrape" (single url) and
                  "crawl" (all accessible sub pages).
             params: The parameters to pass to the Firecrawl API.
                     Examples include crawlerOptions.
