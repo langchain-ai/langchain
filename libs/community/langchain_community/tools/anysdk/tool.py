@@ -1,10 +1,9 @@
 import json
+from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
-
-from typing import Optional
 
 from langchain_community.utilities.anysdk import AnySdkWrapper
 
@@ -28,6 +27,7 @@ class AnySdkAction(BaseTool):
             params = json.dumps(instruction_args)
             return self.api_wrapper.run(self.mode, params)
         except (ValueError, KeyError):
-            return "Invalid instructions format. Excepted a JSON object with 'action_input' field."
+            return "Invalid instructions format. \
+                Expected a JSON object with 'action_input' field."
         
         
