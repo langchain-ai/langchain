@@ -326,7 +326,7 @@ class HuggingFaceEndpoint(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                
+
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text)
                 yield chunk
@@ -362,7 +362,7 @@ class HuggingFaceEndpoint(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                
+
                 if run_manager:
                     await run_manager.on_llm_new_token(chunk.text)
                 yield chunk
