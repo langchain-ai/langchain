@@ -106,7 +106,6 @@ def test_saving_loading_llm_dangerous_serde_check(
     llm2 = Databricks(
         endpoint_name="chat", temperature=0.1, transform_output_fn=lambda x: "test"
     )
-    print("TMP PATH", tmp_path)
     llm2.save(file_path=tmp_path / "databricks2.yaml")
 
     with pytest.raises(ValueError, match="This code relies on the pickle module."):
