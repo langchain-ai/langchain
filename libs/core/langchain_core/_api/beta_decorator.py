@@ -147,10 +147,11 @@ def beta(
                 return cast(T, obj)
 
         elif isinstance(obj, property):
+            # note(erick): this block doesn't seem to be used?
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or obj.fget.__name__
+            _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
             class _beta_property(property):
