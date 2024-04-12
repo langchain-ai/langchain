@@ -2,24 +2,6 @@
 
 All functionality related to the [Hugging Face Platform](https://huggingface.co/).
 
-## Chat models
-
-### Models from Hugging Face
-
-We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
-
-We need to install several python packages.
-
-```bash
-pip install huggingface_hub
-pip install transformers
-```
-See a [usage example](/docs/integrations/chat/huggingface).
-
-```python
-from langchain_community.chat_models.huggingface import ChatHuggingFace
-```
-
 ## LLMs
 
 ### Hugging Face Local Pipelines
@@ -38,7 +20,10 @@ See a [usage example](/docs/integrations/llms/huggingface_pipelines).
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 ```
 
-To use the OpenVINO backend in local pipeline wrapper, please install the optimum library and set HuggingFacePipeline's backend as `openvino`:
+#### Inference with OpenVINO backend
+
+To use the `OpenVINO` backend, please install the `optimum` library 
+and set HuggingFacePipeline's backend as `openvino`:
 
 ```bash
 pip install --upgrade-strategy eager "optimum[openvino,nncf]"
@@ -46,7 +31,7 @@ pip install --upgrade-strategy eager "optimum[openvino,nncf]"
 
 See a [usage example](/docs/integrations/llms/huggingface_pipelines)
 
-To export your model to the OpenVINO IR format with the CLI:
+To export your model to the `OpenVINO IR` format with the CLI:
 
 ```bash
 optimum-cli export openvino --model gpt2 ov_model
@@ -54,6 +39,46 @@ optimum-cli export openvino --model gpt2 ov_model
 
 To apply [weight-only quantization](https://github.com/huggingface/optimum-intel?tab=readme-ov-file#export) when exporting your model.
 
+## Chat models
+
+### Hugging Face Hub
+
+We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
+
+We need to install several python packages.
+
+```bash
+pip install huggingface_hub
+pip install transformers
+```
+See a [usage example](/docs/integrations/chat/huggingface/#huggingfacehub).
+
+```python
+from langchain_community.chat_models.huggingface import ChatHuggingFace
+```
+
+### Hugging Face Endpoint
+
+We need to install a python package.
+
+```bash
+pip install huggingface_hub
+```
+See a [usage example](/docs/integrations/chat/huggingface/#huggingfaceendpoint).
+
+```python
+from langchain_community.chat_models.huggingface import ChatHuggingFace
+```
+
+### Hugging Face Text Generation Inference (TGI)
+
+We need to the API Key to get access to the `Hugging Face Text Generation Inference (TGI)` service.
+
+See a [usage example](/docs/integrations/chat/huggingface/#huggingfacetextgeninference).
+
+```python
+from langchain_community.llms import HuggingFaceTextGenInference
+```
 
 ## Embedding Models
 

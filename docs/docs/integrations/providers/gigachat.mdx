@@ -1,0 +1,45 @@
+# GigaChat
+
+>[GigaChat](https://developers.sber.ru/docs/ru/gigachat/overview) is a service that can interact with the user in a dialogue format, 
+> write code, create texts and pictures at the user’s request. 
+> At the same time, `GigaChat` strives to avoid controversial 
+> ethical issues or provocations.
+>
+>`GigaChat` supports Russian and English languages.
+
+
+## Installation and setup
+
+- Install the `gigachat` integration package.
+
+  ```bash
+  pip install gigachat
+  ```
+
+- Get an API key by following [instructions here](https://developers.sber.ru/docs/ru/gigachat/api/reference/rest/gigachat-api).
+- Authenticate by setting the `GIGACHAT_API_PERS` environment variable.
+
+
+## LlMs
+
+See a [usage example](/docs/integrations/llms/gigachat).
+
+```python
+from langchain_community.llms import GigaChat
+```
+
+## Chat models
+
+See a [usage example](/docs/integrations/chat/gigachat).
+
+```python
+from langchain_community.chat_models import GigaChat
+```
+
+## Embedding models
+
+See a [usage example](/docs/integrations/text_embedding/gigachat).
+
+```python
+from langchain_community.embeddings import GigaChatEmbeddings
+```

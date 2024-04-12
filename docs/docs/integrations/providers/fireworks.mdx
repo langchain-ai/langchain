@@ -1,0 +1,43 @@
+# Fireworks
+
+>[Fireworks](https://app.fireworks.ai/) accelerates product development on generative AI 
+> by creating an innovative AI experiment and production platform.
+
+This page covers how to use [Fireworks models](https://fireworks.ai/models) within
+`Langchain`.
+
+## Installation and setup
+
+- Install the Fireworks integration package.
+
+  ```bash
+  pip install langchain-fireworks
+  ```
+
+- Get a Fireworks API key by following [instructions here](https://readme.fireworks.ai/docs/quickstart).
+- Authenticate by setting the `FIREWORKS_API_KEY` environment variable.
+
+
+## LlMs
+
+See a [usage example](/docs/integrations/llms/fireworks).
+
+```python
+from langchain_fireworks import Fireworks
+```
+
+## Chat models
+
+See a [usage example](/docs/integrations/chat/fireworks).
+
+```python
+from langchain_fireworks import ChatFireworks
+```
+
+## Embedding models
+
+See a [usage example](/docs/integrations/text_embedding/fireworks).
+
+```python
+from langchain_fireworks import FireworksEmbeddings
+```

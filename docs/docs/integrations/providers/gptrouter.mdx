@@ -1,0 +1,31 @@
+# GPTRouter
+
+>[GPTRouter](https://github.com/Writesonic/GPTRouter) is an open source LLM API Gateway 
+> that offers a universal API for 30+ LLMs, vision, and image models, with 
+> smart fallbacks based on uptime and latency, automatic retries, and streaming.
+
+
+## Installation and setup
+
+Install the `gptrouter` integration package.
+
+  ```bash
+  pip install gptrouter
+  ```
+
+See the [installation instructions](https://gpt-router.writesonic.com/docs).
+
+- To run the `GPTRouter` server locally, follow the steps [here](https://gpt-router.writesonic.com/docs/Getting%20Started/Developing%20Locally).
+
+- Alternatively, use our Preview Deployment with the [baseURL](https://gpt-router-preview.writesonic.com/). 
+  Get your API key by filling out the form [here](https://gpt-router.writesonic.com/#APIKey).
+
+
+## Chat models
+
+See a [usage example](/docs/integrations/chat/gpt_router).
+
+```python
+from langchain_community.chat_models import GPTRouter
+from langchain_community.chat_models.gpt_router import GPTRouterModel
+```

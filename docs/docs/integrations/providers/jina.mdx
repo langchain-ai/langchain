@@ -1,20 +1,32 @@
 # Jina
 
-This page covers how to use the Jina Embeddings within LangChain.
-It is broken into two parts: installation and setup, and then references to specific Jina wrappers.
+>[Jina AI](https://jina.ai/about-us) is a multimodal AI company, focusing on prompt and embedding techniques. 
+> Company provides businesses and developers with innovative platforms to harness the power 
+> of AI for value creation and cost savings.
+
 
 ## Installation and Setup
-- Get a Jina AI API token from [here](https://jina.ai/embeddings/) and set it as an environment variable (`JINA_API_TOKEN`)
 
-There exists a Jina Embeddings wrapper, which you can access with 
+Get a `Jina AI API` token from [here](https://jina.ai/embeddings/) and set it as an environment variable (`JINA_API_TOKEN`)
+
+## Chat models
+
+### Jina Chat
+
+See a [usage example](/docs/integrations/chat/jinachat).
+
+```python
+from langchain_community.chat_models import JinaChat
+```
+
+## Embedding models
+
+You can check the list of available embedding models from [here](https://jina.ai/embeddings/)
+
+### Jina Embeddings
+
+See a [usage example](/docs/integrations/text_embedding/jina).
 
 ```python
 from langchain_community.embeddings import JinaEmbeddings
-
-# you can pas jina_api_key, if none is passed it will be taken from `JINA_API_TOKEN` environment variable
-embeddings = JinaEmbeddings(jina_api_key='jina_**', model_name='jina-embeddings-v2-base-en')
 ```
-
-You can check the list of available models from [here](https://jina.ai/embeddings/)
-
-For a more detailed walkthrough of this, see [this notebook](/docs/integrations/text_embedding/jina)
