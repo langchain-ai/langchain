@@ -206,6 +206,9 @@ if TYPE_CHECKING:
         GithubFileLoader,  # noqa: F401
         GitHubIssuesLoader,  # noqa: F401
     )
+    from langchain_community.document_loaders.glue_catalog import (
+        GlueCatalogLoader,  # noqa: F401
+    )
     from langchain_community.document_loaders.google_speech_to_text import (
         GoogleSpeechToTextLoader,  # noqa: F401
     )

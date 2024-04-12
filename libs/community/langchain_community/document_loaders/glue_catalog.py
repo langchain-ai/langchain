@@ -1,9 +1,13 @@
-from typing import Any, Dict, Iterator, List, Optional
+from __future__ import annotations
 
-from boto3.session import Session
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+
+if TYPE_CHECKING:
+    from boto3.session import Session
 
 
 class GlueCatalogLoader(BaseLoader):
@@ -51,7 +55,13 @@ class GlueCatalogLoader(BaseLoader):
         Raises:
             ValueError: If there is an issue with AWS session/client initialization.
         """
-        import boto3
+        try:
+            import boto3
+        except ImportError as e:
+            raise ImportError(
+                "boto3 is required to use the GlueCatalogLoader. "
+                "Please install it with `pip install boto3`."
+            ) from e
 
         try:
             session = (
