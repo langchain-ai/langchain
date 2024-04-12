@@ -21,7 +21,7 @@ from typing import (
     cast,
 )
 
-from langchain_core._api import beta, deprecated
+from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
