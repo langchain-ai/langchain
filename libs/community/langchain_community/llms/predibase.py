@@ -49,7 +49,10 @@ class Predibase(LLM):
         try:
             from predibase import PredibaseClient
             from predibase.pql import get_session
-            from predibase.pql.api import Session
+            from predibase.pql.api import (
+                Session,
+                ServerResponseError,
+            )
             from predibase.resource.llm.interface import (
                 HuggingFaceLLM,
                 LLMDeployment,
@@ -89,17 +92,17 @@ class Predibase(LLM):
                     version=self.adapter_version,
                     model_id=None,
                 )
-            except Exception as e:
-                print(f'\n[ALEX_TEST] [LANGCHAIN:PREDIBASE] EXCEPTION:\n{e} ; TYPE: {str(type(e))}')
-            adapter_model = pc.LLM(uri=f"hf://{self.adapter_id}")
-            result = base_llm_deployment.with_adapter(model=adapter_model).generate(
-                prompt=prompt,
-                options=options,
-            )
-            result = base_llm_deployment.with_adapter(model=adapter_model).generate(
-                prompt=prompt,
-                options=options,
-            )
+            except ServerResponseError as e:
+                # Predibase does not recognize the adapter ID (query HuggingFace).
+                adapter_model = pc.LLM(uri=f"hf://{self.adapter_id}")
+                result = base_llm_deployment.with_adapter(model=adapter_model).generate(
+                    prompt=prompt,
+                    options=options,
+                )
+                result = base_llm_deployment.with_adapter(model=adapter_model).generate(
+                    prompt=prompt,
+                    options=options,
+                )
         else:
             result = base_llm_deployment.generate(
                 prompt=prompt,
