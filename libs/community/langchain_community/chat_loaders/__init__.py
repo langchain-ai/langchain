@@ -19,7 +19,48 @@ WhatsApp. The loaded chat messages can be used for fine-tuning models.
 """  # noqa: E501
 
 import importlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_community.chat_loaders.base import (
+        BaseChatLoader,  # noqa: F401
+    )
+    from langchain_community.chat_loaders.facebook_messenger import (
+        FolderFacebookMessengerChatLoader,  # noqa: F401
+        SingleFileFacebookMessengerChatLoader,  # noqa: F401
+    )
+    from langchain_community.chat_loaders.gmail import (
+        GMailLoader,  # noqa: F401
+    )
+    from langchain_community.chat_loaders.imessage import (
+        IMessageChatLoader,  # noqa: F401
+    )
+    from langchain_community.chat_loaders.langsmith import (
+        LangSmithDatasetChatLoader,  # noqa: F401
+        LangSmithRunChatLoader,  # noqa: F401
+    )
+    from langchain_community.chat_loaders.slack import (
+        SlackChatLoader,  # noqa: F401
+    )
+    from langchain_community.chat_loaders.telegram import (
+        TelegramChatLoader,  # noqa: F401
+    )
+    from langchain_community.chat_loaders.whatsapp import (
+        WhatsAppChatLoader,  # noqa: F401
+    )
+
+__all__ = [
+    "BaseChatLoader",
+    "FolderFacebookMessengerChatLoader",
+    "GMailLoader",
+    "IMessageChatLoader",
+    "LangSmithDatasetChatLoader",
+    "LangSmithRunChatLoader",
+    "SingleFileFacebookMessengerChatLoader",
+    "SlackChatLoader",
+    "TelegramChatLoader",
+    "WhatsAppChatLoader",
+]
 
 _module_lookup = {
     "BaseChatLoader": "langchain_community.chat_loaders.base",
