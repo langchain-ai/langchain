@@ -200,7 +200,9 @@ async def _render_mermaid_using_pyppeteer(
 
     # Setup Mermaid JS
     await page.goto("about:blank")
-    await page.addScriptTag({"url": "https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"})
+    await page.addScriptTag(
+        {"url": "https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"}
+    )
     await page.evaluate(
         """() => {
                 mermaid.initialize({startOnLoad:true});
