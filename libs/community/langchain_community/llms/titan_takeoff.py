@@ -40,7 +40,9 @@ class ReaderConfig(BaseModel):
 
 
 class TitanTakeoff(LLM):
-    """Titan Takeoff is a wrapper to interface with Takeoff Inference API for
+    """Titan Takeoff API LLMs.
+
+    Titan Takeoff is a wrapper to interface with Takeoff Inference API for
     generative text to text language models.
 
     You can use this wrapper to send requests to a generative language model

@@ -67,7 +67,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
 
 
 class ToolCall(TypedDict):
-    """A call to a tool.
+    """Represents a request to call a tool.
 
     Attributes:
         name: (str) the name of the tool to be called
