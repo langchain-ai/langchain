@@ -221,7 +221,9 @@ def _is_hex_string(data: str) -> bool:
     return bool(re.match(pattern, data))
 
 
-def _load_pickled_fn_from_hex_string(data: str, allow_dangerous_deserialization: Optional[bool]) -> Callable:
+def _load_pickled_fn_from_hex_string(
+    data: str, allow_dangerous_deserialization: Optional[bool]
+) -> Callable:
     """Loads a pickled function from a hexadecimal string."""
     if not allow_dangerous_deserialization:
         raise ValueError(
@@ -457,14 +459,18 @@ class Databricks(LLM):
         if "transform_input_fn" in data and _is_hex_string(data["transform_input_fn"]):
             data["transform_input_fn"] = _load_pickled_fn_from_hex_string(
                 data=data["transform_input_fn"],
-                allow_dangerous_deserialization=data.get("allow_dangerous_deserialization"),
+                allow_dangerous_deserialization=data.get(
+                    "allow_dangerous_deserialization"
+                ),
             )
         if "transform_output_fn" in data and _is_hex_string(
             data["transform_output_fn"]
         ):
             data["transform_output_fn"] = _load_pickled_fn_from_hex_string(
                 data=data["transform_output_fn"],
-                allow_dangerous_deserialization=data.get("allow_dangerous_deserialization"),
+                allow_dangerous_deserialization=data.get(
+                    "allow_dangerous_deserialization"
+                ),
             )
 
         super().__init__(**data)

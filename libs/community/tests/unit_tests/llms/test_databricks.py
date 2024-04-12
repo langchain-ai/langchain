@@ -72,14 +72,18 @@ def test_saving_loading_llm(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("DATABRICKS_TOKEN", "my-default-token")
 
     llm = Databricks(
-        endpoint_name="chat", temperature=0.1,
+        endpoint_name="chat",
+        temperature=0.1,
     )
     llm.save(file_path=tmp_path / "databricks.yaml")
 
     loaded_llm = load_llm(tmp_path / "databricks.yaml")
     assert_llm_equality(llm, loaded_llm)
 
-def test_saving_loading_llm_dangerous_serde_check(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+
+def test_saving_loading_llm_dangerous_serde_check(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setattr(
         "langchain_community.llms.databricks._DatabricksServingEndpointClient",
         MockDatabricksServingEndpointClient,
@@ -88,7 +92,9 @@ def test_saving_loading_llm_dangerous_serde_check(monkeypatch: MonkeyPatch, tmp_
     monkeypatch.setenv("DATABRICKS_TOKEN", "my-default-token")
 
     llm1 = Databricks(
-        endpoint_name="chat", temperature=0.1, transform_input_fn=lambda x, y, **kwargs: {}
+        endpoint_name="chat",
+        temperature=0.1,
+        transform_input_fn=lambda x, y, **kwargs: {},
     )
     llm1.save(file_path=tmp_path / "databricks1.yaml")
 
