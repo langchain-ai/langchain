@@ -13,6 +13,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Optional,
     Sequence,
     Type,
@@ -908,6 +909,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[Dict, str, Literal["auto", "any", "none"], bool]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
