@@ -223,6 +223,17 @@ def _is_hex_string(data: str) -> bool:
 
 def _load_pickled_fn_from_hex_string(data: str) -> Callable:
     """Loads a pickled function from a hexadecimal string."""
+    if not data.get("allow_dangerous_deserialization"):
+        raise ValueError(
+            "This code relies on the pickle module. "
+            "You will need to set allow_dangerous_deserialization=True "
+            "if you want to opt-in to allow deserialization of data using pickle."
+            "Data can be compromised by a malicious actor if "
+            "not handled properly to include "
+            "a malicious payload that when deserialized with "
+            "pickle can execute arbitrary code on your machine."
+        )
+
     try:
         import cloudpickle
     except Exception as e:
@@ -443,16 +454,6 @@ class Databricks(LLM):
         return v
 
     def __init__(self, **data: Any):
-        if not data.get("allow_dangerous_deserialization"):
-            raise ValueError(
-                "This code relies on the pickle module. "
-                "You will need to set allow_dangerous_deserialization=True "
-                "if you want to opt-in to allow deserialization of data using pickle."
-                "Data can be compromised by a malicious actor if "
-                "not handled properly to include "
-                "a malicious payload that when deserialized with "
-                "pickle can execute arbitrary code on your machine."
-            )
         if "transform_input_fn" in data and _is_hex_string(data["transform_input_fn"]):
             data["transform_input_fn"] = _load_pickled_fn_from_hex_string(
                 data["transform_input_fn"]
