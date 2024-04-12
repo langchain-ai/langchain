@@ -31,7 +31,7 @@ os.environ["${apiKeyName}"] = getpass.getpass()`;
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideFireworks] - Whether or not to hide Fireworks chat model.
  * @property {boolean} [hideMistral] - Whether or not to hide Mistral chat model.
- * @property {boolean} [hideGoogle] - Whether or not to hide Google chat model.
+ * @property {boolean} [hideGoogle] - Whether or not to hide Google VertexAI chat model.
  * @property {boolean} [hideTogether] - Whether or not to hide Together chat model.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
@@ -111,16 +111,16 @@ export default function ChatModelTabs(props) {
     {
       value: "Google",
       label: "Google",
-      text: `from langchain_google_genai import ChatGoogleGenerativeAI\n\n${llmVarName} = ChatGoogleGenerativeAI(${googleParamsOrDefault})`,
+      text: `from langchain_google_vertexai import ChatVertexAI\n\n${llmVarName} = ChatVertexAI(${googleParamsOrDefault})`,
       apiKeyName: "GOOGLE_API_KEY",
-      packageName: "langchain-google-genai",
+      packageName: "langchain-google-vertexai",
       default: false,
       shouldHide: hideGoogle,
     },
     {
       value: "TogetherAI",
       label: "TogetherAI",
-      text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = Together(${togetherParamsOrDefault})`,
+      text: `from langchain_openai import ChatOpenAI\n\n${llmVarName} = ChatOpenAI(${togetherParamsOrDefault})`,
       apiKeyName: "TOGETHER_API_KEY",
       packageName: "langchain-openai",
       default: false,

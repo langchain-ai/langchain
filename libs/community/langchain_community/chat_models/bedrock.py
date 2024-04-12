@@ -196,7 +196,7 @@ _message_type_lookups = {"human": "user", "ai": "assistant"}
 
 
 class BedrockChat(BaseChatModel, BedrockBase):
-    """A chat model that uses the Bedrock API."""
+    """Chat model that uses the Bedrock API."""
 
     @property
     def _llm_type(self) -> str:
@@ -308,7 +308,7 @@ class BedrockChat(BaseChatModel, BedrockBase):
         final_output = {}
         for output in llm_outputs:
             output = output or {}
-            usage = output.pop("usage", {})
+            usage = output.get("usage", {})
             for token_type, token_count in usage.items():
                 final_usage[token_type] += token_count
             final_output.update(output)

@@ -1,16 +1,16 @@
 """Test chat model integration."""
 
 import os
-from typing import Any, Callable, Dict, Literal, Type
+from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
 from anthropic.types import ContentBlock, Message, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
 
-from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
+from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import _merge_messages, convert_to_anthropic_tool
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
@@ -18,8 +18,17 @@ os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    ChatAnthropicMessages(model_name="claude-instant-1.2", anthropic_api_key="xyz")
-    ChatAnthropicMessages(model="claude-instant-1.2", anthropic_api_key="xyz")
+    for model in [
+        ChatAnthropic(model_name="claude-instant-1.2", api_key="xyz", timeout=2),
+        ChatAnthropic(
+            model="claude-instant-1.2",
+            anthropic_api_key="xyz",
+            default_request_timeout=2,
+        ),
+    ]:
+        assert model.model == "claude-instant-1.2"
+        assert cast(SecretStr, model.anthropic_api_key).get_secret_value() == "xyz"
+        assert model.default_request_timeout == 2.0
 
 
 @pytest.mark.requires("anthropic")
