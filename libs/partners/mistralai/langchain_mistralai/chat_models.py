@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from operator import itemgetter
 from typing import (
     Any,
@@ -91,14 +92,18 @@ def _convert_mistral_chat_message_to_message(
         for raw_tool_call in raw_tool_calls:
             try:
                 parsed: dict = cast(
-                    dict, parse_tool_call(raw_tool_call, return_id=False)
+                    dict, parse_tool_call(raw_tool_call, return_id=True)
                 )
-                tool_calls.append(
-                    {
-                        **parsed,
-                        **{"id": None},
-                    },
-                )
+                if not parsed["id"]:
+                    tool_call_id = uuid.uuid4().hex[:]
+                    tool_calls.append(
+                        {
+                            **parsed,
+                            **{"id": tool_call_id},
+                        },
+                    )
+                else:
+                    tool_calls.append(parsed)
             except Exception as e:
                 invalid_tool_calls.append(
                     dict(make_invalid_tool_call(raw_tool_call, str(e)))
@@ -160,15 +165,20 @@ def _convert_delta_to_message_chunk(
         if raw_tool_calls := _delta.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
-                tool_call_chunks = [
-                    {
-                        "name": rtc["function"].get("name"),
-                        "args": rtc["function"].get("arguments"),
-                        "id": rtc.get("id"),
-                        "index": rtc.get("index"),
-                    }
-                    for rtc in raw_tool_calls
-                ]
+                tool_call_chunks = []
+                for raw_tool_call in raw_tool_calls:
+                    if not raw_tool_call.get("index") and not raw_tool_call.get("id"):
+                        tool_call_id = uuid.uuid4().hex[:]
+                    else:
+                        tool_call_id = raw_tool_call.get("id")
+                    tool_call_chunks.append(
+                        {
+                            "name": raw_tool_call["function"].get("name"),
+                            "args": raw_tool_call["function"].get("arguments"),
+                            "id": tool_call_id,
+                            "index": raw_tool_call.get("index"),
+                        }
+                    )
             except KeyError:
                 pass
         else:
@@ -195,15 +205,17 @@ def _convert_message_to_mistral_chat_message(
         return dict(role="user", content=message.content)
     elif isinstance(message, AIMessage):
         if "tool_calls" in message.additional_kwargs:
-            tool_calls = [
-                {
+            tool_calls = []
+            for tc in message.additional_kwargs["tool_calls"]:
+                chunk = {
                     "function": {
                         "name": tc["function"]["name"],
                         "arguments": tc["function"]["arguments"],
                     }
                 }
-                for tc in message.additional_kwargs["tool_calls"]
-            ]
+                if _id := tc.get("id"):
+                    chunk["id"] = _id
+                tool_calls.append(chunk)
         else:
             tool_calls = []
         return {
