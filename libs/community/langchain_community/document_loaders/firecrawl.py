@@ -2,6 +2,7 @@ from typing import Iterator, Literal, Optional
 
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
+from langchain_core.utils import get_from_env
 
 
 class FireCrawlLoader(BaseLoader):
@@ -9,17 +10,18 @@ class FireCrawlLoader(BaseLoader):
 
     def __init__(
         self,
-        api_key: str,
         url: str,
         *,
+        api_key: Optional[str] = None,
         mode: Literal["crawl", "scrape"] = "crawl",
         params: Optional[dict] = None,
     ):
         """Initialize with API key and url.
 
         Args:
-            api_key: The Firecrawl API key.
             url: The url to be crawled.
+            api_key: The Firecrawl API key. If not specified will be read from env var
+                FIREWALL_API_KEY.
             mode: The mode to run the loader in. Default is "crawl".
                  Options include "scrape" (single url) and
                  "crawl" (all accessible sub pages).
@@ -40,6 +42,7 @@ class FireCrawlLoader(BaseLoader):
             raise ValueError(
                 f"Unrecognized mode '{mode}'. Expected one of 'crawl', 'scrape'."
             )
+        api_key = api_key or get_from_env("api_key", "FIREWALL_API_KEY")
         self.firecrawl = FirecrawlApp(api_key=api_key)
         self.url = url
         self.mode = mode
