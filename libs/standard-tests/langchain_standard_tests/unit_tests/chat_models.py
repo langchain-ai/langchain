@@ -21,8 +21,7 @@ def my_adder_tool(a: int, b: int) -> int:
 class ChatModelUnitTests(ABC):
     @abstractmethod
     @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        ...
+    def chat_model_class(self) -> Type[BaseChatModel]: ...
 
     @pytest.fixture
     def chat_model_params(self) -> dict:
@@ -32,13 +31,20 @@ class ChatModelUnitTests(ABC):
     def chat_model_has_tool_calling(
         self, chat_model_class: Type[BaseChatModel]
     ) -> bool:
-        return hasattr(chat_model_class, "bind_tools")
+        return (
+            hasattr(chat_model_class, "bind_tools")
+            and chat_model_class.bind_tools is not BaseChatModel.bind_tools
+        )
 
     @pytest.fixture
     def chat_model_has_structured_output(
         self, chat_model_class: Type[BaseChatModel]
     ) -> bool:
-        return hasattr(chat_model_class, "with_structured_output")
+        return (
+            hasattr(chat_model_class, "with_structured_output")
+            and chat_model_class.with_structured_output
+            is not BaseChatModel.with_structured_output
+        )
 
     def test_chat_model_init(
         self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
