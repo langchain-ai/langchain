@@ -18,4 +18,5 @@ class TestAI21Standard(ChatModelUnitTests):
     def chat_model_params(self) -> dict:
         return {
             "model": "j2-ultra",
+            "api_key": "test_api_key",
         }

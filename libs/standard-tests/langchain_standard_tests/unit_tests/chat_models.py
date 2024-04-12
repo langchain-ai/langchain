@@ -52,7 +52,8 @@ class ChatModelUnitTests(ABC):
     def test_chat_model_init_api_key(
         self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
     ) -> None:
-        model = chat_model_class(api_key="test", **chat_model_params)  # type: ignore
+        params = {**chat_model_params, "api_key": "test"}
+        model = chat_model_class(**params)  # type: ignore
         assert model is not None
 
     def test_chat_model_init_streaming(
