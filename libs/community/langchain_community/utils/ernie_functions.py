@@ -28,7 +28,7 @@ def convert_pydantic_to_ernie_function(
     name: Optional[str] = None,
     description: Optional[str] = None,
 ) -> FunctionDescription:
-    """Converts a Pydantic model to a function description for the Ernie API."""
+    """Convert a Pydantic model to a function description for the Ernie API."""
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
     return {
@@ -44,7 +44,7 @@ def convert_pydantic_to_ernie_tool(
     name: Optional[str] = None,
     description: Optional[str] = None,
 ) -> ToolDescription:
-    """Converts a Pydantic model to a function description for the Ernie API."""
+    """Convert a Pydantic model to a function description for the Ernie API."""
     function = convert_pydantic_to_ernie_function(
         model, name=name, description=description
     )

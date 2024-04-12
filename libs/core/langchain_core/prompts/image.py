@@ -3,6 +3,7 @@ from typing import Any, List
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables import run_in_executor
 from langchain_core.utils import image as image_utils
 
 
@@ -36,8 +37,10 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         return ["langchain", "prompts", "image"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
         return ImagePromptValue(image_url=self.format(**kwargs))
+
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        return ImagePromptValue(image_url=await self.aformat(**kwargs))
 
     def format(
         self,
@@ -79,6 +82,9 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             # Don't check literal values here: let the API check them
             output["detail"] = detail  # type: ignore[typeddict-item]
         return output
+
+    async def aformat(self, **kwargs: Any) -> ImageURL:
+        return await run_in_executor(None, self.format, **kwargs)
 
     def pretty_repr(self, html: bool = False) -> str:
         raise NotImplementedError()
