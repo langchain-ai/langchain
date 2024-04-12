@@ -905,7 +905,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         starter_dict["_type"] = self._llm_type
         return starter_dict
 
-    @beta()
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
