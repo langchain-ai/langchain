@@ -540,11 +540,11 @@ class OpenSearchVectorSearch(VectorStore):
         return self.client.indices.exists(index=index_name)
 
     def create_index(
-        self, 
-        dimension: int, 
-        index_name: Optional[str] = uuid.uuid4().hex, 
-        **kwargs:Any,
-    ) -> str:
+        self,
+        dimension: int,
+        index_name: Optional[str] = uuid.uuid4().hex,
+        **kwargs: Any,
+    ) -> Optional[str]:
         """Create a new Index with given arguments"""
         is_appx_search = kwargs.get("is_appx_search", True)
         vector_field = kwargs.get("vector_field", "vector_field")
@@ -568,12 +568,12 @@ class OpenSearchVectorSearch(VectorStore):
             _validate_aoss_with_engines(is_aoss, engine)
 
             mapping = _default_text_mapping(
-                dimension, 
-                engine, 
-                space_type, 
-                ef_search, 
-                ef_construction, 
-                m, 
+                dimension,
+                engine,
+                space_type,
+                ef_search,
+                ef_construction,
+                m,
                 vector_field,
             )
         else:
@@ -734,10 +734,10 @@ class OpenSearchVectorSearch(VectorStore):
         )
 
     def similarity_search(
-        self, 
-        query: str, 
-        k: int = 4, 
-        score_threshold: Optional[float] = 0.0, 
+        self,
+        query: str,
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query.
@@ -804,10 +804,10 @@ class OpenSearchVectorSearch(VectorStore):
         return [doc[0] for doc in docs_with_scores]
 
     def similarity_search_by_vector(
-        self, 
-        embedding: List[float], 
-        k: int = 4, 
-        score_threshold: Optional[float] = 0.0, 
+        self,
+        embedding: List[float],
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to the embedding vector."""
@@ -817,10 +817,10 @@ class OpenSearchVectorSearch(VectorStore):
         return [doc[0] for doc in docs_with_scores]
 
     def similarity_search_with_score(
-        self, 
-        query: str, 
-        k: int = 4, 
-        score_threshold: Optional[float] = 0.0, 
+        self,
+        query: str,
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and it's scores most similar to query.
@@ -846,10 +846,10 @@ class OpenSearchVectorSearch(VectorStore):
         )
 
     def similarity_search_with_score_by_vector(
-        self, 
-        embedding: List[float], 
-        k: int = 4, 
-        score_threshold: Optional[float] = 0.0, 
+        self,
+        embedding: List[float],
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs and it's scores most similar to the embedding vector.
@@ -893,10 +893,10 @@ class OpenSearchVectorSearch(VectorStore):
         return documents_with_scores
 
     def _raw_similarity_search_with_score_by_vector(
-        self, 
-        embedding: List[float], 
-        k: int = 4, 
-        score_threshold: Optional[float] = 0.0, 
+        self,
+        embedding: List[float],
+        k: int = 4,
+        score_threshold: Optional[float] = 0.0,
         **kwargs: Any,
     ) -> List[dict]:
         """Return raw opensearch documents (dict) including vectors,
@@ -979,9 +979,9 @@ class OpenSearchVectorSearch(VectorStore):
                 )
             elif efficient_filter != {}:
                 search_query = _approximate_search_query_with_efficient_filter(
-                    embedding, 
-                    efficient_filter, 
-                    k=k, 
+                    embedding,
+                    efficient_filter,
+                    k=k,
                     vector_field=vector_field,
                     score_threshold=score_threshold,
                 )
@@ -991,36 +991,39 @@ class OpenSearchVectorSearch(VectorStore):
                     " `efficient_filter`"
                 )
                 search_query = _approximate_search_query_with_efficient_filter(
-                    embedding, lucene_filter, k=k, vector_field=vector_field,
-                    score_threshold=score_threshold
+                    embedding,
+                    lucene_filter,
+                    k=k,
+                    vector_field=vector_field,
+                    score_threshold=score_threshold,
                 )
             else:
                 search_query = _default_approximate_search_query(
-                    embedding, 
-                    k=k, 
-                    vector_field=vector_field, 
+                    embedding,
+                    k=k,
+                    vector_field=vector_field,
                     score_threshold=score_threshold,
                 )
         elif search_type == SCRIPT_SCORING_SEARCH:
             space_type = kwargs.get("space_type", "l2")
             pre_filter = kwargs.get("pre_filter", MATCH_ALL_QUERY)
             search_query = _default_script_query(
-                embedding, 
-                k, 
-                space_type, 
-                pre_filter, 
-                vector_field, 
+                embedding,
+                k,
+                space_type,
+                pre_filter,
+                vector_field,
                 score_threshold=score_threshold,
             )
         elif search_type == PAINLESS_SCRIPTING_SEARCH:
             space_type = kwargs.get("space_type", "l2Squared")
             pre_filter = kwargs.get("pre_filter", MATCH_ALL_QUERY)
             search_query = _default_painless_scripting_query(
-                embedding, 
-                k, 
-                space_type, 
-                pre_filter, 
-                vector_field, 
+                embedding,
+                k,
+                space_type,
+                pre_filter,
+                vector_field,
                 score_threshold=score_threshold,
             )
         else:

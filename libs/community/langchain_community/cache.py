@@ -19,6 +19,7 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 
     BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -2087,7 +2088,7 @@ class OpenSearchSemanticCache(BaseCache):
         # return vectorstore client for the specific llm string
         if index_name in self._cache_dict:
             return self._cache_dict[index_name]
-        
+
         # create new vectorstore client for the specific llm string
         self._cache_dict[index_name] = OpenSearchVectorStore(
             opensearch_url=self.opensearch_url,
