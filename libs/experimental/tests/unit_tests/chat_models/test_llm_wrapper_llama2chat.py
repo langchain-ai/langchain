@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
 import pytest
-from langchain.callbacks.manager import (
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
