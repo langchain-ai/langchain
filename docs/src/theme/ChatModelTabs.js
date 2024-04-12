@@ -52,7 +52,7 @@ export default function ChatModelTabs(props) {
     togetherParams,
     hideOpenai,
     hideAnthropic,
-    hideCohere = true,
+    hideCohere,
     hideFireworks,
     hideMistral,
     hideGoogle,
