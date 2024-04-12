@@ -1,4 +1,7 @@
 """Callback Handler that writes to a file."""
+
+from __future__ import annotations
+
 from typing import Any, Dict, Optional, TextIO, cast
 
 from langchain_core.agents import AgentAction, AgentFinish

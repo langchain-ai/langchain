@@ -18,6 +18,7 @@ from langchain_core.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
+
 from langchain_core.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainGroup,
@@ -39,6 +40,7 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.callbacks.file import FileCallbackHandler
 
 __all__ = [
     "RetrieverManagerMixin",
@@ -70,4 +72,5 @@ __all__ = [
     "AsyncCallbackManagerForChainGroup",
     "StdOutCallbackHandler",
     "StreamingStdOutCallbackHandler",
+    "FileCallbackHandler",
 ]
