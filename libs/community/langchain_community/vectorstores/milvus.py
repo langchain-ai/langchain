@@ -133,7 +133,7 @@ class Milvus(VectorStore):
         partition_names: Optional[list] = None,
         replica_number: int = 1,
         timeout: Optional[float] = None,
-        shards_num: Optional[int] = None,
+        num_shards: Optional[int] = 1,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -192,7 +192,7 @@ class Milvus(VectorStore):
         self.partition_names = partition_names
         self.replica_number = replica_number
         self.timeout = timeout
-        self.shards_num = shards_num
+        self.num_shards = num_shards
 
         # Create the connection to the server
         if connection_args is None:
@@ -383,7 +383,7 @@ class Milvus(VectorStore):
                 schema=schema,
                 consistency_level=self.consistency_level,
                 using=self.alias,
-                shards_num=self.shards_num,
+                num_shards=self.num_shards,
             )
             # Set the collection properties if they exist
             if self.collection_properties is not None:
