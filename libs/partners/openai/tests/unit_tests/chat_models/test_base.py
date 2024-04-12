@@ -104,7 +104,7 @@ def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_call = {
         "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
         "function": {
-            "arguments": '{"name":"Sally","hair_color":"green"}',
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
             "name": "GenerateUsername",
         },
         "type": "function",
@@ -126,7 +126,7 @@ def test__convert_dict_to_message_tool_call() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
     # Test malformed tool call
-    raw_tool_calls = [
+    raw_tool_calls: list = [
         {
             "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
             "function": {
@@ -138,12 +138,13 @@ def test__convert_dict_to_message_tool_call() -> None:
         {
             "id": "call_abc123",
             "function": {
-                "arguments": '{"name":"Sally","hair_color":"green"}',
+                "arguments": '{"name": "Sally", "hair_color": "green"}',
                 "name": "GenerateUsername",
             },
             "type": "function",
         },
     ]
+    raw_tool_calls = list(sorted(raw_tool_calls, key=lambda x: x["id"]))
     message = {"role": "assistant", "content": None, "tool_calls": raw_tool_calls}
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
@@ -166,7 +167,11 @@ def test__convert_dict_to_message_tool_call() -> None:
         ],
     )
     assert result == expected_output
-    assert _convert_message_to_dict(expected_output) == message
+    reverted_message_dict = _convert_message_to_dict(expected_output)
+    reverted_message_dict["tool_calls"] = list(
+        sorted(reverted_message_dict["tool_calls"], key=lambda x: x["id"])
+    )
+    assert reverted_message_dict == message
 
 
 @pytest.fixture

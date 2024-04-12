@@ -1,5 +1,4 @@
-import warnings
-from typing import Any, List, Literal
+from typing import Any, Dict, List, Literal
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -40,7 +39,15 @@ class AIMessage(BaseMessage):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "messages"]
 
-    @root_validator
+    @property
+    def lc_attributes(self) -> Dict:
+        """Attrs to be serialized even if they are derived from other init args."""
+        return {
+            "tool_calls": self.tool_calls,
+            "invalid_tool_calls": self.invalid_tool_calls,
+        }
+
+    @root_validator()
     def _backwards_compat_tool_calls(cls, values: dict) -> dict:
         raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
         tool_calls = (
@@ -49,12 +56,6 @@ class AIMessage(BaseMessage):
             or values.get("tool_call_chunks")
         )
         if raw_tool_calls and not tool_calls:
-            warnings.warn(
-                "New langchain packages are available that more efficiently handle "
-                "tool calling. Please upgrade your packages to versions that set "
-                "message tool calls. e.g., `pip install --upgrade langchain-anthropic"
-                "`, pip install--upgrade langchain-openai`, etc."
-            )
             try:
                 if issubclass(cls, AIMessageChunk):  # type: ignore
                     values["tool_call_chunks"] = default_tool_chunk_parser(
@@ -87,6 +88,14 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "messages"]
+
+    @property
+    def lc_attributes(self) -> Dict:
+        """Attrs to be serialized even if they are derived from other init args."""
+        return {
+            "tool_calls": self.tool_calls,
+            "invalid_tool_calls": self.invalid_tool_calls,
+        }
 
     @root_validator()
     def init_tool_calls(cls, values: dict) -> dict:
