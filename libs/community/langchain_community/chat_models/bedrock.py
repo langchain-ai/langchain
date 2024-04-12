@@ -196,7 +196,7 @@ _message_type_lookups = {"human": "user", "ai": "assistant"}
 
 
 class BedrockChat(BaseChatModel, BedrockBase):
-    """A chat model that uses the Bedrock API."""
+    """Chat model that uses the Bedrock API."""
 
     @property
     def _llm_type(self) -> str:
