@@ -70,7 +70,6 @@ class ApertureDB(VectorStore):
         """Checks if the descriptor set exists, if not, creates it"""
         find_ds_query = [{
             "FindDescriptorSet": {
-                "_ref": 1,
                 "with_name": descriptor_set,
                 "results": {
                     "count": True
@@ -97,7 +96,7 @@ class ApertureDB(VectorStore):
         embeddings = self.embedding_function.embed_documents(texts)
         if metadatas is None:
             metadatas = repeat({})
-        refs = cycle(range(1,100000))
+        refs = cycle(range(1,100000,2))
         data = zip(texts, embeddings, metadatas, refs)
 
         commands = []
@@ -136,9 +135,9 @@ class ApertureDB(VectorStore):
                 }
             })
 
-        status, responses, blobs = aperturedb.ParallelQuery.execute_batch(q=commands, blobs=blobs, db=self.connection, commands_per_query=2, blobs_per_query=2)
+        status, responses, blobs = aperturedb.ParallelQuery.execute_batch(q=commands, blobs=blobs, db=self.connection, commands_per_query=3, blobs_per_query=2)
         assert status == 0, responses
-        unique_ids = [r["_uniqueid"] for r in responses[-1]["FindDescriptor"]["entities"]]
+        unique_ids = [r["_uniqueid"] for r in responses[2::3]["FindDescriptor"]["entities"]]
         return unique_ids
 
     def delete(self, ids: List[str]) -> Optional[bool]:
