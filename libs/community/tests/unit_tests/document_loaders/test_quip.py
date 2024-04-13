@@ -21,7 +21,7 @@ def mock_quip():  # type: ignore
         yield mock_quip
 
 
-@pytest.mark.requires("quip_api")
+@pytest.mark.requires("quip_api", "beautifulsoup4")
 class TestQuipLoader:
     API_URL = "https://example-api.quip.com"
     DOC_URL_PREFIX = ("https://example.quip.com",)

@@ -234,11 +234,11 @@ class QuipLoader(BaseLoader):
         return None
 
     @staticmethod
-    def remove_unexpected_character(text: str):
+    def remove_unexpected_character(text: str) -> str:
         # In quip, for an empty string
         return text.replace("\u200b", "")
 
-    def handle_rate_limit(self, e):
+    def handle_rate_limit(self, e) -> bool:
         if self.retry_rate_limit and e.code == 503 and "Over Rate Limit" in str(e):
             # Retry later.
             logging.info(f"headers: {e.http_error.headers}")

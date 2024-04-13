@@ -815,6 +815,7 @@ _module_lookup = {
     "PyPDFium2Loader": "langchain_community.document_loaders.pdf",
     "PySparkDataFrameLoader": "langchain_community.document_loaders.pyspark_dataframe",
     "PythonLoader": "langchain_community.document_loaders.python",
+    "QuipLoader": "langchain_community.document_loaders.quip",
     "RSSFeedLoader": "langchain_community.document_loaders.rss",
     "ReadTheDocsLoader": "langchain_community.document_loaders.readthedocs",
     "RecursiveUrlLoader": "langchain_community.document_loaders.recursive_url_loader",
