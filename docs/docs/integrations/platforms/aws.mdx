@@ -112,6 +112,17 @@ See a [usage example](/docs/integrations/document_loaders/amazon_textract).
 from langchain_community.document_loaders import AmazonTextractPDFLoader
 ```
 
+### Amazon Athena
+
+>[Amazon Athena](https://aws.amazon.com/athena/) is a serverless, interactive analytics service built
+>on open-source frameworks, supporting open-table and file formats.
+
+See a [usage example](/docs/integrations/document_loaders/athena).
+
+```python
+from langchain_community.document_loaders.athena import AthenaLoader
+```
+
 ## Vector stores
 
 ### Amazon OpenSearch Service
@@ -283,7 +294,7 @@ We need to install the `boto3` and `nltk` libraries.
 pip install boto3 nltk
 ```
 
-See a [usage example](/docs/guides/safety/amazon_comprehend_chain).
+See a [usage example](/docs/guides/productionization/safety/amazon_comprehend_chain).
 
 ```python
 from langchain_experimental.comprehend_moderation import AmazonComprehendModerationChain

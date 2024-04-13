@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -34,7 +35,11 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    agenerate_from_stream,
+    generate_from_stream,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -46,8 +51,10 @@ from langchain_core.messages import (
     FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    InvalidToolCall,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
     ToolMessage,
     ToolMessageChunk,
 )
@@ -59,6 +66,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -99,10 +108,24 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
-        if tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
+        tool_calls = []
+        invalid_tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
         return AIMessage(
-            content=content, additional_kwargs=additional_kwargs, name=name, id=id_
+            content=content,
+            additional_kwargs=additional_kwargs,
+            name=name,
+            id=id_,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
         )
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
@@ -149,14 +172,25 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = "assistant"
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
-            # If function call only, content is None not empty string
-            if message_dict["content"] == "":
-                message_dict["content"] = None
-        if "tool_calls" in message.additional_kwargs:
+        if message.tool_calls or message.invalid_tool_calls:
+            message_dict["tool_calls"] = [
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+            ] + [
+                _lc_invalid_tool_call_to_openai_tool_call(tc)
+                for tc in message.invalid_tool_calls
+            ]
+        elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
-            # If tool calls only, content is None not empty string
-            if message_dict["content"] == "":
-                message_dict["content"] = None
+            tool_call_supported_props = {"id", "type", "function"}
+            message_dict["tool_calls"] = [
+                {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
+                for tool_call in message_dict["tool_calls"]
+            ]
+        else:
+            pass
+        # If tool calls present, content null value should be None not empty string.
+        if "function_call" in message_dict or "tool_calls" in message_dict:
+            message_dict["content"] = message_dict["content"] or None
     elif isinstance(message, SystemMessage):
         message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
@@ -184,14 +218,30 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
-    if _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = _dict["tool_calls"]
+    tool_call_chunks = []
+    if raw_tool_calls := _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        try:
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc["index"],
+                }
+                for rtc in raw_tool_calls
+            ]
+        except KeyError:
+            pass
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(
-            content=content, additional_kwargs=additional_kwargs, id=id_
+            content=content,
+            additional_kwargs=additional_kwargs,
+            id=id_,
+            tool_call_chunks=tool_call_chunks,
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content, id=id_)
@@ -236,7 +286,7 @@ class ChatOpenAI(BaseChatModel):
 
             from langchain_openai import ChatOpenAI
 
-            model = ChatOpenAI(model_name="gpt-3.5-turbo")
+            model = ChatOpenAI(model="gpt-3.5-turbo")
     """
 
     @property
@@ -453,28 +503,33 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        for chunk in self.client.create(messages=message_dicts, **params):
-            if not isinstance(chunk, dict):
-                chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
-                continue
-            choice = chunk["choices"][0]
-            if choice["delta"] is None:
-                continue
-            chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
-            default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
-            )
-            yield chunk
+        with self.client.create(messages=message_dicts, **params) as response:
+            for chunk in response:
+                if not isinstance(chunk, dict):
+                    chunk = chunk.model_dump()
+                if len(chunk["choices"]) == 0:
+                    continue
+                choice = chunk["choices"][0]
+                if choice["delta"] is None:
+                    continue
+                chunk = _convert_delta_to_message_chunk(
+                    choice["delta"], default_chunk_class
+                )
+                generation_info = {}
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
+                default_chunk_class = chunk.__class__
+                chunk = ChatGenerationChunk(
+                    message=chunk, generation_info=generation_info or None
+                )
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text, chunk=chunk, logprobs=logprobs
+                    )
+                yield chunk
 
     def _generate(
         self,
@@ -483,12 +538,13 @@ class ChatOpenAI(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            **params,
-            **({"stream": self.streaming} if self.streaming else {}),
-            **kwargs,
-        }
+        params = {**params, **kwargs}
         response = self.client.create(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -546,30 +602,34 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        async for chunk in await self.async_client.create(
-            messages=message_dicts, **params
-        ):
-            if not isinstance(chunk, dict):
-                chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
-                continue
-            choice = chunk["choices"][0]
-            if choice["delta"] is None:
-                continue
-            chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
-            default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
-            )
-            yield chunk
+        response = await self.async_client.create(messages=message_dicts, **params)
+        async with response:
+            async for chunk in response:
+                if not isinstance(chunk, dict):
+                    chunk = chunk.model_dump()
+                if len(chunk["choices"]) == 0:
+                    continue
+                choice = chunk["choices"][0]
+                if choice["delta"] is None:
+                    continue
+                chunk = _convert_delta_to_message_chunk(
+                    choice["delta"], default_chunk_class
+                )
+                generation_info = {}
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
+                default_chunk_class = chunk.__class__
+                chunk = ChatGenerationChunk(
+                    message=chunk, generation_info=generation_info or None
+                )
+                if run_manager:
+                    await run_manager.on_llm_new_token(
+                        token=chunk.text, chunk=chunk, logprobs=logprobs
+                    )
+                yield chunk
 
     async def _agenerate(
         self,
@@ -578,12 +638,14 @@ class ChatOpenAI(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.streaming:
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
+
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            **params,
-            **({"stream": self.streaming} if self.streaming else {}),
-            **kwargs,
-        }
+        params = {**params, **kwargs}
         response = await self.async_client.create(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -760,7 +822,10 @@ class ChatOpenAI(BaseChatModel):
                         "function": {"name": tool_choice},
                     }
             elif isinstance(tool_choice, bool):
-                tool_choice = formatted_tools[0]
+                tool_choice = {
+                    "type": "function",
+                    "function": {"name": formatted_tools[0]["function"]["name"]},
+                }
             elif isinstance(tool_choice, dict):
                 if (
                     formatted_tools[0]["function"]["name"]
@@ -1010,3 +1075,27 @@ class ChatOpenAI(BaseChatModel):
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and issubclass(obj, BaseModel)
+
+
+def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
+    return {
+        "type": "function",
+        "id": tool_call["id"],
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        },
+    }
+
+
+def _lc_invalid_tool_call_to_openai_tool_call(
+    invalid_tool_call: InvalidToolCall,
+) -> dict:
+    return {
+        "type": "function",
+        "id": invalid_tool_call["id"],
+        "function": {
+            "name": invalid_tool_call["name"],
+            "arguments": invalid_tool_call["args"],
+        },
+    }

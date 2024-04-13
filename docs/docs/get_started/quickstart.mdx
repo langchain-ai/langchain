@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Quickstart
 
 In this quickstart we'll show you how to:
@@ -90,12 +94,12 @@ from langchain_openai import ChatOpenAI
 llm = ChatOpenAI()
 ```
 
-If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+If you'd prefer not to set an environment variable you can pass the key in directly via the `api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
 from langchain_openai import ChatOpenAI
 
-llm = ChatOpenAI(openai_api_key="...")
+llm = ChatOpenAI(api_key="...")
 ```
 
   </TabItem>
@@ -137,10 +141,10 @@ from langchain_anthropic import ChatAnthropic
 llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=0.2, max_tokens=1024)
 ```
 
-If you'd prefer not to set an environment variable you can pass the key in directly via the `anthropic_api_key` named parameter when initiating the Anthropic Chat Model class:
+If you'd prefer not to set an environment variable you can pass the key in directly via the `api_key` named parameter when initiating the Anthropic Chat Model class:
 
 ```python
-llm = ChatAnthropic(anthropic_api_key="...")
+llm = ChatAnthropic(api_key="...")
 ```
 
   </TabItem>
@@ -149,7 +153,7 @@ llm = ChatAnthropic(anthropic_api_key="...")
 First we'll need to import the Cohere SDK package.
 
 ```shell
-pip install cohere
+pip install langchain-cohere
 ```
 
 Accessing the API requires an API key, which you can get by creating an account and heading [here](https://dashboard.cohere.com/api-keys). Once we have a key we'll want to set it as an environment variable by running:
@@ -161,7 +165,7 @@ export COHERE_API_KEY="..."
 We can then initialize the model:
 
 ```python
-from langchain_community.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 
 llm = ChatCohere()
 ```
@@ -169,7 +173,7 @@ llm = ChatCohere()
 If you'd prefer not to set an environment variable you can pass the key in directly via the `cohere_api_key` named parameter when initiating the Cohere LLM class:
 
 ```python
-from langchain_community.chat_models import ChatCohere
+from langchain_cohere import ChatCohere
 
 llm = ChatCohere(cohere_api_key="...")
 ```
@@ -505,7 +509,7 @@ from langchain.agents import AgentExecutor
 # Get the prompt to use - you can modify this!
 prompt = hub.pull("hwchase17/openai-functions-agent")
 
-# You need to set OPENAI_API_KEY environment variable or pass it as argument `openai_api_key`.
+# You need to set OPENAI_API_KEY environment variable or pass it as argument `api_key`.
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 agent = create_openai_functions_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)

@@ -41,6 +41,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.messages.base import BaseMessage
 from langchain_core.output_parsers import (
     BaseOutputParser,
     CommaSeparatedListOutputParser,
@@ -86,6 +87,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
+from tests.unit_tests.stubs import AnyStr
 
 
 class FakeTracer(BaseTracer):
@@ -105,6 +107,12 @@ class FakeTracer(BaseTracer):
         if uuid not in self.uuids_map:
             self.uuids_map[uuid] = next(self.uuids_generator)
         return self.uuids_map[uuid]
+
+    def _replace_message_id(self, maybe_message: Any) -> Any:
+        if isinstance(maybe_message, BaseMessage):
+            maybe_message.id = AnyStr()
+
+        return maybe_message
 
     def _copy_run(self, run: Run) -> Run:
         if run.dotted_order:
@@ -129,6 +137,16 @@ class FakeTracer(BaseTracer):
                 "child_execution_order": None,
                 "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
                 "dotted_order": new_dotted_order,
+                "inputs": {
+                    k: self._replace_message_id(v) for k, v in run.inputs.items()
+                }
+                if isinstance(run.inputs, dict)
+                else run.inputs,
+                "outputs": {
+                    k: self._replace_message_id(v) for k, v in run.outputs.items()
+                }
+                if isinstance(run.outputs, dict)
+                else run.outputs,
             }
         )
 
@@ -339,6 +357,27 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             }
         },
         "definitions": {
+            "ToolCall": {
+                "title": "ToolCall",
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "args": {"title": "Args", "type": "object"},
+                    "id": {"title": "Id", "type": "string"},
+                },
+                "required": ["name", "args", "id"],
+            },
+            "InvalidToolCall": {
+                "title": "InvalidToolCall",
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "args": {"title": "Args", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
+                    "error": {"title": "Error", "type": "string"},
+                },
+                "required": ["name", "args", "id", "error"],
+            },
             "AIMessage": {
                 "title": "AIMessage",
                 "description": "Message from an AI.",
@@ -370,12 +409,24 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["ai"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
                         "type": "boolean",
+                    },
+                    "tool_calls": {
+                        "title": "Tool Calls",
+                        "default": [],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/ToolCall"},
+                    },
+                    "invalid_tool_calls": {
+                        "title": "Invalid Tool Calls",
+                        "default": [],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/InvalidToolCall"},
                     },
                 },
                 "required": ["content"],
@@ -411,8 +462,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["human"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
@@ -452,8 +503,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["chat"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "role": {"title": "Role", "type": "string"},
                 },
                 "required": ["content", "role"],
@@ -489,8 +540,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["system"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                 },
                 "required": ["content"],
             },
@@ -525,8 +576,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["function"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                 },
                 "required": ["content", "name"],
             },
@@ -561,8 +612,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["tool"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "tool_call_id": {"title": "Tool Call Id", "type": "string"},
                 },
                 "required": ["content", "tool_call_id"],
@@ -1922,7 +1973,7 @@ def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo")
+    ) == AIMessage(content="foo", id=AnyStr())
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1947,8 +1998,8 @@ def test_prompt_with_chat_model(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo"),
-        AIMessage(content="foo"),
+        AIMessage(content="foo", id=AnyStr()),
+        AIMessage(content="foo", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -1988,9 +2039,9 @@ def test_prompt_with_chat_model(
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
     ] == [
-        AIMessageChunk(content="f"),
-        AIMessageChunk(content="o"),
-        AIMessageChunk(content="o"),
+        AIMessageChunk(content="f", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2026,7 +2077,7 @@ async def test_prompt_with_chat_model_async(
     tracer = FakeTracer()
     assert await chain.ainvoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo")
+    ) == AIMessage(content="foo", id=AnyStr())
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -2051,8 +2102,8 @@ async def test_prompt_with_chat_model_async(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo"),
-        AIMessage(content="foo"),
+        AIMessage(content="foo", id=AnyStr()),
+        AIMessage(content="foo", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -2095,9 +2146,9 @@ async def test_prompt_with_chat_model_async(
             {"question": "What is your name?"}, dict(callbacks=[tracer])
         )
     ] == [
-        AIMessageChunk(content="f"),
-        AIMessageChunk(content="o"),
-        AIMessageChunk(content="o"),
+        AIMessageChunk(content="f", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2762,7 +2813,7 @@ def test_prompt_with_chat_model_and_parser(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
+    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
 
     assert tracer.runs == snapshot
 
@@ -2895,7 +2946,7 @@ What is your name?"""
             ),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
+    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
     assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 4
@@ -2941,7 +2992,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot"),
+        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
         "llm": "i'm a textbot",
     }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -3151,7 +3202,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot"),
+        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
         "llm": "i'm a textbot",
         "passthrough": ChatPromptValue(
             messages=[
@@ -3360,12 +3411,13 @@ async def test_map_astream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": AIMessageChunk(content="i", id=AnyStr())},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
     assert final_value.get("chat").content == "i'm a chatbot"
+    final_value["chat"].id = AnyStr()
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == prompt.invoke(
         {"question": "What is your name?"}

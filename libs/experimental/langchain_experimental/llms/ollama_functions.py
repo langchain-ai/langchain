@@ -89,7 +89,7 @@ function in "functions".'
         )
         if "functions" in kwargs:
             del kwargs["functions"]
-        response_message = self.llm.predict_messages(
+        response_message = self.llm.invoke(
             [system_message] + messages, stop=stop, callbacks=run_manager, **kwargs
         )
         chat_generation_content = response_message.content
