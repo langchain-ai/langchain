@@ -818,9 +818,9 @@ class FAISS(VectorStore):
         """
 
         faiss = dependable_faiss_import()
-        vector = self._embed_query(query)
-
-        vector = np.array([vector], dtype=np.float32)
+        
+        vector_ = self._embed_query(query)
+        vector = np.array([vector_], dtype=np.float32)
         if self._normalize_L2:
             faiss.normalize_L2(vector)
 
@@ -836,10 +836,12 @@ class FAISS(VectorStore):
         pages = []
         for index in range(start_index, end_index + 1):
             doc = self.docstore.search(self.index_to_docstore_id[index])
+            assert isinstance(doc, Document)
             page_content += doc.page_content
             pages.append(doc.metadata["page"])
 
         # Creating new output Document
+        assert isinstance(doc, Document)
         metadata = {
             "source": doc.metadata["source"],
             "primary_index": top_index,
