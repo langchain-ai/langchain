@@ -24,9 +24,12 @@ def test_specifying_adapter_id_argument() -> None:
     assert not llm.adapter_id
 
     llm = Predibase(
-        model="my_llm", predibase_api_key="secret-api-key", adapter_id="my-hf-adapter"
+        model="my_llm",
+        predibase_api_key="secret-api-key",
+        adapter_id="my-hf-adapter",
     )
     assert llm.adapter_id == "my-hf-adapter"
+    assert llm.adapter_version is None
 
     llm = Predibase(
         model="my_llm",
@@ -34,3 +37,27 @@ def test_specifying_adapter_id_argument() -> None:
         predibase_api_key="secret-api-key",
     )
     assert llm.adapter_id == "my-other-hf-adapter"
+    assert llm.adapter_version is None
+
+
+def test_specifying_adapter_id_and_adapter_version_arguments() -> None:
+    llm = Predibase(model="my_llm", predibase_api_key="secret-api-key")
+    assert not llm.adapter_id
+
+    llm = Predibase(
+        model="my_llm",
+        predibase_api_key="secret-api-key",
+        adapter_id="my-hf-adapter",
+        adapter_version=None,
+    )
+    assert llm.adapter_id == "my-hf-adapter"
+    assert llm.adapter_version is None
+
+    llm = Predibase(
+        model="my_llm",
+        adapter_id="my-other-hf-adapter",
+        adapter_version=3,
+        predibase_api_key="secret-api-key",
+    )
+    assert llm.adapter_id == "my-other-hf-adapter"
+    assert llm.adapter_version == 3

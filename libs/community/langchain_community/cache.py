@@ -1998,7 +1998,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
             k=1,
             kind=self.kind,
             ef_search=self.ef_search,
-            score_threshold=self.score_threshold,
+            score_threshold=self.score_threshold,  # type: ignore[arg-type]
         )
         if results:
             for document in results:

@@ -42,6 +42,7 @@ ZHIPUAI_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
 @contextmanager
 def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
+    """Connect to a server-sent event stream."""
     from httpx_sse import EventSource
 
     with client.stream(method, url, **kwargs) as response:
@@ -52,6 +53,7 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
 async def aconnect_sse(
     client: Any, method: str, url: str, **kwargs: Any
 ) -> AsyncIterator:
+    """Async connect to a server-sent event stream."""
     from httpx_sse import EventSource
 
     async with client.stream(method, url, **kwargs) as response:
