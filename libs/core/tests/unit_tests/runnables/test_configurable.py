@@ -29,6 +29,12 @@ class MyRunnable(RunnableSerializable[str, str]):
     def invoke(self, input: str, config: Optional[RunnableConfig] = None) -> Any:
         return input + self._my_hidden_property
 
+    def my_custom_function(self) -> str:
+        return self.my_property
+
+    def my_custom_function_w_config(self, config: RunnableConfig) -> str:
+        return self.my_property
+
 
 def test_doubly_set_configurable() -> None:
     """Test that setting a configurable field with a default value works"""
@@ -82,4 +88,37 @@ def test_field_alias_set_configurable() -> None:
             "d", config=RunnableConfig(configurable={"my_property": "c"})
         )
         == "dc"
+    )
+
+
+def test_config_passthrough() -> None:
+    runnable = MyRunnable(my_property="a")  # type: ignore
+    configurable_runnable = runnable.configurable_fields(
+        my_property=ConfigurableField(
+            id="my_property",
+            name="My property",
+            description="The property to test",
+        )
+    )
+    # first one
+    assert configurable_runnable.my_custom_function() == "a"
+    assert (
+        configurable_runnable.my_custom_function_w_config(
+            {"configurable": {"my_property": "b"}}
+        )
+        == "b"
+    )
+    assert (
+        configurable_runnable.my_custom_function_w_config(
+            config={"configurable": {"my_property": "b"}}
+        )
+        == "b"
+    )
+
+    # second one
+    assert (
+        configurable_runnable.with_config(
+            configurable={"my_property": "b"}
+        ).my_custom_function()
+        == "b"
     )

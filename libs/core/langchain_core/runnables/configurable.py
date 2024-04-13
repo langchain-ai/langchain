@@ -85,8 +85,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     @abstractmethod
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
-        ...
+    ) -> Tuple[Runnable[Input, Output], RunnableConfig]: ...
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -218,6 +217,39 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         async for chunk in runnable.atransform(input, config, **kwargs):
             yield chunk
 
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self.default, name)
+        if callable(attr):
+
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                for key, arg in kwargs.items():
+                    if key == "config" and (
+                        isinstance(arg, dict)
+                        and "configurable" in arg
+                        and isinstance(arg["configurable"], dict)
+                    ):
+                        runnable, config = self._prepare(arg)
+                        kwargs = {**kwargs, "config": config}
+                        return getattr(runnable, name)(*args, **kwargs)
+
+                for idx, arg in enumerate(args):
+                    if (
+                        isinstance(arg, dict)
+                        and "configurable" in arg
+                        and isinstance(arg["configurable"], dict)
+                    ):
+                        runnable, config = self._prepare(arg)
+                        args = list(args)
+                        args[idx] = config
+                        return getattr(runnable, name)(*args, **kwargs)
+
+                return attr(*args, **kwargs)
+
+            return wrapper
+
+        else:
+            return attr
+
 
 class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     """Runnable that can be dynamically configured.
@@ -291,19 +323,21 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
             [
-                ConfigurableFieldSpec(
-                    id=spec.id,
-                    name=spec.name,
-                    description=spec.description
-                    or self.default.__fields__[field_name].field_info.description,
-                    annotation=spec.annotation
-                    or self.default.__fields__[field_name].annotation,
-                    default=getattr(self.default, field_name),
-                    is_shared=spec.is_shared,
-                )
-                if isinstance(spec, ConfigurableField)
-                else make_options_spec(
-                    spec, self.default.__fields__[field_name].field_info.description
+                (
+                    ConfigurableFieldSpec(
+                        id=spec.id,
+                        name=spec.name,
+                        description=spec.description
+                        or self.default.__fields__[field_name].field_info.description,
+                        annotation=spec.annotation
+                        or self.default.__fields__[field_name].annotation,
+                        default=getattr(self.default, field_name),
+                        is_shared=spec.is_shared,
+                    )
+                    if isinstance(spec, ConfigurableField)
+                    else make_options_spec(
+                        spec, self.default.__fields__[field_name].field_info.description
+                    )
                 )
                 for field_name, spec in self.fields.items()
             ]
@@ -488,9 +522,11 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             )
             # config specs of the alternatives
             + [
-                prefix_config_spec(s, f"{self.which.id}=={alt_key}")
-                if self.prefix_keys
-                else s
+                (
+                    prefix_config_spec(s, f"{self.which.id}=={alt_key}")
+                    if self.prefix_keys
+                    else s
+                )
                 for alt_key, alt in self.alternatives.items()
                 if isinstance(alt, RunnableSerializable)
                 for s in alt.config_specs
