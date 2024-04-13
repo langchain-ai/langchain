@@ -72,7 +72,6 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
                 char = "\\n"  # Replace the newline character with the escape sequence.
             elif char == "\\":
                 char = "\\\\"
-                escaped = not escaped
             else:
                 escaped = False
         else:
