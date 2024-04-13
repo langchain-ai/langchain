@@ -16,6 +16,7 @@ class AsyncChromiumLoader(BaseLoader):
     def __init__(
         self,
         urls: List[str],
+        headless: bool = True,
     ):
         """
         Initialize the loader with a list of URL paths.
@@ -27,6 +28,7 @@ class AsyncChromiumLoader(BaseLoader):
             ImportError: If the required 'playwright' package is not installed.
         """
         self.urls = urls
+        self.headless = headless
 
         try:
             import playwright  # noqa: F401
@@ -52,7 +54,7 @@ class AsyncChromiumLoader(BaseLoader):
         logger.info("Starting scraping...")
         results = ""
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
+            browser = await p.chromium.launch(headless=self.headless)
             try:
                 page = await browser.new_page()
                 await page.goto(url)
