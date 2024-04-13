@@ -38,9 +38,9 @@ def _handle_exceptions(func):
     try:
       return func(*args, **kwargs)
     except RuntimeError as db_err:
-      # Handle a known type of error (e.g., GPU-related) specifically
+      # Handle a known type of error (e.g., DB-related) specifically
       logger.exception("DB-related error occurred.")
-      raise RuntimeError("Failed due to a GPU issue: {}".format(db_err)) from db_err
+      raise RuntimeError("Failed due to a DB issue: {}".format(db_err)) from db_err
     except ValueError as val_err:
       # Handle another known type of error specifically
       logger.exception("Validation error.")
@@ -79,16 +79,19 @@ def _index_exists(client: oracledb.Connection, index_name: str) -> bool:
 
 
 def _get_distance_function(distance_strategy: DistanceStrategy) -> str:
-  if distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
-    distance_function = 'EUCLIDEAN'
-  elif distance_strategy == DistanceStrategy.DOT_PRODUCT:
-    distance_function = 'DOT'
-  elif distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
-    distance_function = 'COSINE'
-  else:
-    distance_function = 'EUCLIDEAN'
-  return distance_function
+  # Dictionary to map distance strategies to their corresponding function names
+  distance_strategy2function = {
+    DistanceStrategy.EUCLIDEAN_DISTANCE: 'EUCLIDEAN',
+    DistanceStrategy.DOT_PRODUCT: 'DOT',
+    DistanceStrategy.COSINE: 'COSINE'
+  }
 
+  # Attempt to return the corresponding distance function
+  if distance_strategy in distance_strategy2function:
+    return distance_strategy2function[distance_strategy]
+
+  # If it's an unsupported distance strategy, raise an error
+  raise ValueError(f"Unsupported distance strategy: {distance_strategy}")
 
 def _get_index_name(base_name: str):
   unique_id = str(uuid.uuid4()).replace('-', '')
