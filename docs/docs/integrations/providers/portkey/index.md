@@ -1,6 +1,6 @@
 # Portkey
 
-[Portkey](https://portkey.ai/docs) is the Control Panel for AI apps. With it's popular AI Gateway and Observability Suite, hundreds of teams ship **reliable**, **cost-efficient**, and **fast** apps.
+[Portkey](https://portkey.ai) is the Control Panel for AI apps. With it's popular AI Gateway and Observability Suite, hundreds of teams ship **reliable**, **cost-efficient**, and **fast** apps.
 
 ## LLMOps for Langchain
 
@@ -42,14 +42,14 @@ llm.invoke("What is the meaning of life, universe and everything?")
 
 The request is routed through your Portkey AI Gateway to the specified `provider`. Portkey will also start logging all the requests in your account that makes debugging extremely simple.
 
-![](https://files.gitbook.com/v0/b/gitbook-x-prod.appspot.com/o/spaces%2Fy3MCfQqftZOnHqSmVV5x%2Fuploads%2FJ49JMIWDpzvziNWHHTBq%2Flangchain-logs.gif?alt=media&token=1a1d1eaa-514e-4e35-9530-74c3491fb99e)
+![View logs from Langchain in Portkey](https://assets.portkey.ai/docs/langchain-logs.gif)
 
 ## Using 150+ models through the AI Gateway
 The power of the AI gateway comes when you're able to use the above code snippet to connect with 150+ models across 20+ providers supported through the AI gateway.
 
 Let's modify the code above to make a call to Anthropic's `claude-3-opus-20240229` model.
 
-Portkey supports **[Virtual Keys](/o/GD1RlbGGOgZwe0kjTMrT/s/y3MCfQqftZOnHqSmVV5x/product/ai-gateway-streamline-llm-integrations/virtual-keys)** which are an easy way to store and manage API keys in a secure vault. Lets try using a Virtual Key to make LLM calls. You can navigate to the Virtual Keys tab in Portkey and create a new key for Anthropic.
+Portkey supports **[Virtual Keys](https://docs.portkey.ai/docs/product/ai-gateway-streamline-llm-integrations/virtual-keys)** which are an easy way to store and manage API keys in a secure vault. Lets try using a Virtual Key to make LLM calls. You can navigate to the Virtual Keys tab in Portkey and create a new key for Anthropic.
 
 The `virtual_key` parameter sets the authentication and provider for the AI provider being used. In our case we're using the Anthropic Virtual key.
 
@@ -73,7 +73,7 @@ The Portkey AI gateway will authenticate the API request to Anthropic and get th
 
 The AI gateway extends Langchain's `ChatOpenAI` class making it a single interface to call any provider and any model.
 
-## Advanced Routing-  Load Balancing, Fallbacks, Retries
+## Advanced Routing - Load Balancing, Fallbacks, Retries
 The Portkey AI Gateway brings capabilities like load-balancing, fallbacks, experimentation and canary testing to Langchain through a configuration-first approach.
 
 Let's take an **example** where we might want to split traffic between `gpt-4` and `claude-opus` 50:50 to test the two large models. The gateway configuration for this would look like the following:
@@ -110,7 +110,7 @@ llm.invoke("What is the meaning of life, universe and everything?")
 
 When the LLM is invoked, Portkey will distribute the requests to `gpt-4` and `claude-3-opus-20240229` in the ratio of the defined weights.
 
-You can find more config examples [here](/o/GD1RlbGGOgZwe0kjTMrT/s/y3MCfQqftZOnHqSmVV5x/api-reference/config-object#examples).
+You can find more config examples [here](https://docs.portkey.ai/docs/api-reference/config-object#examples).
 
 ## **Tracing Chains & Agents**
 
@@ -161,7 +161,7 @@ agent_executor.invoke({
 ```
 
 **You can see the requests' logs along with the trace id on Portkey dashboard:**
-![Langchain Agent Logs on Portkey](https://docs.portkey.ai/~gitbook/image?url=https:%2F%2F2878743244-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252Fy3MCfQqftZOnHqSmVV5x%252Fuploads%252FGACmPzWG6w6dCfxHYYG8%252Fagent_tracing.gif%3Falt=media%26token=ac96a2d8-cdb4-4827-b1a4-3e4b463da0b1&width=768&dpr=4&quality=100&sign=6e52e31743b4584562c5df30dd0aad3bb02c4cb494fd8a7e4483a5acfc08b83d)
+![Langchain Agent Logs on Portkey](https://assets.portkey.ai/docs/agent_tracing.gif)
 
 
 Additional Docs are available here:
