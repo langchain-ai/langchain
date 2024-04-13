@@ -1,0 +1,163 @@
+# Conceptual Guide
+
+import ThemedImage from '@theme/ThemedImage';
+
+Introductions to all the key parts of LangChain you’ll need to know:
+
+## Architecture
+
+LangChain as a framework consists of several pieces.
+
+<ThemedImage
+  alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
+  sources={{
+    light: '/svg/langchain_stack.svg',
+    dark: '/svg/langchain_stack_dark.svg',
+  }}
+  title="LangChain Framework Overview"
+/>
+
+Concretely, the framework consists of the following open-source libraries:
+
+- **`langchain-core`**: Base abstractions of different components and ways to chain them together.
+- **`langchain-community`**: Third party integrations.
+  - Partner packages (e.g. **`langchain-openai`**, **`langchain-anthropic`**, etc.): Some integrations have been further split into their own lightweight packages that only depend on **`langchain-core`**.
+- **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
+- **[langgraph](/docs/langgraph)**: Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+- **[langserve](/docs/langserve)**: Deploy LangChain chains as REST APIs.
+- **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
+
+## Installation
+
+There are a few different ways to think about installing LangChain.
+
+If you want to work with high level abstractions, you should install the `langchain` package.
+
+```shell
+pip install langchain
+```
+
+If you want to work with specific integrations, you will need to install them separately.
+See [here](integrations) for a list of integrations and how to install them.
+
+For working with LangSmith, you will need to set up a LangSmith developer account [here](smith.langchain.com) and get an API key.
+After that, you can enable it by setting environment variables:
+
+```shell
+export LANGCHAIN_API_KEY=ls__...
+```
+
+## Components
+
+
+
+## LangChain Expression Language
+
+LangChain Expression Language, or LCEL, is a declarative way to easily compose chains together.
+LCEL was designed from day 1 to **support putting prototypes in production, with no code changes**, from the simplest “prompt + LLM” chain to the most complex chains (we’ve seen folks successfully run LCEL chains with 100s of steps in production). To highlight a few of the reasons you might want to use LCEL:
+
+[**First-class streaming support**](/docs/expression_language/streaming)
+When you build your chains with LCEL you get the best possible time-to-first-token (time elapsed until the first chunk of output comes out). For some chains this means eg. we stream tokens straight from an LLM to a streaming output parser, and you get back parsed, incremental chunks of output at the same rate as the LLM provider outputs the raw tokens.
+
+[**Async support**](/docs/expression_language/interface)
+Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langsmith) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
+
+[**Optimized parallel execution**](/docs/expression_language/primitives/parallel)
+Whenever your LCEL chains have steps that can be executed in parallel (eg if you fetch documents from multiple retrievers) we automatically do it, both in the sync and the async interfaces, for the smallest possible latency.
+
+[**Retries and fallbacks**](/docs/guides/productionization/fallbacks)
+Configure retries and fallbacks for any part of your LCEL chain. This is a great way to make your chains more reliable at scale. We’re currently working on adding streaming support for retries/fallbacks, so you can get the added reliability without any latency cost.
+
+[**Access intermediate results**](/docs/expression_language/interface#async-stream-events-beta)
+For more complex chains it’s often very useful to access the results of intermediate steps even before the final output is produced. This can be used to let end-users know something is happening, or even just to debug your chain. You can stream intermediate results, and it’s available on every [LangServe](/docs/langserve) server.
+
+[**Input and output schemas**](/docs/expression_language/interface#input-schema)
+Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
+
+[**Seamless LangSmith tracing**](/docs/langsmith)
+As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
+With LCEL, **all** steps are automatically logged to [LangSmith](/docs/langsmith/) for maximum observability and debuggability.
+
+[**Seamless LangServe deployment**](/docs/langserve)
+Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
+
+### Interface
+
+To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about [in this section](/docs/expression_language/primitives).
+
+This is a standard interface, which makes it easy to define custom chains as well as invoke them in a standard way.
+The standard interface includes:
+
+- [`stream`](#stream): stream back chunks of the response
+- [`invoke`](#invoke): call the chain on an input
+- [`batch`](#batch): call the chain on a list of inputs
+
+These also have corresponding async methods that should be used with [asyncio](https://docs.python.org/3/library/asyncio.html) `await` syntax for concurrency:
+
+- [`astream`](#async-stream): stream back chunks of the response async
+- [`ainvoke`](#async-invoke): call the chain on an input async
+- [`abatch`](#async-batch): call the chain on a list of inputs async
+- [`astream_log`](#async-stream-intermediate-steps): stream back intermediate steps as they happen, in addition to the final response
+- [`astream_events`](#async-stream-events): **beta** stream events as they happen in the chain (introduced in `langchain-core` 0.1.14)
+
+The **input type** and **output type** varies by component:
+
+| Component | Input Type | Output Type |
+| --- | --- | --- |
+| Prompt | Dictionary | PromptValue |
+| ChatModel | Single string, list of chat messages or a PromptValue | ChatMessage |
+| LLM | Single string, list of chat messages or a PromptValue | String |
+| OutputParser | The output of an LLM or ChatModel | Depends on the parser |
+| Retriever | Single string | List of Documents |
+| Tool | Single string or dictionary, depending on the tool | Depends on the tool |
+
+
+All runnables expose input and output **schemas** to inspect the inputs and outputs:
+- [`input_schema`](#input-schema): an input Pydantic model auto-generated from the structure of the Runnable
+- [`output_schema`](#output-schema): an output Pydantic model auto-generated from the structure of the Runnable
+
+### Primitives
+
+The following are all different build in runnables or runnable methods.
+
+#### The Pipe Operator
+
+One key advantage of the `Runnable` interface is that any two runnables can be "chained" together into sequences. The output of the previous runnable's `.invoke()` call is passed as input to the next runnable. This can be done using the pipe operator (`|`), or the more explicit `.pipe()` method, which does the same thing. The resulting `RunnableSequence` is itself a runnable, which means it can be invoked, streamed, or piped just like any other runnable.
+
+For example:
+
+```python
+from langchain_anthropic import ChatAnthropic
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+
+prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
+model = ChatAnthropic(model_name="claude-3-haiku-20240307")
+
+chain = prompt | model | StrOutputParser()
+```
+Prompts and models are both runnable, and the output type from the prompt call is the same as the input type of the chat model, so we can chain them together. We can then invoke the resulting sequence like any other runnable:
+
+```python
+chain.invoke({"topic": "bears"})
+```
+
+**Coercion**
+
+We can even combine this chain with more runnables to create another chain. This may involve some input/output formatting using other types of runnables, depending on the required inputs and outputs of the chain components.
+
+For example, let's say we wanted to compose the joke generating chain with another chain that evaluates whether or not the generated joke was funny.
+
+We would need to be careful with how we format the input into the next chain. In the below example, the dict in the chain is automatically parsed and converted into a [`RunnableParallel`](/docs/expression_language/primitives/parallel), which runs all of its values in parallel and returns a dict with the results.
+
+This happens to be the same format the next prompt template expects. Here it is in action:
+
+```python
+from langchain_core.output_parsers import StrOutputParser
+
+analysis_prompt = ChatPromptTemplate.from_template("is this a funny joke? {joke}")
+
+composed_chain = {"joke": chain} | analysis_prompt | model | StrOutputParser()
+
+composed_chain.invoke({"topic": "bears"})
+```
