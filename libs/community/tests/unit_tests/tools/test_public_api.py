@@ -37,6 +37,7 @@ _EXPECTED = [
     "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
+    "DataheraldTextToSQL",
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
