@@ -1247,6 +1247,7 @@ def test_solidity_code_splitter() -> None:
         "}\n  }",
     ]
 
+
 def test_lua_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.LUA, chunk_size=CHUNK_SIZE, chunk_overlap=0
