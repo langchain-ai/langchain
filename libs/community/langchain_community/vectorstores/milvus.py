@@ -133,7 +133,7 @@ class Milvus(VectorStore):
         partition_names: Optional[list] = None,
         replica_number: int = 1,
         timeout: Optional[float] = None,
-        num_shards: Optional[int] = 1,
+        num_shards: Optional[int] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
