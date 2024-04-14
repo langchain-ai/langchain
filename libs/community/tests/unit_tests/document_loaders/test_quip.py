@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.quip import QuipLoader
 
 try:
-    from quip_api.quip import QuipClient  # noqa: F401
+    from quipclient.quip import QuipClient  # noqa: F401
 
     quip_installed = True
 except ImportError:
@@ -17,11 +17,11 @@ except ImportError:
 @pytest.fixture
 def mock_quip():  # type: ignore
     # mock quip_client
-    with patch("quip_api.quip.QuipClient") as mock_quip:
+    with patch("quipclient.quip.QuipClient") as mock_quip:
         yield mock_quip
 
 
-@pytest.mark.requires("quip_api", "beautifulsoup4")
+@pytest.mark.requires("quipclient", "beautifulsoup4")
 class TestQuipLoader:
     API_URL = "https://example-api.quip.com"
     DOC_URL_PREFIX = ("https://example.quip.com",)

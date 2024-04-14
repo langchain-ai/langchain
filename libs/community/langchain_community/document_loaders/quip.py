@@ -38,13 +38,13 @@ class QuipLoader(BaseLoader):
             retry_rate_limit: retry requests when hit rate_limit, default True
         """
         try:
-            from quip_api.quip import QuipClient
+            from quipclient.quip import QuipClient
         except ImportError:
             raise ImportError(
-                "`quip_api` package not found, please run " "`pip install quip_api`"
+                "`quipclient` package not found, please run " "`pip install quipclient`"
             )
 
-        # enable automatically retry when hit over rate limit error
+        # enable automatically retry when hit overrate limit error
         self.retry_rate_limit = retry_rate_limit
         self.quip_client = QuipClient(
             access_token=access_token, base_url=api_url, request_timeout=request_timeout
@@ -103,9 +103,9 @@ class QuipLoader(BaseLoader):
         self, folder_id: str, depth: int, thread_ids: List[str]
     ) -> None:
         """Get thread ids by folder id and update in thread_ids"""
-        from quip_api.quip import QuipError
-
         try:
+            from quipclient.quip import QuipError
+
             folder = self.quip_client.get_folder(folder_id)
         except QuipError as e:
             if self.handle_rate_limit(e):
@@ -157,7 +157,7 @@ class QuipLoader(BaseLoader):
         include_messages: bool,
         keep_html_format: bool,
     ) -> Optional[Document]:
-        from quip_api.quip import QuipError
+        from quipclient.quip import QuipError
 
         try:
             thread = self.quip_client.get_thread(thread_id)
@@ -238,8 +238,15 @@ class QuipLoader(BaseLoader):
         # In quip, for an empty string
         return text.replace("\u200b", "")
 
-    def handle_rate_limit(self, e) -> bool:
-        if self.retry_rate_limit and e.code == 503 and "Over Rate Limit" in str(e):
+    def handle_rate_limit(self, e: Exception) -> bool:
+        from quipclient.quip import QuipError
+
+        if (
+            self.retry_rate_limit
+            and isinstance(e, QuipError)
+            and e.code == 503
+            and "Over Rate Limit" in str(e)
+        ):
             # Retry later.
             logging.info(f"headers: {e.http_error.headers}")
             reset_time = (
