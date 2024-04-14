@@ -287,7 +287,7 @@ class ChatGroq(BaseChatModel):
                     "id": rtc.get("id"),
                     "index": rtc.get("index"),
                 }
-                for rtc in message.additional_kwargs["tool_calls"]
+                for rtc in message.additional_kwargs.get("tool_calls", [])
             ]
             chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
@@ -358,7 +358,7 @@ class ChatGroq(BaseChatModel):
                     "id": rtc.get("id"),
                     "index": rtc.get("index"),
                 }
-                for rtc in message.additional_kwargs["tool_calls"]
+                for rtc in message.additional_kwargs.get("tool_calls", [])
             ]
             chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
