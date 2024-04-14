@@ -664,7 +664,7 @@ class MilvusHybridSearchRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
         k: int = 4,
-        search_params: Optional[Dict[str, Dict[str, Any]]] = None,
+        ann_search_params: Optional[Dict[str, Dict[str, Any]]] = None,
         include_other_fields: bool = True,
         rerank_params: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
@@ -672,7 +672,7 @@ class MilvusHybridSearchRetriever(BaseRetriever):
     ) -> List[Document]:
         from pymilvus import AnnSearchRequest
         # TODO: add docstring:
-        # search_params = {"dense_vector": {"limit": 10, "expr": 'pk in [1, 2]'}}
+        # ann_search_params = {"dense_vector": {"limit": 10, "expr": 'pk in [1, 2]'}}
 
         if self.col is None:
             logger.debug("No existing collection to search.")
@@ -680,20 +680,23 @@ class MilvusHybridSearchRetriever(BaseRetriever):
 
         available_vector_fields = set(self.vector_fields + self.sparse_vector_fields)
 
+        if not ann_search_params:
+            ann_search_params = {}
+
         ann_search_dict = {}
-        if not search_params:
-            search_params = {}
-        for field, search_kwargs in search_params.items():
+        for field, search_kwargs in ann_search_params.items():
             search_kwargs = deepcopy(search_kwargs)
             if field not in available_vector_fields:
                 logger.info(f"{field} is not a available vector field, ignored")
                 continue
             if "limit" not in search_kwargs:
                 search_kwargs["limit"] = k
+            if "param" not in search_kwargs:
+                search_kwargs["param"] = self.search_params[field]
             ann_search_dict[field] = search_kwargs
 
         if include_other_fields:
-            other_fields = available_vector_fields - set(search_params)
+            other_fields = available_vector_fields - set(ann_search_params)
             for field in other_fields:
                 ann_search_dict[field] = {}
                 ann_search_dict[field]["param"] = deepcopy(self.search_params[field])
