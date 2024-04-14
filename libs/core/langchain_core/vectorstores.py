@@ -40,6 +40,8 @@ from typing import (
     TypeVar,
 )
 
+from langchain_community import vectorstores
+
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
@@ -541,11 +543,7 @@ class VectorStore(ABC):
     def sentence_window_retrieval_search(
         self, query: str, **kwargs: Any
     ) -> List[Document]:
-        """_summary_
-
-        Returns:
-            List[Document]: _description_
-        """
+        """Return docs selected using the sentence window retrieval."""
         raise NotImplementedError
 
     @classmethod
@@ -704,8 +702,15 @@ class VectorStoreRetriever(BaseRetriever):
 
         if search_type == "sentence_window_retrieval":
             window_size = values["search_kwargs"].get("window_size")
-            if (window_size > 0) or (not isinstance(window_size, int)):
-                raise ValueError("`window_size` should be an integer greater than 0")
+            if window_size is not None and (not isinstance(window_size, int)):
+                raise ValueError("`window_size` should be an integer")
+
+            vectorstore = values["vectorstore"]
+            if type(vectorstore) != vectorstores.faiss.FAISS:
+                raise ValueError(
+                    """sentence_window_retrieval is currently only available
+                     for FAISS database"""
+                )
 
         return values
 
@@ -751,6 +756,8 @@ class VectorStoreRetriever(BaseRetriever):
             docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs
             )
+        elif self.search_type == "sentence_window_retrieval":
+            raise NotImplementedError
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
