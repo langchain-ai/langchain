@@ -72,6 +72,9 @@ if TYPE_CHECKING:
     from langchain_community.callbacks.trubrics_callback import (
         TrubricsCallbackHandler,  # noqa: F401
     )
+    from langchain_community.callbacks.uptrain_callback import (
+        UpTrainCallbackHandler,  # noqa: F401
+    )
     from langchain_community.callbacks.wandb_callback import (
         WandbCallbackHandler,  # noqa: F401
     )
@@ -137,6 +140,7 @@ __all__ = [
     "SageMakerCallbackHandler",
     "StreamlitCallbackHandler",
     "TrubricsCallbackHandler",
+    "UpTrainCallbackHandler",
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",
     "get_openai_callback",
