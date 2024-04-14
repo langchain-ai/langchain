@@ -438,7 +438,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.42rc1"
+version = "0.1.42"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -459,6 +459,23 @@ extended-testing = ["jinja2 (>=3,<4)"]
 [package.source]
 type = "directory"
 url = "../../core"
+
+[[package]]
+name = "langchain-standard-tests"
+version = "0.1.0"
+description = "Standard tests for LangChain implementations"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+langchain-core = "^0.1.40"
+pytest = ">=7,<9"
+
+[package.source]
+type = "directory"
+url = "../../standard-tests"
 
 [[package]]
 name = "langsmith"
@@ -1206,4 +1223,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "0e24b0c193c3dbf29e845388efb27245145e6c1a463a987b571a64281ae15aa8"
+content-hash = "adc0024beed52fca8f0f9e1786aaf5c25b3bf6fd138fb9668b44ef36c6bcf23f"
