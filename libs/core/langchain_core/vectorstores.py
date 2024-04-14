@@ -40,8 +40,6 @@ from typing import (
     TypeVar,
 )
 
-
-
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
@@ -687,7 +685,6 @@ class VectorStoreRetriever(BaseRetriever):
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
         search_type = values["search_type"]
-        print(values)
         if search_type not in cls.allowed_search_types:
             raise ValueError(
                 f"search_type of {search_type} not allowed. Valid values are: "
@@ -706,7 +703,7 @@ class VectorStoreRetriever(BaseRetriever):
             if window_size is not None and (not isinstance(window_size, int)):
                 raise ValueError("`window_size` should be an integer")
 
-            if "FAISS" not in values['tags']:
+            if "FAISS" not in values["tags"]:
                 raise ValueError(
                     """sentence_window_retrieval is currently only available
                      for FAISS database"""
