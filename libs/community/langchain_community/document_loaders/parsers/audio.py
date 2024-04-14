@@ -421,8 +421,15 @@ class FasterWhisperParser(BaseBlobParser):
                 "`pip install faster-whisper`"
             )
 
-        # Audio file from disk
-        audio = AudioSegment.from_file(blob.path)
+        # get the audio
+        if isinstance(blob.data, bytes):
+            # blob contains the audio
+            audio = AudioSegment.from_file(io.BytesIO(blob.data))
+        elif blob.data is None and blob.path:
+            # Audio file from disk
+            audio = AudioSegment.from_file(blob.path)
+        else:
+            raise ValueError("Unable to get audio from blob")
 
         file_obj = io.BytesIO(audio.export(format="mp3").read())
 
@@ -433,7 +440,7 @@ class FasterWhisperParser(BaseBlobParser):
             compute_type="float16"
         )
 
-        segments, infos = model.transcribe(file_obj, beam_size=5)
+        segments, info = model.transcribe(file_obj, beam_size=5)
 
         for segment in segments:
             yield Document(
@@ -441,5 +448,8 @@ class FasterWhisperParser(BaseBlobParser):
                 metadata={
                     "source": blob.source,
                     "timestamps": "[%.2fs -> %.2fs]" % (segment.start, segment.end),
+                    "language": info.language,
+                    "probability": "%d%%" % round(info.language_probability * 100),
+                    **blob.metadata,
                     },
             )
