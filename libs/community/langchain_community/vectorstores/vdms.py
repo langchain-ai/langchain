@@ -77,8 +77,7 @@ def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
 
 
 def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
-    """
-    Wrapper to initiate and connect a VDMS client to a VDMS server
+    """VDMS client for the VDMS server.
 
     Args:
         host: IP or hostname of VDMS server
@@ -98,7 +97,7 @@ def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
 
 
 class VDMS(VectorStore):
-    """Wrapper around Intel Lab's VDMS for vector-store workloads.
+    """Intel Lab's VDMS for vector-store workloads.
 
     To use, you should have both:
     - the ``vdms`` python package installed
@@ -1534,6 +1533,8 @@ def _check_descriptor_exists_by_id(
 
 
 def embedding2bytes(embedding: Union[List[float], None]) -> Union[bytes, None]:
+    """Convert embedding to bytes."""
+
     blob = None
     if embedding is not None:
         emb = np.array(embedding, dtype="float32")
