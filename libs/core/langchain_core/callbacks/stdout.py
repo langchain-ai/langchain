@@ -21,7 +21,11 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         self.color = color
 
     def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+        self,
+        serialized: Dict[str, Any],
+        inputs: Dict[str, Any],
+        tags: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> None:
         """Print out that we are entering a chain."""
         class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
@@ -37,7 +41,11 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         print("\n\033[1m> Finished chain.\033[0m")  # noqa: T201
 
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self,
+        serialized: Dict[str, Any],
+        prompts: List[str],
+        tags: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> None:
         """Run when a LLM starts running."""
         llm_name = serialized.get("id", ["<unknown>"])[-1]
@@ -90,6 +98,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         self,
         serialized: Dict[str, Any],
         query: str,
+        tags: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Run on retriever start."""

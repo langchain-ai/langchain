@@ -54,6 +54,12 @@ The callbacks are available on most objects throughout the API (Models, Tools, A
 - Constructor callbacks are most useful for use cases such as logging, monitoring, etc., which are _not specific to a single request_, but rather to the entire chain. For example, if you want to log all the requests made to an entire chain, you would pass a handler to the constructor.
 - Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the `invoke` method through the `config` option.
 
+### Tags
+
+You can add tags to your callbacks by passing a tags argument to the `invoke` method. This is useful for filtering your logs, e.g. if you want to log all requests made to a specific chain, you can add a tag, and then filter your logs by that tag. You can pass tags to both constructor and request callbacks.
+
+These tags are then passed to the tags argument of the "start" callback methods, ie. `on_llm_start`, `on_chat_model_start`, `on_chain_start`,  `on_tool_start` and `on_retriever_start`.
+
 ## Quick start
 
 Let us understand how to use callbacks by examining one of the built-in handlers provided by LangChain - the `StdOutCallbackHandler`, which simply logs all events to `stdout`. This is useful for debugging, as it will log all events to the console.
