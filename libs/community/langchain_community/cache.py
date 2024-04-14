@@ -403,7 +403,7 @@ class _RedisCacheBase(BaseCache, ABC):
         if results:
             for _, text in results.items():
                 try:
-                    generations.append(loads(text))
+                    generations.append(loads(cast(str, text)))
                 except Exception:
                     logger.warning(
                         "Retrieving a cache value that could not be deserialized "
@@ -1998,7 +1998,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
             k=1,
             kind=self.kind,
             ef_search=self.ef_search,
-            score_threshold=self.score_threshold,
+            score_threshold=self.score_threshold,  # type: ignore[arg-type]
         )
         if results:
             for document in results:

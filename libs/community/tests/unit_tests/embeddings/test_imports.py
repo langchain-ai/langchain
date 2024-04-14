@@ -1,7 +1,8 @@
-from langchain_community.embeddings import __all__
+from langchain_community.embeddings import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "OpenAIEmbeddings",
+    "AnyscaleEmbeddings",
     "AzureOpenAIEmbeddings",
     "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
@@ -68,8 +69,12 @@ EXPECTED_ALL = [
     "QuantizedBgeEmbeddings",
     "PremAIEmbeddings",
     "YandexGPTEmbeddings",
+    "OpenVINOEmbeddings",
+    "OpenVINOBgeEmbeddings",
+    "SolarEmbeddings",
 ]
 
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__) == set(_module_lookup.keys())
