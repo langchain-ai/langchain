@@ -227,7 +227,7 @@ def test_pgvector_with_filter_nin_set() -> None:
     ]
 
 
-def test_pg_vector_with_or_filter():
+def test_pg_vector_with_or_filter() -> None:
     """Test end to end construction and search with specific OR filter."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
@@ -248,7 +248,7 @@ def test_pg_vector_with_or_filter():
     ]
 
 
-def test_pg_vector_with_and_filter():
+def test_pg_vector_with_and_filter() -> None:
     """Test end to end construction and search with specific AND filter."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
@@ -261,7 +261,7 @@ def test_pg_vector_with_and_filter():
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score(
-        "foo", k=3, filter={"page": {"AND": [{"IN": ["0","1"]}, {"NIN": ["1"]}]}}
+        "foo", k=3, filter={"page": {"AND": [{"IN": ["0", "1"]}, {"NIN": ["1"]}]}}
     )
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
 
