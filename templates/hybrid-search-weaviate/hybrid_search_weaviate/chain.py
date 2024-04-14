@@ -24,7 +24,7 @@ if os.environ.get("OPENAI_API_KEY", None) is None:
 WEAVIATE_INDEX_NAME = os.environ.get("WEAVIATE_INDEX", "langchain-test")
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 auth_client_secret = (weaviate.AuthApiKey(api_key=os.getenv("WEAVIATE_API_KEY")),)
-client = weaviate.Client(
+client = weaviate.WeaviateClient(
     url=WEAVIATE_URL,
     additional_headers={
         "X-Openai-Api-Key": os.getenv("OPENAI_API_KEY"),

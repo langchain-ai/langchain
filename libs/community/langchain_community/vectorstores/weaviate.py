@@ -23,6 +23,7 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     import weaviate
+    from weaviate.connect import ConnectionParams
 
 
 def _default_schema(index_name: str, text_key: str) -> Dict:
@@ -41,7 +42,7 @@ def _create_weaviate_client(
     url: Optional[str] = None,
     api_key: Optional[str] = None,
     **kwargs: Any,
-) -> weaviate.Client:
+) -> weaviate.WeaviateClient:
     try:
         import weaviate
     except ImportError:
@@ -52,7 +53,11 @@ def _create_weaviate_client(
     url = url or os.environ.get("WEAVIATE_URL")
     api_key = api_key or os.environ.get("WEAVIATE_API_KEY")
     auth = weaviate.auth.AuthApiKey(api_key=api_key) if api_key else None
-    return weaviate.Client(url=url, auth_client_secret=auth, **kwargs)
+    return weaviate.WeaviateClient(
+        connection_params=ConnectionParams.from_url(url=url),
+        auth_client_secret=auth,
+        **kwargs,
+    )
 
 
 def _default_score_normalizer(val: float) -> float:
@@ -76,7 +81,7 @@ class Weaviate(VectorStore):
             import weaviate
             from langchain_community.vectorstores import Weaviate
 
-            client = weaviate.Client(url=os.environ["WEAVIATE_URL"], ...)
+            client = weaviate.WeaviateClient(connection_params=ConnectionParams.from_url(url=url), ... )
             weaviate = Weaviate(client, index_name, text_key)
 
     """
@@ -101,9 +106,9 @@ class Weaviate(VectorStore):
                 "Could not import weaviate python package. "
                 "Please install it with `pip install weaviate-client`."
             )
-        if not isinstance(client, weaviate.Client):
+        if not isinstance(client, weaviate.WeaviateClient):
             raise ValueError(
-                f"client should be an instance of weaviate.Client, got {type(client)}"
+                f"client should be an instance of weaviate.WeaviateClient, got {type(client)}"
             )
         self._client = client
         self._index_name = index_name
@@ -387,7 +392,7 @@ class Weaviate(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         *,
-        client: Optional[weaviate.Client] = None,
+        client: Optional[weaviate.WeaviateClient] = None,
         weaviate_url: Optional[str] = None,
         weaviate_api_key: Optional[str] = None,
         batch_size: Optional[int] = None,
@@ -412,7 +417,7 @@ class Weaviate(VectorStore):
             texts: Texts to add to vector store.
             embedding: Text embedding model to use.
             metadatas: Metadata associated with each text.
-            client: weaviate.Client to use.
+            client: weaviate.WeaviateClient to use.
             weaviate_url: The Weaviate URL. If using Weaviate Cloud Services get it
                 from the ``Details`` tab. Can be passed in as a named param or by
                 setting the environment variable ``WEAVIATE_URL``. Should not be

@@ -43,10 +43,10 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
                 "Could not import weaviate python package. "
                 "Please install it with `pip install weaviate-client`."
             )
-        if not isinstance(values["client"], weaviate.Client):
+        if not isinstance(values["client"], weaviate.WeaviateClient):
             client = values["client"]
             raise ValueError(
-                f"client should be an instance of weaviate.Client, got {type(client)}"
+                f"client should be an instance of weaviate.WeaviateClient, got {type(client)}"
             )
         if values.get("attributes") is None:
             values["attributes"] = []
