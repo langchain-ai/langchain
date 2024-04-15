@@ -8,10 +8,10 @@ sidebar_class_name: hidden
 Head to [Integrations](/docs/integrations/callbacks/) for documentation on built-in callbacks integrations with 3rd-party tools.
 :::
 
-LangChain provides a callbacks system that provides a set of hooks to allow you entry into various stages of your application. This is useful for logging, tracing and monitoring.
+LangChain provides a system of callbacks that provides a set of hooks to allow you entry into various stages of your application. This is useful for logging, tracing, debugging and monitoring.
 
 ## Concepts
-Concepts include the hooks or events that provide entry to the application and the callbacks handler object which subscribes to one or more of these events.
+Concepts include the hooks or events that provide entry to the application and the callbacks handler object which subscribes to one or more of these events. We also discuss the types of callbacks and tags, useful for filtering of specific flows.
 
 ### Events
 
@@ -23,10 +23,10 @@ Concepts include the hooks or events that provide entry to the application and t
 | LLM errors  | When a llm errors | `on_llm_error`|
 | Chat model start  | When a chat model starts | `on_chat_model_start`|
 | Chain start  | When a chain starts running | `on_chain_start`|
-| Chain end  | When a chain ends running | `on_chain_end`|
+| Chain end  | When a chain ends | `on_chain_end`|
 | Chain error  | When a chain errors | `on_chain_error`|
 | Tool start  | When a tool starts running | `on_tool_start`|
-| Tool end  | When a tool ends running | `on_tool_end`|
+| Tool end  | When a tool ends | `on_tool_end`|
 | Tool error  | When a tool errors | `on_tool_error`|
 | Agent action  | When an agent takes an action | `on_agent_action`|
 | Agent finish  | When an agent ends | `on_agent_finish`|
@@ -37,17 +37,17 @@ Concepts include the hooks or events that provide entry to the application and t
 | Retry  | When a retry event is run | `on_retry`|
 
 
-### Callbacks Handler
+### Callback Handlers
 
-Callbacks handlers are objects that implement the associated method (see table above) for each event you are interested in. Handlers register for these events using the `callbacks` argument available throughout the API. When the event is triggered, LangChain will call the appropriate method on every registered handler.
+Callback handlers are objects that implement the associated method (see table above) for each event you are interested in. Handlers register for these events using the `callbacks` argument available throughout the API. When the event is triggered, the callbacks system will call the appropriate method on every registered handler.
 
 
 ### Types
 
 The callbacks are available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
 
-- **Constructor callbacks**: Defined in the constructor. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the `LLMChain` constructor, it will not be used by the Model attached to that chain.
-- **Request callbacks**: Defined in the `invoke` method used for issuing a request. In this case, the callbacks will be used for that specific request (and all sub-requests that it contains (e.g. defining in the `invoke` method of a LCEL chain triggers a call to all entities in the chain, using the same handler). The same approach can be used for the `ainvoke`, `batch` and `abatch` methods.):
+- **Constructor callbacks**: Defined in the constructor. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the llm constructor, it will only be be used by the model.
+- **Request callbacks**: Defined in the `invoke` method used for issuing a request. In this case, the callback will be used for that specific request (and all sub-requests that it contains (e.g. defining in the `invoke` method of a LCEL chain triggers a call to all entities in the chain, using the same handler). The same approach can be used for the `ainvoke`, `batch` and `abatch` methods.)
 
 #### When do you want to use each of these?
 
@@ -71,15 +71,13 @@ from langchain_openai import OpenAI
 from langchain_core.prompts import PromptTemplate
 
 handler = StdOutCallbackHandler()
-llm = OpenAI()
+
 prompt = PromptTemplate.from_template("1 + {number} = ")
 
-# Constructor callback: we set the callback when initializing the prompt
-chain = prompt.with_config({"callbacks": [handler]}) | model
-chain.invoke({"number": 20})
-
 # Constructor callback: we set the callback when initializing the model
-chain = prompt | model.with_config({"callbacks": [handler]})
+model = OpenAI(callbacks = [handler])
+
+chain = prompt | model
 chain.invoke({"number": 25})
 ```
 
@@ -89,11 +87,6 @@ chain.invoke({"number": 25})
 <CodeOutputBlock lang="python">
 
 ```
-> Entering new PromptTemplate chain...
-> Template: what is 1 + {number}?
-
-> Finished chain.
-
 
 > Entering OpenAI...
 > Prompt: ['what is 1 + 25?']
@@ -109,9 +102,11 @@ chain.invoke({"number": 25})
 We can also request the callback in the `invoke` method for the chain, i.e. a "requests" callback. This will be propagated to all objects in the chain.
 
 ```
+model = OpenAI()
+
 # Request callbacks: we set the request callback on the chain and see it propagated to all subrequests
 chain = prompt | model
-chain.invoke({"number": 40}, config = config)
+chain.invoke({"number": 40}, {"callbacks": [handler]})
 ```
 
 
@@ -120,6 +115,7 @@ chain.invoke({"number": 40}, config = config)
 <CodeOutputBlock lang="python">
 
 ```
+
 > Entering new RunnableSequence chain...
 
 
@@ -191,9 +187,9 @@ This was a quick introduction to callbacks in LangChain, but there is a lot more
 
 **Async callbacks:** If you are planning to use the async API, it is recommended to use the `AsyncCallbackHandler `, [this page](https://python.langchain.com/docs/modules/callbacks/async_callbacks/)
 
-**Logging to a file:** LangChain provides a built-in callback handler to log events to a file, see [this page](http://localhost:3021/docs/modules/callbacks/filecallbackhandler/)
+**Logging to a file:** LangChain provides a built-in callback handler to log events to a file, see [this page](https://python.langchain.com/docs/modules/callbacks/filecallbackhandler/)
 
-**Multiple callback handlers:** We saw a simple example of the difference between the two types of callback handlers. For a more elaborate example with agents see [this page](http://localhost:3021/docs/modules/callbacks/multiple_callbacks/) 
+**Multiple callback handlers:** We saw a simple example of the difference between the two types of callback handlers. For a more elaborate example with agents see [this page](https://python.langchain.com/docs/modules/callbacks/multiple_callbacks/) 
 
 **Custom callback handlers:** Although built-in handlers are useful, it’s highly likely that you’ll have to define your own handlers. See [this guide](https://python.langchain.com/docs/modules/callbacks/custom_callbacks/) for instructions on how to do so.
 
