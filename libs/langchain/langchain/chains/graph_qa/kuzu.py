@@ -103,7 +103,8 @@ class KuzuQAChain(Chain):
         generated_cypher = self.cypher_generation_chain.run(
             {"question": question, "schema": self.graph.get_schema}, callbacks=callbacks
         )
-        # Extract Cypher code if it is wrapped in triple backticks with the language marker "cypher"
+        # Extract Cypher code if it is wrapped in triple backticks
+        # with the language marker "cypher"
         generated_cypher = extract_cypher(generated_cypher).removeprefix("cypher")
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
