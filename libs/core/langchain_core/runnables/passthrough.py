@@ -107,7 +107,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
         .. code-block:: python
 
-            from langchain_core.runnables import RunnablePassthrough, RunnableParallel
+            from langchain_core.runnables import RunnablePassthrough
 
             def fake_llm(prompt: str) -> str: # Fake LLM for the example
                 return "completion"
@@ -115,10 +115,9 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             runnable = {
                 'llm1':  fake_llm,
                 'llm2':  fake_llm,
-            }
-            | RunnablePassthrough.assign(
+            } | RunnablePassthrough.assign(
                 total_chars=lambda inputs: len(inputs['llm1'] + inputs['llm2'])
-              )
+            )
 
             runnable.invoke('hello')
             # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
