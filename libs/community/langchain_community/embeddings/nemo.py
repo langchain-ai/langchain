@@ -42,6 +42,8 @@ def is_endpoint_live(url: str, headers: Optional[dict], payload: Any) -> bool:
 
 
 class NeMoEmbeddings(BaseModel, Embeddings):
+    """NeMo embedding models."""
+
     batch_size: int = 16
     model: str = "NV-Embed-QA-003"
     api_endpoint_url: str = "http://localhost:8088/v1/embeddings"

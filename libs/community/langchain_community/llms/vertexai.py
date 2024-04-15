@@ -40,12 +40,12 @@ stream_completion_with_retry = None
 
 
 def is_codey_model(model_name: str) -> bool:
-    """Returns True if the model name is a Codey model."""
+    """Return True if the model name is a Codey model."""
     return "code" in model_name
 
 
 def is_gemini_model(model_name: str) -> bool:
-    """Returns True if the model name is a Gemini model."""
+    """Return True if the model name is a Gemini model."""
     return model_name is not None and "gemini" in model_name
 
 
@@ -397,7 +397,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
     alternative_import="langchain_google_vertexai.VertexAIModelGarden",
 )
 class VertexAIModelGarden(_VertexAIBase, BaseLLM):
-    """Large language models served from Vertex AI Model Garden."""
+    """Vertex AI Model Garden large language models."""
 
     client: "PredictionServiceClient" = None  #: :meta private:
     async_client: "PredictionServiceAsyncClient" = None  #: :meta private:
