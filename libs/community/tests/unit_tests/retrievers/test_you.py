@@ -28,17 +28,6 @@ class TestYouRetriever:
         assert results == expected_result
 
     @responses.activate
-    def test_invoke(self) -> None:
-        responses.add(
-            responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200
-        )
-        query = "Test query text"
-        you_wrapper = YouRetriever(ydc_api_key="test")
-        results = you_wrapper.invoke(query)
-        expected_result = MOCK_PARSED_OUTPUT
-        assert results == expected_result
-
-    @responses.activate
     def test_invoke_max_docs(self) -> None:
         responses.add(
             responses.GET, f"{TEST_ENDPOINT}/search", json=MOCK_RESPONSE_RAW, status=200

@@ -33,14 +33,14 @@ def test_load_success(retriever: ArxivRetriever) -> None:
 def test_load_success_all_meta(retriever: ArxivRetriever) -> None:
     retriever.load_all_available_meta = True
     retriever.load_max_docs = 2
-    docs = retriever.invoke(query="ChatGPT")
+    docs = retriever.invoke("ChatGPT")
     assert len(docs) > 1
     assert_docs(docs, all_meta=True)
 
 
 def test_load_success_init_args() -> None:
     retriever = ArxivRetriever(load_max_docs=1, load_all_available_meta=True)
-    docs = retriever.invoke(query="ChatGPT")
+    docs = retriever.invoke("ChatGPT")
     assert len(docs) == 1
     assert_docs(docs, all_meta=True)
 

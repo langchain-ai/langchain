@@ -24,14 +24,14 @@ def assert_docs(docs: List[Document]) -> None:
 
 
 def test_load_success(retriever: PubMedRetriever) -> None:
-    docs = retriever.invoke(query="chatgpt")
+    docs = retriever.invoke("chatgpt")
     assert len(docs) == 3
     assert_docs(docs)
 
 
 def test_load_success_top_k_results(retriever: PubMedRetriever) -> None:
     retriever.top_k_results = 2
-    docs = retriever.invoke(query="chatgpt")
+    docs = retriever.invoke("chatgpt")
     assert len(docs) == 2
     assert_docs(docs)
 

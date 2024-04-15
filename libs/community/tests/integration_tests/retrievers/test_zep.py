@@ -76,7 +76,7 @@ def zep_retriever(
 def test_zep_retriever_invoke(
     zep_retriever: ZepRetriever, search_results: List[MemorySearchResult]
 ) -> None:
-    documents: List[Document] = zep_retriever.invoke(query="My trip to Iceland")
+    documents: List[Document] = zep_retriever.invoke("My trip to Iceland")
     _test_documents(documents, search_results)
 
 
@@ -84,7 +84,7 @@ def test_zep_retriever_invoke(
 async def test_zep_retriever_ainvoke(
     zep_retriever: ZepRetriever, search_results: List[MemorySearchResult]
 ) -> None:
-    documents: List[Document] = await zep_retriever.ainvoke(query="My trip to Iceland")
+    documents: List[Document] = await zep_retriever.ainvoke("My trip to Iceland")
     _test_documents(documents, search_results)
 
 
