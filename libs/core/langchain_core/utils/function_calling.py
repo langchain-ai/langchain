@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import inspect
 import uuid
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    DefaultDict,
     Dict,
     List,
     Literal,
@@ -165,33 +167,59 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
     Assumes all function arguments are of primitive types (int, float, str, bool) or
     are subclasses of pydantic.BaseModel.
     """
-    properties = {}
-    annotations = inspect.getfullargspec(function).annotations
+    properties: DefaultDict[str, Dict] = defaultdict(dict)
+    spec = inspect.getfullargspec(function)
+    annotations = spec.annotations
+
+    # From https://docs.python.org/3.8/library/inspect.html#inspect.getargspec
+    # 'args' is a list of the parameter names
+    # 'defaults' is an n-tuple of the default values of the last n parameters
+    optional_parameters = spec.args[-len(spec.defaults) :] if spec.defaults else []
+    parameter_defaults = {
+        param: default
+        for param, default in zip(
+            optional_parameters, spec.defaults if spec.defaults else [], strict=True
+        )
+    }
+
     for arg, arg_type in annotations.items():
         if arg == "return":
             continue
         if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
-            # Mypy error:
-            # "type" has no attribute "schema"
-            properties[arg] = arg_type.schema()  # type: ignore[attr-defined]
+            # Parameter is a Pydantic BaseModel - use its schema.
+            properties[arg] = arg_type.schema()
         elif (
             hasattr(arg_type, "__name__")
             and getattr(arg_type, "__name__") in PYTHON_TO_JSON_TYPES
         ):
-            properties[arg] = {"type": PYTHON_TO_JSON_TYPES[arg_type.__name__]}
+            # Parameter type is present in mapping.
+            properties[arg]["type"] = PYTHON_TO_JSON_TYPES[arg_type.__name__]
         elif (
             hasattr(arg_type, "__dict__")
             and getattr(arg_type, "__dict__").get("__origin__", None) == Literal
         ):
+            # Parameter type is a literal - convert to enum.
             properties[arg] = {
                 "enum": list(arg_type.__args__),  # type: ignore
                 "type": PYTHON_TO_JSON_TYPES[arg_type.__args__[0].__class__.__name__],  # type: ignore
             }
+        elif hasattr(arg_type, "__name__") and "Optional" in getattr(
+            arg_type, "__name__"
+        ):
+            # Parameter is optional - convert type if possible.
+            param_type = arg_type.__args__[0].__name__
+            if param_type in PYTHON_TO_JSON_TYPES:
+                properties[arg]["type"] = PYTHON_TO_JSON_TYPES[param_type]
+
         if arg in arg_descriptions:
-            if arg not in properties:
-                properties[arg] = {}
+            # Parameter description is defined.
             properties[arg]["description"] = arg_descriptions[arg]
-    return properties
+
+        if arg in parameter_defaults:
+            # Parameter default exists.
+            properties[arg]["default"] = parameter_defaults.get(arg)
+
+    return dict(properties)
 
 
 def _get_python_function_required_args(function: Callable) -> List[str]:

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Literal, Optional, Type
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 
 import pytest
 
@@ -11,36 +11,42 @@ from langchain_core.utils.function_calling import (
 )
 
 
-@pytest.fixture()
 def pydantic() -> Type[BaseModel]:
     class dummy_function(BaseModel):
         """dummy function"""
 
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
+        arg3: Optional[str] = Field(
+            default="arg3 value", description="arg3 description"
+        )
 
     return dummy_function
 
 
-@pytest.fixture()
-def function() -> Callable:
-    def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
+def function_() -> Callable:
+    def dummy_function(
+        arg1: int, arg2: Literal["bar", "baz"], arg3: Optional[str] = "arg3 value"
+    ) -> None:
         """dummy function
 
         Args:
             arg1: foo
             arg2: one of 'bar', 'baz'
+            arg3: arg3 description
         """
         pass
 
     return dummy_function
 
 
-@pytest.fixture()
 def dummy_tool() -> BaseTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
+        arg3: Optional[str] = Field(
+            default="arg3 value", description="arg3 description"
+        )
 
     class DummyFunction(BaseTool):
         args_schema: Type[BaseModel] = Schema
@@ -53,7 +59,6 @@ def dummy_tool() -> BaseTool:
     return DummyFunction()
 
 
-@pytest.fixture()
 def json_schema() -> Dict:
     return {
         "title": "dummy_function",
@@ -66,16 +71,27 @@ def json_schema() -> Dict:
                 "enum": ["bar", "baz"],
                 "type": "string",
             },
+            "arg3": {
+                "description": "arg3 description",
+                "type": "string",
+                "default": "arg3 value",
+            },
         },
         "required": ["arg1", "arg2"],
     }
 
 
+@pytest.mark.parametrize(
+    "function",
+    [
+        pytest.param(pydantic(), id="Pydantic"),
+        pytest.param(function_(), id="Callable"),
+        pytest.param(dummy_tool(), id="BaseTool"),
+        pytest.param(json_schema(), id="Dict"),
+    ],
+)
 def test_convert_to_openai_function(
-    pydantic: Type[BaseModel],
-    function: Callable,
-    dummy_tool: BaseTool,
-    json_schema: Dict,
+    function: Union[Type[BaseModel], Callable, BaseTool, Dict],
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -89,22 +105,28 @@ def test_convert_to_openai_function(
                     "enum": ["bar", "baz"],
                     "type": "string",
                 },
+                "arg3": {
+                    "description": "arg3 description",
+                    "type": "string",
+                    "default": "arg3 value",
+                },
             },
             "required": ["arg1", "arg2"],
         },
     }
 
-    for fn in (pydantic, function, dummy_tool, json_schema, expected):
-        actual = convert_to_openai_function(fn)  # type: ignore
-        assert actual == expected
+    actual = convert_to_openai_function(function)
+    assert actual == expected
 
 
-@pytest.mark.xfail(reason="Pydantic converts Optional[str] to str in .schema()")
-def test_function_optional_param() -> None:
+@pytest.mark.xfail(
+    reason="Pydantic converts Optional[str] without default to str in .schema()"
+)
+def test_function_optional_param_without_default() -> None:
     @tool
     def func5(
-        a: Optional[str],
-        b: str,
+        a: str,
+        b: Optional[str],
         c: Optional[List[Optional[str]]],
     ) -> None:
         """A test function"""
@@ -112,7 +134,22 @@ def test_function_optional_param() -> None:
 
     func = convert_to_openai_function(func5)
     req = func["parameters"]["required"]
-    assert set(req) == {"b"}
+    assert set(req) == {"a"}
+
+
+def test_function_optional_param_with_default() -> None:
+    @tool
+    def func5(
+        a: str,
+        b: Optional[str] = None,
+        c: Optional[List[Optional[str]]] = None,
+    ) -> None:
+        """A test function"""
+        pass
+
+    func = convert_to_openai_function(func5)
+    req = func["parameters"]["required"]
+    assert set(req) == {"a"}
 
 
 class FakeCall(BaseModel):
