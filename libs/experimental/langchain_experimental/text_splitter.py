@@ -188,9 +188,10 @@ class SemanticChunker(BaseDocumentTransformer):
     def split_text(
         self,
         text: str,
+        regex: str = r"(?<=[.?!])\s+",
     ) -> List[str]:
-        # Splitting the essay on '.', '?', and '!'
-        single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
+        # Splitting the essay (by default on '.', '?', and '!')
+        single_sentences_list = re.split(regex, text)
 
         # having len(single_sentences_list) == 1 would cause the following
         # np.percentile to fail.
