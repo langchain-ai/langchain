@@ -4,7 +4,6 @@ from dataclasses import asdict
 from typing import Dict, List, Optional, Tuple
 
 from langchain_core.runnables.graph import (
-    Branch,
     CurveStyle,
     Edge,
     MermaidDrawMethod,
