@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import threading
 from abc import abstractmethod
+from functools import wraps
 from typing import (
     Any,
     AsyncIterator,
@@ -26,6 +27,7 @@ from langchain_core.runnables.config import (
     ensure_config,
     get_config_list,
     get_executor_for_config,
+    merge_configs,
 )
 from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
@@ -69,34 +71,54 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        runnable, config = self._prepare(config)
+        runnable, config = self.prepare(config)
         return runnable.get_input_schema(config)
 
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        runnable, config = self._prepare(config)
+        runnable, config = self.prepare(config)
         return runnable.get_output_schema(config)
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
-        runnable, config = self._prepare(config)
+        runnable, config = self.prepare(config)
         return runnable.get_graph(config)
+
+    def with_config(
+        self,
+        config: Optional[RunnableConfig] = None,
+        # Sadly Unpack is not well supported by mypy so this will have to be untyped
+        **kwargs: Any,
+    ) -> Runnable[Input, Output]:
+        """
+        Bind config to a Runnable, returning a new Runnable.
+        """
+        runnable, config = self.prepare(merge_configs(config, kwargs))
+        return runnable.with_config(config)
+
+    def prepare(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
+        while isinstance(self, DynamicRunnable):
+            self, config = self._prepare(config)
+        return self, config
 
     @abstractmethod
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Tuple[Runnable[Input, Output], RunnableConfig]: ...
+    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
+        ...
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        runnable, config = self._prepare(config)
+        runnable, config = self.prepare(config)
         return runnable.invoke(input, config, **kwargs)
 
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        runnable, config = self._prepare(config)
+        runnable, config = self.prepare(config)
         return await runnable.ainvoke(input, config, **kwargs)
 
     def batch(
@@ -108,7 +130,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> List[Output]:
         configs = get_config_list(config, len(inputs))
-        prepared = [self._prepare(c) for c in configs]
+        prepared = [self.prepare(c) for c in configs]
 
         if all(p is self.default for p, _ in prepared):
             return self.default.batch(
@@ -150,7 +172,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> List[Output]:
         configs = get_config_list(config, len(inputs))
-        prepared = [self._prepare(c) for c in configs]
+        prepared = [self.prepare(c) for c in configs]
 
         if all(p is self.default for p, _ in prepared):
             return await self.default.abatch(
@@ -185,7 +207,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        runnable, config = self._prepare(config)
+        runnable, config = self.prepare(config)
         return runnable.stream(input, config, **kwargs)
 
     async def astream(
@@ -194,7 +216,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        runnable, config = self._prepare(config)
+        runnable, config = self.prepare(config)
         async for chunk in runnable.astream(input, config, **kwargs):
             yield chunk
 
@@ -204,7 +226,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        runnable, config = self._prepare(config)
+        runnable, config = self.prepare(config)
         return runnable.transform(input, config, **kwargs)
 
     async def atransform(
@@ -213,7 +235,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        runnable, config = self._prepare(config)
+        runnable, config = self.prepare(config)
         async for chunk in runnable.atransform(input, config, **kwargs):
             yield chunk
 
@@ -221,6 +243,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         attr = getattr(self.default, name)
         if callable(attr):
 
+            @wraps(attr)
             def wrapper(*args: Any, **kwargs: Any) -> Any:
                 for key, arg in kwargs.items():
                     if key == "config" and (
@@ -228,7 +251,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
                         and "configurable" in arg
                         and isinstance(arg["configurable"], dict)
                     ):
-                        runnable, config = self._prepare(arg)
+                        runnable, config = self.prepare(arg)
                         kwargs = {**kwargs, "config": config}
                         return getattr(runnable, name)(*args, **kwargs)
 
@@ -238,7 +261,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
                         and "configurable" in arg
                         and isinstance(arg["configurable"], dict)
                     ):
-                        runnable, config = self._prepare(arg)
+                        runnable, config = self.prepare(arg)
                         args = list(args)
                         args[idx] = config
                         return getattr(runnable, name)(*args, **kwargs)

@@ -1421,6 +1421,8 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
     spy = mocker.spy(fake.__class__, "invoke")
     fakew = fake.configurable_fields(hello=ConfigurableField(id="hello", name="Hello"))
 
+    print(fakew.with_config(tags=["a-tag"]).invoke)
+
     assert (
         fakew.with_config(tags=["a-tag"]).invoke(
             "hello", {"configurable": {"hello": "there"}, "metadata": {"bye": "now"}}
