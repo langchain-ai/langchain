@@ -294,7 +294,7 @@ class OpenVINOBgeEmbeddings(OpenVINOEmbeddings):
 
             from langchain_community.embeddings import OpenVINOBgeEmbeddings
 
-            model_name_or_path = "BAAI/bge-large-en"
+            model_name = "BAAI/bge-large-en"
             model_kwargs = {'device': 'CPU'}
             encode_kwargs = {'normalize_embeddings': True}
             ov = OpenVINOBgeEmbeddings(
