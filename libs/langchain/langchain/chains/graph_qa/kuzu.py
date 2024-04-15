@@ -1,6 +1,5 @@
 """Question answering over a graph."""
 from __future__ import annotations
-
 import re
 from typing import Any, Dict, List, Optional
 
@@ -13,6 +12,12 @@ from langchain_core.pydantic_v1 import Field
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, KUZU_GENERATION_PROMPT
 from langchain.chains.llm import LLMChain
+
+
+def remove_prefix(text: str, prefix: str) -> str:
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
 
 
 def extract_cypher(text: str) -> str:
@@ -105,7 +110,7 @@ class KuzuQAChain(Chain):
         )
         # Extract Cypher code if it is wrapped in triple backticks
         # with the language marker "cypher"
-        generated_cypher = extract_cypher(generated_cypher).removeprefix("cypher")
+        generated_cypher = remove_prefix(extract_cypher(generated_cypher), "cypher")
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
         _run_manager.on_text(
