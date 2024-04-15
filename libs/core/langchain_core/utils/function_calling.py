@@ -178,7 +178,7 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
     parameter_defaults = {
         param: default
         for param, default in zip(
-            optional_parameters, spec.defaults if spec.defaults else [], strict=True
+            optional_parameters, spec.defaults if spec.defaults else []
         )
     }
 
