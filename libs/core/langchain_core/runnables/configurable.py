@@ -48,6 +48,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
     default: RunnableSerializable[Input, Output]
 
+    config: Optional[RunnableConfig] = None
+
     class Config:
         arbitrary_types_allowed = True
 
@@ -90,18 +92,17 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         # Sadly Unpack is not well supported by mypy so this will have to be untyped
         **kwargs: Any,
     ) -> Runnable[Input, Output]:
-        """
-        Bind config to a Runnable, returning a new Runnable.
-        """
-        runnable, config = self.prepare(merge_configs(config, kwargs))
-        return runnable.with_config(config)
+        return self.__class__(
+            **{**self.__dict__, "config": ensure_config(merge_configs(config, kwargs))}  # type: ignore[arg-type]
+        )
 
     def prepare(
         self, config: Optional[RunnableConfig] = None
     ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
-        while isinstance(self, DynamicRunnable):
-            self, config = self._prepare(config)
-        return self, config
+        runnable: Runnable[Input, Output] = self
+        while isinstance(runnable, DynamicRunnable):
+            runnable, config = runnable._prepare(merge_configs(runnable.config, config))
+        return runnable, cast(RunnableConfig, config)
 
     @abstractmethod
     def _prepare(
@@ -251,7 +252,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
                         and "configurable" in arg
                         and isinstance(arg["configurable"], dict)
                     ):
-                        runnable, config = self.prepare(arg)
+                        runnable, config = self.prepare(cast(RunnableConfig, arg))
                         kwargs = {**kwargs, "config": config}
                         return getattr(runnable, name)(*args, **kwargs)
 
@@ -261,10 +262,14 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
                         and "configurable" in arg
                         and isinstance(arg["configurable"], dict)
                     ):
-                        runnable, config = self.prepare(arg)
-                        args = list(args)
-                        args[idx] = config
-                        return getattr(runnable, name)(*args, **kwargs)
+                        runnable, config = self.prepare(cast(RunnableConfig, arg))
+                        argsl = list(args)
+                        argsl[idx] = config
+                        return getattr(runnable, name)(*argsl, **kwargs)
+
+                if self.config:
+                    runnable, config = self.prepare()
+                    return getattr(runnable, name)(*args, **kwargs)
 
                 return attr(*args, **kwargs)
 

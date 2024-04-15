@@ -117,17 +117,17 @@ def test_config_passthrough() -> None:
     )
     # first one
     with pytest.raises(AttributeError):
-        configurable_runnable.not_my_custom_function()
+        configurable_runnable.not_my_custom_function()  # type: ignore[attr-defined]
 
-    assert configurable_runnable.my_custom_function() == "a"
+    assert configurable_runnable.my_custom_function() == "a"  # type: ignore[attr-defined]
     assert (
-        configurable_runnable.my_custom_function_w_config(
+        configurable_runnable.my_custom_function_w_config(  # type: ignore[attr-defined]
             {"configurable": {"my_property": "b"}}
         )
         == "b"
     )
     assert (
-        configurable_runnable.my_custom_function_w_config(
+        configurable_runnable.my_custom_function_w_config(  # type: ignore[attr-defined]
             config={"configurable": {"my_property": "b"}}
         )
         == "b"
@@ -137,7 +137,7 @@ def test_config_passthrough() -> None:
     assert (
         configurable_runnable.with_config(
             configurable={"my_property": "b"}
-        ).my_custom_function()
+        ).my_custom_function()  # type: ignore[attr-defined]
         == "b"
     )
 
@@ -156,16 +156,16 @@ def test_config_passthrough_nested() -> None:
     )
     # first one
     with pytest.raises(AttributeError):
-        configurable_runnable.not_my_custom_function()
-    assert configurable_runnable.my_custom_function() == "a"
+        configurable_runnable.not_my_custom_function()  # type: ignore[attr-defined]
+    assert configurable_runnable.my_custom_function() == "a"  # type: ignore[attr-defined]
     assert (
-        configurable_runnable.my_custom_function_w_config(
+        configurable_runnable.my_custom_function_w_config(  # type: ignore[attr-defined]
             {"configurable": {"my_property": "b"}}
         )
         == "b"
     )
     assert (
-        configurable_runnable.my_custom_function_w_config(
+        configurable_runnable.my_custom_function_w_config(  # type: ignore[attr-defined]
             config={"configurable": {"my_property": "b"}}
         )
         == "b"
@@ -173,13 +173,17 @@ def test_config_passthrough_nested() -> None:
     assert (
         configurable_runnable.with_config(
             configurable={"my_property": "b"}
-        ).my_custom_function()
+        ).my_custom_function()  # type: ignore[attr-defined]
         == "b"
     )
     # second one
-    assert (
+    with pytest.raises(AttributeError):
+        configurable_runnable.my_other_custom_function()  # type: ignore[attr-defined]
+    with pytest.raises(AttributeError):
+        configurable_runnable.my_other_custom_function_w_config(  # type: ignore[attr-defined]
+            {"configurable": {"my_other_property": "b"}}
+        )
+    with pytest.raises(AttributeError):
         configurable_runnable.with_config(
             configurable={"my_other_property": "c", "which": "other"}
-        ).my_other_custom_function()
-        == "c"
-    )
+        ).my_other_custom_function()  # type: ignore[attr-defined]
