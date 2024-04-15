@@ -1,8 +1,11 @@
 import unittest
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
-from openapi_pydantic import Info, Reference, Schema
+
+if TYPE_CHECKING:
+    from openapi_pydantic import Info, Reference, Schema
 
 from langchain_community.utilities.openapi import OpenAPISpec
 
