@@ -210,4 +210,6 @@ async def test_fake_retriever_v2_async(
     assert callbacks.retriever_errors == 0
     await fake_retriever_v2.ainvoke("Foo", config={"callbacks": [callbacks]})
     with pytest.raises(ValueError, match="Test error"):
-        await fake_erroring_retriever_v2.ainvoke("Foo", config={"callbacks": [callbacks]})
+        await fake_erroring_retriever_v2.ainvoke(
+            "Foo", config={"callbacks": [callbacks]}
+        )
