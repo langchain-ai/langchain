@@ -61,8 +61,8 @@ class ZillizRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
-        return self.retriever.get_relevant_documents(
-            query, run_manager=run_manager.get_child(), **kwargs
+        return self.retriever.invoke(
+            query, config={"callbacks": run_manager.get_child()}, **kwargs
         )
 
 
