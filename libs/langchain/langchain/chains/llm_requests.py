@@ -3,11 +3,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
+from langchain_community.utilities.requests import TextRequestsWrapper
+from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
+
 from langchain.chains import LLMChain
 from langchain.chains.base import Chain
-from langchain.pydantic_v1 import Extra, Field, root_validator
-from langchain.utilities.requests import TextRequestsWrapper
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"  # noqa: E501
@@ -26,7 +27,7 @@ class LLMRequestsChain(Chain):
         See https://python.langchain.com/docs/security for more information.
     """
 
-    llm_chain: LLMChain
+    llm_chain: LLMChain  # type: ignore[valid-type]
     requests_wrapper: TextRequestsWrapper = Field(
         default_factory=lambda: TextRequestsWrapper(headers=DEFAULT_HEADERS),
         exclude=True,
@@ -86,7 +87,7 @@ class LLMRequestsChain(Chain):
         # extract the text from the html
         soup = BeautifulSoup(res, "html.parser")
         other_keys[self.requests_key] = soup.get_text()[: self.text_length]
-        result = self.llm_chain.predict(
+        result = self.llm_chain.predict(  # type: ignore[attr-defined]
             callbacks=_run_manager.get_child(), **other_keys
         )
         return {self.output_key: result}

@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "plate-chain"
+version = "0.0.1"
+description = "Parse data from laboratory plates into standardized formats"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+langserve = ">=0.0.19"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "plate_chain"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "extraction"
+author = "Sphinx Bio"
+integrations = ["OpenAI"]
+tags = ["bio", "data"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

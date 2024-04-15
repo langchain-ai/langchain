@@ -1,17 +1,17 @@
 """Interfaces to be implemented by general evaluators."""
 from __future__ import annotations
 
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from functools import partial
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence, Tuple, Union
 from warnings import warn
 
+from langchain_core.agents import AgentAction
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.runnables.config import run_in_executor
+
 from langchain.chains.base import Chain
-from langchain.schema.agent import AgentAction
-from langchain.schema.language_model import BaseLanguageModel
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,10 @@ class EvaluatorType(str, Enum):
     """Check if a prediction is valid JSON."""
     JSON_EQUALITY = "json_equality"
     """Check if a prediction is equal to a reference JSON."""
+    JSON_EDIT_DISTANCE = "json_edit_distance"
+    """Compute the edit distance between two JSON strings after canonicalization."""
+    JSON_SCHEMA_VALIDATION = "json_schema_validation"
+    """Check if a prediction is valid JSON according to a JSON schema."""
 
 
 class LLMEvalChain(Chain):
@@ -142,9 +146,9 @@ class StringEvaluator(_EvalArgsMixin, ABC):
     def _evaluate_strings(
         self,
         *,
-        prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        prediction: Union[str, Any],
+        reference: Optional[Union[str, Any]] = None,
+        input: Optional[Union[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Evaluate Chain or LLM output, based on optional input and label.
@@ -165,9 +169,9 @@ class StringEvaluator(_EvalArgsMixin, ABC):
     async def _aevaluate_strings(
         self,
         *,
-        prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        prediction: Union[str, Any],
+        reference: Optional[Union[str, Any]] = None,
+        input: Optional[Union[str, Any]] = None,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously evaluate Chain or LLM output, based on optional input and label.
@@ -184,15 +188,13 @@ class StringEvaluator(_EvalArgsMixin, ABC):
                      - value: the string value of the evaluation, if applicable.
                      - reasoning: the reasoning for the evaluation, if applicable.
         """  # noqa: E501
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None,
-            partial(
-                self._evaluate_strings,
-                prediction=prediction,
-                reference=reference,
-                input=input,
-                **kwargs,
-            ),
+            self._evaluate_strings,
+            prediction=prediction,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
     def evaluate_strings(
@@ -287,16 +289,14 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: A dictionary containing the preference, scores, and/or other information.
         """  # noqa: E501
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None,
-            partial(
-                self._evaluate_string_pairs,
-                prediction=prediction,
-                prediction_b=prediction_b,
-                reference=reference,
-                input=input,
-                **kwargs,
-            ),
+            self._evaluate_string_pairs,
+            prediction=prediction,
+            prediction_b=prediction_b,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
     def evaluate_string_pairs(
@@ -410,16 +410,14 @@ class AgentTrajectoryEvaluator(_EvalArgsMixin, ABC):
         Returns:
             dict: The evaluation result.
         """
-        return await asyncio.get_running_loop().run_in_executor(
+        return await run_in_executor(
             None,
-            partial(
-                self._evaluate_agent_trajectory,
-                prediction=prediction,
-                agent_trajectory=agent_trajectory,
-                reference=reference,
-                input=input,
-                **kwargs,
-            ),
+            self._evaluate_agent_trajectory,
+            prediction=prediction,
+            agent_trajectory=agent_trajectory,
+            reference=reference,
+            input=input,
+            **kwargs,
         )
 
     def evaluate_agent_trajectory(

@@ -2,10 +2,10 @@
 import uuid
 
 import pytest
+from langchain_core.outputs import Generation, LLMResult
 
 import langchain
 from langchain.cache import UpstashRedisCache
-from langchain.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -86,6 +86,5 @@ def test_redis_cache_chat() -> None:
     llm = FakeChatModel()
     params = llm.dict()
     params["stop"] = None
-    with pytest.warns():
-        llm.predict("foo")
+    llm.invoke("foo")
     langchain.llm_cache.redis.flushall()

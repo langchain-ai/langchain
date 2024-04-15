@@ -3,6 +3,22 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence, Tuple
 
+from langchain_core._api import deprecated
+from langchain_core.agents import AgentAction
+from langchain_core.callbacks import BaseCallbackManager
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+)
+from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseTool
+
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.conversational_chat.output_parser import ConvoOutputParser
 from langchain.agents.conversational_chat.prompt import (
@@ -11,21 +27,10 @@ from langchain.agents.conversational_chat.prompt import (
     TEMPLATE_TOOL_RESPONSE,
 )
 from langchain.agents.utils import validate_tools_single_input
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-    SystemMessagePromptTemplate,
-)
-from langchain.pydantic_v1 import Field
-from langchain.schema import AgentAction, BaseOutputParser, BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
-from langchain.tools.base import BaseTool
 
 
+@deprecated("0.1.0", alternative="create_json_chat_agent", removal="0.2.0")
 class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
@@ -83,7 +88,7 @@ class ConversationalChatAgent(Agent):
             HumanMessagePromptTemplate.from_template(final_prompt),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)  # type: ignore[arg-type]
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
@@ -120,7 +125,7 @@ class ConversationalChatAgent(Agent):
             input_variables=input_variables,
             output_parser=_output_parser,
         )
-        llm_chain = LLMChain(
+        llm_chain = LLMChain(  # type: ignore[misc]
             llm=llm,
             prompt=prompt,
             callback_manager=callback_manager,

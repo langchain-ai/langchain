@@ -1,12 +1,14 @@
+import os
 import re
 from pathlib import Path
 from typing import Iterator, List, Optional, Sequence, Tuple, Union
 
-from langchain.schema import BaseStore
+from langchain_core.stores import ByteStore
+
 from langchain.storage.exceptions import InvalidKeyException
 
 
-class LocalFileStore(BaseStore[str, bytes]):
+class LocalFileStore(ByteStore):
     """BaseStore interface that works on the local file system.
 
     Examples:
@@ -30,18 +32,30 @@ class LocalFileStore(BaseStore[str, bytes]):
 
             # Iterate over keys
             for key in file_store.yield_keys():
-                print(key)
+                print(key)  # noqa: T201
 
     """
 
-    def __init__(self, root_path: Union[str, Path]) -> None:
+    def __init__(
+        self,
+        root_path: Union[str, Path],
+        *,
+        chmod_file: Optional[int] = None,
+        chmod_dir: Optional[int] = None,
+    ) -> None:
         """Implement the BaseStore interface for the local file system.
 
         Args:
             root_path (Union[str, Path]): The root path of the file store. All keys are
                 interpreted as paths relative to this root.
+            chmod_file: (optional, defaults to `None`) If specified, sets permissions
+                for newly created files, overriding the current `umask` if needed.
+            chmod_dir: (optional, defaults to `None`) If specified, sets permissions
+                for newly created dirs, overriding the current `umask` if needed.
         """
-        self.root_path = Path(root_path)
+        self.root_path = Path(root_path).absolute()
+        self.chmod_file = chmod_file
+        self.chmod_dir = chmod_dir
 
     def _get_full_path(self, key: str) -> Path:
         """Get the full path for a given key relative to the root path.
@@ -54,7 +68,33 @@ class LocalFileStore(BaseStore[str, bytes]):
         """
         if not re.match(r"^[a-zA-Z0-9_.\-/]+$", key):
             raise InvalidKeyException(f"Invalid characters in key: {key}")
-        return self.root_path / key
+        full_path = os.path.abspath(self.root_path / key)
+        common_path = os.path.commonpath([str(self.root_path), full_path])
+        if common_path != str(self.root_path):
+            raise InvalidKeyException(
+                f"Invalid key: {key}. Key should be relative to the full path."
+                f"{self.root_path} vs. {common_path} and full path of {full_path}"
+            )
+
+        return Path(full_path)
+
+    def _mkdir_for_store(self, dir: Path) -> None:
+        """Makes a store directory path (including parents) with specified permissions
+
+        This is needed because `Path.mkdir()` is restricted by the current `umask`,
+        whereas the explicit `os.chmod()` used here is not.
+
+        Args:
+            dir: (Path) The store directory to make
+
+        Returns:
+            None
+        """
+        if not dir.exists():
+            self._mkdir_for_store(dir.parent)
+            dir.mkdir(exist_ok=True)
+            if self.chmod_dir is not None:
+                os.chmod(dir, self.chmod_dir)
 
     def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
         """Get the values associated with the given keys.
@@ -87,8 +127,10 @@ class LocalFileStore(BaseStore[str, bytes]):
         """
         for key, value in key_value_pairs:
             full_path = self._get_full_path(key)
-            full_path.parent.mkdir(parents=True, exist_ok=True)
+            self._mkdir_for_store(full_path.parent)
             full_path.write_bytes(value)
+            if self.chmod_file is not None:
+                os.chmod(full_path, self.chmod_file)
 
     def mdelete(self, keys: Sequence[str]) -> None:
         """Delete the given keys and their associated values.

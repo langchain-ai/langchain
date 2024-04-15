@@ -23,5 +23,5 @@ def test_evaluate_run() -> None:
     run = MagicMock()
     example = MagicMock()
     res = evaluator.evaluate_run(run, example)
-    assert res.comment.startswith("Error evaluating run ")
+    assert str(res.comment).startswith("Error evaluating run ")
     assert res.key == string_evaluator.evaluation_name

@@ -1,5 +1,5 @@
 # flake8: noqa
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE = """You are an assistant to a human, powered by a large language model trained by OpenAI.
 

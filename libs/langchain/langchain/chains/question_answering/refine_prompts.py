@@ -1,12 +1,12 @@
 # flake8: noqa
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.prompts.chat import (
+from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 DEFAULT_REFINE_PROMPT_TMPL = (
     "The original question is as follows: {question}\n"

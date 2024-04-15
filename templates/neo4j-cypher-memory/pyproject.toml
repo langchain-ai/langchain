@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "neo4j-cypher-memory"
+version = "0.1.0"
+description = "Conversational interface for a Neo4j graph database"
+authors = [
+    "Tomaz Bratanic <tomaz.bratanic@neo4j.com>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+neo4j = ">5.12"
+openai = "<2"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "neo4j_cypher_memory"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "query"
+author = "Neo4j"
+integrations = ["Neo4j", "OpenAI"]
+tags = ["conversation", "graph-database"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

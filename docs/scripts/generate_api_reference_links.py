@@ -1,3 +1,4 @@
+import argparse
 import importlib
 import inspect
 import json
@@ -5,7 +6,6 @@ import logging
 import os
 import re
 from pathlib import Path
-import argparse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ def main():
     global_imports = {}
 
     for file in find_files(args.docs_dir):
-        print(f"Adding links for imports in {file}")
+        print(f"Adding links for imports in {file}")  # noqa: T201
         file_imports = replace_imports(file)
 
         if file_imports:

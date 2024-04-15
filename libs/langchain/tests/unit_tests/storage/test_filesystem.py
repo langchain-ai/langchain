@@ -1,3 +1,4 @@
+import os
 import tempfile
 from typing import Generator
 
@@ -26,6 +27,34 @@ def test_mset_and_mget(file_store: LocalFileStore) -> None:
 
     # Assert that the retrieved values match the original values
     assert values == [b"value1", b"value2"]
+
+
+@pytest.mark.parametrize(
+    "chmod_dir_s, chmod_file_s", [("777", "666"), ("770", "660"), ("700", "600")]
+)
+def test_mset_chmod(chmod_dir_s: str, chmod_file_s: str) -> None:
+    chmod_dir = int(chmod_dir_s, base=8)
+    chmod_file = int(chmod_file_s, base=8)
+
+    # Create a temporary directory for testing
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Instantiate the LocalFileStore with a directory inside the temporary directory
+        # as the root path
+        temp_dir = os.path.join(temp_dir, "store_dir")
+        file_store = LocalFileStore(
+            temp_dir, chmod_dir=chmod_dir, chmod_file=chmod_file
+        )
+
+        # Set values for keys
+        key_value_pairs = [("key1", b"value1"), ("key2", b"value2")]
+        file_store.mset(key_value_pairs)
+
+        # verify the permissions are set correctly
+        # (test only the standard user/group/other bits)
+        dir_path = str(file_store.root_path)
+        file_path = os.path.join(dir_path, "key1")
+        assert (os.stat(dir_path).st_mode & 0o777) == chmod_dir
+        assert (os.stat(file_path).st_mode & 0o777) == chmod_file
 
 
 def test_mdelete(file_store: LocalFileStore) -> None:
@@ -74,5 +103,28 @@ def test_yield_keys(file_store: LocalFileStore) -> None:
     keys = list(file_store.yield_keys())
 
     # Assert that the yielded keys match the expected keys
-    expected_keys = ["key1", "subdir/key2"]
+    expected_keys = ["key1", os.path.join("subdir", "key2")]
     assert keys == expected_keys
+
+
+def test_catches_forbidden_keys(file_store: LocalFileStore) -> None:
+    """Make sure we raise exception on keys that are not allowed; e.g., absolute path"""
+    with pytest.raises(InvalidKeyException):
+        file_store.mset([("/etc", b"value1")])
+    with pytest.raises(InvalidKeyException):
+        list(file_store.yield_keys("/etc/passwd"))
+    with pytest.raises(InvalidKeyException):
+        file_store.mget(["/etc/passwd"])
+
+    # check relative paths
+    with pytest.raises(InvalidKeyException):
+        list(file_store.yield_keys(".."))
+
+    with pytest.raises(InvalidKeyException):
+        file_store.mget(["../etc/passwd"])
+
+    with pytest.raises(InvalidKeyException):
+        file_store.mset([("../etc", b"value1")])
+
+    with pytest.raises(InvalidKeyException):
+        list(file_store.yield_keys("../etc/passwd"))

@@ -1,4 +1,5 @@
 """Test functionality of Python REPL."""
+
 import sys
 
 import pytest
@@ -9,7 +10,7 @@ from langchain_experimental.utilities.python import PythonREPL
 _SAMPLE_CODE = """
 ```
 def multiply():
-    print(5*6)
+    print(5*6)  # noqa: T201
 multiply()
 ```
 """
