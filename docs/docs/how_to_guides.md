@@ -12,29 +12,29 @@ However, these guides will help you quickly accomplish common tasks.
 - How to see what is going on inside your LLM application
 - How to test your LLM application
 - How to deploy your LLM application
-- 
 
 ### LCEL
 
-- [How to chain runnables](expression_language/primitives/sequence.ipynb)
-- [How to run two runnables in parallel](expression_language/primitives/parallel.ipynb)
-- [How to attach runtime arguments to a runnable](expression_language/primitives/binding.ipynb)
+- [How to chain runnables](/docs/expression_language/primitives/sequence)
+- [How to run two runnables in parallel](/docs/expression_language/primitives/parallel/)
+- [How to attach runtime arguments to a runnable](/docs/expression_language/primitives/binding/)
 - 
 
 ## Components
+
 ### Prompts
-- [How to use example selectors](modules/model_io/prompts/example_selectors/index.ipynb)
-- [How to use few shot examples in chat models](modules/model_io/prompts/few_shot_examples_chat.ipynb)
+- [How to use example selectors](/docs/modules/model_io/prompts/example_selectors/)
+- [How to use few shot examples in chat models](/docs/modules/model_io/prompts/few_shot_examples_chat/)
 
 ## Use Cases
 
 ### Q&A with RAG
-- [How to add chat history](use_cases/question_answering/chat_history.ipynb)
-- [How to stream](use_cases/question_answering/streaming.ipynb)
-- [How to return sources](use_cases/question_answering/sources.ipynb)
-- [How to return citations](use_cases/question_answering/citations.ipynb)
+- [How to add chat history](/docs/use_cases/question_answering/chat_history/)
+- [How to stream](/docs/use_cases/question_answering/streaming/)
+- [How to return sources](/docs/use_cases/question_answering/sources/)
+- [How to return citations](/docs/use_cases/question_answering/citations/)
 
 
 ### Extraction
-- [How to use reference examples](use_cases/extraction/how_to/examples.ipynb)
-- [How to handle long text](use_cases/extraction/how_to/handle_long_text.ipynb)
+- [How to use reference examples](/docs/use_cases/extraction/how_to/examples/)
+- [How to handle long text](/docs/use_cases/extraction/how_to/handle_long_text/)
