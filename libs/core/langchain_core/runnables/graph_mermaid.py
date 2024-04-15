@@ -185,6 +185,7 @@ async def _render_mermaid_using_pyppeteer(
     output_file_path: Optional[str] = None,
     background_color: Optional[str] = "white",
     padding: int = 10,
+    device_scale_factor: int = 3,
 ) -> bytes:
     """Renders Mermaid graph using Pyppeteer."""
     try:
@@ -199,7 +200,9 @@ async def _render_mermaid_using_pyppeteer(
 
     # Setup Mermaid JS
     await page.goto("about:blank")
-    await page.addScriptTag({"url": "https://unpkg.com/mermaid/dist/mermaid.min.js"})
+    await page.addScriptTag(
+        {"url": "https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"}
+    )
     await page.evaluate(
         """() => {
                 mermaid.initialize({startOnLoad:true});
@@ -236,6 +239,7 @@ async def _render_mermaid_using_pyppeteer(
         {
             "width": int(dimensions["width"] + padding),
             "height": int(dimensions["height"] + padding),
+            "deviceScaleFactor": device_scale_factor,
         }
     )
 
