@@ -163,7 +163,6 @@ class Graph:
 
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
-    branches: Optional[Dict[str, List[Branch]]] = field(default_factory=dict)
 
     def to_json(self, *, with_schemas: bool = False) -> Dict[str, List[Dict[str, Any]]]:
         """Convert the graph to a JSON-serializable format."""
@@ -354,7 +353,6 @@ class Graph:
         return draw_mermaid(
             nodes=nodes,
             edges=self.edges,
-            branches=self.branches,
             first_node_label=first_label,
             last_node_label=last_label,
             curve_style=curve_style,
