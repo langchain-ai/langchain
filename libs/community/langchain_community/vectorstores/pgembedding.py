@@ -125,7 +125,7 @@ class PGEmbedding(VectorStore):
     def __init__(
         self,
         connection_string: str,
-        embedding_function: Embeddings,
+        embedding_function: Embeddings = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
         collection_metadata: Optional[dict] = None,
         pre_delete_collection: bool = False,
@@ -287,6 +287,13 @@ class PGEmbedding(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
+        if self.embedding_function is None:
+            raise ValueError(
+                "You need to initialize a embedding function to use this function. "
+                "you can do this by initializing the class with a embedding function or"
+                "pass your embedding function to set_embedding_function() function after "
+                "building the object."
+            )
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
@@ -319,6 +326,13 @@ class PGEmbedding(VectorStore):
         filter: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        if self.embedding_function is None:
+            raise ValueError(
+                "You need to initialize a embedding function to use this function. "
+                "you can do this by initializing the class with a embedding function or"
+                "pass your embedding function to set_embedding_function() function after "
+                "building the object."
+            )
         embedding = self.embedding_function.embed_query(text=query)
         return self.similarity_search_by_vector(
             embedding=embedding,
@@ -332,6 +346,13 @@ class PGEmbedding(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
+        if self.embedding_function is None:
+            raise ValueError(
+                "You need to initialize a embedding function to use this function. "
+                "you can do this by initializing the class with a embedding function or"
+                "pass your embedding function to set_embedding_function() function after "
+                "building the object."
+            )
         embedding = self.embedding_function.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
             embedding=embedding, k=k, filter=filter
@@ -418,6 +439,12 @@ class PGEmbedding(VectorStore):
             embedding=embedding, k=k, filter=filter
         )
         return [doc for doc, _ in docs_and_scores]
+
+    def set_embedding_function(
+            self, 
+            embedding_function: Embeddings
+    ) -> None:
+        self.embedding_function = embedding_function
 
     @classmethod
     def from_texts(
@@ -529,3 +556,4 @@ class PGEmbedding(VectorStore):
             collection_name=collection_name,
             **kwargs,
         )
+
