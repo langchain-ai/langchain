@@ -34,6 +34,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         self,
         documents: Sequence[Document],
         unwanted_tags: List[str] = ["script", "style"],
+        unwanted_classnames: List[str] = ["frame-header","frame-footer","frame-sidebar","nav-bar"],
         tags_to_extract: List[str] = ["p", "li", "div", "a"],
         remove_lines: bool = True,
         *,
@@ -46,6 +47,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         Args:
             documents: A sequence of Document objects containing HTML content.
             unwanted_tags: A list of tags to be removed from the HTML.
+            unwanted_classnames: A list of class names to be removed from the HTML
             tags_to_extract: A list of tags whose content will be extracted.
             remove_lines: If set to True, unnecessary lines will be removed.
             remove_comments: If set to True, comments will be removed.
@@ -55,6 +57,8 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         """
         for doc in documents:
             cleaned_content = doc.page_content
+
+            cleaned_content = self.remove_unwanted_classnames(cleaned_content, unwanted_classnames)
 
             cleaned_content = self.remove_unwanted_tags(cleaned_content, unwanted_tags)
 
@@ -68,6 +72,26 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
             doc.page_content = cleaned_content
 
         return documents
+
+    @staticmethod
+    def remove_unwanted_classnames(html_content: str, unwanted_classnames: List[str]) -> str:
+        """
+        Remove unwanted classname from a given HTML content.
+
+        Args:
+            html_content: The original HTML content string.
+            unwanted_classnames: A list of classnames to be removed from the HTML.
+
+        Returns:
+            A cleaned HTML string with unwanted classnames removed.
+        """
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(html_content, "html.parser")
+        for classname in unwanted_classnames:
+            for element in soup.find_all(class_ = classname):
+                element.decompose()
+        return str(soup)
 
     @staticmethod
     def remove_unwanted_tags(html_content: str, unwanted_tags: List[str]) -> str:
