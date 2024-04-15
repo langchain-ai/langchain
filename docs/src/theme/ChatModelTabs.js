@@ -23,15 +23,17 @@ os.environ["${apiKeyName}"] = getpass.getpass()`;
  * @typedef {Object} ChatModelTabsProps - Component props.
  * @property {string} [openaiParams] - Parameters for OpenAI chat model. Defaults to `model="gpt-3.5-turbo-0125"`
  * @property {string} [anthropicParams] - Parameters for Anthropic chat model. Defaults to `model="claude-3-sonnet-20240229"`
+ * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r"`
  * @property {string} [fireworksParams] - Parameters for Fireworks chat model. Defaults to `model="accounts/fireworks/models/mixtral-8x7b-instruct"`
  * @property {string} [mistralParams] - Parameters for Mistral chat model. Defaults to `model="mistral-large-latest"`
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
  * @property {boolean} [hideOpenai] - Whether or not to hide OpenAI chat model.
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
+ * @property {boolean} [hideCohere] - Whether or not to hide Cohere chat model.
  * @property {boolean} [hideFireworks] - Whether or not to hide Fireworks chat model.
  * @property {boolean} [hideMistral] - Whether or not to hide Mistral chat model.
- * @property {boolean} [hideGoogle] - Whether or not to hide Google chat model.
+ * @property {boolean} [hideGoogle] - Whether or not to hide Google VertexAI chat model.
  * @property {boolean} [hideTogether] - Whether or not to hide Together chat model.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
@@ -43,12 +45,14 @@ export default function ChatModelTabs(props) {
   const {
     openaiParams,
     anthropicParams,
+    cohereParams,
     fireworksParams,
     mistralParams,
     googleParams,
     togetherParams,
     hideOpenai,
     hideAnthropic,
+    hideCohere,
     hideFireworks,
     hideMistral,
     hideGoogle,
@@ -59,6 +63,7 @@ export default function ChatModelTabs(props) {
   const openAIParamsOrDefault = openaiParams ?? `model="gpt-3.5-turbo-0125"`;
   const anthropicParamsOrDefault =
     anthropicParams ?? `model="claude-3-sonnet-20240229"`;
+  const cohereParamsOrDefault = cohereParams ?? `model="command-r"`;
   const fireworksParamsOrDefault =
     fireworksParams ??
     `model="accounts/fireworks/models/mixtral-8x7b-instruct"`;
@@ -91,6 +96,24 @@ export default function ChatModelTabs(props) {
       shouldHide: hideAnthropic,
     },
     {
+      value: "Google",
+      label: "Google",
+      text: `from langchain_google_vertexai import ChatVertexAI\n\n${llmVarName} = ChatVertexAI(${googleParamsOrDefault})`,
+      apiKeyName: "GOOGLE_API_KEY",
+      packageName: "langchain-google-vertexai",
+      default: false,
+      shouldHide: hideGoogle,
+    },
+    {
+      value: "Cohere",
+      label: "Cohere",
+      text: `from langchain_cohere import ChatCohere\n\n${llmVarName} = ChatCohere(${cohereParamsOrDefault})`,
+      apiKeyName: "COHERE_API_KEY",
+      packageName: "langchain-cohere",
+      default: false,
+      shouldHide: hideCohere,
+    },
+    {
       value: "FireworksAI",
       label: "FireworksAI",
       text: `from langchain_fireworks import ChatFireworks\n\n${llmVarName} = ChatFireworks(${fireworksParamsOrDefault})`,
@@ -107,15 +130,6 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-mistralai",
       default: false,
       shouldHide: hideMistral,
-    },
-    {
-      value: "Google",
-      label: "Google",
-      text: `from langchain_google_genai import ChatGoogleGenerativeAI\n\n${llmVarName} = ChatGoogleGenerativeAI(${googleParamsOrDefault})`,
-      apiKeyName: "GOOGLE_API_KEY",
-      packageName: "langchain-google-genai",
-      default: false,
-      shouldHide: hideGoogle,
     },
     {
       value: "TogetherAI",
