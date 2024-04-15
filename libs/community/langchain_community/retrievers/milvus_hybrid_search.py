@@ -670,9 +670,23 @@ class MilvusHybridSearchRetriever(BaseRetriever):
         timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Get documents relevant to a query
+
+        Args:
+            query (str): String to find relevant documents for
+            run_manager (CallbackManagerForRetrieverRun): The callbacks handler to use
+            k (int, optional): Number of documents to return. Defaults to 4.
+            ann_search_params (Optional[Dict[str, Dict[str, Any]]], optional): Vector search params. Defaults to None.
+                examples: ann_search_params = {"dense_vector": {"limit": 10, "expr": 'pk in [1, 2]'}}
+            include_other_fields (bool, optional): Whether to use other vector fields which are not included in ann_search_params. Defaults to True.
+            rerank_params (Optional[Dict[str, Any]], optional): Rerank model params. Defaults to None.
+            timeout (Optional[float], optional): Timeout for search. Defaults to None.
+            **kwargs: Additional arguments to pass to the retriever
+
+        Returns:
+            List[Document]: List of relevant documents
+        """
         from pymilvus import AnnSearchRequest
-        # TODO: add docstring:
-        # ann_search_params = {"dense_vector": {"limit": 10, "expr": 'pk in [1, 2]'}}
 
         if self.col is None:
             logger.debug("No existing collection to search.")
@@ -682,13 +696,16 @@ class MilvusHybridSearchRetriever(BaseRetriever):
 
         if not ann_search_params:
             ann_search_params = {}
+        
+        valid_fields = set(ann_search_params) & available_vector_fields
+        invalid_fields = set(ann_search_params) - valid_fields
+        if invalid_fields:
+            logger.info(f"These fields {invalid_fields} are not available fields, which are ignored")
+        ann_search_params = {field: ann_search_params[field] for field in valid_fields}
 
         ann_search_dict = {}
         for field, search_kwargs in ann_search_params.items():
             search_kwargs = deepcopy(search_kwargs)
-            if field not in available_vector_fields:
-                logger.info(f"{field} is not a available vector field, ignored")
-                continue
             if "limit" not in search_kwargs:
                 search_kwargs["limit"] = k
             if "param" not in search_kwargs:
@@ -725,24 +742,56 @@ class MilvusHybridSearchRetriever(BaseRetriever):
             )
             ann_search_fields.append(field)
 
-        rerank = _get_reranker(rerank_params, ann_search_fields)
+        if len(reqs) == 0:
+            expr = kwargs.pop("expr", "")
+            logger.debug(f"using query, expr={expr}")
+            res = self.col.query(
+                expr=expr,
+                limit=k,
+                output_fields=[self.text_field, self.metadata_field],
+                **kwargs,
+            )
+            docs = []
+            for result in res:
+                docs.append(
+                    Document(
+                        page_content=result.get(self.text_field),
+                        metadata=result.get(self.metadata_field),
+                    )
+                )
+            return docs
 
-        logger.debug(f"vector search reqs:")
-        for req in reqs:
-            logger.info(
-                f"anns_field: {req.anns_field}, param: {req.param}, "
-                f"limit: {req.limit}, expr: {req.expr}"
-            )         
-        logger.debug(f"rerank: {rerank}")
+        elif len(reqs) == 1:
+            anns_field = reqs[0].anns_field
+            logger.debug(f"using single vector search on {anns_field}")
+            res = self.col.search(
+                data = [all_embeddings[anns_field]],
+                param = reqs[0].param,
+                anns_field = anns_field, 
+                limit = reqs[0].limit,
+                expr = reqs[0].expr, 
+                output_fields=[self.text_field, self.metadata_field],
+                **kwargs,
+            )
+        else:
+            rerank = _get_reranker(rerank_params, ann_search_fields)
 
-        res = self.col.hybrid_search(
-            reqs=reqs,
-            rerank=rerank,
-            limit=k,
-            output_fields=[self.text_field, self.metadata_field],
-            timeout=timeout,
-            **kwargs,
-        )
+            logger.debug(f"vector search reqs:")
+            for req in reqs:
+                logger.info(
+                    f"anns_field: {req.anns_field}, param: {req.param}, "
+                    f"limit: {req.limit}, expr: {req.expr}"
+                )         
+            logger.debug(f"rerank: {rerank}")
+
+            res = self.col.hybrid_search(
+                reqs=reqs,
+                rerank=rerank,
+                limit=k,
+                output_fields=[self.text_field, self.metadata_field],
+                timeout=timeout,
+                **kwargs,
+            )
 
         docs = []
         for result in res[0]:
