@@ -1,6 +1,7 @@
 """VectorStore agent."""
 from typing import Any, Dict, Optional
 
+from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain.agents.agent import AgentExecutor
@@ -10,7 +11,6 @@ from langchain.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreToolkit,
 )
 from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
 
 

@@ -1,12 +1,12 @@
 from typing import Any, List, Optional
 
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from pytest_mock import MockerFixture
 from syrupy import SnapshotAssertion
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.runnables.openai_functions import OpenAIFunctionsRouter
 
 

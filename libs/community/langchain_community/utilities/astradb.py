@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class SetupMode(Enum):
+    """Setup mode for AstraDBEnvironment as enumerator."""
+
     SYNC = 1
     ASYNC = 2
     OFF = 3

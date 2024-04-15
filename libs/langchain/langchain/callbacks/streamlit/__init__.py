@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain_core.callbacks.base import BaseCallbackHandler
+
 from langchain.callbacks.streamlit.streamlit_callback_handler import (
     LLMThoughtLabeler as LLMThoughtLabeler,
 )
