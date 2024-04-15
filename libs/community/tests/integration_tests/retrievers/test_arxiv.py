@@ -25,7 +25,7 @@ def assert_docs(docs: List[Document], all_meta: bool = False) -> None:
 
 
 def test_load_success(retriever: ArxivRetriever) -> None:
-    docs = retriever.invoke(query="1605.08386")
+    docs = retriever.invoke("1605.08386")
     assert len(docs) == 1
     assert_docs(docs, all_meta=False)
 
