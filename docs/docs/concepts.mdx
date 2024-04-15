@@ -51,6 +51,36 @@ export LANGCHAIN_API_KEY=ls__...
 
 LangChain provides standard, extendable interfaces and external integrations for various components useful for building with LLMs.
 
+### Message types
+
+Some language models take a list of messages as input and return a message. There are a few different types of messages. All messages have a `role` and a `content` property. The `role` describes WHO is saying the message. LangChain has different message classes for different roles. The `content` property describes the content of the message. This can be a few different things:
+
+- A string (most models deal this type of content)
+- A List of dictionaries (this is used for multi-modal input, where the dictionary contains information about that input type and that input location)
+
+In addition, messages have an `additional_kwargs` property. This is where additional information about messages can be passed. This is largely used for input parameters that are *provider specific* and not general. The best known example of this is `function_call` from OpenAI.
+
+#### HumanMessage
+
+This represents a message from the user. Generally consists only of content.
+
+#### AIMessage
+
+This represents a message from the model. This may have `additional_kwargs` in it - for example `tool_calls` if using OpenAI tool calling.
+
+#### SystemMessage
+
+This represents a system message, which tells the model how to behave. This generally only consists of content. Not every model supports this.
+
+#### FunctionMessage
+
+This represents the result of a function call. In addition to `role` and `content`, this message has a `name` parameter which conveys the name of the function that was called to produce this result.
+
+#### ToolMessage
+
+This represents the result of a tool call. This is distinct from a FunctionMessage in order to match OpenAI's `function` and `tool` message types. In addition to `role` and `content`, this message has a `tool_call_id` parameter which conveys the id of the call to the tool that was called to produce this result.
+
+
 ### Models
 
 LangChain has useful components for calling different types of language models, formatting prompt inputs, and streaming model outputs:
@@ -58,9 +88,13 @@ LangChain has useful components for calling different types of language models, 
 #### [Prompt templates](/docs/modules/model_io/prompts/)
 Formats input provided by a user in a reusable way. Used guide a model's response, helping it understand the context and generate relevant and coherent language-based output.
 
+#### [Example Selectors](/docs/modules/model_io/prompts/example_selectors)
+Select examples to include in the prompt as few shot examples. There are generally a few ways of doing this, the two main ones being randomly or by semantic similarity.
+
 #### [Chat models](/docs/modules/model_io/chat/)
 Language models that uses chat messages as inputs and returns chat messages as outputs (as opposed to using plain text).
 Implementations include [GPT-4](/docs/integrations/chat/openai/) and [Claude 3](/docs/integrations/chat/anthropic/).
+
 
 #### [LLMs](/docs/modules/model_io/llms/)
 Language models that takes a string as input and returns a string.
@@ -87,21 +121,48 @@ Useful for retrieval-augmented generation (RAG).
 Implementations include loaders for [PDF file content](/docs/modules/data_connection/document_loaders/pdf/) and [GitHub repos](/docs/integrations/document_loaders/github/#load-github-file-content).
 
 #### [Text splitters](/docs/modules/data_connection/document_transformers/)
-Prepare and transform loaded data into formats more suitable for a language model to use as context when performing RAG.
+Once you've loaded documents, you'll often want to transform them to better suit your application. The simplest example is you may want to split a long document into smaller chunks that can fit into your model's context window. LangChain has a number of built-in document transformers that make it easy to split, combine, filter, and otherwise manipulate documents.
+
+When you want to deal with long pieces of text, it is necessary to split up that text into chunks. As simple as this sounds, there is a lot of potential complexity here. Ideally, you want to keep the semantically related pieces of text together. What "semantically related" means could depend on the type of text. This notebook showcases several ways to do that.
+
+At a high level, text splitters work as following:
+
+1. Split the text up into small, semantically meaningful chunks (often sentences).
+2. Start combining these small chunks into a larger chunk until you reach a certain size (as measured by some function).
+3. Once you reach that size, make that chunk its own piece of text and then start creating a new chunk of text with some overlap (to keep context between chunks).
+
+That means there are two different axes along which you can customize your text splitter:
+
+1. How the text is split
+2. How the chunk size is measured
+
 Implementations include [generic text splitters](/docs/modules/data_connection/document_transformers/recursive_text_splitter/)
 and [more specialized ones](/docs/modules/data_connection/document_transformers/code_splitter/) for code in various languages.
 
 #### [Embedding models](/docs/modules/data_connection/text_embedding/)
-Models that create a vector representation of a piece of text. Useful for semantic search.
+The Embeddings class is a class designed for interfacing with text embedding models. There are lots of embedding model providers (OpenAI, Cohere, Hugging Face, etc) - this class is designed to provide a standard interface for all of them.
+
+Embeddings create a vector representation of a piece of text. This is useful because it means we can think about text in the vector space, and do things like semantic search where we look for pieces of text that are most similar in the vector space.
+
+The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former takes as input multiple texts, while the latter takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
+
 Implementations include [`mistral-embed`](/docs/integrations/text_embedding/mistralai/) and OpenAI's [`text-embedding-3-large`](/docs/integrations/text_embedding/openai/).
 
 #### [Vectorstores](/docs/modules/data_connection/vectorstores/)
-A specialized database that stores embedded data and performs semantic search over vector embeddings.
+One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
+and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
+A vector store takes care of storing embedded data and performing vector search for you.
+
+
 Implementations include [PGVector](/docs/integrations/vectorstores/pgvector/) and [LanceDB](/docs/integrations/vectorstores/lancedb/).
 
 #### [Retrievers](/docs/modules/data_connection/retrievers/)
-An interface that returns documents given an unstructured query. More general than a vector store, since a retriever does not need to be able to store documents, only return (or retrieve) them.
+A retriever is an interface that returns documents given an unstructured query.
+It is more general than a vector store.
+A retriever does not need to be able to store documents, only to return (or retrieve) them.
 Retrievers can be created from vectorstores, but are also broad enough to include [Wikipedia search](/docs/integrations/retrievers/wikipedia/) and [Amazon Kendra](/docs/integrations/retrievers/amazon_kendra_retriever/).
+
+Retrievers accept a string query as input and return a list of Document's as output.
 
 ### Composition
 
@@ -109,9 +170,42 @@ This section contains higher-level components that combine other arbitrary syste
 A good primer for this section would be reading the sections on [LangChain Expression Language](/docs/concepts/#langchain-expression-language) and becoming familiar with constructing sequences via piping and the various primitives offered.
 
 #### [Tools](/docs/modules/tools/)
-An interface that an agent, chain, or bare language model can use to interact with the world.
-Tools can fetch data from various sources for the model to use as context, but can also perform actions.
+Tools are interfaces that an agent, chain, or LLM can use to interact with the world.
+They combine a few things:
+
+1. The name of the tool
+2. A description of what the tool is
+3. JSON schema of what the inputs to the tool are
+4. The function to call
+5. Whether the result of a tool should be returned directly to the user
+
+It is useful to have all this information because this information can be used to build action-taking systems! The name, description, and JSON schema can be used to prompt the LLM so it knows how to specify what action to take, and then the function to call is equivalent to taking that action.
+
+The simpler the input to a tool is, the easier it is for an LLM to be able to use it.
+Many agents will only work with tools that have a single string input.
+For a list of agent types and which ones work with more complicated inputs, please see [this documentation](/docs/modules/agents/agent_types)
+
+Importantly, the name, description, and JSON schema (if used) are all used in the prompt. Therefore, it is really important that they are clear and describe exactly how the tool should be used. You may need to change the default name, description, or JSON schema if the LLM is not understanding how to use the tool.
 Implementations include [web search](/docs/integrations/tools/tavily_search/) and [Twilio SMS](/docs/integrations/tools/twilio/).
+
+#### Toolkits
+
+Toolkits are collections of tools that are designed to be used together for specific tasks. They have convenient loading methods.
+For a complete list of available ready-made toolkits, visit [Integrations](/docs/integrations/toolkits/).
+
+All Toolkits expose a `get_tools` method which returns a list of tools.
+You can therefore do:
+
+```python
+# Initialize a toolkit
+toolkit = ExampleTookit(...)
+
+# Get list of tools
+tools = toolkit.get_tools()
+
+# Create agent
+agent = create_agent_method(llm, tools, prompt)
+```
 
 #### [Agents](/docs/modules/agents/)
 Interfaces that allow a language model to choose an action to take at a given step.

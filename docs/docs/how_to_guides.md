@@ -42,11 +42,17 @@ However, these guides will help you quickly accomplish common tasks.
 ## Components
 
 ### Prompts
-- [How to use example selectors](/docs/modules/model_io/prompts/example_selectors/)
 - [How to use few shot examples](/docs/modules/model_io/prompts/few_shot_examples)
 - [How to use few shot examples in chat models](/docs/modules/model_io/prompts/few_shot_examples_chat/)
 - [How to partial prompt templates](/docs/modules/model_io/prompts/partial)
 - [How to compose two prompts together](/docs/modules/model_io/prompts/composition)
+
+### Example Selectors
+- [How to use example selectors](/docs/modules/model_io/prompts/example_selectors/)
+- [How to select examples by length](/docs/modules/model_io/prompts/example_selectors/length_based)
+- [How to select examples by semantic similarity](/docs/modules/model_io/prompts/example_selectors/similarity)
+- [How to select examples by semantic ngram overlap](/docs/modules/model_io/prompts/example_selectors/ngram_overlap)
+- [How to select examples by maximal marginal relevance](/docs/modules/model_io/prompts/example_selectors/mmr)
 
 ### Chat Models
 - [How to function/tool calling](/docs/modules/model_io/chat/function_calling)
@@ -65,9 +71,9 @@ However, these guides will help you quickly accomplish common tasks.
 
 ### Output Parsers
 - [How to use output parsers to parse an LLM response into structured format](/docs/modules/model_io/output_parsers/quick_start)
-- [How to pase JSON output](/docs/modules/model_io/output_parsers/types/json)
-- [How to pase XML output](/docs/modules/model_io/output_parsers/types/xml)
-- [How to pase YAML output](/docs/modules/model_io/output_parsers/types/yaml)
+- [How to parse JSON output](/docs/modules/model_io/output_parsers/types/json)
+- [How to parse XML output](/docs/modules/model_io/output_parsers/types/xml)
+- [How to parse YAML output](/docs/modules/model_io/output_parsers/types/yaml)
 - [How to retry when output parsing errors occur](/docs/modules/model_io/output_parsers/types/retry)
 - [How to try to fix errors in output parsing](/docs/modules/model_io/output_parsers/types/output_fixing)
 - [How to write a custom output parser class](/docs/modules/model_io/output_parsers/custom)
@@ -77,7 +83,7 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to load data from a directory](/docs/modules/data_connection/document_loaders/file_directory)
 - [How to load HTML data](/docs/modules/data_connection/document_loaders/html)
 - [How to load JSON data](/docs/modules/data_connection/document_loaders/json)
-- [How to load Markdown data](/doc/modules/data_connection/document_loaders/markdown)
+- [How to load Markdown data](/docs/modules/data_connection/document_loaders/markdown)
 - [How to load Microsoft Office data](/docs/modules/data_connection/document_loaders/office_file)
 - [How to load PDF files](/docs/modules/data_connection/document_loaders/pdf)
 - [How to write a custom document loader](/docs/modules/data_connection/document_loaders/custom)
@@ -106,7 +112,7 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to use contextual compression to compress the data retrieved](/docs/modules/data_connection/retrievers/contextual_compression)
 - [How to write a custom retriever class](/docs/modules/data_connection/retrievers/custom_retriever)
 - [How to combine the results from multiple retrievers](/docs/modules/data_connection/retrievers/ensemble)
-- [How to reorder retrieved results to put most relevant documents not in the middle](/docs/docs/modules/data_connection/retrievers/long_context_reorder)
+- [How to reorder retrieved results to put most relevant documents not in the middle](/docs/modules/data_connection/retrievers/long_context_reorder)
 - [How to generate multiple embeddings per document](/docs/modules/data_connection/retrievers/multi_vector)
 - [How to retrieve the whole document for a chunk](/docs/modules/data_connection/retrievers/parent_document_retriever)
 - [How to generate metadata filters](/docs/modules/data_connection/retrievers/self_query)
