@@ -203,10 +203,8 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
                 "enum": list(arg_type.__args__),  # type: ignore
                 "type": PYTHON_TO_JSON_TYPES[arg_type.__args__[0].__class__.__name__],  # type: ignore
             }
-        elif hasattr(arg_type, "__name__") and "Optional" in getattr(
-            arg_type, "__name__"
-        ):
-            # Parameter is optional - convert type if possible.
+        elif hasattr(arg_type, "__args__") and arg_type.__args__:
+            # Parameter is likely optional - convert type if possible.
             param_type = arg_type.__args__[0].__name__
             if param_type in PYTHON_TO_JSON_TYPES:
                 properties[arg]["type"] = PYTHON_TO_JSON_TYPES[param_type]
