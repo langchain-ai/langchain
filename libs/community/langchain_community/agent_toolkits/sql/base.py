@@ -1,7 +1,6 @@
 """SQL agent."""
 from __future__ import annotations
 
-import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -93,7 +92,7 @@ def create_sql_agent(
             using 'db' and 'llm'. Must provide exactly one of 'db' or 'toolkit'.
         prompt: Complete agent prompt. prompt and {prefix, suffix, format_instructions,
             input_variables} are mutually exclusive.
-        **kwargs: DEPRECATED. Not used, kept for backwards compatibility.
+        **kwargs: Arbitrary additional Agent args.
 
     Returns:
         An AgentExecutor with the specified agent_type agent.
@@ -130,13 +129,6 @@ def create_sql_agent(
     if toolkit and db:
         raise ValueError(
             "Must provide exactly one of 'toolkit' or 'db'. Received both."
-        )
-    if input_variables:
-        kwargs = kwargs or {}
-        kwargs["input_variables"] = input_variables
-    if kwargs:
-        warnings.warn(
-            f"Received additional kwargs {kwargs} which are no longer supported."
         )
 
     toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)
@@ -183,6 +175,7 @@ def create_sql_agent(
             runnable=create_react_agent(llm, tools, prompt),
             input_keys_arg=["input"],
             return_keys_arg=["output"],
+            **kwargs,
         )
 
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
@@ -198,6 +191,7 @@ def create_sql_agent(
             runnable=create_openai_functions_agent(llm, tools, prompt),
             input_keys_arg=["input"],
             return_keys_arg=["output"],
+            **kwargs,
         )
     elif agent_type == "openai-tools":
         if prompt is None:
@@ -212,6 +206,7 @@ def create_sql_agent(
             runnable=create_openai_tools_agent(llm, tools, prompt),
             input_keys_arg=["input"],
             return_keys_arg=["output"],
+            **kwargs,
         )
 
     else:
