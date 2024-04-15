@@ -6,7 +6,7 @@
 ## Quick Install
 
 ```bash
-pip install langchain-core
+pip install gigachain-core
 ```
 
 ## What is it?

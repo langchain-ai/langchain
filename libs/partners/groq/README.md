@@ -17,7 +17,7 @@ Want more Groq? Check out our [website](https://groq.com) for more resources and
 Install the integration package:
 
 ```bash
-pip install langchain-groq
+pip install gigachain-groq
 ```
 
 Request an [API key](https://wow.groq.com) and set it as an environment variable
