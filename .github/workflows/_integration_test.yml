@@ -6,11 +6,6 @@ on:
       working-directory:
         required: true
         type: string
-  workflow_call:
-    inputs:
-      working-directory:
-        required: true
-        type: string
 
 env:
   POETRY_VERSION: "1.7.1"
