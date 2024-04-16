@@ -8,6 +8,10 @@ class FakeSdk():
         """Gets Things"""
         return self._dummy_return(thing_id)
     
+    def create_thing(self, thing_id):
+        """Creates Things"""
+        return self._dummy_return(thing_id)
+    
     def post_thing(self, thing_id):
         """Posts Things"""
         return self._dummy_return(thing_id)
