@@ -488,6 +488,23 @@ class AzureCosmosDBVectorSearch(VectorStore):
             },
         ]
         return pipeline
+        
+    def similarity_search_with_relevance_scores(
+        self,
+        query: str,
+        k: int = 4,
+        kind: CosmosDBVectorSearchType = CosmosDBVectorSearchType.VECTOR_IVF,
+        ef_search: int = 40,
+        score_threshold: float = 0.0,
+    ) -> List[Tuple[Document, float]]:
+        docs = self.similarity_search_with_score(
+            query=query,
+            k=k,
+            kind=kind,
+            ef_search=ef_search,
+            score_threshold=score_threshold,
+        )
+        return docs
 
     def similarity_search_with_score(
         self,
