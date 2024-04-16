@@ -47,9 +47,23 @@ After that, you can enable it by setting environment variables:
 export LANGCHAIN_API_KEY=ls__...
 ```
 
-## Components
+# Components
 
 LangChain provides standard, extendable interfaces and external integrations for various components useful for building with LLMs.
+
+## Models
+
+LangChain has useful components for calling different types of language models, formatting prompt inputs, and streaming model outputs:
+
+### [Prompt templates](/docs/modules/model_io/prompts/)
+Formats input provided by a user in a reusable way. Used guide a model's response, helping it understand the context and generate relevant and coherent language-based output.
+
+### [Example Selectors](/docs/modules/model_io/prompts/example_selectors)
+Select examples to include in the prompt as few shot examples. There are generally a few ways of doing this, the two main ones being randomly or by semantic similarity.
+
+### [Chat models](/docs/modules/model_io/chat/)
+Language models that uses chat messages as inputs and returns chat messages as outputs (as opposed to using plain text).
+Implementations include [GPT-4](/docs/integrations/chat/openai/) and [Claude 3](/docs/integrations/chat/anthropic/).
 
 ### Message types
 
@@ -80,27 +94,11 @@ This represents the result of a function call. In addition to `role` and `conten
 
 This represents the result of a tool call. This is distinct from a FunctionMessage in order to match OpenAI's `function` and `tool` message types. In addition to `role` and `content`, this message has a `tool_call_id` parameter which conveys the id of the call to the tool that was called to produce this result.
 
-
-### Models
-
-LangChain has useful components for calling different types of language models, formatting prompt inputs, and streaming model outputs:
-
-#### [Prompt templates](/docs/modules/model_io/prompts/)
-Formats input provided by a user in a reusable way. Used guide a model's response, helping it understand the context and generate relevant and coherent language-based output.
-
-#### [Example Selectors](/docs/modules/model_io/prompts/example_selectors)
-Select examples to include in the prompt as few shot examples. There are generally a few ways of doing this, the two main ones being randomly or by semantic similarity.
-
-#### [Chat models](/docs/modules/model_io/chat/)
-Language models that uses chat messages as inputs and returns chat messages as outputs (as opposed to using plain text).
-Implementations include [GPT-4](/docs/integrations/chat/openai/) and [Claude 3](/docs/integrations/chat/anthropic/).
-
-
-#### [LLMs](/docs/modules/model_io/llms/)
+### [LLMs](/docs/modules/model_io/llms/)
 Language models that takes a string as input and returns a string.
 Implementations include [GPT-3](/docs/integrations/llms/openai/).
 
-#### [Output parsers](/docs/modules/model_io/output_parsers/)
+### [Output parsers](/docs/modules/model_io/output_parsers/)
 Responsible for taking the output of a model and transforming it to a more suitable format for downstream tasks.
 Useful when you are using LLMs to generate structured data, or to normalize output from chat models and LLMs.
 Some implementations can handle streamed output from models and "transform" individual chunks into a different format.
@@ -110,17 +108,17 @@ formatting outputs with an `output parser`.
 
 ![Flowchart illustrating the Model I/O process with steps Format, Predict, and Parse, showing the transformation from input variables to structured output.](/img/model_io.jpg "Model Input/Output Process Diagram")
 
-### Retrieval
+## Retrieval
 
 Retrieval of data is a key component of providing LLMs with user-specific data that is not part of the model's training set, commonly referred to as **Retrieval-Augmented Generation** (RAG).
 In this process, external data is retrieved and then passed to the LLM during the generation step.
 
-#### [Document loaders](/docs/modules/data_connection/document_loaders/)
+### [Document loaders](/docs/modules/data_connection/document_loaders/)
 Load data from a source as text and associated metadata.
 Useful for retrieval-augmented generation (RAG).
 Implementations include loaders for [PDF file content](/docs/modules/data_connection/document_loaders/pdf/) and [GitHub repos](/docs/integrations/document_loaders/github/#load-github-file-content).
 
-#### [Text splitters](/docs/modules/data_connection/document_transformers/)
+### [Text splitters](/docs/modules/data_connection/document_transformers/)
 Once you've loaded documents, you'll often want to transform them to better suit your application. The simplest example is you may want to split a long document into smaller chunks that can fit into your model's context window. LangChain has a number of built-in document transformers that make it easy to split, combine, filter, and otherwise manipulate documents.
 
 When you want to deal with long pieces of text, it is necessary to split up that text into chunks. As simple as this sounds, there is a lot of potential complexity here. Ideally, you want to keep the semantically related pieces of text together. What "semantically related" means could depend on the type of text. This notebook showcases several ways to do that.
@@ -139,7 +137,7 @@ That means there are two different axes along which you can customize your text 
 Implementations include [generic text splitters](/docs/modules/data_connection/document_transformers/recursive_text_splitter/)
 and [more specialized ones](/docs/modules/data_connection/document_transformers/code_splitter/) for code in various languages.
 
-#### [Embedding models](/docs/modules/data_connection/text_embedding/)
+### [Embedding models](/docs/modules/data_connection/text_embedding/)
 The Embeddings class is a class designed for interfacing with text embedding models. There are lots of embedding model providers (OpenAI, Cohere, Hugging Face, etc) - this class is designed to provide a standard interface for all of them.
 
 Embeddings create a vector representation of a piece of text. This is useful because it means we can think about text in the vector space, and do things like semantic search where we look for pieces of text that are most similar in the vector space.
@@ -148,7 +146,7 @@ The base Embeddings class in LangChain provides two methods: one for embedding d
 
 Implementations include [`mistral-embed`](/docs/integrations/text_embedding/mistralai/) and OpenAI's [`text-embedding-3-large`](/docs/integrations/text_embedding/openai/).
 
-#### [Vectorstores](/docs/modules/data_connection/vectorstores/)
+### [Vectorstores](/docs/modules/data_connection/vectorstores/)
 One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
 and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
 A vector store takes care of storing embedded data and performing vector search for you.
@@ -156,7 +154,7 @@ A vector store takes care of storing embedded data and performing vector search 
 
 Implementations include [PGVector](/docs/integrations/vectorstores/pgvector/) and [LanceDB](/docs/integrations/vectorstores/lancedb/).
 
-#### [Retrievers](/docs/modules/data_connection/retrievers/)
+### [Retrievers](/docs/modules/data_connection/retrievers/)
 A retriever is an interface that returns documents given an unstructured query.
 It is more general than a vector store.
 A retriever does not need to be able to store documents, only to return (or retrieve) them.
@@ -164,12 +162,12 @@ Retrievers can be created from vectorstores, but are also broad enough to includ
 
 Retrievers accept a string query as input and return a list of Document's as output.
 
-### Composition
+## Composition
 
 This section contains higher-level components that combine other arbitrary systems (e.g. external APIs and services) and/or LangChain primitives together.
 A good primer for this section would be reading the sections on [LangChain Expression Language](/docs/concepts/#langchain-expression-language) and becoming familiar with constructing sequences via piping and the various primitives offered.
 
-#### [Tools](/docs/modules/tools/)
+### [Tools](/docs/modules/tools/)
 Tools are interfaces that an agent, chain, or LLM can use to interact with the world.
 They combine a few things:
 
@@ -188,7 +186,7 @@ For a list of agent types and which ones work with more complicated inputs, plea
 Importantly, the name, description, and JSON schema (if used) are all used in the prompt. Therefore, it is really important that they are clear and describe exactly how the tool should be used. You may need to change the default name, description, or JSON schema if the LLM is not understanding how to use the tool.
 Implementations include [web search](/docs/integrations/tools/tavily_search/) and [Twilio SMS](/docs/integrations/tools/twilio/).
 
-#### Toolkits
+### Toolkits
 
 Toolkits are collections of tools that are designed to be used together for specific tasks. They have convenient loading methods.
 For a complete list of available ready-made toolkits, visit [Integrations](/docs/integrations/toolkits/).
@@ -207,13 +205,13 @@ tools = toolkit.get_tools()
 agent = create_agent_method(llm, tools, prompt)
 ```
 
-#### [Agents](/docs/modules/agents/)
+### [Agents](/docs/modules/agents/)
 Interfaces that allow a language model to choose an action to take at a given step.
 When run in a loop using an executor, they can autonomously solve abstract, multi-step problems.
 Implementations can rely on specific model functionality like [tool calling](/docs/modules/agents/agent_types/tool_calling/) for performance
 or use a more generalized prompt-based approach like [ReAct](/docs/modules/agents/agent_types/react/).
 
-#### [Chains](/docs/modules/chains/)
+### [Chains](/docs/modules/chains/)
 Sequences of calls, whether to an LLM, a tool, or a data preprocessing step. These are primarily composed using LangChain Expression Language,
 but also include some more opaque object-oriented classes.
 
