@@ -34,10 +34,14 @@ class MyRunnable(RunnableSerializable[str, str]):
     def my_custom_function(self) -> str:
         return self.my_property
 
-    def my_custom_function_w_config(self, config: RunnableConfig = None) -> str:
+    def my_custom_function_w_config(
+        self, config: Optional[RunnableConfig] = None
+    ) -> str:
         return self.my_property
 
-    def my_custom_function_w_kw_config(self, *, config: RunnableConfig = None) -> str:
+    def my_custom_function_w_kw_config(
+        self, *, config: Optional[RunnableConfig] = None
+    ) -> str:
         return self.my_property
 
 
