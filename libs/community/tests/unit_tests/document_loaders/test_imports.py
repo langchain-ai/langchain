@@ -65,6 +65,7 @@ EXPECTED_ALL = [
     "FaunaLoader",
     "FigmaFileLoader",
     "FileSystemBlobLoader",
+    "FireCrawlLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
