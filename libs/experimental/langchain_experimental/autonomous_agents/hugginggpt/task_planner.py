@@ -4,7 +4,6 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import Callbacks
 from langchain.chains import LLMChain
 from langchain.prompts.chat import (
     AIMessagePromptTemplate,
@@ -13,6 +12,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain.tools.base import BaseTool
+from langchain_core.callbacks.manager import Callbacks
 
 from langchain_experimental.pydantic_v1 import BaseModel
 
