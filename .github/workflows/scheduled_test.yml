@@ -20,6 +20,10 @@ jobs:
         working-directory:
           - "libs/partners/openai"
           - "libs/partners/anthropic"
+          - "libs/partners/fireworks"
+          - "libs/partners/groq"
+          - "libs/partners/mistralai"
+          - "libs/partners/together"
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
       - uses: actions/checkout@v4
@@ -65,6 +69,9 @@ jobs:
           AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
           AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
           make integration_test
 
