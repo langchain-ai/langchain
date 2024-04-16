@@ -1056,7 +1056,7 @@ develop = true
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
 gigachain-core = "^0.1.41"
-gigachat = "^0.1.22"
+gigachat = "^0.1.23"
 langsmith = "^0.1.0"
 numpy = "^1"
 PyYAML = ">=5.3"
