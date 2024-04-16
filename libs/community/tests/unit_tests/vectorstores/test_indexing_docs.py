@@ -82,6 +82,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "SurrealDBStore",
         "TileDB",
         "TimescaleVector",
+        "TencentVectorDB",
         "EcloudESVectorStore",
         "Vald",
         "VDMS",
@@ -91,5 +92,6 @@ def test_compatible_vectorstore_documentation() -> None:
         "ZepVectorStore",
         "Zilliz",
         "Lantern",
+        "OpenSearchVectorSearch",
     }
     assert compatible == documented

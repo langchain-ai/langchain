@@ -278,7 +278,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.37"
+version = "0.1.42"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -291,7 +291,6 @@ langsmith = "^0.1.0"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
-requests = "^2"
 tenacity = "^8.1.0"
 
 [package.extras]
@@ -300,6 +299,23 @@ extended-testing = ["jinja2 (>=3,<4)"]
 [package.source]
 type = "directory"
 url = "../../core"
+
+[[package]]
+name = "langchain-standard-tests"
+version = "0.1.0"
+description = "Standard tests for LangChain implementations"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+langchain-core = "^0.1.40"
+pytest = ">=7,<9"
+
+[package.source]
+type = "directory"
+url = "../../standard-tests"
 
 [[package]]
 name = "langchain-text-splitters"
@@ -994,4 +1010,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d0e6ec94729c40ea458eead2404d2b501f18dd67c211c832146352410223276e"
+content-hash = "446d53423f89a3a378db9cff7ce8cb392e146e294d31e9d1bbfc23108a571097"
