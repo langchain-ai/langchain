@@ -16,13 +16,15 @@ class AsyncChromiumLoader(BaseLoader):
     def __init__(
         self,
         urls: List[str],
+        *,
         headless: bool = True,
     ):
         """
         Initialize the loader with a list of URL paths.
 
         Args:
-            urls (List[str]): A list of URLs to scrape content from.
+            urls: A list of URLs to scrape content from.
+            headless: Whether to run browser in headless mode.
 
         Raises:
             ImportError: If the required 'playwright' package is not installed.
