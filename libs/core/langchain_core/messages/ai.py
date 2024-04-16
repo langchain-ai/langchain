@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -19,6 +19,11 @@ from langchain_core.utils.json import (
 )
 
 
+class TokenUsage(TypedDict):
+    prompt_tokens: int
+    completion_tokens: int
+
+
 class AIMessage(BaseMessage):
     """Message from an AI."""
 
@@ -31,6 +36,7 @@ class AIMessage(BaseMessage):
     """If provided, tool calls associated with the message."""
     invalid_tool_calls: List[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
+    token_usage: Optional[TokenUsage] = None
 
     type: Literal["ai"] = "ai"
 
@@ -167,12 +173,22 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             else:
                 tool_call_chunks = []
 
+            if self.token_usage and other.token_usage:
+                token_usage = TokenUsage(
+                    prompt_tokens=self.token_usage["prompt_tokens"],
+                    completion_tokens=self.token_usage["completion_tokens"]
+                    + other.token_usage["completion_tokens"],
+                )
+            else:
+                token_usage = self.token_usage or other.token_usage
+
             return self.__class__(
                 example=self.example,
                 content=content,
                 additional_kwargs=additional_kwargs,
                 tool_call_chunks=tool_call_chunks,
                 response_metadata=response_metadata,
+                token_usage=token_usage,
                 id=self.id,
             )
 
