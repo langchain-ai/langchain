@@ -22,7 +22,6 @@ jobs:
           - "libs/partners/anthropic"
           - "libs/partners/ai21"
           - "libs/partners/fireworks"
-          - "libs/partners/groq"
           - "libs/partners/mistralai"
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
