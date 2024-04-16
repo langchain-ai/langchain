@@ -170,6 +170,17 @@ class Graph:
             node.id: i if is_uuid(node.id) else node.id
             for i, node in enumerate(self.nodes.values())
         }
+        edges: List[Dict[str, Any]] = []
+        for edge in self.edges:
+            edge_dict = {
+                "source": stable_node_ids[edge.source],
+                "target": stable_node_ids[edge.target],
+            }
+            if edge.data is not None:
+                edge_dict["data"] = edge.data
+            if edge.conditional:
+                edge_dict["conditional"] = True
+            edges.append(edge_dict)
 
         return {
             "nodes": [
@@ -179,19 +190,7 @@ class Graph:
                 }
                 for node in self.nodes.values()
             ],
-            "edges": [
-                {
-                    "source": stable_node_ids[edge.source],
-                    "target": stable_node_ids[edge.target],
-                    "data": edge.data,
-                }
-                if edge.data is not None
-                else {
-                    "source": stable_node_ids[edge.source],
-                    "target": stable_node_ids[edge.target],
-                }
-                for edge in self.edges
-            ],
+            "edges": edges,
         }
 
     def __bool__(self) -> bool:
@@ -345,6 +344,7 @@ class Graph:
     def draw_mermaid(
         self,
         *,
+        with_styles: bool = True,
         curve_style: CurveStyle = CurveStyle.LINEAR,
         node_colors: NodeColors = NodeColors(
             start="#ffdfba", end="#baffc9", other="#fad7de"
@@ -366,6 +366,7 @@ class Graph:
             edges=self.edges,
             first_node_label=first_label,
             last_node_label=last_label,
+            with_styles=with_styles,
             curve_style=curve_style,
             node_colors=node_colors,
             wrap_label_n_words=wrap_label_n_words,

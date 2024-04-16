@@ -17,6 +17,7 @@ def draw_mermaid(
     *,
     first_node_label: Optional[str] = None,
     last_node_label: Optional[str] = None,
+    with_styles: bool = True,
     curve_style: CurveStyle = CurveStyle.LINEAR,
     node_colors: NodeColors = NodeColors(),
     wrap_label_n_words: int = 9,
@@ -36,24 +37,29 @@ def draw_mermaid(
     """
     # Initialize Mermaid graph configuration
     mermaid_graph = (
-        f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}'"
-        f"}}}}}}%%\ngraph TD;\n"
+        (
+            f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}'"
+            f"}}}}}}%%\ngraph TD;\n"
+        )
+        if with_styles
+        else "graph TD;\n"
     )
 
-    # Node formatting templates
-    default_class_label = "default"
-    format_dict = {default_class_label: "{0}([{0}]):::otherclass"}
-    if first_node_label is not None:
-        format_dict[first_node_label] = "{0}[{0}]:::startclass"
-    if last_node_label is not None:
-        format_dict[last_node_label] = "{0}[{0}]:::endclass"
+    if with_styles:
+        # Node formatting templates
+        default_class_label = "default"
+        format_dict = {default_class_label: "{0}([{0}]):::otherclass"}
+        if first_node_label is not None:
+            format_dict[first_node_label] = "{0}[{0}]:::startclass"
+        if last_node_label is not None:
+            format_dict[last_node_label] = "{0}[{0}]:::endclass"
 
-    # Add nodes to the graph
-    for node in nodes.values():
-        node_label = format_dict.get(node, format_dict[default_class_label]).format(
-            _escape_node_label(node)
-        )
-        mermaid_graph += f"\t{node_label};\n"
+        # Add nodes to the graph
+        for node in nodes.values():
+            node_label = format_dict.get(node, format_dict[default_class_label]).format(
+                _escape_node_label(node)
+            )
+            mermaid_graph += f"\t{node_label};\n"
 
     # Add edges to the graph
     for edge in edges:
@@ -92,7 +98,8 @@ def draw_mermaid(
         )
 
     # Add custom styles for nodes
-    mermaid_graph += _generate_mermaid_graph_styles(node_colors)
+    if with_styles:
+        mermaid_graph += _generate_mermaid_graph_styles(node_colors)
     return mermaid_graph
 
 
