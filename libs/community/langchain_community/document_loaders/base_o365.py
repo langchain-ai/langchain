@@ -118,7 +118,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
             yield from loader.yield_blobs()
         if self.recursive:
             for subfolder in folder.get_child_folders():
-                    yield from self._load_from_folder(subfolder)
+                yield from self._load_from_folder(subfolder)
 
     def _load_from_object_ids(
         self, drive: Drive, object_ids: List[str]

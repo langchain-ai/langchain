@@ -62,7 +62,7 @@ class SharePointLoader(O365BaseLoader):
         if self.object_ids:
             for blob in self._load_from_object_ids(drive, self.object_ids):
                 yield from blob_parser.lazy_parse(blob)
-        if not(self.folder_path or self.folder_id or self.object_ids):
+        if not (self.folder_path or self.folder_id or self.object_ids):
             target_folder = drive.get_root_folder()
             if not isinstance(target_folder, Folder):
                 raise ValueError("Unable to fetch root folder")
