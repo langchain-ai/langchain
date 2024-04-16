@@ -15,10 +15,10 @@ from langchain_community.tools.connery.models import Action, Parameter
 class ConneryActionInput(BaseTool):
     """Input for the ConneryAction."""
 
-    kwargs: Dict[str, str] = Field(description="""The input dictionary expected 
-                                   by the action""")
-
-
+    kwargs: Dict[str, str] = Field(
+        description="""The input dictionary expected 
+                                   by the action"""
+    )
 
 
 class ConneryAction(BaseTool):

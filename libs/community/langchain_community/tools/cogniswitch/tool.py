@@ -14,7 +14,6 @@ class CogniswitchKnowledgeRequestToolInput(BaseTool):
     query: str = Field(description="Query for CogniswitchKnowledgeRequest")
 
 
-
 class CogniswitchKnowledgeRequest(BaseTool):
     """Tool that uses the Cogniswitch service to answer questions.
 

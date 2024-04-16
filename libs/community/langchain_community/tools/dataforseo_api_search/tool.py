@@ -18,8 +18,6 @@ class DataForSeoAPISearchRunInput(BaseTool):
     query: str = Field(description="Query for DataForSeo Google search API")
 
 
-
-
 class DataForSeoAPISearchRun(BaseTool):
     """Tool that queries the DataForSeo Google search API."""
 

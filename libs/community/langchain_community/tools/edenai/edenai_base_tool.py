@@ -36,6 +36,7 @@ class EdenaiTool(BaseTool):
     providers: List[str]
     """provider to use for the API call."""
     args_schema: Type[BaseModel] = EdenaiToolInput
+
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""

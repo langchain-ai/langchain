@@ -15,7 +15,6 @@ class GoldenQueryRunToolInput(BaseModel):
     query: str = Field(description="Query for GoldenQueryRun tool")
 
 
-
 class GoldenQueryRun(BaseTool):
     """Tool that adds the capability to query using the Golden API and get back JSON."""
 

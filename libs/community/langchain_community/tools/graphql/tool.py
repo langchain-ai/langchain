@@ -13,6 +13,7 @@ class BaseGraphQLToolInput(BaseModel):
 
     query: str = Field(description="GraphQL query")
 
+
 class BaseGraphQLTool(BaseTool):
     """Base tool for querying a GraphQL API."""
 

@@ -15,7 +15,6 @@ class BingSearchRunToolInput(BaseTool):
     query: str = Field(description="Query for Bing Search")
 
 
-
 class BingSearchRun(BaseTool):
     """Tool that queries the Bing search API."""
 
@@ -49,7 +48,7 @@ class BingSearchResults(BaseTool):
     num_results: int = 4
     api_wrapper: BingSearchAPIWrapper
     args_schema: Type[BaseModel] = BingSearchRunToolInput
-    
+
     def _run(
         self,
         query: str,

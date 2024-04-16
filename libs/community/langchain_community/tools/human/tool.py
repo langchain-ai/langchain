@@ -11,10 +11,12 @@ def _print_func(text: str) -> None:
     print("\n")  # noqa: T201
     print(text)  # noqa: T201
 
+
 class HumanInputRunInput(BaseModel):
     """Input for the HumanInputRunInput tool."""
 
     query: str = Field(description="Human Input")
+
 
 class HumanInputRun(BaseTool):
     """Tool that asks user for input."""

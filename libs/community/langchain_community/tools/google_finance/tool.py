@@ -13,7 +13,6 @@ class GoogleFinanceQueryRunInput(BaseModel):
     """Input for the GoogleFinanceQueryRun tool."""
 
     query: str = Field(description="Query for Google Finance")
-    
 
 
 class GoogleFinanceQueryRun(BaseTool):

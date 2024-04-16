@@ -42,16 +42,21 @@ class GoogleCloudTextToSpeechToolInput(BaseModel):
     """Input for the GoogleCloudTextToSpeechTool tool."""
 
     input_text: str = Field(description="Text that needs to be converted to speech")
-    language_code: str = Field(description="""Language Code to be 
+    language_code: str = Field(
+        description="""Language Code to be 
                                used for GoogleCloudTextToSpeech""",
-                               default="en-US")
-    ssml_gender: Optional[texttospeech.SsmlVoiceGender] = Field(description="""
+        default="en-US",
+    )
+    ssml_gender: Optional[texttospeech.SsmlVoiceGender] = Field(
+        description="""
                                             SSML Gender to be used""",
-                               default=None)
-    audio_encoding: Optional[texttospeech.AudioEncoding] = Field(description="""
+        default=None,
+    )
+    audio_encoding: Optional[texttospeech.AudioEncoding] = Field(
+        description="""
                                     Audio Encoding to be used""",
-                               default=None)
-
+        default=None,
+    )
 
 
 @deprecated(
@@ -76,7 +81,7 @@ class GoogleCloudTextToSpeechTool(BaseTool):
 
     _client: Any
     args_schema: Type[BaseModel] = GoogleCloudTextToSpeechToolInput
-    
+
     def __init__(self, **kwargs: Any) -> None:
         """Initializes private fields."""
         texttospeech = _import_google_cloud_texttospeech()

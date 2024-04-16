@@ -28,7 +28,6 @@ class GoogleTrendsQueryRun(BaseTool):
     api_wrapper: GoogleTrendsAPIWrapper
     args_schema: Type[BaseModel] = GoogleTrendsQueryInput
 
-
     def _run(
         self,
         query: str,
