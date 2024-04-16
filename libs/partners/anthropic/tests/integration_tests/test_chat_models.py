@@ -13,6 +13,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
@@ -286,14 +287,27 @@ def test_with_structured_output() -> None:
 
 
 def test_tool_message() -> None:
-    llm = ChatAnthropic(model="claude-3-sonnet-20240229")
+    @tool
+    def calculator(arg1: str, arg2: str, op: str) -> str:  # type: ignore
+        """Calculator tool."""
+        pass
+
+    llm = ChatAnthropic(model="claude-3-sonnet-20240229").bind_tools([calculator])
     function_name = "calculator"
     function_args = {"arg1": "2", "arg2": "2", "op": "+"}
 
     messages = [
         HumanMessage(content="What is 2 + 2"),
         AIMessage(
-            content="",
+            content=[
+                {"text": "Let's use the tool:", "type": "text"},
+                {
+                    "id": "abc123",
+                    "input": function_args,
+                    "name": function_name,
+                    "type": "tool_use",
+                },
+            ],
             tool_calls=[
                 {
                     "name": function_name,
@@ -309,4 +323,5 @@ def test_tool_message() -> None:
         ),
     ]
 
-    llm.invoke(messages)
+    result = llm.invoke(messages)
+    assert isinstance(result, AIMessage)
