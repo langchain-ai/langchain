@@ -4892,6 +4892,23 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             config=self.config,
         )
 
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self.bound, name)
+
+        if callable(attr) and accepts_config(attr):
+
+            @wraps(attr)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                return attr(
+                    *args,
+                    **kwargs,
+                    config=merge_configs(self.config, kwargs.get("config")),
+                )
+
+            return wrapper
+
+        return attr
+
 
 RunnableLike = Union[
     Runnable[Input, Output],

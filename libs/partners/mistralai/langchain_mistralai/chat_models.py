@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from operator import itemgetter
 from typing import (
     Any,
@@ -49,6 +50,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -82,9 +85,35 @@ def _convert_mistral_chat_message_to_message(
     content = cast(str, _message["content"])
 
     additional_kwargs: Dict = {}
-    if tool_calls := _message.get("tool_calls"):
-        additional_kwargs["tool_calls"] = tool_calls
-    return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    tool_calls = []
+    invalid_tool_calls = []
+    if raw_tool_calls := _message.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        for raw_tool_call in raw_tool_calls:
+            try:
+                parsed: dict = cast(
+                    dict, parse_tool_call(raw_tool_call, return_id=True)
+                )
+                if not parsed["id"]:
+                    tool_call_id = uuid.uuid4().hex[:]
+                    tool_calls.append(
+                        {
+                            **parsed,
+                            **{"id": tool_call_id},
+                        },
+                    )
+                else:
+                    tool_calls.append(parsed)
+            except Exception as e:
+                invalid_tool_calls.append(
+                    dict(make_invalid_tool_call(raw_tool_call, str(e)))
+                )
+    return AIMessage(
+        content=content,
+        additional_kwargs=additional_kwargs,
+        tool_calls=tool_calls,
+        invalid_tool_calls=invalid_tool_calls,
+    )
 
 
 async def _aiter_sse(
@@ -133,9 +162,32 @@ def _convert_delta_to_message_chunk(
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
-        if tool_calls := _delta.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        if raw_tool_calls := _delta.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            try:
+                tool_call_chunks = []
+                for raw_tool_call in raw_tool_calls:
+                    if not raw_tool_call.get("index") and not raw_tool_call.get("id"):
+                        tool_call_id = uuid.uuid4().hex[:]
+                    else:
+                        tool_call_id = raw_tool_call.get("id")
+                    tool_call_chunks.append(
+                        {
+                            "name": raw_tool_call["function"].get("name"),
+                            "args": raw_tool_call["function"].get("arguments"),
+                            "id": tool_call_id,
+                            "index": raw_tool_call.get("index"),
+                        }
+                    )
+            except KeyError:
+                pass
+        else:
+            tool_call_chunks = []
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
@@ -153,17 +205,19 @@ def _convert_message_to_mistral_chat_message(
         return dict(role="user", content=message.content)
     elif isinstance(message, AIMessage):
         if "tool_calls" in message.additional_kwargs:
-            tool_calls = [
-                {
+            tool_calls = []
+            for tc in message.additional_kwargs["tool_calls"]:
+                chunk = {
                     "function": {
                         "name": tc["function"]["name"],
                         "arguments": tc["function"]["arguments"],
                     }
                 }
-                for tc in message.additional_kwargs["tool_calls"]
-            ]
+                if _id := tc.get("id"):
+                    chunk["id"] = _id
+                tool_calls.append(chunk)
         else:
-            tool_calls = None
+            tool_calls = []
         return {
             "role": "assistant",
             "content": message.content,
