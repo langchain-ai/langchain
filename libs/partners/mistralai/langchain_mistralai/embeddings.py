@@ -16,7 +16,7 @@ from tokenizers import Tokenizer  # type: ignore
 
 logger = logging.getLogger(__name__)
 
-MAX_TOKENS = 16_000
+MAX_TOKENS = 8_190
 
 
 class MistralAIEmbeddings(BaseModel, Embeddings):
