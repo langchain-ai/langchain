@@ -35,5 +35,5 @@ class AnySdkToolkit(BaseToolkit):
 
         return cls(tools=tools)
 
-    def get_tools(self) -> List(BaseTool):
+    def get_tools(self) -> List[BaseTool]:
         return self.tools
