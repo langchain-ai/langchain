@@ -1,7 +1,5 @@
 import json
 
-import pytest
-
 from langchain_community.utilities.anysdk import AnySdkWrapper
 
 
