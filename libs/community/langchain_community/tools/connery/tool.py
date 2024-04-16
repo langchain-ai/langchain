@@ -21,9 +21,7 @@ class ConneryActionInput(BaseTool):
 
 
 class ConneryAction(BaseTool):
-    """
-    A LangChain Tool wrapping a Connery Action.
-    """
+    """Connery Action tool."""
 
     name: str
     description: str
