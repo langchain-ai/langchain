@@ -30,13 +30,23 @@ class FakeSdk():
 
 client = FakeSdk()
 
-anysdk = AnySdkWrapper(client=client)
+anysdk = AnySdkWrapper(
+        client=client, 
+        crud_controls_create=True,
+        crud_controls_update=True,
+        crud_controls_delete=True
+    )
 
 def test_operations_is_populated():
     assert len(anysdk.operations) != 0
 
 def test_get_thing():
     assert json.loads(anysdk.run('get_thing', json.dumps({
+            "thing_id": 123
+        })))["response"]["id"] == 123
+    
+def test_create_thing():
+    assert json.loads(anysdk.run('create_thing', json.dumps({
             "thing_id": 123
         })))["response"]["id"] == 123
 
