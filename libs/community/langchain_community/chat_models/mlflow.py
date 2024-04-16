@@ -1,10 +1,10 @@
 import logging
-from typing import cast, Any, Dict, Iterator, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional, cast
 from urllib.parse import urlparse
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.base import LanguageModelInput
 from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models.base import LanguageModelInput
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -18,7 +18,7 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult, ChatGenerationChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import (
     Field,
     PrivateAttr,
@@ -108,7 +108,7 @@ class ChatMlflow(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         **kwargs: Any,
-    ):
+    ) -> Dict[str, Any]:
         message_dicts = [
             ChatMlflow._convert_message_to_dict(message) for message in messages
         ]
@@ -134,7 +134,9 @@ class ChatMlflow(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         data = self._prepare_inputs(
-            messages, stop, **kwargs,
+            messages,
+            stop,
+            **kwargs,
         )
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return ChatMlflow._create_chat_result(resp)
@@ -166,7 +168,9 @@ class ChatMlflow(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         data = self._prepare_inputs(
-            messages, stop, **kwargs,
+            messages,
+            stop,
+            **kwargs,
         )
         # TODO: check if `_client.predict_stream` is available.
         chunk_iter = self._client.predict_stream(endpoint=self.endpoint, inputs=data)
@@ -232,7 +236,6 @@ class ChatMlflow(BaseChatModel):
             return SystemMessageChunk(content=content)
         else:
             return ChatMessageChunk(content=content, role=role)
-
 
     @staticmethod
     def _raise_functions_not_supported() -> None:
