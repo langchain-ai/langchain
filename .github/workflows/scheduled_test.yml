@@ -20,9 +20,11 @@ jobs:
         working-directory:
           - "libs/partners/openai"
           - "libs/partners/anthropic"
-          - "libs/partners/ai21"
+          # - "libs/partners/ai21"  # standard-tests broken
           - "libs/partners/fireworks"
+          # - "libs/partners/groq"  # rate-limited
           - "libs/partners/mistralai"
+          # - "libs/partners/together"  # rate-limited
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
       - uses: actions/checkout@v4
