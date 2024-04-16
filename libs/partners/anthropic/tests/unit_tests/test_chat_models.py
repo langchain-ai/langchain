@@ -313,12 +313,13 @@ def test__format_messages_with_tool_calls() -> None:
     assert expected == actual
 
 
-def test__format_messages_with_content_and_tool_calls() -> None:
+def test__format_messages_with_str_content_and_tool_calls() -> None:
     system = SystemMessage("fuzz")
     human = HumanMessage("foo")
-    # If content and tool_calls are specified, content is preferred.
+    # If content and tool_calls are specified and content is a string, then both are
+    # included with content first.
     ai = AIMessage(
-        "not a tool call",
+        "thought",
         tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
     )
     tool = ToolMessage(
@@ -332,7 +333,62 @@ def test__format_messages_with_content_and_tool_calls() -> None:
             {"role": "user", "content": "foo"},
             {
                 "role": "assistant",
-                "content": "not a tool call",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "thought",
+                    },
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "buzz"},
+                    },
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test__format_messages_with_list_content_and_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    # If content and tool_calls are specified and content is a list, then content is
+    # preferred.
+    ai = AIMessage(
+        [
+            {
+                "type": "text",
+                "text": "thought",
+            }
+        ],
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
+        "blurb",
+        tool_call_id="1",
+    )
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "thought",
+                    }
+                ],
             },
             {
                 "role": "user",

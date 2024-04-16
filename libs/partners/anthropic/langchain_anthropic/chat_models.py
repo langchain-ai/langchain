@@ -199,13 +199,18 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                     )
         elif (
             isinstance(message, AIMessage)
-            and not message.content
+            and not isinstance(message.content, list)
             and message.tool_calls
         ):
+            content = (
+                []
+                if not message.content
+                else [{"type": "text", "text": message.content}]
+            )
             # Note: Anthropic can't have invalid tool calls as presently defined,
             # since the model already returns dicts args not JSON strings, and invalid
             # tool calls are those with invalid JSON for args.
-            content = _lc_tool_calls_to_anthropic_tool_use_blocks(message.tool_calls)
+            content += _lc_tool_calls_to_anthropic_tool_use_blocks(message.tool_calls)
         else:
             content = message.content
 
