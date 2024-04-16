@@ -344,6 +344,7 @@ class Graph:
 
     def draw_mermaid(
         self,
+        *,
         curve_style: CurveStyle = CurveStyle.LINEAR,
         node_colors: NodeColors = NodeColors(
             start="#ffdfba", end="#baffc9", other="#fad7de"
@@ -372,6 +373,7 @@ class Graph:
 
     def draw_mermaid_png(
         self,
+        *,
         curve_style: CurveStyle = CurveStyle.LINEAR,
         node_colors: NodeColors = NodeColors(
             start="#ffdfba", end="#baffc9", other="#fad7de"

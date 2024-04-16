@@ -14,6 +14,7 @@ from langchain_core.runnables.graph import (
 def draw_mermaid(
     nodes: Dict[str, str],
     edges: List[Edge],
+    *,
     first_node_label: Optional[str] = None,
     last_node_label: Optional[str] = None,
     curve_style: CurveStyle = CurveStyle.LINEAR,
