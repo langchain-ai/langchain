@@ -70,6 +70,7 @@ EXPECTED_ALL = [
     "GCSFileLoader",
     "GeoDataFrameLoader",
     "GithubFileLoader",
+    "GlueCatalogLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
