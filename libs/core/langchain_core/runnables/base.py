@@ -4892,6 +4892,45 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             config=self.config,
         )
 
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self.bound, name)
+
+        if callable(attr) and (
+            config_param := inspect.signature(attr).parameters.get("config")
+        ):
+            if config_param.kind == inspect.Parameter.KEYWORD_ONLY:
+
+                @wraps(attr)
+                def wrapper(*args: Any, **kwargs: Any) -> Any:
+                    return attr(
+                        *args,
+                        config=merge_configs(self.config, kwargs.pop("config", None)),
+                        **kwargs,
+                    )
+
+                return wrapper
+            elif config_param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                idx = list(inspect.signature(attr).parameters).index("config")
+
+                @wraps(attr)
+                def wrapper(*args: Any, **kwargs: Any) -> Any:
+                    if len(args) >= idx + 1:
+                        argsl = list(args)
+                        argsl[idx] = merge_configs(self.config, argsl[idx])
+                        return attr(*argsl, **kwargs)
+                    else:
+                        return attr(
+                            *args,
+                            config=merge_configs(
+                                self.config, kwargs.pop("config", None)
+                            ),
+                            **kwargs,
+                        )
+
+                return wrapper
+
+        return attr
+
 
 RunnableLike = Union[
     Runnable[Input, Output],
