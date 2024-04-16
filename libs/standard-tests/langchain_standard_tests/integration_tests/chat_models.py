@@ -114,12 +114,14 @@ class ChatModelIntegrationTests(ABC):
             assert isinstance(result.content, str)
             assert len(result.content) > 0
 
-    @pytest.mark.skipif(
-        not chat_model_has_tool_calling, reason="Test requires tool calling."
-    )
     def test_tool_message(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
+        self,
+        chat_model_class: Type[BaseChatModel],
+        chat_model_params: dict,
+        chat_model_has_tool_calling: bool,
     ) -> None:
+        if not chat_model_has_tool_calling:
+            pytest.skip("Test requires tool calling.")
         model = chat_model_class(**chat_model_params)
         model_with_tools = model.bind_tools([my_adder_tool])
         function_name = "my_adder_tool"
