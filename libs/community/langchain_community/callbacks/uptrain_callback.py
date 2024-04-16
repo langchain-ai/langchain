@@ -59,13 +59,11 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Union,
 )
 from uuid import UUID
 
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.documents import Document
-from langchain_core.messages.base import BaseMessage
 from langchain_core.outputs import LLMResult
 
 logger = logging.getLogger(__name__)
@@ -102,8 +100,8 @@ class UpTrainDataSchema:
         query (str): Query for the RAG evaluation.
         context (str): Context for the RAG evaluation.
         response (str): Response for the RAG evaluation.
-        old_context (list[str]): Old context nodes for Context Conciseness evaluation.
-        new_context (list[str]): New context nodes for Context Conciseness evaluation.
+        old_context (List[str]): Old context nodes for Context Conciseness evaluation.
+        new_context (List[str]): New context nodes for Context Conciseness evaluation.
         context_conciseness_run_id (str): Run ID for Context Conciseness evaluation.
         multi_queries (List[str]): List of multi queries for Multi Query evaluation.
         multi_query_run_id (str): Run ID for Multi Query evaluation.
@@ -126,8 +124,8 @@ class UpTrainDataSchema:
         self.response: str = ""
 
         ## CONTEXT CONCISENESS
-        self.old_context: list[str] = []
-        self.new_context: list[str] = []
+        self.old_context: List[str] = []
+        self.new_context: List[str] = []
         self.context_conciseness_run_id: UUID = UUID(int=0)
 
         # MULTI QUERY
@@ -276,26 +274,6 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                     uptrain.Evals.RESPONSE_COMPLETENESS,
                 ],
             )
-
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Do nothing when LLM outputs an error."""
-        pass
-
-    def on_chat_model_start(
-        self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Run when a chat model starts running."""
-        pass
 
     def on_chain_start(
         self,
