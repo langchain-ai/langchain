@@ -112,34 +112,36 @@ class AnySdkWrapper(BaseModel):
 
         for func_name in sdk_functions:
             func = getattr(self.client, func_name)
-
-            if self.crud_controls_create and any(
-                word.lower() in func_name.lower()
-                for word in self.crud_controls_create_list
-            ):
-                continue
-            if self.crud_controls_read and any(
-                word.lower() in func_name.lower()
-                for word in self.crud_controls_read_list
-            ):
-                continue
-            if self.crud_controls_update and any(
-                word.lower() in func_name.lower()
-                for word in self.crud_controls_update_list
-            ):
-                continue
-            if self.crud_controls_delete and any(
-                word.lower() in func_name.lower()
-                for word in self.crud_controls_delete_list
-            ):
-                continue
-
             operation = {
                 "mode": func_name,
                 "name": func.__name__.replace("_", " ").title(),
                 "description": func.__doc__,
             }
-            operations.append(operation)
+
+            if self.crud_controls_create and any(
+                word.lower() in func_name.lower()
+                for word in self.crud_controls_create_list
+            ):
+                operations.append(operation)
+
+            if self.crud_controls_read and any(
+                word.lower() in func_name.lower()
+                for word in self.crud_controls_read_list
+            ):
+                operations.append(operation)
+
+            if self.crud_controls_update and any(
+                word.lower() in func_name.lower()
+                for word in self.crud_controls_update_list
+            ):
+                operations.append(operation)
+                
+            if self.crud_controls_delete and any(
+                word.lower() in func_name.lower()
+                for word in self.crud_controls_delete_list
+            ):
+                operations.append(operation)
+
         return operations
 
     def run(self, mode: str, query: str) -> str:
