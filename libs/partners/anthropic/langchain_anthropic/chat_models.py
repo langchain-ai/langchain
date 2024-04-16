@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import warnings
@@ -54,7 +55,7 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-from langchain_anthropic.output_parsers import ToolsOutputParser
+from langchain_anthropic.output_parsers import ToolsOutputParser, extract_tool_calls
 
 _message_type_lookups = {
     "human": "user",
@@ -250,7 +251,7 @@ class ChatAnthropic(BaseChatModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    anthropic_api_url: str = "https://api.anthropic.com"
+    anthropic_api_url: Optional[str] = None
 
     anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
@@ -371,11 +372,27 @@ class ChatAnthropic(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         if _tools_in_params(params):
-            warnings.warn("stream: Tool use is not yet supported in streaming mode.")
             result = self._generate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            yield cast(ChatGenerationChunk, result.generations[0])
+            message = result.generations[0].message
+            if isinstance(message, AIMessage) and message.tool_calls is not None:
+                tool_call_chunks = [
+                    {
+                        "name": tool_call["name"],
+                        "args": json.dumps(tool_call["args"]),
+                        "id": tool_call["id"],
+                        "index": idx,
+                    }
+                    for idx, tool_call in enumerate(message.tool_calls)
+                ]
+                message_chunk = AIMessageChunk(
+                    content=message.content,
+                    tool_call_chunks=tool_call_chunks,
+                )
+                yield ChatGenerationChunk(message=message_chunk)
+            else:
+                yield cast(ChatGenerationChunk, result.generations[0])
             return
         with self._client.messages.stream(**params) as stream:
             for text in stream.text_stream:
@@ -397,7 +414,24 @@ class ChatAnthropic(BaseChatModel):
             result = await self._agenerate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            yield cast(ChatGenerationChunk, result.generations[0])
+            message = result.generations[0].message
+            if isinstance(message, AIMessage) and message.tool_calls is not None:
+                tool_call_chunks = [
+                    {
+                        "name": tool_call["name"],
+                        "args": json.dumps(tool_call["args"]),
+                        "id": tool_call["id"],
+                        "index": idx,
+                    }
+                    for idx, tool_call in enumerate(message.tool_calls)
+                ]
+                message_chunk = AIMessageChunk(
+                    content=message.content,
+                    tool_call_chunks=tool_call_chunks,
+                )
+                yield ChatGenerationChunk(message=message_chunk)
+            else:
+                yield cast(ChatGenerationChunk, result.generations[0])
             return
         async with self._async_client.messages.stream(**params) as stream:
             async for text in stream.text_stream:
@@ -414,6 +448,12 @@ class ChatAnthropic(BaseChatModel):
         }
         if len(content) == 1 and content[0]["type"] == "text":
             msg = AIMessage(content=content[0]["text"])
+        elif any(block["type"] == "tool_use" for block in content):
+            tool_calls = extract_tool_calls(content)
+            msg = AIMessage(
+                content=content,
+                tool_calls=tool_calls,
+            )
         else:
             msg = AIMessage(content=content)
         return ChatResult(
