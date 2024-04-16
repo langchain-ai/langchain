@@ -9,7 +9,10 @@ class BrowserbaseLoader(BaseLoader):
     """Create new Browserbase loader"""
 
     def __init__(
-        self, urls: List[str], api_key: str = os.environ["BROWSERBASE_KEY"], text_content: str = False
+        self,
+        urls: List[str],
+        api_key: str = os.environ["BROWSERBASE_KEY"],
+        text_content: str = False,
     ):
         self.urls = urls
         self.api_key = api_key
