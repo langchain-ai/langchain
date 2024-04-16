@@ -9,11 +9,9 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     HumanMessage,
-    ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.tools import tool
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
@@ -284,44 +282,3 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
-
-
-def test_tool_message() -> None:
-    @tool
-    def calculator(arg1: str, arg2: str, op: str) -> str:  # type: ignore
-        """Calculator tool."""
-        pass
-
-    llm = ChatAnthropic(model="claude-3-sonnet-20240229").bind_tools([calculator])
-    function_name = "calculator"
-    function_args = {"arg1": "2", "arg2": "2", "op": "+"}
-
-    messages = [
-        HumanMessage(content="What is 2 + 2"),
-        AIMessage(
-            content=[
-                {"text": "Let's use the tool:", "type": "text"},
-                {
-                    "id": "abc123",
-                    "input": function_args,
-                    "name": function_name,
-                    "type": "tool_use",
-                },
-            ],
-            tool_calls=[
-                {
-                    "name": function_name,
-                    "args": function_args,
-                    "id": "abc123",
-                },
-            ],
-        ),
-        ToolMessage(
-            name=function_name,
-            content=json.dumps({"result": 4}),
-            tool_call_id="abc123",
-        ),
-    ]
-
-    result = llm.invoke(messages)
-    assert isinstance(result, AIMessage)

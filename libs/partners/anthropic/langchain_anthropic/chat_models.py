@@ -196,7 +196,18 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                         f"Content items must be str or dict, instead was: {type(item)}"
                     )
         else:
-            content = message.content
+            if isinstance(message, AIMessage) and message.tool_calls:
+                content = [
+                    {
+                        "type": "tool_use",
+                        "id": tool_call["id"],
+                        "name": tool_call["name"],
+                        "input": tool_call["args"],
+                    }
+                    for tool_call in message.tool_calls
+                ]
+            else:
+                content = message.content
 
         formatted_messages.append(
             {
