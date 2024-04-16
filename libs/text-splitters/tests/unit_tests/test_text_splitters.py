@@ -1248,6 +1248,53 @@ def test_solidity_code_splitter() -> None:
     ]
 
 
+def test_lua_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.LUA, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+local variable = 10
+
+function add(a, b)
+    return a + b
+end
+
+if variable > 5 then
+    for i=1, variable do
+        while i < variable do
+            repeat
+                print(i)
+                i = i + 1
+            until i >= variable
+        end
+    end
+end
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "local variable",
+        "= 10",
+        "function add(a,",
+        "b)",
+        "return a +",
+        "b",
+        "end",
+        "if variable > 5",
+        "then",
+        "for i=1,",
+        "variable do",
+        "while i",
+        "< variable do",
+        "repeat",
+        "print(i)",
+        "i = i + 1",
+        "until i >=",
+        "variable",
+        "end",
+        "end\nend",
+    ]
+
+
 def test_haskell_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.HASKELL, chunk_size=CHUNK_SIZE, chunk_overlap=0
