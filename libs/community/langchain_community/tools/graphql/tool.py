@@ -1,11 +1,17 @@
 import json
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.graphql import GraphQLAPIWrapper
 
+
+class BaseGraphQLToolInput(BaseModel):
+    """Input for the BaseGraphQLTool tool."""
+
+    query: str = Field(description="GraphQL query")
 
 class BaseGraphQLTool(BaseTool):
     """Base tool for querying a GraphQL API."""
@@ -21,6 +27,7 @@ class BaseGraphQLTool(BaseTool):
 
     Example Input: query {{ allUsers {{ id, name, email }} }}\
     """  # noqa: E501
+    args_schema: Type[BaseModel] = BaseGraphQLToolInput
 
     class Config:
         """Configuration for this pydantic object."""
