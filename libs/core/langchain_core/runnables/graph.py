@@ -19,7 +19,6 @@ from typing import (
 from uuid import UUID, uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables.graph_ascii import draw_ascii
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
@@ -44,6 +43,7 @@ class Edge(NamedTuple):
     source: str
     target: str
     data: Optional[str] = None
+    conditional: bool = False
 
 
 class Node(NamedTuple):
@@ -219,13 +219,21 @@ class Graph:
             if edge.source != node.id and edge.target != node.id
         ]
 
-    def add_edge(self, source: Node, target: Node, data: Optional[str] = None) -> Edge:
+    def add_edge(
+        self,
+        source: Node,
+        target: Node,
+        data: Optional[str] = None,
+        conditional: bool = False,
+    ) -> Edge:
         """Add an edge to the graph and return it."""
         if source.id not in self.nodes:
             raise ValueError(f"Source node {source.id} not in graph")
         if target.id not in self.nodes:
             raise ValueError(f"Target node {target.id} not in graph")
-        edge = Edge(source=source.id, target=target.id, data=data)
+        edge = Edge(
+            source=source.id, target=target.id, data=data, conditional=conditional
+        )
         self.edges.append(edge)
         return edge
 
@@ -283,9 +291,11 @@ class Graph:
                 self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
+        from langchain_core.runnables.graph_ascii import draw_ascii
+
         return draw_ascii(
             {node.id: node_data_str(node) for node in self.nodes.values()},
-            [(edge.source, edge.target) for edge in self.edges],
+            self.edges,
         )
 
     def print_ascii(self) -> None:

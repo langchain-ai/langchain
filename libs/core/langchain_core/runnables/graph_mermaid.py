@@ -76,9 +76,15 @@ def draw_mermaid(
                         for i in range(0, len(words), wrap_label_n_words)
                     ]
                 )
-            edge_label = f" -- {edge_data} --> "
+            if edge.conditional:
+                edge_label = f" -. {edge_data} .-> "
+            else:
+                edge_label = f" -- {edge_data} --> "
         else:
-            edge_label = " --> "
+            if edge.conditional:
+                edge_label = " -.-> "
+            else:
+                edge_label = " --> "
         mermaid_graph += (
             f"\t{_escape_node_label(source)}{edge_label}"
             f"{_escape_node_label(target)};\n"
