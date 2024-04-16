@@ -196,7 +196,11 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                         f"Content items must be str or dict, instead was: {type(item)}"
                     )
         else:
-            if isinstance(message, AIMessage) and message.tool_calls:
+            if (
+                isinstance(message, AIMessage)
+                and message.content == ""
+                and message.tool_calls
+            ):
                 content = [
                     {
                         "type": "tool_use",
