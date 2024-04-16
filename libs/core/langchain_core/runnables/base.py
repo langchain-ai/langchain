@@ -4915,9 +4915,9 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
                 @wraps(attr)
                 def wrapper(*args: Any, **kwargs: Any) -> Any:
                     if len(args) >= idx + 1:
-                        args = list(args)
-                        args[idx] = merge_configs(self.config, args[idx])
-                        return attr(*args, **kwargs)
+                        argsl = list(args)
+                        argsl[idx] = merge_configs(self.config, argsl[idx])
+                        return attr(*argsl, **kwargs)
                     else:
                         return attr(
                             *args,
