@@ -30,7 +30,7 @@ langchain-openai = {path = "../openai", develop = true}
 langchain-core = {path = "../../core", develop = true}
 docarray = "^0.32.1"
 pydantic = "^1.10.9"
-langchain_community = {path = "../../community", develop = true}
+langchain-standard-tests = {path = "../../standard-tests", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
