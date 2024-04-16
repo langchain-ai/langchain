@@ -1183,8 +1183,8 @@
       "destination": "/docs/guides/productionization/evaluation/:path*/"
     },
     {
-      "source": "/docs/integrations/text_embedding/solar.ipynb",
-      "destination": "/docs/integrations/text_embedding/upstage.ipynb"
+      "source": "/docs/integrations/text_embedding/solar(/?)",
+      "destination": "/docs/integrations/text_embedding/upstage"
     }
   ]
 }
