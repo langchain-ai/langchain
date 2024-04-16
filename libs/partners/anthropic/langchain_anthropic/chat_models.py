@@ -10,6 +10,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -38,6 +39,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
@@ -156,7 +158,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
             continue
 
         role = _message_type_lookups[message.type]
-        content: Union[str, List[Dict]]
+        content: Union[str, List]
 
         if not isinstance(message.content, str):
             # parse as dict
@@ -195,6 +197,20 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                     raise ValueError(
                         f"Content items must be str or dict, instead was: {type(item)}"
                     )
+        elif (
+            isinstance(message, AIMessage)
+            and not isinstance(message.content, list)
+            and message.tool_calls
+        ):
+            content = (
+                []
+                if not message.content
+                else [{"type": "text", "text": message.content}]
+            )
+            # Note: Anthropic can't have invalid tool calls as presently defined,
+            # since the model already returns dicts args not JSON strings, and invalid
+            # tool calls are those with invalid JSON for args.
+            content += _lc_tool_calls_to_anthropic_tool_use_blocks(message.tool_calls)
         else:
             content = message.content
 
@@ -675,6 +691,29 @@ def _tools_in_params(params: dict) -> bool:
     return "tools" in params or (
         "extra_body" in params and params["extra_body"].get("tools")
     )
+
+
+class _AnthropicToolUse(TypedDict):
+    type: Literal["tool_use"]
+    name: str
+    input: dict
+    id: str
+
+
+def _lc_tool_calls_to_anthropic_tool_use_blocks(
+    tool_calls: List[ToolCall],
+) -> List[_AnthropicToolUse]:
+    blocks = []
+    for tool_call in tool_calls:
+        blocks.append(
+            _AnthropicToolUse(
+                type="tool_use",
+                name=tool_call["name"],
+                input=tool_call["args"],
+                id=cast(str, tool_call["id"]),
+            )
+        )
+    return blocks
 
 
 @deprecated(since="0.1.0", removal="0.2.0", alternative="ChatAnthropic")
