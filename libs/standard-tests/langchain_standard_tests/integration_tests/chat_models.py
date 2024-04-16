@@ -122,7 +122,7 @@ class ChatModelIntegrationTests(ABC):
     ) -> None:
         model = chat_model_class(**chat_model_params)
         model_with_tools = model.bind_tools([my_adder_tool])
-        function_name = my_adder_tool.name
+        function_name = "my_adder_tool"
         function_args = {"a": "1", "b": "2"}
 
         messages = [
