@@ -251,7 +251,7 @@ class ChatAnthropic(BaseChatModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    anthropic_api_url: str = "https://api.anthropic.com"
+    anthropic_api_url: Optional[str] = None
 
     anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
