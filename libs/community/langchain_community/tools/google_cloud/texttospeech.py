@@ -42,11 +42,14 @@ class GoogleCloudTextToSpeechToolInput(BaseModel):
     """Input for the GoogleCloudTextToSpeechTool tool."""
 
     input_text: str = Field(description="Text that needs to be converted to speech")
-    language_code: str = Field(description="Language Code to be used for GoogleCloudTextToSpeech",
+    language_code: str = Field(description="""Language Code to be 
+                               used for GoogleCloudTextToSpeech""",
                                default="en-US")
-    ssml_gender: Optional[texttospeech.SsmlVoiceGender] = Field(description="SSML Gender to be used",
+    ssml_gender: Optional[texttospeech.SsmlVoiceGender] = Field(description="""
+                                            SSML Gender to be used""",
                                default=None)
-    audio_encoding: Optional[texttospeech.AudioEncoding] = Field(description="Audio Encoding to be used",
+    audio_encoding: Optional[texttospeech.AudioEncoding] = Field(description="""
+                                    Audio Encoding to be used""",
                                default=None)
 
 
