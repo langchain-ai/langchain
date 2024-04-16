@@ -135,7 +135,7 @@ class AnySdkWrapper(BaseModel):
                 for word in self.crud_controls_update_list
             ):
                 operations.append(operation)
-                
+
             if self.crud_controls_delete and any(
                 word.lower() in func_name.lower()
                 for word in self.crud_controls_delete_list
