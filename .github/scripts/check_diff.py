@@ -53,6 +53,10 @@ if __name__ == "__main__":
             dirs_to_run["lint"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
+            dirs_to_run["test"].add("libs/partners/anthropic")
+            dirs_to_run["test"].add("libs/partners/ai21")
+            dirs_to_run["test"].add("libs/partners/fireworks")
+            dirs_to_run["test"].add("libs/partners/groq")
 
         elif file.startswith("libs/cli"):
             # todo: add cli makefile

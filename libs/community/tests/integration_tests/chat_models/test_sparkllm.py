@@ -3,6 +3,15 @@ from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_community.chat_models.sparkllm import ChatSparkLLM
 
 
+def test_initialization() -> None:
+    """Test chat model initialization."""
+    for model in [
+        ChatSparkLLM(timeout=30),
+        ChatSparkLLM(request_timeout=30),
+    ]:
+        assert model.request_timeout == 30
+
+
 def test_chat_spark_llm() -> None:
     chat = ChatSparkLLM()
     message = HumanMessage(content="Hello")

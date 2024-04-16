@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Tuple, Union
 
 import pytest
-from langchain_core.documents import Document
-
-from langchain.callbacks.manager import (
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain_core.documents import Document
+
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
