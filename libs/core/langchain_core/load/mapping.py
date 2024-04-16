@@ -91,16 +91,6 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "chat",
         "MessagesPlaceholder",
     ),
-    ("langchain", "llms", "anthropic", "Anthropic"): (
-        "langchain_anthropic",
-        "llms",
-        "AnthropicLLM",
-    ),
-    ("langchain", "llms", "anthropic", "AnthropicLLM"): (
-        "langchain_anthropic",
-        "llms",
-        "AnthropicLLM",
-    ),
     ("langchain", "llms", "openai", "OpenAI"): (
         "langchain_openai",
         "llms",
