@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-ANYSDK_CRUD_CONTROLS_CREATE = False
-ANYSDK_CRUD_CONTROLS_READ = True
-ANYSDK_CRUD_CONTROLS_UPDATE = False
-ANYSDK_CRUD_CONTROLS_DELETE = False
+ANYSDK_CRUD_CONTROLS_CREATE = "False"
+ANYSDK_CRUD_CONTROLS_READ = "True"
+ANYSDK_CRUD_CONTROLS_UPDATE = "False"
+ANYSDK_CRUD_CONTROLS_DELETE = "False"
 
 ANYSDK_CRUD_CONTROLS_CREATE_LIST = "create"
 ANYSDK_CRUD_CONTROLS_READ_LIST = "get,read,list"
@@ -18,14 +18,14 @@ ANYSDK_CRUD_CONTROLS_DELETE_LIST = "delete,destroy,remove"
 class AnySdkWrapper(BaseModel):
     client: Any
     operations: List[Dict] = []
-    crud_controls_create: Optional[bool] = ANYSDK_CRUD_CONTROLS_CREATE
-    crud_controls_create_list: Optional[str]
-    crud_controls_read: Optional[bool] = ANYSDK_CRUD_CONTROLS_READ
-    crud_controls_read_list: Optional[str]
-    crud_controls_update: Optional[bool] = ANYSDK_CRUD_CONTROLS_UPDATE
-    crud_controls_update_list: Optional[str]
-    crud_controls_delete: Optional[bool] = ANYSDK_CRUD_CONTROLS_DELETE
-    crud_controls_delete_list: Optional[str]
+    crud_controls_create: Optional[str] = ANYSDK_CRUD_CONTROLS_CREATE
+    crud_controls_create_list: Optional[str] = ANYSDK_CRUD_CONTROLS_CREATE_LIST
+    crud_controls_read: Optional[str] = ANYSDK_CRUD_CONTROLS_READ
+    crud_controls_read_list: Optional[str] = ANYSDK_CRUD_CONTROLS_READ_LIST
+    crud_controls_update: Optional[str] = ANYSDK_CRUD_CONTROLS_UPDATE
+    crud_controls_update_list: Optional[str] = ANYSDK_CRUD_CONTROLS_UPDATE_LIST
+    crud_controls_delete: Optional[str] = ANYSDK_CRUD_CONTROLS_DELETE
+    crud_controls_delete_list: Optional[str] = ANYSDK_CRUD_CONTROLS_DELETE_LIST
 
     class Config:
         extra = Extra.allow
@@ -36,7 +36,7 @@ class AnySdkWrapper(BaseModel):
             values,
             "crud_controls_create",
             "ANYSDK_CRUD_CONTROLS_CREATE",
-            default=ANYSDK_CRUD_CONTROLS_CREATE,
+            default=bool(ANYSDK_CRUD_CONTROLS_CREATE),
         )
         values["crud_controls_create"] = crud_controls_create
 
@@ -52,7 +52,7 @@ class AnySdkWrapper(BaseModel):
             values,
             "crud_controls_read",
             "ANYSDK_CRUD_CONTROLS_READ",
-            default=ANYSDK_CRUD_CONTROLS_READ,
+            default=bool(ANYSDK_CRUD_CONTROLS_READ),
         )
         values["crud_controls_read"] = crud_controls_read
 
@@ -68,7 +68,7 @@ class AnySdkWrapper(BaseModel):
             values,
             "crud_controls_update",
             "ANYSDK_CRUD_CONTROLS_UPDATE",
-            default=ANYSDK_CRUD_CONTROLS_UPDATE,
+            default=bool(ANYSDK_CRUD_CONTROLS_UPDATE),
         )
         values["crud_controls_update"] = crud_controls_update
 
@@ -84,7 +84,7 @@ class AnySdkWrapper(BaseModel):
             values,
             "crud_controls_delete",
             "ANYSDK_CRUD_CONTROLS_DELETE",
-            default=ANYSDK_CRUD_CONTROLS_DELETE,
+            default=bool(ANYSDK_CRUD_CONTROLS_DELETE),
         )
         values["crud_controls_delete"] = crud_controls_delete
 
@@ -98,11 +98,11 @@ class AnySdkWrapper(BaseModel):
 
         return values
 
-    def __init__(self, **data):
+    def __init__(self, **data: dict) -> None:
         super().__init__(**data)
         self.operations = self._build_operations()
 
-    def _build_operations(self):
+    def _build_operations(self) -> list:
         operations = []
         sdk_functions = [
             func
