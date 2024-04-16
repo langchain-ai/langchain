@@ -9,6 +9,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     HumanMessage,
+    ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
@@ -282,3 +283,30 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+def test_tool_message() -> None:
+    llm = ChatAnthropic(model="claude-3-sonnet-20240229")
+    function_name = "calculator"
+    function_args = {"arg1": "2", "arg2": "2", "op": "+"}
+
+    messages = [
+        HumanMessage(content="What is 2 + 2"),
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": function_name,
+                    "args": function_args,
+                    "id": "abc123",
+                },
+            ],
+        ),
+        ToolMessage(
+            name=function_name,
+            content=json.dumps({"result": 4}),
+            tool_call_id="abc123",
+        ),
+    ]
+
+    llm.invoke(messages)
