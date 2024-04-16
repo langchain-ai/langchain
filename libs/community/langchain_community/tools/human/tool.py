@@ -11,6 +11,10 @@ def _print_func(text: str) -> None:
     print("\n")  # noqa: T201
     print(text)  # noqa: T201
 
+class HumanInputRunInput(BaseModel):
+    """Input for the HumanInputRunInput tool."""
+
+    query: str = Field(description="Human Input")
 
 class HumanInputRun(BaseTool):
     """Tool that asks user for input."""
@@ -23,7 +27,8 @@ class HumanInputRun(BaseTool):
     )
     prompt_func: Callable[[str], None] = Field(default_factory=lambda: _print_func)
     input_func: Callable = Field(default_factory=lambda: input)
-    args_schema: Type[BaseModel] = BaseGraphQLToolInput
+    args_schema: Type[BaseModel] = HumanInputRunInput
+
     def _run(
         self,
         query: str,
