@@ -6,7 +6,7 @@ import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from cassandra.cluster import ResultSet, Session
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
 IGNORED_KEYSPACES = [
     "system",
@@ -110,7 +110,7 @@ class CassandraDatabase:
 
     # This is a more basic string building function that doesn't use a query builder
     # or prepared statements
-    # TODO: Refactor to use a query builder or prepared statements
+    # TODO: Refactor to use prepared statements
     def get_table_data(
         self, keyspace: str, table: str, predicate: str, limit: int
     ) -> str:
@@ -487,86 +487,44 @@ class DatabaseError(Exception):
 
 class Table(BaseModel):
     keyspace: str
+    """The keyspace in which the table exists."""
+
     table_name: str
+    """The name of the table."""
+
     comment: Optional[str] = None
-    columns: List[Tuple[str, str]] = []
-    partition: List[str] = []
-    clustering: List[Tuple[str, str]] = []
-    indexes: List[Tuple[str, str, str]] = []
+    """The comment associated with the table."""
 
-    def __init__(
-        self,
-        keyspace: str,
-        table_name: str,
-        db: Optional[CassandraDatabase] = None,
-        comment: Optional[str] = None,
-        columns: Optional[List[Tuple[str, str]]] = None,
-        partition: Optional[List[str]] = None,
-        clustering: Optional[List[Tuple[str, str]]] = None,
-        indexes: Optional[List[Tuple[str, str, str]]] = None,
-    ):
-        """
-        Initializes a representation of a Cassandra table, either by resolving its
-        schema from the database or by directly using the provided schema details.
+    columns: List[Tuple[str, str]] = Field(default_factory=list)
+    partition: List[str] = Field(default_factory=list)
+    clustering: List[Tuple[str, str]] = Field(default_factory=list)
+    indexes: List[Tuple[str, str, str]] = Field(default_factory=list)
 
-        Parameters:
-        - keyspace (str): The keyspace in which the table exists.
-        - table_name (str): The name of the table.
-        - db (Optional[CassandraDatabase]): An optional database connection to resolve
-          table schema.
-        - comment (Optional[str]): An optional comment describing the table, used
-          if `db` is not provided.
-        - columns (Optional[Dict[str, str]]): A dictionary mapping column names
-          to types, used if `db` is not provided.
-        - partition (Optional[List[str]]): A list of partition key column names, used
-          if `db` is not provided.
-        - clustering (Optional[List[str]]): A list of clustering key column names,
-          used if `db` is not provided.
-        - indexes (Optional[List[Tuple[str, str, str]]]): A list of tuples describing
-          indexes, used if `db` is not provided.
+    class Config:
+        frozen = True
 
-        Raises:
-        - ValueError: If `keyspace` or `table_name` is not provided, or if `columns`
-          or `partition` is not provided when `db` is None.
-        """
-        if keyspace is None or table_name is None:
-            raise ValueError("keyspace and table_name are required")
-
-        self._table_name = table_name
-        self._keyspace = keyspace
-
-        if db:
-            self._comment = self._resolve_comment(db)
-            self._columns, self._partition, self._clustering = self._resolve_columns(db)
-            self._indexes = self._resolve_indexes(db)
-        else:
-            if not columns or len(columns) == 0:
-                raise ValueError("non-empty column list must be provided")
-            if not partition or len(partition) == 0:
-                raise ValueError("non-empty partition list must be provided")
-            self._comment = comment
-            self._columns = columns
-            self._partition = partition
-            self._clustering = clustering or []
-            self._indexes = indexes or []
+    @root_validator()
+    def check_required_fields(cls, class_values: dict) -> dict:
+        if not class_values["columns"]:
+            raise ValueError("non-empty column list for must be provided")
+        if not class_values["partition"]:
+            raise ValueError("non-empty partition list must be provided")
+        return class_values
 
     @classmethod
     def from_database(
         cls, keyspace: str, table_name: str, db: CassandraDatabase
     ) -> Table:
-        """
-        Creates a Table instance by resolving the schema details from the database.
-
-        Args:
-            keyspace (str): The keyspace in which the table exists.
-            table_name (str): The name of the table.
-            db (CassandraDatabase): A database connection to resolve the table schema.
-
-        Returns:
-            Table: A Table instance representing the specified table.
-        """
-        table = cls(keyspace, table_name, db)
-        return table
+        columns, partition, clustering = cls._resolve_columns(keyspace, table_name, db)
+        return cls(
+            keyspace=keyspace,
+            table_name=table_name,
+            comment=cls._resolve_comment(keyspace, table_name, db),
+            columns=columns,
+            partition=partition,
+            clustering=clustering,
+            indexes=cls._resolve_indexes(keyspace, table_name, db),
+        )
 
     def as_markdown(
         self, include_keyspace: bool = True, header_level: Optional[int] = None
@@ -593,41 +551,44 @@ class Table(BaseModel):
         output = ""
         if header_level is not None:
             output += f"{'#' * header_level} "
-        output += f"Table Name: {self._table_name}\n"
+        output += f"Table Name: {self.table_name}\n"
 
         if include_keyspace:
-            output += f"- Keyspace: {self._keyspace}\n"
-        if self._comment:
-            output += f"- Comment: {self._comment}\n"
+            output += f"- Keyspace: {self.keyspace}\n"
+        if self.comment:
+            output += f"- Comment: {self.comment}\n"
 
         output += "- Columns\n"
-        for column, type in self._columns:
+        for column, type in self.columns:
             output += f"  - {column} ({type})\n"
 
-        output += f"- Partition Keys: ({', '.join(self._partition)})\n"
+        output += f"- Partition Keys: ({', '.join(self.partition)})\n"
         output += "- Clustering Keys: "
-        if self._clustering:
+        if self.clustering:
             cluster_list = []
-            for column, clustering_order in self._clustering:
+            for column, clustering_order in self.clustering:
                 if clustering_order.lower() == "none":
                     cluster_list.append(column)
                 else:
                     cluster_list.append(f"{column} {clustering_order}")
             output += f"({', '.join(cluster_list)})\n"
 
-        if self._indexes:
+        if self.indexes:
             output += "- Indexes\n"
-            for name, kind, options in self._indexes:
+            for name, kind, options in self.indexes:
                 output += f"  - {name} : kind={kind}, options={options}\n"
 
         return output
 
-    def _resolve_comment(self, db: CassandraDatabase) -> Optional[str]:
+    @staticmethod
+    def _resolve_comment(
+        keyspace: str, table_name: str, db: CassandraDatabase
+    ) -> Optional[str]:
         result = db.run(
             f"""SELECT comment 
                 FROM system_schema.tables 
-                WHERE keyspace_name = '{self._keyspace}' 
-                AND table_name = '{self._table_name}';""",
+                WHERE keyspace_name = '{keyspace}' 
+                AND table_name = '{table_name}';""",
             fetch="one",
         )
 
@@ -643,8 +604,9 @@ class Table(BaseModel):
                              {type(result).__name__}"""
             )
 
+    @staticmethod
     def _resolve_columns(
-        self, db: CassandraDatabase
+        keyspace: str, table_name: str, db: CassandraDatabase
     ) -> Tuple[List[Tuple[str, str]], List[str], List[Tuple[str, str]]]:
         columns = []
         partition_info = []
@@ -652,8 +614,8 @@ class Table(BaseModel):
         results = db.run(
             f"""SELECT column_name, type, kind, clustering_order, position 
                            FROM system_schema.columns 
-                           WHERE keyspace_name = '{self._keyspace}' 
-                           AND table_name = '{self._table_name}';"""
+                           WHERE keyspace_name = '{keyspace}' 
+                           AND table_name = '{table_name}';"""
         )
         # Type check to ensure 'results' is a sequence of dictionaries.
         if not isinstance(results, Sequence):
@@ -684,13 +646,16 @@ class Table(BaseModel):
 
         return columns, partition, cluster
 
-    def _resolve_indexes(self, db: CassandraDatabase) -> List[Tuple[str, str, str]]:
+    @staticmethod
+    def _resolve_indexes(
+        keyspace: str, table_name: str, db: CassandraDatabase
+    ) -> List[Tuple[str, str, str]]:
         indexes = []
         results = db.run(
             f"""SELECT index_name, kind, options 
                         FROM system_schema.indexes 
-                        WHERE keyspace_name = '{self._keyspace}' 
-                        AND table_name = '{self._table_name}';"""
+                        WHERE keyspace_name = '{keyspace}' 
+                        AND table_name = '{table_name}';"""
         )
 
         # Type check to ensure 'results' is a sequence of dictionaries
