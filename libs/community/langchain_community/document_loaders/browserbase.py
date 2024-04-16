@@ -18,8 +18,6 @@ class BrowserbaseLoader(BaseLoader):
         self.api_key = api_key
         self.text_content = text_content
 
-    def lazy_load(self) -> Iterator[Document]:
-        """Load pages from URLs"""
         try:
             from browserbase import Browserbase
         except ImportError:
@@ -30,8 +28,11 @@ class BrowserbaseLoader(BaseLoader):
                 "to use the Browserbase loader."
             )
 
-        browser = Browserbase(api_key=self.api_key)
-        pages = browser.load_urls(self.urls, self.text_content)
+        self.browserbase = Browserbase(api_key=self.api_key)
+
+    def lazy_load(self) -> Iterator[Document]:
+        """Load pages from URLs"""
+        pages = self.browserbase.load_urls(self.urls, self.text_content)
 
         for i, page in enumerate(pages):
             yield Document(
