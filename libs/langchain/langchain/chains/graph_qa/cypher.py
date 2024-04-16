@@ -163,6 +163,7 @@ class GraphCypherQAChain(Chain):
         validate_cypher: bool = False,
         qa_llm_kwargs: Optional[Dict[str, Any]] = None,
         cypher_llm_kwargs: Optional[Dict[str, Any]] = None,
+        custom_cypher_query_corrector: Optional[function[str]] = None,
         **kwargs: Any,
     ) -> GraphCypherQAChain:
         """Initialize from LLM."""
@@ -216,13 +217,15 @@ class GraphCypherQAChain(Chain):
             kwargs["graph"].get_structured_schema, include_types, exclude_types
         )
 
-        cypher_query_corrector = None
         if validate_cypher:
-            corrector_schema = [
-                Schema(el["start"], el["type"], el["end"])
-                for el in kwargs["graph"].structured_schema.get("relationships")
-            ]
-            cypher_query_corrector = CypherQueryCorrector(corrector_schema)
+            if custom_cypher_query_corrector:
+                cypher_query_corrector = custom_cypher_query_corrector
+            else:
+                corrector_schema = [
+                    Schema(el["start"], el["type"], el["end"])
+                    for el in kwargs["graph"].structured_schema.get("relationships")
+                ]
+                cypher_query_corrector = CypherQueryCorrector(corrector_schema)
 
         return cls(
             graph_schema=graph_schema,
@@ -252,8 +255,18 @@ class GraphCypherQAChain(Chain):
         generated_cypher = extract_cypher(generated_cypher)
 
         # Correct Cypher query if enabled
-        if self.cypher_query_corrector:
-            generated_cypher = self.cypher_query_corrector(generated_cypher)
+        try:
+            if self.cypher_query_corrector:
+                generated_cypher = self.cypher_query_corrector(generated_cypher)
+        except:
+            raise ValidationError(
+                "cypher_query_corrector is not a valid function."
+            )
+
+        if not isinstance(generated_cypher, str):
+            raise ValidationError(
+                "Returned cypher is not a string. Check cypher_query_corrector function."
+            )
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
         _run_manager.on_text(
