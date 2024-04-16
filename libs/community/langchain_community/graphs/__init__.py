@@ -29,8 +29,6 @@ if TYPE_CHECKING:
         Neo4jGraph,  # noqa: F401
     )
     from langchain_community.graphs.neptune_graph import (
-        BaseNeptuneGraph,  # noqa: F401
-        NeptuneAnalyticsGraph,  # noqa: F401
         NeptuneGraph,  # noqa: F401
     )
     from langchain_community.graphs.neptune_rdf_graph import (
