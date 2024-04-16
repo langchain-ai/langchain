@@ -212,22 +212,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
             # tool calls are those with invalid JSON for args.
             content += _lc_tool_calls_to_anthropic_tool_use_blocks(message.tool_calls)
         else:
-            if (
-                isinstance(message, AIMessage)
-                and message.content == ""
-                and message.tool_calls
-            ):
-                content = [
-                    {
-                        "type": "tool_use",
-                        "id": tool_call["id"],
-                        "name": tool_call["name"],
-                        "input": tool_call["args"],
-                    }
-                    for tool_call in message.tool_calls
-                ]
-            else:
-                content = message.content
+            content = message.content
 
         formatted_messages.append(
             {
