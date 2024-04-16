@@ -14,6 +14,7 @@ ANYSDK_CRUD_CONTROLS_READ_LIST = "get,read,list"
 ANYSDK_CRUD_CONTROLS_UPDATE_LIST = "update,put,post"
 ANYSDK_CRUD_CONTROLS_DELETE_LIST = "delete,destroy,remove"
 
+
 class AnySdkWrapper(BaseModel):
     client: Any
     operations: List[Dict] = []
@@ -28,14 +29,14 @@ class AnySdkWrapper(BaseModel):
 
     class Config:
         extra = Extra.allow
-    
+
     @root_validator
     def validate_environment(cls, values: Dict) -> Dict:
         crud_controls_create = get_from_dict_or_env(
             values,
             "crud_controls_create",
             "ANYSDK_CRUD_CONTROLS_CREATE",
-            default=ANYSDK_CRUD_CONTROLS_CREATE
+            default=ANYSDK_CRUD_CONTROLS_CREATE,
         )
         values["crud_controls_create"] = crud_controls_create
 
@@ -43,15 +44,15 @@ class AnySdkWrapper(BaseModel):
             values,
             "crud_controls_create_list",
             "ANYSDK_CRUD_CONTROLS_CREATE_LIST",
-            default=ANYSDK_CRUD_CONTROLS_CREATE_LIST
+            default=ANYSDK_CRUD_CONTROLS_CREATE_LIST,
         )
-        values["crud_controls_create_list"] = crud_controls_create_list.split(',')
+        values["crud_controls_create_list"] = crud_controls_create_list.split(",")
 
         crud_controls_read = get_from_dict_or_env(
             values,
             "crud_controls_read",
             "ANYSDK_CRUD_CONTROLS_READ",
-            default=ANYSDK_CRUD_CONTROLS_READ
+            default=ANYSDK_CRUD_CONTROLS_READ,
         )
         values["crud_controls_read"] = crud_controls_read
 
@@ -59,15 +60,15 @@ class AnySdkWrapper(BaseModel):
             values,
             "crud_controls_read_list",
             "ANYSDK_CRUD_CONTROLS_READ_LIST",
-            default=ANYSDK_CRUD_CONTROLS_READ_LIST
+            default=ANYSDK_CRUD_CONTROLS_READ_LIST,
         )
-        values["crud_controls_read_list"] = crud_controls_read_list.split(',')
+        values["crud_controls_read_list"] = crud_controls_read_list.split(",")
 
         crud_controls_update = get_from_dict_or_env(
             values,
             "crud_controls_update",
             "ANYSDK_CRUD_CONTROLS_UPDATE",
-            default=ANYSDK_CRUD_CONTROLS_UPDATE
+            default=ANYSDK_CRUD_CONTROLS_UPDATE,
         )
         values["crud_controls_update"] = crud_controls_update
 
@@ -75,15 +76,15 @@ class AnySdkWrapper(BaseModel):
             values,
             "crud_controls_update_list",
             "ANYSDK_CRUD_CONTROLS_UPDATE_LIST",
-            default=ANYSDK_CRUD_CONTROLS_UPDATE_LIST
+            default=ANYSDK_CRUD_CONTROLS_UPDATE_LIST,
         )
-        values["crud_controls_update_list"] = crud_controls_update_list.split(',')
+        values["crud_controls_update_list"] = crud_controls_update_list.split(",")
 
         crud_controls_delete = get_from_dict_or_env(
             values,
             "crud_controls_delete",
             "ANYSDK_CRUD_CONTROLS_DELETE",
-            default=ANYSDK_CRUD_CONTROLS_DELETE
+            default=ANYSDK_CRUD_CONTROLS_DELETE,
         )
         values["crud_controls_delete"] = crud_controls_delete
 
@@ -91,12 +92,11 @@ class AnySdkWrapper(BaseModel):
             values,
             "crud_controls_delete_list",
             "ANYSDK_CRUD_CONTROLS_DELETE_LIST",
-            default=ANYSDK_CRUD_CONTROLS_DELETE_LIST
+            default=ANYSDK_CRUD_CONTROLS_DELETE_LIST,
         )
-        values["crud_controls_delete_list"] = crud_controls_delete_list.split(',')
+        values["crud_controls_delete_list"] = crud_controls_delete_list.split(",")
 
         return values
-
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -113,31 +113,35 @@ class AnySdkWrapper(BaseModel):
         for func_name in sdk_functions:
             func = getattr(self.client, func_name)
 
-            if (self.crud_controls_create
-                and any(word.lower() in func_name.lower() 
-                    for word in self.crud_controls_create_list)):
+            if self.crud_controls_create and any(
+                word.lower() in func_name.lower()
+                for word in self.crud_controls_create_list
+            ):
                 continue
-            if (self.crud_controls_read
-                and any(word.lower() in func_name.lower() 
-                    for word in self.crud_controls_read_list)):
+            if self.crud_controls_read and any(
+                word.lower() in func_name.lower()
+                for word in self.crud_controls_read_list
+            ):
                 continue
-            if (self.crud_controls_update
-                and any(word.lower() in func_name.lower() 
-                        for word in self.crud_controls_update_list)):
+            if self.crud_controls_update and any(
+                word.lower() in func_name.lower()
+                for word in self.crud_controls_update_list
+            ):
                 continue
-            if (self.crud_controls_delete
-                and any(word.lower() in func_name.lower() 
-                        for word in self.crud_controls_delete_list)):
+            if self.crud_controls_delete and any(
+                word.lower() in func_name.lower()
+                for word in self.crud_controls_delete_list
+            ):
                 continue
 
             operation = {
                 "mode": func_name,
                 "name": func.__name__.replace("_", " ").title(),
-                "description": func.__doc__
+                "description": func.__doc__,
             }
             operations.append(operation)
         return operations
-    
+
     def run(self, mode: str, query: str) -> str:
         try:
             params = json.loads(query)

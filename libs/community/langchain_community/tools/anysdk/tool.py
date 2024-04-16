@@ -17,9 +17,7 @@ class AnySdkAction(BaseTool):
     description: str = ""
 
     def _run(
-        self,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs
+        self, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs
     ) -> str:
         """Use the  AnySdk API to run an operation."""
         try:
@@ -29,5 +27,3 @@ class AnySdkAction(BaseTool):
         except (ValueError, KeyError):
             return "Invalid instructions format. \
                 Expected a JSON object with 'action_input' field."
-        
-        
