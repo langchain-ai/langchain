@@ -103,34 +103,6 @@ def test__format_output() -> None:
 
 
 def test__merge_messages() -> None:
-    original_messages = [
-        SystemMessage("foo"),
-        HumanMessage("bar"),
-        AIMessage(
-            [
-                {"text": "baz", "type": "text"},
-                {
-                    "tool_input": {"a": "b"},
-                    "type": "tool_use",
-                    "id": "1",
-                    "text": None,
-                    "name": "buz",
-                },
-                {"text": "baz", "type": "text"},
-                {
-                    "tool_input": {"a": "c"},
-                    "type": "tool_use",
-                    "id": "2",
-                    "text": None,
-                    "name": "blah",
-                },
-            ]
-        ),
-        ToolMessage("buz output", tool_call_id="1"),
-        ToolMessage("blah output", tool_call_id="2"),
-        HumanMessage([{"type": "text", "text": "next thing"}]),
-        HumanMessage([{"type": "text", "text": "next next thing"}]),
-    ]
     messages = [
         SystemMessage("foo"),
         HumanMessage("bar"),
@@ -156,8 +128,7 @@ def test__merge_messages() -> None:
         ),
         ToolMessage("buz output", tool_call_id="1"),
         ToolMessage("blah output", tool_call_id="2"),
-        HumanMessage([{"type": "text", "text": "next thing"}]),
-        HumanMessage([{"type": "text", "text": "next next thing"}]),
+        HumanMessage("next thing"),
     ]
     expected = [
         SystemMessage("foo"),
@@ -187,8 +158,25 @@ def test__merge_messages() -> None:
                 {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
                 {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
                 {"type": "text", "text": "next thing"},
-                {"type": "text", "text": "next next thing"},
             ]
+        ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+
+def test__merge_messages_mutation() -> None:
+    original_messages = [
+        HumanMessage([{"type": "text", "text": "bar"}]),
+        HumanMessage("next thing"),
+    ]
+    messages = [
+        HumanMessage([{"type": "text", "text": "bar"}]),
+        HumanMessage("next thing"),
+    ]
+    expected = [
+        HumanMessage(
+            [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}]
         ),
     ]
     actual = _merge_messages(messages)
