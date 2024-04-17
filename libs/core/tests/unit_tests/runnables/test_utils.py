@@ -48,7 +48,7 @@ def test_nonlocals() -> None:
         return agent.get("agent_name", input)
 
     def my_func2(input: str) -> str:
-        return agent.get("agent_name", input)
+        return agent.get("agent_name", input)  # type: ignore[attr-defined]
 
     def my_func3(input: str) -> str:
         return agent.invoke(input)
