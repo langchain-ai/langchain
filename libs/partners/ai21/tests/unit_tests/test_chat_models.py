@@ -1,5 +1,5 @@
 """Test chat model integration."""
-from typing import List, Optional
+from typing import List, Optional, cast
 from unittest.mock import Mock, call
 
 import pytest
@@ -14,6 +14,8 @@ from langchain_core.messages import (
 from langchain_core.messages import (
     ChatMessage as LangChainChatMessage,
 )
+from langchain_core.pydantic_v1 import SecretStr
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_ai21.chat_models import (
     ChatAI21,
@@ -236,3 +238,37 @@ def test_generate(mock_client_with_chat: Mock) -> None:
             ),
         ]
     )
+
+
+def test_api_key_is_secret_string() -> None:
+    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")
+    assert isinstance(llm.api_key, SecretStr)
+
+
+def test_api_key_masked_when_passed_from_env(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    """Test initialization with an API key provided via an env variable"""
+    monkeypatch.setenv("AI21_API_KEY", "secret-api-key")
+    llm = ChatAI21(model="j2-ultra")
+    print(llm.api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_api_key_masked_when_passed_via_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    """Test initialization with an API key provided via the initializer"""
+    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")
+    print(llm.api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_uses_actual_secret_value_from_secretstr() -> None:
+    """Test that actual secret is retrieved using `.get_secret_value()`."""
+    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")
+    assert cast(SecretStr, llm.api_key).get_secret_value() == "secret-api-key"

@@ -7,6 +7,7 @@ from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer, wait_for_all_tracers
 
 from langchain_community.callbacks import get_openai_callback
+from langchain_community.callbacks.manager import get_bedrock_anthropic_callback
 from langchain_community.llms.openai import BaseOpenAI
 
 
@@ -73,6 +74,37 @@ def test_callback_manager_configure_context_vars(
                                 "total_tokens": 3,
                             },
                             "model_name": BaseOpenAI.__fields__["model_name"].default,
+                        },
+                    )
+                    mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)
+
+                    # The callback handler has been updated
+                    assert cb.successful_requests == 1
+                    assert cb.total_tokens == 3
+                    assert cb.prompt_tokens == 2
+                    assert cb.completion_tokens == 1
+                    assert cb.total_cost > 0
+
+                with get_bedrock_anthropic_callback() as cb:
+                    # This is a new empty callback handler
+                    assert cb.successful_requests == 0
+                    assert cb.total_tokens == 0
+
+                    # configure adds this bedrock anthropic cb,
+                    # but doesn't modify the group manager
+                    mngr = CallbackManager.configure(group_manager)
+                    assert mngr.handlers == [tracer, cb]
+                    assert group_manager.handlers == [tracer]
+
+                    response = LLMResult(
+                        generations=[],
+                        llm_output={
+                            "usage": {
+                                "prompt_tokens": 2,
+                                "completion_tokens": 1,
+                                "total_tokens": 3,
+                            },
+                            "model_id": "anthropic.claude-instant-v1",
                         },
                     )
                     mngr.on_llm_start({}, ["prompt"])[0].on_llm_end(response)

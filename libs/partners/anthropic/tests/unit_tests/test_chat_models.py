@@ -1,25 +1,38 @@
 """Test chat model integration."""
 
 import os
-from typing import Any, Callable, Dict, Literal, Type
+from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
 from anthropic.types import ContentBlock, Message, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
 
-from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
-from langchain_anthropic.chat_models import _merge_messages, convert_to_anthropic_tool
+from langchain_anthropic import ChatAnthropic
+from langchain_anthropic.chat_models import (
+    _format_messages,
+    _merge_messages,
+    convert_to_anthropic_tool,
+)
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    ChatAnthropicMessages(model_name="claude-instant-1.2", anthropic_api_key="xyz")
-    ChatAnthropicMessages(model="claude-instant-1.2", anthropic_api_key="xyz")
+    for model in [
+        ChatAnthropic(model_name="claude-instant-1.2", api_key="xyz", timeout=2),
+        ChatAnthropic(
+            model="claude-instant-1.2",
+            anthropic_api_key="xyz",
+            default_request_timeout=2,
+        ),
+    ]:
+        assert model.model == "claude-instant-1.2"
+        assert cast(SecretStr, model.anthropic_api_key).get_secret_value() == "xyz"
+        assert model.default_request_timeout == 2.0
 
 
 @pytest.mark.requires("anthropic")
@@ -259,3 +272,131 @@ def test_convert_to_anthropic_tool(
     for fn in (pydantic, function, dummy_tool, json_schema, expected, openai_function):
         actual = convert_to_anthropic_tool(fn)  # type: ignore
         assert actual == expected
+
+
+def test__format_messages_with_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
+        "blurb",
+        tool_call_id="1",
+    )
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "buzz"},
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test__format_messages_with_str_content_and_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    # If content and tool_calls are specified and content is a string, then both are
+    # included with content first.
+    ai = AIMessage(
+        "thought",
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
+        "blurb",
+        tool_call_id="1",
+    )
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "thought",
+                    },
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "buzz"},
+                    },
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test__format_messages_with_list_content_and_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    # If content and tool_calls are specified and content is a list, then content is
+    # preferred.
+    ai = AIMessage(
+        [
+            {
+                "type": "text",
+                "text": "thought",
+            }
+        ],
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
+        "blurb",
+        tool_call_id="1",
+    )
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "thought",
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
