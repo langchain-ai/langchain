@@ -119,7 +119,7 @@ def _convert_mistral_chat_message_to_message(
 def _raise_on_error(response: httpx.Response) -> None:
     """Raise an error if the response is an error."""
     if httpx.codes.is_error(response.status_code):
-        error_message = response.text
+        error_message = response.read().decode('utf-8')
         raise httpx.HTTPStatusError(
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}",
