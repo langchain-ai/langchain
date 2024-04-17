@@ -31,5 +31,18 @@ python3 scripts/resolve_local_links.py docs/langserve.md https://github.com/lang
 wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O docs/langgraph.md
 python3 scripts/resolve_local_links.py docs/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
+# Duplicate changes to canary version
+cp docs/integrations/llms/index.mdx versioned_docs/version-canary/integrations/llms/
+cp docs/integrations/chat/index.mdx versioned_docs/version-canary/integrations/chat/
+mkdir -p versioned_docs/version-canary/templates
+cp docs/templates/index.md versioned_docs/version-canary/templates/
+
+wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O versioned_docs/version-canary/langserve.md
+python3 scripts/resolve_local_links.py versioned_docs/version-canary/langserve.md https://github.com/langchain-ai/langserve/tree/main/
+
+wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O versioned_docs/version-canary/langgraph.md
+python3 scripts/resolve_local_links.py versioned_docs/version-canary/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
+
 # render
 quarto render docs/
+quarto render versioned_docs/version-canary/
