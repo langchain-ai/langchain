@@ -135,7 +135,7 @@ class MLXPipeline(LLM):
                 "Please install it with `pip install mlx_lm`."
             )
 
-        pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        pipeline_kwargs = kwargs.get("pipeline_kwargs", self.pipeline_kwargs)
 
         return generate(self.model, self.tokenizer, prompt=prompt, **pipeline_kwargs)
 
@@ -185,7 +185,7 @@ class MLXPipeline(LLM):
         ):
             # identify text to yield
             text: Optional[str] = None
-            text = self.tokenizer.decode(token.item())
+            text = self.tokenizer.decode(token)
 
             # yield text, if any
             if text:
@@ -197,3 +197,4 @@ class MLXPipeline(LLM):
             # break if stop sequence found
             if token == eos_token_id or (stop is not None and text in stop):
                 break
+
