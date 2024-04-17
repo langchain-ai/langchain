@@ -119,7 +119,7 @@ def test_takeoff_initialization(httpx_mock: Any) -> None:
 @pytest.mark.requires("pytest_httpx")
 @pytest.mark.requires("takeoff_client")
 def test_takeoff_initialization_with_more_than_one_consumer_group(
-    httpx_mock: Any
+    httpx_mock: Any,
 ) -> None:
     """Test valid call to Titan Takeoff."""
     mgnt_port = 36452
