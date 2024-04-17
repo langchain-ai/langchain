@@ -11,7 +11,11 @@ from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
 
 from langchain_anthropic import ChatAnthropic
-from langchain_anthropic.chat_models import _merge_messages, convert_to_anthropic_tool
+from langchain_anthropic.chat_models import (
+    _format_messages,
+    _merge_messages,
+    convert_to_anthropic_tool,
+)
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
@@ -268,3 +272,131 @@ def test_convert_to_anthropic_tool(
     for fn in (pydantic, function, dummy_tool, json_schema, expected, openai_function):
         actual = convert_to_anthropic_tool(fn)  # type: ignore
         assert actual == expected
+
+
+def test__format_messages_with_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
+        "blurb",
+        tool_call_id="1",
+    )
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "buzz"},
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test__format_messages_with_str_content_and_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    # If content and tool_calls are specified and content is a string, then both are
+    # included with content first.
+    ai = AIMessage(
+        "thought",
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
+        "blurb",
+        tool_call_id="1",
+    )
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "thought",
+                    },
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "buzz"},
+                    },
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test__format_messages_with_list_content_and_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    # If content and tool_calls are specified and content is a list, then content is
+    # preferred.
+    ai = AIMessage(
+        [
+            {
+                "type": "text",
+                "text": "thought",
+            }
+        ],
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
+        "blurb",
+        tool_call_id="1",
+    )
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "thought",
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual

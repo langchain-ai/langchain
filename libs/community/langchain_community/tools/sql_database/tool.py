@@ -79,7 +79,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
 
 class _ListSQLDataBaseToolInput(BaseModel):
-    tool_input: str = Field(..., description="An empty string")
+    tool_input: str = Field("", description="An empty string")
 
 
 class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
