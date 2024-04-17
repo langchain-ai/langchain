@@ -150,7 +150,7 @@ def _convert_delta_to_message_chunk(
     return default_class(content=content)
 
 
-def _truncate_params(payload: Dict[str, Any]):
+def _truncate_params(payload: Dict[str, Any]) -> None:
     """Truncate temperature and top_p parameters between [0.01, 0.99].
 
     ZhipuAI only support temperature / top_p between (0, 1) open interval,
