@@ -116,6 +116,30 @@ def _convert_mistral_chat_message_to_message(
     )
 
 
+def _raise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = response.text
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
+
+
+async def _araise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = (await response.aread()).decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
+
+
 async def _aiter_sse(
     event_source_mgr: AsyncContextManager[EventSource],
 ) -> AsyncIterator[Dict]:
@@ -123,7 +147,7 @@ async def _aiter_sse(
     async with event_source_mgr as event_source:
         # TODO(Team): Remove after this is fixed in httpx dependency
         # https://github.com/florimondmanca/httpx-sse/pull/25/files
-        event_source._response.raise_for_status()
+        await _araise_on_error(event_source._response)
         async for event in event_source.aiter_sse():
             if event.data == "[DONE]":
                 return
@@ -302,7 +326,7 @@ class ChatMistralAI(BaseChatModel):
                     ) as event_source:
                         # TODO(Team): Remove after this is fixed in httpx dependency
                         # https://github.com/florimondmanca/httpx-sse/pull/25/files
-                        event_source._response.raise_for_status()
+                        _raise_on_error(event_source._response)
                         for event in event_source.iter_sse():
                             if event.data == "[DONE]":
                                 return
