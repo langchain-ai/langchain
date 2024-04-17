@@ -1,10 +1,9 @@
 import sys
 from typing import Callable
 
-from langchain_core.runnables.base import RunnableLambda
-
 import pytest
 
+from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.utils import (
     get_function_nonlocals,
     get_lambda_source,
