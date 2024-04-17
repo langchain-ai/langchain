@@ -11,30 +11,33 @@ Head to [Integrations](/docs/integrations/callbacks/) for documentation on built
 LangChain provides a system of callbacks that provides a set of hooks to allow you entry into various stages of your application. This is useful for logging, tracing, debugging and monitoring.
 
 ## Concepts
-Concepts include the hooks or events that provide entry to the application and the callbacks handler object which subscribes to one or more of these events. We also discuss the types of callbacks and tags, useful for filtering of specific flows.
+
+Concepts include the hooks or events that provide entry to the application and the
+callbacks handler object which subscribes to one or more of these events.
+We also discuss the types of callbacks and tags, useful for filtering of specific flows.
 
 ### Events
 
-| Event Name | Event Trigger | Associated Method |
-| --- | --- | --- |
-| LLM start  | When a llm starts | `on_llm_start`|
-| LLM new token  | When a llm receives a new token | `on_llm_new_token`|
-| LLM ends  | When a llm ends | `on_llm_end`|
-| LLM errors  | When a llm errors | `on_llm_error`|
-| Chat model start  | When a chat model starts | `on_chat_model_start`|
-| Chain start  | When a chain starts running | `on_chain_start`|
-| Chain end  | When a chain ends | `on_chain_end`|
-| Chain error  | When a chain errors | `on_chain_error`|
-| Tool start  | When a tool starts running | `on_tool_start`|
-| Tool end  | When a tool ends | `on_tool_end`|
-| Tool error  | When a tool errors | `on_tool_error`|
-| Agent action  | When an agent takes an action | `on_agent_action`|
-| Agent finish  | When an agent ends | `on_agent_finish`|
-| Retriever start  | When a retriever starts | `on_retriever_start`|
-| Retriever end  | When a retriever ends | `on_retriever_end`|
-| Retriever error  | When a retriever errors | `on_retriever_error`|
-| Text  | When arbitrary text is run | `on_text`|
-| Retry  | When a retry event is run | `on_retry`|
+| Event Name       | Event Trigger                   | Associated Method     |
+|------------------|---------------------------------|-----------------------|
+| LLM start        | When a llm starts               | `on_llm_start`        |
+| LLM new token    | When a llm receives a new token | `on_llm_new_token`    |
+| LLM ends         | When a llm ends                 | `on_llm_end`          |
+| LLM errors       | When a llm errors               | `on_llm_error`        |
+| Chat model start | When a chat model starts        | `on_chat_model_start` |
+| Chain start      | When a chain starts running     | `on_chain_start`      |
+| Chain end        | When a chain ends               | `on_chain_end`        |
+| Chain error      | When a chain errors             | `on_chain_error`      |
+| Tool start       | When a tool starts running      | `on_tool_start`       |
+| Tool end         | When a tool ends                | `on_tool_end`         |
+| Tool error       | When a tool errors              | `on_tool_error`       |
+| Agent action     | When an agent takes an action   | `on_agent_action`     |
+| Agent finish     | When an agent ends              | `on_agent_finish`     |
+| Retriever start  | When a retriever starts         | `on_retriever_start`  |
+| Retriever end    | When a retriever ends           | `on_retriever_end`    |
+| Retriever error  | When a retriever errors         | `on_retriever_error`  |
+| Text             | When arbitrary text is run      | `on_text`             |
+| Retry            | When a retry event is run       | `on_retry`            |
 
 
 ### Callback Handlers
@@ -46,138 +49,158 @@ Callback handlers are objects that implement the associated method (see table ab
 
 The callbacks are available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
 
-- **Constructor callbacks**: Defined in the constructor. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only, e.g. if you pass a handler to the llm constructor, it will only be be used by the model.
-- **Request callbacks**: Defined in the `invoke` method used for issuing a request. In this case, the callback will be used for that specific request (and all sub-requests that it contains (e.g. defining in the `invoke` method of a LCEL chain triggers a call to all entities in the chain, using the same handler). The same approach can be used for the `ainvoke`, `batch` and `abatch` methods.)
+- **Request time callbacks**: Passed at the time of the request in addition to the input data.
+    Available on all standard LCEL methods. These callbacks are INHERITED by all children
+    of the object they are defined on. For example, `chain.invoke({"number": 25}, {"callbacks": [handler]})`.
+- **Constructor callbacks**: `chain = TheNameOfSomeChain(callbacks=[handler])`. These callbacks
+are passed as arguments to the constructor of the object. The callbacks are SCOPED
+to the object they are defined on, and are not inherited by any children of the object.
 
-#### When do you want to use each of these?
+:::warning
+Constructor callbacks are scoped only to the object they are defined on. You should
+generally avoid using them!
 
-- Constructor callbacks are most useful for use cases such as logging, monitoring, etc., which are _not specific to a single request_, but rather to the entire chain. For example, if you want to log all the requests made to an entire chain, you would pass a handler to the constructor.
-- Request callbacks are most useful for use cases such as streaming, where you want to stream the output of a single request to a specific websocket connection, or other similar use cases. For example, if you want to stream the output of a single request to a websocket, you would pass a handler to the `invoke` method through the `config` option.
+While they can be useful if you don't want to add logic to filter callbacks triggered
+by children of the object, most of the time they end up being more confusing than helpful.
+:::
 
 ### Tags
 
-You can add tags to your callbacks by passing a tags argument to the `invoke` method. This is useful for filtering your logs, e.g. if you want to log all requests made to a specific chain, you can add a tag, and then filter your logs by that tag. You can pass tags to both constructor and request callbacks.
+All standard LCEL methods accept a `RunnableConfig` object as a 2nd argument.
+
+The config object includes a standard field called "tags".
+
+You would declare it like this:
+
+```python
+chain.invoke({"number": 25}, {"tags": ["tag1", "tag2"]})
+```
+
+This is useful for filtering your logs, e.g. if you want to log all requests made to a specific chain, you can add a tag, and then filter your logs by that tag. You can pass tags to both constructor and request callbacks.
 
 These tags are then passed to the tags argument of the "start" callback methods, ie. `on_llm_start`, `on_chat_model_start`, `on_chain_start`,  `on_tool_start` and `on_retriever_start`.
 
 ## Quick start
 
-Let us understand how to use callbacks by examining one of the built-in handlers provided by LangChain - the `StdOutCallbackHandler`, which simply logs all events to `stdout`. This is useful for debugging, as it will log all events to the console.
-
+Let us understand what callbacks can do by examining one of the built-in callback handlers
+provided by LangChain called `ConsoleCallbackHandler`.
 
 ```python
-from langchain_core.callbacks import StdOutCallbackHandler
-from langchain_openai import OpenAI
+from langchain_core.tracers.stdout import ConsoleCallbackHandler
 from langchain_core.prompts import PromptTemplate
-
-handler = StdOutCallbackHandler()
+from langchain_openai import ChatOpenAI
 
 prompt = PromptTemplate.from_template("1 + {number} = ")
+model = ChatOpenAI()
+chain = prompt | model
+chain.invoke({"number": 25}, {'callbacks': [ConsoleCallbackHandler()]})
+```
 
-# Constructor callback: we set the callback when initializing the model
-model = OpenAI(callbacks = [handler])
+<details> <summary>Console output</summary>
 
+
+<CodeOutputBlock lang="python">
+
+```
+[chain/start] [1:chain:RunnableSequence] Entering Chain run with input:
+{
+    "number": 25
+}
+[chain/start] [1:chain:RunnableSequence > 2:prompt:PromptTemplate] Entering Prompt run with input:
+{
+    "number": 25
+}
+[chain/end] [1:chain:RunnableSequence > 2:prompt:PromptTemplate] [0ms] Exiting Prompt run with output:
+[outputs]
+[llm/start] [1:chain:RunnableSequence > 3:llm:ChatOpenAI] Entering LLM run with input:
+{
+    "prompts": [
+    "Human: 1 + 25 ="
+    ]
+}
+[llm/end] [1:chain:RunnableSequence > 3:llm:ChatOpenAI] [371ms] Exiting LLM run with output:
+{
+    "generations": [
+    [
+{
+    "text": "26",
+    "generation_info": {
+    "finish_reason": "stop",
+    "logprobs": null
+},
+    "type": "ChatGeneration",
+    "message": {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+    "langchain",
+    "schema",
+    "messages",
+    "AIMessage"
+    ],
+    "kwargs": {
+    "content": "26",
+    "additional_kwargs": {},
+    "name": null,
+    "id": "run-a74e2a93-7269-4cd7-9008-e2518841b4f6-0",
+    "tool_calls": [],
+    "invalid_tool_calls": []
+}
+}
+}
+    ]
+    ],
+    "llm_output": {
+    "token_usage": {
+    "completion_tokens": 1,
+    "prompt_tokens": 13,
+    "total_tokens": 14
+},
+    "model_name": "gpt-3.5-turbo",
+    "system_fingerprint": "fp_c2295e73ad"
+},
+    "run": null
+}
+[chain/end] [1:chain:RunnableSequence] [372ms] Exiting Chain run with output:
+[outputs]
+AIMessage(content='26', response_metadata={'token_usage': {'completion_tokens': 1, 'prompt_tokens': 13, 'total_tokens': 14}, 'model_name': 'gpt-3.5-turbo', 'system_fingerprint': 'fp_c2295e73ad', 'finish_reason': 'stop', 'logprobs': None}, id='run-a74e2a93-7269-4cd7-9008-e2518841b4f6-0')
+
+```
+
+</CodeOutputBlock>
+
+</details>
+
+:::hint
+`ConsoleCallbackHandler` is the callback handler that's used by LangChain
+when the debug flag is set to True!
+
+Doing the following:
+
+```python
+from langchain_core.globals import set_debug
+set_debug(True)
+```
+
+will automatically add the `ConsoleCallbackHandler` to all chains that are run!
+:::
+
+
+We can also pass the callback handler via the constructor (do we recommend against doing that in general).
+
+```python
+from langchain_core.prompts import PromptTemplate
+from langchain_core.tracers.stdout import ConsoleCallbackHandler
+from langchain_openai import ChatOpenAI
+
+prompt = PromptTemplate.from_template("1 + {number} = ")
+model = ChatOpenAI(callbacks=[ConsoleCallbackHandler()])
 chain = prompt | model
 chain.invoke({"number": 25})
 ```
 
-<details> <summary>Console output</summary>
-
-
-<CodeOutputBlock lang="python">
-
-```
-
-> Entering OpenAI...
-> Prompt: ['what is 1 + 25?']
-
-> Finished llm.
-```
-
-</CodeOutputBlock>
-
-</details>
-
-
-We can also request the callback in the `invoke` method for the chain, i.e. a "requests" callback. This will be propagated to all objects in the chain.
-
-```
-model = OpenAI()
-
-# Request callbacks: we set the request callback on the chain and see it propagated to all subrequests
-chain = prompt | model
-chain.invoke({"number": 40}, {"callbacks": [handler]})
-```
-
-
-<details> <summary>Console output</summary>
-
-<CodeOutputBlock lang="python">
-
-```
-
-> Entering new RunnableSequence chain...
-
-
-> Entering new PromptTemplate chain...
-> Template: what is 1 + {number}?
-
-> Finished chain.
-
-
-> Entering OpenAI...
-> Prompt: ['what is 1 + 40?']
-
-> Finished llm.
-
-> Finished chain.
-```
-
-</CodeOutputBlock>
-
-</details>
 
 In the above examples, the prints are due to the `StdOutCallbackHandler` implementing the `on_chain_start`, `on_chain_end`, `on_llm_start` and `on_llm_end` methods to provide helpful debugging information.
-
-In the example below, we show how the `StdOutCallbackHandler` can be used with a retriever (implementing the `on_retriever_start` and `on_retriever_end` methods).
-
-```
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.document_loaders.text import TextLoader
-from langchain_community.vectorstores.faiss import FAISS
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-handler = StdOutCallbackHandler()
-
-documents = TextLoader("state_of_the_union.txt", encoding="utf-8").load()
-
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-texts = text_splitter.split_documents(documents)
-
-embeddings_model = OpenAIEmbeddings()
-
-db = FAISS.from_documents(texts, embeddings_model)
-
-retriever = db.as_retriever(search_kwargs={"k": 2})
-docs = retriever.get_relevant_documents("what did he say about ketanji brown jackson", callbacks = [handler])
-```
-
-
-<details> <summary>Console output</summary>
-
-<CodeOutputBlock lang="python">
-
-```
-> Entering VectorStoreRetriever...
-
-> Finished retriever.
-
-```
-
-</CodeOutputBlock>
-
-</details>
-
 
 ## More topics
 
