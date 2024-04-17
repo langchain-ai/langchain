@@ -201,7 +201,7 @@ def _convert_delta_to_message_chunk(
 
 def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
     """Format Langchain ToolCall to dict expected by Mistral."""
-    result = {
+    result: Dict[str, Any] = {
         "function": {
             "name": tool_call["name"],
             "arguments": json.dumps(tool_call["args"]),
@@ -215,7 +215,7 @@ def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
 
 def _format_invalid_tool_call_for_mistral(tool_call: InvalidToolCall) -> dict:
     """Format Langchain ToolCall to dict expected by Mistral."""
-    result = {
+    result: Dict[str, Any] = {
         "function": {
             "name": tool_call["name"],
             "arguments": tool_call["args"],
