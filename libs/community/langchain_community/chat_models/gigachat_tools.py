@@ -41,41 +41,13 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
             )
         message = generation.message
         try:
-            tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
+            tool_call = copy.deepcopy(message.additional_kwargs["function_call"])
         except KeyError:
             return []
 
         final_tools = []
         exceptions = []
-        for tool_call in tool_calls:
-            if "function" not in tool_call:
-                continue
-            if partial:
-                try:
-                    function_args = parse_partial_json(
-                        tool_call["function"]["arguments"], strict=self.strict
-                    )
-                except JSONDecodeError:
-                    continue
-            else:
-                try:
-                    function_args = json.loads(
-                        tool_call["function"]["arguments"], strict=self.strict
-                    )
-                except JSONDecodeError as e:
-                    exceptions.append(
-                        f"Function {tool_call['function']['name']} arguments:\n\n"
-                        f"{tool_call['function']['arguments']}\n\nare not valid JSON. "
-                        f"Received JSONDecodeError {e}"
-                    )
-                    continue
-            parsed = {
-                "type": tool_call["function"]["name"],
-                "args": function_args,
-            }
-            if self.return_id:
-                parsed["id"] = tool_call["id"]
-            final_tools.append(parsed)
+        final_tools = [{"type": tool_call["name"], "args": tool_call["arguments"]}]
         if exceptions:
             raise OutputParserException("\n\n".join(exceptions))
         if self.first_tool_only:
