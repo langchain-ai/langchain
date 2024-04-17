@@ -193,7 +193,8 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                         content.append(item)
                     elif item["type"] == "text":
                         text = item.get("text", "")
-                        # Only add non-empty strings for now as empty ones are not accepted.
+                        # Only add non-empty strings for now as empty ones are not
+                        # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
                         if text.strip():
                             content.append(
