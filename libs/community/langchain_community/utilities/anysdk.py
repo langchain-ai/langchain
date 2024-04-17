@@ -98,7 +98,7 @@ class AnySdkWrapper(BaseModel):
             default=ANYSDK_CRUD_CONTROLS_DELETE_LIST,
         )
         values["crud_controls_delete_list"] = crud_controls_delete_list.split(",")
-        print(values)
+
         return values
 
     def __init__(self, **data: dict) -> None:
