@@ -128,7 +128,8 @@ def test__merge_messages() -> None:
         ),
         ToolMessage("buz output", tool_call_id="1"),
         ToolMessage("blah output", tool_call_id="2"),
-        HumanMessage("next thing"),
+        HumanMessage([{"type": "text", "text": "next thing"}]),
+        HumanMessage([{"type": "text", "text": "next next thing"}]),
     ]
     messages = [
         SystemMessage("foo"),
@@ -155,7 +156,8 @@ def test__merge_messages() -> None:
         ),
         ToolMessage("buz output", tool_call_id="1"),
         ToolMessage("blah output", tool_call_id="2"),
-        HumanMessage("next thing"),
+        HumanMessage([{"type": "text", "text": "next thing"}]),
+        HumanMessage([{"type": "text", "text": "next next thing"}]),
     ]
     expected = [
         SystemMessage("foo"),
@@ -185,6 +187,7 @@ def test__merge_messages() -> None:
                 {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
                 {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
                 {"type": "text", "text": "next thing"},
+                {"type": "text", "text": "next next thing"},
             ]
         ),
     ]
