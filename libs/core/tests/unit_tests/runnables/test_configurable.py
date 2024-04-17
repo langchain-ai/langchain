@@ -34,7 +34,14 @@ class MyRunnable(RunnableSerializable[str, str]):
     def my_custom_function(self) -> str:
         return self.my_property
 
-    def my_custom_function_w_config(self, config: RunnableConfig) -> str:
+    def my_custom_function_w_config(
+        self, config: Optional[RunnableConfig] = None
+    ) -> str:
+        return self.my_property
+
+    def my_custom_function_w_kw_config(
+        self, *, config: Optional[RunnableConfig] = None
+    ) -> str:
         return self.my_property
 
 
@@ -175,7 +182,73 @@ def test_config_passthrough_nested() -> None:
             configurable={"my_property": "b"}
         ).my_custom_function()  # type: ignore[attr-defined]
         == "b"
-    )
+    ), "function without config can be called w bound config"
+    assert (
+        configurable_runnable.with_config(
+            configurable={"my_property": "b"}
+        ).my_custom_function_w_config(  # type: ignore[attr-defined]
+        )
+        == "b"
+    ), "func with config arg can be called w bound config without config"
+    assert (
+        configurable_runnable.with_config(
+            configurable={"my_property": "b"}
+        ).my_custom_function_w_config(  # type: ignore[attr-defined]
+            config={"configurable": {"my_property": "c"}}
+        )
+        == "c"
+    ), "func with config arg can be called w bound config with config as kwarg"
+    assert (
+        configurable_runnable.with_config(
+            configurable={"my_property": "b"}
+        ).my_custom_function_w_kw_config(  # type: ignore[attr-defined]
+        )
+        == "b"
+    ), "function with config kwarg can be called w bound config w/out config"
+    assert (
+        configurable_runnable.with_config(
+            configurable={"my_property": "b"}
+        ).my_custom_function_w_kw_config(  # type: ignore[attr-defined]
+            config={"configurable": {"my_property": "c"}}
+        )
+        == "c"
+    ), "function with config kwarg can be called w bound config with config"
+    assert (
+        configurable_runnable.with_config(configurable={"my_property": "b"})
+        .with_types()
+        .my_custom_function()  # type: ignore[attr-defined]
+        == "b"
+    ), "function without config can be called w bound config"
+    assert (
+        configurable_runnable.with_config(configurable={"my_property": "b"})
+        .with_types()
+        .my_custom_function_w_config(  # type: ignore[attr-defined]
+        )
+        == "b"
+    ), "func with config arg can be called w bound config without config"
+    assert (
+        configurable_runnable.with_config(configurable={"my_property": "b"})
+        .with_types()
+        .my_custom_function_w_config(  # type: ignore[attr-defined]
+            config={"configurable": {"my_property": "c"}}
+        )
+        == "c"
+    ), "func with config arg can be called w bound config with config as kwarg"
+    assert (
+        configurable_runnable.with_config(configurable={"my_property": "b"})
+        .with_types()
+        .my_custom_function_w_kw_config(  # type: ignore[attr-defined]
+        )
+        == "b"
+    ), "function with config kwarg can be called w bound config w/out config"
+    assert (
+        configurable_runnable.with_config(configurable={"my_property": "b"})
+        .with_types()
+        .my_custom_function_w_kw_config(  # type: ignore[attr-defined]
+            config={"configurable": {"my_property": "c"}}
+        )
+        == "c"
+    ), "function with config kwarg can be called w bound config with config"
     # second one
     with pytest.raises(AttributeError):
         configurable_runnable.my_other_custom_function()  # type: ignore[attr-defined]
