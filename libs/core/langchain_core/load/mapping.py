@@ -126,12 +126,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "agents",
         "AgentActionMessageLog",
     ),
-    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+    ("langchain", "schema", "agent", "ToolAgentAction"): (
         "langchain",
         "agents",
         "output_parsers",
-        "openai_tools",
-        "OpenAIToolAgentAction",
+        "tools",
+        "ToolAgentAction",
     ),
     ("langchain", "prompts", "chat", "BaseMessagePromptTemplate"): (
         "langchain_core",
@@ -241,9 +241,8 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "BedrockChat",
     ),
     ("langchain", "chat_models", "anthropic", "ChatAnthropic"): (
-        "langchain",
+        "langchain_anthropic",
         "chat_models",
-        "anthropic",
         "ChatAnthropic",
     ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
@@ -527,6 +526,13 @@ _OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "prompts",
         "image",
         "ImagePromptTemplate",
+    ),
+    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+        "langchain",
+        "agents",
+        "output_parsers",
+        "openai_tools",
+        "OpenAIToolAgentAction",
     ),
 }
 

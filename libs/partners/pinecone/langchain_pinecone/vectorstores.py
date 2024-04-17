@@ -166,7 +166,8 @@ class PineconeVectorStore(VectorStore):
                     batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
                 )
             ]
-            [res.get() for res in async_res]
+            if async_req:
+                [res.get() for res in async_res]
 
         return ids
 

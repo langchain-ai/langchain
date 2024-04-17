@@ -356,6 +356,12 @@ def _import_mlflow_ai_gateway() -> Type[BaseLLM]:
     return MlflowAIGateway
 
 
+def _import_mlx_pipeline() -> Type[BaseLLM]:
+    from langchain_community.llms.mlx_pipeline import MLXPipeline
+
+    return MLXPipeline
+
+
 def _import_modal() -> Type[BaseLLM]:
     from langchain_community.llms.modal import Modal
 
@@ -737,6 +743,8 @@ def __getattr__(name: str) -> Any:
         return _import_mlflow()
     elif name == "MlflowAIGateway":
         return _import_mlflow_ai_gateway()
+    elif name == "MLXPipeline":
+        return _import_mlx_pipeline()
     elif name == "Modal":
         return _import_modal()
     elif name == "MosaicML":
@@ -887,6 +895,7 @@ __all__ = [
     "Minimax",
     "Mlflow",
     "MlflowAIGateway",
+    "MLXPipeline",
     "Modal",
     "MosaicML",
     "NIBittensorLLM",
@@ -985,6 +994,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "mlflow": _import_mlflow,
         "mlflow-chat": _import_mlflow_chat,  # deprecated / only for back compat
         "mlflow-ai-gateway": _import_mlflow_ai_gateway,
+        "mlx_pipeline": _import_mlx_pipeline,
         "modal": _import_modal,
         "mosaic": _import_mosaicml,
         "nebula": _import_symblai_nebula,
@@ -993,6 +1003,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "oci_model_deployment_tgi_endpoint": _import_oci_md_tgi,
         "oci_model_deployment_vllm_endpoint": _import_oci_md_vllm,
         "oci_generative_ai": _import_oci_gen_ai,
+        "octoai_endpoint": _import_octoai_endpoint,
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,
