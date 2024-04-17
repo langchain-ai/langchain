@@ -862,29 +862,36 @@ class FAISS(VectorStore):
             raise ValueError("window_size should be an integer greater than 0")
 
         assert isinstance(primary_doc, Document)
-        primary_doc_source = primary_doc.metadata["source"]
+        primary_doc_source = primary_doc.metadata.get("source", None)
 
         # Retrieving content for neighboring indices
-        page_content = ""
+        page_content_list = []
         pages = []
         for index in range(start_index, end_index + 1):
             doc = self.docstore.search(self.index_to_docstore_id[index])
             assert isinstance(doc, Document)
 
-            if doc.metadata["source"] == primary_doc_source:
+            if doc.metadata.get("source",None) == primary_doc_source:
                 # We only want to include adjacent indices that are
-                # from the same source text
-                page_content += doc.page_content
+                # from the same source text. If source is not provided,
+                # then this condition is relaxed
+                page_content_list.append(doc.page_content)
                 pages.append(doc.metadata["page"])
 
         # Creating new output Document
         assert isinstance(doc, Document)
+
+        page_content = " ".join(page_content_list)
+
         metadata = {
-            "source": doc.metadata["source"],
             "primary_index": primary_index,
             "page": list(set(pages)),
             "type": "sentence_window",
         }
+
+        if primary_doc_source:
+            metadata['source'] = primary_doc_source
+
         output_doc = Document(page_content=page_content, metadata=metadata)
 
         return output_doc
