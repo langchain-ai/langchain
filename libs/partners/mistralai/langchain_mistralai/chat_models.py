@@ -43,8 +43,10 @@ from langchain_core.messages import (
     ChatMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    InvalidToolCall,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
@@ -197,6 +199,34 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
+def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
+    """Format Langchain ToolCall to dict expected by Mistral."""
+    result = {
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        }
+    }
+    if _id := tool_call.get("id"):
+        result["id"] = _id
+
+    return result
+
+
+def _format_invalid_tool_call_for_mistral(tool_call: InvalidToolCall) -> dict:
+    """Format Langchain ToolCall to dict expected by Mistral."""
+    result = {
+        "function": {
+            "name": tool_call["name"],
+            "arguments": tool_call["args"],
+        }
+    }
+    if _id := tool_call.get("id"):
+        result["id"] = _id
+
+    return result
+
+
 def _convert_message_to_mistral_chat_message(
     message: BaseMessage,
 ) -> Dict:
@@ -205,20 +235,8 @@ def _convert_message_to_mistral_chat_message(
     elif isinstance(message, HumanMessage):
         return dict(role="user", content=message.content)
     elif isinstance(message, AIMessage):
-        if message.tool_calls:
-            tool_calls = []
-            for tc in message.tool_calls:
-                chunk = {
-                    "function": {
-                        "name": tc["name"],
-                        "arguments": json.dumps(tc["args"]),
-                    }
-                }
-                if _id := tc.get("id"):
-                    chunk["id"] = _id
-                tool_calls.append(chunk)
-        elif "tool_calls" in message.additional_kwargs:
-            tool_calls = []
+        tool_calls = []
+        if "tool_calls" in message.additional_kwargs:
             for tc in message.additional_kwargs["tool_calls"]:
                 chunk = {
                     "function": {
@@ -229,8 +247,15 @@ def _convert_message_to_mistral_chat_message(
                 if _id := tc.get("id"):
                     chunk["id"] = _id
                 tool_calls.append(chunk)
+        elif message.tool_calls or message.invalid_tool_calls:
+            for tool_call in message.tool_calls:
+                tool_calls.append(_format_tool_call_for_mistral(tool_call))
+            for invalid_tool_call in message.invalid_tool_calls:
+                tool_calls.append(
+                    _format_invalid_tool_call_for_mistral(invalid_tool_call)
+                )
         else:
-            tool_calls = []
+            pass
         return {
             "role": "assistant",
             "content": message.content,
