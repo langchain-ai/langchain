@@ -89,6 +89,7 @@ EXPECTED_ALL = [
     "Vectara",
     "VectorStore",
     "VespaStore",
+    "VLite",
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
