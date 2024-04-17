@@ -86,8 +86,8 @@ const config = {
             current: {
               label: '0.1.x',
             },
-            canary: {
-              label: "canary",
+            "0.2.x": {
+              label: "0.2.x",
               banner: "unreleased",
             }
           },

@@ -129,8 +129,7 @@ function LatestDocVersionBanner({className, versionMetadata}) {
   // back to main doc of latest version
   const latestVersionSuggestedDoc =
     latestDocSuggestion ?? getVersionMainDoc(latestVersionSuggestion);
-    console.log(latestVersionSuggestedDoc);
-  const canaryPath = `/docs/canary/${latestVersionSuggestedDoc.path.slice("/docs/".length)}`;
+  const canaryPath = `/docs/0.2.x/${latestVersionSuggestedDoc.path.slice("/docs/".length)}`;
   return (
     <div
       className={clsx(
@@ -142,7 +141,7 @@ function LatestDocVersionBanner({className, versionMetadata}) {
       <div>
         <Translate
           id="theme.docs.versions.unmaintainedVersionLabel"
-          description="The label used to encourage the user to view the experimental canary version"
+          description="The label used to encourage the user to view the experimental 0.2.x version"
           values={{
             siteTitle,
             versionLabel: <b>{versionMetadata.label}</b>,
@@ -160,7 +159,7 @@ function LatestDocVersionBanner({className, versionMetadata}) {
             versionLabel: <b>{versionMetadata.label}</b>,
             latestVersionLink: (
               <b>
-                <Link to={canaryPath} onClick={() => savePreferredVersionName("canary")}>
+                <Link to={canaryPath} onClick={() => savePreferredVersionName("0.2.x")}>
                   <Translate
                     id="theme.docs.versions.latestVersionLinkLabel"
                     description="The label used for the latest version suggestion link label">
