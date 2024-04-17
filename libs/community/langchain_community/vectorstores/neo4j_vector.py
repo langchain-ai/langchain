@@ -957,7 +957,12 @@ class Neo4jVector(VectorStore):
                     "a hybrid search approach"
                 )
             parallel_query = "CYPHER runtime = parallel " if self._is_enterprise else ""
-            base_index_query = parallel_query + f"MATCH (n:`{self.node_label}`) WHERE "
+            base_index_query = parallel_query + (
+                f"MATCH (n:`{self.node_label}`) WHERE "
+                f"n.`{self.embedding_node_property}` IS NOT NULL AND "
+                f"size(n.`{self.embedding_node_property}`) = "
+                f"toInteger({self.embedding_dimension}) AND "
+            )
             base_cosine_query = (
                 " WITH n as node, vector.similarity.cosine("
                 f"n.`{self.embedding_node_property}`, "
