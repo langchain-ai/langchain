@@ -871,7 +871,7 @@ class FAISS(VectorStore):
             doc = self.docstore.search(self.index_to_docstore_id[index])
             assert isinstance(doc, Document)
 
-            if doc.metadata.get("source",None) == primary_doc_source:
+            if doc.metadata.get("source", None) == primary_doc_source:
                 # We only want to include adjacent indices that are
                 # from the same source text. If source is not provided,
                 # then this condition is relaxed
@@ -890,7 +890,7 @@ class FAISS(VectorStore):
         }
 
         if primary_doc_source:
-            metadata['source'] = primary_doc_source
+            metadata["source"] = primary_doc_source
 
         output_doc = Document(page_content=page_content, metadata=metadata)
 
