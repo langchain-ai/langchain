@@ -1,4 +1,5 @@
 """Test Alibaba Tongyi Chat Model."""
+from typing import cast
 
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -8,6 +9,16 @@ from pytest import CaptureFixture
 
 from langchain_community.chat_models.tongyi import ChatTongyi
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+
+
+def test_initialization() -> None:
+    """Test chat model initialization."""
+    for model in [
+        ChatTongyi(model_name="qwen-turbo", api_key="xyz"),
+        ChatTongyi(model="qwen-turbo", dashscope_api_key="xyz"),
+    ]:
+        assert model.model_name == "qwen-turbo"
+        assert cast(SecretStr, model.dashscope_api_key).get_secret_value() == "xyz"
 
 
 def test_api_key_is_string() -> None:
