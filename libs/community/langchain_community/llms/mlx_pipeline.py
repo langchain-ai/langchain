@@ -160,7 +160,7 @@ class MLXPipeline(LLM):
             repetition_penalty=repetition_penalty,
             repetition_context_size=repetition_context_size,
             top_p=top_p,
-            )
+        )
 
     def _stream(
         self,
@@ -222,4 +222,3 @@ class MLXPipeline(LLM):
             # break if stop sequence found
             if token == eos_token_id or (stop is not None and text in stop):
                 break
-
