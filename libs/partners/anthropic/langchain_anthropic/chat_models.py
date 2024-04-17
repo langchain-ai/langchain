@@ -10,6 +10,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -38,6 +39,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
@@ -156,7 +158,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
             continue
 
         role = _message_type_lookups[message.type]
-        content: Union[str, List[Dict]]
+        content: Union[str, List]
 
         if not isinstance(message.content, str):
             # parse as dict
@@ -195,6 +197,20 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
                     raise ValueError(
                         f"Content items must be str or dict, instead was: {type(item)}"
                     )
+        elif (
+            isinstance(message, AIMessage)
+            and not isinstance(message.content, list)
+            and message.tool_calls
+        ):
+            content = (
+                []
+                if not message.content
+                else [{"type": "text", "text": message.content}]
+            )
+            # Note: Anthropic can't have invalid tool calls as presently defined,
+            # since the model already returns dicts args not JSON strings, and invalid
+            # tool calls are those with invalid JSON for args.
+            content += _lc_tool_calls_to_anthropic_tool_use_blocks(message.tool_calls)
         else:
             content = message.content
 
@@ -251,7 +267,7 @@ class ChatAnthropic(BaseChatModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    anthropic_api_url: str = "https://api.anthropic.com"
+    anthropic_api_url: Optional[str] = None
 
     anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
@@ -268,6 +284,34 @@ class ChatAnthropic(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "anthropic-chat"
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "anthropic"]
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "model_kwargs": self.model_kwargs,
+            "streaming": self.streaming,
+            "max_retries": self.max_retries,
+            "default_request_timeout": self.default_request_timeout,
+        }
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict) -> Dict:
@@ -675,6 +719,29 @@ def _tools_in_params(params: dict) -> bool:
     return "tools" in params or (
         "extra_body" in params and params["extra_body"].get("tools")
     )
+
+
+class _AnthropicToolUse(TypedDict):
+    type: Literal["tool_use"]
+    name: str
+    input: dict
+    id: str
+
+
+def _lc_tool_calls_to_anthropic_tool_use_blocks(
+    tool_calls: List[ToolCall],
+) -> List[_AnthropicToolUse]:
+    blocks = []
+    for tool_call in tool_calls:
+        blocks.append(
+            _AnthropicToolUse(
+                type="tool_use",
+                name=tool_call["name"],
+                input=tool_call["args"],
+                id=cast(str, tool_call["id"]),
+            )
+        )
+    return blocks
 
 
 @deprecated(since="0.1.0", removal="0.2.0", alternative="ChatAnthropic")

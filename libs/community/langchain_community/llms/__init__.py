@@ -1003,6 +1003,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "oci_model_deployment_tgi_endpoint": _import_oci_md_tgi,
         "oci_model_deployment_vllm_endpoint": _import_oci_md_vllm,
         "oci_generative_ai": _import_oci_gen_ai,
+        "octoai_endpoint": _import_octoai_endpoint,
         "ollama": _import_ollama,
         "openai": _import_openai,
         "openlm": _import_openlm,
