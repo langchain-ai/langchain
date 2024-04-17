@@ -3752,7 +3752,13 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             objects = []
 
-        return [obj for obj in objects if isinstance(obj, Runnable)]
+        deps: List[Runnable] = []
+        for obj in objects:
+            if isinstance(obj, Runnable):
+                deps.append(obj)
+            elif isinstance(getattr(obj, "__self__", None), Runnable):
+                deps.append(obj.__self__)
+        return deps
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
