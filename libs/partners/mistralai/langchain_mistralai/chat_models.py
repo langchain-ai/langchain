@@ -283,9 +283,16 @@ def _convert_message_to_mistral_chat_message(
                 tool_calls.append(chunk)
         else:
             pass
+        if tool_calls and message.content:
+            # Assistant message must have either content or tool_calls, but not both.
+            # Some providers may not support tool_calls in the same message as content.
+            # This is done to ensure compatibility with messages from other providers.
+            content: Any = ""
+        else:
+            content = message.content
         return {
             "role": "assistant",
-            "content": message.content,
+            "content": content,
             "tool_calls": tool_calls,
         }
     elif isinstance(message, SystemMessage):
