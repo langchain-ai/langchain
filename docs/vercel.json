@@ -2,6 +2,10 @@
   "trailingSlash": true,
   "redirects": [
     {
+      "source": "/docs/integrations/llms/titan_takeoff_pro",
+      "destination": "/docs/integrations/llms/titan_takeoff"
+    },
+    {
       "source": "/docs/integrations/providers/optimum_intel(/?)",
       "destination": "/docs/integrations/providers/intel/"
     },

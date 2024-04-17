@@ -61,6 +61,7 @@ logger = logging.getLogger(__name__)
 def convert_dict_to_message(
     _dict: Mapping[str, Any], is_chunk: bool = False
 ) -> Union[BaseMessage, BaseMessageChunk]:
+    """Convert a dict to a message."""
     role = _dict["role"]
     content = _dict["content"]
     if role == "user":
@@ -88,6 +89,7 @@ def convert_dict_to_message(
 
 
 def convert_message_chunk_to_message(message_chunk: BaseMessageChunk) -> BaseMessage:
+    """Convert a message chunk to a message."""
     if isinstance(message_chunk, HumanMessageChunk):
         return HumanMessage(content=message_chunk.content)
     elif isinstance(message_chunk, AIMessageChunk):
@@ -158,7 +160,7 @@ class ChatTongyi(BaseChatModel):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[SecretStr] = None
+    dashscope_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Dashscope api key provide by Alibaba Cloud."""
 
     streaming: bool = False
@@ -166,6 +168,11 @@ class ChatTongyi(BaseChatModel):
 
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @property
     def _llm_type(self) -> str:
