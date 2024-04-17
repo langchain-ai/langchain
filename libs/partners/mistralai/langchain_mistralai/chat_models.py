@@ -263,7 +263,14 @@ def _convert_message_to_mistral_chat_message(
         return dict(role="user", content=message.content)
     elif isinstance(message, AIMessage):
         tool_calls = []
-        if "tool_calls" in message.additional_kwargs:
+        if message.tool_calls or message.invalid_tool_calls:
+            for tool_call in message.tool_calls:
+                tool_calls.append(_format_tool_call_for_mistral(tool_call))
+            for invalid_tool_call in message.invalid_tool_calls:
+                tool_calls.append(
+                    _format_invalid_tool_call_for_mistral(invalid_tool_call)
+                )
+        elif "tool_calls" in message.additional_kwargs:
             for tc in message.additional_kwargs["tool_calls"]:
                 chunk = {
                     "function": {
@@ -274,13 +281,6 @@ def _convert_message_to_mistral_chat_message(
                 if _id := tc.get("id"):
                     chunk["id"] = _id
                 tool_calls.append(chunk)
-        elif message.tool_calls or message.invalid_tool_calls:
-            for tool_call in message.tool_calls:
-                tool_calls.append(_format_tool_call_for_mistral(tool_call))
-            for invalid_tool_call in message.invalid_tool_calls:
-                tool_calls.append(
-                    _format_invalid_tool_call_for_mistral(invalid_tool_call)
-                )
         else:
             pass
         return {
