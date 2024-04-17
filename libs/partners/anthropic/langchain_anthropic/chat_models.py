@@ -2,7 +2,6 @@ import json
 import os
 import re
 import warnings
-from copy import deepcopy
 from operator import itemgetter
 from typing import (
     Any,
@@ -101,7 +100,7 @@ def _merge_messages(
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
     for curr in messages:
-        curr = curr.__class__(**deepcopy(curr.dict()))
+        curr = curr.copy(deep=True)
         if isinstance(curr, ToolMessage):
             if isinstance(curr.content, str):
                 curr = HumanMessage(
