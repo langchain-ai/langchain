@@ -144,7 +144,9 @@ async def acompletion_with_retry(
             event_source = aconnect_sse(
                 llm.async_client, "POST", "/chat/completions", json=kwargs
             )
-
+            # TODO(Team): Remove after this is fixed in httpx dependency
+            # https://github.com/florimondmanca/httpx-sse/pull/25/files
+            event_source._response.raise_for_status()
             return _aiter_sse(event_source)
         else:
             response = await llm.async_client.post(url="/chat/completions", json=kwargs)
@@ -298,6 +300,9 @@ class ChatMistralAI(BaseChatModel):
                     with connect_sse(
                         self.client, "POST", "/chat/completions", json=kwargs
                     ) as event_source:
+                        # TODO(Team): Remove after this is fixed in httpx dependency
+                        # https://github.com/florimondmanca/httpx-sse/pull/25/files
+                        event_source._response.raise_for_status()
                         for event in event_source.iter_sse():
                             if event.data == "[DONE]":
                                 return
