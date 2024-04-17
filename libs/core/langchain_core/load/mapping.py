@@ -241,9 +241,8 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "BedrockChat",
     ),
     ("langchain", "chat_models", "anthropic", "ChatAnthropic"): (
-        "langchain",
+        "langchain_anthropic",
         "chat_models",
-        "anthropic",
         "ChatAnthropic",
     ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
