@@ -16,5 +16,5 @@ class TestUpstageStandard(ChatModelUnitTests):
     @pytest.fixture
     def chat_model_params(self) -> dict:
         return {
-            "model": "solar-1-mini-embedding",
+            "model": "solar-1-mini-chat",
         }
