@@ -42,11 +42,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         except KeyError:
             return []
 
-        final_tools = []
-        exceptions = []
         final_tools = [{"type": tool_call["name"], "args": tool_call["arguments"]}]
-        if exceptions:
-            raise OutputParserException("\n\n".join(exceptions))
         if self.first_tool_only:
             return final_tools[0] if final_tools else None
         return final_tools
