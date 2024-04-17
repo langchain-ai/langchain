@@ -27,6 +27,14 @@ class SolarChat(SolarCommon, ChatOpenAI):
             solar = SolarChat(model="solar-1-mini-chat")
     """
 
+    # this is needed to match ChatOpenAI superclass
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        extra = "ignore"
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the environment is set up correctly."""
@@ -45,9 +53,9 @@ class SolarChat(SolarCommon, ChatOpenAI):
 
         client_params = {
             "api_key": values["solar_api_key"],
-            "base_url": values["base_url"]
-            if "base_url" in values
-            else SOLAR_SERVICE_URL_BASE,
+            "base_url": (
+                values["base_url"] if "base_url" in values else SOLAR_SERVICE_URL_BASE
+            ),
         }
 
         if not values.get("client"):
