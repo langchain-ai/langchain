@@ -174,6 +174,7 @@ async def acompletion_with_retry(
             return _aiter_sse(event_source)
         else:
             response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+            await _araise_on_error(response)
             return response.json()
 
     return await _completion_with_retry(**kwargs)
@@ -334,7 +335,9 @@ class ChatMistralAI(BaseChatModel):
 
                 return iter_sse()
             else:
-                return self.client.post(url="/chat/completions", json=kwargs).json()
+                response = self.client.post(url="/chat/completions", json=kwargs)
+                _raise_on_error(response)
+                return response.json()
 
         rtn = _completion_with_retry(**kwargs)
         return rtn
