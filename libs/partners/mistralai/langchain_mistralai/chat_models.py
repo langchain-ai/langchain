@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from operator import itemgetter
@@ -42,8 +43,10 @@ from langchain_core.messages import (
     ChatMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    InvalidToolCall,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
@@ -116,11 +119,38 @@ def _convert_mistral_chat_message_to_message(
     )
 
 
+def _raise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = response.read().decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
+
+
+async def _araise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = (await response.aread()).decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
+
+
 async def _aiter_sse(
     event_source_mgr: AsyncContextManager[EventSource],
 ) -> AsyncIterator[Dict]:
     """Iterate over the server-sent events."""
     async with event_source_mgr as event_source:
+        # TODO(Team): Remove after this is fixed in httpx dependency
+        # https://github.com/florimondmanca/httpx-sse/pull/25/files
+        await _araise_on_error(event_source._response)
         async for event in event_source.aiter_sse():
             if event.data == "[DONE]":
                 return
@@ -144,10 +174,10 @@ async def acompletion_with_retry(
             event_source = aconnect_sse(
                 llm.async_client, "POST", "/chat/completions", json=kwargs
             )
-
             return _aiter_sse(event_source)
         else:
             response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+            await _araise_on_error(response)
             return response.json()
 
     return await _completion_with_retry(**kwargs)
@@ -196,6 +226,34 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
+def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
+    """Format Langchain ToolCall to dict expected by Mistral."""
+    result: Dict[str, Any] = {
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        }
+    }
+    if _id := tool_call.get("id"):
+        result["id"] = _id
+
+    return result
+
+
+def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) -> dict:
+    """Format Langchain InvalidToolCall to dict expected by Mistral."""
+    result: Dict[str, Any] = {
+        "function": {
+            "name": invalid_tool_call["name"],
+            "arguments": invalid_tool_call["args"],
+        }
+    }
+    if _id := invalid_tool_call.get("id"):
+        result["id"] = _id
+
+    return result
+
+
 def _convert_message_to_mistral_chat_message(
     message: BaseMessage,
 ) -> Dict:
@@ -204,8 +262,15 @@ def _convert_message_to_mistral_chat_message(
     elif isinstance(message, HumanMessage):
         return dict(role="user", content=message.content)
     elif isinstance(message, AIMessage):
-        if "tool_calls" in message.additional_kwargs:
-            tool_calls = []
+        tool_calls = []
+        if message.tool_calls or message.invalid_tool_calls:
+            for tool_call in message.tool_calls:
+                tool_calls.append(_format_tool_call_for_mistral(tool_call))
+            for invalid_tool_call in message.invalid_tool_calls:
+                tool_calls.append(
+                    _format_invalid_tool_call_for_mistral(invalid_tool_call)
+                )
+        elif "tool_calls" in message.additional_kwargs:
             for tc in message.additional_kwargs["tool_calls"]:
                 chunk = {
                     "function": {
@@ -217,7 +282,7 @@ def _convert_message_to_mistral_chat_message(
                     chunk["id"] = _id
                 tool_calls.append(chunk)
         else:
-            tool_calls = []
+            pass
         return {
             "role": "assistant",
             "content": message.content,
@@ -298,6 +363,9 @@ class ChatMistralAI(BaseChatModel):
                     with connect_sse(
                         self.client, "POST", "/chat/completions", json=kwargs
                     ) as event_source:
+                        # TODO(Team): Remove after this is fixed in httpx dependency
+                        # https://github.com/florimondmanca/httpx-sse/pull/25/files
+                        _raise_on_error(event_source._response)
                         for event in event_source.iter_sse():
                             if event.data == "[DONE]":
                                 return
@@ -305,7 +373,9 @@ class ChatMistralAI(BaseChatModel):
 
                 return iter_sse()
             else:
-                return self.client.post(url="/chat/completions", json=kwargs).json()
+                response = self.client.post(url="/chat/completions", json=kwargs)
+                _raise_on_error(response)
+                return response.json()
 
         rtn = _completion_with_retry(**kwargs)
         return rtn
