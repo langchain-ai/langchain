@@ -235,10 +235,10 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "AzureChatOpenAI",
     ),
     ("langchain", "chat_models", "bedrock", "BedrockChat"): (
-        "langchain",
+        "langchain_aws",
         "chat_models",
         "bedrock",
-        "BedrockChat",
+        "ChatBedrock",
     ),
     ("langchain", "chat_models", "anthropic", "ChatAnthropic"): (
         "langchain_anthropic",
@@ -311,10 +311,10 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "BaseOpenAI",
     ),
     ("langchain", "llms", "bedrock", "Bedrock"): (
-        "langchain",
+        "langchain_aws",
         "llms",
         "bedrock",
-        "Bedrock",
+        "BedrockLLM",
     ),
     ("langchain", "llms", "fireworks", "Fireworks"): (
         "langchain",
