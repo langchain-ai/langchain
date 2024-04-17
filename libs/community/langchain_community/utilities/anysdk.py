@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, Union, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 ANYSDK_CRUD_CONTROLS_CREATE = "False"
@@ -14,92 +14,95 @@ ANYSDK_CRUD_CONTROLS_READ_LIST = "get,read,list"
 ANYSDK_CRUD_CONTROLS_UPDATE_LIST = "update,put,post"
 ANYSDK_CRUD_CONTROLS_DELETE_LIST = "delete,destroy,remove"
 
+class CrudControls(BaseModel):
+    create: Optional[Union[bool, str]] = None
+    create_list: Optional[str] = None
+    read: Optional[Union[bool, str]] = None
+    read_list: Optional[str] = None
+    update: Optional[Union[bool, str]] = None
+    update_list: Optional[str] = None
+    delete: Optional[Union[bool, str]] = None
+    delete_list: Optional[str] = None
+
+    @root_validator
+    def validate_environment(cls, values: dict) -> dict:
+        create = get_from_dict_or_env(
+            values,
+            "create",
+            "ANYSDK_CRUD_CONTROLS_CREATE",
+            default=ANYSDK_CRUD_CONTROLS_CREATE,
+        )
+        values["create"] = bool(create)
+
+        create_list: str = get_from_dict_or_env(
+            values,
+            "create_list",
+            "ANYSDK_CRUD_CONTROLS_CREATE_LIST",
+            default=ANYSDK_CRUD_CONTROLS_CREATE_LIST,
+        )
+        if create_list:
+            values["create_list"] = create_list.split(",")
+        else:
+            values["create_list"] = []
+
+        read = get_from_dict_or_env(
+            values,
+            "read",
+            "ANYSDK_CRUD_CONTROLS_READ",
+            default=ANYSDK_CRUD_CONTROLS_READ,
+        )
+        values["read"] = bool(read)
+
+        read_list = get_from_dict_or_env(
+            values,
+            "read_list",
+            "ANYSDK_CRUD_CONTROLS_READ_LIST",
+            default=ANYSDK_CRUD_CONTROLS_READ_LIST,
+        )
+        values["read_list"] = read_list.split(",")
+
+        update = get_from_dict_or_env(
+            values,
+            "update",
+            "ANYSDK_CRUD_CONTROLS_UPDATE",
+            default=ANYSDK_CRUD_CONTROLS_UPDATE,
+        )
+        values["update"] = bool(update)
+
+        update_list = get_from_dict_or_env(
+            values,
+            "update_list",
+            "ANYSDK_CRUD_CONTROLS_UPDATE_LIST",
+            default=ANYSDK_CRUD_CONTROLS_UPDATE_LIST,
+        )
+        values["update_list"] = update_list.split(",")
+
+        delete = get_from_dict_or_env(
+            values,
+            "delete",
+            "ANYSDK_CRUD_CONTROLS_DELETE",
+            default=ANYSDK_CRUD_CONTROLS_DELETE,
+        )
+        values["delete"] = bool(delete)
+
+        delete_list = get_from_dict_or_env(
+            values,
+            "delete_list",
+            "ANYSDK_CRUD_CONTROLS_DELETE_LIST",
+            default=ANYSDK_CRUD_CONTROLS_DELETE_LIST,
+        )
+        values["delete_list"] = delete_list.split(",")
+
+        return values
+
 
 class AnySdkWrapper(BaseModel):
     client: Any
     operations: List[Dict] = []
-    crud_controls_create: Optional[str] = None
-    crud_controls_create_list: Optional[str] = None
-    crud_controls_read: Optional[str] = None
-    crud_controls_read_list: Optional[str] = None
-    crud_controls_update: Optional[str] = None
-    crud_controls_update_list: Optional[str] = None
-    crud_controls_delete: Optional[str] = None
-    crud_controls_delete_list: Optional[str] = None
+    crud_controls: Optional[CrudControls] = None
 
     class Config:
-        extra = Extra.allow
-
-    @root_validator
-    def validate_environment(cls, values: dict) -> dict:
-        crud_controls_create = get_from_dict_or_env(
-            values,
-            "crud_controls_create",
-            "ANYSDK_CRUD_CONTROLS_CREATE",
-            default=ANYSDK_CRUD_CONTROLS_CREATE,
-        )
-        values["crud_controls_create"] = bool(crud_controls_create)
-
-        crud_controls_create_list: str = get_from_dict_or_env(
-            values,
-            "crud_controls_create_list",
-            "ANYSDK_CRUD_CONTROLS_CREATE_LIST",
-            default=ANYSDK_CRUD_CONTROLS_CREATE_LIST,
-        )
-        if crud_controls_create_list:
-            values["crud_controls_create_list"] = crud_controls_create_list.split(",")
-        else:
-            values["crud_controls_create_list"] = []
-
-        crud_controls_read = get_from_dict_or_env(
-            values,
-            "crud_controls_read",
-            "ANYSDK_CRUD_CONTROLS_READ",
-            default=ANYSDK_CRUD_CONTROLS_READ,
-        )
-        values["crud_controls_read"] = bool(crud_controls_read)
-
-        crud_controls_read_list = get_from_dict_or_env(
-            values,
-            "crud_controls_read_list",
-            "ANYSDK_CRUD_CONTROLS_READ_LIST",
-            default=ANYSDK_CRUD_CONTROLS_READ_LIST,
-        )
-        values["crud_controls_read_list"] = crud_controls_read_list.split(",")
-
-        crud_controls_update = get_from_dict_or_env(
-            values,
-            "crud_controls_update",
-            "ANYSDK_CRUD_CONTROLS_UPDATE",
-            default=ANYSDK_CRUD_CONTROLS_UPDATE,
-        )
-        values["crud_controls_update"] = bool(crud_controls_update)
-
-        crud_controls_update_list = get_from_dict_or_env(
-            values,
-            "crud_controls_update_list",
-            "ANYSDK_CRUD_CONTROLS_UPDATE_LIST",
-            default=ANYSDK_CRUD_CONTROLS_UPDATE_LIST,
-        )
-        values["crud_controls_update_list"] = crud_controls_update_list.split(",")
-
-        crud_controls_delete = get_from_dict_or_env(
-            values,
-            "crud_controls_delete",
-            "ANYSDK_CRUD_CONTROLS_DELETE",
-            default=ANYSDK_CRUD_CONTROLS_DELETE,
-        )
-        values["crud_controls_delete"] = bool(crud_controls_delete)
-
-        crud_controls_delete_list = get_from_dict_or_env(
-            values,
-            "crud_controls_delete_list",
-            "ANYSDK_CRUD_CONTROLS_DELETE_LIST",
-            default=ANYSDK_CRUD_CONTROLS_DELETE_LIST,
-        )
-        values["crud_controls_delete_list"] = crud_controls_delete_list.split(",")
-
-        return values
+        extra = Extra.forbid
 
     def __init__(self, **data: dict) -> None:
         super().__init__(**data)
