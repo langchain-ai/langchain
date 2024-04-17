@@ -81,6 +81,16 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          lastVersion: "current",
+          versions: {
+            current: {
+              label: '0.1.x',
+            },
+            canary: {
+              label: "canary",
+              banner: "unreleased",
+            }
+          },
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
