@@ -112,18 +112,13 @@ class Cassandra(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding
 
-    @staticmethod
-    def _dont_flip_the_cos_score(distance: float) -> float:
-        # the identity
-        return distance
-
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
         The underlying VectorTable already returns a "score proper",
         i.e. one in [0, 1] where higher means more *similar*,
         so here the final score transformation is not reversing the interval:
         """
-        return self._dont_flip_the_cos_score
+        return lambda score: score
 
     def delete_collection(self) -> None:
         """
