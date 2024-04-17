@@ -43,8 +43,8 @@ python3 scripts/resolve_local_links.py versioned_docs/version-0.2.x/langserve.md
 wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O versioned_docs/version-0.2.x/langgraph.md
 python3 scripts/resolve_local_links.py versioned_docs/version-0.2.x/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
-python3 scripts/resolve_versioned_links.py versioned_docs/version-0.2.x/ /docs/0.2.x/
-
 # render
 quarto render docs/
 quarto render versioned_docs/version-0.2.x/
+
+python3 scripts/resolve_versioned_links_in_markdown.py versioned_docs/version-0.2.x/ /docs/0.2.x/

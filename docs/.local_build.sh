@@ -26,8 +26,9 @@ mkdir -p versioned_docs/version-0.2.x/templates
 cp docs/templates/index.md versioned_docs/version-0.2.x/templates/
 cp docs/langserve.md versioned_docs/version-0.2.x/
 cp docs/langgraph.md versioned_docs/version-0.2.x/
-poetry run python scripts/resolve_versioned_links.py versioned_docs/version-0.2.x/ /docs/0.2.x/
 
 yarn
 
 poetry run quarto preview docs
+
+poetry run python scripts/resolve_versioned_links_in_markdown.py versioned_docs/version-0.2.x/ /docs/0.2.x/
