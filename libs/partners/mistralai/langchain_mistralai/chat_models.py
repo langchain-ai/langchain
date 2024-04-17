@@ -240,15 +240,15 @@ def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
     return result
 
 
-def _format_invalid_tool_call_for_mistral(tool_call: InvalidToolCall) -> dict:
+def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) -> dict:
     """Format Langchain ToolCall to dict expected by Mistral."""
     result: Dict[str, Any] = {
         "function": {
-            "name": tool_call["name"],
-            "arguments": tool_call["args"],
+            "name": invalid_tool_call["name"],
+            "arguments": invalid_tool_call["args"],
         }
     }
-    if _id := tool_call.get("id"):
+    if _id := invalid_tool_call.get("id"):
         result["id"] = _id
 
     return result
