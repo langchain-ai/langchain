@@ -4,34 +4,37 @@
 # Authors:
 #   Harichandan Roy (hroy)
 #   David Jiang (ddjiang)
-# 
+#
 # -----------------------------------------------------------------------------
 # oracleds.py
 # -----------------------------------------------------------------------------
 from __future__ import annotations
 
 import sys
+
 sys.path.remove(sys.path[0])
 
-import os
-import json
-import time
-import struct
-import random
 import hashlib
-import oracledb
+import json
+import os
+import random
+import struct
+import time
 import traceback
-
-from oracledb import Connection
 from html.parser import HTMLParser
 from typing import Dict, List, Optional
+
+import oracledb
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-
+from oracledb import Connection
 
 """ParseOracleDocMetadata class"""
+
+
 class ParseOracleDocMetadata(HTMLParser):
     """Parse Oracle doc metadata..."""
+
     def __init__(self):
         super().__init__()
         self.reset()
@@ -41,7 +44,7 @@ class ParseOracleDocMetadata(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == "meta":
             entry = ""
-            for name,value in attrs:
+            for name, value in attrs:
                 if name == "name":
                     entry = value
                 if name == "content":
@@ -59,37 +62,45 @@ class ParseOracleDocMetadata(HTMLParser):
         return self.metadata
 
 
-
 """OracleDocReader class"""
-class OracleDocReader():
+
+
+class OracleDocReader:
     """Read a file"""
 
     @staticmethod
-    def generate_object_id(input_string = None):
-        out_length = 32 # output length
-        hash_len = 8 # hash value length
+    def generate_object_id(input_string=None):
+        out_length = 32  # output length
+        hash_len = 8  # hash value length
 
         if input_string is None:
-            input_string = ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=16))
-        
+            input_string = "".join(
+                random.choices(
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+                    k=16,
+                )
+            )
+
         # timestamp
         timestamp = int(time.time())
-        timestamp_bin = struct.pack(">I", timestamp) # 4 bytes
+        timestamp_bin = struct.pack(">I", timestamp)  # 4 bytes
 
         # hash_value
-        hashval_bin = hashlib.sha256(input_string.encode()).digest() 
-        hashval_bin = hashval_bin[:hash_len] # 8 bytes
+        hashval_bin = hashlib.sha256(input_string.encode()).digest()
+        hashval_bin = hashval_bin[:hash_len]  # 8 bytes
 
         # counter
-        counter_bin = struct.pack(">I", random.getrandbits(32)) # 4 bytes
+        counter_bin = struct.pack(">I", random.getrandbits(32))  # 4 bytes
 
         # binary object id
-        object_id = timestamp_bin + hashval_bin + counter_bin # 16 bytes
-        object_id_hex = object_id.hex() # 32 bytes
-        object_id_hex = object_id_hex.zfill(out_length) # fill with zeros if less than 32 bytes
+        object_id = timestamp_bin + hashval_bin + counter_bin  # 16 bytes
+        object_id_hex = object_id.hex()  # 32 bytes
+        object_id_hex = object_id_hex.zfill(
+            out_length
+        )  # fill with zeros if less than 32 bytes
 
         object_id_hex = object_id_hex[:out_length]
-        
+
         return object_id_hex
 
     @staticmethod
@@ -107,23 +118,29 @@ class OracleDocReader():
         try:
             oracledb.defaults.fetch_lobs = False
             cursor = conn.cursor()
-            
+
             with open(file_path, "rb") as f:
                 data = f.read()
 
             if data is None:
                 return Document(page_content="", metadata=metadata)
-            
+
             mdata = cursor.var(oracledb.DB_TYPE_CLOB)
             text = cursor.var(oracledb.DB_TYPE_CLOB)
-            cursor.execute("""
+            cursor.execute(
+                """
                 declare
                     input blob;
                 begin
                     input := :blob;
                     :mdata := dbms_vector_chain.utl_to_text(input, json(:pref));
                     :text := dbms_vector_chain.utl_to_text(input);
-                end;""", blob=data, pref=json.dumps(params), mdata=mdata, text=text)
+                end;""",
+                blob=data,
+                pref=json.dumps(params),
+                mdata=mdata,
+                text=text,
+            )
             cursor.close()
 
             if mdata is None:
@@ -134,16 +151,16 @@ class OracleDocReader():
                     p = ParseOracleDocMetadata()
                     p.feed(data)
                     metadata = p.get_metadata()
-                
+
             doc_id = OracleDocReader.generate_object_id(conn.username + "$" + file_path)
-            metadata['_oid'] = doc_id
+            metadata["_oid"] = doc_id
             metadata["_file"] = file_path
-            
+
             if text is None:
                 return Document(page_content="", metadata=metadata)
             else:
                 return Document(page_content=str(text.getvalue()), metadata=metadata)
-            
+
         except Exception as ex:
             print(f"An exception occurred :: {ex}")
             print(f"Skip processing {file_path}")
@@ -152,65 +169,62 @@ class OracleDocReader():
 
 
 """OracleDocLoader class"""
+
+
 class OracleDocLoader(BaseLoader):
     """Read documents using OracleDocLoader
     Args:
         conn: Oracle Connection,
         params: Loader parameters.
     """
-    
-    def __init__(
-        self,
-        conn: Connection,
-        params: Dict[str, Any],
-        **kwargs: Any
-    ):
-        self.conn      = conn
-        self.params    = json.loads(json.dumps(params))
+
+    def __init__(self, conn: Connection, params: Dict[str, Any], **kwargs: Any):
+        self.conn = conn
+        self.params = json.loads(json.dumps(params))
         super().__init__(**kwargs)
-        
+
     def load(self) -> List[Document]:
         """Load data into LangChain Document objects..."""
 
         ncols = 0
         results = []
         metadata = {}
-        m_params = {"plaintext":"false"}
+        m_params = {"plaintext": "false"}
 
         try:
             # extract the parameters
             if self.params is not None:
-                self.file      = self.params.get("file")
-                self.dir       = self.params.get("dir")
-                self.owner     = self.params.get("owner")
+                self.file = self.params.get("file")
+                self.dir = self.params.get("dir")
+                self.owner = self.params.get("owner")
                 self.tablename = self.params.get("tablename")
-                self.colname   = self.params.get("colname")
+                self.colname = self.params.get("colname")
             else:
                 raise Exception("Missing loader parameters")
-            
+
             oracledb.defaults.fetch_lobs = False
 
             if self.file:
                 doc = OracleDocReader.read_file(self.conn, self.file, m_params)
-                
+
                 if doc is None:
                     return results
-                
+
                 results.append(doc)
-            
+
             if self.dir:
                 skip_count = 0
                 for file_name in os.listdir(self.dir):
                     file_path = os.path.join(self.dir, file_name)
                     if os.path.isfile(file_path):
                         doc = OracleDocReader.read_file(self.conn, file_path, m_params)
-                        
+
                         if doc is None:
                             skip_count = skip_count + 1
                             print(f"Total skipped: {skip_count}\n")
                         else:
                             results.append(doc)
-                        
+
             if self.tablename:
                 try:
                     if self.owner is None or self.colname is None:
@@ -220,68 +234,118 @@ class OracleDocLoader(BaseLoader):
                     self.mdata_cols = self.params.get("mdata_cols")
                     if self.mdata_cols is not None:
                         if len(self.mdata_cols) > 3:
-                            raise Exception("Exceeds the max number of columns you can request for metadata.")
-                        
+                            raise Exception(
+                                "Exceeds the max number of columns you can request for metadata."
+                            )
+
                         # execute a query to get column data types
-                        sql = "select column_name, data_type from all_tab_columns where owner = " + \
-                            ":ownername and " +"table_name = :tablename"
-                        cursor.execute(sql, ownername=self.owner.upper(), tablename=self.tablename.upper())
+                        sql = (
+                            "select column_name, data_type from all_tab_columns where owner = "
+                            + ":ownername and "
+                            + "table_name = :tablename"
+                        )
+                        cursor.execute(
+                            sql,
+                            ownername=self.owner.upper(),
+                            tablename=self.tablename.upper(),
+                        )
 
                         # cursor.execute(sql)
                         rows = cursor.fetchall()
                         for row in rows:
                             if row[0] in self.mdata_cols:
-                                if row[1] not in ["NUMBER", "BINARY_DOUBLE", "BINARY_FLOAT", "LONG", "DATE", "TIMESTAMP", "VARCHAR2"]:
-                                    raise Exception("The datatype for the column requested for metadata is not supported.")
-                    
+                                if row[1] not in [
+                                    "NUMBER",
+                                    "BINARY_DOUBLE",
+                                    "BINARY_FLOAT",
+                                    "LONG",
+                                    "DATE",
+                                    "TIMESTAMP",
+                                    "VARCHAR2",
+                                ]:
+                                    raise Exception(
+                                        "The datatype for the column requested for metadata is not supported."
+                                    )
+
                     self.mdata_cols_sql = ", rowid"
                     if self.mdata_cols is not None:
                         for col in self.mdata_cols:
                             self.mdata_cols_sql = self.mdata_cols_sql + ", " + col
 
                     # [TODO] use bind variables
-                    sql = "select dbms_vector_chain.utl_to_text(t." + self.colname + \
-                        ", json('"+ json.dumps(m_params) +"')) mdata, dbms_vector_chain.utl_to_text(t." + \
-                        self.colname + ") text" + self.mdata_cols_sql +" from " + self.owner + "." + self.tablename+ " t"
+                    sql = (
+                        "select dbms_vector_chain.utl_to_text(t."
+                        + self.colname
+                        + ", json('"
+                        + json.dumps(m_params)
+                        + "')) mdata, dbms_vector_chain.utl_to_text(t."
+                        + self.colname
+                        + ") text"
+                        + self.mdata_cols_sql
+                        + " from "
+                        + self.owner
+                        + "."
+                        + self.tablename
+                        + " t"
+                    )
 
                     cursor.execute(sql)
                     for row in cursor:
                         metadata = {}
-                        
+
                         if row is None:
-                            doc_id = OracleDocReader.generate_object_id(self.conn.username + "$" + 
-                                                                 self.owner + "$" + 
-                                                                 self.tablename + "$" + 
-                                                                 self.colname)
-                            metadata['_oid'] = doc_id
+                            doc_id = OracleDocReader.generate_object_id(
+                                self.conn.username
+                                + "$"
+                                + self.owner
+                                + "$"
+                                + self.tablename
+                                + "$"
+                                + self.colname
+                            )
+                            metadata["_oid"] = doc_id
                             results.append(Document(page_content="", metadata=metadata))
                         else:
                             if row[0] is not None:
                                 data = str(row[0])
-                                if data.startswith("<!DOCTYPE html") or data.startswith("<HTML>"):
+                                if data.startswith("<!DOCTYPE html") or data.startswith(
+                                    "<HTML>"
+                                ):
                                     p = ParseOracleDocMetadata()
                                     p.feed(data)
                                     metadata = p.get_metadata()
 
-                            doc_id = OracleDocReader.generate_object_id(self.conn.username + "$" + 
-                                                                 self.owner + "$" + 
-                                                                 self.tablename + "$" + 
-                                                                 self.colname + "$" + 
-                                                                 str(row[2]))
-                            metadata['_oid'] = doc_id
+                            doc_id = OracleDocReader.generate_object_id(
+                                self.conn.username
+                                + "$"
+                                + self.owner
+                                + "$"
+                                + self.tablename
+                                + "$"
+                                + self.colname
+                                + "$"
+                                + str(row[2])
+                            )
+                            metadata["_oid"] = doc_id
                             metadata["_rowid"] = row[2]
 
                             # process projected metadata cols
                             if self.mdata_cols is not None:
                                 ncols = len(self.mdata_cols)
-                            
+
                             for i in range(0, ncols):
-                                metadata[self.mdata_cols[i]] = row[i+2]
-                            
+                                metadata[self.mdata_cols[i]] = row[i + 2]
+
                             if row[1] is None:
-                                results.append(Document(page_content="", metadata=metadata))
+                                results.append(
+                                    Document(page_content="", metadata=metadata)
+                                )
                             else:
-                                results.append(Document(page_content=str(row[1]), metadata=metadata))
+                                results.append(
+                                    Document(
+                                        page_content=str(row[1]), metadata=metadata
+                                    )
+                                )
                 except Exception as ex:
                     print(f"An exception occurred :: {ex}")
                     traceback.print_exc()
@@ -295,16 +359,17 @@ class OracleDocLoader(BaseLoader):
             raise
 
 
+import json
 from typing import Any, Dict, List, Optional
 
 import oracledb
-import json
 import requests
-
 from langchain.pydantic_v1 import BaseModel, Extra, Field
 from langchain.schema.embeddings import Embeddings
 
 """OracleEmbeddings class"""
+
+
 class OracleEmbeddings(BaseModel, Embeddings):
     """Get Embeddings"""
 
@@ -320,12 +385,14 @@ class OracleEmbeddings(BaseModel, Embeddings):
 
     class Config:
         """Configuration for this pydantic object."""
+
         extra = Extra.forbid
 
     """
     1 - user needs to have create procedure, create mining model, create any directory privilege.
     2 - grant create procedure, create mining model, create any directory to <user>;
     """
+
     @staticmethod
     def load_onnx_model(conn: Connection, dir: str, onnx_file: str, model_name: str):
         """Load an ONNX model to Oracle Database.
@@ -339,20 +406,25 @@ class OracleEmbeddings(BaseModel, Embeddings):
         try:
             if conn is None or dir is None or onnx_file is None or model_name is None:
                 raise Exception("Invalid input")
-            
+
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 begin
                     dbms_data_mining.drop_model(model_name => :model, force => true);
                     SYS.DBMS_VECTOR.load_onnx_model(:path, :filename, :model, json('{"function" : "embedding", "embeddingOutput" : "embedding" , "input": {"input": ["DATA"]}}'));
-                end;""", path=dir, filename=onnx_file, model=model_name)
-            
+                end;""",
+                path=dir,
+                filename=onnx_file,
+                model=model_name,
+            )
+
             cursor.close()
 
         except Exception as ex:
             print(f"An exception occurred :: {ex}")
             cursor.close()
-            raise 
+            raise
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using an OracleEmbeddings.
@@ -364,27 +436,32 @@ class OracleEmbeddings(BaseModel, Embeddings):
 
         if texts is None:
             return None
-        
+
         embeddings = []
         try:
             # returns strings or bytes instead of a locator
             oracledb.defaults.fetch_lobs = False
             cursor = self.conn.cursor()
-            
+
             if self.proxy:
-                cursor.execute("begin utl_http.set_proxy(:proxy); end;", proxy=self.proxy)
-            
+                cursor.execute(
+                    "begin utl_http.set_proxy(:proxy); end;", proxy=self.proxy
+                )
+
             for text in texts:
-                cursor.execute("select t.* from dbms_vector_chain.utl_to_embeddings(:content, json(:params)) t",
-                    content=text, params=json.dumps(self.params))
-                
+                cursor.execute(
+                    "select t.* from dbms_vector_chain.utl_to_embeddings(:content, json(:params)) t",
+                    content=text,
+                    params=json.dumps(self.params),
+                )
+
                 for row in cursor:
                     if row is None:
                         embeddings.append([])
                     else:
                         rdata = json.loads(row[0])
                         # dereference string as array
-                        vec = json.loads(rdata['embed_vector'])
+                        vec = json.loads(rdata["embed_vector"])
                         embeddings.append(vec)
 
             cursor.close()
@@ -392,7 +469,7 @@ class OracleEmbeddings(BaseModel, Embeddings):
         except Exception as ex:
             print(f"An exception occurred :: {ex}")
             cursor.close()
-            raise 
+            raise
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embedding using an OracleEmbeddings.
@@ -405,24 +482,23 @@ class OracleEmbeddings(BaseModel, Embeddings):
 
 
 """OracleSummary class"""
-class OracleSummary():
+
+
+class OracleSummary:
     """Get Summary
     Args:
         conn: Oracle Connection,
         params: Summary parameters,
         proxy: Proxy
     """
-    
+
     def __init__(
-        self,
-        conn: Connection,
-        params: Dict[str, Any],
-        proxy: Optional[str] = None
+        self, conn: Connection, params: Dict[str, Any], proxy: Optional[str] = None
     ):
-        self.conn               = conn
-        self.proxy              = proxy
-        self.summary_params     = params
-            
+        self.conn = conn
+        self.proxy = proxy
+        self.summary_params = params
+
     def get_summary(self, docs) -> List[str]:
         """Get the summary of the input docs.
         Args:
@@ -431,47 +507,59 @@ class OracleSummary():
         Returns:
             List of summary text, one for each input doc.
         """
-        
+
         if docs is None:
-                return None
-        
+            return None
+
         results = []
         try:
             oracledb.defaults.fetch_lobs = False
             cursor = self.conn.cursor()
-            
+
             if self.proxy:
-                cursor.execute("begin utl_http.set_proxy(:proxy); end;", proxy=self.proxy);
+                cursor.execute(
+                    "begin utl_http.set_proxy(:proxy); end;", proxy=self.proxy
+                )
 
             if isinstance(docs, str):
                 results = []
 
                 summary = cursor.var(oracledb.DB_TYPE_CLOB)
-                cursor.execute("""
+                cursor.execute(
+                    """
                     declare
                         input clob;
                     begin
                         input := :data;
                         :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
-                    end;""", data=docs, params=json.dumps(self.summary_params), summ=summary)
-                
+                    end;""",
+                    data=docs,
+                    params=json.dumps(self.summary_params),
+                    summ=summary,
+                )
+
                 if summary is None:
                     results.append("")
                 else:
                     results.append(str(summary.getvalue()))
-                
+
             elif isinstance(docs, Document):
                 results = []
 
                 summary = cursor.var(oracledb.DB_TYPE_CLOB)
-                cursor.execute("""
+                cursor.execute(
+                    """
                     declare
                         input clob;
                     begin
                         input := :data;
                         :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
-                    end;""", data=docs.page_content, params=json.dumps(self.summary_params), summ=summary)
-                
+                    end;""",
+                    data=docs.page_content,
+                    params=json.dumps(self.summary_params),
+                    summ=summary,
+                )
+
                 if summary is None:
                     results.append("")
                 else:
@@ -483,23 +571,33 @@ class OracleSummary():
                 for doc in docs:
                     summary = cursor.var(oracledb.DB_TYPE_CLOB)
                     if isinstance(doc, str):
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             declare
                                 input clob;
                             begin
                                 input := :data;
                                 :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
-                            end;""", data=doc, params=json.dumps(self.summary_params), summ=summary)
-                        
+                            end;""",
+                            data=doc,
+                            params=json.dumps(self.summary_params),
+                            summ=summary,
+                        )
+
                     elif isinstance(doc, Document):
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             declare
                                 input clob;
                             begin
                                 input := :data;
                                 :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
-                            end;""", data=doc.page_content, params=json.dumps(self.summary_params), summ=summary)
-                    
+                            end;""",
+                            data=doc.page_content,
+                            params=json.dumps(self.summary_params),
+                            summ=summary,
+                        )
+
                     else:
                         raise Exception("Invalid input type")
 
@@ -507,19 +605,18 @@ class OracleSummary():
                         results.append("")
                     else:
                         results.append(str(summary.getvalue()))
-                    
+
             else:
                 raise Exception("Invalid input type")
-            
+
             cursor.close()
             return results
-            
+
         except Exception as ex:
             print(f"An exception occurred :: {ex}")
             traceback.print_exc()
             cursor.close()
             raise
-
 
 
 """**Text Splitters** are classes for splitting text.
@@ -1952,31 +2049,29 @@ class SpacyTextSplitter(TextSplitter):
 
 
 class OracleTextSplitter(TextSplitter):
-    """Splitting text using Oracle chunker.
-    """
+    """Splitting text using Oracle chunker."""
 
-    def __init__(
-        self, conn, params, **kwargs: Any
-    ) -> None:
+    def __init__(self, conn, params, **kwargs: Any) -> None:
         """Initialize."""
         self.conn = conn
         self.params = params
         super().__init__(**kwargs)
         try:
-            import oracledb
             import json
-			
+
+            import oracledb
+
             self._oracledb = oracledb
             self._json = json
         except ImportError:
             raise ImportError(
                 "oracledb or json or both are not installed. Please install them. Recommendations: `pip install oracledb`. "
             )
-    
+
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
         splits = []
-		
+
         try:
             # returns strings or bytes instead of a locator
             self._oracledb.defaults.fetch_lobs = False
@@ -1984,18 +2079,21 @@ class OracleTextSplitter(TextSplitter):
             cursor = self.conn.cursor()
 
             cursor.setinputsizes(content=oracledb.CLOB)
-            cursor.execute("select t.column_value from dbms_vector_chain.utl_to_chunks(:content, json(:params)) t",
-                content=text, params=self._json.dumps(self.params))
-            
+            cursor.execute(
+                "select t.column_value from dbms_vector_chain.utl_to_chunks(:content, json(:params)) t",
+                content=text,
+                params=self._json.dumps(self.params),
+            )
+
             while True:
                 row = cursor.fetchone()
                 if row is None:
                     break
                 d = self._json.loads(row[0])
-                splits.append(d['chunk_data'])
+                splits.append(d["chunk_data"])
 
             return splits
-        
+
         except Exception as ex:
             print(f"An exception occurred :: {ex}")
             traceback.print_exc()
