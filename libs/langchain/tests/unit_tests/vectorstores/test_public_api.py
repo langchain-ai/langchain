@@ -63,7 +63,6 @@ _EXPECTED = [
     "Vearch",
     "Vectara",
     "VespaStore",
-    "VLite",
     "Weaviate",
     "ZepVectorStore",
     "Zilliz",
