@@ -3,7 +3,7 @@
 from typing import Dict
 
 from langchain_core._api import deprecated
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.chat_models import ChatOpenAI
@@ -26,6 +26,8 @@ class SolarChat(SolarCommon, ChatOpenAI):
 
             solar = SolarChat(model="solar-1-mini-chat")
     """
+
+    max_tokens: int = Field(default=1024)
 
     # this is needed to match ChatOpenAI superclass
     class Config:
