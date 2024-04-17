@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from operator import itemgetter
@@ -204,7 +205,19 @@ def _convert_message_to_mistral_chat_message(
     elif isinstance(message, HumanMessage):
         return dict(role="user", content=message.content)
     elif isinstance(message, AIMessage):
-        if "tool_calls" in message.additional_kwargs:
+        if message.tool_calls:
+            tool_calls = []
+            for tc in message.tool_calls:
+                chunk = {
+                    "function": {
+                        "name": tc["name"],
+                        "arguments": json.dumps(tc["args"]),
+                    }
+                }
+                if _id := tc.get("id"):
+                    chunk["id"] = _id
+                tool_calls.append(chunk)
+        elif "tool_calls" in message.additional_kwargs:
             tool_calls = []
             for tc in message.additional_kwargs["tool_calls"]:
                 chunk = {
