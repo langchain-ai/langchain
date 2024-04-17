@@ -103,6 +103,33 @@ def test__format_output() -> None:
 
 
 def test__merge_messages() -> None:
+    original_messages = [
+        SystemMessage("foo"),
+        HumanMessage("bar"),
+        AIMessage(
+            [
+                {"text": "baz", "type": "text"},
+                {
+                    "tool_input": {"a": "b"},
+                    "type": "tool_use",
+                    "id": "1",
+                    "text": None,
+                    "name": "buz",
+                },
+                {"text": "baz", "type": "text"},
+                {
+                    "tool_input": {"a": "c"},
+                    "type": "tool_use",
+                    "id": "2",
+                    "text": None,
+                    "name": "blah",
+                },
+            ]
+        ),
+        ToolMessage("buz output", tool_call_id="1"),
+        ToolMessage("blah output", tool_call_id="2"),
+        HumanMessage("next thing"),
+    ]
     messages = [
         SystemMessage("foo"),
         HumanMessage("bar"),
@@ -163,7 +190,7 @@ def test__merge_messages() -> None:
     ]
     actual = _merge_messages(messages)
     assert expected == actual
-    assert messages == messages
+    assert messages == original_messages
 
 
 @pytest.fixture()
