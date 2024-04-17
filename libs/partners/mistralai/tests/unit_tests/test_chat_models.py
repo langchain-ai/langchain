@@ -130,7 +130,7 @@ def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_call = {
         "id": "abc123",
         "function": {
-            "arguments": '{"name":"Sally","hair_color":"green"}',
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
             "name": "GenerateUsername",
         },
     }
@@ -153,16 +153,16 @@ def test__convert_dict_to_message_tool_call() -> None:
     # Test malformed tool call
     raw_tool_calls = [
         {
-            "id": "abc123",
+            "id": "def456",
             "function": {
-                "arguments": "oops",
+                "arguments": '{"name": "Sally", "hair_color": "green"}',
                 "name": "GenerateUsername",
             },
         },
         {
-            "id": "def456",
+            "id": "abc123",
             "function": {
-                "arguments": '{"name":"Sally","hair_color":"green"}',
+                "arguments": "oops",
                 "name": "GenerateUsername",
             },
         },
