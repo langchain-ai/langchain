@@ -1,14 +1,36 @@
 """Test Alibaba Tongyi Chat Model."""
-from typing import cast
+from typing import Any, cast
 
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.chat_models.tongyi import ChatTongyi
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+
+_FUNCTIONS: Any = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get the current weather in a given location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                },
+                "required": ["location"],
+            },
+        },
+    }
+]
 
 
 def test_initialization() -> None:
@@ -50,6 +72,23 @@ def test_model() -> None:
     response = chat(messages=[HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
+
+
+def test_functions_call_thoughts() -> None:
+    chat = ChatTongyi(model="qwen-plus")
+
+    prompt_tmpl = "Use the given functions to answer following question: {input}"
+    prompt_msgs = [
+        HumanMessagePromptTemplate.from_template(prompt_tmpl),
+    ]
+    prompt = ChatPromptTemplate(messages=prompt_msgs)
+
+    chain = prompt | chat.bind(functions=_FUNCTIONS)
+
+    message = HumanMessage(content="What's the weather like in Shanghai today?")
+    response = chain.batch([{"input": message}])
+    assert isinstance(response[0], AIMessage)
+    assert "tool_calls" in response[0].additional_kwargs
 
 
 def test_multiple_history() -> None:
