@@ -4,12 +4,10 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 import requests
-from langchain_core.documents import Document
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.pydantic_v1 import Extra, root_validator
-
-from langchain.callbacks.manager import Callbacks
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
-from langchain.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env
 
 JINA_API_URL: str = "https://api.jina.ai/v1/rerank"
 
