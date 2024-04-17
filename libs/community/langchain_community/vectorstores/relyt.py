@@ -4,9 +4,9 @@ import logging
 import uuid
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
+from pgvecto_rs.sqlalchemy import Vector
 from sqlalchemy import REAL, Column, String, Table, create_engine, insert, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSON, TEXT
-from pgvecto_rs.sqlalchemy import Vector
 from sqlalchemy.orm.session import Session
 
 try:
@@ -70,7 +70,7 @@ class Relyt(VectorStore):
                 "Unable to import pgvector_rs.sdk , please install with "
                 '`pip install "pgvecto_rs[sdk]"`.'
             ) from e
-    
+
         self.connection_string = connection_string
         self.embedding_function = embedding_function
         self.embedding_dimension = embedding_dimension
@@ -108,7 +108,7 @@ class Relyt(VectorStore):
 
     def create_table_if_not_exists(self) -> None:
         # Define the dynamic table
-        '''
+        """
         Table(
             self.collection_name,
             Base.metadata,
@@ -118,12 +118,12 @@ class Relyt(VectorStore):
             Column("metadata", JSON, nullable=True),
             extend_existing=True,
         )
-        '''
-        with self.engine.connect() as conn:            
+        """
+        with self.engine.connect() as conn:
             with conn.begin():
                 # create vectors
                 conn.execute(text("CREATE EXTENSION IF NOT EXISTS vectors"))
-                conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""))
+                conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
 
                 # Create the table
                 # Base.metadata.create_all(conn)
@@ -138,7 +138,7 @@ class Relyt(VectorStore):
                 result = conn.execute(table_query).scalar()
                 if not result:
                     table_statement = text(
-                            f"""
+                        f"""
                             CREATE TABLE {table_name} (
                                 id TEXT PRIMARY KEY DEFAULT uuid_generate_v4(),
                                 embedding vector({self.embedding_dimension}),
@@ -146,9 +146,8 @@ class Relyt(VectorStore):
                                 metadata JSON
                             ) USING heap;
                         """
-                        )
+                    )
                     conn.execute(table_statement)
-
 
                 # Check if the index exists
                 index_name = f"{self.collection_name}_embedding_idx"
@@ -335,8 +334,8 @@ class Relyt(VectorStore):
         """
 
         # Set up the query parameters
-        embedding_str = ', '.join(format(x) for x in embedding)
-        embedding_str = '[' + embedding_str + ']'
+        embedding_str = ", ".join(format(x) for x in embedding)
+        embedding_str = "[" + embedding_str + "]"
         params = {"embedding": embedding_str, "k": k}
 
         # Execute the query and fetch the results
