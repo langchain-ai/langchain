@@ -7,8 +7,6 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     HumanMessage,
-    ToolCall,
-    ToolCallChunk,
 )
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -140,7 +138,7 @@ def test_structured_output() -> None:
 
 
 def test_streaming_structured_output() -> None:
-    llm = ChatMistralAI(model="mistral-large", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
 
     class Person(BaseModel):
         name: str
@@ -158,7 +156,7 @@ def test_streaming_structured_output() -> None:
 
 
 def test_tool_call() -> None:
-    llm = ChatMistralAI(model="mistral-large", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
 
     class Person(BaseModel):
         name: str
@@ -168,13 +166,14 @@ def test_tool_call() -> None:
 
     result = tool_llm.invoke("Erick, 27 years old")
     assert isinstance(result, AIMessage)
-    assert result.tool_calls == [
-        ToolCall(name="Person", args={"name": "Erick", "age": 27}, id=None)
-    ]
+    assert len(result.tool_calls) == 1
+    tool_call = result.tool_calls[0]
+    assert tool_call["name"] == "Person"
+    assert tool_call["args"] == {"name": "Erick", "age": 27}
 
 
 def test_streaming_tool_call() -> None:
-    llm = ChatMistralAI(model="mistral-large", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
 
     class Person(BaseModel):
         name: str
@@ -201,11 +200,10 @@ def test_streaming_tool_call() -> None:
     }
 
     assert isinstance(chunk, AIMessageChunk)
-    assert chunk.tool_call_chunks == [
-        ToolCallChunk(
-            name="Person", args='{"name": "Erick", "age": 27}', id=None, index=None
-        )
-    ]
+    assert len(chunk.tool_call_chunks) == 1
+    tool_call_chunk = chunk.tool_call_chunks[0]
+    assert tool_call_chunk["name"] == "Person"
+    assert tool_call_chunk["args"] == '{"name": "Erick", "age": 27}'
 
     # where it doesn't call the tool
     strm = tool_llm.stream("What is 2+2?")

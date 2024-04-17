@@ -103,7 +103,7 @@ class QianfanChatEndpoint(BaseChatModel):
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
 
-    request_timeout: Optional[int] = 60
+    request_timeout: Optional[int] = Field(60, alias="timeout")
     """request timeout for chat http requests"""
 
     top_p: Optional[float] = 0.8
@@ -124,6 +124,11 @@ class QianfanChatEndpoint(BaseChatModel):
 
     endpoint: Optional[str] = None
     """Endpoint of the Qianfan LLM, required if custom model used."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

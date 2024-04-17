@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class IpexLLM(LLM):
-    """Wrapper around the IpexLLM model
+    """IpexLLM model.
 
     Example:
         .. code-block:: python
