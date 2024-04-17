@@ -121,6 +121,9 @@ async def _aiter_sse(
 ) -> AsyncIterator[Dict]:
     """Iterate over the server-sent events."""
     async with event_source_mgr as event_source:
+        # TODO(Team): Remove after this is fixed in httpx dependency
+        # https://github.com/florimondmanca/httpx-sse/pull/25/files
+        event_source._response.raise_for_status()
         async for event in event_source.aiter_sse():
             if event.data == "[DONE]":
                 return
@@ -144,9 +147,6 @@ async def acompletion_with_retry(
             event_source = aconnect_sse(
                 llm.async_client, "POST", "/chat/completions", json=kwargs
             )
-            # TODO(Team): Remove after this is fixed in httpx dependency
-            # https://github.com/florimondmanca/httpx-sse/pull/25/files
-            event_source._response.raise_for_status()
             return _aiter_sse(event_source)
         else:
             response = await llm.async_client.post(url="/chat/completions", json=kwargs)
