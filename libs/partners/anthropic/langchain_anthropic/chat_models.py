@@ -96,7 +96,7 @@ def _format_image(image_url: str) -> Dict:
 
 
 def _merge_messages(
-    messages: List[BaseMessage],
+    messages: Sequence[BaseMessage],
 ) -> List[Union[SystemMessage, AIMessage, HumanMessage]]:
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
