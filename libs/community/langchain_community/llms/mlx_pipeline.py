@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterator, List, Mapping, Optional
+from typing import Any, Iterator, List, Mapping, Optional, Callable
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -137,7 +137,30 @@ class MLXPipeline(LLM):
 
         pipeline_kwargs = kwargs.get("pipeline_kwargs", self.pipeline_kwargs)
 
-        return generate(self.model, self.tokenizer, prompt=prompt, **pipeline_kwargs)
+        temp: float = pipeline_kwargs.get("temp", 0.0)
+        max_tokens: int = pipeline_kwargs.get("max_tokens", 100)
+        verbose: bool = pipeline_kwargs.get("verbose", False)
+        formatter: Optional[Callable] = pipeline_kwargs.get("formatter", None)
+        repetition_penalty: Optional[float] = pipeline_kwargs.get(
+            "repetition_penalty", None
+        )
+        repetition_context_size: Optional[int] = pipeline_kwargs.get(
+            "repetition_context_size", None
+        )
+        top_p: float = pipeline_kwargs.get("top_p", 1.0)
+
+        return generate(
+            model=self.model,
+            tokenizer=self.tokenizer,
+            prompt=prompt,
+            temp=temp,
+            max_tokens=max_tokens,
+            verbose=verbose,
+            formatter=formatter,
+            repetition_penalty=repetition_penalty,
+            repetition_context_size=repetition_context_size,
+            top_p=top_p,
+            )
 
     def _stream(
         self,
@@ -166,6 +189,7 @@ class MLXPipeline(LLM):
         repetition_context_size: Optional[int] = pipeline_kwargs.get(
             "repetition_context_size", None
         )
+        top_p: float = pipeline_kwargs.get("top_p", 1.0)
 
         prompt = self.tokenizer.encode(prompt, return_tensors="np")
 
@@ -175,11 +199,12 @@ class MLXPipeline(LLM):
 
         for (token, prob), n in zip(
             generate_step(
-                prompt_tokens,
-                self.model,
-                temp,
-                repetition_penalty,
-                repetition_context_size,
+                prompt=prompt_tokens,
+                model=self.model,
+                temp=temp,
+                repetition_penalty=repetition_penalty,
+                repetition_context_size=repetition_context_size,
+                top_p=top_p,
             ),
             range(max_new_tokens),
         ):
