@@ -163,6 +163,7 @@ def test__merge_messages() -> None:
     ]
     actual = _merge_messages(messages)
     assert expected == actual
+    assert messages == messages
 
 
 @pytest.fixture()
