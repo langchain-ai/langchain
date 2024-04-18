@@ -8,16 +8,16 @@ from ai21.models import RoleType
 from ai21.models.chat import ChatMessage
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-_ChatMessageType = Union[ChatMessage, J2ChatMessage]
+_ConvertMessagesReturnType = Union[List[ChatMessage], List[ChatMessage]]
 
 
 class Chat(ABC):
     def convert_messages(
         self,
         messages: List[BaseMessage],
-    ) -> Tuple[str, List[_ChatMessageType]]:
+    ) -> Tuple[str, _ConvertMessagesReturnType]:
         system_message = None
-        converted_messages: List[_ChatMessageType] = []
+        converted_messages: _ConvertMessagesReturnType = []
 
         for i, message in enumerate(messages):
             if message.type == "system":
