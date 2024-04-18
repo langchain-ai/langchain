@@ -44,6 +44,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.tool import default_tool_parser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import (
@@ -94,9 +95,6 @@ def _format_image(image_url: str) -> Dict:
         "media_type": match.group("media_type"),
         "data": match.group("data"),
     }
-
-
-from langchain_core.messages.tool import default_tool_parser
 
 
 def _process_ai_message(ai_message: AIMessage) -> AIMessage:
