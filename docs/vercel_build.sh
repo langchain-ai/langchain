@@ -44,10 +44,10 @@ wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md 
 python3 scripts/resolve_local_links.py versioned_docs/version-0.2.x/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
 # render in parallel
-quarto render docs/ &
+(cd docs/ && quarto render .) &
 PID1=$!
 
-quarto render versioned_docs/version-0.2.x/ &
+(cd versioned_docs/version-0.2.x/ && quarto render .) &
 PID2=$!
 
 wait $PID1
