@@ -8,6 +8,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -309,6 +310,41 @@ def test_anthropic_with_empty_text_block() -> None:
     ]
 
     model.invoke(messages)
+
+
+def test_function_message() -> None:
+    @tool
+    def my_adder_tool(a: int, b: int) -> int:
+        """Takes two integers, a and b, and returns their sum."""
+        return a + b
+
+    model = ChatAnthropic(model="claude-3-sonnet-20240229").bind_tools([my_adder_tool])
+    text_question = "What is 1 + 2"
+    function_name = "my_adder_tool"
+    function_call = {
+        "name": function_name,
+        "arguments": json.dumps({"a": "1", "b": "2"}),
+    }
+    function_answer = json.dumps({"result": 3})
+
+    message1 = HumanMessage(content=text_question)
+    message2 = AIMessage(
+        content="",
+        additional_kwargs={
+            "function_call": function_call,
+        },
+    )
+    message3 = FunctionMessage(
+        name=function_name,
+        content=function_answer,
+    )
+    messages = [
+        message1,
+        message2,
+        message3,
+    ]
+    result = model.invoke(messages)
+    assert isinstance(result, AIMessage)
 
 
 def test_with_structured_output() -> None:

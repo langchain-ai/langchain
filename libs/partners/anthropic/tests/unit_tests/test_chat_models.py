@@ -5,7 +5,13 @@ from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
 from anthropic.types import ContentBlock, Message, Usage
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    FunctionMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
@@ -16,6 +22,7 @@ from langchain_anthropic.chat_models import (
     _merge_messages,
     convert_to_anthropic_tool,
 )
+from tests.unit_tests._utils import AnyStr
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
@@ -413,6 +420,51 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
                 "role": "user",
                 "content": [
                     {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test__format_messages_with_function_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    ai = AIMessage(
+        "thought",
+        additional_kwargs={
+            "function_call": {"arguments": '{"baz":"buzz"}', "name": "bar"}
+        },
+    )
+    function = FunctionMessage(
+        content="blurb",
+        name="bar",
+    )
+    messages = [system, human, ai, function]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "thought",
+                    },
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": AnyStr(),
+                        "input": {"baz": "buzz"},
+                    },
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": AnyStr()}
                 ],
             },
         ],
