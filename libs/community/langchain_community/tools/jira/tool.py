@@ -18,7 +18,7 @@ jira = JiraAPIWrapper()
 toolkit = JiraToolkit.from_jira_api_wrapper(jira)
 ```
 """
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -40,6 +40,7 @@ class JiraAction(BaseTool):
     mode: str
     name: str = "Jira Action tool"
     description: str = "Tool to execute an query/action using Atlassian Jira API"
+    args_schema: Type[BaseModel] = JiraActionInput
 
     def _run(
         self,
