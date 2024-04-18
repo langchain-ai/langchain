@@ -8,7 +8,7 @@ DOCS_DIR = Path(os.path.abspath(__file__)).parents[1]
 
 def update_links(doc_path, docs_link):
     for path in (DOCS_DIR / doc_path).glob('**/*'):
-        if path.is_file() and path.suffix in ['.md', '.mdx']:
+        if path.is_file() and path.suffix in ['.md', '.mdx', '.ipynb']:
             with open(path, "r") as f:
                 content = f.read()
 

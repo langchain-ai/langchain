@@ -8,7 +8,7 @@ Well, you came to the right place: read this material to quickly get up and runn
 
 [Build an Extraction Service](/docs/use_cases/extraction/quickstart/)
 
-[Build a ChatBot](/docs/use_cases/chatbots/quickstart/)
+[Build a Chatbot](/docs/use_cases/chatbots/quickstart/)
 
 [Build an Agent](/docs/modules/agents/quick_start/)
 

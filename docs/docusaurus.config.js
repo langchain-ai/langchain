@@ -86,6 +86,10 @@ const config = {
             current: {
               label: '0.1.x',
               badge: false,
+            },
+            "0.2.x": {
+              label: "0.2.x",
+              banner: "unreleased",
             }
           },
           sidebarPath: require.resolve("./sidebars.js"),
