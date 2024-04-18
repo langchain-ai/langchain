@@ -24,6 +24,10 @@ class FakeSdk:
         """Deletes Things"""
         return self._dummy_return(thing_id)
 
+    def confabulate_thing(self, thing_id: int) -> dict:
+        """Confabulates Things -- example of custom verbs"""
+        return self._dummy_return(thing_id)
+
     def _dummy_return(self, thing_id: int) -> dict:
         """Hidden, never called directly. Does Things"""
         return {"status": 200, "response": {"id": thing_id}}
@@ -88,6 +92,30 @@ def test_put_thing() -> None:
 def test_delete_thing() -> None:
     assert (
         json.loads(anysdk.run("delete_thing", json.dumps({"thing_id": 123})))[
+            "response"
+        ]["id"]
+        == 123
+    )
+
+
+def test_confabulate_thing() -> None:
+    """tests example sdk customization"""
+    crud_controls = {
+        "crud_controls": CrudControls(
+            read=True,
+            read_list="confabulate",
+            create=True,
+            update=True,
+            delete=True,
+        )
+    }
+
+    anysdk = AnySdkWrapper(
+        client=client,
+        crud_controls=crud_controls,
+    )
+    assert (
+        json.loads(anysdk.run("confabulate_thing", json.dumps({"thing_id": 123})))[
             "response"
         ]["id"]
         == 123
