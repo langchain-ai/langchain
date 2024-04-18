@@ -125,7 +125,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             giga = GigaChat(credentials=..., scope=..., verify_ssl_certs=False)
     """
 
-    def _build_payload(self, messages: List[BaseMessage], **kwargs: Any) -> gm.Chat:
+    def _build_payload(self, messages: List[BaseMessage], **kwargs: Any) -> gm.ChatAdapter:
         from gigachat.models import Chat
 
         payload = Chat(

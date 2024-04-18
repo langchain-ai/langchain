@@ -14,7 +14,7 @@ from langchain_core.messages import (
     ChatMessage as LangChainChatMessage,
 )
 
-from langchain_ai21.chat.chat import Chat
+from langchain_ai21.chat.chat_adapter import ChatAdapter
 
 _J2_MODEL_NAME = "j2-ultra"
 _JAMBA_MODEL_NAME = "jamba-instruct-preview"
@@ -52,7 +52,7 @@ _JAMBA_MODEL_NAME = "jamba-instruct-preview"
     ],
 )
 def test_convert_message_to_ai21_message(
-    message: BaseMessage, expected_ai21_message: ChatMessage, chat: Chat
+    message: BaseMessage, expected_ai21_message: ChatMessage, chat: ChatAdapter
 ) -> None:
     ai21_message = chat._convert_message_to_ai21_message(message)
     assert ai21_message == expected_ai21_message
@@ -87,7 +87,7 @@ def test_convert_message_to_ai21_message(
 )
 def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
     message: BaseMessage,
-    chat: Chat,
+    chat: ChatAdapter,
 ) -> None:
     with pytest.raises(ValueError) as e:
         chat._convert_message_to_ai21_message(message)
@@ -155,7 +155,7 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
     ],
 )
 def test_convert_messages(
-    chat: Chat,
+    chat: ChatAdapter,
     messages: List[BaseMessage],
     expected_system: Optional[str],
     expected_messages: List[ChatMessage],
@@ -176,7 +176,7 @@ def test_convert_messages(
         (_JAMBA_MODEL_NAME,),
     ],
 )
-def test_convert_messages__when_system_is_not_first(chat: Chat) -> None:
+def test_convert_messages__when_system_is_not_first(chat: ChatAdapter) -> None:
     messages = [
         HumanMessage(content="Human Message Content 1"),
         SystemMessage(content="System Message Content 1"),

@@ -13,7 +13,12 @@ _ConvertMessagesReturnType = Union[List[_ChatMessageTypes]]
 _SYSTEM_ERR_MESSAGE = "System message must be at beginning of message list."
 
 
-class Chat(ABC):
+class ChatAdapter(ABC):
+    """
+    This class provides a common interface for the different Chat models available in AI21.
+    It converts LangChain messages to AI21 messages.
+    Calls the appropriate AI21 model API with the converted messages.
+    """
     def convert_messages(
         self,
         messages: List[BaseMessage],
@@ -75,7 +80,7 @@ class Chat(ABC):
         return message.content
 
 
-class J2Chat(Chat):
+class J2ChatAdapter(ChatAdapter):
     def _chat_message(
         self,
         role: RoleType,
@@ -89,7 +94,7 @@ class J2Chat(Chat):
         return AIMessage(content=outputs[0].text)
 
 
-class JambaChatCompletions(Chat):
+class JambaChatCompletionsAdapter(ChatAdapter):
     def _chat_message(
         self,
         role: RoleType,

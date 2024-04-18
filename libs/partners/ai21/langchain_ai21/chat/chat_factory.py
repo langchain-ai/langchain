@@ -1,15 +1,15 @@
-from langchain_ai21.chat.chat import (
-    Chat,
-    J2Chat,
-    JambaChatCompletions,
+from langchain_ai21.chat.chat_adapter import (
+    ChatAdapter,
+    J2ChatAdapter,
+    JambaChatCompletionsAdapter,
 )
 
 
-def create_chat(model: str) -> Chat:
+def create_chat_adapter(model: str) -> ChatAdapter:
     if "j2" in model:
-        return J2Chat()
+        return J2ChatAdapter()
 
     if "jamba" in model:
-        return JambaChatCompletions()
+        return JambaChatCompletionsAdapter()
 
     raise ValueError(f"Model {model} not supported.")

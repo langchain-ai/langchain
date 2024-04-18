@@ -4,9 +4,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.outputs import ChatGeneration
 
 from langchain_ai21.chat_models import ChatAI21
-
-_J2_MODEL_NAME = "j2-ultra"
-_JAMBA_MODEL_NAME = "jamba-instruct-preview"
+from tests.unit_tests.conftest import J2_CHAT_MODEL_NAME, JAMBA_CHAT_MODEL_NAME
 
 
 @pytest.mark.parametrize(
@@ -16,8 +14,8 @@ _JAMBA_MODEL_NAME = "jamba-instruct-preview"
     ],
     argnames=["model"],
     argvalues=[
-        (_J2_MODEL_NAME,),
-        (_JAMBA_MODEL_NAME,),
+        (J2_CHAT_MODEL_NAME,),
+        (JAMBA_CHAT_MODEL_NAME,),
     ],
 )
 def test_invoke(model: str) -> None:
@@ -35,8 +33,8 @@ def test_invoke(model: str) -> None:
     ],
     argnames=["model"],
     argvalues=[
-        (_J2_MODEL_NAME,),
-        (_JAMBA_MODEL_NAME,),
+        (J2_CHAT_MODEL_NAME,),
+        (JAMBA_CHAT_MODEL_NAME,),
     ],
 )
 def test_generation(model: str) -> None:
@@ -61,8 +59,8 @@ def test_generation(model: str) -> None:
     ],
     argnames=["model"],
     argvalues=[
-        (_J2_MODEL_NAME,),
-        (_JAMBA_MODEL_NAME,),
+        (J2_CHAT_MODEL_NAME,),
+        (JAMBA_CHAT_MODEL_NAME,),
     ],
 )
 async def test_ageneration(model: str) -> None:
