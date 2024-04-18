@@ -35,7 +35,7 @@ python3 scripts/resolve_local_links.py docs/langgraph.md https://github.com/lang
 cp docs/integrations/llms/index.mdx versioned_docs/version-0.2.x/integrations/llms/
 cp docs/integrations/chat/index.mdx versioned_docs/version-0.2.x/integrations/chat/
 mkdir -p versioned_docs/version-0.2.x/templates
-cp -r docs/templates/ versioned_docs/version-0.2.x/templates/
+cp -r docs/templates/* versioned_docs/version-0.2.x/templates/
 
 wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O versioned_docs/version-0.2.x/langserve.md
 python3 scripts/resolve_local_links.py versioned_docs/version-0.2.x/langserve.md https://github.com/langchain-ai/langserve/tree/main/
