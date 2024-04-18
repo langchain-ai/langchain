@@ -12,7 +12,10 @@ _ChatMessageType = Union[ChatMessage, J2ChatMessage]
 
 
 class Chat(ABC):
-    def convert_messages(self, messages: List[BaseMessage]) -> Tuple[str, List[_ChatMessageType]]:
+    def convert_messages(
+            self,
+            messages: List[BaseMessage],
+    ) -> Tuple[str, List[_ChatMessageType]]:
         system_message = None
         converted_messages: List[_ChatMessageType] = []
 
