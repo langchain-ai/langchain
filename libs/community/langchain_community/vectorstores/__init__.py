@@ -178,6 +178,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.opensearch_vector_search import (
         OpenSearchVectorSearch,  # noqa: F401
     )
+    from langchain_community.vectorstores.oraclevs import (
+        OracleVS,  # noqa: F401
+    )
     from langchain_community.vectorstores.pathway import (
         PathwayVectorClient,  # noqa: F401
     )
