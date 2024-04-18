@@ -15,10 +15,11 @@ _SYSTEM_ERR_MESSAGE = "System message must be at beginning of message list."
 
 class ChatAdapter(ABC):
     """
-    This class provides a common interface for the different Chat models available in AI21.
+    Provides a common interface for the different Chat models available in AI21.
     It converts LangChain messages to AI21 messages.
     Calls the appropriate AI21 model API with the converted messages.
     """
+
     def convert_messages(
         self,
         messages: List[BaseMessage],

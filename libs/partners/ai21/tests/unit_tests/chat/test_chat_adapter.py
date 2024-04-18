@@ -87,7 +87,7 @@ def test_convert_message_to_ai21_message(
 )
 def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
     message: BaseMessage,
-        chat_adapter: ChatAdapter,
+    chat_adapter: ChatAdapter,
 ) -> None:
     with pytest.raises(ValueError) as e:
         chat_adapter._convert_message_to_ai21_message(message)
@@ -155,7 +155,7 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
     ],
 )
 def test_convert_messages(
-        chat_adapter: ChatAdapter,
+    chat_adapter: ChatAdapter,
     messages: List[BaseMessage],
     expected_system: Optional[str],
     expected_messages: List[ChatMessage],
