@@ -4,6 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
+from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -44,6 +45,9 @@ def embed_with_retry(embeddings: SolarEmbeddings, *args: Any, **kwargs: Any) -> 
     return _embed_with_retry(*args, **kwargs)
 
 
+@deprecated(
+    since="0.0.34", removal="0.2.0", alternative_import="langchain_upstage.ChatUpstage"
+)
 class SolarEmbeddings(BaseModel, Embeddings):
     """Solar's embedding service.
 
