@@ -3,6 +3,7 @@
 
 Using DuckDB as SQLite does not support schemas.
 """
+
 import pytest
 
 from sqlalchemy import (

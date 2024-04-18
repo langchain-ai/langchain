@@ -1,4 +1,5 @@
 """Test Graph Database Chain."""
+
 import os
 
 from langchain_community.graphs import Neo4jGraph

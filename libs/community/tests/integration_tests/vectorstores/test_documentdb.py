@@ -1,4 +1,5 @@
 """Test DocumentDBVectorSearch functionality."""
+
 import logging
 import os
 from time import sleep

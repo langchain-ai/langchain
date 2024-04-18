@@ -1,4 +1,5 @@
 """Test IPEX LLM"""
+
 from langchain_core.outputs import LLMResult
 
 from langchain_community.llms.ipex_llm import IpexLLM

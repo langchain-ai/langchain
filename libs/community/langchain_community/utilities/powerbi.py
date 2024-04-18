@@ -1,4 +1,5 @@
 """Wrapper around a Power BI endpoint."""
+
 from __future__ import annotations
 
 import asyncio

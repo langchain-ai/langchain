@@ -1,4 +1,5 @@
 """Chain for question-answering against a vector database."""
+
 from __future__ import annotations
 
 import inspect

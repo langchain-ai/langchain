@@ -1,4 +1,5 @@
 """GitHub Toolkit."""
+
 from typing import Dict, List
 
 from langchain_community.agent_toolkits.base import BaseToolkit

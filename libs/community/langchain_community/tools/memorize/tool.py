@@ -20,16 +20,14 @@ class TrainableLLM(Protocol):
         self,
         inputs: Sequence[str],
         **kwargs: Any,
-    ) -> TrainResult:
-        ...
+    ) -> TrainResult: ...
 
     @abstractmethod
     async def atrain_unsupervised(
         self,
         inputs: Sequence[str],
         **kwargs: Any,
-    ) -> TrainResult:
-        ...
+    ) -> TrainResult: ...
 
 
 class Memorize(BaseTool):

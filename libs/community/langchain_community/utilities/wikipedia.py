@@ -1,4 +1,5 @@
 """Util that calls Wikipedia."""
+
 import logging
 from typing import Any, Dict, Iterator, List, Optional
 

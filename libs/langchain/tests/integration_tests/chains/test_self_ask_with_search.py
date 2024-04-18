@@ -1,4 +1,5 @@
 """Integration test for self ask with search."""
+
 from langchain_community.llms.openai import OpenAI
 from langchain_community.utilities.searchapi import SearchApiAPIWrapper
 

@@ -1,4 +1,5 @@
 """A mock Robot server."""
+
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4

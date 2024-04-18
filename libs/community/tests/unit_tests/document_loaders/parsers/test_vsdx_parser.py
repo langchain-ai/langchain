@@ -1,4 +1,5 @@
 """Tests for the VSDX parsers."""
+
 from pathlib import Path
 from typing import Iterator
 

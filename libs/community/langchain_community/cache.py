@@ -19,6 +19,7 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 
     BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -1964,14 +1965,14 @@ class AzureCosmosDBSemanticCache(BaseCache):
                 index_name=index_name,
             )
         else:
-            self._cache_dict[
-                index_name
-            ] = AzureCosmosDBVectorSearch.from_connection_string(
-                connection_string=self.cosmosdb_connection_string,
-                namespace=namespace,
-                embedding=self.embedding,
-                index_name=index_name,
-                application_name=self.application_name,
+            self._cache_dict[index_name] = (
+                AzureCosmosDBVectorSearch.from_connection_string(
+                    connection_string=self.cosmosdb_connection_string,
+                    namespace=namespace,
+                    embedding=self.embedding,
+                    index_name=index_name,
+                    application_name=self.application_name,
+                )
             )
 
         # create index for the vectorstore
@@ -1998,7 +1999,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
             k=1,
             kind=self.kind,
             ef_search=self.ef_search,
-            score_threshold=self.score_threshold,
+            score_threshold=self.score_threshold,  # type: ignore[arg-type]
         )
         if results:
             for document in results:

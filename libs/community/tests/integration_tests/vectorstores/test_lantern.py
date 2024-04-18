@@ -1,4 +1,5 @@
 """Test Lantern functionality."""
+
 import os
 from typing import List, Tuple
 
@@ -85,7 +86,7 @@ def test_lantern_embeddings_distance_strategy() -> None:
         collection_name="test_collection",
         embedding=FakeEmbeddingsWithAdaDimension(),
         connection_string=CONNECTION_STRING,
-        distance_strategy="hamming",
+        distance_strategy="hamming",  # type: ignore[arg-type]
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search("foo", k=1)

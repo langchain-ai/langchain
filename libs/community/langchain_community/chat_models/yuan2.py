@@ -1,4 +1,5 @@
 """ChatYuan2 wrapper."""
+
 from __future__ import annotations
 
 import logging

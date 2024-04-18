@@ -32,6 +32,8 @@ class _SolarClient(BaseModel):
 
 
 class SolarCommon(BaseModel):
+    """Common configuration for Solar LLMs."""
+
     _client: _SolarClient
     base_url: str = SOLAR_SERVICE_URL_BASE
     solar_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")

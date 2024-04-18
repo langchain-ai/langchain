@@ -71,9 +71,9 @@ class AnalyticDB(VectorStore):
         if (
             "pool_recycle" not in _engine_args
         ):  # Check if pool_recycle is not in _engine_args
-            _engine_args[
-                "pool_recycle"
-            ] = 3600  # Set pool_recycle to 3600s if not present
+            _engine_args["pool_recycle"] = (
+                3600  # Set pool_recycle to 3600s if not present
+            )
 
         self.engine = create_engine(self.connection_string, **_engine_args)
         self.create_collection()

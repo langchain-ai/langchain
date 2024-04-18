@@ -1,5 +1,6 @@
 # flake8: noqa
 """Tools for interacting with a SQL database."""
+
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from sqlalchemy.engine import Result
@@ -79,7 +80,7 @@ class InfoSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):
 
 
 class _ListSQLDataBaseToolInput(BaseModel):
-    tool_input: str = Field(..., description="An empty string")
+    tool_input: str = Field("", description="An empty string")
 
 
 class ListSQLDatabaseTool(BaseSQLDatabaseTool, BaseTool):

@@ -1,4 +1,5 @@
 """Networkx wrapper for graph operations."""
+
 from __future__ import annotations
 
 from typing import Any, List, NamedTuple, Optional, Tuple
@@ -7,7 +8,7 @@ KG_TRIPLE_DELIMITER = "<|>"
 
 
 class KnowledgeTriple(NamedTuple):
-    """A triple in the graph."""
+    """Knowledge triple in the graph."""
 
     subject: str
     predicate: str

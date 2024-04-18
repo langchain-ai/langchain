@@ -1,4 +1,5 @@
 """Utility that calls OpenAI's Dall-E Image Generator."""
+
 import logging
 import os
 from typing import Any, Dict, Mapping, Optional, Tuple, Union

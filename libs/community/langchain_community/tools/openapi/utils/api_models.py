@@ -1,4 +1,5 @@
 """Pydantic models for parsing an OpenAPI spec."""
+
 from __future__ import annotations
 
 import logging

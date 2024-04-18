@@ -1,4 +1,5 @@
 """Transform documents"""
+
 from typing import Any, Callable, List, Sequence
 
 import numpy as np

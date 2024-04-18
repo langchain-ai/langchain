@@ -1,4 +1,5 @@
 """Toolkit for interacting with a vector store."""
+
 from typing import List
 
 from langchain_community.agent_toolkits.base import BaseToolkit
