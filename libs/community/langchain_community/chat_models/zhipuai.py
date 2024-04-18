@@ -42,7 +42,6 @@ ZHIPUAI_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
 @contextmanager
 def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
-    """Connect to a server-sent event stream."""
     from httpx_sse import EventSource
 
     with client.stream(method, url, **kwargs) as response:
@@ -53,7 +52,6 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
 async def aconnect_sse(
     client: Any, method: str, url: str, **kwargs: Any
 ) -> AsyncIterator:
-    """Async connect to a server-sent event stream."""
     from httpx_sse import EventSource
 
     async with client.stream(method, url, **kwargs) as response:
@@ -332,7 +330,7 @@ class ChatZhipuAI(BaseChatModel):
         }
         import httpx
 
-        with httpx.Client(headers=headers) as client:
+        with httpx.Client(headers=headers, timeout=60) as client:
             response = client.post(self.zhipuai_api_base, json=payload)
             response.raise_for_status()
         return self._create_chat_result(response.json())
@@ -360,7 +358,7 @@ class ChatZhipuAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         import httpx
 
-        with httpx.Client(headers=headers) as client:
+        with httpx.Client(headers=headers, timeout=60) as client:
             with connect_sse(
                 client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
@@ -419,7 +417,7 @@ class ChatZhipuAI(BaseChatModel):
         }
         import httpx
 
-        async with httpx.AsyncClient(headers=headers) as client:
+        async with httpx.AsyncClient(headers=headers, timeout=60) as client:
             response = await client.post(self.zhipuai_api_base, json=payload)
             response.raise_for_status()
         return self._create_chat_result(response.json())
@@ -446,7 +444,7 @@ class ChatZhipuAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         import httpx
 
-        async with httpx.AsyncClient(headers=headers) as client:
+        async with httpx.AsyncClient(headers=headers, timeout=60) as client:
             async with aconnect_sse(
                 client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
