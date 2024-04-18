@@ -654,7 +654,7 @@ class AzureSearch(VectorStore):
         azure_search.add_texts(texts, metadatas, **kwargs)
         return azure_search
 
-    def as_retriever(self, **kwargs: Any) -> AzureSearchVectorStoreRetriever:
+    def as_retriever(self, **kwargs: Any) -> AzureSearchVectorStoreRetriever:  # type: ignore
         """Return AzureSearchVectorStoreRetriever initialized from this VectorStore.
 
         Args:
