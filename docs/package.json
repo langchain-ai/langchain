@@ -56,6 +56,9 @@
     "typedoc-plugin-markdown": "next",
     "yaml-loader": "^0.8.0"
   },
+  "resolutions": {
+    "cytoscape": "3.28.1"
+  },
   "browserslist": {
     "production": [
       ">0.5%",

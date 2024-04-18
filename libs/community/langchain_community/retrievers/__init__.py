@@ -212,6 +212,7 @@ _module_lookup = {
     "YouRetriever": "langchain_community.retrievers.you",
     "ZepRetriever": "langchain_community.retrievers.zep",
     "ZillizRetriever": "langchain_community.retrievers.zilliz",
+    "NeuralDBRetriever": "langchain_community.retrievers.thirdai_neuraldb",
 }
 
 
