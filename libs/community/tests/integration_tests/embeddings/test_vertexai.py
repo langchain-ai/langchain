@@ -5,6 +5,7 @@ pip install google-cloud-aiplatform>=1.35.0
 Your end-user credentials would be used to make the calls (make sure you've run
 `gcloud auth login` first).
 """
+
 import pytest
 
 from langchain_community.embeddings import VertexAIEmbeddings

@@ -1,4 +1,5 @@
 """Question answering over a graph."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -7,12 +8,11 @@ if TYPE_CHECKING:
     import rdflib
 
 from langchain_community.graphs import OntotextGraphDBGraph
-from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.callbacks.manager import CallbackManager, CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import (
     GRAPHDB_QA_PROMPT,

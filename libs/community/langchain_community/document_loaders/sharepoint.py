@@ -1,4 +1,5 @@
 """Loader that loads data from Sharepoint Document Library"""
+
 from __future__ import annotations
 
 from typing import Iterator, List, Optional, Sequence

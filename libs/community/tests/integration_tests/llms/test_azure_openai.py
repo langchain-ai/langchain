@@ -1,4 +1,5 @@
 """Test AzureOpenAI wrapper."""
+
 import os
 from typing import Any, Generator
 

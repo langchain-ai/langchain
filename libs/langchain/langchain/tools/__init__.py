@@ -16,6 +16,7 @@ tool for the job.
 
     CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
 """
+
 import warnings
 from typing import Any
 
@@ -65,7 +66,7 @@ def __getattr__(name: str) -> Any:
                 "langchain will no longer be supported as of langchain==0.2.0. "
                 "Please import from langchain-community instead:\n\n"
                 f"`from langchain_community.tools import {name}`.\n\n"
-                "To install langchain-community run "
+                "To install gigachain-community run "
                 "`pip install -U langchain-community`.",
                 category=LangChainDeprecationWarning,
             )

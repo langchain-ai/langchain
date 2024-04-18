@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-groq"
-version = "0.1.1"
+version = "0.1.2"
 description = "An integration package connecting Groq and LangChain"
 authors = []
 readme = "README.md"
@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1.41"
+gigachain-core = "^0.1.42"
 groq = ">=0.4.1,<1"
 
 [tool.poetry.group.test]
@@ -24,6 +24,7 @@ pytest-mock = "^3.10.0"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 gigachain-core = { path = "../../core", develop = true }
+gigachain-standard-tests = {path = "../../standard-tests", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true

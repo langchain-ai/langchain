@@ -1,4 +1,5 @@
 """Base interfaces for tracing runs."""
+
 from __future__ import annotations
 
 import logging

@@ -11,7 +11,7 @@ Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` thr
 Install python package.
 
 ```bash
-pip install langchain-google-genai
+pip install gigachain-google-genai
 ```
 
 See a [usage example](/docs/integrations/llms/google_ai).
@@ -27,7 +27,7 @@ Access `PaLM` and hundreds of OSS models via `Vertex AI Model Garden` service.
 We need to install `langchain-google-vertexai` python package.
 
 ```bash
-pip install langchain-google-vertexai
+pip install gigachain-google-vertexai
 ```
 
 See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
@@ -95,7 +95,7 @@ Access PaLM chat models like `chat-bison` and `codechat-bison` via Google Cloud.
 We need to install `langchain-google-vertexai` python package.
 
 ```bash
-pip install langchain-google-vertexai
+pip install gigachain-google-vertexai
 ```
 
 See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
@@ -129,7 +129,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 We need to install `langchain-google-vertexai` python package.
 
 ```bash
-pip install langchain-google-vertexai
+pip install gigachain-google-vertexai
 ```
 
 See a [usage example](/docs/integrations/text_embedding/google_vertex_ai_palm).
@@ -147,7 +147,7 @@ from langchain_google_vertexai import VertexAIEmbeddings
 Install the python package:
 
 ```bash
-pip install langchain-google-alloydb-pg
+pip install gigachain-google-alloydb-pg
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_alloydb).
@@ -165,7 +165,7 @@ Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` thr
 Install python package.
 
 ```bash
-pip install langchain-google-genai
+pip install gigachain-google-genai
 ```
 
 See a [usage example](/docs/integrations/llms/google_ai).
@@ -180,7 +180,7 @@ from langchain_google_genai import GoogleGenerativeAI
 Install the python package:
 
 ```bash
-pip install langchain-google-bigtable
+pip install gigachain-google-bigtable
 ```
 
 See [Googel Cloud usage example](/docs/integrations/document_loaders/google_bigtable).
@@ -195,7 +195,7 @@ from langchain_google_bigtable import BigtableLoader
 Install the python package:
 
 ```bash
-pip install langchain-google-cloud-sql-mysql
+pip install gigachain-google-cloud-sql-mysql
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_cloud_sql_mysql).
@@ -210,7 +210,7 @@ from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLDocumentLoader
 Install the python package:
 
 ```bash
-pip install langchain-google-cloud-sql-mssql
+pip install gigachain-google-cloud-sql-mssql
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_cloud_sql_mssql).
@@ -225,13 +225,13 @@ from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLLoader
 Install the python package:
 
 ```bash
-pip install langchain-google-cloud-sql-pg
+pip install gigachain-google-cloud-sql-pg
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_cloud_sql_pg).
 
 ```python
-from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgreSQLLoader
+from langchain_google_cloud_sql_pg import PostgresEngine, PostgresLoader
 ```
 
 ### Cloud Storage
@@ -264,7 +264,7 @@ offers a way to run Oracle databases in Kubernetes as a portable, open source,
 community driven, no vendor lock-in container orchestration system.
 
 ```bash
-pip install langchain-google-el-carro
+pip install gigachain-google-el-carro
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_el_carro).
@@ -297,7 +297,7 @@ from langchain_community.document_loaders import GoogleDriveLoader
 Install the python package:
 
 ```bash
-pip install langchain-google-firestore
+pip install gigachain-google-firestore
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_firestore).
@@ -313,7 +313,7 @@ from langchain_google_firestore import FirestoreLoader
 Install the python package:
 
 ```bash
-pip install langchain-google-datastore
+pip install gigachain-google-datastore
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_datastore).
@@ -328,7 +328,7 @@ from langchain_google_datastore import DatastoreLoader
 Install the python package:
 
 ```bash
-pip install langchain-google-memorystore-redis
+pip install gigachain-google-memorystore-redis
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_memorystore_redis).
@@ -343,7 +343,7 @@ from langchain_google_memorystore_redis import MemorystoreLoader
 Install the python package:
 
 ```bash
-pip install langchain-google-spanner
+pip install gigachain-google-spanner
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_spanner).
@@ -427,7 +427,7 @@ from langchain_community.document_transformers import GoogleTranslateTransformer
 Install the python package:
 
 ```bash
-pip install langchain-google-alloydb-pg
+pip install gigachain-google-alloydb-pg
 ```
 
 See [usage example](/docs/integrations/vectorstores/google_alloydb).
@@ -464,7 +464,7 @@ from langchain.vectorstores import BigQueryVectorSearch
 Install the python package:
 
 ```bash
-pip install langchain-google-memorystore-redis
+pip install gigachain-google-memorystore-redis
 ```
 
 See [usage example](/docs/integrations/vectorstores/google_memorystore_redis).
@@ -479,7 +479,7 @@ from langchain_google_memorystore_redis import RedisVectorStore
 Install the python package:
 
 ```bash
-pip install langchain-google-spanner
+pip install gigachain-google-spanner
 ```
 
 See [usage example](/docs/integrations/vectorstores/google_spanner).
@@ -488,19 +488,49 @@ See [usage example](/docs/integrations/vectorstores/google_spanner).
 from langchain_google_spanner import SpannerVectorStore
 ```
 
+### Firestore (Native Mode)
+
+> [Google Cloud Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+Install the python package:
+
+```bash
+pip install langchain-google-firestore
+```
+
+See [usage example](/docs/integrations/vectorstores/google_firestore).
+
+```python
+from langchain_google_firestore import FirestoreVectorstore
+```
+
+### Cloud SQL for MySQL
+
+> [Google Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mysql
+```
+
+See [usage example](/docs/integrations/vectorstores/google_cloud_sql_mysql).
+
+```python
+from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLVectorStore
+```
+
 ### Cloud SQL for PostgreSQL
 
 > [Google Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
 Install the python package:
 
 ```bash
-pip install langchain-google-cloud-sql-pg
+pip install gigachain-google-cloud-sql-pg
 ```
 
 See [usage example](/docs/integrations/vectorstores/google_cloud_sql_pg).
 
 ```python
-from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgresVectorStore
+from langchain_google_cloud_sql_pg import PostgresEngine, PostgresVectorStore
 ```
 
 ### Vertex AI Vector Search
@@ -513,7 +543,7 @@ from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgresVectorStore
 Install the python package:
 
 ```bash
-pip install langchain-google-vertexai
+pip install gigachain-google-vertexai
 ```
 
 See a [usage example](/docs/integrations/vectorstores/google_vertex_ai_vector_search).
@@ -888,7 +918,7 @@ from langchain_community.agent_toolkits import GmailToolkit
 Install the python package:
 
 ```bash
-pip install langchain-google-alloydb-pg
+pip install gigachain-google-alloydb-pg
 ```
 
 See [usage example](/docs/integrations/memory/google_alloydb).
@@ -903,14 +933,14 @@ from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBChatMessageHistory
 Install the python package:
 
 ```bash
-pip install langchain-google-cloud-sql-pg
+pip install gigachain-google-cloud-sql-pg
 ```
 
 See [usage example](/docs/integrations/memory/google_sql_pg).
 
 
 ```python
-from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgreSQLChatMessageHistory
+from langchain_google_cloud_sql_pg import PostgresEngine, PostgresChatMessageHistory
 ```
 
 ### Cloud SQL for MySQL
@@ -919,7 +949,7 @@ from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgreSQLChatMessag
 Install the python package:
 
 ```bash
-pip install langchain-google-cloud-sql-mysql
+pip install gigachain-google-cloud-sql-mysql
 ```
 
 See [usage example](/docs/integrations/memory/google_sql_mysql).
@@ -934,7 +964,7 @@ from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLChatMessageHistor
 Install the python package:
 
 ```bash
-pip install langchain-google-cloud-sql-mssql
+pip install gigachain-google-cloud-sql-mssql
 ```
 
 See [usage example](/docs/integrations/memory/google_sql_mssql).
@@ -949,7 +979,7 @@ from langchain_google_cloud_sql_mssql import MSSQLEngine, MSSQLChatMessageHistor
 Install the python package:
 
 ```bash
-pip install langchain-google-spanner
+pip install gigachain-google-spanner
 ```
 
 See [usage example](/docs/integrations/memory/google_spanner).
@@ -964,7 +994,7 @@ from langchain_google_spanner import SpannerChatMessageHistory
 Install the python package:
 
 ```bash
-pip install langchain-google-memorystore-redis
+pip install gigachain-google-memorystore-redis
 ```
 
 See [usage example](/docs/integrations/document_loaders/google_memorystore_redis).
@@ -979,7 +1009,7 @@ from langchain_google_memorystore_redis import MemorystoreChatMessageHistory
 Install the python package:
 
 ```bash
-pip install langchain-google-bigtable
+pip install gigachain-google-bigtable
 ```
 
 See [usage example](/docs/integrations/memory/google_bigtable).
@@ -994,7 +1024,7 @@ from langchain_google_bigtable import BigtableChatMessageHistory
 Install the python package:
 
 ```bash
-pip install langchain-google-firestore
+pip install gigachain-google-firestore
 ```
 
 See [usage example](/docs/integrations/memory/google_firestore).
@@ -1010,7 +1040,7 @@ from langchain_google_firestore import FirestoreChatMessageHistory
 Install the python package:
 
 ```bash
-pip install langchain-google-datastore
+pip install gigachain-google-datastore
 ```
 
 See [usage example](/docs/integrations/memory/google_firestore_datastore).
@@ -1026,7 +1056,7 @@ offers a way to run `Oracle` databases in `Kubernetes` as a portable, open sourc
 community driven, no vendor lock-in container orchestration system.
 
 ```bash
-pip install langchain-google-el-carro
+pip install gigachain-google-el-carro
 ```
 
 See [usage example](/docs/integrations/memory/google_el_carro).

@@ -19,6 +19,7 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 
     BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -1998,7 +1999,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
             k=1,
             kind=self.kind,
             ef_search=self.ef_search,
-            score_threshold=self.score_threshold,
+            score_threshold=self.score_threshold,  # type: ignore[arg-type]
         )
         if results:
             for document in results:

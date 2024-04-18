@@ -1,4 +1,5 @@
 """Callback Handler that writes to a file."""
+
 from typing import Any, Dict, Optional, TextIO, cast
 
 from langchain_core.agents import AgentAction, AgentFinish

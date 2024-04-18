@@ -1,5 +1,5 @@
-"""Loader that uses Selenium to load a page, then uses unstructured to load the html.
-"""
+"""Loader that uses Selenium to load a page, then uses unstructured to load the html."""
+
 import logging
 from typing import TYPE_CHECKING, List, Literal, Optional, Union
 

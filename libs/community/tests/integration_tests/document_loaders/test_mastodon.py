@@ -1,4 +1,5 @@
 """Tests for the Mastodon toots loader"""
+
 from langchain_community.document_loaders import MastodonTootsLoader
 
 

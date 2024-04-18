@@ -10,7 +10,7 @@ readme = "README.md"
 python = ">=3.8.1,<4.0"
 gigachain = "^0.1"
 langchainhub = ">=0.1.13"
-langchain-anthropic = "^0.1.4"
+gigachain-anthropic = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
 gigachain-cli = ">=0.0.21"

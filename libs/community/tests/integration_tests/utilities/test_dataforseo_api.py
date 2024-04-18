@@ -1,4 +1,5 @@
 """Integration test for Dataforseo API Wrapper."""
+
 from langchain_community.utilities.dataforseo_api_search import DataForSeoAPIWrapper
 
 

@@ -1,4 +1,5 @@
 """Module definitions of agent types together with corresponding agents."""
+
 from enum import Enum
 
 from langchain_core._api import deprecated

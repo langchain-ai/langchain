@@ -1,4 +1,5 @@
 """Wrapper around Moonshot chat models."""
+
 from typing import Dict
 
 from langchain_core.pydantic_v1 import root_validator
@@ -8,8 +9,8 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.moonshot import MOONSHOT_SERVICE_URL_BASE, MoonshotCommon
 
 
-class MoonshotChat(MoonshotCommon, ChatOpenAI):
-    """Wrapper around Moonshot large language models.
+class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc]
+    """Moonshot large language models.
 
     To use, you should have the ``openai`` python package installed, and the
     environment variable ``MOONSHOT_API_KEY`` set with your API key.

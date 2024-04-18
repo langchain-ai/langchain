@@ -77,7 +77,7 @@ We'll show how to use models available via API, like OpenAI, and local open sour
 First we'll need to import the LangChain x OpenAI integration package.
 
 ```shell
-pip install langchain-openai
+pip install gigachain-openai
 ```
 
 Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
@@ -124,7 +124,7 @@ llm = Ollama(model="llama2")
 First we'll need to import the LangChain x Anthropic package.
 
 ```shell
-pip install langchain-anthropic
+pip install gigachain-anthropic
 ```
 
 Accessing the API requires an API key, which you can get by creating an account [here](https://claude.ai/login). Once we have a key we'll want to set it as an environment variable by running:
@@ -153,7 +153,7 @@ llm = ChatAnthropic(api_key="...")
 First we'll need to import the Cohere SDK package.
 
 ```shell
-pip install langchain-cohere
+pip install gigachain-cohere
 ```
 
 Accessing the API requires an API key, which you can get by creating an account and heading [here](https://dashboard.cohere.com/api-keys). Once we have a key we'll want to set it as an environment variable by running:
@@ -293,7 +293,7 @@ embeddings = OllamaEmbeddings()
 Make sure you have the `cohere` package installed and the appropriate environment variables set (these are the same as needed for the LLM).
 
 ```python
-from langchain_community.embeddings import CohereEmbeddings
+from langchain_cohere.embeddings import CohereEmbeddings
 
 embeddings = CohereEmbeddings()
 ```
@@ -495,7 +495,7 @@ pip install langchainhub
 Install the langchain-openai package
 To interact with OpenAI we need to use langchain-openai which connects with OpenAI SDK[https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai].  
 ```bash
-pip install langchain-openai
+pip install gigachain-openai
 ```
 
 Now we can use it to get a predefined prompt

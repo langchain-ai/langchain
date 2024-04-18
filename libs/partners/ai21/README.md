@@ -6,7 +6,7 @@ This package contains the LangChain integrations for [AI21](https://docs.ai21.co
 
 - Install the AI21 partner package
 ```bash
-pip install langchain-ai21
+pip install gigachain-ai21
 ```
 - Get an AI21 api key and set it as an environment variable (`AI21_API_KEY`)
 

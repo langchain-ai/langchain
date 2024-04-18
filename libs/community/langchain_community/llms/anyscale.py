@@ -1,4 +1,5 @@
 """Wrapper around Anyscale Endpoint"""
+
 from typing import (
     Any,
     Dict,

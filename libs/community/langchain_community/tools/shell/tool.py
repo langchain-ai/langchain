@@ -42,7 +42,7 @@ def _get_default_bash_process() -> Any:
     except ImportError:
         raise ImportError(
             "BashProcess has been moved to langchain experimental."
-            "To use this tool, install langchain-experimental "
+            "To use this tool, install gigachain-experimental "
             "with `pip install gigachain-experimental`."
         )
     return BashProcess(return_err_output=True)

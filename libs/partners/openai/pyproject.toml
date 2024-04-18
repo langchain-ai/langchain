@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-openai"
-version = "0.1.3rc1"
+version = "0.1.3"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
@@ -15,7 +15,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = { version = "^0.1.42rc1", allow-prereleases = true }
+gigachain-core = "^0.1.42"
 openai = "^1.10.0"
 tiktoken = ">=0.5.2,<1"
 

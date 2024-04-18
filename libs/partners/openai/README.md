@@ -6,7 +6,7 @@ This package contains the LangChain integrations for OpenAI through their `opena
 
 - Install the LangChain partner package
 ```bash
-pip install langchain-openai
+pip install gigachain-openai
 ```
 - Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
 

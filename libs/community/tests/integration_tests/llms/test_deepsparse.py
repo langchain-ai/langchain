@@ -1,4 +1,5 @@
 """Test DeepSparse wrapper."""
+
 from langchain_community.llms import DeepSparse
 
 

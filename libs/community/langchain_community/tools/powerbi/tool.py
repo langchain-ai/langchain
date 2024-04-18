@@ -1,4 +1,5 @@
 """Tools for interacting with a Power BI dataset."""
+
 import logging
 from time import perf_counter
 from typing import Any, Dict, Optional, Tuple

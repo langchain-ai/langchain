@@ -1,4 +1,5 @@
 """An agent designed to hold a conversation in addition to using tools."""
+
 from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
@@ -116,7 +117,7 @@ class ConversationalAgent(Agent):
             format_instructions=format_instructions,
             input_variables=input_variables,
         )
-        llm_chain = LLMChain(
+        llm_chain = LLMChain(  # type: ignore[misc]
             llm=llm,
             prompt=prompt,
             callback_manager=callback_manager,

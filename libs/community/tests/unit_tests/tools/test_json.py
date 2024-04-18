@@ -1,4 +1,5 @@
 """Test functionality of JSON tools."""
+
 from pathlib import Path
 
 from langchain_community.tools.json.tool import JsonSpec

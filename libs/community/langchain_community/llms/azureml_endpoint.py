@@ -442,12 +442,9 @@ class AzureMLBaseEndpoint(BaseModel):
         """Validate that endpoint api type is compatible with the URL format."""
         endpoint_url = values.get("endpoint_url")
         if (
-            (
-                field_value == AzureMLEndpointApiType.dedicated
-                or field_value == AzureMLEndpointApiType.realtime
-            )
-            and not endpoint_url.endswith("/score")  # type: ignore[union-attr]
-        ):
+            field_value == AzureMLEndpointApiType.dedicated
+            or field_value == AzureMLEndpointApiType.realtime
+        ) and not endpoint_url.endswith("/score"):  # type: ignore[union-attr]
             raise ValueError(
                 "Endpoints of type `dedicated` should follow the format "
                 "`https://<your-endpoint>.<your_region>.inference.ml.azure.com/score`."
