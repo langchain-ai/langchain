@@ -31,5 +31,20 @@ python3 scripts/resolve_local_links.py docs/langserve.md https://github.com/lang
 wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O docs/langgraph.md
 python3 scripts/resolve_local_links.py docs/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
+# Duplicate changes to 0.2.x versioned docs
+cp docs/integrations/llms/index.mdx versioned_docs/version-0.2.x/integrations/llms/
+cp docs/integrations/chat/index.mdx versioned_docs/version-0.2.x/integrations/chat/
+mkdir -p versioned_docs/version-0.2.x/templates
+cp -r docs/templates/* versioned_docs/version-0.2.x/templates/
+
+wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O versioned_docs/version-0.2.x/langserve.md
+python3 scripts/resolve_local_links.py versioned_docs/version-0.2.x/langserve.md https://github.com/langchain-ai/langserve/tree/main/
+
+wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O versioned_docs/version-0.2.x/langgraph.md
+python3 scripts/resolve_local_links.py versioned_docs/version-0.2.x/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
+
 # render
 quarto render docs/
+quarto render versioned_docs/version-0.2.x/
+
+python3 scripts/resolve_versioned_links_in_markdown.py versioned_docs/version-0.2.x/ /docs/0.2.x/

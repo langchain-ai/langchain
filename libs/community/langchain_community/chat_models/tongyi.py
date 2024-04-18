@@ -33,6 +33,10 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
+)
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -71,8 +75,28 @@ def convert_dict_to_message(
             else HumanMessage(content=content)
         )
     elif role == "assistant":
+        tool_calls = []
+        invalid_tool_calls = []
+        if "tool_calls" in _dict:
+            additional_kwargs = {"tool_calls": _dict["tool_calls"]}
+            for raw_tool_call in _dict["tool_calls"]:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
+        else:
+            additional_kwargs = {}
         return (
-            AIMessageChunk(content=content) if is_chunk else AIMessage(content=content)
+            AIMessageChunk(content=content)
+            if is_chunk
+            else AIMessage(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                tool_calls=tool_calls,
+                invalid_tool_calls=invalid_tool_calls,
+            )
         )
     elif role == "system":
         return (
@@ -160,7 +184,7 @@ class ChatTongyi(BaseChatModel):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[SecretStr] = None
+    dashscope_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Dashscope api key provide by Alibaba Cloud."""
 
     streaming: bool = False
@@ -168,6 +192,11 @@ class ChatTongyi(BaseChatModel):
 
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @property
     def _llm_type(self) -> str:

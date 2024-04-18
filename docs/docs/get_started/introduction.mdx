@@ -31,8 +31,16 @@ Concretely, the framework consists of the following open-source libraries:
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
 - **[langgraph](/docs/langgraph)**: Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 - **[langserve](/docs/langserve)**: Deploy LangChain chains as REST APIs.
-- **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
 
+The broader ecosystem includes:
+
+- **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor LLM applications and seamlessly integrates with LangChain.
+
+## Get started
+
+We recommend following our [Quickstart](/docs/get_started/quickstart) guide to familiarize yourself with the framework by building your first LangChain application.
+
+[See here](/docs/get_started/installation) for instructions on how to install LangChain, set up your environment, and start building.
 
 :::note
 
@@ -40,9 +48,9 @@ These docs focus on the Python LangChain library. [Head here](https://js.langcha
 
 :::
 
-## [Tutorials](/docs/tutorials)
+## Use cases
 
-If you're looking to build something specific or are more of a hands-on learner, check out our [tutorials](/docs/tutorials).
+If you're looking to build something specific or are more of a hands-on learner, check out our [use-cases](/docs/use_cases).
 They're walkthroughs and techniques for common end-to-end tasks, such as:
 
 - [Question answering with RAG](/docs/use_cases/question_answering/)
@@ -51,18 +59,14 @@ They're walkthroughs and techniques for common end-to-end tasks, such as:
 - and more!
 
 
-## [How-To Guides](/docs/how_to_guides)
+## Expression Language
 
-[Here](/docs/how_to_guides) you’ll find short answers to “How do I….?” types of questions.
-These how-to guides don’t cover topics in depth – you’ll find that material in the [Tutorials](/docs/tutorials) and the [API Reference](https://api.python.langchain.com/en/latest/).
-However, these guides will help you quickly accomplish common tasks.
+LangChain Expression Language (LCEL) is the foundation of many of LangChain's components, and is a declarative way to compose chains. LCEL was designed from day 1 to support putting prototypes in production, with no code changes, from the simplest “prompt + LLM” chain to the most complex chains.
 
-## [Conceptual Guide](/docs/concepts)
-
-Introductions to all the key parts of LangChain you’ll need to know! [Here](/docs/concepts) you'll find high level explanations of all LangChain concepts.
-
-## [API reference](https://api.python.langchain.com)
-Head to the reference section for full documentation of all classes and methods in the LangChain Python packages.
+- **[Get started](/docs/expression_language/)**: LCEL and its benefits
+- **[Runnable interface](/docs/expression_language/interface)**: The standard interface for LCEL objects
+- **[Primitives](/docs/expression_language/primitives)**: More on the primitives LCEL includes
+- and more!
 
 ## Ecosystem
 
@@ -80,11 +84,17 @@ Read up on our [Security](/docs/security) best practices to make sure you're dev
 
 ## Additional resources
 
+### [Components](/docs/modules/)
+LangChain provides standard, extendable interfaces and integrations for many different components, including:
+
 ### [Integrations](/docs/integrations/providers/)
 LangChain is part of a rich ecosystem of tools that integrate with our framework and build on top of it. Check out our growing list of [integrations](/docs/integrations/providers/).
 
 ### [Guides](/docs/guides/)
 Best practices for developing with LangChain.
+
+### [API reference](https://api.python.langchain.com)
+Head to the reference section for full documentation of all classes and methods in the LangChain and LangChain Experimental Python packages.
 
 ### [Contributing](/docs/contributing)
 Check out the developer's guide for guidelines on contributing and help getting your dev environment set up.

@@ -81,6 +81,13 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          lastVersion: "current",
+          versions: {
+            current: {
+              label: '0.1.x',
+              badge: false,
+            }
+          },
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
@@ -149,7 +156,8 @@ const config = {
         logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
           {
-            to: "/docs/modules",
+            type: "doc",
+            docId: "modules/index",
             label: "Components",
             position: "left",
           },
@@ -160,7 +168,8 @@ const config = {
             label: "Integrations",
           },
           {
-            to: "/docs/guides",
+            type: "doc",
+            docId: "guides/index",
             label: "Guides",
             position: "left",
           },
@@ -175,15 +184,18 @@ const config = {
             position: "left",
             items: [
               {
-                to: "/docs/people/",
+                type: "doc",
+                docId: "people",
                 label: "People",
               },
               {
-                to: "/docs/packages",
+                type: "doc",
+                docId: "packages",
                 label: "Versioning",
               },
               {
-                to: "/docs/contributing",
+                type: "doc",
+                docId: "contributing/index",
                 label: "Contributing",
               },
               {
@@ -196,11 +208,13 @@ const config = {
                 href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
-                to: "/docs/additional_resources/tutorials",
+                type: "doc",
+                docId: "additional_resources/tutorials",
                 label: "Tutorials"
               },
               {
-                to: "/docs/additional_resources/youtube",
+                type: "doc",
+                docId: "additional_resources/youtube",
                 label: "YouTube"
               },
             ]
