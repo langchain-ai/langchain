@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import uuid
 import warnings
 from operator import itemgetter
 from typing import (
@@ -37,6 +38,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    FunctionMessage,
     HumanMessage,
     SystemMessage,
     ToolCall,
@@ -94,6 +96,42 @@ def _format_image(image_url: str) -> Dict:
     }
 
 
+from langchain_core.messages.tool import default_tool_parser
+
+
+def _process_ai_message(ai_message: AIMessage) -> AIMessage:
+    """Process an AIMessage to ensure tool_calls are in the correct format."""
+    if "function_call" in ai_message.additional_kwargs and not ai_message.tool_calls:
+        tool_call_dict = {"function": ai_message.additional_kwargs["function_call"]}
+        tool_call_dict["id"] = uuid.uuid4().hex[:]
+        tool_calls, _ = default_tool_parser([tool_call_dict])
+        return ai_message.copy(update={"tool_calls": tool_calls})
+    else:
+        return ai_message
+
+
+def _process_function_message(
+    function_message: FunctionMessage,
+    message_history: Sequence[BaseMessage],
+) -> HumanMessage:
+    """Process function messages to Anthropic tool_result."""
+    for message in message_history[::-1]:
+        if isinstance(message, AIMessage) and message.tool_calls:
+            for tool_call in message.tool_calls:
+                if tool_call["name"] == function_message.name:
+                    if isinstance(function_message.content, str):
+                        return HumanMessage(
+                            [
+                                {
+                                    "type": "tool_result",
+                                    "content": function_message.content,
+                                    "tool_use_id": tool_call["id"],
+                                }
+                            ]
+                        )
+    return HumanMessage(function_message.content)
+
+
 def _merge_messages(
     messages: Sequence[BaseMessage],
 ) -> List[Union[SystemMessage, AIMessage, HumanMessage]]:
@@ -101,6 +139,8 @@ def _merge_messages(
     merged: list = []
     for curr in messages:
         curr = curr.copy(deep=True)
+        if isinstance(curr, AIMessage):
+            curr = _process_ai_message(curr)
         if isinstance(curr, ToolMessage):
             if isinstance(curr.content, str):
                 curr = HumanMessage(
@@ -114,6 +154,8 @@ def _merge_messages(
                 )
             else:
                 curr = HumanMessage(curr.content)
+        if isinstance(curr, FunctionMessage):
+            curr = _process_function_message(curr, merged)
         last = merged[-1] if merged else None
         if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
             if isinstance(last.content, str):
