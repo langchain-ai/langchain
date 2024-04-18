@@ -23,7 +23,7 @@ wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md 
 cp docs/integrations/llms/index.mdx versioned_docs/version-0.2.x/integrations/llms/
 cp docs/integrations/chat/index.mdx versioned_docs/version-0.2.x/integrations/chat/
 mkdir -p versioned_docs/version-0.2.x/templates
-cp docs/templates/index.md versioned_docs/version-0.2.x/templates/
+cp -r docs/templates/ versioned_docs/version-0.2.x/templates/
 cp docs/langserve.md versioned_docs/version-0.2.x/
 cp docs/langgraph.md versioned_docs/version-0.2.x/
 
