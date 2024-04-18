@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-ANYSDK_CRUD_CONTROLS_CREATE = False
-ANYSDK_CRUD_CONTROLS_READ = True
-ANYSDK_CRUD_CONTROLS_UPDATE = False
-ANYSDK_CRUD_CONTROLS_DELETE = False
+ANYSDK_CRUD_CONTROLS_CREATE = "False"
+ANYSDK_CRUD_CONTROLS_READ = "True"
+ANYSDK_CRUD_CONTROLS_UPDATE = "False"
+ANYSDK_CRUD_CONTROLS_DELETE = "False"
 
 ANYSDK_CRUD_CONTROLS_CREATE_LIST = "create"
 ANYSDK_CRUD_CONTROLS_READ_LIST = "get,read,list"
@@ -16,13 +16,13 @@ ANYSDK_CRUD_CONTROLS_DELETE_LIST = "delete,destroy,remove"
 
 
 class CrudControls(BaseModel):
-    create: Optional[bool] = None
+    create: Optional[str] = None
     create_list: Optional[str] = None
-    read: Optional[bool] = None
+    read: Optional[str] = None
     read_list: Optional[str] = None
-    update: Optional[bool] = None
+    update: Optional[str] = None
     update_list: Optional[str] = None
-    delete: Optional[bool] = None
+    delete: Optional[str] = None
     delete_list: Optional[str] = None
 
     @root_validator
@@ -127,34 +127,34 @@ class AnySdkWrapper(BaseModel):
                 "name": func.__name__.replace("_", " ").title(),
                 "description": func.__doc__,
             }
+            if self.crud_controls:
+                if self.crud_controls.create:
+                    if self.crud_controls.create_list is not None and any(
+                        word.lower() in func_name.lower()
+                        for word in self.crud_controls.create_list
+                    ):
+                        operations.append(operation)
 
-            if self.crud_controls.create:
-                if self.crud_controls.create_list is not None and any(
-                    word.lower() in func_name.lower()
-                    for word in self.crud_controls.create_list
-                ):
-                    operations.append(operation)
+                if self.crud_controls.read:
+                    if self.crud_controls.read_list is not None and any(
+                        word.lower() in func_name.lower()
+                        for word in self.crud_controls.read_list
+                    ):
+                        operations.append(operation)
 
-            if self.crud_controls.read:
-                if self.crud_controls.read_list is not None and any(
-                    word.lower() in func_name.lower()
-                    for word in self.crud_controls.read_list
-                ):
-                    operations.append(operation)
+                if self.crud_controls.update:
+                    if self.crud_controls.update_list is not None and any(
+                        word.lower() in func_name.lower()
+                        for word in self.crud_controls.update_list
+                    ):
+                        operations.append(operation)
 
-            if self.crud_controls.update:
-                if self.crud_controls.update_list is not None and any(
-                    word.lower() in func_name.lower()
-                    for word in self.crud_controls.update_list
-                ):
-                    operations.append(operation)
-
-            if self.crud_controls.delete:
-                if self.crud_controls.delete_list is not None and any(
-                    word.lower() in func_name.lower()
-                    for word in self.crud_controls.delete_list
-                ):
-                    operations.append(operation)
+                if self.crud_controls.delete:
+                    if self.crud_controls.delete_list is not None and any(
+                        word.lower() in func_name.lower()
+                        for word in self.crud_controls.delete_list
+                    ):
+                        operations.append(operation)
 
         return operations
 
