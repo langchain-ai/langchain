@@ -4,8 +4,6 @@ import pytest
 from ai21.models import ChatMessage as J2ChatMessage
 from ai21.models import RoleType
 from ai21.models.chat import ChatMessage
-
-from langchain_ai21.chat_builder.chat_builder import ChatBuilder
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -15,6 +13,8 @@ from langchain_core.messages import (
 from langchain_core.messages import (
     ChatMessage as LangChainChatMessage,
 )
+
+from langchain_ai21.chat_builder.chat_builder import ChatBuilder
 
 _J2_MODEL_NAME = "j2-ultra"
 _JAMBA_MODEL_NAME = "jamba-instruct-preview"
@@ -69,10 +69,22 @@ def test_convert_message_to_ai21_message(
     ],
     argnames=["model", "message"],
     argvalues=[
-        (_J2_MODEL_NAME, SystemMessage(content="System Message Content")),
-        (_J2_MODEL_NAME, LangChainChatMessage(content="Chat Message Content", role="human"),),
-        (_JAMBA_MODEL_NAME, SystemMessage(content="System Message Content")),
-        (_JAMBA_MODEL_NAME, LangChainChatMessage(content="Chat Message Content", role="human"),),
+        (
+                _J2_MODEL_NAME,
+                SystemMessage(content="System Message Content"),
+        ),
+        (
+                _J2_MODEL_NAME,
+                LangChainChatMessage(content="Chat Message Content", role="human"),
+        ),
+        (
+                _JAMBA_MODEL_NAME,
+                SystemMessage(content="System Message Content"),
+        ),
+        (
+                _JAMBA_MODEL_NAME,
+                LangChainChatMessage(content="Chat Message Content", role="human"),
+        ),
     ],
 )
 def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
@@ -165,7 +177,7 @@ def test_build(
         (_JAMBA_MODEL_NAME,),
     ],
 )
-def test_build__when_system_is_not_first__should_raise_value_error(chat_builder: ChatBuilder) -> None:
+def test_build__when_system_is_not_first(chat_builder: ChatBuilder) -> None:
     messages = [
         HumanMessage(content="Human Message Content 1"),
         SystemMessage(content="System Message Content 1"),

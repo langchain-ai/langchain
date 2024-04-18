@@ -2,7 +2,11 @@ from typing import Type
 
 import pytest
 
-from langchain_ai21.chat_builder.chat_builder import J2ChatBuilder, JambaChatBuilder, ChatBuilder
+from langchain_ai21.chat_builder.chat_builder import (
+    ChatBuilder,
+    J2ChatBuilder,
+    JambaChatBuilder,
+)
 from langchain_ai21.chat_builder.chat_builder_factory import create_chat_builder
 from tests.unit_tests.conftest import J2_CHAT_MODEL_NAME, JAMBA_CHAT_MODEL_NAME
 

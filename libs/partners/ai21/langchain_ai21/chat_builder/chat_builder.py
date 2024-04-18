@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple, cast, Any, Type, Union
+from typing import Any, List, Tuple, Union, cast
 
-from ai21.models import ChatMessage as J2ChatMessage, RoleType
+from ai21.models import ChatMessage as J2ChatMessage
+from ai21.models import RoleType
 from ai21.models.chat import ChatMessage
-
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 _ChatMessageType = Union[ChatMessage, J2ChatMessage]
 
@@ -19,7 +19,8 @@ class ChatBuilder(ABC):
         for i, message in enumerate(messages):
             if message.type == "system":
                 if i != 0:
-                    raise ValueError("System message must be at beginning of message list.")
+                    raise ValueError("System message must be at "
+                                     "beginning of message list.")
                 else:
                     system_message = self._get_system_message_from_message(message)
             else:

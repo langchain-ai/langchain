@@ -1,10 +1,7 @@
 import asyncio
 from functools import partial
-from typing import Any, List, Mapping, Optional, Dict
+from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_ai21.ai21_base import AI21Base
-from langchain_ai21.chat_builder.chat_builder import ChatBuilder
-from langchain_ai21.chat_builder.chat_builder_factory import create_chat_builder
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -15,6 +12,10 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import root_validator
+
+from langchain_ai21.ai21_base import AI21Base
+from langchain_ai21.chat_builder.chat_builder import ChatBuilder
+from langchain_ai21.chat_builder.chat_builder_factory import create_chat_builder
 
 
 class ChatAI21(BaseChatModel, AI21Base):

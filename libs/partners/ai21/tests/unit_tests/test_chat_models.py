@@ -5,17 +5,17 @@ from unittest.mock import Mock, call
 import pytest
 from ai21 import MissingApiKeyError
 from ai21.models import ChatMessage, Penalty, RoleType
-from pytest import CaptureFixture, MonkeyPatch
-
-from langchain_ai21.chat_models import (
-    ChatAI21,
-)
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage,
 )
 from langchain_core.pydantic_v1 import SecretStr
+from pytest import CaptureFixture, MonkeyPatch
+
+from langchain_ai21.chat_models import (
+    ChatAI21,
+)
 from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_LLM_PARAMETERS,
     BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
