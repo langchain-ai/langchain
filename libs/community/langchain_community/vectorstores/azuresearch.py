@@ -705,7 +705,8 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
                 allowed_search_types := ("similarity", "hybrid", "semantic_hybrid")
             ):
                 raise ValueError(
-                    f"search_type of {search_type} not allowed. Valid values are: {allowed_search_types}"
+                    f"search_type of {search_type} not allowed. Valid values are: "
+                    f"{allowed_search_types}"
                 )
         return values
 
