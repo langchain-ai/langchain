@@ -5,5 +5,5 @@ from langchain_ai21.chat.chat_factory import create_chat_adapter
 
 
 @pytest.fixture
-def chat(model: str) -> ChatAdapter:
+def chat_adapter(model: str) -> ChatAdapter:
     return create_chat_adapter(model)

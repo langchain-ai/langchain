@@ -52,9 +52,9 @@ _JAMBA_MODEL_NAME = "jamba-instruct-preview"
     ],
 )
 def test_convert_message_to_ai21_message(
-    message: BaseMessage, expected_ai21_message: ChatMessage, chat: ChatAdapter
+    message: BaseMessage, expected_ai21_message: ChatMessage, chat_adapter: ChatAdapter
 ) -> None:
-    ai21_message = chat._convert_message_to_ai21_message(message)
+    ai21_message = chat_adapter._convert_message_to_ai21_message(message)
     assert ai21_message == expected_ai21_message
 
 
@@ -87,10 +87,10 @@ def test_convert_message_to_ai21_message(
 )
 def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
     message: BaseMessage,
-    chat: ChatAdapter,
+        chat_adapter: ChatAdapter,
 ) -> None:
     with pytest.raises(ValueError) as e:
-        chat._convert_message_to_ai21_message(message)
+        chat_adapter._convert_message_to_ai21_message(message)
     assert e.value.args[0] == (
         f"Could not resolve role type from message {message}. "
         f"Only support {HumanMessage.__name__} and {AIMessage.__name__}."
@@ -155,12 +155,12 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
     ],
 )
 def test_convert_messages(
-    chat: ChatAdapter,
+        chat_adapter: ChatAdapter,
     messages: List[BaseMessage],
     expected_system: Optional[str],
     expected_messages: List[ChatMessage],
 ) -> None:
-    system, ai21_messages = chat.convert_messages(messages)
+    system, ai21_messages = chat_adapter.convert_messages(messages)
     assert ai21_messages == expected_messages
     assert system == expected_system
 
@@ -176,10 +176,10 @@ def test_convert_messages(
         (_JAMBA_MODEL_NAME,),
     ],
 )
-def test_convert_messages__when_system_is_not_first(chat: ChatAdapter) -> None:
+def test_convert_messages__when_system_is_not_first(chat_adapter: ChatAdapter) -> None:
     messages = [
         HumanMessage(content="Human Message Content 1"),
         SystemMessage(content="System Message Content 1"),
     ]
     with pytest.raises(ValueError):
-        chat.convert_messages(messages)
+        chat_adapter.convert_messages(messages)
