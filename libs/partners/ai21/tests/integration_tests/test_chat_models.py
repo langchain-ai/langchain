@@ -1,24 +1,51 @@
 """Test ChatAI21 chat model."""
-
+import pytest
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import ChatGeneration
 
 from langchain_ai21.chat_models import ChatAI21
 
-_MODEL_NAME = "j2-ultra"
+_J2_MODEL_NAME = "j2-ultra"
+_JAMBA_MODEL_NAME = "jamba-instruct-preview"
 
 
-def test_invoke() -> None:
+@pytest.mark.parametrize(
+    ids=[
+        "when_j2_model",
+        "when_jamba_model",
+    ],
+    argnames=[
+        "model"
+    ],
+    argvalues=[
+        (_J2_MODEL_NAME,),
+        (_JAMBA_MODEL_NAME,),
+    ],
+)
+def test_invoke(model: str) -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model=_MODEL_NAME)
+    llm = ChatAI21(model=model)
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
 
 
-def test_generation() -> None:
+@pytest.mark.parametrize(
+    ids=[
+        "when_j2_model",
+        "when_jamba_model",
+    ],
+    argnames=[
+        "model"
+    ],
+    argvalues=[
+        (_J2_MODEL_NAME,),
+        (_JAMBA_MODEL_NAME,),
+    ],
+)
+def test_generation(model: str) -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model=_MODEL_NAME)
+    llm = ChatAI21(model=model)
     message = HumanMessage(content="Hello")
 
     result = llm.generate([[message], [message]], config=dict(tags=["foo"]))
@@ -31,9 +58,22 @@ def test_generation() -> None:
             assert generation.text == generation.message.content
 
 
-async def test_ageneration() -> None:
+@pytest.mark.parametrize(
+    ids=[
+        "when_j2_model",
+        "when_jamba_model",
+    ],
+    argnames=[
+        "model"
+    ],
+    argvalues=[
+        (_J2_MODEL_NAME,),
+        (_JAMBA_MODEL_NAME,),
+    ],
+)
+async def test_ageneration(model: str) -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model=_MODEL_NAME)
+    llm = ChatAI21(model=model)
     message = HumanMessage(content="Hello")
 
     result = await llm.agenerate([[message], [message]], config=dict(tags=["foo"]))
