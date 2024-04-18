@@ -956,7 +956,11 @@ class Neo4jVector(VectorStore):
                     "Metadata filtering can't be use in combination with "
                     "a hybrid search approach"
                 )
-            parallel_query = "CYPHER runtime = parallel " if self._is_enterprise else ""
+            parallel_query = (
+                "CYPHER runtime = parallel parallelRuntimeSupport=all "
+                if self._is_enterprise
+                else ""
+            )
             base_index_query = parallel_query + (
                 f"MATCH (n:`{self.node_label}`) WHERE "
                 f"n.`{self.embedding_node_property}` IS NOT NULL AND "
