@@ -1,21 +1,25 @@
 import os
-from typing import Iterator, List
+from typing import Iterator, Sequence, Optional
 from langchain_core.documents import Document
+from langchain_core.utils import get_from_env
 
 from langchain_community.document_loaders.base import BaseLoader
 
 
 class BrowserbaseLoader(BaseLoader):
-    """Create new Browserbase loader"""
+    """Load pre-rendered web pages using a headless browser hosted on Browserbase.
+
+    Depends on `browserbase` package.
+    Get your API key from https://browserbase.com
+    """
 
     def __init__(
         self,
-        urls: List[str],
-        api_key: str = os.environ["BROWSERBASE_KEY"],
+        urls: Sequence[str],
+        api_key: Optional[str] = None,
         text_content: str = False,
     ):
         self.urls = urls
-        self.api_key = api_key
         self.text_content = text_content
 
         try:
@@ -28,7 +32,8 @@ class BrowserbaseLoader(BaseLoader):
                 "to use the Browserbase loader."
             )
 
-        self.browserbase = Browserbase(api_key=self.api_key)
+        api_key = api_key or get_from_env("api_key", "BROWSERBASE_API_KEY")
+        self.browserbase = Browserbase(api_key=api_key)
 
     def lazy_load(self) -> Iterator[Document]:
         """Load pages from URLs"""
