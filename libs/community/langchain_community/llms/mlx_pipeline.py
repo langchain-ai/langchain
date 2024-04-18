@@ -196,6 +196,8 @@ class MLXPipeline(LLM):
         prompt_tokens = mx.array(prompt[0])
 
         eos_token_id = self.tokenizer.eos_token_id
+        detokenizer = self.tokenizer.detokenizer
+        detokenizer.reset()
 
         for (token, prob), n in zip(
             generate_step(
@@ -210,7 +212,9 @@ class MLXPipeline(LLM):
         ):
             # identify text to yield
             text: Optional[str] = None
-            text = self.tokenizer.decode(token)
+            detokenizer.add_token(token)
+            detokenizer.finalize()
+            text = detokenizer.last_segment
 
             # yield text, if any
             if text:
