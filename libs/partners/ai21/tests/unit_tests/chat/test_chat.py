@@ -14,7 +14,7 @@ from langchain_core.messages import (
     ChatMessage as LangChainChatMessage,
 )
 
-from langchain_ai21.chat_builder.chat_builder import ChatBuilder
+from langchain_ai21.chat_builder.chat import Chat
 
 _J2_MODEL_NAME = "j2-ultra"
 _JAMBA_MODEL_NAME = "jamba-instruct-preview"
@@ -54,9 +54,9 @@ _JAMBA_MODEL_NAME = "jamba-instruct-preview"
 def test_convert_message_to_ai21_message(
         message: BaseMessage,
         expected_ai21_message: ChatMessage,
-        chat_builder: ChatBuilder
+        chat: Chat
 ) -> None:
-    ai21_message = chat_builder._convert_message_to_ai21_message(message)
+    ai21_message = chat._convert_message_to_ai21_message(message)
     assert ai21_message == expected_ai21_message
 
 
@@ -88,10 +88,10 @@ def test_convert_message_to_ai21_message(
     ],
 )
 def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
-        message: BaseMessage, chat_builder: ChatBuilder,
+        message: BaseMessage, chat: Chat,
 ) -> None:
     with pytest.raises(ValueError) as e:
-        chat_builder._convert_message_to_ai21_message(message)
+        chat._convert_message_to_ai21_message(message)
     assert e.value.args[0] == (
         f"Could not resolve role type from message {message}. "
         f"Only support {HumanMessage.__name__} and {AIMessage.__name__}."
@@ -155,13 +155,13 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
         ),
     ],
 )
-def test_build(
-        chat_builder: ChatBuilder,
+def test_convert_messages(
+        chat: Chat,
         messages: List[BaseMessage],
         expected_system: Optional[str],
         expected_messages: List[ChatMessage],
 ) -> None:
-    system, ai21_messages = chat_builder.build(messages)
+    system, ai21_messages = chat.convert_messages(messages)
     assert ai21_messages == expected_messages
     assert system == expected_system
 
@@ -177,10 +177,10 @@ def test_build(
         (_JAMBA_MODEL_NAME,),
     ],
 )
-def test_build__when_system_is_not_first(chat_builder: ChatBuilder) -> None:
+def test_convert_messages__when_system_is_not_first(chat: Chat) -> None:
     messages = [
         HumanMessage(content="Human Message Content 1"),
         SystemMessage(content="System Message Content 1"),
     ]
     with pytest.raises(ValueError):
-        chat_builder.build(messages)
+        chat.convert_messages(messages)

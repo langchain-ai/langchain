@@ -11,8 +11,8 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 _ChatMessageType = Union[ChatMessage, J2ChatMessage]
 
 
-class ChatBuilder(ABC):
-    def build(self, messages: List[BaseMessage]) -> Tuple[str, List[_ChatMessageType]]:
+class Chat(ABC):
+    def convert_messages(self, messages: List[BaseMessage]) -> Tuple[str, List[_ChatMessageType]]:
         system_message = None
         converted_messages: List[_ChatMessageType] = []
 
@@ -71,7 +71,7 @@ class ChatBuilder(ABC):
         return message.content
 
 
-class J2ChatBuilder(ChatBuilder):
+class J2Chat(Chat):
 
     def _chat_message(
             self,
@@ -86,7 +86,7 @@ class J2ChatBuilder(ChatBuilder):
         return AIMessage(content=outputs[0].text)
 
 
-class JambaChatBuilder(ChatBuilder):
+class JambaChatCompletions(Chat):
 
     def _chat_message(
             self,

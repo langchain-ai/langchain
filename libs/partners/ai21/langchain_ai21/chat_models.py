@@ -14,8 +14,8 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import root_validator
 
 from langchain_ai21.ai21_base import AI21Base
-from langchain_ai21.chat_builder.chat_builder import ChatBuilder
-from langchain_ai21.chat_builder.chat_builder_factory import create_chat_builder
+from langchain_ai21.chat_builder.chat import Chat
+from langchain_ai21.chat_builder.chat_factory import create_chat
 
 
 class ChatAI21(BaseChatModel, AI21Base):
@@ -60,14 +60,14 @@ class ChatAI21(BaseChatModel, AI21Base):
     count_penalty: Optional[Any] = None
     """A penalty applied to tokens based on their frequency 
     in the generated responses."""
-    _chat_builder: ChatBuilder
+    _chat_builder: Chat
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         values = super().validate_environment(values)
         model = values.get("model")
 
-        values["_builder"] = create_chat_builder(model)
+        values["_builder"] = create_chat(model)
 
         return values
 
@@ -111,7 +111,7 @@ class ChatAI21(BaseChatModel, AI21Base):
             **kwargs: Any,
     ) -> Mapping[str, Any]:
         params = {}
-        system, ai21_messages = self._builder.build(messages)
+        system, ai21_messages = self._builder.convert_messages(messages)
 
         if stop is not None:
             if "stop" in kwargs:
