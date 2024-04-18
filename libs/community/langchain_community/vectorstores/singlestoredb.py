@@ -297,13 +297,28 @@ class SingleStoreDB(VectorStore):
                         index_options = "INDEX_OPTIONS '{}'".format(
                             json.dumps(self.vector_index_options)
                         )
-                    cur.execute(
-                        """CREATE TABLE IF NOT EXISTS {}
-                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} BIGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+                    print("""CREATE TABLE IF NOT EXISTS {}
+                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
                         {} VECTOR({}, F32) NOT NULL, {} JSON,
                         VECTOR INDEX {} ({}) {}{});""".format(
-                            self.id_field,
                             self.table_name,
+                            self.id_field,
+                            self.content_field,
+                            self.vector_field,
+                            self.vector_size,
+                            self.metadata_field,
+                            self.vector_index_name,
+                            self.vector_field,
+                            index_options,
+                            full_text_index,
+                        ))
+                    cur.execute(
+                        """CREATE TABLE IF NOT EXISTS {}
+                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+                        {} VECTOR({}, F32) NOT NULL, {} JSON,
+                        VECTOR INDEX {} ({}) {}{});""".format(
+                            self.table_name,
+                            self.id_field,
                             self.content_field,
                             self.vector_field,
                             self.vector_size,
@@ -317,9 +332,10 @@ class SingleStoreDB(VectorStore):
                 else:
                     cur.execute(
                         """CREATE TABLE IF NOT EXISTS {}
-                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
                         {} BLOB, {} JSON{});""".format(
                             self.table_name,
+                            self.id_field,
                             self.content_field,
                             self.vector_field,
                             self.metadata_field,
@@ -479,7 +495,7 @@ class SingleStoreDB(VectorStore):
             List of Documents most similar to the query and score for each
         """
 
-        if search_strategy != SingleStoreDB.SearchStrategy.VECTOR_ONLY:
+        if search_strategy != SingleStoreDB.SearchStrategy.VECTOR_ONLY and not self.use_full_text_search:
             raise ValueError("Search strategy {} is not supported when use_full_text_search is False".format(search_strategy))
 
         # Creates embedding vector from user query
@@ -499,10 +515,10 @@ class SingleStoreDB(VectorStore):
             if search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_TEXT:
                 arguments.append("MATCH ({}) AGAINST (%s) > %s".format(self.content_field))
                 where_clause_values.append(query)
-                where_clause_values.append(filter_threshold)
+                where_clause_values.append(float(filter_threshold))
 
             if search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR:
-                condition = "{}({}, JSON_ARRAY_PACK(%s) ".format(
+                condition = "{}({}, JSON_ARRAY_PACK(%s)) ".format(
                     self.distance_strategy.name
                     if isinstance(self.distance_strategy, DistanceStrategy)
                     else self.distance_strategy,
@@ -513,7 +529,7 @@ class SingleStoreDB(VectorStore):
                     condition += "> %s"
                 arguments.append(condition)
                 where_clause_values.append("[{}]".format(",".join(map(str, embedding))))
-                where_clause_values.append(filter_threshold)
+                where_clause_values.append(float(filter_threshold))
 
             def build_where_clause(
                 where_clause_values: List[Any],
@@ -536,13 +552,28 @@ class SingleStoreDB(VectorStore):
                         where_clause_values += prefix_args + [key]
                         where_clause_values.append(json.dumps(sub_filter[key]))
 
-            build_where_clause(where_clause_values, filter)
+            if filter:
+                build_where_clause(where_clause_values, filter)
             where_clause += " AND ".join(arguments)
 
         try:
             cur = conn.cursor()
             try:
                 if search_strategy == SingleStoreDB.SearchStrategy.VECTOR_ONLY or search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_TEXT:
+                    print( """SELECT {}, {}, {}({}, JSON_ARRAY_PACK(%s)) as __score
+                        FROM {} {} ORDER BY __score {} LIMIT %s""".format(
+                            self.content_field,
+                            self.metadata_field,
+                            self.distance_strategy.name
+                            if isinstance(self.distance_strategy, DistanceStrategy)
+                            else self.distance_strategy,
+                            self.vector_field,
+                            self.table_name,
+                            where_clause,
+                            ORDERING_DIRECTIVE[self.distance_strategy],
+                        ) % (("[{}]".format(",".join(map(str, embedding))),)
+                        + tuple(where_clause_values)
+                        + (k,)))
                     cur.execute(
                         """SELECT {}, {}, {}({}, JSON_ARRAY_PACK(%s)) as __score
                         FROM {} {} ORDER BY __score {} LIMIT %s""".format(
@@ -561,6 +592,17 @@ class SingleStoreDB(VectorStore):
                         + (k,),
                     )
                 elif search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR or search_strategy == SingleStoreDB.SearchStrategy.TEXT_ONLY:
+                    print("""SELECT {}, {}, MATCH ({}) AGAINST (%s) as __score
+                        FROM {} {} ORDER BY __score DESC LIMIT %s""".format(
+                            self.content_field,
+                            self.metadata_field,
+                            self.content_field,
+                            self.table_name,
+                            where_clause,
+                        ) %
+                        ((query,)
+                        + tuple(where_clause_values)
+                        + (k,)))
                     cur.execute(
                         """SELECT {}, {}, MATCH ({}) AGAINST (%s) as __score
                         FROM {} {} ORDER BY __score DESC LIMIT %s""".format(
