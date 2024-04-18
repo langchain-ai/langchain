@@ -157,6 +157,47 @@ class ChatModelIntegrationTests(ABC):
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
 
+        # Streaming context
+        messages = [
+            human_message,
+            AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "name": function_name,
+                        "args": "",
+                        "id": "abc123",
+                        "index": 0,
+                    },
+                ],
+            ),
+            AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "name": None,
+                        "args": '{"a": "1",',
+                        "id": None,
+                        "index": 0,
+                    },
+                ],
+            ),
+            AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "name": None,
+                        "args": '"b": "2"}',
+                        "id": None,
+                        "index": 0,
+                    },
+                ],
+            ),
+            tool_message,
+        ]
+        result = model_with_tools.invoke(messages)
+        assert isinstance(result, AIMessage)
+
         # List content (e.g., Anthropic)
         list_content_msg = AIMessage(
             content=[
