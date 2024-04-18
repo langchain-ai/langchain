@@ -145,7 +145,7 @@ def test_api_key_is_secret_string() -> None:
 
 
 def test_api_key_masked_when_passed_from_env(
-        monkeypatch: MonkeyPatch, capsys: CaptureFixture
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
 ) -> None:
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("AI21_API_KEY", "secret-api-key")
@@ -157,7 +157,7 @@ def test_api_key_masked_when_passed_from_env(
 
 
 def test_api_key_masked_when_passed_via_constructor(
-        capsys: CaptureFixture,
+    capsys: CaptureFixture,
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")

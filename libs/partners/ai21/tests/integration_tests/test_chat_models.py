@@ -14,9 +14,7 @@ _JAMBA_MODEL_NAME = "jamba-instruct-preview"
         "when_j2_model",
         "when_jamba_model",
     ],
-    argnames=[
-        "model"
-    ],
+    argnames=["model"],
     argvalues=[
         (_J2_MODEL_NAME,),
         (_JAMBA_MODEL_NAME,),
@@ -35,9 +33,7 @@ def test_invoke(model: str) -> None:
         "when_j2_model",
         "when_jamba_model",
     ],
-    argnames=[
-        "model"
-    ],
+    argnames=["model"],
     argvalues=[
         (_J2_MODEL_NAME,),
         (_JAMBA_MODEL_NAME,),
@@ -63,9 +59,7 @@ def test_generation(model: str) -> None:
         "when_j2_model",
         "when_jamba_model",
     ],
-    argnames=[
-        "model"
-    ],
+    argnames=["model"],
     argvalues=[
         (_J2_MODEL_NAME,),
         (_JAMBA_MODEL_NAME,),

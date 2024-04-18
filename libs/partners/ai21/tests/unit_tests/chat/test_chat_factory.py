@@ -23,8 +23,8 @@ from tests.unit_tests.conftest import J2_CHAT_MODEL_NAME, JAMBA_CHAT_MODEL_NAME
     ],
 )
 def test_create_chat_with_supported_models(
-        model: str,
-        expected_chat_type: Type[Chat]) -> None:
+    model: str, expected_chat_type: Type[Chat]
+) -> None:
     builder = create_chat(model)
     assert isinstance(builder, expected_chat_type)
 
