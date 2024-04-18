@@ -180,7 +180,6 @@ function LatestDocVersionBanner({className, versionMetadata}) {
 
 export default function DocVersionBanner({className}) {
   const versionMetadata = useDocsVersion();
-  console.log("VERSION METADATA", versionMetadata);
   if (versionMetadata.banner) {
     return (
       <DocVersionBannerEnabled
