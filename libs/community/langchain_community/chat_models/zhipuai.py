@@ -42,7 +42,6 @@ ZHIPUAI_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
 @contextmanager
 def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
-    """Connect to a server-sent event stream."""
     from httpx_sse import EventSource
 
     with client.stream(method, url, **kwargs) as response:
@@ -51,9 +50,8 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
 
 @asynccontextmanager
 async def aconnect_sse(
-        client: Any, method: str, url: str, **kwargs: Any
+    client: Any, method: str, url: str, **kwargs: Any
 ) -> AsyncIterator:
-    """Async connect to a server-sent event stream."""
     from httpx_sse import EventSource
 
     async with client.stream(method, url, **kwargs) as response:
@@ -130,7 +128,7 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
 
 
 def _convert_delta_to_message_chunk(
-        dct: Dict[str, Any], default_class: Type[BaseMessageChunk]
+    dct: Dict[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = dct.get("role")
     content = dct.get("content", "")
@@ -261,7 +259,7 @@ class ChatZhipuAI(BaseChatModel):
         return values
 
     def _create_message_dicts(
-            self, messages: List[BaseMessage], stop: Optional[List[str]]
+        self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
@@ -287,12 +285,12 @@ class ChatZhipuAI(BaseChatModel):
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            stream: Optional[bool] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         """Generate a chat response."""
         should_stream = stream if stream is not None else self.streaming
@@ -323,11 +321,11 @@ class ChatZhipuAI(BaseChatModel):
         return self._create_chat_result(response.json())
 
     def _stream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the chat response in chunks."""
         if self.zhipuai_api_key is None:
@@ -346,7 +344,7 @@ class ChatZhipuAI(BaseChatModel):
 
         with httpx.Client(headers=headers, timeout=60) as client:
             with connect_sse(
-                    client, "POST", self.zhipuai_api_base, json=payload
+                client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
                 for sse in event_source.iter_sse():
                     chunk = json.loads(sse.data)
@@ -373,12 +371,12 @@ class ChatZhipuAI(BaseChatModel):
                         break
 
     async def _agenerate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            stream: Optional[bool] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
@@ -408,11 +406,11 @@ class ChatZhipuAI(BaseChatModel):
         return self._create_chat_result(response.json())
 
     async def _astream(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         if self.zhipuai_api_key is None:
             raise ValueError("Did not find zhipuai_api_key.")
@@ -430,7 +428,7 @@ class ChatZhipuAI(BaseChatModel):
 
         async with httpx.AsyncClient(headers=headers, timeout=60) as client:
             async with aconnect_sse(
-                    client, "POST", self.zhipuai_api_base, json=payload
+                client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
                 async for sse in event_source.aiter_sse():
                     chunk = json.loads(sse.data)
