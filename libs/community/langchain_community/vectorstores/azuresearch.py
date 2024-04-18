@@ -660,8 +660,8 @@ class AzureSearch(VectorStore):
         Args:
             search_type (Optional[str]): Defines the type of search that
                 the Retriever should perform.
-                Can be "similarity" (default), "mmr", or
-                "similarity_score_threshold".
+                Can be "similarity" (default), "hybrid", or
+                    "semantic_hybrid".
             search_kwargs (Optional[Dict]): Keyword arguments to pass to the
                 search function. Can include things like:
                     k: Amount of documents to return (Default: 4)
