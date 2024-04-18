@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import Any, List
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -62,6 +62,7 @@ class RePhraseQueryRetriever(BaseRetriever):
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
     ) -> List[Document]:
         """Get relevated documents given a user question.
 
@@ -75,7 +76,7 @@ class RePhraseQueryRetriever(BaseRetriever):
         re_phrased_question = response["text"]
         logger.info(f"Re-phrased question: {re_phrased_question}")
         docs = self.retriever.get_relevant_documents(
-            re_phrased_question, callbacks=run_manager.get_child()
+            re_phrased_question, callbacks=run_manager.get_child(), **kwargs
         )
         return docs
 
