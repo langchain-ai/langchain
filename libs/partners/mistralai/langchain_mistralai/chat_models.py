@@ -315,8 +315,7 @@ class ChatMistralAI(BaseChatModel):
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
-
-    model: str = "mistral-small"
+    model: str = Field(default="mistral-small", alias="model_name")
     temperature: float = 0.7
     max_tokens: Optional[int] = None
     top_p: float = 1
