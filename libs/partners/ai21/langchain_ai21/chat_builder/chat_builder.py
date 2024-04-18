@@ -96,4 +96,3 @@ class JambaChatBuilder(ChatBuilder):
         response = client.chat.completions.create(**params)
         choices = response.choices
         return AIMessage(content=choices[0].message.content)
-
