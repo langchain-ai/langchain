@@ -70,6 +70,11 @@ if TYPE_CHECKING:
     from langchain_community.tools.brave_search.tool import (
         BraveSearch,  # noqa: F401
     )
+    from langchain_community.tools.cassandra_database.tool import (
+        GetSchemaCassandraDatabaseTool,  # noqa: F401
+        GetTableDataCassandraDatabaseTool,  # noqa: F401
+        QueryCassandraDatabaseTool,  # noqa: F401
+    )
     from langchain_community.tools.cogniswitch.tool import (
         CogniswitchKnowledgeRequest,  # noqa: F401
         CogniswitchKnowledgeSourceFile,  # noqa: F401
