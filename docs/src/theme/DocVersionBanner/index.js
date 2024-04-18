@@ -188,12 +188,14 @@ export default function DocVersionBanner({className}) {
       />
     );
   } else if (versionMetadata.isLast) {
-    return (
-      <LatestDocVersionBanner
-        className={className}
-        versionMetadata={versionMetadata}
-      />
-    );
+    // Uncomment when we are ready to direct people to new build
+    // return (
+    //   <LatestDocVersionBanner
+    //     className={className}
+    //     versionMetadata={versionMetadata}
+    //   />
+    // );
+    return null;
   }
   return null;
 }
