@@ -361,8 +361,8 @@ def test_whole_class_inherited_deprecation() -> None:
         warning = warning_list[0].message
         assert str(warning) == (
             "The class "
-            "`test_whole_class_inherited_deprecation.<locals>.InheritedDeprecatedClass` "
-            "was deprecated in tests 2.2.0 and will be removed in 3.2.0"
+            "`test_whole_class_inherited_deprecation.<locals>.InheritedDeprecatedClass`"
+            " was deprecated in tests 2.2.0 and will be removed in 3.2.0"
         )
 
         warning = warning_list[1].message
