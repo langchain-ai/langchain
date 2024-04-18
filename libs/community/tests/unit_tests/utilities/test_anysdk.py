@@ -32,6 +32,7 @@ class FakeSdk:
 client = {"client": FakeSdk()}
 
 crud_controls = CrudControls(
+    read=True,
     create=True,
     update=True,
     delete=True,
@@ -39,6 +40,7 @@ crud_controls = CrudControls(
 
 anysdk = AnySdkWrapper(
     client=client,
+    crud_controls=crud_controls,
 )
 
 

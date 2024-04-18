@@ -1,27 +1,28 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Extra, Union, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-ANYSDK_CRUD_CONTROLS_CREATE = "False"
-ANYSDK_CRUD_CONTROLS_READ = "True"
-ANYSDK_CRUD_CONTROLS_UPDATE = "False"
-ANYSDK_CRUD_CONTROLS_DELETE = "False"
+ANYSDK_CRUD_CONTROLS_CREATE = False
+ANYSDK_CRUD_CONTROLS_READ = True
+ANYSDK_CRUD_CONTROLS_UPDATE = False
+ANYSDK_CRUD_CONTROLS_DELETE = False
 
 ANYSDK_CRUD_CONTROLS_CREATE_LIST = "create"
 ANYSDK_CRUD_CONTROLS_READ_LIST = "get,read,list"
 ANYSDK_CRUD_CONTROLS_UPDATE_LIST = "update,put,post"
 ANYSDK_CRUD_CONTROLS_DELETE_LIST = "delete,destroy,remove"
 
+
 class CrudControls(BaseModel):
-    create: Optional[Union[bool, str]] = None
+    create: Optional[bool] = None
     create_list: Optional[str] = None
-    read: Optional[Union[bool, str]] = None
+    read: Optional[bool] = None
     read_list: Optional[str] = None
-    update: Optional[Union[bool, str]] = None
+    update: Optional[bool] = None
     update_list: Optional[str] = None
-    delete: Optional[Union[bool, str]] = None
+    delete: Optional[bool] = None
     delete_list: Optional[str] = None
 
     @root_validator
@@ -112,43 +113,46 @@ class AnySdkWrapper(BaseModel):
         operations = []
         sdk_functions = [
             func
-            for func in dir(self.client)
-            if callable(getattr(self.client, func)) and not func.startswith("_")
+            for func in dir(self.client["client"])
+            if (
+                callable(getattr(self.client["client"], func))
+                and not func.startswith("_")
+            )
         ]
 
         for func_name in sdk_functions:
-            func = getattr(self.client, func_name)
+            func = getattr(self.client["client"], func_name)
             operation = {
                 "mode": func_name,
                 "name": func.__name__.replace("_", " ").title(),
                 "description": func.__doc__,
             }
 
-            if self.crud_controls_create:
-                if self.crud_controls_create_list is not None and any(
+            if self.crud_controls.create:
+                if self.crud_controls.create_list is not None and any(
                     word.lower() in func_name.lower()
-                    for word in self.crud_controls_create_list
+                    for word in self.crud_controls.create_list
                 ):
                     operations.append(operation)
 
-            if self.crud_controls_read:
-                if self.crud_controls_read_list is not None and any(
+            if self.crud_controls.read:
+                if self.crud_controls.read_list is not None and any(
                     word.lower() in func_name.lower()
-                    for word in self.crud_controls_read_list
+                    for word in self.crud_controls.read_list
                 ):
                     operations.append(operation)
 
-            if self.crud_controls_update:
-                if self.crud_controls_update_list is not None and any(
+            if self.crud_controls.update:
+                if self.crud_controls.update_list is not None and any(
                     word.lower() in func_name.lower()
-                    for word in self.crud_controls_update_list
+                    for word in self.crud_controls.update_list
                 ):
                     operations.append(operation)
 
-            if self.crud_controls_delete:
-                if self.crud_controls_delete_list is not None and any(
+            if self.crud_controls.delete:
+                if self.crud_controls.delete_list is not None and any(
                     word.lower() in func_name.lower()
-                    for word in self.crud_controls_delete_list
+                    for word in self.crud_controls.delete_list
                 ):
                     operations.append(operation)
 
@@ -157,7 +161,7 @@ class AnySdkWrapper(BaseModel):
     def run(self, mode: str, query: str) -> str:
         try:
             params = json.loads(query)
-            func = getattr(self.client, mode)
+            func = getattr(self.client["client"], mode)
             result = func(**params)
             return json.dumps(result)
         except AttributeError:
