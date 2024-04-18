@@ -117,12 +117,13 @@ class ChatModelIntegrationTests(ABC):
             assert isinstance(result.content, str)
             assert len(result.content) > 0
 
-    def test_tool_message(
+    def test_tool_message_histories(
         self,
         chat_model_class: Type[BaseChatModel],
         chat_model_params: dict,
         chat_model_has_tool_calling: bool,
     ) -> None:
+        """Test that message histories are compatible across providers."""
         if not chat_model_has_tool_calling:
             pytest.skip("Test requires tool calling.")
         model = chat_model_class(**chat_model_params)
@@ -130,24 +131,55 @@ class ChatModelIntegrationTests(ABC):
         function_name = "my_adder_tool"
         function_args = {"a": "1", "b": "2"}
 
-        messages = [
-            HumanMessage(content="What is 1 + 2"),
-            AIMessage(
-                content="",
-                tool_calls=[
-                    {
-                        "name": function_name,
-                        "args": function_args,
-                        "id": "abc123",
-                    },
-                ],
-            ),
-            ToolMessage(
-                name=function_name,
-                content=json.dumps({"result": 3}),
-                tool_call_id="abc123",
-            ),
-        ]
+        human_message = HumanMessage(content="What is 1 + 2")
+        tool_message = ToolMessage(
+            name=function_name,
+            content=json.dumps({"result": 3}),
+            tool_call_id="abc123",
+        )
 
+        # String content (e.g., OpenAI)
+        string_content_msg = AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": function_name,
+                    "args": function_args,
+                    "id": "abc123",
+                },
+            ],
+        )
+        messages = [
+            human_message,
+            string_content_msg,
+            tool_message,
+        ]
+        result = model_with_tools.invoke(messages)
+        assert isinstance(result, AIMessage)
+
+        # List content (e.g., Anthropic)
+        list_content_msg = AIMessage(
+            content=[
+                {"type": "text", "text": "some text"},
+                {
+                    "type": "tool_use",
+                    "id": "abc123",
+                    "name": function_name,
+                    "input": function_args,
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": function_name,
+                    "args": function_args,
+                    "id": "abc123",
+                },
+            ],
+        )
+        messages = [
+            human_message,
+            list_content_msg,
+            tool_message,
+        ]
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
