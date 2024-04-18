@@ -320,6 +320,10 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.oracleadb_loader import (
         OracleAutonomousDatabaseLoader,  # noqa: F401
     )
+    from langchain_community.document_loaders.oracleai import (
+        OracleDocLoader,  # noqa: F401
+        OracleTextSplitter,  # noqa: F401
+    )
     from langchain_community.document_loaders.org_mode import (
         UnstructuredOrgModeLoader,  # noqa: F401
     )
@@ -605,6 +609,8 @@ __all__ = [
     "OnlinePDFLoader",
     "OpenCityDataLoader",
     "OracleAutonomousDatabaseLoader",
+    "OracleDocLoader",
+    "OracleTextSplitter",
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
@@ -790,6 +796,8 @@ _module_lookup = {
     "OnlinePDFLoader": "langchain_community.document_loaders.pdf",
     "OpenCityDataLoader": "langchain_community.document_loaders.open_city_data",
     "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
+    "OracleDocLoader": "langchain_community.document_loaders.oracleai",
+    "OracleTextSplitter": "langchain_community.document_loaders.oracleai",
     "OutlookMessageLoader": "langchain_community.document_loaders.email",
     "PDFMinerLoader": "langchain_community.document_loaders.pdf",
     "PDFMinerPDFasHTMLLoader": "langchain_community.document_loaders.pdf",
