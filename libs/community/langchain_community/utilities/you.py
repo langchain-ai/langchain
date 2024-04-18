@@ -2,7 +2,6 @@
 
 In order to set this up, follow instructions at:
 """
-import json
 from typing import Any, Dict, List, Literal, Optional
 
 import aiohttp
@@ -30,7 +29,7 @@ class YouHit(YouHitMetadata):
 
 
 class YouAPIOutput(BaseModel):
-    """The output from you.com api"""
+    """Output from you.com API."""
 
     hits: List[YouHit] = Field(
         description="A list of dictionaries containing the results"
@@ -38,7 +37,7 @@ class YouAPIOutput(BaseModel):
 
 
 class YouDocument(BaseModel):
-    """The output of parsing one snippet"""
+    """Output of parsing one snippet."""
 
     page_content: str = Field(description="One snippet of text")
     metadata: YouHitMetadata
@@ -113,16 +112,16 @@ class YouSearchAPIWrapper(BaseModel):
 
         docs = []
         for hit in raw_search_results["hits"]:
-            n_snippets_per_hit = self.n_snippets_per_hit or len(hit["snippets"])
-            for snippet in hit["snippets"][:n_snippets_per_hit]:
+            n_snippets_per_hit = self.n_snippets_per_hit or len(hit.get("snippets"))
+            for snippet in hit.get("snippets")[:n_snippets_per_hit]:
                 docs.append(
                     Document(
                         page_content=snippet,
                         metadata={
-                            "url": hit["url"],
-                            "thumbnail_url": hit["thumbnail_url"],
-                            "title": hit["title"],
-                            "description": hit["description"],
+                            "url": hit.get("url"),
+                            "thumbnail_url": hit.get("thumbnail_url"),
+                            "title": hit.get("title"),
+                            "description": hit.get("description"),
                         },
                     )
                 )
@@ -188,43 +187,47 @@ class YouSearchAPIWrapper(BaseModel):
     async def raw_results_async(
         self,
         query: str,
-        num_web_results: Optional[int] = 5,
-        safesearch: Optional[str] = "moderate",
-        country: Optional[str] = "US",
+        **kwargs: Any,
     ) -> Dict:
         """Get results from the you.com Search API asynchronously."""
 
-        # Function to perform the API call
-        async def fetch() -> str:
-            params = {
-                "query": query,
-                "num_web_results": num_web_results,
-                "safesearch": safesearch,
-                "country": country,
-            }
-            async with aiohttp.ClientSession() as session:
-                async with session.post(f"{YOU_API_URL}/search", json=params) as res:
-                    if res.status == 200:
-                        data = await res.text()
-                        return data
-                    else:
-                        raise Exception(f"Error {res.status}: {res.reason}")
+        headers = {"X-API-Key": self.ydc_api_key or ""}
+        params = {
+            "query": query,
+            "num_web_results": self.num_web_results,
+            "safesearch": self.safesearch,
+            "country": self.country,
+            **kwargs,
+        }
+        params = {k: v for k, v in params.items() if v is not None}
+        # news endpoint expects `q` instead of `query`
+        if self.endpoint_type == "news":
+            params["q"] = params["query"]
+            del params["query"]
 
-        results_json_str = await fetch()
-        return json.loads(results_json_str)
+        # @todo deprecate `snippet`, not part of API
+        if self.endpoint_type == "snippet":
+            self.endpoint_type = "search"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url=f"{YOU_API_URL}/{self.endpoint_type}",
+                params=params,
+                headers=headers,
+            ) as res:
+                if res.status == 200:
+                    results = await res.json()
+                    return results
+                else:
+                    raise Exception(f"Error {res.status}: {res.reason}")
 
     async def results_async(
         self,
         query: str,
-        num_web_results: Optional[int] = 5,
-        safesearch: Optional[str] = "moderate",
-        country: Optional[str] = "US",
+        **kwargs: Any,
     ) -> List[Document]:
-        results_json = await self.raw_results_async(
-            query=query,
-            num_web_results=num_web_results,
-            safesearch=safesearch,
-            country=country,
+        raw_search_results_async = await self.raw_results_async(
+            query,
+            **{key: value for key, value in kwargs.items() if value is not None},
         )
-
-        return self._parse_results(results_json["results"])
+        return self._parse_results(raw_search_results_async)

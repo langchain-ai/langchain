@@ -3,14 +3,14 @@ from typing import List, Optional
 
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers import SelfQueryRetriever
-from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.llms import BaseLLM
-from langchain_community.llms.openai import OpenAI
 from langchain_community.vectorstores.qdrant import Qdrant
-from langchain_core.documents import Document, StrOutputParser
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai import OpenAI, OpenAIEmbeddings
 from qdrant_client import QdrantClient
 
 from self_query_qdrant import defaults, helper, prompts
@@ -84,7 +84,11 @@ def initialize(
 
     # Set up a vector store to store your vectors and metadata
     Qdrant.from_documents(
-        documents, embedding=embeddings, collection_name=collection_name
+        documents,
+        embedding=embeddings,
+        collection_name=collection_name,
+        url=os.environ.get("QDRANT_URL", "http://localhost:6333"),
+        api_key=os.environ.get("QDRANT_API_KEY"),
     )
 
 

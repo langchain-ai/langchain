@@ -665,3 +665,9 @@ class RivaTTS(
 
         await producer
         await consumer
+
+
+# Backwards compatibility:
+NVIDIARivaASR = RivaASR
+NVIDIARivaTTS = RivaTTS
+NVIDIARivaStream = AudioStream

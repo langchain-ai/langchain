@@ -18,7 +18,7 @@ def test_ensemble_retriever_get_relevant_docs() -> None:
     dummy_retriever = BM25Retriever.from_texts(doc_list)
     dummy_retriever.k = 1
 
-    ensemble_retriever = EnsembleRetriever(
+    ensemble_retriever = EnsembleRetriever(  # type: ignore[call-arg]
         retrievers=[dummy_retriever, dummy_retriever]
     )
     docs = ensemble_retriever.get_relevant_documents("I like apples")

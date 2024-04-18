@@ -86,6 +86,17 @@ _FUNCTIONS: Any = [
 ]
 
 
+def test_initialization() -> None:
+    """Test chat model initialization."""
+
+    for model in [
+        QianfanChatEndpoint(model="BLOOMZ-7B", timeout=40),
+        QianfanChatEndpoint(model="BLOOMZ-7B", request_timeout=40),
+    ]:
+        assert model.model == "BLOOMZ-7B"
+        assert model.request_timeout == 40
+
+
 def test_default_call() -> None:
     """Test default model(`ERNIE-Bot`) call."""
     chat = QianfanChatEndpoint()

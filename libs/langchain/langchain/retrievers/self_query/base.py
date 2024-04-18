@@ -1,4 +1,5 @@
 """Retriever that generates and executes structured queries over its own data source."""
+
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
@@ -7,7 +8,7 @@ from langchain_community.vectorstores import (
     Chroma,
     DashVector,
     DeepLake,
-    ElasticsearchStore,
+    Dingo,
     Milvus,
     MongoDBAtlasVectorSearch,
     MyScale,
@@ -17,9 +18,17 @@ from langchain_community.vectorstores import (
     Qdrant,
     Redis,
     SupabaseVectorStore,
+    TencentVectorDB,
     TimescaleVector,
     Vectara,
     Weaviate,
+)
+from langchain_community.vectorstores import (
+    ElasticsearchStore as ElasticsearchStoreCommunity,
+)
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
@@ -28,10 +37,6 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_core.vectorstores import VectorStore
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -39,6 +44,7 @@ from langchain.retrievers.self_query.astradb import AstraDBTranslator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.dashvector import DashvectorTranslator
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
+from langchain.retrievers.self_query.dingo import DingoDBTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
 from langchain.retrievers.self_query.milvus import MilvusTranslator
 from langchain.retrievers.self_query.mongodb_atlas import MongoDBAtlasTranslator
@@ -49,6 +55,7 @@ from langchain.retrievers.self_query.pinecone import PineconeTranslator
 from langchain.retrievers.self_query.qdrant import QdrantTranslator
 from langchain.retrievers.self_query.redis import RedisTranslator
 from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
+from langchain.retrievers.self_query.tencentvectordb import TencentVectorDBTranslator
 from langchain.retrievers.self_query.timescalevector import TimescaleVectorTranslator
 from langchain.retrievers.self_query.vectara import VectaraTranslator
 from langchain.retrievers.self_query.weaviate import WeaviateTranslator
@@ -65,12 +72,13 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Pinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
+        Dingo: DingoDBTranslator,
         Weaviate: WeaviateTranslator,
         Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
-        ElasticsearchStore: ElasticsearchTranslator,
+        ElasticsearchStoreCommunity: ElasticsearchTranslator,
         Milvus: MilvusTranslator,
         SupabaseVectorStore: SupabaseVectorTranslator,
         TimescaleVector: TimescaleVectorTranslator,
@@ -84,6 +92,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
     elif isinstance(vectorstore, Redis):
         return RedisTranslator.from_vectorstore(vectorstore)
+    elif isinstance(vectorstore, TencentVectorDB):
+        fields = [
+            field.name for field in (vectorstore.meta_fields or []) if field.index
+        ]
+        return TencentVectorDBTranslator(fields)
     elif vectorstore.__class__ in BUILTIN_TRANSLATORS:
         return BUILTIN_TRANSLATORS[vectorstore.__class__]()
     else:
@@ -92,6 +105,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
             if isinstance(vectorstore, AstraDBVectorStore):
                 return AstraDBTranslator()
+        except ImportError:
+            pass
+
+        try:
+            from langchain_elasticsearch.vectorstores import ElasticsearchStore
+
+            if isinstance(vectorstore, ElasticsearchStore):
+                return ElasticsearchTranslator()
         except ImportError:
             pass
 
@@ -248,7 +269,7 @@ class SelfQueryRetriever(BaseRetriever):
         query_constructor = query_constructor.with_config(
             run_name=QUERY_CONSTRUCTOR_RUN_NAME
         )
-        return cls(
+        return cls(  # type: ignore[call-arg]
             query_constructor=query_constructor,
             vectorstore=vectorstore,
             use_original_query=use_original_query,

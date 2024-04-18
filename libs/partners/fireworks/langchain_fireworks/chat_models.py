@@ -56,6 +56,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -94,9 +96,23 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
-        if tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+        tool_calls = []
+        invalid_tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        dict(make_invalid_tool_call(raw_tool_call, str(e)))
+                    )
+        return AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+        )
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
@@ -174,13 +190,31 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
-    if _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = _dict["tool_calls"]
+    if raw_tool_calls := _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        try:
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc["index"],
+                }
+                for rtc in raw_tool_calls
+            ]
+        except KeyError:
+            pass
+    else:
+        tool_call_chunks = []
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
@@ -449,9 +483,7 @@ class ChatFireworks(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        async for chunk in await self.async_client.create(
-            messages=message_dicts, **params
-        ):
+        async for chunk in self.async_client.acreate(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
@@ -497,7 +529,7 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = await self.async_client.create(messages=message_dicts, **params)
+        response = await self.async_client.acreate(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     @property
@@ -581,7 +613,9 @@ class ChatFireworks(BaseChatModel):
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "any", "none"], bool]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -594,9 +628,10 @@ class ChatFireworks(BaseChatModel):
                 models, callables, and BaseTools will be automatically converted to
                 their schema dictionary representation.
             tool_choice: Which tool to require the model to call.
-                Must be the name of the single provided function or
+                Must be the name of the single provided function,
                 "auto" to automatically determine which function to call
-                (if any), or a dict of the form:
+                with the option to not call any function, "any" to enforce that some
+                function is called, or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
@@ -604,7 +639,9 @@ class ChatFireworks(BaseChatModel):
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
-            if isinstance(tool_choice, str) and (tool_choice not in ("auto", "none")):
+            if isinstance(tool_choice, str) and (
+                tool_choice not in ("auto", "any", "none")
+            ):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
             if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
                 raise ValueError(
@@ -625,7 +662,12 @@ class ChatFireworks(BaseChatModel):
                         "tool_choice can only be True when there is one tool. Received "
                         f"{len(tools)} tools."
                     )
-                tool_choice = formatted_tools[0]
+                tool_name = formatted_tools[0]["function"]["name"]
+                tool_choice = {
+                    "type": "function",
+                    "function": {"name": tool_name},
+                }
+
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 

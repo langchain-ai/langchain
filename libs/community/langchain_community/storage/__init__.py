@@ -14,22 +14,49 @@ The primary goal of these storages is to support caching.
 
 """  # noqa: E501
 
-from langchain_community.storage.astradb import (
-    AstraDBByteStore,
-    AstraDBStore,
-)
-from langchain_community.storage.mongodb import MongoDBStore
-from langchain_community.storage.redis import RedisStore
-from langchain_community.storage.upstash_redis import (
-    UpstashRedisByteStore,
-    UpstashRedisStore,
-)
+import importlib
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_community.storage.astradb import (
+        AstraDBByteStore,  # noqa: F401
+        AstraDBStore,  # noqa: F401
+    )
+    from langchain_community.storage.mongodb import (
+        MongoDBStore,  # noqa: F401
+    )
+    from langchain_community.storage.redis import (
+        RedisStore,  # noqa: F401
+    )
+    from langchain_community.storage.upstash_redis import (
+        UpstashRedisByteStore,  # noqa: F401
+        UpstashRedisStore,  # noqa: F401
+    )
 
 __all__ = [
-    "AstraDBStore",
     "AstraDBByteStore",
+    "AstraDBStore",
     "MongoDBStore",
     "RedisStore",
     "UpstashRedisByteStore",
     "UpstashRedisStore",
 ]
+
+_module_lookup = {
+    "AstraDBByteStore": "langchain_community.storage.astradb",
+    "AstraDBStore": "langchain_community.storage.astradb",
+    "MongoDBStore": "langchain_community.storage.mongodb",
+    "RedisStore": "langchain_community.storage.redis",
+    "UpstashRedisByteStore": "langchain_community.storage.upstash_redis",
+    "UpstashRedisStore": "langchain_community.storage.upstash_redis",
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _module_lookup:
+        module = importlib.import_module(_module_lookup[name])
+        return getattr(module, name)
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
+__all__ = list(_module_lookup.keys())
