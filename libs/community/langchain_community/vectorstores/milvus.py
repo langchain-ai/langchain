@@ -378,13 +378,23 @@ class Milvus(VectorStore):
 
         # Create the collection
         try:
-            self.col = Collection(
-                name=self.collection_name,
-                schema=schema,
-                consistency_level=self.consistency_level,
-                using=self.alias,
-                num_shards=self.num_shards,
-            )
+            if self.num_shards is not None:
+                # Issue with defaults:
+                # https://github.com/milvus-io/pymilvus/blob/59bf5e811ad56e20946559317fed855330758d9c/pymilvus/client/prepare.py#L82-L85
+                self.col = Collection(
+                    name=self.collection_name,
+                    schema=schema,
+                    consistency_level=self.consistency_level,
+                    using=self.alias,
+                    num_shards=self.num_shards,
+                )
+            else:
+                self.col = Collection(
+                    name=self.collection_name,
+                    schema=schema,
+                    consistency_level=self.consistency_level,
+                    using=self.alias,
+                )
             # Set the collection properties if they exist
             if self.collection_properties is not None:
                 self.col.set_properties(self.collection_properties)
