@@ -1,5 +1,5 @@
-import os
-from typing import Iterator, Sequence, Optional
+from typing import Iterator, Optional, Sequence
+
 from langchain_core.documents import Document
 from langchain_core.utils import get_from_env
 
