@@ -1,4 +1,4 @@
-from langchain_ai21.chat_builder.chat import (
+from langchain_ai21.chat.chat import (
     Chat,
     J2Chat,
     JambaChatCompletions,

@@ -14,7 +14,7 @@ from langchain_core.messages import (
     ChatMessage as LangChainChatMessage,
 )
 
-from langchain_ai21.chat_builder.chat import Chat
+from langchain_ai21.chat.chat import Chat
 
 _J2_MODEL_NAME = "j2-ultra"
 _JAMBA_MODEL_NAME = "jamba-instruct-preview"
