@@ -334,13 +334,13 @@ class YandexSTTParser(BaseBlobParser):
 class FasterWhisperParser(BaseBlobParser):
     """Transcribe and parse audio files with faster-whisper.
 
-    faster-whisper is a reimplementation of OpenAI's Whisper model using CTranslate2, 
-    which is up to 4 times faster than openai/whisper for the same accuracy while using 
-    less memory. The efficiency can be further improved with 8-bit quantization on both 
+    faster-whisper is a reimplementation of OpenAI's Whisper model using CTranslate2,
+    which is up to 4 times faster than openai/whisper for the same accuracy while using
+    less memory. The efficiency can be further improved with 8-bit quantization on both
     CPU and GPU.
 
-    It can automatically detect the following 14 languages and transcribe the text 
-    into their respective languages: en, zh, fr, de, ja, ko, ru, es, th, it, pt, vi, 
+    It can automatically detect the following 14 languages and transcribe the text
+    into their respective languages: en, zh, fr, de, ja, ko, ru, es, th, it, pt, vi,
     ar, tr.
 
     The gitbub repository for faster-whisper is :
@@ -350,9 +350,9 @@ class FasterWhisperParser(BaseBlobParser):
         .. code-block:: python
 
             from langchain.document_loaders.generic import GenericLoader
-            from langchain_community.document_loaders.parsers.audio 
+            from langchain_community.document_loaders.parsers.audio
                 import FasterWhisperParser
-            from langchain.document_loaders.blob_loaders.youtube_audio 
+            from langchain.document_loaders.blob_loaders.youtube_audio
                 import YoutubeAudioLoader
 
 
@@ -376,7 +376,7 @@ class FasterWhisperParser(BaseBlobParser):
 
         Args:
             device: It can be "cuda" or "cpu" based on the available device.
-            model_size: There are four model sizes to choose from: "base", "small", 
+            model_size: There are four model sizes to choose from: "base", "small",
                         "medium", and "large-v3", based on the available GPU memory.
         """
         try:
@@ -410,7 +410,7 @@ class FasterWhisperParser(BaseBlobParser):
         if model_size is not None:
             if model_size in ["base", "small", "medium", "large-v3"]:
                 self.model_size = model_size
-        
+
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
 
@@ -445,9 +445,7 @@ class FasterWhisperParser(BaseBlobParser):
 
         # Transcribe
         model = WhisperModel(
-            self.model_size, 
-            device=self.device, 
-            compute_type="float16"
+            self.model_size, device=self.device, compute_type="float16"
         )
 
         segments, info = model.transcribe(file_obj, beam_size=5)
@@ -461,5 +459,5 @@ class FasterWhisperParser(BaseBlobParser):
                     "language": info.language,
                     "probability": "%d%%" % round(info.language_probability * 100),
                     **blob.metadata,
-                    },
+                },
             )
