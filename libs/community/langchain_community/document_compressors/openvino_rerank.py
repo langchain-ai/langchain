@@ -9,6 +9,8 @@ from langchain_core.pydantic_v1 import Field
 
 
 class RerankRequest:
+    """Request for reranking."""
+
     def __init__(self, query: Any = None, passages: Any = None):
         self.query = query
         self.passages = passages if passages is not None else []
