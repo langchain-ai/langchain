@@ -9,21 +9,17 @@ def test_lancedb_with_connection() -> None:
     import lancedb
 
     embeddings = FakeEmbeddings()
-    db = lancedb.connect("/tmp/lancedb")
+    db = lancedb.connect("/tmp/lancedb_connection")
     texts = ["text 1", "text 2", "item 3"]
-    vectors = embeddings.embed_documents(texts)
-    table = db.create_table(
-        "my_table",
-        data=[
-            {"vector": vectors[idx], "id": text, "text": text}
-            for idx, text in enumerate(texts)
-        ],
-        mode="overwrite",
-    )
-    store = LanceDB(table, embeddings)
+    store = LanceDB(connection=db, embedding=embeddings)
+    store.add_texts(texts)
+
     result = store.similarity_search("text 1")
     result_texts = [doc.page_content for doc in result]
     assert "text 1" in result_texts
+
+    store.delete(filter="text = 'text 1'")
+    assert store.get_table().count_rows() == 2
 
 
 @pytest.mark.requires("lancedb")
