@@ -3,9 +3,12 @@
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
+from langchain.retrievers.self_query.databricks_vector_search import \
+    DatabricksVectorSearchTranslator
 from langchain_community.vectorstores import (
     AstraDB,
     Chroma,
+    DatabricksVectorSearch,
     DashVector,
     DeepLake,
     Dingo,
@@ -85,7 +88,8 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         OpenSearchVectorSearch: OpenSearchTranslator,
         MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
-
+    if isinstance(vectorstore, DatabricksVectorSearch):
+        return DatabricksVectorSearchTranslator()
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):
