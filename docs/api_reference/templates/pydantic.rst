@@ -11,7 +11,7 @@
     :field-signature-prefix: param
     :members:
     :undoc-members:
-    :inherited-members:
+    :inherited-members: False
     :member-order: groupwise
     :show-inheritance: True
     :special-members: __call__
