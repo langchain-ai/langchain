@@ -102,15 +102,15 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         if not values.get("doc_model_uri"):
             if values["folder_id"] == "":
                 raise ValueError("'doc_model_uri' or 'folder_id' must be provided.")
-            values["doc_model_uri"] = (
-                f"emb://{values['folder_id']}/{values['doc_model_name']}/{values['model_version']}"  # noqa: E501
-            )
+            values[
+                "doc_model_uri"
+            ] = f"emb://{values['folder_id']}/{values['doc_model_name']}/{values['model_version']}"  # noqa: E501
         if not values.get("model_uri"):
             if values["folder_id"] == "":
                 raise ValueError("'model_uri' or 'folder_id' must be provided.")
-            values["model_uri"] = (
-                f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"  # noqa: E501
-            )
+            values[
+                "model_uri"
+            ] = f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"  # noqa: E501
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
