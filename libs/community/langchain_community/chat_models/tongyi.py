@@ -91,7 +91,12 @@ def convert_dict_to_message(
         else:
             additional_kwargs = {}
         return (
-            AIMessageChunk(content=content)
+            AIMessageChunk(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                tool_calls=tool_calls,
+                invalid_tool_calls=invalid_tool_calls,
+            )
             if is_chunk
             else AIMessage(
                 content=content,
