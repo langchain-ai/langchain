@@ -5,6 +5,7 @@ to a simple key-value interface.
 
 The primary goal of these storages is to support implementation of caching.
 """
+
 import warnings
 from typing import Any
 

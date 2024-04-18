@@ -1,4 +1,5 @@
 """Integration test for compression pipelines."""
+
 from langchain_community.document_transformers import EmbeddingsRedundantFilter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_core.documents import Document

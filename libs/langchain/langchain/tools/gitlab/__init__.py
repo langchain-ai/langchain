@@ -1,1 +1,1 @@
-""" GitLab Tool """
+"""GitLab Tool"""

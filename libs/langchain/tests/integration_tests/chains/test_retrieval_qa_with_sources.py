@@ -1,4 +1,5 @@
 """Test RetrievalQA functionality."""
+
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.llms import OpenAI

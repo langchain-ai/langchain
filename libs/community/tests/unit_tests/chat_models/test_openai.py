@@ -1,4 +1,5 @@
 """Test OpenAI Chat API wrapper."""
+
 import json
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -96,8 +97,8 @@ def test_openai_predict(mock_completion: dict) -> None:
         "client",
         mock_client,
     ):
-        res = llm.predict("bar")
-        assert res == "Bar Baz"
+        res = llm.invoke("bar")
+        assert res.content == "Bar Baz"
     assert completed
 
 

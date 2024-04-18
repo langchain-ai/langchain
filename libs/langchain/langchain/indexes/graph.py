@@ -1,4 +1,5 @@
 """Graph Index Creator."""
+
 from typing import Optional, Type
 
 from langchain_community.graphs.networkx_graph import NetworkxEntityGraph, parse_triples

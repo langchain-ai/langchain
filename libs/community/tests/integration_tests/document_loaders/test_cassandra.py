@@ -1,6 +1,7 @@
 """
 Test of Cassandra document loader class `CassandraLoader`
 """
+
 import os
 from typing import Any, Iterator
 

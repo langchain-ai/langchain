@@ -1,4 +1,5 @@
 """Base class for all loaders that uses O365 Package"""
+
 from __future__ import annotations
 
 import logging

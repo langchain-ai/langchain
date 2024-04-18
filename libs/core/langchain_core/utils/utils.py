@@ -1,4 +1,5 @@
 """Generic utility functions."""
+
 import contextlib
 import datetime
 import functools

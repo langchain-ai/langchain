@@ -6,6 +6,7 @@ embeddings for the same text.
 
 The text is hashed and the hash is used as the key in the cache.
 """
+
 from __future__ import annotations
 
 import hashlib

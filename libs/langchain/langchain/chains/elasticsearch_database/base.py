@@ -1,4 +1,5 @@
 """Chain for interacting with Elasticsearch Database."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional

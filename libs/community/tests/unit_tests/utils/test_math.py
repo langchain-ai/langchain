@@ -1,4 +1,5 @@
 """Test math utility functions."""
+
 from typing import List
 
 import numpy as np

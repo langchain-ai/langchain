@@ -2,7 +2,7 @@
 [tool.poetry]
 name = "gigachain-pinecone"
 version = "0.1.0"
-description = "An integration package connecting Pinecone and GigaChain"
+description = "An integration package connecting Pinecone and LangChain"
 authors = []
 readme = "README.md"
 repository = "https://github.com/gigachain-ai/gigachain"

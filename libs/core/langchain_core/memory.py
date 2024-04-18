@@ -7,6 +7,7 @@
     BaseMemory --> <name>Memory --> <name>Memory  # Examples: BaseChatMemory -> MotorheadMemory
 
 """  # noqa: E501
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

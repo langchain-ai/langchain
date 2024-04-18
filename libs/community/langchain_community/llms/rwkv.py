@@ -3,6 +3,7 @@
 Based on https://github.com/saharNooby/rwkv.cpp/blob/master/rwkv/chat_with_bot.py
          https://github.com/BlinkDL/ChatRWKV/blob/main/v2/chat.py
 """
+
 from typing import Any, Dict, List, Mapping, Optional, Set
 
 from langchain_core.callbacks import CallbackManagerForLLMRun

@@ -10,10 +10,282 @@ from different APIs and services.
     Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
 """
 
-
 import importlib
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_community.embeddings.aleph_alpha import (
+        AlephAlphaAsymmetricSemanticEmbedding,  # noqa: F401
+        AlephAlphaSymmetricSemanticEmbedding,  # noqa: F401
+    )
+    from langchain_community.embeddings.anyscale import (
+        AnyscaleEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.awa import (
+        AwaEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.azure_openai import (
+        AzureOpenAIEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.baichuan import (
+        BaichuanTextEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.baidu_qianfan_endpoint import (
+        QianfanEmbeddingsEndpoint,  # noqa: F401
+    )
+    from langchain_community.embeddings.bedrock import (
+        BedrockEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.bookend import (
+        BookendEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.clarifai import (
+        ClarifaiEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.cohere import (
+        CohereEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.dashscope import (
+        DashScopeEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.databricks import (
+        DatabricksEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.deepinfra import (
+        DeepInfraEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.edenai import (
+        EdenAiEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.elasticsearch import (
+        ElasticsearchEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.embaas import (
+        EmbaasEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.ernie import (
+        ErnieEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.fake import (
+        DeterministicFakeEmbedding,  # noqa: F401
+        FakeEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.fastembed import (
+        FastEmbedEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.gigachat import (
+        GigaChatEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.google_palm import (
+        GooglePalmEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.gpt4all import (
+        GPT4AllEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.gradient_ai import (
+        GradientEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.huggingface import (
+        HuggingFaceBgeEmbeddings,  # noqa: F401
+        HuggingFaceEmbeddings,  # noqa: F401
+        HuggingFaceInferenceAPIEmbeddings,  # noqa: F401
+        HuggingFaceInstructEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.huggingface_hub import (
+        HuggingFaceHubEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.infinity import (
+        InfinityEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.infinity_local import (
+        InfinityEmbeddingsLocal,  # noqa: F401
+    )
+    from langchain_community.embeddings.itrex import (
+        QuantizedBgeEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.javelin_ai_gateway import (
+        JavelinAIGatewayEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.jina import (
+        JinaEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.johnsnowlabs import (
+        JohnSnowLabsEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.laser import (
+        LaserEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.llamacpp import (
+        LlamaCppEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.llamafile import (
+        LlamafileEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.llm_rails import (
+        LLMRailsEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.localai import (
+        LocalAIEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.minimax import (
+        MiniMaxEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.mlflow import (
+        MlflowCohereEmbeddings,  # noqa: F401
+        MlflowEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.mlflow_gateway import (
+        MlflowAIGatewayEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.modelscope_hub import (
+        ModelScopeEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.mosaicml import (
+        MosaicMLInstructorEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.nemo import (
+        NeMoEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.nlpcloud import (
+        NLPCloudEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.oci_generative_ai import (
+        OCIGenAIEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.octoai_embeddings import (
+        OctoAIEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.ollama import (
+        OllamaEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.openai import (
+        OpenAIEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.openvino import (
+        OpenVINOBgeEmbeddings,  # noqa: F401
+        OpenVINOEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.optimum_intel import (
+        QuantizedBiEncoderEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.premai import (
+        PremAIEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.sagemaker_endpoint import (
+        SagemakerEndpointEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.self_hosted import (
+        SelfHostedEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.self_hosted_hugging_face import (
+        SelfHostedHuggingFaceEmbeddings,  # noqa: F401
+        SelfHostedHuggingFaceInstructEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.sentence_transformer import (
+        SentenceTransformerEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.solar import (
+        SolarEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.spacy_embeddings import (
+        SpacyEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.sparkllm import (
+        SparkLLMTextEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.tensorflow_hub import (
+        TensorflowHubEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.vertexai import (
+        VertexAIEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.volcengine import (
+        VolcanoEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.voyageai import (
+        VoyageEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.xinference import (
+        XinferenceEmbeddings,  # noqa: F401
+    )
+    from langchain_community.embeddings.yandex import (
+        YandexGPTEmbeddings,  # noqa: F401
+    )
+
+__all__ = [
+    "AlephAlphaAsymmetricSemanticEmbedding",
+    "AlephAlphaSymmetricSemanticEmbedding",
+    "AnyscaleEmbeddings",
+    "AwaEmbeddings",
+    "AzureOpenAIEmbeddings",
+    "BaichuanTextEmbeddings",
+    "BedrockEmbeddings",
+    "BookendEmbeddings",
+    "ClarifaiEmbeddings",
+    "CohereEmbeddings",
+    "DashScopeEmbeddings",
+    "DatabricksEmbeddings",
+    "DeepInfraEmbeddings",
+    "DeterministicFakeEmbedding",
+    "EdenAiEmbeddings",
+    "ElasticsearchEmbeddings",
+    "EmbaasEmbeddings",
+    "ErnieEmbeddings",
+    "FakeEmbeddings",
+    "FastEmbedEmbeddings",
+    "GPT4AllEmbeddings",
+    "GigaChatEmbeddings",
+    "GooglePalmEmbeddings",
+    "GradientEmbeddings",
+    "HuggingFaceBgeEmbeddings",
+    "HuggingFaceEmbeddings",
+    "HuggingFaceHubEmbeddings",
+    "HuggingFaceInferenceAPIEmbeddings",
+    "HuggingFaceInstructEmbeddings",
+    "InfinityEmbeddings",
+    "InfinityEmbeddingsLocal",
+    "JavelinAIGatewayEmbeddings",
+    "JinaEmbeddings",
+    "JohnSnowLabsEmbeddings",
+    "LLMRailsEmbeddings",
+    "LaserEmbeddings",
+    "LlamaCppEmbeddings",
+    "LlamafileEmbeddings",
+    "LocalAIEmbeddings",
+    "MiniMaxEmbeddings",
+    "MlflowAIGatewayEmbeddings",
+    "MlflowCohereEmbeddings",
+    "MlflowEmbeddings",
+    "ModelScopeEmbeddings",
+    "MosaicMLInstructorEmbeddings",
+    "NLPCloudEmbeddings",
+    "NeMoEmbeddings",
+    "OCIGenAIEmbeddings",
+    "OctoAIEmbeddings",
+    "OllamaEmbeddings",
+    "OpenAIEmbeddings",
+    "OpenVINOBgeEmbeddings",
+    "OpenVINOEmbeddings",
+    "PremAIEmbeddings",
+    "QianfanEmbeddingsEndpoint",
+    "QuantizedBgeEmbeddings",
+    "QuantizedBiEncoderEmbeddings",
+    "SagemakerEndpointEmbeddings",
+    "SelfHostedEmbeddings",
+    "SelfHostedHuggingFaceEmbeddings",
+    "SelfHostedHuggingFaceInstructEmbeddings",
+    "SentenceTransformerEmbeddings",
+    "SolarEmbeddings",
+    "SpacyEmbeddings",
+    "SparkLLMTextEmbeddings",
+    "TensorflowHubEmbeddings",
+    "VertexAIEmbeddings",
+    "VolcanoEmbeddings",
+    "VoyageEmbeddings",
+    "XinferenceEmbeddings",
+    "YandexGPTEmbeddings",
+]
 
 _module_lookup = {
     "AlephAlphaAsymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501

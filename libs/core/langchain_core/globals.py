@@ -1,5 +1,6 @@
 # flake8: noqa
 """Global values and configuration that apply to all of LangChain."""
+
 import warnings
 from typing import TYPE_CHECKING, Optional
 

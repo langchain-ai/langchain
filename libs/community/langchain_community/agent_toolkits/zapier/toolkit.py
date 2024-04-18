@@ -1,4 +1,5 @@
 """[DEPRECATED] Zapier Toolkit."""
+
 from typing import List
 
 from langchain_core._api import warn_deprecated

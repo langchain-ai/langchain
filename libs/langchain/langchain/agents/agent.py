@@ -1,4 +1,5 @@
 """Chain that takes in an input and produces an action and action input."""
+
 from __future__ import annotations
 
 import asyncio

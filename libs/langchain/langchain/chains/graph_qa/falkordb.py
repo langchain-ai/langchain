@@ -1,4 +1,5 @@
 """Question answering over a graph."""
+
 from __future__ import annotations
 
 import re

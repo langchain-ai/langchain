@@ -199,8 +199,14 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             messages=[_convert_message_to_dict(m) for m in messages],
         )
 
-        payload.functions = kwargs.get("functions", None)
+        payload.functions = kwargs.get("functions", [])
         payload.function_call = kwargs.get("function_call", None)
+
+        for tool in kwargs.get("tools", []):
+            if tool.get("type", None) == "function" and isinstance(
+                payload.functions, List
+            ):
+                payload.functions.append(tool["function"])
 
         if self.profanity_check is not None:
             payload.profanity_check = self.profanity_check
@@ -494,7 +500,9 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "any", "none"], bool]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.

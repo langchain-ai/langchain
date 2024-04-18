@@ -7,6 +7,7 @@ To use this tool, you must first set as environment variables:
     GITLAB_REPOSITORY -> format: {owner}/{repo}
 
 """
+
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun

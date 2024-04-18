@@ -1,4 +1,5 @@
 """Base interface that all chains should implement."""
+
 import inspect
 import json
 import logging

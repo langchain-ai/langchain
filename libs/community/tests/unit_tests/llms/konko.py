@@ -3,6 +3,7 @@
 In order to run this test, you need to have an Konko api key.
 You'll then need to set KONKO_API_KEY environment variable to your api key.
 """
+
 import pytest as pytest
 
 from langchain_community.llms import Konko

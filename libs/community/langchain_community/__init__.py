@@ -1,4 +1,5 @@
 """Main entrypoint into package."""
+
 from importlib import metadata
 
 # Check that we have gigachain_core package instead of langchain_core
