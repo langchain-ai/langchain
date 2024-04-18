@@ -3752,7 +3752,13 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             objects = []
 
-        return [obj for obj in objects if isinstance(obj, Runnable)]
+        deps: List[Runnable] = []
+        for obj in objects:
+            if isinstance(obj, Runnable):
+                deps.append(obj)
+            elif isinstance(getattr(obj, "__self__", None), Runnable):
+                deps.append(obj.__self__)
+        return deps
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -4891,6 +4897,45 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             kwargs=self.kwargs,
             config=self.config,
         )
+
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self.bound, name)
+
+        if callable(attr) and (
+            config_param := inspect.signature(attr).parameters.get("config")
+        ):
+            if config_param.kind == inspect.Parameter.KEYWORD_ONLY:
+
+                @wraps(attr)
+                def wrapper(*args: Any, **kwargs: Any) -> Any:
+                    return attr(
+                        *args,
+                        config=merge_configs(self.config, kwargs.pop("config", None)),
+                        **kwargs,
+                    )
+
+                return wrapper
+            elif config_param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                idx = list(inspect.signature(attr).parameters).index("config")
+
+                @wraps(attr)
+                def wrapper(*args: Any, **kwargs: Any) -> Any:
+                    if len(args) >= idx + 1:
+                        argsl = list(args)
+                        argsl[idx] = merge_configs(self.config, argsl[idx])
+                        return attr(*argsl, **kwargs)
+                    else:
+                        return attr(
+                            *args,
+                            config=merge_configs(
+                                self.config, kwargs.pop("config", None)
+                            ),
+                            **kwargs,
+                        )
+
+                return wrapper
+
+        return attr
 
 
 RunnableLike = Union[
