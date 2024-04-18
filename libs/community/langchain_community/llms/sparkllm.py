@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class SparkLLM(LLM):
-    """Wrapper around iFlyTek's Spark large language model.
+    """iFlyTek Spark large language model.
 
     To use, you should pass `app_id`, `api_key`, `api_secret`
     as a named parameter to the constructor OR set environment
