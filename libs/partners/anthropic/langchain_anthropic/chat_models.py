@@ -98,7 +98,7 @@ def _aggregate_ai_message_chunks(
     messages: Sequence[BaseMessage],
 ) -> Sequence[BaseMessage]:
     """Aggregate AIMessageChunks with tool calls into a single chunk.
-    This is done for compatability with providers that support streaming
+    This is done for compatibility with providers that support streaming
     tool calls.
 
     Example:
