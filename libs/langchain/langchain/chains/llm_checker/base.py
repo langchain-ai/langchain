@@ -119,9 +119,9 @@ class LLMCheckerChain(Chain):
                         values.get("revised_answer_prompt", REVISED_ANSWER_PROMPT),
                     )
                 )
-                values["question_to_checked_assertions_chain"] = (
-                    question_to_checked_assertions_chain
-                )
+                values[
+                    "question_to_checked_assertions_chain"
+                ] = question_to_checked_assertions_chain
         return values
 
     @property
