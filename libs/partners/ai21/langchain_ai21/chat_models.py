@@ -65,9 +65,9 @@ class ChatAI21(BaseChatModel, AI21Base):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         values = super().validate_environment(values)
-        model: str = values.get("model")
+        model = values.get("model")
 
-        values["_chat"] = create_chat(model)
+        values["_chat"] = create_chat(model)  # type: ignore
 
         return values
 

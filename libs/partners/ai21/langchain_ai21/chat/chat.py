@@ -1,30 +1,30 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, List, Tuple, Union, cast
+from typing import Any, List, Optional, Tuple, Union, cast
 
 from ai21.models import ChatMessage as J2ChatMessage
 from ai21.models import RoleType
 from ai21.models.chat import ChatMessage
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-_ConvertMessagesReturnType = Union[List[ChatMessage], List[ChatMessage]]
+_ChatMessageTypes = Union[ChatMessage, J2ChatMessage]
+_ConvertMessagesReturnType = Union[List[_ChatMessageTypes]]
+_SYSTEM_ERR_MESSAGE = "System message must be at beginning of message list."
 
 
 class Chat(ABC):
     def convert_messages(
         self,
         messages: List[BaseMessage],
-    ) -> Tuple[str, _ConvertMessagesReturnType]:
-        system_message = None
-        converted_messages: _ConvertMessagesReturnType = []
+    ) -> Tuple[Optional[str], _ConvertMessagesReturnType]:
+        system_message: Optional[str] = None
+        converted_messages = []  # type: ignore
 
         for i, message in enumerate(messages):
             if message.type == "system":
                 if i != 0:
-                    raise ValueError(
-                        "System message must be at " "beginning of message list."
-                    )
+                    raise ValueError(_SYSTEM_ERR_MESSAGE)
                 else:
                     system_message = self._get_system_message_from_message(message)
             else:
@@ -36,7 +36,7 @@ class Chat(ABC):
     def _convert_message_to_ai21_message(
         self,
         message: BaseMessage,
-    ) -> ChatMessage:
+    ) -> _ChatMessageTypes:
         content = cast(str, message.content)
 
         role = None
@@ -59,7 +59,7 @@ class Chat(ABC):
         self,
         role: RoleType,
         content: str,
-    ) -> ChatMessage | J2ChatMessage:
+    ) -> _ChatMessageTypes:
         pass
 
     @abstractmethod
