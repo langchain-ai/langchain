@@ -94,12 +94,58 @@ def _format_image(image_url: str) -> Dict:
     }
 
 
+def _aggregate_ai_message_chunks(
+    messages: Sequence[BaseMessage],
+) -> Sequence[BaseMessage]:
+    """Aggregate AIMessageChunks with tool calls into a single chunk.
+    This is done for compatability with providers that support streaming
+    tool calls.
+
+    Example:
+        [
+            human_message,
+            ai_msg_chunk_1,
+            ai_msg_chunk_2,
+            human_message,
+            ai_msg_chunk_3,
+            ai_msg_chunk_4_with_tool_call,
+            ai_msg_chunk_5_with_tool_call,
+            tool_message,
+        ] --> [
+            human_message,
+            ai_message_chunk_1
+            ai_message_chunk_2,
+            human_message,
+            ai_message_chunk_3,
+            ai_msg_chunk_4_with_tool_call + ai_msg_chunk_5_with_tool_call,
+            tool_message,
+        ]
+    """
+    new_message_sequence: List[BaseMessage] = []
+    gathered: Optional[AIMessageChunk] = None
+    for message in messages:
+        if isinstance(message, AIMessageChunk) and message.tool_call_chunks:
+            if gathered is None:
+                gathered = message
+            else:
+                gathered = gathered + message  # type: ignore
+        else:
+            if gathered is not None:
+                new_message_sequence.append(gathered)
+                gathered = None
+            new_message_sequence.append(message)
+    if gathered is not None:
+        new_message_sequence.append(gathered)
+    return new_message_sequence
+
+
 def _merge_messages(
     messages: Sequence[BaseMessage],
 ) -> List[Union[SystemMessage, AIMessage, HumanMessage]]:
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
+    processed_messages = _aggregate_ai_message_chunks(messages)
     merged: list = []
-    for curr in messages:
+    for curr in processed_messages:
         curr = curr.copy(deep=True)
         if isinstance(curr, ToolMessage):
             if isinstance(curr.content, str):

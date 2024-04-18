@@ -5,13 +5,20 @@ from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
 from anthropic.types import ContentBlock, Message, Usage
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import (
+    _aggregate_ai_message_chunks,
     _format_messages,
     _merge_messages,
     convert_to_anthropic_tool,
@@ -419,3 +426,181 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
     )
     actual = _format_messages(messages)
     assert expected == actual
+
+
+def test__aggregate_ai_message_chunks() -> None:
+    messages = [
+        HumanMessage(content="What is 1 + 2? What is 4 - 3?"),
+        AIMessageChunk(content="Sure."),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": "my_adder_tool",
+                    "args": "",
+                    "id": "abc123",
+                    "index": 0,
+                },
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '{"a": "1", ',
+                    "id": None,
+                    "index": 0,
+                },
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '"b": "2"}',
+                    "id": None,
+                    "index": 0,
+                },
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": "my_subtractor_tool",
+                    "args": "",
+                    "id": "def456",
+                    "index": 1,
+                },
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '{"a": "4", ',
+                    "id": None,
+                    "index": 1,
+                },
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '"b": "3"}',
+                    "id": None,
+                    "index": 1,
+                },
+            ],
+        ),
+        ToolMessage(
+            name="my_adder_tool",
+            content='{"result": 3}',
+            tool_call_id="abc123",
+        ),
+        ToolMessage(
+            name="my_subtractor_tool",
+            content='{"result": 1}',
+            tool_call_id="def456",
+        ),
+        AIMessageChunk(content="Answers are 3 and 1."),
+        HumanMessage(content="What is 3 + 4?"),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": "my_adder_tool",
+                    "args": "",
+                    "id": "abc234",
+                    "index": 0,
+                },
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '{"a": "3", ',
+                    "id": None,
+                    "index": 0,
+                },
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": None,
+                    "args": '"b": "4"}',
+                    "id": None,
+                    "index": 0,
+                },
+            ],
+        ),
+        ToolMessage(
+            name="my_adder_tool",
+            content='{"result": 7}',
+            tool_call_id="abc234",
+        ),
+        AIMessageChunk(content="Answer is 7."),
+        HumanMessage(content="Nice job."),
+        AIMessageChunk(content="Thank "),
+        AIMessageChunk(content="you!"),
+    ]
+    expected = [
+        HumanMessage(content="What is 1 + 2? What is 4 - 3?"),
+        AIMessageChunk(content="Sure."),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": "my_adder_tool",
+                    "args": '{"a": "1", "b": "2"}',
+                    "id": "abc123",
+                    "index": 0,
+                },
+                {
+                    "name": "my_subtractor_tool",
+                    "args": '{"a": "4", "b": "3"}',
+                    "id": "def456",
+                    "index": 1,
+                },
+            ],
+        ),
+        ToolMessage(
+            name="my_adder_tool", content='{"result": 3}', tool_call_id="abc123"
+        ),
+        ToolMessage(
+            name="my_subtractor_tool",
+            content='{"result": 1}',
+            tool_call_id="def456",
+        ),
+        AIMessageChunk(content="Answers are 3 and 1."),
+        HumanMessage(content="What is 3 + 4?"),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "name": "my_adder_tool",
+                    "args": '{"a": "3", "b": "4"}',
+                    "id": "abc234",
+                    "index": 0,
+                },
+            ],
+        ),
+        ToolMessage(
+            name="my_adder_tool", content='{"result": 7}', tool_call_id="abc234"
+        ),
+        AIMessageChunk(content="Answer is 7."),
+        HumanMessage(content="Nice job."),
+        AIMessageChunk(content="Thank "),
+        AIMessageChunk(content="you!"),
+    ]
+    result = _aggregate_ai_message_chunks(messages)
+    assert result == expected
