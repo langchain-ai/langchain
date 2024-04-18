@@ -36,6 +36,7 @@ jobs:
       dirs-to-lint: ${{ steps.set-matrix.outputs.dirs-to-lint }}
       dirs-to-test: ${{ steps.set-matrix.outputs.dirs-to-test }}
       dirs-to-extended-test: ${{ steps.set-matrix.outputs.dirs-to-extended-test }}
+      docs-edited: ${{ steps.set-matrix.outputs.docs-edited }}
   lint:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
@@ -62,7 +63,7 @@ jobs:
 
   test_doc_imports:
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
+    if: ${{ needs.build.outputs.dirs-to-test != '[]' || needs.build.outputs.docs-edited }}
     uses: ./.github/workflows/_test_doc_imports.yml
     secrets: inherit
 
