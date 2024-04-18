@@ -43,8 +43,22 @@ python3 scripts/resolve_local_links.py versioned_docs/version-0.2.x/langserve.md
 wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O versioned_docs/version-0.2.x/langgraph.md
 python3 scripts/resolve_local_links.py versioned_docs/version-0.2.x/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
-# render
-quarto render docs/
-quarto render versioned_docs/version-0.2.x/
+# render in parallel
+quarto render docs/ &
+PID1=$!
+
+quarto render versioned_docs/version-0.2.x/ &
+PID2=$!
+
+wait $PID1
+STATUS1=$?
+
+wait $PID2
+STATUS2=$?
+
+if [ $STATUS1 -ne 0 -o $STATUS2 -ne 0 ]; then
+    echo "One or both commands failed"
+    exit 1
+fi
 
 python3 scripts/resolve_versioned_links_in_markdown.py versioned_docs/version-0.2.x/ /docs/0.2.x/
