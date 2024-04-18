@@ -402,7 +402,7 @@ class ChatZhipuAI(BaseChatModel):
         }
         import httpx
 
-        async with httpx.AsyncClient(headers=headers) as client:
+        async with httpx.AsyncClient(headers=headers, timeout=60) as client:
             response = await client.post(self.zhipuai_api_base, json=payload)
             response.raise_for_status()
         return self._create_chat_result(response.json())
@@ -428,7 +428,7 @@ class ChatZhipuAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         import httpx
 
-        async with httpx.AsyncClient(headers=headers) as client:
+        async with httpx.AsyncClient(headers=headers, timeout=60) as client:
             async with aconnect_sse(
                     client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
