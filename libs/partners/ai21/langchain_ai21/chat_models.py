@@ -105,10 +105,10 @@ class ChatAI21(BaseChatModel, AI21Base):
         return base_params
 
     def _build_params_for_request(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> Mapping[str, Any]:
         params = {}
         system, ai21_messages = self._chat.convert_messages(messages)
@@ -127,11 +127,11 @@ class ChatAI21(BaseChatModel, AI21Base):
         }
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         params = self._build_params_for_request(messages=messages, stop=stop, **kwargs)
         message = self._chat.call(self.client, **params)
@@ -139,11 +139,11 @@ class ChatAI21(BaseChatModel, AI21Base):
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     async def _agenerate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         return await asyncio.get_running_loop().run_in_executor(
             None, partial(self._generate, **kwargs), messages, stop, run_manager

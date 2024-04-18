@@ -13,8 +13,8 @@ _ChatMessageType = Union[ChatMessage, J2ChatMessage]
 
 class Chat(ABC):
     def convert_messages(
-            self,
-            messages: List[BaseMessage],
+        self,
+        messages: List[BaseMessage],
     ) -> Tuple[str, List[_ChatMessageType]]:
         system_message = None
         converted_messages: List[_ChatMessageType] = []
@@ -22,8 +22,9 @@ class Chat(ABC):
         for i, message in enumerate(messages):
             if message.type == "system":
                 if i != 0:
-                    raise ValueError("System message must be at "
-                                     "beginning of message list.")
+                    raise ValueError(
+                        "System message must be at " "beginning of message list."
+                    )
                 else:
                     system_message = self._get_system_message_from_message(message)
             else:
@@ -33,8 +34,8 @@ class Chat(ABC):
         return system_message, converted_messages
 
     def _convert_message_to_ai21_message(
-            self,
-            message: BaseMessage,
+        self,
+        message: BaseMessage,
     ) -> ChatMessage:
         content = cast(str, message.content)
 
@@ -55,9 +56,9 @@ class Chat(ABC):
 
     @abstractmethod
     def _chat_message(
-            self,
-            role: RoleType,
-            content: str,
+        self,
+        role: RoleType,
+        content: str,
     ) -> ChatMessage | J2ChatMessage:
         pass
 
@@ -75,11 +76,10 @@ class Chat(ABC):
 
 
 class J2Chat(Chat):
-
     def _chat_message(
-            self,
-            role: RoleType,
-            content: str,
+        self,
+        role: RoleType,
+        content: str,
     ) -> J2ChatMessage:
         return J2ChatMessage(role=role, text=content)
 
@@ -90,11 +90,10 @@ class J2Chat(Chat):
 
 
 class JambaChatCompletions(Chat):
-
     def _chat_message(
-            self,
-            role: RoleType,
-            content: str,
+        self,
+        role: RoleType,
+        content: str,
     ) -> ChatMessage:
         return ChatMessage(role=role, content=content)
 
