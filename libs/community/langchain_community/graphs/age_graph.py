@@ -43,6 +43,16 @@ class AGEGraph(GraphStore):
     label_regex = re.compile("[^0-9a-zA-Z]+")
 
     def __init__(self, graph_name: str, conf: Dict[str, Any], create: bool = True):
+        """
+        initialize connection and optionally create graph
+
+        Args:
+            graph_name (str): the name of the graph to connect to or create
+            conf (Dict[str, Any]): the pgsql connection config passed directly
+                to psycopg2.connect
+            create (bool): if True and graph doesn't exist, attempt to create it
+        """
+
         self.graph_name = graph_name
 
         # check that psycopg2 is installed
@@ -57,7 +67,7 @@ class AGEGraph(GraphStore):
         self.connection = psycopg2.connect(**conf)
 
         with self._get_cursor() as curs:
-            # check if graph of with name graph_name exists
+            # check if graph with name graph_name exists
             graph_id_query = (
                 """SELECT graphid FROM ag_catalog.ag_graph WHERE name = '{}'""".format(
                     graph_name
