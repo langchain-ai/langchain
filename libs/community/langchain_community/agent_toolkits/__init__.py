@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from langchain_community.agent_toolkits.azure_cognitive_services import (
         AzureCognitiveServicesToolkit,  # noqa: F401
     )
-    from langchain_community.agent_toolkits.cassandra_database import (
+    from langchain_community.agent_toolkits.cassandra_database.toolkit import (
         CassandraDatabaseToolkit,  # noqa: F401
     )
     from langchain_community.agent_toolkits.cogniswitch.toolkit import (
