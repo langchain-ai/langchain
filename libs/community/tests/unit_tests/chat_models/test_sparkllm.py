@@ -66,7 +66,7 @@ def test__convert_dict_to_message_function_call() -> None:
 
 def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
-    result = convert_dict_to_message(message)
+    result = convert_message_to_dict(message)
     expected_output = {"role": "user", "content": "foo"}
     assert result == expected_output
 
