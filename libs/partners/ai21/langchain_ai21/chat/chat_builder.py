@@ -45,13 +45,13 @@ class ChatBuilder(ABC):
                 f"Only support {HumanMessage.__name__} and {AIMessage.__name__}."
             )
 
-        return self.chat_message(role=role, text=content)
+        return self._chat_message(role=role, content=content)
 
     @abstractmethod
-    def chat_message(
+    def _chat_message(
             self,
             role: RoleType,
-            text: str,
+            content: str,
     ) -> ChatMessage | J2ChatMessage:
         pass
 
@@ -70,7 +70,7 @@ class ChatBuilder(ABC):
 
 class J2ChatBuilder(ChatBuilder):
 
-    def chat_message(
+    def _chat_message(
             self,
             role: RoleType,
             content: str,
@@ -85,7 +85,7 @@ class J2ChatBuilder(ChatBuilder):
 
 class JambaChatBuilder(ChatBuilder):
 
-    def chat_message(
+    def _chat_message(
             self,
             role: RoleType,
             content: str,

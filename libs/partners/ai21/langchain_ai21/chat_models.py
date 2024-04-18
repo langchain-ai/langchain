@@ -1,10 +1,10 @@
 import asyncio
-
 from functools import partial
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Dict
 
 from langchain_ai21.ai21_base import AI21Base
-from langchain_ai21.chat_builder import JambaChatBuilder, J2ChatBuilder
+from langchain_ai21.chat.chat_builder import ChatBuilder
+from langchain_ai21.chat.chat_builder_factory import create_chat_builder
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -14,6 +14,7 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.pydantic_v1 import root_validator
 
 
 class ChatAI21(BaseChatModel, AI21Base):
@@ -58,6 +59,16 @@ class ChatAI21(BaseChatModel, AI21Base):
     count_penalty: Optional[Any] = None
     """A penalty applied to tokens based on their frequency 
     in the generated responses."""
+    _chat_builder: ChatBuilder
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        values = super().validate_environment(values)
+        model = values.get("model")
+
+        values["_builder"] = create_chat_builder(model)
+
+        return values
 
     class Config:
         """Configuration for this pydantic object."""
@@ -94,13 +105,12 @@ class ChatAI21(BaseChatModel, AI21Base):
 
     def _build_params_for_request(
             self,
-            builder,
             messages: List[BaseMessage],
             stop: Optional[List[str]] = None,
             **kwargs: Any,
     ) -> Mapping[str, Any]:
         params = {}
-        system, ai21_messages = builder.build(messages)
+        system, ai21_messages = self._builder.build(messages)
 
         if stop is not None:
             if "stop" in kwargs:
@@ -122,13 +132,8 @@ class ChatAI21(BaseChatModel, AI21Base):
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
     ) -> ChatResult:
-        if "j2" in self.model:
-            builder = J2ChatBuilder()
-        else:
-            builder = JambaChatBuilder()
-
-        params = self._build_params_for_request(builder=builder, messages=messages, stop=stop, **kwargs)
-        message = builder.call(self.client, **params)
+        params = self._build_params_for_request(messages=messages, stop=stop, **kwargs)
+        message = self._builder.call(self.client, **params)
 
         return ChatResult(generations=[ChatGeneration(message=message)])
 
