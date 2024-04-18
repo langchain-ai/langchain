@@ -1,79 +1,19 @@
 import asyncio
-from functools import partial
-from typing import Any, List, Mapping, Optional, Tuple, cast
 
-from ai21.models import ChatMessage, RoleType
+from functools import partial
+from typing import Any, List, Mapping, Optional
+
+from langchain_ai21.ai21_base import AI21Base
+from langchain_ai21.chat_builder import JambaChatBuilder, J2ChatBuilder
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
-    AIMessage,
     BaseMessage,
-    HumanMessage,
-    SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
-
-from langchain_ai21.ai21_base import AI21Base
-
-
-def _get_system_message_from_message(message: BaseMessage) -> str:
-    if not isinstance(message.content, str):
-        raise ValueError(
-            f"System Message must be of type str. Got {type(message.content)}"
-        )
-
-    return message.content
-
-
-def _convert_messages_to_ai21_messages(
-    messages: List[BaseMessage],
-) -> Tuple[Optional[str], List[ChatMessage]]:
-    system_message = None
-    converted_messages: List[ChatMessage] = []
-
-    for i, message in enumerate(messages):
-        if message.type == "system":
-            if i != 0:
-                raise ValueError("System message must be at beginning of message list.")
-            else:
-                system_message = _get_system_message_from_message(message)
-        else:
-            converted_message = _convert_message_to_ai21_message(message)
-            converted_messages.append(converted_message)
-
-    return system_message, converted_messages
-
-
-def _convert_message_to_ai21_message(
-    message: BaseMessage,
-) -> ChatMessage:
-    content = cast(str, message.content)
-
-    role = None
-
-    if isinstance(message, HumanMessage):
-        role = RoleType.USER
-    elif isinstance(message, AIMessage):
-        role = RoleType.ASSISTANT
-
-    if not role:
-        raise ValueError(
-            f"Could not resolve role type from message {message}. "
-            f"Only support {HumanMessage.__name__} and {AIMessage.__name__}."
-        )
-
-    return ChatMessage(role=role, text=content)
-
-
-def _pop_system_messages(messages: List[BaseMessage]) -> List[SystemMessage]:
-    system_message_indexes = [
-        i for i, message in enumerate(messages) if isinstance(message, SystemMessage)
-    ]
-
-    return [cast(SystemMessage, messages.pop(i)) for i in system_message_indexes]
 
 
 class ChatAI21(BaseChatModel, AI21Base):
@@ -153,13 +93,14 @@ class ChatAI21(BaseChatModel, AI21Base):
         return base_params
 
     def _build_params_for_request(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
+            self,
+            builder,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            **kwargs: Any,
     ) -> Mapping[str, Any]:
         params = {}
-        system, ai21_messages = _convert_messages_to_ai21_messages(messages)
+        system, ai21_messages = builder.build(messages)
 
         if stop is not None:
             if "stop" in kwargs:
@@ -175,27 +116,37 @@ class ChatAI21(BaseChatModel, AI21Base):
         }
 
     def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> ChatResult:
-        params = self._build_params_for_request(messages=messages, stop=stop, **kwargs)
+        if "j2" in self.model:
+            builder = J2ChatBuilder()
+        else:
+            builder = JambaChatBuilder()
 
-        response = self.client.chat.create(**params)
+        params = self._build_params_for_request(builder=builder, messages=messages, stop=stop, **kwargs)
+        message = builder.call(self.client, **params)
 
-        outputs = response.outputs
-        message = AIMessage(content=outputs[0].text)
         return ChatResult(generations=[ChatGeneration(message=message)])
 
     async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         return await asyncio.get_running_loop().run_in_executor(
             None, partial(self._generate, **kwargs), messages, stop, run_manager
         )
+
+    def _get_system_message_from_message(self, message: BaseMessage) -> str:
+        if not isinstance(message.content, str):
+            raise ValueError(
+                f"System Message must be of type str. Got {type(message.content)}"
+            )
+
+        return message.content
