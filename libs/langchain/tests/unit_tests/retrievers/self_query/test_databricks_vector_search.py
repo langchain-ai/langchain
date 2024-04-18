@@ -9,8 +9,9 @@ from langchain.chains.query_constructor.ir import (
     Operator,
     StructuredQuery,
 )
-from langchain.retrievers.self_query.databricks_vector_search import \
-    DatabricksVectorSearchTranslator
+from langchain.retrievers.self_query.databricks_vector_search import (
+    DatabricksVectorSearchTranslator,
+)
 
 DEFAULT_TRANSLATOR = DatabricksVectorSearchTranslator()
 
@@ -73,18 +74,19 @@ def test_visit_operation_not() -> None:
 
 
 def test_visit_operation_not_that_raises_for_more_than_one_filter_condition() -> None:
-
     with pytest.raises(Exception) as exc_info:
         op = Operation(
             operator=Operator.NOT,
             arguments=[
                 Comparison(comparator=Comparator.EQ, attribute="foo", value=2),
-                Comparison(comparator=Comparator.EQ, attribute="bar", value="baz")
+                Comparison(comparator=Comparator.EQ, attribute="bar", value="baz"),
             ],
         )
         DEFAULT_TRANSLATOR.visit_operation(op)
-    assert str(exc_info.value) == '"not" can have only one argument in ' \
-                                  'Databricks vector search'
+    assert (
+        str(exc_info.value) == '"not" can have only one argument in '
+        "Databricks vector search"
+    )
 
 
 def test_visit_structured_query_with_no_filter() -> None:
@@ -107,10 +109,7 @@ def test_visit_structured_query_with_one_arg_filter() -> None:
         filter=comp,
     )
 
-    expected = (
-        query,
-        {"filters": {"country": "France"}}
-    )
+    expected = (query, {"filters": {"country": "France"}})
 
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual

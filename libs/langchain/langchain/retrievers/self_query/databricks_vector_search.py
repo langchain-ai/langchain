@@ -1,7 +1,7 @@
-"""Logic for converting internal query language to a valid databricks vector search query."""
-from itertools import chain
-from typing import Tuple, Union, Dict
 from collections import ChainMap
+from itertools import chain
+from typing import Dict, Tuple
+
 from langchain.chains.query_constructor.ir import (
     Comparator,
     Comparison,
@@ -40,30 +40,31 @@ class DatabricksVectorSearchTranslator(Visitor):
         Comparator.LIKE,
     ]
 
-    def _format_func(self, func: Union[Operator, Comparator]) -> str:
-        self._validate_func(func)
-        return f"{_COMPARATOR_TO_SYMBOL[func]}"
-
     def _visit_and_operation(self, operation: Operation) -> Dict:
         return dict(ChainMap(*[arg.accept(self) for arg in operation.arguments]))
 
     def _visit_or_operation(self, operation: Operation) -> Dict:
         filter_args = [arg.accept(self) for arg in operation.arguments]
         flattened_args = list(
-            chain.from_iterable(filter_arg.items() for filter_arg in filter_args))
+            chain.from_iterable(filter_arg.items() for filter_arg in filter_args)
+        )
         return {
-            ' OR '.join(key for key, _ in flattened_args): [value for _, value in
-                                                            flattened_args]}
+            " OR ".join(key for key, _ in flattened_args): [
+                value for _, value in flattened_args
+            ]
+        }
 
     def _visit_not_operation(self, operation: Operation) -> Dict:
         if len(operation.arguments) > 1:
             raise ValueError(
                 f'"{operation.operator.value}" can have only one argument '
-                f'in Databricks vector search'
+                f"in Databricks vector search"
             )
         filter_arg = operation.arguments[0].accept(self)
-        return {f"{colum_with_bool_expression} NOT": value for
-                colum_with_bool_expression, value in filter_arg.items()}
+        return {
+            f"{colum_with_bool_expression} NOT": value
+            for colum_with_bool_expression, value in filter_arg.items()
+        }
 
     def visit_operation(self, operation: Operation) -> Dict:
         self._validate_func(operation.operator)
@@ -80,7 +81,7 @@ class DatabricksVectorSearchTranslator(Visitor):
         return {f"{comparison.attribute}{comparator_symbol}": comparison.value}
 
     def visit_structured_query(
-            self, structured_query: StructuredQuery
+        self, structured_query: StructuredQuery
     ) -> Tuple[str, dict]:
         if structured_query.filter is None:
             kwargs = {}

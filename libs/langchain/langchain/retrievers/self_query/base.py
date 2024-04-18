@@ -3,13 +3,11 @@
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-from langchain.retrievers.self_query.databricks_vector_search import \
-    DatabricksVectorSearchTranslator
 from langchain_community.vectorstores import (
     AstraDB,
     Chroma,
-    DatabricksVectorSearch,
     DashVector,
+    DatabricksVectorSearch,
     DeepLake,
     Dingo,
     Milvus,
@@ -46,6 +44,9 @@ from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.astradb import AstraDBTranslator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.dashvector import DashvectorTranslator
+from langchain.retrievers.self_query.databricks_vector_search import (
+    DatabricksVectorSearchTranslator,
+)
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.retrievers.self_query.dingo import DingoDBTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
