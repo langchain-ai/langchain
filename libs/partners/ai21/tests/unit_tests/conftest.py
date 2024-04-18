@@ -21,6 +21,8 @@ from ai21.models import (
 from ai21.models.responses.segmentation_response import Segment
 from pytest_mock import MockerFixture
 
+J2_CHAT_MODEL_NAME = "j2-ultra"
+JAMBA_CHAT_MODEL_NAME = "jamba-instruct-preview"
 DUMMY_API_KEY = "test_api_key"
 
 BASIC_EXAMPLE_LLM_PARAMETERS = {

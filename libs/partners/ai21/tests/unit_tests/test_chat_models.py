@@ -1,23 +1,21 @@
 """Test chat model integration."""
-from typing import List, Optional, cast
+from typing import cast
 from unittest.mock import Mock, call
 
 import pytest
 from ai21 import MissingApiKeyError
 from ai21.models import ChatMessage, Penalty, RoleType
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
-
-from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_ai21.chat_models import (
     ChatAI21,
 )
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.pydantic_v1 import SecretStr
 from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_LLM_PARAMETERS,
     BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
@@ -39,7 +37,7 @@ def test_initialization__when_default_parameters_in_init() -> None:
 
 
 def test_initialization__when_custom_parameters_in_init() -> None:
-    model = "j2-mid"
+    model = "j2-ultra"
     num_results = 1
     max_tokens = 10
     min_tokens = 20
@@ -73,8 +71,6 @@ def test_initialization__when_custom_parameters_in_init() -> None:
     assert llm.frequency_penalty == frequency_penalty
     assert llm.presence_penalty == presence_penalty
     assert count_penalty == count_penalty
-
-
 
 
 def test_invoke(mock_client_with_chat: Mock) -> None:

@@ -1,7 +1,9 @@
 from typing import List, Optional
 
 import pytest
+from ai21.models import ChatMessage as J2ChatMessage
 from ai21.models import RoleType
+from ai21.models.chat import ChatMessage
 
 from langchain_ai21.chat_builder.chat_builder import ChatBuilder
 from langchain_core.messages import (
@@ -10,12 +12,9 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from ai21.models.chat import ChatMessage
-from ai21.models import ChatMessage as J2ChatMessage
 from langchain_core.messages import (
     ChatMessage as LangChainChatMessage,
 )
-from langchain_ai21.chat_builder.chat_builder_factory import create_chat_builder
 
 _J2_MODEL_NAME = "j2-ultra"
 _JAMBA_MODEL_NAME = "jamba-instruct-preview"
