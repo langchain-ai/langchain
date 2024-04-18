@@ -16,8 +16,8 @@
 
 Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com). 
-[LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications. 
+To help you ship LangChain apps to production faster, check out [LangSmith](https://smith.langchain.com).
+[LangSmith](https://smith.langchain.com) is a unified developer platform for building, testing, and monitoring LLM applications.
 Fill out [this form](https://www.langchain.com/contact-sales) to speak with our sales team.
 
 ## Quick Install
@@ -47,7 +47,7 @@ For these applications, LangChain simplifies the entire application lifecycle:
 - **`langchain-community`**: Third party integrations.
   - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-- **`[LangGraph](https://python.langchain.com/docs/langgraph)`**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+- **[`LangGraph`](https://python.langchain.com/docs/langgraph)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
 ### Productionization:
 - **[LangSmith](https://python.langchain.com/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
@@ -81,7 +81,7 @@ The main value props of the LangChain libraries are:
 1. **Components**: composable building blocks, tools and integrations for working with language models. Components are modular and easy-to-use, whether you are using the rest of the LangChain framework or not
 2. **Off-the-shelf chains**: built-in assemblages of components for accomplishing higher-level tasks
 
-Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones. 
+Off-the-shelf chains make it easy to get started. Components make it easy to customize existing chains and build new ones.
 
 ## LangChain Expression Language (LCEL)
 
