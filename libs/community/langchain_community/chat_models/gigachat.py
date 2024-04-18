@@ -207,7 +207,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         payload.function_call = kwargs.get("function_call", None)
 
         for tool in kwargs.get("tools", []):
-            if tool.get("type", None) == "function":
+            if tool.get("type", None) == "function" and isinstance(payload.functions, List):
                 payload.functions.append(tool["function"])
 
         if self.profanity_check is not None:
