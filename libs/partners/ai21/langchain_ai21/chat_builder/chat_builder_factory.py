@@ -1,4 +1,4 @@
-from langchain_ai21.chat.chat_builder import ChatBuilder, J2ChatBuilder, JambaChatBuilder
+from langchain_ai21.chat_builder.chat_builder import ChatBuilder, J2ChatBuilder, JambaChatBuilder
 
 
 def create_chat_builder(model: str) -> ChatBuilder:

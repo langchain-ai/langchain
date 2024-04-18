@@ -3,8 +3,8 @@ from functools import partial
 from typing import Any, List, Mapping, Optional, Dict
 
 from langchain_ai21.ai21_base import AI21Base
-from langchain_ai21.chat.chat_builder import ChatBuilder
-from langchain_ai21.chat.chat_builder_factory import create_chat_builder
+from langchain_ai21.chat_builder.chat_builder import ChatBuilder
+from langchain_ai21.chat_builder.chat_builder_factory import create_chat_builder
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,

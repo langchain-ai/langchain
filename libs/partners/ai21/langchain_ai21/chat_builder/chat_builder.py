@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple, cast, Any
+from typing import List, Tuple, cast, Any, Type, Union
 
 from ai21.models import ChatMessage as J2ChatMessage, RoleType
 from ai21.models.chat import ChatMessage
 
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 
+_ChatMessageType = Union[ChatMessage, J2ChatMessage]
+
 
 class ChatBuilder(ABC):
-    def build(self, messages: List[BaseMessage]) -> Tuple[str, List[ChatMessage | J2ChatMessage]]:
+    def build(self, messages: List[BaseMessage]) -> Tuple[str, List[_ChatMessageType]]:
         system_message = None
-        converted_messages: List[J2ChatMessage] = []
+        converted_messages: List[_ChatMessageType] = []
 
         for i, message in enumerate(messages):
             if message.type == "system":
