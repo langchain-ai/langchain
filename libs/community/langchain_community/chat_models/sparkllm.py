@@ -51,6 +51,7 @@ logger = logging.getLogger(__name__)
 
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
+    message_dict: Dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, HumanMessage):
