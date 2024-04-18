@@ -50,7 +50,7 @@ from langchain_core.utils import (
 logger = logging.getLogger(__name__)
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -75,7 +75,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     msg_role = _dict["role"]
     msg_content = _dict["content"]
     if msg_role == "user":
@@ -280,7 +280,7 @@ class ChatSparkLLM(BaseChatModel):
         default_chunk_class = AIMessageChunk
 
         self.client.arun(
-            [_convert_message_to_dict(m) for m in messages],
+            [convert_message_to_dict(m) for m in messages],
             self.spark_user_id,
             self.model_kwargs,
             self.streaming,
@@ -309,7 +309,7 @@ class ChatSparkLLM(BaseChatModel):
             return generate_from_stream(stream_iter)
 
         self.client.arun(
-            [_convert_message_to_dict(m) for m in messages],
+            [convert_message_to_dict(m) for m in messages],
             self.spark_user_id,
             self.model_kwargs,
             False,
@@ -322,7 +322,7 @@ class ChatSparkLLM(BaseChatModel):
             if "data" not in content:
                 continue
             completion = content["data"]
-        message = _convert_dict_to_message(completion)
+        message = convert_dict_to_message(completion)
         generations = [ChatGeneration(message=message)]
         return ChatResult(generations=generations, llm_output=llm_output)
 
