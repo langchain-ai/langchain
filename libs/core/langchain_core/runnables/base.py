@@ -4431,7 +4431,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             kwargs: optional kwargs to pass to the underlying runnable, when running
                     the underlying runnable (e.g., via `invoke`, `batch`,
                     `transform`, or `stream` or async variants)
-            config: config_factories:
+            config:
             config_factories: optional list of config factories to apply to the
             custom_input_type: Specify to override the input type of the underlying
                                runnable with a custom type.
