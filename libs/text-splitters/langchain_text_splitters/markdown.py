@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Tuple, TypedDict
 
 from langchain_core.documents import Document
@@ -107,7 +108,8 @@ class MarkdownHeaderTextSplitter:
 
         for line in lines:
             stripped_line = line.strip()
-
+            # Remove all non-printable characters from the string, keeping only visible text
+            stripped_line = ''.join(filter(str.isprintable, stripped_line))
             if not in_code_block:
                 # Exclude inline code spans
                 if stripped_line.startswith("```") and stripped_line.count("```") == 1:
