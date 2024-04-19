@@ -107,7 +107,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     @abstractmethod
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Tuple[Runnable[Input, Output], RunnableConfig]: ...
+    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
+        ...
 
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
