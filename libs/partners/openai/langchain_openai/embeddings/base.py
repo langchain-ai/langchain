@@ -129,7 +129,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
-    check_embedding_ctx_lengths: bool = True
+    check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs 
         longer than embedding_ctx_length."""
 
@@ -514,7 +514,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        if not self.check_embedding_ctx_lengths:
+        if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
             for text in texts:
                 response = self.client.create(
@@ -544,7 +544,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        if not self.check_embedding_ctx_lengths:
+        if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
             for text in texts:
                 response = await self.async_client.create(
