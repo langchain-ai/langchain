@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-langchain-core = "^0.1.29"
+langchain-core = "^0.1.42"
 ibm-watsonx-ai = "^0.2.0"
 
 [tool.poetry.group.test]
