@@ -5401,11 +5401,10 @@ def test_transform_of_runnable_lambda_with_dicts() -> None:
     runnable = RunnableLambda(lambda x: x)
     chunks = iter(
         [
-            {"foo": "a"},
             {"foo": "n"},
         ]
     )
-    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+    assert list(runnable.transform(chunks)) == [{"foo": "n"}]
 
 
 async def test_atransform_of_runnable_lambda_with_dicts() -> None:
@@ -5420,7 +5419,7 @@ async def test_atransform_of_runnable_lambda_with_dicts() -> None:
         yield {"foo": "n"}
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
-    assert chunks == [{"foo": "an"}]
+    assert chunks == [{"foo": "n"}]
 
 
 def test_default_transform_with_dicts() -> None:

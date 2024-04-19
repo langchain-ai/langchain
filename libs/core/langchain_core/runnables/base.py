@@ -4000,13 +4000,14 @@ class RunnableLambda(Runnable[Input, Output]):
     ) -> Iterator[Output]:
         final: Optional[Input] = None
         for ichunk in input:
-            if final is None:
-                final = adapt_first_streaming_chunk(ichunk)  # type: ignore
-            else:
-                try:
-                    final = final + ichunk  # type: ignore[operator]
-                except TypeError:
-                    final = ichunk
+            # By definitions, RunnableLambdas consume all input before emitting output.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk.
+            # So we'll iterate until we get to the last chunk!
+            try:
+                final = final + ichunk  # type: ignore[operator]
+            except TypeError:
+                final = ichunk
 
         if inspect.isgeneratorfunction(self.func):
             output: Optional[Output] = None
@@ -4084,13 +4085,14 @@ class RunnableLambda(Runnable[Input, Output]):
     ) -> AsyncIterator[Output]:
         final: Optional[Input] = None
         async for ichunk in input:
-            if final is None:
-                final = adapt_first_streaming_chunk(ichunk)
-            else:
-                try:
-                    final = final + ichunk  # type: ignore[operator]
-                except TypeError:
-                    final = ichunk
+            # By definitions, RunnableLambdas consume all input before emitting output.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk.
+            # So we'll iterate until we get to the last chunk!
+            try:
+                final = final + ichunk  # type: ignore[operator]
+            except TypeError:
+                final = ichunk
 
         if hasattr(self, "afunc"):
             afunc = self.afunc
