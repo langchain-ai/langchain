@@ -914,13 +914,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def bind_tools(
         self,
         tools: Sequence[_ToolLike],
-        *,
-        tool_choice: Optional[_ToolChoice] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self._bind_tools(
             tools,
-            tool_choice=tool_choice,
             __lc_serialized_tools__=self._as_lc_serialized_tools(tools),
             **kwargs,
         )
@@ -928,8 +925,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def _bind_tools(
         self,
         tools: Sequence[_ToolLike],
-        *,
-        tool_choice: Optional[_ToolChoice] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
@@ -963,7 +958,6 @@ class _SerializedTool(TypedDict):
 
 
 _ToolLike = Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]
-_ToolChoice = Union[str, List[str], Literal["any", "auto", "none"], bool, dict]
 
 
 class SimpleChatModel(BaseChatModel):
