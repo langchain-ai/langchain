@@ -1,6 +1,6 @@
 import React from "react";
 import { marked } from "marked";
-import * as DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 import Admonition from '@theme/Admonition';
 
 export default function PrerequisiteLinks({children}) {
