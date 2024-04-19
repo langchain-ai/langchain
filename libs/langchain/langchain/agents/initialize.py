@@ -1,4 +1,5 @@
 """Load agent."""
+
 from typing import Any, Optional, Sequence
 
 from langchain_core._api import deprecated

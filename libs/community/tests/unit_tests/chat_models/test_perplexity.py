@@ -1,4 +1,5 @@
 """Test Perplexity Chat API wrapper."""
+
 import os
 
 import pytest

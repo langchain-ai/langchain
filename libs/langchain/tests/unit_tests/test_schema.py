@@ -1,4 +1,5 @@
 """Test formatting functionality."""
+
 from typing import Union
 
 import pytest

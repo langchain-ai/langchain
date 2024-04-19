@@ -1,4 +1,5 @@
 """Test embaas embeddings."""
+
 import responses
 
 from langchain_community.embeddings.embaas import EMBAAS_API_URL, EmbaasEmbeddings

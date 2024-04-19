@@ -1,4 +1,5 @@
 """Util that sends messages via Infobip."""
+
 from typing import Dict, List, Optional
 
 import requests

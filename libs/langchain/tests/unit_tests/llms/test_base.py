@@ -1,4 +1,5 @@
 """Test base LLM functionality."""
+
 from sqlalchemy import Column, Integer, Sequence, String, create_engine
 
 try:

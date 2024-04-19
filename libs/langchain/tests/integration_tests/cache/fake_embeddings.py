@@ -1,4 +1,5 @@
 """Fake Embedding class for testing purposes."""
+
 import math
 from typing import List
 

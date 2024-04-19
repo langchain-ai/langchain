@@ -8,7 +8,7 @@ This is the partner package for tying Fireworks.ai and LangChain. Fireworks real
 To use the `langchain-fireworks` package, follow these installation steps:
 
 ```bash
-pip install langchain-fireworks
+pip install gigachain-fireworks
 ```
 
 

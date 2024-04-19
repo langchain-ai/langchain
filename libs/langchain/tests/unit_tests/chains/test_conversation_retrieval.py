@@ -1,4 +1,5 @@
 """Test conversation chain and memory."""
+
 from langchain_community.llms.fake import FakeListLLM
 from langchain_core.documents import Document
 

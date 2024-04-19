@@ -1,4 +1,5 @@
-""" This file is for LLMRails Embedding """
+"""This file is for LLMRails Embedding"""
+
 from typing import Dict, List, Optional
 
 import requests

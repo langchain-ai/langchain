@@ -1,4 +1,5 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
+
 from typing import Any, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core._api import deprecated
@@ -298,7 +299,9 @@ def create_openai_functions_agent(
                 ]
             )
     """
-    if "agent_scratchpad" not in prompt.input_variables:
+    if "agent_scratchpad" not in (
+        prompt.input_variables + list(prompt.partial_variables)
+    ):
         raise ValueError(
             "Prompt must have input variable `agent_scratchpad`, but wasn't found. "
             f"Found {prompt.input_variables} instead."

@@ -1,4 +1,5 @@
 """Test openai embeddings."""
+
 import os
 from typing import Any
 

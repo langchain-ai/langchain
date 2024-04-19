@@ -1,4 +1,5 @@
 """Util that calls Merriam-Webster."""
+
 import json
 from typing import Dict, Iterator, List, Optional
 from urllib.parse import quote

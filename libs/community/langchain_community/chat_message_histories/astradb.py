@@ -1,4 +1,5 @@
 """Astra DB - based chat message history, based on astrapy."""
+
 from __future__ import annotations
 
 import json

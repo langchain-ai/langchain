@@ -7,7 +7,7 @@ This package provides the integration between LangChain and IBM watsonx.ai throu
 To use the `langchain-ibm` package, follow these installation steps:
 
 ```bash
-pip install langchain-ibm
+pip install gigachain-ibm
 ```
 
 ## Usage

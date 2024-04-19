@@ -1,4 +1,5 @@
 """Test Graph Database Chain."""
+
 from typing import Any
 
 from langchain_community.graphs import ArangoGraph

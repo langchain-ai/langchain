@@ -2,6 +2,7 @@
 
 In order to set this up, follow instructions at:
 """
+
 from typing import Any, Dict, List, Literal, Optional
 
 import aiohttp
@@ -29,7 +30,7 @@ class YouHit(YouHitMetadata):
 
 
 class YouAPIOutput(BaseModel):
-    """The output from you.com api"""
+    """Output from you.com API."""
 
     hits: List[YouHit] = Field(
         description="A list of dictionaries containing the results"
@@ -37,7 +38,7 @@ class YouAPIOutput(BaseModel):
 
 
 class YouDocument(BaseModel):
-    """The output of parsing one snippet"""
+    """Output of parsing one snippet."""
 
     page_content: str = Field(description="One snippet of text")
     metadata: YouHitMetadata

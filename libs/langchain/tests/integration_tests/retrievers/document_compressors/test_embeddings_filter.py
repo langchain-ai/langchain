@@ -1,4 +1,5 @@
 """Integration test for embedding-based relevant doc filtering."""
+
 import numpy as np
 from langchain_community.document_transformers.embeddings_redundant_filter import (
     _DocumentWithState,

@@ -15,19 +15,20 @@ Agents select and use **Tools** and **Toolkits** for actions.
                               OpenAIFunctionsAgent
                               XMLAgent
                               Agent --> <name>Agent  # Examples: ZeroShotAgent, ChatAgent
-                                        
+
 
     BaseMultiActionAgent  --> OpenAIMultiFunctionsAgent
-    
-    
+
+
 **Main helpers:**
 
 .. code-block::
 
     AgentType, AgentExecutor, AgentOutputParser, AgentExecutorIterator,
     AgentAction, AgentFinish
-    
+
 """  # noqa: E501
+
 from pathlib import Path
 from typing import Any
 
@@ -85,6 +86,7 @@ from langchain.agents.structured_chat.base import (
     StructuredChatAgent,
     create_structured_chat_agent,
 )
+from langchain.agents.tool_calling_agent.base import create_tool_calling_agent
 from langchain.agents.tools import Tool, tool
 from langchain.agents.xml.base import XMLAgent, create_xml_agent
 
@@ -158,4 +160,5 @@ __all__ = [
     "create_self_ask_with_search_agent",
     "create_json_chat_agent",
     "create_structured_chat_agent",
+    "create_tool_calling_agent",
 ]

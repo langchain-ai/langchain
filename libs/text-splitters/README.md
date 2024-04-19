@@ -6,7 +6,7 @@
 ## Quick Install
 
 ```bash
-pip install langchain-text-splitters
+pip install gigachain-text-splitters
 ```
 
 ## What is it?

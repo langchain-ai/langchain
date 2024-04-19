@@ -6,7 +6,7 @@
 ## Quick Install
 
 ```bash
-pip install langchain-community
+pip install gigachain-community
 ```
 
 ## What is it?

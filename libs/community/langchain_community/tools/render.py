@@ -4,6 +4,7 @@ Depending on the LLM you are using and the prompting strategy you are using,
 you may want Tools to be rendered in a different way.
 This module contains various ways to render tools.
 """
+
 from langchain_core.tools import BaseTool
 
 from langchain_community.utils.gigachat_functions import (

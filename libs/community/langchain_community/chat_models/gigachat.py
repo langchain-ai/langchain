@@ -47,10 +47,6 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.output_parsers import (
-    JsonOutputParser,
-    PydanticOutputParser,
-)
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel
@@ -203,8 +199,14 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             messages=[_convert_message_to_dict(m) for m in messages],
         )
 
-        payload.functions = kwargs.get("functions", None)
+        payload.functions = kwargs.get("functions", [])
         payload.function_call = kwargs.get("function_call", None)
+
+        for tool in kwargs.get("tools", []):
+            if tool.get("type", None) == "function" and isinstance(
+                payload.functions, List
+            ):
+                payload.functions.append(tool["function"])
 
         if self.profanity_check is not None:
             payload.profanity_check = self.profanity_check
@@ -420,7 +422,6 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
@@ -462,152 +463,26 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
 
                 If schema is a dict then _DictOrPydantic is a dict.
 
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
-            .. code-block:: python
-
-                from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-                    answer: str
-                    justification: str
-
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
-
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
-
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
-
-        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
-            .. code-block:: python
-
-                from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-                    answer: str
-                    justification: str
-
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
-
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
-                # -> {
-                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-                #     'parsing_error': None
-                # }
-
-        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
-            .. code-block:: python
-
-                from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
-                from langchain_core.utils.function_calling import convert_to_openai_tool
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-                    answer: str
-                    justification: str
-
-                dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_structured_output(dict_schema)
-
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
-
-        Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
-            .. code-block::
-
-                from langchain_openai import ChatOpenAI
-                from langchain_core.pydantic_v1 import BaseModel
-
-                class AnswerWithJustification(BaseModel):
-                    answer: str
-                    justification: str
-
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification,
-                    method="json_mode",
-                    include_raw=True
-                )
-
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
-                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
-                #     'parsing_error': None
-                # }
-
-        Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
-            .. code-block::
-
-                from langchain_openai import ChatOpenAI
-
-                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
-
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
-                #     'parsed': {
-                #         'answer': 'They are both the same weight.',
-                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
-                #     },
-                #     'parsing_error': None
-                # }
-
 
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = _is_pydantic_class(schema)
-        if method == "function_calling":
-            if schema is None:
-                raise ValueError(
-                    "schema must be specified when method is 'function_calling'. "
-                    "Received None."
-                )
-            llm = self.bind_functions([schema], tool_choice=True)
-            if is_pydantic_schema:
-                output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
-                )
-            else:
-                key_name = convert_to_gigachat_tool(schema)["function"]["name"]
-                output_parser = JsonOutputKeyToolsParser(
-                    key_name=key_name, first_tool_only=True
-                )
-        elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
-                if is_pydantic_schema
-                else JsonOutputParser()
+        if schema is None:
+            raise ValueError(
+                "schema must be specified when method is 'function_calling'. "
+                "Received None."
+            )
+        key_name = convert_to_gigachat_tool(schema)["function"]["name"]
+        if is_pydantic_schema:
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
             )
         else:
-            raise ValueError(
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_format'. Received: '{method}'"
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
             )
+        llm = self.bind_tools([schema], tool_choice=key_name)
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
@@ -625,7 +500,9 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "any", "none"], bool]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.

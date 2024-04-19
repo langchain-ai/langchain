@@ -1,4 +1,5 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
+
 from typing import (
     Any,
     Callable,
@@ -52,7 +53,7 @@ def create_openai_fn_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLM chain that uses OpenAI functions.
 
     Args:
@@ -132,7 +133,7 @@ def create_openai_fn_chain(
     }
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
-    llm_chain = LLMChain(
+    llm_chain = LLMChain(  # type: ignore[misc]
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
@@ -154,7 +155,7 @@ def create_structured_output_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLMChain that uses an OpenAI function to get a structured output.
 
     Args:

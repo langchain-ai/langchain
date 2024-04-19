@@ -1,4 +1,5 @@
 """**Graphs** provide a natural language interface to graph databases."""
+
 import warnings
 from typing import Any
 

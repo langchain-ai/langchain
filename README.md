@@ -133,7 +133,7 @@ pip install gigachain
 Для работы с сервисом GigaChat передайте полученные авторизационные данные в параметре `credentials` объекта `GigaChat`.
 
 ```py
-chat = GigaChat(credentials=<авторизационные данные>)
+chat = GigaChat(credentials=<авторизационные_данные>)
 ```
 
 Для обращения к GigaChat в вашем приложении или в вашей ОС должны быть установлены сертификаты НУЦ Минцифры. О том как настроить сертификаты НУЦ Минцифры для обращения к GigaChat читайте в [официальной документации](https://developers.sber.ru/docs/ru/gigachat/certificates).
@@ -156,7 +156,7 @@ gigachain install-rus-certs
 Если вы не используете сертификат НУЦ Минцифры, то при создании объекта `GigaChat` вам нужно передать параметр `verify_ssl_certs=False` .
 
 ```py
-chat = GigaChat(credentials=<авторизационные данные>, verify_ssl_certs=False)
+chat = GigaChat(credentials=<авторизационные_данные>, verify_ssl_certs=False)
 ```
 
 > [!NOTE]
@@ -240,10 +240,26 @@ chat.get_num_tokens("Сколько токенов в этой строке")
 
 ## Работа с эмбеддингами
 
-Сейчас генерация эмбеддингов с помощью GigaChat недоступна.
-В качестве временного решения вы можете использовать любые доступные эмбеддинги, например, OpenAIEmbeddings.
+Эмбеддинг — это векторное представление слова, которое можно использовать для определения смысловой близости разных текстов. 
+Векторное представление создается с помощью модели [Embeddings](https://developers.sber.ru/docs/ru/gigachat/models#model-dlya-vektornogo-predstavleniya-teksta).
 
-Вы также можете [использовать локальные эмбеддинги](docs/docs/modules/chains/how_to/retrieve.ipynb).
+> [!NOTE]
+> Работа с моделью Embeddings оплачивается отдельно. Подробнее — в разделе [Тарифы и оплата](https://developers.sber.ru/docs/ru/gigachat/api/tariffs).
+
+Для создания эмбеддингов с помощью GigaChain используйте модуль `GigaChatEmbeddings`:
+
+```python
+from langchain_community.embeddings.gigachat import GigaChatEmbeddings
+
+embeddings = GigaChatEmbeddings(
+    credentials="<авторизационные_данные>", verify_ssl_certs=False
+)
+```
+
+Для работы с `GigaChatEmbeddings` используются те же авторизационные данные, что и при [работе с модулем GigaChat](#авторизация-запросов-к-gigachat).
+
+Подробнее о работе с эмбеддингами и использовании их при реализации RAG-методики — в разделе [Ответы на вопросы с помощью RAG](/docs/docs/use_cases/question_answering/index.ipynb).
+
 
 ## Устранение проблем
 
