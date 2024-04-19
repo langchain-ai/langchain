@@ -6,8 +6,8 @@ However, these guides will help you quickly accomplish common tasks.
 
 ## Core Functionality
 
-- [How to return structured data from an LLM](/docs/how_to/structured_output)
-- How to use an LLM to call tools
+- [How to return structured data from an LLM](/docs/how_to/structured_output/)
+- [How to use a chat model to call tools](/docs/how_to/tool_calling/)
 - [How to stream](/docs/how_to/streaming)
 - How to see what is going on inside your LLM application
 - How to test your LLM application
