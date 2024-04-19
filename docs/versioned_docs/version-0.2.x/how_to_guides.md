@@ -25,19 +25,19 @@ However, these guides will help you quickly accomplish common tasks.
 
 ## LangChain Expression Language (LCEL)
 
-- [How to chain runnables](/docs/expression_language/primitives/sequence)
-- [How to run two runnables in parallel](/docs/expression_language/primitives/parallel/)
-- [How to attach runtime arguments to a runnable](/docs/expression_language/primitives/binding/)
-- [How to run custom functions](/docs/expression_language/primitives/functions)
-- [How to pass through arguments from one step to the next](/docs/expression_language/primitives/passthrough)
-- [How to add values to state](/docs/expression_language/primitives/assign)
-- [How to configure runtime chain internals](/docs/expression_language/primitives/configure)
-- [How to add message history](/docs/expression_language/how_to/message_history)
-- [How to do routing](/docs/expression_language/how_to/routing)
-- [How to inspect your runnables](/docs/expression_language/how_to/inspect)
-- [How to use `@chain` decorator to create a runnable](/docs/expression_language/how_to/decorator)
-- [How to manage prompt size](/docs/expression_language/cookbook/prompt_size)
-- [How to string together multiple chains](/docs/expression_language/cookbook/multiple_chains)
+- [How to chain runnables](/docs/how_to/sequence)
+- [How to run two runnables in parallel](/docs/how_to/parallel/)
+- [How to attach runtime arguments to a runnable](/docs/how_to/binding/)
+- [How to run custom functions](/docs/how_to/functions)
+- [How to pass through arguments from one step to the next](/docs/how_to/passthrough)
+- [How to add values to state](/docs/how_to/assign)
+- [How to configure runtime chain internals](/docs/how_to/configure)
+- [How to add message history](/docs/how_to/message_history)
+- [How to do routing](/docs/how_to/routing)
+- [How to inspect your runnables](/docs/how_to/inspect)
+- [How to use `@chain` decorator to create a runnable](/docs/how_to/decorator)
+- [How to manage prompt size](/docs/how_to/prompt_size)
+- [How to string together multiple chains](/docs/how_to/multiple_chains)
 
 ## Components
 
