@@ -152,7 +152,7 @@ def _truncate_params(payload: Dict[str, Any]) -> None:
     """Truncate temperature and top_p parameters between [0.01, 0.99].
 
     ZhipuAI only support temperature / top_p between (0, 1) open interval,
-    so we tuncate them to [0.01, 0.99].
+    so we truncate them to [0.01, 0.99].
     """
     temperature = payload.get("temperature")
     top_p = payload.get("top_p")
@@ -227,7 +227,7 @@ class ChatZhipuAI(BaseChatModel):
     model_name: Optional[str] = Field(default="glm-4", alias="model")
     """
     Model name to use, see 'https://open.bigmodel.cn/dev/api#language'.
-    or you can use any finetune model of glm series.
+    Alternatively, you can use any fine-tuned model from the GLM series.
     """
 
     temperature: float = 0.95
