@@ -84,7 +84,8 @@ def _get_search_index_query(
     if index_type == IndexType.NODE:
         type_to_query_map = {
             SearchType.VECTOR: (
-                "CALL db.index.vector.queryNodes($index, $k, $embedding) YIELD node, score "
+                "CALL db.index.vector.queryNodes($index, $k, $embedding) "
+                "YIELD node, score "
             ),
             SearchType.HYBRID: (
                 "CALL { "
@@ -94,8 +95,8 @@ def _get_search_index_query(
                 "UNWIND nodes AS n "
                 # We use 0 as min
                 "RETURN n.node AS node, (n.score / max) AS score UNION "
-                "CALL db.index.fulltext.queryNodes($keyword_index, $query, {limit: $k}) "
-                "YIELD node, score "
+                "CALL db.index.fulltext.queryNodes($keyword_index, $query, "
+                "{limit: $k}) YIELD node, score "
                 "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
                 "UNWIND nodes AS n "
                 # We use 0 as min
@@ -780,7 +781,7 @@ class Neo4jVector(VectorStore):
         # Raise error if relationship index type
         if index_type == "RELATIONSHIP":
             raise ValueError(
-                "Data ingestion is not supported with relationship " "vector index."
+                "Data ingestion is not supported with relationship vector index."
             )
 
         # If the vector index doesn't exist yet
