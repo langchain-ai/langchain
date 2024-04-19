@@ -1,7 +1,12 @@
 import time
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, TypedDict
 
 from langchain_core.indexing.base import RecordManager
+
+
+class _Record(TypedDict):
+    group_id: Optional[str]
+    updated_at: float
 
 
 class InMemoryRecordManager(RecordManager):
@@ -11,7 +16,7 @@ class InMemoryRecordManager(RecordManager):
         super().__init__(namespace)
         # Each key points to a dictionary
         # of {'group_id': group_id, 'updated_at': timestamp}
-        self.records = {}
+        self.records: Dict[str, _Record] = {}
         self.namespace = namespace
 
     def create_schema(self) -> None:

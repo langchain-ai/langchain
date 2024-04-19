@@ -327,7 +327,7 @@ async def test_aindex_simple_delete_full(
     )
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 2,
@@ -337,7 +337,7 @@ async def test_aindex_simple_delete_full(
         }
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -358,7 +358,7 @@ async def test_aindex_simple_delete_full(
     )
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 1,
@@ -376,7 +376,7 @@ async def test_aindex_simple_delete_full(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -562,7 +562,7 @@ async def test_ano_delete(
     )
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
             loader,
@@ -579,7 +579,7 @@ async def test_ano_delete(
 
     # If we add the same content twice it should be skipped
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
             loader,
@@ -609,7 +609,7 @@ async def test_ano_delete(
 
     # Should result in no updates or deletions!
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
             loader,
@@ -965,7 +965,7 @@ async def test_aincremental_delete(
     )
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -989,7 +989,7 @@ async def test_aincremental_delete(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -1024,7 +1024,7 @@ async def test_aincremental_delete(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 3).timestamp()
+        arecord_manager, "get_time", return_value=datetime(2021, 1, 3).timestamp()
     ):
         assert await aindex(
             loader.lazy_load(),
