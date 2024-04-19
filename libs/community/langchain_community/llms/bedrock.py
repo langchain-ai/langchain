@@ -14,6 +14,7 @@ from typing import (
     Tuple,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -711,6 +712,9 @@ class BedrockBase(BaseModel, ABC):
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)  # type: ignore[unused-coroutine]
 
 
+@deprecated(
+    since="0.0.34", removal="0.3", alternative_import="langchain_aws.BedrockLLM"
+)
 class Bedrock(LLM, BedrockBase):
     """Bedrock models.
 
