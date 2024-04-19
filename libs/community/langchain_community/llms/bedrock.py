@@ -14,6 +14,7 @@ from typing import (
     Tuple,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -427,11 +428,13 @@ class BedrockBase(BaseModel, ABC):
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
+        except ValueError as e:
+            raise ValueError(f"Error raised by bedrock service: {e}")
         except Exception as e:
             raise ValueError(
                 "Could not load credentials to authenticate with AWS client. "
                 "Please check that credentials in the specified "
-                "profile name are valid."
+                f"profile name are valid. Bedrock error: {e}"
             ) from e
 
         return values
@@ -709,6 +712,9 @@ class BedrockBase(BaseModel, ABC):
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)  # type: ignore[unused-coroutine]
 
 
+@deprecated(
+    since="0.0.34", removal="0.3", alternative_import="langchain_aws.BedrockLLM"
+)
 class Bedrock(LLM, BedrockBase):
     """Bedrock models.
 

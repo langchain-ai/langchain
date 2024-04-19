@@ -183,7 +183,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
 
 
 class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding):
-    """The symmetric version of the Aleph Alpha's semantic embeddings.
+    """Symmetric version of the Aleph Alpha's semantic embeddings.
 
     The main difference is that here, both the documents and
     queries are embedded with a SemanticRepresentation.Symmetric

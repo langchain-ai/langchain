@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-core"
-version = "0.1.36"
+version = "0.1.44"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -15,7 +15,6 @@ langsmith = "^0.1.0"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
-requests = "^2"
 packaging = "^23.2"
 jinja2 = { version = "^3", optional = true }
 

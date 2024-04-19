@@ -12,7 +12,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult
 
 from langchain_community.llms.minimax import MinimaxCommon
 from langchain_community.llms.utils import enforce_stop_tokens
@@ -37,7 +37,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> List:
 
 
 class MiniMaxChat(MinimaxCommon, BaseChatModel):
-    """Wrapper around Minimax large language models.
+    """MiniMax large language models.
 
     To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
     ``MINIMAX_API_KEY`` set with your API token, or pass it as a named parameter to
@@ -81,7 +81,8 @@ class MiniMaxChat(MinimaxCommon, BaseChatModel):
         text = self._client.post(payload)
 
         # This is required since the stop are not enforced by the model parameters
-        return text if stop is None else enforce_stop_tokens(text, stop)
+        text = text if stop is None else enforce_stop_tokens(text, stop)
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(text))])
 
     async def _agenerate(
         self,

@@ -25,7 +25,7 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
         base_url="https://ollama-hostname:8000",
         model="foo",
         headers={
-            "Authentication": "Bearer TEST-TOKEN-VALUE",
+            "Authorization": "Bearer TEST-TOKEN-VALUE",
             "Referer": "https://application-host",
         },
         timeout=300,
@@ -35,7 +35,7 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
         assert url == "https://ollama-hostname:8000/api/generate"
         assert headers == {
             "Content-Type": "application/json",
-            "Authentication": "Bearer TEST-TOKEN-VALUE",
+            "Authorization": "Bearer TEST-TOKEN-VALUE",
             "Referer": "https://application-host",
         }
         assert json is not None
@@ -91,7 +91,7 @@ def test_handle_kwargs_top_level_parameters(monkeypatch: MonkeyPatch) -> None:
                 "num_predict": None,
                 "repeat_last_n": None,
                 "repeat_penalty": None,
-                "stop": [],
+                "stop": None,
                 "temperature": None,
                 "tfs_z": None,
                 "top_k": None,
@@ -138,7 +138,7 @@ def test_handle_kwargs_with_unknown_param(monkeypatch: MonkeyPatch) -> None:
                 "num_predict": None,
                 "repeat_last_n": None,
                 "repeat_penalty": None,
-                "stop": [],
+                "stop": None,
                 "temperature": 0.8,
                 "tfs_z": None,
                 "top_k": None,
