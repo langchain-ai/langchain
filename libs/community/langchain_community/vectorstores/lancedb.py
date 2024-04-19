@@ -26,6 +26,7 @@ class LanceDB(VectorStore):
         table_name: Name of the table to use. Defaults to ``vectorstore``.
         api_key: API key to use for LanceDB cloud database.
         region: Region to use for LanceDB cloud database.
+        mode: Mode to use for adding data to the table. Defaults to ``overwrite``.
 
 
 
@@ -62,14 +63,11 @@ class LanceDB(VectorStore):
         self._id_key = id_key
         self._text_key = text_key
         self._table_name = table_name
-        self.api_key = api_key
+        self.api_key = api_key or os.getenv("LANCE_API_KEY")
         self.region = region
         self.mode = mode
 
-        if os.getenv("LANCE_API_KEY") is not None:
-            api_key = os.getenv("LANCE_API_KEY")
-
-        if "db://" in uri and api_key is None:
+        if "db://" in uri and self.api_key is None:
             raise ValueError("API key is required for LanceDB cloud.")
 
         if self._embedding is None:
@@ -82,7 +80,7 @@ class LanceDB(VectorStore):
                 "`connection` has to be a lancedb.db.LanceDBConnection object."
             )
         else:
-            if api_key is None:
+            if self.api_key is None:
                 self._connection = lancedb.connect(uri)
             else:
                 if "db://" not in uri:
@@ -91,7 +89,9 @@ class LanceDB(VectorStore):
                         "api key provided with local uri. \
                         The data will be stored locally"
                     )
-                self._connection = lancedb.connect(uri, api_key=api_key, region=region)
+                self._connection = lancedb.connect(
+                    uri, api_key=self.api_key, region=self.region
+                )
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -132,7 +132,7 @@ class LanceDB(VectorStore):
 
         if self._table_name in self._connection.table_names():
             tbl = self._connection.open_table(self._table_name)
-            if self.mode and self.api_key is None:
+            if self.api_key is None:
                 tbl.add(docs, mode=self.mode)
             else:
                 tbl.add(docs)
