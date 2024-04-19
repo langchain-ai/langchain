@@ -48,16 +48,16 @@ def parse_tool_call(
         parsed["id"] = raw_tool_call.get("id")
     return parsed
 
+
 def make_json_valid(json_string: str) -> str:
     """
-    This function takes a dictionary-like string and converts it into a valid JSON string.
-    It does this by adding double quotes around the keys.
+    This function takes a dictionary-like string and converts it into a valid 
+    JSON string. It does this by adding double quotes around the keys.
     """
     try:
-        corrected_json_string = re.sub(r'(\b\w+\b):', r'"\1":', json_string)
+        corrected_json_string = re.sub(r"(\b\w+\b):", r'"\1":', json_string)
         return corrected_json_string
-    except TypeError as e:
-        print(f"An error occurred: {e}")
+    except TypeError:
         return json_string
 
 
