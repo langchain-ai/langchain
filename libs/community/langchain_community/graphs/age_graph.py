@@ -31,6 +31,27 @@ class AGEQueryException(Exception):
 
 
 class AGEGraph(GraphStore):
+    """
+    Apache AGE wrapper for graph operations.
+
+    Args:
+        graph_name (str): the name of the graph to connect to or create
+        conf (Dict[str, Any]): the pgsql connection config passed directly
+            to psycopg2.connect
+        create (bool): if True and graph doesn't exist, attempt to create it
+
+    *Security note*: Make sure that the database connection uses credentials
+        that are narrowly-scoped to only include necessary permissions.
+        Failure to do so may result in data corruption or loss, since the calling
+        code may attempt commands that would result in deletion, mutation
+        of data if appropriately prompted or reading sensitive data if such
+        data is present in the database.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this tool.
+
+        See https://python.langchain.com/docs/security for more information.
+    """
+
     # python type mapping for providing readable types to LLM
     types = {
         "str": "STRING",
@@ -47,15 +68,7 @@ class AGEGraph(GraphStore):
     def __init__(
         self, graph_name: str, conf: Dict[str, Any], create: bool = True
     ) -> None:
-        """
-        initialize connection and optionally create graph
-
-        Args:
-            graph_name (str): the name of the graph to connect to or create
-            conf (Dict[str, Any]): the pgsql connection config passed directly
-                to psycopg2.connect
-            create (bool): if True and graph doesn't exist, attempt to create it
-        """
+        """Create a new AGEGraph instance."""
 
         self.graph_name = graph_name
 
@@ -221,7 +234,7 @@ class AGEGraph(GraphStore):
             e_labels (List[str]): a list of edge labels to filter for
 
         Returns:
-            List[str]: relationships as a list of dicts in the format
+            List[str]: relationships as a list of strings in the format
                 "(:`<from_label>`)-[:`<edge_label>`]->(:`<to_label>`)"
         """
 
@@ -229,7 +242,8 @@ class AGEGraph(GraphStore):
 
         return self._format_triples(triples)
 
-    def _format_triples(self, triples: List[Dict[str, str]]) -> List[str]:
+    @staticmethod
+    def _format_triples(triples: List[Dict[str, str]]) -> List[str]:
         """
         Convert a list of relationships from dictionaries to formatted strings
         to be better readable by an llm
@@ -456,7 +470,8 @@ class AGEGraph(GraphStore):
         else:
             return field.replace("(", "_").replace(")", "")
 
-    def _wrap_query(self, query: str) -> str:
+    @staticmethod
+    def _wrap_query(query: str, graph_name: str) -> str:
         """
         Convert a cypher query to an Apache Age compatible
         sql query by wrapping the cypher query in ag_catalog.cypher,
@@ -464,6 +479,7 @@ class AGEGraph(GraphStore):
 
         Args:
             query (str): a valid cypher query
+            graph_name (str): the name of the graph to query
 
         Returns:
             str: an equivalent pgsql query
@@ -511,13 +527,14 @@ class AGEGraph(GraphStore):
         select_str = "*"
 
         return template.format(
-            graph_name=self.graph_name,
+            graph_name=graph_name,
             query=query,
             fields=fields_str,
             projection=select_str,
         )
 
-    def _record_to_dict(self, record: NamedTuple) -> Dict[str, Any]:
+    @staticmethod
+    def _record_to_dict(record: NamedTuple) -> Dict[str, Any]:
         """
         Convert a record returned from an age query to a dictionary
 
@@ -592,7 +609,7 @@ class AGEGraph(GraphStore):
             ) from e
 
         # convert cypher query to pgsql/age query
-        wrapped_query = self._wrap_query(query)
+        wrapped_query = self._wrap_query(query, self.graph_name)
 
         # execute the query, rolling back on an error
         with self._get_cursor() as curs:
@@ -617,8 +634,9 @@ class AGEGraph(GraphStore):
 
             return result
 
+    @staticmethod
     def _format_properties(
-        self, properties: Dict[str, Any], id: Union[str, None] = None
+        properties: Dict[str, Any], id: Union[str, None] = None
     ) -> str:
         """
         Convert a dictionary of properties to a string representation that

@@ -2,7 +2,6 @@ import re
 import unittest
 from collections import namedtuple
 from typing import Any, Dict, List
-from unittest.mock import patch
 
 from langchain_community.graphs.age_graph import AGEGraph
 
@@ -19,10 +18,7 @@ class TestAGEGraph(unittest.TestCase):
             "(:`from_b`)-[:`edge_b`]->(:`to_b`)",
         ]
 
-        with patch("psycopg2.connect"):
-            graph = AGEGraph("test", {})
-
-            self.assertEqual(graph._format_triples(test_input), expected)
+        self.assertEqual(AGEGraph._format_triples(test_input), expected)
 
     def test_get_col_name(self) -> None:
         inputs = [
@@ -53,11 +49,8 @@ class TestAGEGraph(unittest.TestCase):
             "column_1",
         ]
 
-        with patch("psycopg2.connect"):
-            graph = AGEGraph("test", {})
-
-            for idx, value in enumerate(inputs):
-                self.assertEqual(graph._get_col_name(*value), expected[idx])
+        for idx, value in enumerate(inputs):
+            self.assertEqual(AGEGraph._get_col_name(*value), expected[idx])
 
     def test_wrap_query(self) -> None:
         inputs = [
@@ -84,33 +77,28 @@ class TestAGEGraph(unittest.TestCase):
             """,
         ]
 
-        with patch("psycopg2.connect"):
-            graph = AGEGraph("test", {})
+        for idx, value in enumerate(inputs):
+            self.assertEqual(
+                re.sub(r"\s", "", AGEGraph._wrap_query(value, "test")),
+                re.sub(r"\s", "", expected[idx]),
+            )
 
-            for idx, value in enumerate(inputs):
-                self.assertEqual(
-                    re.sub(r"\s", "", graph._wrap_query(value)),
-                    re.sub(r"\s", "", expected[idx]),
-                )
-
-            with self.assertRaises(ValueError):
-                graph._wrap_query(
-                    """
-                MATCH ()
-                RETURN *
+        with self.assertRaises(ValueError):
+            AGEGraph._wrap_query(
                 """
-                )
+            MATCH ()
+            RETURN *
+            """,
+                "test",
+            )
 
     def test_format_properties(self) -> None:
         inputs: List[Dict[str, Any]] = [{}, {"a": "b"}, {"a": "b", "c": 1, "d": True}]
 
         expected = ["{}", '{`a`: "b"}', '{`a`: "b", `c`: 1, `d`: true}']
 
-        with patch("psycopg2.connect"):
-            graph = AGEGraph("test", {})
-
-            for idx, value in enumerate(inputs):
-                self.assertEqual(graph._format_properties(value), expected[idx])
+        for idx, value in enumerate(inputs):
+            self.assertEqual(AGEGraph._format_properties(value), expected[idx])
 
     def test_clean_graph_labels(self) -> None:
         inputs = ["label", "label 1", "label#$"]
@@ -121,40 +109,37 @@ class TestAGEGraph(unittest.TestCase):
             self.assertEqual(AGEGraph.clean_graph_labels(value), expected[idx])
 
     def test_record_to_dict(self) -> None:
-        with patch("psycopg2.connect"):
-            graph = AGEGraph("test", {})
+        Record = namedtuple("Record", ["node1", "edge", "node2"])
+        r = Record(
+            node1='{"id": 1, "label": "label1", "properties":'
+            + ' {"prop": "a"}}::vertex',
+            edge='{"id": 3, "label": "edge", "end_id": 2, '
+            + '"start_id": 1, "properties": {"test": "abc"}}::edge',
+            node2='{"id": 2, "label": "label1", '
+            + '"properties": {"prop": "b"}}::vertex',
+        )
 
-            Record = namedtuple("Record", ["node1", "edge", "node2"])
-            r = Record(
-                node1='{"id": 1, "label": "label1", "properties":'
-                + ' {"prop": "a"}}::vertex',
-                edge='{"id": 3, "label": "edge", "end_id": 2, '
-                + '"start_id": 1, "properties": {"test": "abc"}}::edge',
-                node2='{"id": 2, "label": "label1", '
-                + '"properties": {"prop": "b"}}::vertex',
-            )
+        result = AGEGraph._record_to_dict(r)
 
-            result = graph._record_to_dict(r)
+        expected = {
+            "node1": {"prop": "a"},
+            "edge": ({"prop": "a"}, "edge", {"prop": "b"}),
+            "node2": {"prop": "b"},
+        }
 
-            expected = {
-                "node1": {"prop": "a"},
-                "edge": ({"prop": "a"}, "edge", {"prop": "b"}),
-                "node2": {"prop": "b"},
-            }
+        self.assertEqual(result, expected)
 
-            self.assertEqual(result, expected)
+        Record2 = namedtuple("Record2", ["string", "int", "float", "bool", "null"])
+        r2 = Record2('"test"', "1", "1.5", "true", None)
 
-            Record2 = namedtuple("Record2", ["string", "int", "float", "bool", "null"])
-            r2 = Record2('"test"', "1", "1.5", "true", None)
+        result = AGEGraph._record_to_dict(r2)
 
-            result = graph._record_to_dict(r2)
+        expected2 = {
+            "string": "test",
+            "int": 1,
+            "float": 1.5,
+            "bool": True,
+            "null": None,
+        }
 
-            expected2 = {
-                "string": "test",
-                "int": 1,
-                "float": 1.5,
-                "bool": True,
-                "null": None,
-            }
-
-            self.assertEqual(result, expected2)
+        self.assertEqual(result, expected2)
