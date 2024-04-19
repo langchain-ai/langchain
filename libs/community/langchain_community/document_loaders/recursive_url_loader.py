@@ -169,6 +169,7 @@ class RecursiveUrlLoader(BaseLoader):
         visited.add(url)
         try:
             response = requests.get(url, timeout=self.timeout, headers=self.headers)
+            response.encoding = response.apparent_encoding
             if self.check_response_status and 400 <= response.status_code <= 599:
                 raise ValueError(f"Received HTTP status {response.status_code}")
         except Exception as e:
