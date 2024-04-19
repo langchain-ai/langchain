@@ -22,7 +22,5 @@ class TestMistralStandard(ChatModelIntegrationTests):
         chat_model_has_tool_calling: bool,
     ) -> None:
         super().test_tool_message_histories_list_content(
-            chat_model_class,
-            chat_model_params,
-            chat_model_has_tool_calling
+            chat_model_class, chat_model_params, chat_model_has_tool_calling
         )
