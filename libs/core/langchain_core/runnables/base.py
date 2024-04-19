@@ -2136,7 +2136,7 @@ def _seq_input_schema(
                 **{
                     k: (v.annotation, v.default)
                     for k, v in next_input_schema.__fields__.items()
-                    if k not in first.mapper.steps
+                    if k not in first.mapper.steps__
                 },
             )
     elif isinstance(first, RunnablePick):
@@ -2981,11 +2981,11 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                 print(output)  # noqa: T201
     """
 
-    steps: Mapping[str, Runnable[Input, Any]]
+    steps__: Mapping[str, Runnable[Input, Any]]
 
     def __init__(
         self,
-        __steps: Optional[
+        steps__: Optional[
             Mapping[
                 str,
                 Union[
@@ -3001,10 +3001,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
         ],
     ) -> None:
-        merged = {**__steps} if __steps is not None else {}
+        merged = {**steps__} if steps__ is not None else {}
         merged.update(kwargs)
         super().__init__(  # type: ignore[call-arg]
-            steps={key: coerce_to_runnable(r) for key, r in merged.items()}
+            steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
         )
 
     @classmethod
@@ -3022,12 +3022,12 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
-        name = name or self.name or f"RunnableParallel<{','.join(self.steps.keys())}>"
+        name = name or self.name or f"RunnableParallel<{','.join(self.steps__.keys())}>"
         return super().get_name(suffix, name=name)
 
     @property
     def InputType(self) -> Any:
-        for step in self.steps.values():
+        for step in self.steps__.values():
             if step.InputType:
                 return step.InputType
 
@@ -3038,14 +3038,14 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     ) -> Type[BaseModel]:
         if all(
             s.get_input_schema(config).schema().get("type", "object") == "object"
-            for s in self.steps.values()
+            for s in self.steps__.values()
         ):
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model(  # type: ignore[call-overload]
                 self.get_name("Input"),
                 **{
                     k: (v.annotation, v.default)
-                    for step in self.steps.values()
+                    for step in self.steps__.values()
                     for k, v in step.get_input_schema(config).__fields__.items()
                     if k != "__root__"
                 },
@@ -3059,13 +3059,13 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             self.get_name("Output"),
-            **{k: (v.OutputType, None) for k, v in self.steps.items()},
+            **{k: (v.OutputType, None) for k, v in self.steps__.items()},
         )
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
-            spec for step in self.steps.values() for spec in step.config_specs
+            spec for step in self.steps__.values() for spec in step.config_specs
         )
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
@@ -3074,7 +3074,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         graph = Graph()
         input_node = graph.add_node(self.get_input_schema(config))
         output_node = graph.add_node(self.get_output_schema(config))
-        for step in self.steps.values():
+        for step in self.steps__.values():
             step_graph = step.get_graph()
             step_graph.trim_first_node()
             step_graph.trim_last_node()
@@ -3096,7 +3096,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     def __repr__(self) -> str:
         map_for_repr = ",\n  ".join(
             f"{k}: {indent_lines_after_first(repr(v), '  ' + k + ': ')}"
-            for k, v in self.steps.items()
+            for k, v in self.steps__.items()
         )
         return "{\n  " + map_for_repr + "\n}"
 
@@ -3127,7 +3127,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = dict(self.steps)
+            steps = dict(self.steps__)
             with get_executor_for_config(config) as executor:
                 futures = [
                     executor.submit(
@@ -3170,7 +3170,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = dict(self.steps)
+            steps = dict(self.steps__)
             results = await asyncio.gather(
                 *(
                     step.ainvoke(
@@ -3199,7 +3199,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         config: RunnableConfig,
     ) -> Iterator[AddableDict]:
         # Shallow copy steps to ignore mutations while in progress
-        steps = dict(self.steps)
+        steps = dict(self.steps__)
         # Each step gets a copy of the input iterator,
         # which is consumed in parallel in a separate thread.
         input_copies = list(safetee(input, len(steps), lock=threading.Lock()))
@@ -3264,7 +3264,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         config: RunnableConfig,
     ) -> AsyncIterator[AddableDict]:
         # Shallow copy steps to ignore mutations while in progress
-        steps = dict(self.steps)
+        steps = dict(self.steps__)
         # Each step gets a copy of the input iterator,
         # which is consumed in parallel in a separate thread.
         input_copies = list(atee(input, len(steps), lock=asyncio.Lock()))
