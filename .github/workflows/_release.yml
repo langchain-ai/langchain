@@ -293,28 +293,12 @@ jobs:
           path: ${{ inputs.working-directory }}/dist/
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ needs.build.outputs.pkg-name }}-v${{ needs.build.outputs.version }}
-          release_name: ${{ needs.build.outputs.pkg-name }}==${{ needs.build.outputs.version }}
-          body: |
-            Changes in this Release
-            - First Change
-            - Second Change
-          draft: false
-          prerelease: false
-
-      - name: Create Release
         uses: ncipollo/release-action@v1
-        if: 
+        if: ${{ inputs.working-directory == 'libs/langchain' }}
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
-
-          generateReleaseNotes: ${{ inputs.working-directory == 'libs/langchain' }}
+          generateReleaseNotes: true
           tag: v${{ needs.build.outputs.version }}
           commit: master
