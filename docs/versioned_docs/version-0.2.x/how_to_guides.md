@@ -64,10 +64,10 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to track token usage](/docs/how_to/chat_token_usage_tracking)
 
 ### LLMs
-- [How to cache model responses](/docs/modules/model_io/llms/llm_caching)
-- [How to create a custom LLM class](/docs/modules/model_io/llms/custom_llm)
-- [How to stream a response back](/docs/modules/model_io/llms/streaming_llm)
-- [How to track token usage](/docs/modules/model_io/llms/token_usage_tracking)
+- [How to cache model responses](/docs/how_to/llm_caching)
+- [How to create a custom LLM class](/docs/how_to/custom_llm)
+- [How to stream a response back](/docs/how_to/streaming_llm)
+- [How to track token usage](/docs/how_to/llm_token_usage_tracking)
 
 ### Output Parsers
 - [How to use output parsers to parse an LLM response into structured format](/docs/modules/model_io/output_parsers/quick_start)
