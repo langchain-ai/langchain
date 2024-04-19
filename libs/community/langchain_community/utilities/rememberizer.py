@@ -23,7 +23,7 @@ class RememberizerAPIWrapper(BaseModel):
 
         return values
 
-    def search(self, query: str) -> Optional[dict]:
+    def search(self, query: str) -> dict:
         """Search for a query in the Rememberizer API."""
         url = f"https://api.rememberizer.ai/api/v1/documents/search?q={query}&n={self.top_k_results}"
         response = requests.get(url, headers={"x-api-key": self.rememberizer_api_key})

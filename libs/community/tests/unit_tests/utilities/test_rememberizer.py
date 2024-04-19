@@ -1,4 +1,5 @@
 import unittest
+from typing import Any
 from unittest.mock import patch
 
 import responses
@@ -8,7 +9,7 @@ from langchain_community.utilities import RememberizerAPIWrapper
 
 class TestRememberizerAPIWrapper(unittest.TestCase):
     @responses.activate
-    def test_search_successful(self):
+    def test_search_successful(self) -> None:
         responses.add(
             responses.GET,
             "https://api.rememberizer.ai/api/v1/documents/search?q=test&n=10",
@@ -36,7 +37,7 @@ class TestRememberizerAPIWrapper(unittest.TestCase):
         )
 
     @responses.activate
-    def test_search_fail(self):
+    def test_search_fail(self) -> None:
         responses.add(
             responses.GET,
             "https://api.rememberizer.ai/api/v1/documents/search?q=test&n=10",
@@ -52,7 +53,7 @@ class TestRememberizerAPIWrapper(unittest.TestCase):
             )
 
     @patch("langchain_community.utilities.rememberizer.RememberizerAPIWrapper.search")
-    def test_load(self, mock_search):
+    def test_load(self, mock_search: Any) -> None:
         mock_search.return_value = [
             {
                 "chunk_id": "chunk1",
