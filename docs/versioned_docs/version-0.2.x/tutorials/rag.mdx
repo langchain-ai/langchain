@@ -107,6 +107,10 @@ the post.
 We can create a simple indexing pipeline and RAG chain to do this in ~20
 lines of code:
 
+import ChatModelTabs from "@theme/ChatModelTabs";
+
+<ChatModelTabs customVarName="llm" />
+
 ```python
 import bs4
 from langchain import hub
@@ -116,13 +120,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-```
 
-import ChatModelTabs from "@theme/ChatModelTabs";
-
-<ChatModelTabs customVarName="llm" />
-
-```python
 # Load, chunk and index the contents of the blog.
 loader = WebBaseLoader(
     web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
@@ -152,9 +150,7 @@ rag_chain = (
     | llm
     | StrOutputParser()
 )
-```
 
-```python
 rag_chain.invoke("What is Task Decomposition?")
 ```
 
@@ -206,9 +202,7 @@ loader = WebBaseLoader(
     bs_kwargs={"parse_only": bs4_strainer},
 )
 docs = loader.load()
-```
 
-```python
 len(docs[0].page_content)
 ```
 
@@ -276,9 +270,7 @@ text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000, chunk_overlap=200, add_start_index=True
 )
 all_splits = text_splitter.split_documents(docs)
-```
 
-```python
 len(all_splits)
 ```
 
@@ -389,13 +381,9 @@ facilitate retrieval. Any `VectorStore` can easily be turned into a
 
 ```python
 retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 6})
-```
 
-```python
 retrieved_docs = retriever.invoke("What are the approaches to Task Decomposition?")
-```
 
-```python
 len(retrieved_docs)
 ```
 
@@ -465,12 +453,11 @@ We’ll use a prompt for RAG that is checked into the LangChain prompt hub
 from langchain import hub
 
 prompt = hub.pull("rlm/rag-prompt")
-```
 
-```python
 example_messages = prompt.invoke(
     {"context": "filler context", "question": "filler question"}
 ).to_messages()
+
 example_messages
 ```
 
@@ -509,9 +496,7 @@ rag_chain = (
     | llm
     | StrOutputParser()
 )
-```
 
-```python
 for chunk in rag_chain.stream("What is Task Decomposition?"):
     print(chunk, end="", flush=True)
 ```
@@ -583,8 +568,15 @@ trace](https://smith.langchain.com/public/da23c4d8-3b33-47fd-84df-a3a582eedf84/r
 
 ## Next steps
 
-That’s a lot of content we’ve covered in a short amount of time. There’s
-plenty of features, integrations, and extensions to explore in each of
+We've covered the steps to build a basic Q&A app over data:
+
+- Loading data with a [Document Loader](/docs/modules/data_connection/document_loaders/)
+- Chunking the indexed data with a [Text Splitter](/docs/modules/data_connection/document_transformers/) to make it more easily usable by a model
+- [Embedding the data](/docs/modules/data_connection/text_embedding/) and storing the data in a [vectorstore](/docs/modules/data_connection/vectorstores/)
+- [Retrieving](/docs/modules/data_connection/retrievers/) the previously stored chunks in response to incoming questions
+- Generating an answer using the retrieved chunks as context
+
+There’s plenty of features, integrations, and extensions to explore in each of
 the above sections. Along from the **Go deeper** sources mentioned
 above, good next steps include:
 
