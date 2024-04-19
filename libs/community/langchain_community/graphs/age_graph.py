@@ -44,7 +44,9 @@ class AGEGraph(GraphStore):
     # precompiled regex for checking chars in graph labels
     label_regex = re.compile("[^0-9a-zA-Z]+")
 
-    def __init__(self, graph_name: str, conf: Dict[str, Any], create: bool = True) -> None:
+    def __init__(
+        self, graph_name: str, conf: Dict[str, Any], create: bool = True
+    ) -> None:
         """
         initialize connection and optionally create graph
 
