@@ -12,7 +12,7 @@ on:
       working-directory:
         required: true
         type: string
-        default: 'libs/langchain'
+        default: "libs/langchain"
 
 env:
   PYTHON_VERSION: "3.11"
@@ -71,8 +71,7 @@ jobs:
   test-pypi-publish:
     needs:
       - build
-    uses:
-      ./.github/workflows/_test_release.yml
+    uses: ./.github/workflows/_test_release.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
@@ -112,7 +111,7 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         # Here we use:
-        # - The default regular PyPI index as the *primary* index, meaning 
+        # - The default regular PyPI index as the *primary* index, meaning
         #   that it takes priority (https://pypi.org/simple)
         # - The test PyPI index as an extra index, so that any dependencies that
         #   are not found on test PyPI can be resolved and installed anyway.
@@ -175,11 +174,11 @@ jobs:
           make tests
         working-directory: ${{ inputs.working-directory }}
 
-      - name: 'Authenticate to Google Cloud'
-        id: 'auth'
+      - name: "Authenticate to Google Cloud"
+        id: "auth"
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
 
       - name: Run integration tests
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
@@ -216,6 +215,7 @@ jobs:
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
+          UPSTAGE_DOCUMENT_AI_API_KEY: ${{ secrets.UPSTAGE_DOCUMENT_AI_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 

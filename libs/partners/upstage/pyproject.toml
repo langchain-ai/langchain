@@ -12,8 +12,13 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+openai = "^1.10.0"
 langchain-core = "^0.1.44"
 langchain-openai = "^0.1.3"
+pymupdf = ">=1.24.1"
+requests = ">=2.31.0"
+types-requests = ">=2.31.0"
+langchain_community = ">=0.0.31"
 
 [tool.poetry.group.test]
 optional = true
@@ -21,15 +26,16 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 freezegun = "^1.2.2"
-pytest-mock = "^3.10.0"
+pytest-mock  = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-openai = { path = "../openai", develop = true }
-langchain-core = { path = "../../core", develop = true }
+langchain-openai = {path = "../openai", develop = true}
+langchain-core = {path = "../../core", develop = true}
 docarray = "^0.32.1"
 pydantic = "^1.10.9"
-langchain-standard-tests = { path = "../../standard-tests", develop = true }
+langchain_community = {path = "../../community", develop = true}
+langchain-standard-tests = {path = "../../standard-tests", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
@@ -50,26 +56,28 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = { path = "../../core", develop = true }
+langchain-core = {path = "../../core", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = { path = "../../core", develop = true }
+langchain-core = {path = "../../core", develop = true}
 
 [tool.ruff]
 select = [
-  "E", # pycodestyle
-  "F", # pyflakes
-  "I", # isort
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
 ]
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
 [tool.coverage.run]
-omit = ["tests/*"]
+omit = [
+    "tests/*",
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

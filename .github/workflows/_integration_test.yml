@@ -43,11 +43,11 @@ jobs:
         shell: bash
         run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
 
-      - name: 'Authenticate to Google Cloud'
-        id: 'auth'
+      - name: "Authenticate to Google Cloud"
+        id: "auth"
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
 
       - name: Run integration tests
         shell: bash
@@ -79,6 +79,7 @@ jobs:
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
+          UPSTAGE_DOCUMENT_AI_API_KEY: ${{ secrets.UPSTAGE_DOCUMENT_AI_API_KEY }}
         run: |
           make integration_tests
 

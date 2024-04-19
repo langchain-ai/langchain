@@ -1,4 +1,5 @@
 """Standard LangChain interface tests"""
+
 from typing import Type
 
 import pytest
