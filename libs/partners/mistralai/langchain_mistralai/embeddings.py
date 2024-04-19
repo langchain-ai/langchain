@@ -89,7 +89,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         return values
 
     def _get_batches(self, texts: List[str]) -> Iterable[List[str]]:
-        """Split a list of texts into batches of less than 16k tokens
+        """Split a list of texts into batches of less than MAX_TOKENS tokens
         for Mistral API."""
         batch: List[str] = []
         batch_tokens = 0
