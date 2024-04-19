@@ -60,6 +60,13 @@ def test_loading_jinja_from_YAML() -> None:
         load_prompt(prompt_path)
 
 
+def test_loading_from_github() -> None:
+    synonyms_prompt = load_prompt(
+        "lc://prompts/synonyms/synonyms_generation_with_examples.yaml"
+    )
+    assert len(synonyms_prompt.input_variables) == 4
+
+
 def test_saving_loading_round_trip(tmp_path: Path) -> None:
     """Test equality when saving and loading a prompt."""
     simple_prompt = PromptTemplate(

@@ -21,8 +21,7 @@ If I ask you to generate an image, return answer + command img(image description
 <|im_start|>user
 Hello, who are you? Give me your photo<|im_end|>
 <|im_start|>assistant""",
-        "parameters": {
-            "return_full_text": False},
+        "parameters": {"return_full_text": False},
     }
 )
 print(output)
