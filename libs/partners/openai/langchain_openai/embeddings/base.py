@@ -129,10 +129,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
-    disable_safe_len_embeddings: bool = False
-    """For servers compatible with OpenAI API may not support `safe_len_embedding`,
-    use this option to disable it.
-    """
+    check_embedding_ctx_lengths: bool = True
+    """Whether to check the token length of inputs and automatically split inputs 
+        longer than embedding_ctx_length."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -515,7 +514,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        if self.disable_safe_len_embeddings:
+        if not self.check_embedding_ctx_lengths:
             embeddings: List[List[float]] = []
             for text in texts:
                 response = self.client.create(
@@ -545,7 +544,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        if self.disable_safe_len_embeddings:
+        if not self.check_embedding_ctx_lengths:
             embeddings: List[List[float]] = []
             for text in texts:
                 response = await self.async_client.create(
