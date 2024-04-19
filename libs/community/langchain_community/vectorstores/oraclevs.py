@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import array
 import functools
 import hashlib
 import json
@@ -16,25 +17,25 @@ from typing import (
     Tuple,
     Type,
     Union,
-    )
+)
 
-import array
 import numpy as np
 import oracledb
-from langchain_community.vectorstores.utils import (
-    DistanceStrategy,
-    maximal_marginal_relevance,
-    )
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+
+from langchain_community.vectorstores.utils import (
+    DistanceStrategy,
+    maximal_marginal_relevance,
+)
 
 logger = logging.getLogger(__name__)
 log_level = os.getenv("LOG_LEVEL", "ERROR").upper()
 logging.basicConfig(
     level=getattr(logging, log_level),
     format="%(asctime)s - %(levelname)s - %(message)s",
-    )
+)
 
 
 def _handle_exceptions(func):
@@ -47,12 +48,11 @@ def _handle_exceptions(func):
             logger.exception("DB-related error occurred.")
             raise RuntimeError(
                 "Failed due to a DB issue: {}".format(db_err)
-                ) from db_err
+            ) from db_err
         except ValueError as val_err:
             # Handle another known type of error specifically
             logger.exception("Validation error.")
-            raise ValueError(
-                "Validation failed: {}".format(val_err)) from val_err
+            raise ValueError("Validation failed: {}".format(val_err)) from val_err
         except Exception as e:
             # Generic handler for all other exceptions
             logger.exception("An unexpected error occurred: {}".format(str(e)))
@@ -97,7 +97,7 @@ def _get_distance_function(distance_strategy: DistanceStrategy) -> str:
         DistanceStrategy.EUCLIDEAN_DISTANCE: "EUCLIDEAN",
         DistanceStrategy.DOT_PRODUCT: "DOT",
         DistanceStrategy.COSINE: "COSINE",
-        }
+    }
 
     # Attempt to return the corresponding distance function
     if distance_strategy in distance_strategy2function:
@@ -114,21 +114,20 @@ def _get_index_name(base_name: str):
 
 @_handle_exceptions
 def _create_table(
-        client: oracledb.Connection, table_name: str, embedding_dim: int
-        ) -> None:
+    client: oracledb.Connection, table_name: str, embedding_dim: int
+) -> None:
     cols_dict = {
         "id": "RAW(16) DEFAULT SYS_GUID() PRIMARY KEY",
         "text": "CLOB",
         "metadata": "CLOB",
         "embedding": f"vector({embedding_dim}, FLOAT32)",
-        }
+    }
 
     if not _table_exists(client, table_name):
         with client.cursor() as cursor:
             ddl_body = ", ".join(
-                f"{col_name} {col_type}" for col_name, col_type in
-                cols_dict.items()
-                )
+                f"{col_name} {col_type}" for col_name, col_type in cols_dict.items()
+            )
             ddl = f"CREATE TABLE {table_name} ({ddl_body})"
             cursor.execute(ddl)
         logger.info("Table created successfully...")
@@ -138,41 +137,37 @@ def _create_table(
 
 @_handle_exceptions
 def create_index(
-        client: oracledb.Connection,
-        vector_store: OracleVS,
-        params: Optional[dict[str, Any]] = None,
-        ) -> None:
+    client: oracledb.Connection,
+    vector_store: OracleVS,
+    params: Optional[dict[str, Any]] = None,
+) -> None:
     if params:
         if params["idx_type"] == "HNSW":
             _create_hnsw_index(
-                client, vector_store.table_name,
-                vector_store.distance_strategy, params
-                )
+                client, vector_store.table_name, vector_store.distance_strategy, params
+            )
         elif params["idx_type"] == "IVF":
             _create_ivf_index(
-                client, vector_store.table_name,
-                vector_store.distance_strategy, params
-                )
+                client, vector_store.table_name, vector_store.distance_strategy, params
+            )
         else:
             _create_hnsw_index(
-                client, vector_store.table_name,
-                vector_store.distance_strategy, params
-                )
+                client, vector_store.table_name, vector_store.distance_strategy, params
+            )
     else:
         _create_hnsw_index(
-            client, vector_store.table_name, vector_store.distance_strategy,
-            params
-            )
+            client, vector_store.table_name, vector_store.distance_strategy, params
+        )
     return
 
 
 @_handle_exceptions
 def _create_hnsw_index(
-        client: oracledb.Connection,
-        table_name: str,
-        distance_strategy: DistanceStrategy,
-        params: Optional[dict[str, Any]] = None,
-        ) -> None:
+    client: oracledb.Connection,
+    table_name: str,
+    distance_strategy: DistanceStrategy,
+    params: Optional[dict[str, Any]] = None,
+) -> None:
     defaults = {
         "idx_name": "HNSW",
         "idx_type": "HNSW",
@@ -180,7 +175,7 @@ def _create_hnsw_index(
         "efConstruction": 200,
         "accuracy": 90,
         "parallel": 8,
-        }
+    }
 
     if params:
         config = params.copy()
@@ -188,8 +183,7 @@ def _create_hnsw_index(
         for compulsory_key in ["idx_name", "parallel"]:
             if compulsory_key not in config:
                 if compulsory_key == "idx_name":
-                    config[compulsory_key] = _get_index_name(
-                        defaults[compulsory_key])
+                    config[compulsory_key] = _get_index_name(defaults[compulsory_key])
                 else:
                     config[compulsory_key] = defaults[compulsory_key]
 
@@ -202,34 +196,40 @@ def _create_hnsw_index(
 
     # Base SQL statement
     idx_name = config["idx_name"]
-    base_sql = (f"create vector index {idx_name} on {table_name}(embedding) "
-                f"ORGANIZATION INMEMORY NEIGHBOR GRAPH")
+    base_sql = (
+        f"create vector index {idx_name} on {table_name}(embedding) "
+        f"ORGANIZATION INMEMORY NEIGHBOR GRAPH"
+    )
 
     # Optional parts depending on parameters
-    accuracy_part = " WITH TARGET ACCURACY {accuracy}" if ("accuracy" in
-                                                           config) else ""
+    accuracy_part = " WITH TARGET ACCURACY {accuracy}" if ("accuracy" in config) else ""
     distance_part = f" DISTANCE {_get_distance_function(distance_strategy)}"
 
     parameters_part = ""
     if "neighbors" in config and "efConstruction" in config:
-        parameters_part = (" parameters (type {idx_type}, neighbors {"
-                           "neighbors}, efConstruction {efConstruction})")
+        parameters_part = (
+            " parameters (type {idx_type}, neighbors {"
+            "neighbors}, efConstruction {efConstruction})"
+        )
     elif "neighbors" in config and "efConstruction" not in config:
         config["efConstruction"] = defaults["efConstruction"]
-        parameters_part = (" parameters (type {idx_type}, neighbors {"
-                           "neighbors}, efConstruction {efConstruction})")
+        parameters_part = (
+            " parameters (type {idx_type}, neighbors {"
+            "neighbors}, efConstruction {efConstruction})"
+        )
     elif "neighbors" not in config and "efConstruction" in config:
         config["neighbors"] = defaults["neighbors"]
-        parameters_part = (" parameters (type {idx_type}, neighbors {"
-                           "neighbors}, efConstruction {efConstruction})")
+        parameters_part = (
+            " parameters (type {idx_type}, neighbors {"
+            "neighbors}, efConstruction {efConstruction})"
+        )
 
     # Always included part for parallel
     parallel_part = " parallel {parallel}"
 
     # Combine all parts
     ddl_assembly = (
-            base_sql + accuracy_part + distance_part + parameters_part +
-            parallel_part
+        base_sql + accuracy_part + distance_part + parameters_part + parallel_part
     )
     # Format the SQL with values from the params dictionary
     ddl = ddl_assembly.format(**config)
@@ -245,11 +245,11 @@ def _create_hnsw_index(
 
 @_handle_exceptions
 def _create_ivf_index(
-        client: oracledb.Connection,
-        table_name: str,
-        distance_strategy: DistanceStrategy,
-        params: Optional[dict[str, Any]] = None,
-        ) -> None:
+    client: oracledb.Connection,
+    table_name: str,
+    distance_strategy: DistanceStrategy,
+    params: Optional[dict[str, Any]] = None,
+) -> None:
     # Default configuration
     defaults = {
         "idx_name": "IVF",
@@ -257,7 +257,7 @@ def _create_ivf_index(
         "neighbor_part": 32,
         "accuracy": 90,
         "parallel": 8,
-        }
+    }
 
     if params:
         config = params.copy()
@@ -265,8 +265,7 @@ def _create_ivf_index(
         for compulsory_key in ["idx_name", "parallel"]:
             if compulsory_key not in config:
                 if compulsory_key == "idx_name":
-                    config[compulsory_key] = _get_index_name(
-                        defaults[compulsory_key])
+                    config[compulsory_key] = _get_index_name(defaults[compulsory_key])
                 else:
                     config[compulsory_key] = defaults[compulsory_key]
 
@@ -279,26 +278,28 @@ def _create_ivf_index(
 
     # Base SQL statement
     idx_name = config["idx_name"]
-    base_sql = (f"CREATE VECTOR INDEX {idx_name} ON {table_name}(embedding) "
-                f"ORGANIZATION NEIGHBOR PARTITIONS")
+    base_sql = (
+        f"CREATE VECTOR INDEX {idx_name} ON {table_name}(embedding) "
+        f"ORGANIZATION NEIGHBOR PARTITIONS"
+    )
 
     # Optional parts depending on parameters
-    accuracy_part = " WITH TARGET ACCURACY {accuracy}" if ("accuracy" in
-                                                           config) else ""
+    accuracy_part = " WITH TARGET ACCURACY {accuracy}" if ("accuracy" in config) else ""
     distance_part = f" DISTANCE {_get_distance_function(distance_strategy)}"
 
     parameters_part = ""
     if "idx_type" in config and "neighbor_part" in config:
-        parameters_part = (f" PARAMETERS (type {config['idx_type']}, neighbor"
-                           f" partitions {config['neighbor_part']})")
+        parameters_part = (
+            f" PARAMETERS (type {config['idx_type']}, neighbor"
+            f" partitions {config['neighbor_part']})"
+        )
 
     # Always included part for parallel
     parallel_part = f" PARALLEL {config['parallel']}"
 
     # Combine all parts
     ddl_assembly = (
-            base_sql + accuracy_part + distance_part + parameters_part +
-            parallel_part
+        base_sql + accuracy_part + distance_part + parameters_part + parallel_part
     )
     # Format the SQL with values from the params dictionary
     ddl = ddl_assembly.format(**config)
@@ -359,18 +360,17 @@ class OracleVS(VectorStore):
     """
 
     def __init__(
-            self,
-            client: oracledb.Connection,
-            embedding_function: Union[
-                Callable[[str], List[float]],
-                Embeddings,
-            ],
-            table_name: str,
-            distance_strategy: DistanceStrategy =
-            DistanceStrategy.EUCLIDEAN_DISTANCE,
-            query: Optional[str] = "What is a Oracle database",
-            params: Optional[Dict[str, Any]] = None,
-            ):
+        self,
+        client: oracledb.Connection,
+        embedding_function: Union[
+            Callable[[str], List[float]],
+            Embeddings,
+        ],
+        table_name: str,
+        distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
+        query: Optional[str] = "What is a Oracle database",
+        params: Optional[Dict[str, Any]] = None,
+    ):
         try:
             """Initialize with oracledb client."""
             self.client = client
@@ -380,7 +380,7 @@ class OracleVS(VectorStore):
                     "`embedding_function` is expected to be an Embeddings "
                     "object, support "
                     "for passing in a function will soon be removed."
-                    )
+                )
             self.embedding_function = embedding_function
             self.query = query
             embedding_dim = self.get_embedding_dimension()
@@ -391,22 +391,20 @@ class OracleVS(VectorStore):
 
             _create_table(client, table_name, embedding_dim)
         except oracledb.DatabaseError as db_err:
-            logger.exception(
-                f"Database error occurred while create table: {db_err}")
+            logger.exception(f"Database error occurred while create table: {db_err}")
             raise RuntimeError(
                 "Failed to create table due to a database error."
-                ) from db_err
+            ) from db_err
         except ValueError as val_err:
             logger.exception(f"Validation error: {val_err}")
             raise RuntimeError(
                 "Failed to create table due to a validation error."
-                ) from val_err
+            ) from val_err
         except Exception as ex:
-            logger.exception(
-                "An unexpected error occurred while creating the index.")
+            logger.exception("An unexpected error occurred while creating the index.")
             raise RuntimeError(
                 "Failed to create table due to an unexpected error."
-                ) from ex
+            ) from ex
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -439,12 +437,12 @@ class OracleVS(VectorStore):
 
     @_handle_exceptions
     def add_texts(
-            self,
-            texts: List[str],
-            metadatas: Optional[List[Dict[Any, Any]]] = None,
-            ids: Optional[List[str]] = None,
-            **kwargs: Any,
-            ) -> List[str]:
+        self,
+        texts: List[str],
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
         """Add more texts to the vectorstore index.
         Args:
           texts: Iterable of strings to add to the vectorstore.
@@ -456,26 +454,24 @@ class OracleVS(VectorStore):
         if ids:
             # If ids are provided, hash them to maintain consistency
             processed_ids = [
-                hashlib.sha256(_id.encode()).hexdigest()[:16].upper() for _id
-                in ids
-                ]
+                hashlib.sha256(_id.encode()).hexdigest()[:16].upper() for _id in ids
+            ]
         elif metadatas and all("id" in metadata for metadata in metadatas):
             # If no ids are provided but metadatas with ids are, generate
             # ids from metadatas
             processed_ids = [
-                hashlib.sha256(metadata["id"].encode())
-                .hexdigest()[:16].upper()
+                hashlib.sha256(metadata["id"].encode()).hexdigest()[:16].upper()
                 for metadata in metadatas
-                ]
+            ]
         else:
             # Generate new ids if none are provided
             generated_ids = [
                 str(uuid.uuid4()) for _ in texts
-                ]  # uuid4 is more standard for random UUIDs
+            ]  # uuid4 is more standard for random UUIDs
             processed_ids = [
                 hashlib.sha256(_id.encode()).hexdigest()[:16].upper()
                 for _id in generated_ids
-                ]
+            ]
 
         embeddings = self._embed_documents(texts)
         if not metadatas:
@@ -484,58 +480,56 @@ class OracleVS(VectorStore):
             (id_, text, json.dumps(metadata), array.array("f", embedding))
             for id_, text, metadata, embedding in zip(
                 processed_ids, texts, metadatas, embeddings
-                )
-            ]
+            )
+        ]
 
         with self.client.cursor() as cursor:
             cursor.executemany(
                 f"INSERT INTO {self.table_name} (id, text, metadata, "
                 f"embedding) VALUES (:1, :2, :3, :4)",
                 docs,
-                )
+            )
             self.client.commit()
         return processed_ids
 
     def similarity_search(
-            self,
-            query: str,
-            k: int = 4,
-            filter: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
-            ) -> List[Document]:
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Return docs most similar to query."""
         embedding = self.embedding_function.embed_query(query)
         documents = self.similarity_search_by_vector(
             embedding=embedding, k=k, filter=filter, **kwargs
-            )
+        )
         return documents
 
     def similarity_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            filter: Optional[dict[str, Any]] = None,
-            **kwargs: Any,
-            ) -> List[Document]:
-        docs_and_scores = (
-            self.similarity_search_by_vector_with_relevance_scores(
-                embedding=embedding, k=k, filter=filter, **kwargs
-                ))
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        docs_and_scores = self.similarity_search_by_vector_with_relevance_scores(
+            embedding=embedding, k=k, filter=filter, **kwargs
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_with_score(
-            self,
-            query: str,
-            k: int = 4,
-            filter: Optional[dict[str, Any]] = None,
-            **kwargs: Any,
-            ) -> List[Tuple[Document, float]]:
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query."""
         embedding = self.embedding_function.embed_query(query)
-        docs_and_scores = (
-            self.similarity_search_by_vector_with_relevance_scores(
-                embedding=embedding, k=k, filter=filter, **kwargs
-                ))
+        docs_and_scores = self.similarity_search_by_vector_with_relevance_scores(
+            embedding=embedding, k=k, filter=filter, **kwargs
+        )
         return docs_and_scores
 
     @_handle_exceptions
@@ -552,12 +546,12 @@ class OracleVS(VectorStore):
 
     @_handle_exceptions
     def similarity_search_by_vector_with_relevance_scores(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            filter: Optional[dict[str, Any]] = None,
-            **kwargs: Any,
-            ) -> List[Tuple[Document, float]]:
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
         docs_and_scores = []
         embedding = array.array("f", embedding)
 
@@ -580,21 +574,18 @@ class OracleVS(VectorStore):
             # Filter results if filter is provided
             for result in results:
                 metadata = json.loads(
-                    self._get_clob_value(result[2]) if result[
-                                                           2] is not None
-                    else "{}"
-                    )
+                    self._get_clob_value(result[2]) if result[2] is not None else "{}"
+                )
 
                 # Apply filtering based on the 'filter' dictionary
                 if filter:
-                    if all(metadata.get(key) == value for key, value in
-                           filter.items()):
+                    if all(metadata.get(key) in value for key, value in filter.items()):
                         doc = Document(
                             page_content=self._get_clob_value(result[1])
                             if result[1] is not None
                             else "",
                             metadata=metadata,
-                            )
+                        )
                         distance = result[3]
                         docs_and_scores.append((doc, distance))
                 else:
@@ -603,7 +594,7 @@ class OracleVS(VectorStore):
                         if result[1] is not None
                         else "",
                         metadata=metadata,
-                        )
+                    )
                     distance = result[3]
                     docs_and_scores.append((doc, distance))
 
@@ -611,12 +602,12 @@ class OracleVS(VectorStore):
 
     @_handle_exceptions
     def similarity_search_by_vector_returning_embeddings(
-            self,
-            embedding: List[float],
-            k: int,
-            filter: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
-            ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
+        self,
+        embedding: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
         documents = []
         embedding = array.array("f", embedding)
 
@@ -646,30 +637,28 @@ class OracleVS(VectorStore):
                 # Apply filter if provided and matches; otherwise, add all
                 # documents
                 if not filter or all(
-                        metadata.get(key) == value for key, value in
-                        filter.items()
-                        ):
+                    metadata.get(key) in value for key, value in filter.items()
+                ):
                     document = Document(
                         page_content=page_content_str, metadata=metadata
-                        )
+                    )
                     distance = result[3]
                     # Assuming result[4] is already in the correct format;
                     # adjust if necessary
-                    embedding = np.array(result[4]) if result[4] else np.array(
-                        [])
+                    embedding = np.array(result[4]) if result[4] else np.array([])
                     documents.append((document, distance, embedding))
         return documents
 
     @_handle_exceptions
     def max_marginal_relevance_search_with_score_by_vector(
-            self,
-            embedding: List[float],
-            *,
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            filter: Optional[Dict[str, Any]] = None,
-            ) -> List[Tuple[Document, float]]:
+        self,
+        embedding: List[float],
+        *,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+    ) -> List[Tuple[Document, float]]:
         """Return docs and their similarity scores selected using the
         maximal marginal
             relevance.
@@ -697,17 +686,15 @@ class OracleVS(VectorStore):
         """
 
         # Fetch documents and their scores
-        docs_scores_embeddings = (
-            self.similarity_search_by_vector_returning_embeddings(
-                embedding, fetch_k, filter=filter
-                ))
+        docs_scores_embeddings = self.similarity_search_by_vector_returning_embeddings(
+            embedding, fetch_k, filter=filter
+        )
         # Assuming documents_with_scores is a list of tuples (Document, score)
 
         # If you need to split documents and scores for processing (e.g.,
         # for MMR calculation)
         documents, scores, embeddings = (
-            zip(*docs_scores_embeddings) if docs_scores_embeddings else (
-                [], [], [])
+            zip(*docs_scores_embeddings) if docs_scores_embeddings else ([], [], [])
         )
 
         # Assume maximal_marginal_relevance method accepts embeddings and
@@ -717,25 +704,25 @@ class OracleVS(VectorStore):
             embeddings,
             k=k,
             lambda_mult=lambda_mult,
-            )
+        )
 
         # Filter documents based on MMR-selected indices and map scores
         mmr_selected_documents_with_scores = [
             (documents[i], scores[i]) for i in mmr_selected_indices
-            ]
+        ]
 
         return mmr_selected_documents_with_scores
 
     @_handle_exceptions
     def max_marginal_relevance_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            filter: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
-            ) -> List[Document]:
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND
@@ -756,23 +743,21 @@ class OracleVS(VectorStore):
         Returns:
           List of Documents selected by maximal marginal relevance.
         """
-        docs_and_scores = (
-            self.max_marginal_relevance_search_with_score_by_vector(
-                embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult,
-                filter=filter
-                ))
+        docs_and_scores = self.max_marginal_relevance_search_with_score_by_vector(
+            embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult, filter=filter
+        )
         return [doc for doc, _ in docs_and_scores]
 
     @_handle_exceptions
     def max_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            filter: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
-            ) -> List[Document]:
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND
@@ -804,7 +789,7 @@ class OracleVS(VectorStore):
             lambda_mult=lambda_mult,
             filter=filter,
             **kwargs,
-            )
+        )
         return documents
 
     @_handle_exceptions
@@ -820,21 +805,18 @@ class OracleVS(VectorStore):
 
         # Compute SHA-256 hashes of the ids and truncate them
         hashed_ids = [
-            hashlib.sha256(_id.encode()).hexdigest()[:16].upper() for _id in
-            ids
-            ]
+            hashlib.sha256(_id.encode()).hexdigest()[:16].upper() for _id in ids
+        ]
 
         # Constructing the SQL statement with individual placeholders
-        placeholders = ", ".join(
-            [":id" + str(i + 1) for i in range(len(hashed_ids))])
+        placeholders = ", ".join([":id" + str(i + 1) for i in range(len(hashed_ids))])
 
         ddl = f"DELETE FROM {self.table_name} WHERE id IN ({placeholders})"
 
         # Preparing bind variables
         bind_vars = {
-            f"id{i}": hashed_id for i, hashed_id in
-            enumerate(hashed_ids, start=1)
-            }
+            f"id{i}": hashed_id for i, hashed_id in enumerate(hashed_ids, start=1)
+        }
 
         with self.client.cursor() as cursor:
             cursor.execute(ddl, bind_vars)
@@ -843,12 +825,12 @@ class OracleVS(VectorStore):
     @classmethod
     @_handle_exceptions
     def from_texts(
-            cls: Type[OracleVS],
-            texts: Iterable[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
-            ) -> OracleVS:
+        cls: Type[OracleVS],
+        texts: Iterable[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> OracleVS:
         """Return VectorStore initialized from texts and embeddings."""
         client = kwargs.get("client")
         if client is None:
@@ -864,20 +846,20 @@ class OracleVS(VectorStore):
             table_name=table_name,
             params=params,
             distance_strategy=distance_strategy,
-            )
+        )
         vss.add_texts(texts=list(texts), metadatas=metadatas)
         return vss
 
     @classmethod
     @_handle_exceptions
     def from_documents(
-            cls: Type[OracleVS],
-            docs: List[Document],
-            embedding: Embeddings,
-            optional_metadatas: Optional[List[dict]] = None,
-            table_name: str = "langchain",
-            **kwargs: Any,
-            ) -> OracleVS:
+        cls: Type[OracleVS],
+        docs: List[Document],
+        embedding: Embeddings,
+        optional_metadatas: Optional[List[dict]] = None,
+        table_name: str = "langchain",
+        **kwargs: Any,
+    ) -> OracleVS:
         """Return VectorStore initialized from texts and embeddings."""
         client = kwargs.get("client")
         if client is None:
@@ -892,7 +874,7 @@ class OracleVS(VectorStore):
             table_name=table_name,
             params=params,
             distance_strategy=distance_strategy,
-            )
+        )
         texts = [doc.page_content for doc in docs]
         metadatas = [doc.metadata for doc in docs]
         vss.add_texts(texts=texts, metadatas=metadatas)

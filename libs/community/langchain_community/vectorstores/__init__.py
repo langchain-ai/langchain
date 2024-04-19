@@ -337,7 +337,7 @@ __all__ = [
     "MyScaleSettings",
     "Neo4jVector",
     "NeuralDBVectorStore",
-		"OracleVS",
+    "OracleVS",
     "OpenSearchVectorSearch",
     "PGEmbedding",
     "PGVector",
