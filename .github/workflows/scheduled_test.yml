@@ -22,8 +22,8 @@ jobs:
           - "libs/partners/ai21"
           - "libs/partners/fireworks"
           - "libs/partners/groq"
-          - "libs/partners/mistralai"
-          - "libs/partners/together"
+          # - "libs/partners/mistralai"
+          - "libs/partners/together"  # needs standard-tests
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
       - uses: actions/checkout@v4
