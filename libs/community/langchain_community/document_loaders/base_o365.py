@@ -108,13 +108,17 @@ class O365BaseLoader(BaseLoader, BaseModel):
         """
         file_mime_types = self._fetch_mime_types
         items = folder.get_items()
+        metadata_dict = {}
         with tempfile.TemporaryDirectory() as temp_dir:
             os.makedirs(os.path.dirname(temp_dir), exist_ok=True)
             for file in items:
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
-            loader = FileSystemBlobLoader(path=temp_dir)
+                        metadata_dict[file.name] = {}
+                        metadata_dict[file.name]["web_url"] = file.web_url
+                        metadata_dict[file.name]["mime_type"] = file.mime_type
+            loader = FileSystemBlobLoader(path=temp_dir, metadata_dict=metadata_dict)
             yield from loader.yield_blobs()
         if self.recursive:
             for subfolder in folder.get_child_folders():

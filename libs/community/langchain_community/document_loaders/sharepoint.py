@@ -67,4 +67,6 @@ class SharePointLoader(O365BaseLoader):
             if not isinstance(target_folder, Folder):
                 raise ValueError("Unable to fetch root folder")
             for blob in self._load_from_folder(target_folder):
-                yield from blob_parser.lazy_parse(blob)
+                for parsed_blob_chunk in blob_parser.lazy_parse(blob):
+                    parsed_blob_chunk.metadata["web_url"] = blob.metadata.get("web_url")
+                    yield parsed_blob_chunk
