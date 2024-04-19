@@ -42,10 +42,10 @@ However, these guides will help you quickly accomplish common tasks.
 ## Components
 
 ### Prompts
-- [How to use few shot examples](/docs/modules/model_io/prompts/few_shot_examples)
-- [How to use few shot examples in chat models](/docs/modules/model_io/prompts/few_shot_examples_chat/)
-- [How to partial prompt templates](/docs/modules/model_io/prompts/partial)
-- [How to compose two prompts together](/docs/modules/model_io/prompts/composition)
+- [How to use few shot examples](/docs/how_to/few_shot_examples)
+- [How to use few shot examples in chat models](/docs/how_to/few_shot_examples_chat/)
+- [How to partial prompt templates](/docs/how_to/prompts_partial)
+- [How to compose two prompts together](/docs/how_to/prompts_composition)
 
 ### Example Selectors
 - [How to use example selectors](/docs/modules/model_io/prompts/example_selectors/)
