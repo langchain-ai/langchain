@@ -8,20 +8,20 @@ However, these guides will help you quickly accomplish common tasks.
 
 - How to return structured data from an LLM
 - How to use an LLM to call tools
-- [How to stream](/docs/expression_language/streaming)
+- [How to stream](/docs/how_to/streaming)
 - How to see what is going on inside your LLM application
 - How to test your LLM application
 - How to deploy your LLM application
 
 ### Tool Usage
 
-- [How to use tools in a chain](/docs/use_cases/tool_use/quickstart/)
-- [How to use agents to use tools](/docs/use_cases/tool_use/agents)
-- [How to use tools without function calling](/docs/use_cases/tool_use/prompting)
-- [How to let the LLM choose between multiple tools](/docs/use_cases/tool_use/multiple_tools)
-- [How to add a human in the loop to tool usage](/docs/use_cases/tool_use/human_in_the_loop)
-- [How to do parallel tool use](/docs/use_cases/tool_use/parallel)
-- [How to handle errors when calling tools](/docs/use_cases/tool_use/tool_error_handling)
+- [How to use tools in a chain](/docs/how_to/tool_chain)
+- [How to use agents to use tools](/docs/how_to/tools_agents)
+- [How to use tools without function calling](/docs/how_to/tools_prompting)
+- [How to let the LLM choose between multiple tools](/docs/how_to/tools_multiple)
+- [How to add a human in the loop to tool usage](/docs/how_to/tools_human)
+- [How to do parallel tool use](/docs/how_to/tools_parallel)
+- [How to handle errors when calling tools](/docs/how_to/tools_error)
 
 ## LangChain Expression Language (LCEL)
 
