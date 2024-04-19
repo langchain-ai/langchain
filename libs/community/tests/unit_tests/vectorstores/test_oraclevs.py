@@ -18,9 +18,9 @@ from langchain_community.vectorstores.oraclevs import (
 )
 from langchain_community.vectorstores.utils import DistanceStrategy
 
-username = "vector"
-password = "rohan"
-dsn = "152.67.235.198:1521/orclpdb1"
+username = ""
+password = ""
+dsn = ""
 
 
 ############################
