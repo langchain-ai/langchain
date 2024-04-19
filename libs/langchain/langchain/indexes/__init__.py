@@ -11,10 +11,11 @@ Importantly, Index keeps on working even if the content being written is derived
 via a set of transformations from some source content (e.g., indexing children
 documents that were derived from parent documents by chunking.)
 """
+from langchain_core.indexing.api import IndexingResult, aindex, index
+
 from langchain.indexes._sql_record_manager import SQLRecordManager
 from langchain.indexes.graph import GraphIndexCreator
 from langchain.indexes.vectorstore import VectorstoreIndexCreator
-from langchain_core.indexing.api import IndexingResult, aindex, index
 
 __all__ = [
     # Keep sorted
