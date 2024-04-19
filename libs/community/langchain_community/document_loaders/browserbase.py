@@ -1,7 +1,6 @@
 from typing import Iterator, Optional, Sequence
 
 from langchain_core.documents import Document
-from langchain_core.utils import get_from_env
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -32,7 +31,6 @@ class BrowserbaseLoader(BaseLoader):
                 "to use the Browserbase loader."
             )
 
-        api_key = api_key or get_from_env("api_key", "BROWSERBASE_API_KEY")
         self.browserbase = Browserbase(api_key=api_key)
 
     def lazy_load(self) -> Iterator[Document]:
