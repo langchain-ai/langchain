@@ -57,6 +57,7 @@ EXPECTED_ALL = [
     "ErnieEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",
+    "OracleEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",

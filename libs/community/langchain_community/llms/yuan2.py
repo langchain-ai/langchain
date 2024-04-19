@@ -150,7 +150,7 @@ class Yuan2(LLM):
 
         data = json.dumps(
             {
-                "ques_list": [{"id": "000", "ques": input}],
+                "ques_list": [{"id": "000", "quest": input}],
                 "tokens_to_generate": self.max_tokens,
                 "temperature": self.temp,
                 "top_p": self.top_p,
@@ -182,7 +182,7 @@ class Yuan2(LLM):
 
             if "resData" in resp:
                 if len(resp["resData"]["output"]) >= 0:
-                    generate_text = resp["resData"]["output"][0]["ans"]
+                    generate_text = resp["resData"]["output"][0]["and"]
                 else:
                     raise ValueError("No output found in response.")
             else:
