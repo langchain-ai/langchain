@@ -48,11 +48,11 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to compose two prompts together](/docs/how_to/prompts_composition)
 
 ### Example Selectors
-- [How to use example selectors](/docs/modules/model_io/prompts/example_selectors/)
-- [How to select examples by length](/docs/modules/model_io/prompts/example_selectors/length_based)
-- [How to select examples by semantic similarity](/docs/modules/model_io/prompts/example_selectors/similarity)
-- [How to select examples by semantic ngram overlap](/docs/modules/model_io/prompts/example_selectors/ngram_overlap)
-- [How to select examples by maximal marginal relevance](/docs/modules/model_io/prompts/example_selectors/mmr)
+- [How to use example selectors](/docs/how_to/example_selectors.ipynb)
+- [How to select examples by length](/docs/how_to/example_selectors_length_based.ipynb)
+- [How to select examples by semantic similarity](/docs/how_to/example_selectors_similarity.ipynb)
+- [How to select examples by semantic ngram overlap](/docs/how_to/example_selectors_ngram.ipynb)
+- [How to select examples by maximal marginal relevance](/docs/how_to/example_selectors_mmr.ipynb)
 
 ### Chat Models
 - [How to function/tool calling](/docs/modules/model_io/chat/function_calling)
