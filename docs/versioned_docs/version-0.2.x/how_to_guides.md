@@ -70,13 +70,13 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to track token usage](/docs/how_to/llm_token_usage_tracking)
 
 ### Output Parsers
-- [How to use output parsers to parse an LLM response into structured format](/docs/modules/model_io/output_parsers/quick_start)
-- [How to parse JSON output](/docs/modules/model_io/output_parsers/types/json)
-- [How to parse XML output](/docs/modules/model_io/output_parsers/types/xml)
-- [How to parse YAML output](/docs/modules/model_io/output_parsers/types/yaml)
-- [How to retry when output parsing errors occur](/docs/modules/model_io/output_parsers/types/retry)
-- [How to try to fix errors in output parsing](/docs/modules/model_io/output_parsers/types/output_fixing)
-- [How to write a custom output parser class](/docs/modules/model_io/output_parsers/custom)
+- [How to use output parsers to parse an LLM response into structured format](/docs/how_to/output_parser_structured)
+- [How to parse JSON output](/docs/how_to/output_parser_json)
+- [How to parse XML output](/docs/how_to/output_parser_xml)
+- [How to parse YAML output](/docs/how_to/output_parser_yaml)
+- [How to retry when output parsing errors occur](/docs/how_to/output_parser_retry)
+- [How to try to fix errors in output parsing](/docs/how_to/output_parser_fixing)
+- [How to write a custom output parser class](/docs/how_to/output_parser_custom)
 
 ### Document Loaders
 - [How to load CSV data](/docs/modules/data_connection/document_loaders/csv)
