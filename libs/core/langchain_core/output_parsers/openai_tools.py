@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Type
 
@@ -31,7 +32,7 @@ def parse_tool_call(
     else:
         try:
             function_args = json.loads(
-                raw_tool_call["function"]["arguments"], strict=strict
+                make_json_valid(raw_tool_call["function"]["arguments"]), strict=strict
             )
         except JSONDecodeError as e:
             raise OutputParserException(
@@ -46,6 +47,18 @@ def parse_tool_call(
     if return_id:
         parsed["id"] = raw_tool_call.get("id")
     return parsed
+
+def make_json_valid(json_string: str) -> str:
+    """
+    This function takes a dictionary-like string and converts it into a valid JSON string.
+    It does this by adding double quotes around the keys.
+    """
+    try:
+        corrected_json_string = re.sub(r'(\b\w+\b):', r'"\1":', json_string)
+        return corrected_json_string
+    except TypeError as e:
+        print(f"An error occurred: {e}")
+        return json_string
 
 
 def make_invalid_tool_call(
