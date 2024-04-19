@@ -636,7 +636,7 @@ class Neo4jVector(VectorStore):
         # Flag for enterprise
         self._is_enterprise = True if db_data[0]["edition"] == "enterprise" else False
 
-    def retrieve_existing_index(self) -> Optional[int]:
+    def retrieve_existing_index(self) -> Tuple[Optional[int], Optional[str]]:
         """
         Check if the vector index exists in the Neo4j database
         and returns its embedding dimension.
