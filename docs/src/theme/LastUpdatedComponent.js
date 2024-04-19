@@ -7,7 +7,7 @@ const LAST_UPDATED_ELEMENT_ID = "lc_last_updated"
 
 const fetchUrl = async (url) => {
   try {
-    const res = await fetch(apiUrl)
+    const res = await fetch(url)
     if (!res.ok) return null;
     const json = await res.json();
     if (!json || json.length === 0 || !json[0]?.commit?.author?.date) return null;
