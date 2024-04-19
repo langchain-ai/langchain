@@ -28,6 +28,8 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 CVST = TypeVar("CVST", bound="Cassandra")
 
+_NOT_SET = object()
+
 
 class Cassandra(VectorStore):
     """Wrapper around Apache Cassandra(R) for vector-store workloads.
@@ -48,16 +50,18 @@ class Cassandra(VectorStore):
                 keyspace = 'my_keyspace'  # the keyspace should exist already
                 table_name = 'my_vector_store'
                 vectorstore = Cassandra(embeddings, session, keyspace, table_name)
+
+    Args:
+        embedding: Embedding function to use.
+        session: Cassandra driver session.
+        keyspace: Cassandra key space.
+        table_name: Cassandra table.
+        ttl_seconds: Optional time-to-live for the added texts.
+        body_index_options: Optional options used to create the body index.
+            Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
     """
 
     _embedding_dimension: Union[int, None]
-
-    @staticmethod
-    def _filter_to_metadata(filter_dict: Optional[Dict[str, str]]) -> Dict[str, Any]:
-        if filter_dict is None:
-            return {}
-        else:
-            return filter_dict
 
     def _get_embedding_dimension(self) -> int:
         if self._embedding_dimension is None:
@@ -73,6 +77,8 @@ class Cassandra(VectorStore):
         keyspace: str,
         table_name: str,
         ttl_seconds: Optional[int] = None,
+        *,
+        body_index_options: Optional[List[Tuple[str, Any]]] = None,
     ) -> None:
         try:
             from cassio.table import MetadataVectorCassandraTable
@@ -90,6 +96,10 @@ class Cassandra(VectorStore):
         #
         self._embedding_dimension = None
         #
+        kwargs = {}
+        if body_index_options is not None:
+            kwargs["body_index_options"] = body_index_options
+
         self.table = MetadataVectorCassandraTable(
             session=session,
             keyspace=keyspace,
@@ -97,16 +107,12 @@ class Cassandra(VectorStore):
             vector_dimension=self._get_embedding_dimension(),
             metadata_indexing="all",
             primary_key_type="TEXT",
+            **kwargs,
         )
 
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding
-
-    @staticmethod
-    def _dont_flip_the_cos_score(distance: float) -> float:
-        # the identity
-        return distance
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
@@ -114,7 +120,7 @@ class Cassandra(VectorStore):
         i.e. one in [0, 1] where higher means more *similar*,
         so here the final score transformation is not reversing the interval:
         """
-        return self._dont_flip_the_cos_score
+        return lambda score: score
 
     def delete_collection(self) -> None:
         """
@@ -124,7 +130,7 @@ class Cassandra(VectorStore):
         self.clear()
 
     def clear(self) -> None:
-        """Empty the collection."""
+        """Empty the table."""
         self.table.clear()
 
     def delete_by_document_id(self, document_id: str) -> None:
@@ -161,12 +167,11 @@ class Cassandra(VectorStore):
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
-            texts (Iterable[str]): Texts to add to the vectorstore.
-            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
-            ids (Optional[List[str]], optional): Optional list of IDs.
-            batch_size (int): Number of concurrent requests to send to the server.
-            ttl_seconds (Optional[int], optional): Optional time-to-live
-                for the added texts.
+            texts: Texts to add to the vectorstore.
+            metadatas: Optional list of metadatas.
+            ids: Optional list of IDs.
+            batch_size: Number of concurrent requests to send to the server.
+            ttl_seconds: Optional time-to-live for the added texts.
 
         Returns:
             List[str]: List of IDs of the added texts.
@@ -209,22 +214,30 @@ class Cassandra(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float, str]]:
         """Return docs most similar to embedding vector.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
         Returns:
             List of (Document, score, id), the most similar to the query vector.
         """
-        search_metadata = self._filter_to_metadata(filter)
+        kwargs: Dict[str, Any] = {}
+        if filter is not None:
+            kwargs["metadata"] = filter
+        if body_search is not None:
+            kwargs["body_search"] = body_search
         #
         hits = self.table.metric_ann_search(
             vector=embedding,
             n=k,
             metric="cos",
-            metadata=search_metadata,
+            **kwargs,
         )
         # We stick to 'cos' distance as it can be normalized on a 0-1 axis
         # (1=most relevant), as required by this class' contract.
@@ -245,12 +258,14 @@ class Cassandra(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float, str]]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_id_by_vector(
             embedding=embedding_vector,
             k=k,
             filter=filter,
+            body_search=body_search,
         )
 
     # id-unaware search facilities
@@ -259,12 +274,16 @@ class Cassandra(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to embedding vector.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
         Returns:
             List of (Document, score), the most similar to the query vector.
         """
@@ -274,6 +293,7 @@ class Cassandra(VectorStore):
                 embedding=embedding,
                 k=k,
                 filter=filter,
+                body_search=body_search,
             )
         ]
 
@@ -282,6 +302,7 @@ class Cassandra(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         embedding_vector = self.embedding.embed_query(query)
@@ -289,6 +310,7 @@ class Cassandra(VectorStore):
             embedding_vector,
             k,
             filter=filter,
+            body_search=body_search,
         )
 
     def similarity_search_by_vector(
@@ -296,6 +318,7 @@ class Cassandra(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         return [
@@ -304,6 +327,7 @@ class Cassandra(VectorStore):
                 embedding,
                 k,
                 filter=filter,
+                body_search=body_search,
             )
         ]
 
@@ -312,12 +336,14 @@ class Cassandra(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float]]:
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding_vector,
             k,
             filter=filter,
+            body_search=body_search,
         )
 
     def max_marginal_relevance_search_by_vector(
@@ -327,6 +353,7 @@ class Cassandra(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -334,22 +361,31 @@ class Cassandra(VectorStore):
         among selected documents.
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return.
+            k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
+                of diversity among the results with 0 corresponding to maximum
+                diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        search_metadata = self._filter_to_metadata(filter)
+        _kwargs: Dict[str, Any] = {}
+        if filter is not None:
+            _kwargs["metadata"] = filter
+        if body_search is not None:
+            _kwargs["body_search"] = body_search
 
         prefetch_hits = list(
             self.table.metric_ann_search(
                 vector=embedding,
                 n=fetch_k,
                 metric="cos",
-                metadata=search_metadata,
+                **_kwargs,
             )
         )
         # let the mmr utility pick the *indices* in the above array
@@ -379,6 +415,7 @@ class Cassandra(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
+        body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -386,12 +423,16 @@ class Cassandra(VectorStore):
         among selected documents.
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return.
+            k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+                Defaults to 20.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Optional.
+                of diversity among the results with 0 corresponding to maximum
+                diversity and 1 to minimum diversity.
+                Defaults to 0.5.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -402,6 +443,7 @@ class Cassandra(VectorStore):
             fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
+            body_search=body_search,
         )
 
     @classmethod
@@ -410,53 +452,99 @@ class Cassandra(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        *,
+        session: Session = _NOT_SET,
+        keyspace: str = "",
+        table_name: str = "",
+        ids: Optional[List[str]] = None,
         batch_size: int = 16,
+        ttl_seconds: Optional[int] = None,
+        body_index_options: Optional[List[Tuple[str, Any]]] = None,
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from raw texts.
 
-        No support for specifying text IDs
+        Args:
+            texts: Texts to add to the vectorstore.
+            embedding: Embedding function to use.
+            metadatas: Optional list of metadatas associated with the texts.
+            session: Cassandra driver session (required).
+            keyspace: Cassandra key space (required).
+            table_name: Cassandra table (required).
+            ids: Optional list of IDs associated with the texts.
+            batch_size: Number of concurrent requests to send to the server.
+                Defaults to 16.
+            ttl_seconds: Optional time-to-live for the added texts.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
 
         Returns:
             a Cassandra vectorstore.
         """
-        session: Session = kwargs["session"]
-        keyspace: str = kwargs["keyspace"]
-        table_name: str = kwargs["table_name"]
-        cassandraStore = cls(
+        if session is _NOT_SET:
+            raise ValueError("session parameter is required")
+        if not keyspace:
+            raise ValueError("keyspace parameter is required")
+        if not table_name:
+            raise ValueError("table_name parameter is required")
+        store = cls(
             embedding=embedding,
             session=session,
             keyspace=keyspace,
             table_name=table_name,
+            ttl_seconds=ttl_seconds,
+            body_index_options=body_index_options,
         )
-        cassandraStore.add_texts(texts=texts, metadatas=metadatas)
-        return cassandraStore
+        store.add_texts(
+            texts=texts, metadatas=metadatas, ids=ids, batch_size=batch_size
+        )
+        return store
 
     @classmethod
     def from_documents(
         cls: Type[CVST],
         documents: List[Document],
         embedding: Embeddings,
+        *,
+        session: Session = _NOT_SET,
+        keyspace: str = "",
+        table_name: str = "",
+        ids: Optional[List[str]] = None,
         batch_size: int = 16,
+        ttl_seconds: Optional[int] = None,
+        body_index_options: Optional[List[Tuple[str, Any]]] = None,
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from a document list.
 
-        No support for specifying text IDs
+        Args:
+            documents: Documents to add to the vectorstore.
+            embedding: Embedding function to use.
+            session: Cassandra driver session (required).
+            keyspace: Cassandra key space (required).
+            table_name: Cassandra table (required).
+            ids: Optional list of IDs associated with the documents.
+            batch_size: Number of concurrent requests to send to the server.
+                Defaults to 16.
+            ttl_seconds: Optional time-to-live for the added documents.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
 
         Returns:
             a Cassandra vectorstore.
         """
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        session: Session = kwargs["session"]
-        keyspace: str = kwargs["keyspace"]
-        table_name: str = kwargs["table_name"]
         return cls.from_texts(
             texts=texts,
-            metadatas=metadatas,
             embedding=embedding,
+            metadatas=metadatas,
             session=session,
             keyspace=keyspace,
             table_name=table_name,
+            ids=ids,
+            batch_size=batch_size,
+            ttl_seconds=ttl_seconds,
+            body_index_options=body_index_options,
+            **kwargs,
         )
