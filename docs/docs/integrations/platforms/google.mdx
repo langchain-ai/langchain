@@ -169,7 +169,7 @@ pip install google-cloud-bigquery
 See a [usage example](/docs/integrations/document_loaders/google_bigquery).
 
 ```python
-from langchain_community.document_loaders import BigQueryLoader
+from langchain_google_community import BigQueryLoader
 ```
 
 ### Bigtable
@@ -247,12 +247,12 @@ There are two loaders for the `Google Cloud Storage`: the `Directory` and the `F
 See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_directory).
 
 ```python
-from langchain_community.document_loaders import GCSDirectoryLoader
+from langchain_google_community import GCSDirectoryLoader
 ```
 See a [usage example](/docs/integrations/document_loaders/google_cloud_storage_file).
 
 ```python
-from langchain_community.document_loaders import GCSFileLoader
+from langchain_google_community import GCSFileLoader
 ```
 
 ### El Carro for Oracle Workloads
@@ -286,7 +286,7 @@ pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_drive).
 
 ```python
-from langchain_community.document_loaders import GoogleDriveLoader
+from langchain_google_community import GoogleDriveLoader
 ```
 
 ### Firestore (Native Mode)
@@ -365,7 +365,7 @@ pip install google-cloud-speech
 See a [usage example and authorization instructions](/docs/integrations/document_loaders/google_speech_to_text).
 
 ```python
-from langchain_community.document_loaders import GoogleSpeechToTextLoader
+from langchain_google_community import SpeechToTextLoader
 ```
 
 ## Document Transformers
@@ -390,8 +390,8 @@ pip install google-cloud-documentai-toolbox
 See a [usage example](/docs/integrations/document_transformers/google_docai).
 
 ```python
-from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers import DocAIParser
+from langchain_core.document_loaders.blob_loaders import Blob
+from langchain_google_community import DocAIParser
 ```
 
 ### Google Translate
@@ -413,7 +413,7 @@ pip install google-cloud-translate
 See a [usage example and authorization instructions](/docs/integrations/document_transformers/google_translate).
 
 ```python
-from langchain_community.document_transformers import GoogleTranslateTransformer
+from langchain_google_community import GoogleTranslateTransformer
 ```
 
 ## Vector Stores
@@ -643,7 +643,7 @@ pip install google-cloud-text-to-speech
 See a [usage example and authorization instructions](/docs/integrations/tools/google_cloud_texttospeech).
 
 ```python
-from langchain.tools import GoogleCloudTextToSpeechTool
+from langchain_google_community import TextToSpeechTool
 ```
 
 ### Google Drive
@@ -736,7 +736,7 @@ from langchain_community.utilities.google_scholar import GoogleScholarAPIWrapper
 `GOOGLE_API_KEY` and `GOOGLE_CSE_ID` respectively.
 
 ```python
-from langchain_community.utilities import GoogleSearchAPIWrapper
+from langchain_google_community import GoogleSearchAPIWrapper
 ```
 
 For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/google_search).
@@ -779,7 +779,7 @@ pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
 See a [usage example and authorization instructions](/docs/integrations/toolkits/gmail).
 
 ```python
-from langchain_community.agent_toolkits import GmailToolkit
+from langchain_google_community import GmailToolkit
 ```
 
 ## Memory
@@ -954,7 +954,7 @@ pip install google-api-python-client google-auth-oauthlib google-auth-httplib2
 See a [usage example and authorization instructions](/docs/integrations/chat_loaders/gmail).
 
 ```python
-from langchain_community.chat_loaders.gmail import GMailLoader
+from langchain_google_community import GMailLoader
 ```
 
 ## 3rd Party Integrations
