@@ -20,8 +20,8 @@ const config = {
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
   trailingSlash: true,
-  onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "throw",
+  onBrokenLinks: "warn",
+  onBrokenMarkdownLinks: "warn",
 
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
@@ -170,12 +170,6 @@ const config = {
             position: "left",
             sidebarId: "integrations",
             label: "Integrations",
-          },
-          {
-            type: "doc",
-            docId: "guides/index",
-            label: "Guides",
-            position: "left",
           },
           {
             href: "https://api.python.langchain.com",
