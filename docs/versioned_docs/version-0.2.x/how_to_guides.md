@@ -9,24 +9,14 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to return structured data from an LLM](/docs/how_to/structured_output/)
 - [How to use a chat model to call tools](/docs/how_to/tool_calling/)
 - [How to stream](/docs/how_to/streaming)
-- How to see what is going on inside your LLM application
+- [How to debug your LLM apps](/docs/how_to/debugging/)
 - How to test your LLM application
 - How to deploy your LLM application
-
-### Tool Usage
-
-- [How to use tools in a chain](/docs/how_to/tool_chain)
-- [How to use agents to use tools](/docs/how_to/tools_agents)
-- [How to use tools without function calling](/docs/how_to/tools_prompting)
-- [How to let the LLM choose between multiple tools](/docs/how_to/tools_multiple)
-- [How to add a human in the loop to tool usage](/docs/how_to/tools_human)
-- [How to do parallel tool use](/docs/how_to/tools_parallel)
-- [How to handle errors when calling tools](/docs/how_to/tools_error)
 
 ## LangChain Expression Language (LCEL)
 
 - [How to chain runnables](/docs/how_to/sequence)
-- [How to run two runnables in parallel](/docs/how_to/parallel/)
+- [How to invoke runnables in parallel](/docs/how_to/parallel/)
 - [How to attach runtime arguments to a runnable](/docs/how_to/binding/)
 - [How to run custom functions](/docs/how_to/functions)
 - [How to pass through arguments from one step to the next](/docs/how_to/passthrough)
@@ -126,6 +116,13 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to use LangChain toolkits](/docs/modules/tools/toolkits)
 - [How to define a custom tool](/docs/modules/tools/custom_tools)
 - [How to convert LangChain tools to OpenAI functions](/docs/modules/tools/tools_as_openai_functions)
+- [How to use tools in a chain](/docs/how_to/tool_chain)
+- [How to use agents to use tools](/docs/how_to/tools_agents)
+- [How to use tools without function calling](/docs/how_to/tools_prompting)
+- [How to let the LLM choose between multiple tools](/docs/how_to/tools_multiple)
+- [How to add a human in the loop to tool usage](/docs/how_to/tools_human)
+- [How to do parallel tool use](/docs/how_to/tools_parallel)
+- [How to handle errors when calling tools](/docs/how_to/tools_error)
 
 ### Agents
 - [How to create a custom agent](/docs/modules/agents/how_to/custom_agent)
