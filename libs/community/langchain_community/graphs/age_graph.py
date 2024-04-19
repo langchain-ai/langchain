@@ -1,19 +1,21 @@
+from __future__ import annotations
+
 import json
 import re
 from hashlib import md5
-from typing import Any, Dict, List, NamedTuple, Tuple, Union
-
-import psycopg2
-import psycopg2.extras
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Tuple, Union
 
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
+
+if TYPE_CHECKING:
+    import psycopg2.extras
 
 
 class AGEQueryException(Exception):
     """Exception for the AGE queries."""
 
-    def __init__(self, exception: Union[str, Dict]):
+    def __init__(self, exception: Union[str, Dict]) -> None:
         if isinstance(exception, dict):
             self.message = exception["message"] if "message" in exception else "unknown"
             self.details = exception["details"] if "details" in exception else "unknown"
@@ -42,7 +44,7 @@ class AGEGraph(GraphStore):
     # precompiled regex for checking chars in graph labels
     label_regex = re.compile("[^0-9a-zA-Z]+")
 
-    def __init__(self, graph_name: str, conf: Dict[str, Any], create: bool = True):
+    def __init__(self, graph_name: str, conf: Dict[str, Any], create: bool = True) -> None:
         """
         initialize connection and optionally create graph
 
@@ -114,6 +116,14 @@ class AGEGraph(GraphStore):
         """
         get cursor, load age extension and set search path
         """
+
+        try:
+            import psycopg2.extras
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import psycopg2, please install with "
+                "`pip install -U psycopg2`."
+            ) from e
         cursor = self.connection.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
         cursor.execute("""LOAD 'age';""")
         cursor.execute("""SET search_path = ag_catalog, "$user", public;""")
@@ -155,6 +165,13 @@ class AGEGraph(GraphStore):
         """
 
         # age query to get distinct relationship types
+        try:
+            import psycopg2
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import psycopg2, please install with "
+                "`pip install -U psycopg2`."
+            ) from e
         triple_query = """
         SELECT * FROM ag_catalog.cypher('{graph_name}', $$
             MATCH (a)-[e:`{e_label}`]->(b)
@@ -249,6 +266,13 @@ class AGEGraph(GraphStore):
                         ]
                 }"
         """
+        try:
+            import psycopg2
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import psycopg2, please install with "
+                "`pip install -U psycopg2`."
+            ) from e
 
         # cypher query to fetch properties of a given label
         node_properties_query = """
@@ -315,6 +339,13 @@ class AGEGraph(GraphStore):
                 }"
         """
 
+        try:
+            import psycopg2
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import psycopg2, please install with "
+                "`pip install -U psycopg2`."
+            ) from e
         # cypher query to fetch properties of a given label
         edge_properties_query = """
         SELECT * FROM ag_catalog.cypher('{graph_name}', $$
@@ -550,6 +581,13 @@ class AGEGraph(GraphStore):
         Returns:
             List[Dict[str, Any]]: a list of dictionaries containing the result set
         """
+        try:
+            import psycopg2
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import psycopg2, please install with "
+                "`pip install -U psycopg2`."
+            ) from e
 
         # convert cypher query to pgsql/age query
         wrapped_query = self._wrap_query(query)
