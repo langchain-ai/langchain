@@ -157,6 +157,29 @@ class ChatModelIntegrationTests(ABC):
         result = model_with_tools.invoke(messages)
         assert isinstance(result, AIMessage)
 
+    def test_tool_message_histories_list_content(
+        self,
+        chat_model_class: Type[BaseChatModel],
+        chat_model_params: dict,
+        chat_model_has_tool_calling: bool,
+    ) -> None:
+        """Test that message histories with list content are compatible across
+        providers.
+        """
+        if not chat_model_has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model = chat_model_class(**chat_model_params)
+        model_with_tools = model.bind_tools([my_adder_tool])
+        function_name = "my_adder_tool"
+        function_args = {"a": "1", "b": "2"}
+
+        human_message = HumanMessage(content="What is 1 + 2")
+        tool_message = ToolMessage(
+            name=function_name,
+            content=json.dumps({"result": 3}),
+            tool_call_id="abc123",
+        )
+
         # List content (e.g., Anthropic)
         list_content_msg = AIMessage(
             content=[
