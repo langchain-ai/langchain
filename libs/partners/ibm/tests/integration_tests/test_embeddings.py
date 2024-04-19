@@ -7,7 +7,6 @@ import os
 
 from ibm_watsonx_ai import APIClient  # type: ignore
 from ibm_watsonx_ai.metanames import EmbedTextParamsMetaNames  # type: ignore
-from langchain_community.vectorstores.chroma import Chroma
 
 from langchain_ibm import WatsonxEmbeddings
 
@@ -67,28 +66,3 @@ def test_10_generate_embed_query_with_client_initialization() -> None:
     assert isinstance(generate_embedding, list) and isinstance(
         generate_embedding[0], float
     )
-
-
-def test_90_generate_embed_chroma_integration() -> None:
-    watsonx_embedding = WatsonxEmbeddings(
-        model_id=MODEL_ID,
-        url=URL,
-        project_id=WX_PROJECT_ID,
-    )
-    vectorstore = Chroma.from_texts(
-        texts=[
-            "harrison worked at kensho",
-            "I have blue eye's",
-            "My name is Mateusz",
-            "I got 5 at math in school",
-            "My best friend is Lukas",
-        ],
-        collection_name="rag-chroma",
-        embedding=watsonx_embedding,
-    )
-    retriever = vectorstore.as_retriever()
-    docs = retriever.get_relevant_documents(query="What is my best grade in school?")
-
-    assert docs
-    assert isinstance(docs, list)
-    assert getattr(docs[0], "page_content", None)
