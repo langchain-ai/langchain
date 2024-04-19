@@ -265,6 +265,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.vespa import (
         VespaStore,  # noqa: F401
     )
+    from langchain_community.vectorstores.vlite import (
+        VLite,  # noqa: F401
+    )
     from langchain_community.vectorstores.weaviate import (
         Weaviate,  # noqa: F401
     )
@@ -364,6 +367,7 @@ __all__ = [
     "Vectara",
     "VectorStore",
     "VespaStore",
+    "VLite",
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
@@ -456,6 +460,7 @@ _module_lookup = {
     "Vectara": "langchain_community.vectorstores.vectara",
     "VectorStore": "langchain_core.vectorstores",
     "VespaStore": "langchain_community.vectorstores.vespa",
+    "VLite": "langchain_community.vectorstores.vlite",
     "Weaviate": "langchain_community.vectorstores.weaviate",
     "Yellowbrick": "langchain_community.vectorstores.yellowbrick",
     "ZepVectorStore": "langchain_community.vectorstores.zep",

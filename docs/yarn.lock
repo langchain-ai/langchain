@@ -5322,7 +5322,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cytoscape@npm:^3.23.0":
+"cytoscape@npm:3.28.1":
   version: 3.28.1
   resolution: "cytoscape@npm:3.28.1"
   dependencies:
