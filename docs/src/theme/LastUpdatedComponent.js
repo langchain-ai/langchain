@@ -5,6 +5,27 @@ const BASE_GIT_URL = "https://api.github.com/repos/langchain-ai/langchain/commit
 
 const LAST_UPDATED_ELEMENT_ID = "lc_last_updated"
 
+const fetchUrl = async (url) => {
+  try {
+    const res = await fetch(apiUrl)
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json || json.length === 0 || !json[0]?.commit?.author?.date) return null;
+    const lastCommitDate = new Date(json[0]?.commit?.author?.date);
+    const formattedDate = lastCommitDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    if (formattedDate !== "Invalid Date") {
+      return formattedDate;
+    }
+  } catch (_) {
+    // no-op
+  }
+  return null;
+}
+
 /**
  * NOTE: This component file can NOT be named `LastUpdated` as it
  * conflicts with the built-in Docusaurus component, and will override it.
@@ -15,26 +36,25 @@ export default function LastUpdatedComponent() {
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const currentPath = window.location.pathname;
-      let apiUrl = ""
+      let currentPath = window.location.pathname;
       if (currentPath.endsWith("/")) {
-        apiUrl = `${BASE_GIT_URL}${currentPath}index.ipynb`;
-      } else {
-        apiUrl = `${BASE_GIT_URL}${currentPath}.ipynb`;
+        // strip the trailing slash
+        currentPath = currentPath.slice(0, -1);
       }
+      const apiUrl = `${BASE_GIT_URL}${currentPath}.ipynb`
+      const apiUrlWithIndex = `${BASE_GIT_URL}${currentPath}/index.ipynb`
 
-      fetch(apiUrl)
-        .then((response) => response.json())
-        .then((data) => {
-          if (!data || data.length === 0 || !data[0]?.commit?.author?.date) return;
-          const lastCommitDate = new Date(data[0]?.commit?.author?.date);
-          const formattedDate = lastCommitDate.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          });
-          if (formattedDate !== "Invalid Date") {
-            setLastUpdatedDate(formattedDate);
+      fetchUrl(apiUrl)
+        .then((date) => {
+          if (date) {
+            setLastUpdatedDate(date);
+          } else {
+            fetchUrl(apiUrlWithIndex)
+              .then((date) => {
+                if (date) {
+                  setLastUpdatedDate(date);
+                }
+              });
           }
         });
     } catch (_) {
