@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import logging
+import uuid
 from operator import itemgetter
 from typing import (
     Any,
@@ -41,14 +43,18 @@ from langchain_core.messages import (
     ChatMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    InvalidToolCall,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -82,9 +88,59 @@ def _convert_mistral_chat_message_to_message(
     content = cast(str, _message["content"])
 
     additional_kwargs: Dict = {}
-    if tool_calls := _message.get("tool_calls"):
-        additional_kwargs["tool_calls"] = tool_calls
-    return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    tool_calls = []
+    invalid_tool_calls = []
+    if raw_tool_calls := _message.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        for raw_tool_call in raw_tool_calls:
+            try:
+                parsed: dict = cast(
+                    dict, parse_tool_call(raw_tool_call, return_id=True)
+                )
+                if not parsed["id"]:
+                    tool_call_id = uuid.uuid4().hex[:]
+                    tool_calls.append(
+                        {
+                            **parsed,
+                            **{"id": tool_call_id},
+                        },
+                    )
+                else:
+                    tool_calls.append(parsed)
+            except Exception as e:
+                invalid_tool_calls.append(
+                    dict(make_invalid_tool_call(raw_tool_call, str(e)))
+                )
+    return AIMessage(
+        content=content,
+        additional_kwargs=additional_kwargs,
+        tool_calls=tool_calls,
+        invalid_tool_calls=invalid_tool_calls,
+    )
+
+
+def _raise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = response.read().decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
+
+
+async def _araise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = (await response.aread()).decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
 
 
 async def _aiter_sse(
@@ -92,6 +148,7 @@ async def _aiter_sse(
 ) -> AsyncIterator[Dict]:
     """Iterate over the server-sent events."""
     async with event_source_mgr as event_source:
+        await _araise_on_error(event_source.response)
         async for event in event_source.aiter_sse():
             if event.data == "[DONE]":
                 return
@@ -115,10 +172,10 @@ async def acompletion_with_retry(
             event_source = aconnect_sse(
                 llm.async_client, "POST", "/chat/completions", json=kwargs
             )
-
             return _aiter_sse(event_source)
         else:
             response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+            await _araise_on_error(response)
             return response.json()
 
     return await _completion_with_retry(**kwargs)
@@ -133,15 +190,66 @@ def _convert_delta_to_message_chunk(
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
-        if tool_calls := _delta.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        if raw_tool_calls := _delta.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            try:
+                tool_call_chunks = []
+                for raw_tool_call in raw_tool_calls:
+                    if not raw_tool_call.get("index") and not raw_tool_call.get("id"):
+                        tool_call_id = uuid.uuid4().hex[:]
+                    else:
+                        tool_call_id = raw_tool_call.get("id")
+                    tool_call_chunks.append(
+                        {
+                            "name": raw_tool_call["function"].get("name"),
+                            "args": raw_tool_call["function"].get("arguments"),
+                            "id": tool_call_id,
+                            "index": raw_tool_call.get("index"),
+                        }
+                    )
+            except KeyError:
+                pass
+        else:
+            tool_call_chunks = []
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)
+
+
+def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
+    """Format Langchain ToolCall to dict expected by Mistral."""
+    result: Dict[str, Any] = {
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        }
+    }
+    if _id := tool_call.get("id"):
+        result["id"] = _id
+
+    return result
+
+
+def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) -> dict:
+    """Format Langchain InvalidToolCall to dict expected by Mistral."""
+    result: Dict[str, Any] = {
+        "function": {
+            "name": invalid_tool_call["name"],
+            "arguments": invalid_tool_call["args"],
+        }
+    }
+    if _id := invalid_tool_call.get("id"):
+        result["id"] = _id
+
+    return result
 
 
 def _convert_message_to_mistral_chat_message(
@@ -152,21 +260,37 @@ def _convert_message_to_mistral_chat_message(
     elif isinstance(message, HumanMessage):
         return dict(role="user", content=message.content)
     elif isinstance(message, AIMessage):
-        if "tool_calls" in message.additional_kwargs:
-            tool_calls = [
-                {
+        tool_calls = []
+        if message.tool_calls or message.invalid_tool_calls:
+            for tool_call in message.tool_calls:
+                tool_calls.append(_format_tool_call_for_mistral(tool_call))
+            for invalid_tool_call in message.invalid_tool_calls:
+                tool_calls.append(
+                    _format_invalid_tool_call_for_mistral(invalid_tool_call)
+                )
+        elif "tool_calls" in message.additional_kwargs:
+            for tc in message.additional_kwargs["tool_calls"]:
+                chunk = {
                     "function": {
                         "name": tc["function"]["name"],
                         "arguments": tc["function"]["arguments"],
                     }
                 }
-                for tc in message.additional_kwargs["tool_calls"]
-            ]
+                if _id := tc.get("id"):
+                    chunk["id"] = _id
+                tool_calls.append(chunk)
         else:
-            tool_calls = None
+            pass
+        if tool_calls and message.content:
+            # Assistant message must have either content or tool_calls, but not both.
+            # Some providers may not support tool_calls in the same message as content.
+            # This is done to ensure compatibility with messages from other providers.
+            content: Any = ""
+        else:
+            content = message.content
         return {
             "role": "assistant",
-            "content": message.content,
+            "content": content,
             "tool_calls": tool_calls,
         }
     elif isinstance(message, SystemMessage):
@@ -186,13 +310,12 @@ class ChatMistralAI(BaseChatModel):
 
     client: httpx.Client = Field(default=None)  #: :meta private:
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
-    mistral_api_key: Optional[SecretStr] = None
+    mistral_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     endpoint: str = "https://api.mistral.ai/v1"
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
-
-    model: str = "mistral-small"
+    model: str = Field(default="mistral-small", alias="model_name")
     temperature: float = 0.7
     max_tokens: Optional[int] = None
     top_p: float = 1
@@ -201,6 +324,12 @@ class ChatMistralAI(BaseChatModel):
     random_seed: Optional[int] = None
     safe_mode: bool = False
     streaming: bool = False
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -238,6 +367,7 @@ class ChatMistralAI(BaseChatModel):
                     with connect_sse(
                         self.client, "POST", "/chat/completions", json=kwargs
                     ) as event_source:
+                        _raise_on_error(event_source.response)
                         for event in event_source.iter_sse():
                             if event.data == "[DONE]":
                                 return
@@ -245,10 +375,28 @@ class ChatMistralAI(BaseChatModel):
 
                 return iter_sse()
             else:
-                return self.client.post(url="/chat/completions", json=kwargs).json()
+                response = self.client.post(url="/chat/completions", json=kwargs)
+                _raise_on_error(response)
+                return response.json()
 
         rtn = _completion_with_retry(**kwargs)
         return rtn
+
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        overall_token_usage: dict = {}
+        for output in llm_outputs:
+            if output is None:
+                # Happens in streaming
+                continue
+            token_usage = output["token_usage"]
+            if token_usage is not None:
+                for k, v in token_usage.items():
+                    if k in overall_token_usage:
+                        overall_token_usage[k] += v
+                    else:
+                        overall_token_usage[k] = v
+        combined = {"token_usage": overall_token_usage, "model_name": self.model}
+        return combined
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

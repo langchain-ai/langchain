@@ -21,6 +21,23 @@ from langchain_community.chat_models.baichuan import (
 )
 
 
+def test_initialization() -> None:
+    """Test chat model initialization."""
+
+    for model in [
+        ChatBaichuan(
+            model="Baichuan2-Turbo-192K", baichuan_api_key="test-api-key", timeout=40
+        ),
+        ChatBaichuan(
+            model="Baichuan2-Turbo-192K",
+            baichuan_api_key="test-api-key",
+            request_timeout=40,
+        ),
+    ]:
+        assert model.model == "Baichuan2-Turbo-192K"
+        assert model.request_timeout == 40
+
+
 def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
     result = _convert_message_to_dict(message)
