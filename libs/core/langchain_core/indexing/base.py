@@ -61,8 +61,16 @@ class RecordManager(ABC):
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-            time_at_least: if provided, updates should only happen if the
-              updated_at field is at least this time.
+            time_at_least: Optional timestamp. Implementation can use this
+                to optionally verify that the timestamp IS at least this time
+                in the system that stores the data.
+
+                e.g., use to validate that the time in the postgres database
+                is equal to or larger than the given timestamp, if not
+                raise an error.
+
+                This is meant to help prevent time-drift issues since
+                time may not be monotonically increasing!
 
         Raises:
             ValueError: If the length of keys doesn't match the length of group_ids.
@@ -81,8 +89,16 @@ class RecordManager(ABC):
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-            time_at_least: if provided, updates should only happen if the
-              updated_at field is at least this time.
+            time_at_least: Optional timestamp. Implementation can use this
+                to optionally verify that the timestamp IS at least this time
+                in the system that stores the data.
+
+                e.g., use to validate that the time in the postgres database
+                is equal to or larger than the given timestamp, if not
+                raise an error.
+
+                This is meant to help prevent time-drift issues since
+                time may not be monotonically increasing!
 
         Raises:
             ValueError: If the length of keys doesn't match the length of group_ids.

@@ -280,10 +280,9 @@ def test_index_simple_delete_full(
         ]
     )
 
-    with (patch.object(
+    with patch.object(
         record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
-    )):
-        assert datetime(2021, 1, 2).timestamp() == 0
+    ):
         indexing_result = index(loader, record_manager, vector_store, cleanup="full")
 
         doc_texts = set(
@@ -300,17 +299,16 @@ def test_index_simple_delete_full(
             "num_updated": 0,
         }
 
-
-    # # Attempt to index again verify that nothing changes
-    # with patch.object(
-    #     record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
-    # ):
-    #     assert index(loader, record_manager, vector_store, cleanup="full") == {
-    #         "num_added": 0,
-    #         "num_deleted": 0,
-    #         "num_skipped": 2,
-    #         "num_updated": 0,
-    #     }
+    # Attempt to index again verify that nothing changes
+    with patch.object(
+        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+    ):
+        assert index(loader, record_manager, vector_store, cleanup="full") == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 2,
+            "num_updated": 0,
+        }
 
 
 async def test_aindex_simple_delete_full(
