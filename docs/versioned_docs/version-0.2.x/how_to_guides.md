@@ -48,20 +48,20 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to compose two prompts together](/docs/how_to/prompts_composition)
 
 ### Example Selectors
-- [How to use example selectors](/docs/how_to/example_selectors.ipynb)
-- [How to select examples by length](/docs/how_to/example_selectors_length_based.ipynb)
-- [How to select examples by semantic similarity](/docs/how_to/example_selectors_similarity.ipynb)
-- [How to select examples by semantic ngram overlap](/docs/how_to/example_selectors_ngram.ipynb)
-- [How to select examples by maximal marginal relevance](/docs/how_to/example_selectors_mmr.ipynb)
+- [How to use example selectors](/docs/how_to/example_selectors)
+- [How to select examples by length](/docs/how_to/example_selectors_length_based)
+- [How to select examples by semantic similarity](/docs/how_to/example_selectors_similarity)
+- [How to select examples by semantic ngram overlap](/docs/how_to/example_selectors_ngram)
+- [How to select examples by maximal marginal relevance](/docs/how_to/example_selectors_mmr)
 
 ### Chat Models
-- [How to function/tool calling](/docs/modules/model_io/chat/function_calling)
-- [How to get models to return structured output](/docs/modules/model_io/chat/structured_output)
-- [How to cache model responses](/docs/modules/model_io/chat/chat_model_caching)
-- [How to get log probabilities](/docs/modules/model_io/chat/logprobs)
-- [How to create a custom chat model class](/docs/modules/model_io/chat/custom_chat_model)
-- [How to stream a response back](/docs/modules/model_io/chat/streaming)
-- [How to track token usage](/docs/modules/model_io/chat/token_usage_tracking)
+- [How to do function/tool calling](/docs/how_to/function_calling)
+- [How to get models to return structured output](/docs/how_to/structured_output)
+- [How to cache model responses](/docs/how_to/chat_model_caching)
+- [How to get log probabilities](/docs/how_to/logprobs)
+- [How to create a custom chat model class](/docs/how_to/custom_chat_model)
+- [How to stream a response back](/docs/how_to/chat_streaming)
+- [How to track token usage](/docs/how_to/chat_token_usage_tracking)
 
 ### LLMs
 - [How to cache model responses](/docs/modules/model_io/llms/llm_caching)
