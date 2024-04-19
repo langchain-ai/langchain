@@ -257,7 +257,6 @@ embeddings = GigaChatEmbeddings(
 
 Подробнее о работе с эмбеддингами и использовании их при реализации RAG-методики — в разделе [Ответы на вопросы с помощью RAG](/docs/docs/use_cases/question_answering/index.ipynb).
 
-
 ## Устранение проблем
 
 Если у вас возникли проблемы при работе с GigaChain убедитесь, что:
