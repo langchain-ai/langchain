@@ -24,8 +24,8 @@ def _parse_input(text: str) -> List[Union[str, int]]:
     res = [int(i) if i.isdigit() else i for i in res]
     return res
 
-class JsonListKeysToolInput(BaseModel):
-    """Input for the JsonListKeysTool tool."""
+class JsonToolInput(BaseModel):
+    """Input for the JsonToolInput tools."""
 
     tool_input: str = Field(description="""
                               Text representation of the path to the dict 
@@ -99,7 +99,7 @@ class JsonListKeysTool(BaseTool):
     The input is a text representation of the path to the dict in Python syntax (e.g. data["key1"][0]["key2"]).
     """
     spec: JsonSpec
-    args_schema: Type[BaseModel] = JsonListKeysToolInput
+    args_schema: Type[BaseModel] = JsonToolInput
 
     def _run(
         self,
@@ -126,6 +126,7 @@ class JsonGetValueTool(BaseTool):
     The input is a text representation of the path to the dict in Python syntax (e.g. data["key1"][0]["key2"]).
     """
     spec: JsonSpec
+    args_schema: Type[BaseModel] = JsonToolInput
 
     def _run(
         self,
