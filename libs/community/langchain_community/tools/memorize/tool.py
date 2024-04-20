@@ -1,14 +1,20 @@
 from abc import abstractmethod
-from typing import Any, Optional, Protocol, Sequence, runtime_checkable
+from typing import Any, Optional, Protocol, Sequence, Type, runtime_checkable
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.llms.gradient_ai import TrainResult
+
+
+class MemorizeActionInput(BaseModel):
+    """Input for the MemorizeAction tool."""
+
+    information_to_learn: str = Field(description="Information for training the LLM")
 
 
 @runtime_checkable
@@ -44,6 +50,7 @@ class Memorize(BaseTool):
         "then the tool will fine-tune yourself to remember it."
     )
     llm: TrainableLLM = Field()
+    args_schema: Type[BaseModel] = MemorizeActionInput
 
     def _run(
         self,

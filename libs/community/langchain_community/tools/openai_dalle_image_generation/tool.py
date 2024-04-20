@@ -1,11 +1,18 @@
 """Tool for the OpenAI DALLE V1 Image Generation SDK."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
+
+
+class OpenAIDALLEImageGenerationToolInput(BaseModel):
+    """Input for the OpenAIDALLEImageGenerationTool tool."""
+
+    query: str = Field(description="Query to be used to generate image")
 
 
 class OpenAIDALLEImageGenerationTool(BaseTool):
@@ -19,6 +26,7 @@ class OpenAIDALLEImageGenerationTool(BaseTool):
         "Input should be a text prompt to generate an image."
     )
     api_wrapper: DallEAPIWrapper
+    args_schema: Type[BaseModel] = OpenAIDALLEImageGenerationToolInput
 
     def _run(
         self,
