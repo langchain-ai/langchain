@@ -16,7 +16,9 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -38,9 +40,13 @@ logging.basicConfig(
 )
 
 
-def _handle_exceptions(func):
+# Define a type variable that can be any kind of function
+T = TypeVar("T", bound=Callable[..., Any])
+
+
+def _handle_exceptions(func: T) -> T:
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return func(*args, **kwargs)
         except RuntimeError as db_err:
@@ -55,13 +61,13 @@ def _handle_exceptions(func):
             raise ValueError("Validation failed: {}".format(val_err)) from val_err
         except Exception as e:
             # Generic handler for all other exceptions
-            logger.exception("An unexpected error occurred: {}".format(str(e)))
-            raise RuntimeError("Unexpected error: {}".format(str(e))) from e
+            logger.exception("An unexpected error occurred: {}".format(e))
+            raise RuntimeError("Unexpected error: {}".format(e)) from e
 
-    return wrapper
+    return cast(T, wrapper)
 
 
-def _table_exists(client: oracledb.Connection, table_name: str):
+def _table_exists(client: oracledb.Connection, table_name: str) -> bool:
     try:
         with client.cursor() as cursor:
             cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
@@ -76,10 +82,11 @@ def _table_exists(client: oracledb.Connection, table_name: str):
 @_handle_exceptions
 def _index_exists(client: oracledb.Connection, index_name: str) -> bool:
     # Check if the index exists
-    query = (
-        "SELECT index_name FROM all_indexes WHERE upper(index_name) = upper("
-        ":idx_name)"
-    )
+    query = """
+        SELECT index_name 
+        FROM all_indexes 
+        WHERE upper(index_name) = upper(:idx_name)
+        """
 
     with client.cursor() as cursor:
         # Execute the query
@@ -107,7 +114,7 @@ def _get_distance_function(distance_strategy: DistanceStrategy) -> str:
     raise ValueError(f"Unsupported distance strategy: {distance_strategy}")
 
 
-def _get_index_name(base_name: str):
+def _get_index_name(base_name: str) -> str:
     unique_id = str(uuid.uuid4()).replace("-", "")
     return f"{base_name}_{unique_id}"
 
@@ -183,7 +190,9 @@ def _create_hnsw_index(
         for compulsory_key in ["idx_name", "parallel"]:
             if compulsory_key not in config:
                 if compulsory_key == "idx_name":
-                    config[compulsory_key] = _get_index_name(defaults[compulsory_key])
+                    config[compulsory_key] = _get_index_name(
+                        str(defaults[compulsory_key])
+                    )
                 else:
                     config[compulsory_key] = defaults[compulsory_key]
 
@@ -265,7 +274,9 @@ def _create_ivf_index(
         for compulsory_key in ["idx_name", "parallel"]:
             if compulsory_key not in config:
                 if compulsory_key == "idx_name":
-                    config[compulsory_key] = _get_index_name(defaults[compulsory_key])
+                    config[compulsory_key] = _get_index_name(
+                        str(defaults[compulsory_key])
+                    )
                 else:
                     config[compulsory_key] = defaults[compulsory_key]
 
@@ -314,7 +325,7 @@ def _create_ivf_index(
 
 
 @_handle_exceptions
-def drop_table_purge(client: oracledb.Connection, table_name: str):
+def drop_table_purge(client: oracledb.Connection, table_name: str) -> None:
     if _table_exists(client, table_name):
         cursor = client.cursor()
         with cursor:
@@ -323,10 +334,11 @@ def drop_table_purge(client: oracledb.Connection, table_name: str):
         logger.info("Table dropped successfully...")
     else:
         logger.info("Table not found...")
+    return
 
 
 @_handle_exceptions
-def drop_index_if_exists(client: oracledb.Connection, index_name: str):
+def drop_index_if_exists(client: oracledb.Connection, index_name: str) -> None:
     if _index_exists(client, index_name):
         drop_query = f"DROP INDEX {index_name}"
         with client.cursor() as cursor:
@@ -334,6 +346,7 @@ def drop_index_if_exists(client: oracledb.Connection, index_name: str):
             logger.info(f"Index {index_name} has been dropped.")
     else:
         logger.exception(f"Index {index_name} does not exist.")
+    return
 
 
 class OracleVS(VectorStore):
@@ -408,26 +421,38 @@ class OracleVS(VectorStore):
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
+        """
+        A property that returns an Embeddings instance embedding_function
+        is an instance of Embeddings, otherwise returns None.
+
+        Returns:
+            Optional[Embeddings]: The embedding function if it's an instance of
+            Embeddings, otherwise None.
+        """
         return (
             self.embedding_function
             if isinstance(self.embedding_function, Embeddings)
             else None
         )
 
-    def get_embedding_dimension(self):
+    def get_embedding_dimension(self) -> int:
         # Embed the single document by wrapping it in a list
-        embedded_document = self._embed_documents([self.query])
+        embedded_document = self._embed_documents(
+            [self.query if self.query is not None else ""]
+        )
 
         # Get the first (and only) embedding's dimension
-        embedding_dimension = len(embedded_document[0])
-
-        return embedding_dimension
+        return len(embedded_document[0])
 
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
         if isinstance(self.embedding_function, Embeddings):
             return self.embedding_function.embed_documents(texts)
-        else:
+        elif callable(self.embedding_function):
             return [self.embedding_function(text) for text in texts]
+        else:
+            raise TypeError(
+                "The embedding_function is neither Embeddings nor callable."
+            )
 
     def _embed_query(self, text: str) -> List[float]:
         if isinstance(self.embedding_function, Embeddings):
@@ -500,7 +525,8 @@ class OracleVS(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query."""
-        embedding = self.embedding_function.embed_query(query)
+        if isinstance(self.embedding_function, Embeddings):
+            embedding = self.embedding_function.embed_query(query)
         documents = self.similarity_search_by_vector(
             embedding=embedding, k=k, filter=filter, **kwargs
         )
@@ -526,7 +552,8 @@ class OracleVS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query."""
-        embedding = self.embedding_function.embed_query(query)
+        if isinstance(self.embedding_function, Embeddings):
+            embedding = self.embedding_function.embed_query(query)
         docs_and_scores = self.similarity_search_by_vector_with_relevance_scores(
             embedding=embedding, k=k, filter=filter, **kwargs
         )
@@ -553,7 +580,7 @@ class OracleVS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         docs_and_scores = []
-        embedding = array.array("f", embedding)
+        embedding_arr = array.array("f", embedding)
 
         query = f"""
         SELECT id,
@@ -562,13 +589,12 @@ class OracleVS(VectorStore):
           vector_distance(embedding, :embedding,
           {_get_distance_function(self.distance_strategy)}) as distance
         FROM {self.table_name}
-        ORDER BY vector_distance(embedding, :embedding,
-        {_get_distance_function(self.distance_strategy)})
+        ORDER BY distance
         FETCH APPROX FIRST :k ROWS ONLY
-      """
+        """
         # Execute the query
         with self.client.cursor() as cursor:
-            cursor.execute(query, embedding=embedding, k=k)
+            cursor.execute(query, embedding=embedding_arr, k=k)
             results = cursor.fetchall()
 
             # Filter results if filter is provided
@@ -609,7 +635,7 @@ class OracleVS(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
         documents = []
-        embedding = array.array("f", embedding)
+        embedding_arr = array.array("f", embedding)
 
         query = f"""
         SELECT id,
@@ -622,11 +648,11 @@ class OracleVS(VectorStore):
         ORDER BY vector_distance(embedding, :embedding
         , {_get_distance_function(self.distance_strategy)})
         FETCH APPROX FIRST :k ROWS ONLY
-      """
+        """
 
         # Execute the query
         with self.client.cursor() as cursor:
-            cursor.execute(query, embedding=embedding, k=k)
+            cursor.execute(query, embedding=embedding_arr, k=k)
             results = cursor.fetchall()
 
             for result in results:
@@ -701,7 +727,7 @@ class OracleVS(VectorStore):
         # scores, and returns indices of selected docs
         mmr_selected_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
-            embeddings,
+            list(embeddings),
             k=k,
             lambda_mult=lambda_mult,
         )
@@ -836,8 +862,14 @@ class OracleVS(VectorStore):
         if client is None:
             raise ValueError("client parameter is required...")
         params = kwargs.get("params")
-        distance_strategy = kwargs.get("distance_strategy")
-        table_name = kwargs.get("table_name")
+        distance_strategy = cast(
+            DistanceStrategy, kwargs.get("distance_strategy", None)
+        )
+        if not isinstance(distance_strategy, DistanceStrategy):
+            raise TypeError(
+                f"Expected DistanceStrategy got " f"{type(distance_strategy).__name__} "
+            )
+        table_name = str(kwargs.get("table_name"))
         drop_table_purge(client, table_name)
 
         vss = cls(
@@ -865,7 +897,14 @@ class OracleVS(VectorStore):
         if client is None:
             raise ValueError("client parameter is required...")
         params = kwargs.get("params")
-        distance_strategy = kwargs.get("distance_strategy")
+        distance_strategy = cast(
+            DistanceStrategy, kwargs.get("distance_strategy", None)
+        )
+        # Type check to confirm distance_strategy
+        if not isinstance(distance_strategy, DistanceStrategy):
+            raise TypeError(
+                f"Expected DistanceStrategy got " f"{type(distance_strategy).__name__} "
+            )
         drop_table_purge(client, table_name)
 
         vss = cls(
