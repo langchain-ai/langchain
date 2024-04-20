@@ -645,8 +645,7 @@ class OracleVS(VectorStore):
             self.distance_strategy)}) as distance,
           embedding
         FROM {self.table_name}
-        ORDER BY vector_distance(embedding, :embedding
-        , {_get_distance_function(self.distance_strategy)})
+        ORDER BY distance
         FETCH APPROX FIRST :k ROWS ONLY
         """
 
