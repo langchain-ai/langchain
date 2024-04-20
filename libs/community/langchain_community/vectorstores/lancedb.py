@@ -68,7 +68,7 @@ class LanceDB(VectorStore):
         self._id_key = id_key
         self._text_key = text_key
         self._table_name = table_name
-        self.api_key = api_key or os.getenv("LANCE_API_KEY")
+        self.api_key = api_key or os.getenv("LANCE_API_KEY") if api_key != "" else None
         self.region = region
         self.mode = mode
 
@@ -98,7 +98,7 @@ class LanceDB(VectorStore):
                     else:
                         self._connection = lancedb.connect(uri)
                         warnings.warn(
-                            "api key provided with local uri. \
+                            "api key provided with local uri.\
                             The data will be stored locally"
                         )
 
