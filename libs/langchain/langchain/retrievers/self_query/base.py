@@ -109,27 +109,27 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     else:
         try:
             from langchain_astradb.vectorstores import AstraDBVectorStore
-
-            if isinstance(vectorstore, AstraDBVectorStore):
-                return AstraDBTranslator()
         except ImportError:
             pass
+        else:
+            if isinstance(vectorstore, AstraDBVectorStore):
+                return AstraDBTranslator()
 
         try:
             from langchain_elasticsearch.vectorstores import ElasticsearchStore
-
-            if isinstance(vectorstore, ElasticsearchStore):
-                return ElasticsearchTranslator()
         except ImportError:
             pass
+        else:
+            if isinstance(vectorstore, ElasticsearchStore):
+                return ElasticsearchTranslator()
 
         try:
             from langchain_pinecone import Pinecone
-
-            if isinstance(vectorstore, Pinecone):
-                return PineconeTranslator()
         except ImportError:
             pass
+        else:
+            if isinstance(vectorstore, Pinecone):
+                return PineconeTranslator()
 
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
