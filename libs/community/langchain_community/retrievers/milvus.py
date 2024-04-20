@@ -60,7 +60,7 @@ class MilvusRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         return self.retriever.invoke(
-            query, config={"callbacks": run_manager.get_child()}, **kwargs
+            query, run_manager=run_manager.get_child(), **kwargs
         )
 
 
