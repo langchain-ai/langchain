@@ -444,6 +444,8 @@ class HuggingFaceEncoderEmbeddings(BaseModel, Embeddings):
         if "truncation" in self.tokenizer_kwargs:
             self.truncation = self.tokenizer_kwargs["truncation"]
 
+        torch.set_grad_enabled(False)
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         out_embds: List[List[float]] = []
         batch: List[str] = []
