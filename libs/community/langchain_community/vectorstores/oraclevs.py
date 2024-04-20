@@ -25,7 +25,7 @@ import numpy as np
 import oracledb
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
+from langchain_core.vectorstores import VST, VectorStore
 
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
@@ -672,7 +672,7 @@ class OracleVS(VectorStore):
                     # adjust if necessary
                     embedding = np.array(result[4]) if result[4] else np.array([])
                     documents.append((document, distance, embedding))
-        return documents
+        return documents  # type: ignore
 
     @_handle_exceptions
     def max_marginal_relevance_search_with_score_by_vector(
@@ -855,12 +855,17 @@ class OracleVS(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> OracleVS:
+    ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
         client = kwargs.get("client")
         if client is None:
             raise ValueError("client parameter is required...")
         params = kwargs.get("params")
+
+        table_name = str(kwargs.get("table_name"))
+        if table_name is None:
+            table_name = "langchain"
+
         distance_strategy = cast(
             DistanceStrategy, kwargs.get("distance_strategy", None)
         )
@@ -868,7 +873,7 @@ class OracleVS(VectorStore):
             raise TypeError(
                 f"Expected DistanceStrategy got " f"{type(distance_strategy).__name__} "
             )
-        table_name = str(kwargs.get("table_name"))
+
         drop_table_purge(client, table_name)
 
         vss = cls(
@@ -879,41 +884,4 @@ class OracleVS(VectorStore):
             distance_strategy=distance_strategy,
         )
         vss.add_texts(texts=list(texts), metadatas=metadatas)
-        return vss
-
-    @classmethod
-    @_handle_exceptions
-    def from_documents(
-        cls: Type[OracleVS],
-        docs: List[Document],
-        embedding: Embeddings,
-        optional_metadatas: Optional[List[dict]] = None,
-        table_name: str = "langchain",
-        **kwargs: Any,
-    ) -> OracleVS:
-        """Return VectorStore initialized from texts and embeddings."""
-        client = kwargs.get("client")
-        if client is None:
-            raise ValueError("client parameter is required...")
-        params = kwargs.get("params")
-        distance_strategy = cast(
-            DistanceStrategy, kwargs.get("distance_strategy", None)
-        )
-        # Type check to confirm distance_strategy
-        if not isinstance(distance_strategy, DistanceStrategy):
-            raise TypeError(
-                f"Expected DistanceStrategy got " f"{type(distance_strategy).__name__} "
-            )
-        drop_table_purge(client, table_name)
-
-        vss = cls(
-            client=client,
-            embedding_function=embedding,
-            table_name=table_name,
-            params=params,
-            distance_strategy=distance_strategy,
-        )
-        texts = [doc.page_content for doc in docs]
-        metadatas = [doc.metadata for doc in docs]
-        vss.add_texts(texts=texts, metadatas=metadatas)
         return vss
