@@ -312,6 +312,10 @@ class ChatAnthropic(BaseChatModel):
         return ["langchain", "chat_models", "anthropic"]
 
     @property
+    def _standardize_input_messages(self) -> bool:
+        return True
+
+    @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         return {
