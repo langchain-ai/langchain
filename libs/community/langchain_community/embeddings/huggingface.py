@@ -423,8 +423,6 @@ class HuggingFaceEncoderEmbeddings(BaseModel, Embeddings):
         
         try:
             import torch
-            from torch import Tensor
-            from transformers import BatchEncoding
             from transformers import AutoTokenizer, AutoModel
         except ImportError as e:
             raise ImportError(
