@@ -29,15 +29,16 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_mistralai import MistralAIEmbeddings
+
             mistral = MistralAIEmbeddings(
                 model="mistral-embed",
-                mistral_api_key="my-api-key"
+                api_key="my-api-key"
             )
     """
 
     client: httpx.Client = Field(default=None)  #: :meta private:
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
-    mistral_api_key: Optional[SecretStr] = None
+    mistral_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     endpoint: str = "https://api.mistral.ai/v1/"
     max_retries: int = 5
     timeout: int = 120
@@ -49,6 +50,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     class Config:
         extra = Extra.forbid
         arbitrary_types_allowed = True
+        allow_population_by_field_name = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

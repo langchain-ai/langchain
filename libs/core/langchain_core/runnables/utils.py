@@ -263,7 +263,10 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
                         if vv is None:
                             break
                         else:
-                            vv = getattr(vv, part)
+                            try:
+                                vv = getattr(vv, part)
+                            except AttributeError:
+                                break
                     else:
                         values.append(vv)
         return values
