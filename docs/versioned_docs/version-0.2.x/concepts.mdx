@@ -318,12 +318,7 @@ Retrievers can be created from vectorstores, but are also broad enough to includ
 
 Retrievers accept a string query as input and return a list of Document's as output.
 
-## Composition
-
-This section contains higher-level components that combine other arbitrary systems (e.g. external APIs and services) and/or LangChain primitives together.
-A good primer for this section would be reading the sections on [LangChain Expression Language](/docs/concepts/#langchain-expression-language) and becoming familiar with constructing sequences via piping and the various primitives offered.
-
-### [Tools](/docs/modules/tools/)
+### Tools
 Tools are interfaces that an agent, chain, or LLM can use to interact with the world.
 They combine a few things:
 
@@ -337,15 +332,13 @@ It is useful to have all this information because this information can be used t
 
 The simpler the input to a tool is, the easier it is for an LLM to be able to use it.
 Many agents will only work with tools that have a single string input.
-For a list of agent types and which ones work with more complicated inputs, please see [this documentation](/docs/modules/agents/agent_types)
 
 Importantly, the name, description, and JSON schema (if used) are all used in the prompt. Therefore, it is really important that they are clear and describe exactly how the tool should be used. You may need to change the default name, description, or JSON schema if the LLM is not understanding how to use the tool.
-Implementations include [web search](/docs/integrations/tools/tavily_search/) and [Twilio SMS](/docs/integrations/tools/twilio/).
+
 
 ### Toolkits
 
 Toolkits are collections of tools that are designed to be used together for specific tasks. They have convenient loading methods.
-For a complete list of available ready-made toolkits, visit [Integrations](/docs/integrations/toolkits/).
 
 All Toolkits expose a `get_tools` method which returns a list of tools.
 You can therefore do:
@@ -356,42 +349,105 @@ toolkit = ExampleTookit(...)
 
 # Get list of tools
 tools = toolkit.get_tools()
-
-# Create agent
-agent = create_agent_method(llm, tools, prompt)
 ```
 
-### [Agents](/docs/modules/agents/)
+### Agents
+
+:::note
+
+The information here refers to a specific agent architecture.
+This is a high level agent architecture, and while it makes it easy to get started it can also be restrictive as you try to build more advanced agents.
+If you are interested in building more customizable, highly controllable agents, then please check out [LangGraph](https://github.com/langchain-ai/langgraph)
+
+:::
+
 Interfaces that allow a language model to choose an action to take at a given step.
 When run in a loop using an executor, they can autonomously solve abstract, multi-step problems.
-Implementations can rely on specific model functionality like [tool calling](/docs/modules/agents/agent_types/tool_calling/) for performance
-or use a more generalized prompt-based approach like [ReAct](/docs/modules/agents/agent_types/react/).
 
-### [Chains](/docs/modules/chains/)
-Sequences of calls, whether to an LLM, a tool, or a data preprocessing step. These are primarily composed using LangChain Expression Language,
-but also include some more opaque object-oriented classes.
+#### AgentAction
+
+This is a dataclass that represents the action an agent should take.
+It has a `tool` property (which is the name of the tool that should be invoked) and a `tool_input` property (the input to that tool)
+
+#### AgentFinish
+
+This represents the final result from an agent, when it is ready to return to the user.
+It contains a `return_values` key-value mapping, which contains the final agent output.
+Usually, this contains an `output` key containing a string that is the agent's response.
+
+#### Intermediate Steps
+
+These represent previous agent actions and corresponding outputs from this CURRENT agent run.
+These are important to pass to future iteration so the agent knows what work it has already done.
+This is typed as a `List[Tuple[AgentAction, Any]]`.
+Note that observation is currently left as type `Any` to be maximally flexible.
+In practice, this is often a string.
+
+#### Agent
+
+This is the chain responsible for deciding what step to take next.
+This is usually powered by a language model, a prompt, and an output parser.
+
+Different agents have different prompting styles for reasoning, different ways of encoding inputs, and different ways of parsing the output.
+You can also **easily build custom agents**, should you need further control.
+
+#### Agent Inputs
+
+The inputs to an agent are a key-value mapping.
+There is only one required key: `intermediate_steps`, which corresponds to `Intermediate Steps` as described above.
+
+Generally, the PromptTemplate takes care of transforming these pairs into a format that can best be passed into the LLM.
+
+#### Agent Outputs
+
+The output is the next action(s) to take or the final response to send to the user (`AgentAction`s or `AgentFinish`).
+Concretely, this can be typed as `Union[AgentAction, List[AgentAction], AgentFinish]`.
+
+The output parser is responsible for taking the raw LLM output and transforming it into one of these three types.
+
+#### AgentExecutor
+
+The agent executor is the runtime for an agent.
+This is what actually calls the agent, executes the actions it chooses, passes the action outputs back to the agent, and repeats.
+In pseudocode, this looks roughly like:
+
+```python
+next_action = agent.get_action(...)
+while next_action != AgentFinish:
+    observation = run(next_action)
+    next_action = agent.get_action(..., next_action, observation)
+return next_action
+```
+
+While this may seem simple, there are several complexities this runtime handles for you, including:
+
+1. Handling cases where the agent selects a non-existent tool
+2. Handling cases where the tool errors
+3. Handling cases where the agent produces output that cannot be parsed into a tool invocation
+4. Logging and observability at all levels (agent decisions, tool calls) to stdout and/or to [LangSmith](/docs/langsmith).
+
 
 ## LangChain Expression Language
 
 LangChain Expression Language, or LCEL, is a declarative way to easily compose chains together.
 LCEL was designed from day 1 to **support putting prototypes in production, with no code changes**, from the simplest “prompt + LLM” chain to the most complex chains (we’ve seen folks successfully run LCEL chains with 100s of steps in production). To highlight a few of the reasons you might want to use LCEL:
 
-[**First-class streaming support**](/docs/expression_language/streaming)
+**First-class streaming support**
 When you build your chains with LCEL you get the best possible time-to-first-token (time elapsed until the first chunk of output comes out). For some chains this means eg. we stream tokens straight from an LLM to a streaming output parser, and you get back parsed, incremental chunks of output at the same rate as the LLM provider outputs the raw tokens.
 
-[**Async support**](/docs/expression_language/interface)
+**Async support**
 Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langsmith) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
 
-[**Optimized parallel execution**](/docs/expression_language/primitives/parallel)
+**Optimized parallel execution**
 Whenever your LCEL chains have steps that can be executed in parallel (eg if you fetch documents from multiple retrievers) we automatically do it, both in the sync and the async interfaces, for the smallest possible latency.
 
-[**Retries and fallbacks**](/docs/guides/productionization/fallbacks)
+**Retries and fallbacks**
 Configure retries and fallbacks for any part of your LCEL chain. This is a great way to make your chains more reliable at scale. We’re currently working on adding streaming support for retries/fallbacks, so you can get the added reliability without any latency cost.
 
-[**Access intermediate results**](/docs/expression_language/interface#async-stream-events-beta)
+**Access intermediate results**
 For more complex chains it’s often very useful to access the results of intermediate steps even before the final output is produced. This can be used to let end-users know something is happening, or even just to debug your chain. You can stream intermediate results, and it’s available on every [LangServe](/docs/langserve) server.
 
-[**Input and output schemas**](/docs/expression_language/interface#input-schema)
+**Input and output schemas**
 Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
 
 [**Seamless LangSmith tracing**](/docs/langsmith)
@@ -403,7 +459,7 @@ Any chain created with LCEL can be easily deployed using [LangServe](/docs/langs
 
 ### Interface
 
-To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about [in this section](/docs/expression_language/primitives).
+To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
 
 This is a standard interface, which makes it easy to define custom chains as well as invoke them in a standard way.
 The standard interface includes:
@@ -414,11 +470,11 @@ The standard interface includes:
 
 These also have corresponding async methods that should be used with [asyncio](https://docs.python.org/3/library/asyncio.html) `await` syntax for concurrency:
 
-- [`astream`](#async-stream): stream back chunks of the response async
-- [`ainvoke`](#async-invoke): call the chain on an input async
-- [`abatch`](#async-batch): call the chain on a list of inputs async
-- [`astream_log`](#async-stream-intermediate-steps): stream back intermediate steps as they happen, in addition to the final response
-- [`astream_events`](#async-stream-events): **beta** stream events as they happen in the chain (introduced in `langchain-core` 0.1.14)
+- `astream`: stream back chunks of the response async
+- `ainvoke`: call the chain on an input async
+- `abatch`: call the chain on a list of inputs async
+- `astream_log`: stream back intermediate steps as they happen, in addition to the final response
+- `astream_events`: **beta** stream events as they happen in the chain (introduced in `langchain-core` 0.1.14)
 
 The **input type** and **output type** varies by component:
 
@@ -433,51 +489,5 @@ The **input type** and **output type** varies by component:
 
 
 All runnables expose input and output **schemas** to inspect the inputs and outputs:
-- [`input_schema`](#input-schema): an input Pydantic model auto-generated from the structure of the Runnable
-- [`output_schema`](#output-schema): an output Pydantic model auto-generated from the structure of the Runnable
-
-### Primitives
-
-The following are all different build in runnables or runnable methods.
-
-#### The Pipe Operator
-
-One key advantage of the `Runnable` interface is that any two runnables can be "chained" together into sequences. The output of the previous runnable's `.invoke()` call is passed as input to the next runnable. This can be done using the pipe operator (`|`), or the more explicit `.pipe()` method, which does the same thing. The resulting `RunnableSequence` is itself a runnable, which means it can be invoked, streamed, or piped just like any other runnable.
-
-For example:
-
-```python
-from langchain_anthropic import ChatAnthropic
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-
-prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
-model = ChatAnthropic(model_name="claude-3-haiku-20240307")
-
-chain = prompt | model | StrOutputParser()
-```
-Prompts and models are both runnable, and the output type from the prompt call is the same as the input type of the chat model, so we can chain them together. We can then invoke the resulting sequence like any other runnable:
-
-```python
-chain.invoke({"topic": "bears"})
-```
-
-**Coercion**
-
-We can even combine this chain with more runnables to create another chain. This may involve some input/output formatting using other types of runnables, depending on the required inputs and outputs of the chain components.
-
-For example, let's say we wanted to compose the joke generating chain with another chain that evaluates whether or not the generated joke was funny.
-
-We would need to be careful with how we format the input into the next chain. In the below example, the dict in the chain is automatically parsed and converted into a [`RunnableParallel`](/docs/expression_language/primitives/parallel), which runs all of its values in parallel and returns a dict with the results.
-
-This happens to be the same format the next prompt template expects. Here it is in action:
-
-```python
-from langchain_core.output_parsers import StrOutputParser
-
-analysis_prompt = ChatPromptTemplate.from_template("is this a funny joke? {joke}")
-
-composed_chain = {"joke": chain} | analysis_prompt | model | StrOutputParser()
-
-composed_chain.invoke({"topic": "bears"})
-```
+- `input_schema`: an input Pydantic model auto-generated from the structure of the Runnable
+- `output_schema`: an output Pydantic model auto-generated from the structure of the Runnable
