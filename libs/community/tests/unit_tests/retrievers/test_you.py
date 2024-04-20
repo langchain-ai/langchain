@@ -64,24 +64,6 @@ class TestYouRetriever:
         assert results == expected_result
 
     @pytest.mark.asyncio
-    async def test_aget_relevant_documents(self) -> None:
-        instance = YouRetriever(ydc_api_key="test_api_key")
-
-        # Mock response object to simulate aiohttp response
-        mock_response = AsyncMock()
-        mock_response.__aenter__.return_value = (
-            mock_response  # Make the context manager return itself
-        )
-        mock_response.__aexit__.return_value = None  # No value needed for exit
-        mock_response.status = 200
-        mock_response.json = AsyncMock(return_value=MOCK_RESPONSE_RAW)
-
-        # Patch the aiohttp.ClientSession object
-        with patch("aiohttp.ClientSession.get", return_value=mock_response):
-            results = await instance.aget_relevant_documents("test query")
-            assert results == MOCK_PARSED_OUTPUT
-
-    @pytest.mark.asyncio
     async def test_ainvoke(self) -> None:
         instance = YouRetriever(ydc_api_key="test_api_key")
 
