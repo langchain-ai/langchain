@@ -109,13 +109,13 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to create a time-weighted retriever](/docs/how_to/time_weighted_vectorstore)
 
 ### Indexing
-- [How to reindex data to keep your vectorstore in-sync with the underlying data source](/docs/modules/data_connection/indexing)
+- [How to reindex data to keep your vectorstore in-sync with the underlying data source](/docs/how_to/indexing)
 
 ### Tools
-- [How to use LangChain tools](/docs/modules/tools)
-- [How to use LangChain toolkits](/docs/modules/tools/toolkits)
-- [How to define a custom tool](/docs/modules/tools/custom_tools)
-- [How to convert LangChain tools to OpenAI functions](/docs/modules/tools/tools_as_openai_functions)
+- [How to use LangChain tools](/docs/how_to/tools)
+- [How to use LangChain toolkits](/docs/how_to/toolkits)
+- [How to define a custom tool](/docs/how_to/custom_tools)
+- [How to convert LangChain tools to OpenAI functions](/docs/how_to/tools_as_openai_functions)
 - [How to use tools in a chain](/docs/how_to/tool_chain)
 - [How to use agents to use tools](/docs/how_to/tools_agents)
 - [How to use tools without function calling](/docs/how_to/tools_prompting)
@@ -125,51 +125,51 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to handle errors when calling tools](/docs/how_to/tools_error)
 
 ### Agents
-- [How to create a custom agent](/docs/modules/agents/how_to/custom_agent)
-- [How to stream responses from an agent](/docs/modules/agents/how_to/streaming)
-- [How to run an agent as an iterator](/docs/modules/agents/how_to/agent_iter)
-- [How to return structured output from an agent](/docs/modules/agents/how_to/agent_structured)
-- [How to handle parsing errors in an agent](/docs/modules/agents/how_to/handle_parsing_errors)
-- [How to access intermediate steps](/docs/modules/agents/how_to/intermediate_steps)
-- [How to cap the maximum number of iterations](/docs/modules/agents/how_to/max_iterations)
-- [How to set a time limit for agents](/docs/modules/agents/how_to/max_time_limit)
+- [How to create a custom agent](/docs/how_to/custom_agent)
+- [How to stream responses from an agent](/docs/how_to/agents_streaming)
+- [How to run an agent as an iterator](/docs/how_to/agent_iter)
+- [How to return structured output from an agent](/docs/how_to/agent_structured)
+- [How to handle parsing errors in an agent](/docs/how_to/agents_parsing_errors)
+- [How to access intermediate steps](/docs/how_to/intermediate_steps)
+- [How to cap the maximum number of iterations](/docs/how_to/max_iterations)
+- [How to set a time limit for agents](/docs/how_to/max_time_limit)
 
 ## Use Cases
 
 ### Q&A with RAG
-- [How to add chat history](/docs/use_cases/question_answering/chat_history/)
-- [How to stream](/docs/use_cases/question_answering/streaming/)
-- [How to return sources](/docs/use_cases/question_answering/sources/)
-- [How to return citations](/docs/use_cases/question_answering/citations/)
-- [How to do per-user retrieval](/docs/use_cases/question_answering/per_user/)
+- [How to add chat history](/docs/how_to/qa_chat_history/)
+- [How to stream](/docs/how_to/qa_streaming/)
+- [How to return sources](/docs/how_to/qa_sources/)
+- [How to return citations](/docs/how_to/qa_citations/)
+- [How to do per-user retrieval](/docs/how_to/qa_per_user/)
 
 
 ### Extraction
-- [How to use reference examples](/docs/use_cases/extraction/how_to/examples/)
-- [How to handle long text](/docs/use_cases/extraction/how_to/handle_long_text/)
-- [How to do extraction without using function calling](/docs/use_cases/extraction/how_to/parse)
+- [How to use reference examples](/docs/how_to/extraction_examples/)
+- [How to handle long text](/docs/how_to/extraction_long_text/)
+- [How to do extraction without using function calling](/docs/how_to/extraction_parse)
 
 ### Chatbots
-- [How to manage memory](/docs/use_cases/chatbots/memory_management)
-- [How to do retrieval](/docs/use_cases/chatbots/retrieval)
-- [How to use tools](/docs/use_cases/chatbots/tool_usage)
+- [How to manage memory](/docs/how_to/chatbots_memory)
+- [How to do retrieval](/docs/how_to/chatbots_retrieval)
+- [How to use tools](/docs/how_to/chatbots_tools)
 
 ### Query Analysis
-- [How to add examples to the prompt](/docs/use_cases/query_analysis/how_to/few_shot)
-- [How to handle cases where no queries are generated](/docs/use_cases/query_analysis/how_to/no_queries)
-- [How to handle multiple queries](/docs/use_cases/query_analysis/how_to/multiple_queries)
-- [How to handle multiple retrievers](/docs/use_cases/query_analysis/how_to/multiple_retrievers)
-- [How to construct filters](/docs/use_cases/query_analysis/how_to/constructing-filters)
-- [How to deal with high cardinality categorical variables](/docs/use_cases/query_analysis/how_to/high_cardinality)
+- [How to add examples to the prompt](/docs/how_to/query_few_shot)
+- [How to handle cases where no queries are generated](/docs/how_to/query_no_queries)
+- [How to handle multiple queries](/docs/how_to/query_multiple_queries)
+- [How to handle multiple retrievers](/docs/how_to/query_multiple_retrievers)
+- [How to construct filters](/docs/how_to/query_constructing_filters)
+- [How to deal with high cardinality categorical variables](/docs/how_to/query_high_cardinality)
 
 ### Q&A over SQL + CSV
-- [How to use prompting to improve results](/docs/use_cases/sql/prompting)
-- [How to do query validation](/docs/use_cases/sql/query_checking)
-- [How to deal with large databases](/docs/use_cases/sql/large_db)
-- [How to deal with CSV files](/docs/use_cases/sql/csv)
+- [How to use prompting to improve results](/docs/how_to/sql_prompting)
+- [How to do query validation](/docs/how_to/sql_query_checking)
+- [How to deal with large databases](/docs/how_to/sql_large_db)
+- [How to deal with CSV files](/docs/how_to/sql_csv)
 
 ### Q&A over Graph Databases
-- [How to map values to a database](/docs/use_cases/graph/mapping)
-- [How to add a semantic layer over the database](/docs/use_cases/graph/semantic)
-- [How to improve results with prompting](/docs/use_cases/graph/prompting)
-- [How to construct knowledge graphs](/docs/use_cases/graph/constructing)
+- [How to map values to a database](/docs/how_to/graph_mapping)
+- [How to add a semantic layer over the database](/docs/how_to/graph_semantic)
+- [How to improve results with prompting](/docs/how_to/graph_prompting)
+- [How to construct knowledge graphs](/docs/how_to/graph_constructing)
