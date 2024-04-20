@@ -71,11 +71,42 @@ def json_schema() -> Dict:
     }
 
 
+@pytest.fixture()
+def dummy_instance_method() -> object:
+    class Dummy:
+        def dummy_function(self, arg1: int, arg2: Literal["bar", "baz"]) -> None:
+            """dummy function
+
+            Args:
+                arg1: foo
+                arg2: one of 'bar', 'baz'
+            """
+            pass
+    return Dummy
+
+
+@pytest.fixture()
+def dummy_class_method() -> object:
+    class Dummy:
+        @classmethod
+        def dummy_function(cls, arg1: int, arg2: Literal["bar", "baz"]) -> None:
+            """dummy function
+
+            Args:
+                arg1: foo
+                arg2: one of 'bar', 'baz'
+            """
+            pass
+    return Dummy
+
+
 def test_convert_to_openai_function(
     pydantic: Type[BaseModel],
     function: Callable,
     dummy_tool: BaseTool,
     json_schema: Dict,
+    dummy_instance_method: object,
+    dummy_class_method: object,
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -94,7 +125,8 @@ def test_convert_to_openai_function(
         },
     }
 
-    for fn in (pydantic, function, dummy_tool, json_schema, expected):
+    for fn in (pydantic, function, dummy_tool, json_schema, expected,
+               dummy_instance_method.dummy_function, dummy_class_method.dummy_function):
         actual = convert_to_openai_function(fn)  # type: ignore
         assert actual == expected
 
