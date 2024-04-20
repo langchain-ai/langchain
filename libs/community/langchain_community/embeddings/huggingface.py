@@ -1,6 +1,10 @@
 from typing import Any, Dict, List, Optional
 
 import requests
+import torch
+from torch import Tensor
+from transformers import BatchEncoding
+from transformers import AutoTokenizer, AutoModel
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
 
@@ -371,3 +375,105 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         return self.embed_documents([text])[0]
+
+
+class HuggingFaceEncoderEmbeddings(BaseModel, Embeddings):
+    """HuggingFace encoder-only embedding models.
+    
+    To use, you must have torch and transformers be installed, 
+    some examples are BERT, distil-BERT.
+
+    Test case can be run by `python -m pytest tests/unit_tests/embeddings/test_huggingface.py`
+
+    Example:
+        .. code-block:: python
+
+        from langchain_community.embeddings.huggingface import HuggingFaceEncoderEmbeddings
+
+        model_name = "distilbert/distilbert-base-uncased" 
+        tokenizer_name = "distilbert/distilbert-base-uncased"
+        model_kwargs = {}
+        tokenizer_kwargs = {"max_length": 768, "add_special_tokens": False}
+        device = "cpu"
+        batch_size = 2
+        use_cls_embedding=False # This means only use CLS embedding as output.
+
+        embedding = HuggingFaceEncoderEmbeddings(
+            model_name=model_name, 
+            tokenizer_name=tokenizer_name, 
+            device=device, 
+            batch_size=batch_size,
+            use_cls_embedding=use_cls_embedding, 
+            model_kwargs=model_kwargs, 
+            tokenizer_kwargs=tokenizer_kwargs
+        )
+    """
+    model_name: str 
+    tokenizer_name: str
+    device: str = "cpu"
+    batch_size: int = 4
+    use_cls_embedding: bool = False
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    tokenizer_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+    client: Any
+    tokenizer: Any
+    max_length: int = 512
+    add_special_tokens: bool = False
+    truncation: bool = True
+
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+
+        self.client = AutoModel\
+            .from_pretrained(self.model_name, **self.model_kwargs)\
+            .to(torch.device(self.device))
+        self.tokenizer = AutoTokenizer\
+            .from_pretrained(self.tokenizer_name, **self.tokenizer_kwargs)
+
+        if "max_length" in self.tokenizer_kwargs:
+            self.max_length = self.tokenizer_kwargs["max_length"]
+        if "add_special_tokens" in self.tokenizer_kwargs:
+            self.add_special_tokens = self.tokenizer_kwargs["add_special_tokens"]
+        if "truncation" in self.tokenizer_kwargs:
+            self.truncation = self.tokenizer_kwargs["truncation"]
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        out_embds: List[List[float]] = []
+        batch: List[str] = []
+        for i, text in enumerate(texts):
+            batch.append(text)
+            if len(batch) == self.batch_size or i == len(texts) - 1:
+                tokens: BatchEncoding = self.tokenizer(
+                    batch, 
+                    padding=True, 
+                    add_special_tokens=self.add_special_tokens, 
+                    max_length=self.max_length, 
+                    truncation=self.truncation, 
+                    return_tensors='pt'
+                ).to(torch.device(self.device))
+
+                self.client.eval()
+                with torch.no_grad():
+                    embd_vecs: Optional[Tensor] = None
+                    if self.use_cls_embedding:
+                        embd_vecs = self.client(**tokens)["last_hidden_state"][:, 0, :]
+                    else:
+                        valid_length: Tensor = tokens.attention_mask.sum(dim=1)
+                        # Keep each embedding at least has valid length larger or 
+                        # equal with 1
+                        valid_length[valid_length == 0] = 1
+                        valid_length = valid_length.reshape(valid_length.shape[0], -1)
+                        
+                        hidden_states: Tensor = self.client(**tokens)["last_hidden_state"]
+                        hidden_states = hidden_states * tokens.attention_mask.unsqueeze(2)
+                        
+                        embd_vecs = torch.sum(hidden_states, dim=1) / valid_length
+
+                out_embds.extend(embd_vecs.tolist())
+                batch = []
+        return out_embds
+
+    def embed_query(self, text: str) -> List[float]:
+        return self.embed_documents([text])[0]
+

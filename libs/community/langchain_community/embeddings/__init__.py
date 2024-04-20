@@ -91,6 +91,7 @@ if TYPE_CHECKING:
         HuggingFaceEmbeddings,  # noqa: F401
         HuggingFaceInferenceAPIEmbeddings,  # noqa: F401
         HuggingFaceInstructEmbeddings,  # noqa: F401
+        HuggingFaceEncoderEmbeddings, 
     )
     from langchain_community.embeddings.huggingface_hub import (
         HuggingFaceHubEmbeddings,  # noqa: F401
@@ -240,6 +241,7 @@ __all__ = [
     "GradientEmbeddings",
     "HuggingFaceBgeEmbeddings",
     "HuggingFaceEmbeddings",
+    "HuggingFaceEncoderEmbeddings",
     "HuggingFaceHubEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "HuggingFaceInstructEmbeddings",
@@ -314,6 +316,7 @@ _module_lookup = {
     "GigaChatEmbeddings": "langchain_community.embeddings.gigachat",
     "HuggingFaceBgeEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceEmbeddings": "langchain_community.embeddings.huggingface",
+    "HuggingFaceEncoderEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceHubEmbeddings": "langchain_community.embeddings.huggingface_hub",
     "HuggingFaceInferenceAPIEmbeddings": "langchain_community.embeddings.huggingface",
     "HuggingFaceInstructEmbeddings": "langchain_community.embeddings.huggingface",
