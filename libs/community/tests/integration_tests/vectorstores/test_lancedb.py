@@ -1,12 +1,25 @@
+from typing import Any
+
 import pytest
 
 from langchain_community.vectorstores import LanceDB
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
+def import_lancedb() -> Any:
+    try:
+        import lancedb
+    except ImportError as e:
+        raise ImportError(
+            "Could not import pinecone lancedb package. "
+            "Please install it with `pip install lancedb`."
+        ) from e
+    return lancedb
+
+
 @pytest.mark.requires("lancedb")
 def test_lancedb_with_connection() -> None:
-    import lancedb
+    lancedb = import_lancedb()
 
     embeddings = FakeEmbeddings()
     db = lancedb.connect("/tmp/lancedb_connection")

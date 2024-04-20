@@ -10,6 +10,17 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 
+def import_lancedb() -> Any:
+    try:
+        import lancedb
+    except ImportError as e:
+        raise ImportError(
+            "Could not import pinecone lancedb package. "
+            "Please install it with `pip install lancedb`."
+        ) from e
+    return lancedb
+
+
 class LanceDB(VectorStore):
     """`LanceDB` vector store.
 
@@ -51,13 +62,7 @@ class LanceDB(VectorStore):
         mode: Optional[str] = "overwrite",
     ):
         """Initialize with Lance DB vectorstore"""
-        try:
-            import lancedb
-        except ImportError:
-            raise ImportError(
-                "Could not import lancedb python package. "
-                "Please install it with `pip install lancedb`."
-            )
+        lancedb = import_lancedb()
         self._embedding = embedding
         self._vector_key = vector_key
         self._id_key = id_key
@@ -67,8 +72,9 @@ class LanceDB(VectorStore):
         self.region = region
         self.mode = mode
 
-        if "db://" in uri and self.api_key is None:
-            raise ValueError("API key is required for LanceDB cloud.")
+        if isinstance(uri, str) and self.api_key is None:
+            if uri.startswith("db://"):
+                raise ValueError("API key is required for LanceDB cloud.")
 
         if self._embedding is None:
             raise ValueError("embedding object should be provided")
@@ -84,15 +90,17 @@ class LanceDB(VectorStore):
             if self.api_key is None:
                 self._connection = lancedb.connect(uri)
             else:
-                if "db://" not in uri:
-                    self._connection = lancedb.connect(uri)
-                    warnings.warn(
-                        "api key provided with local uri. \
-                        The data will be stored locally"
-                    )
-                self._connection = lancedb.connect(
-                    uri, api_key=self.api_key, region=self.region
-                )
+                if isinstance(uri, str):
+                    if uri.startswith("db://"):
+                        self._connection = lancedb.connect(
+                            uri, api_key=self.api_key, region=self.region
+                        )
+                    else:
+                        self._connection = lancedb.connect(uri)
+                        warnings.warn(
+                            "api key provided with local uri. \
+                            The data will be stored locally"
+                        )
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
