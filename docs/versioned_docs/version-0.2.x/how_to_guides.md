@@ -20,7 +20,7 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to attach runtime arguments to a runnable](/docs/how_to/binding/)
 - [How to run custom functions](/docs/how_to/functions)
 - [How to pass through arguments from one step to the next](/docs/how_to/passthrough)
-- [How to add values to state](/docs/how_to/assign)
+- [How to add values to a chain's state](/docs/how_to/assign)
 - [How to configure runtime chain internals](/docs/how_to/configure)
 - [How to add message history](/docs/how_to/message_history)
 - [How to do routing](/docs/how_to/routing)
