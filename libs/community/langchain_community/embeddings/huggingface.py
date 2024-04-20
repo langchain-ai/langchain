@@ -1,10 +1,6 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import requests
-import torch
-from torch import Tensor
-from transformers import BatchEncoding
-from transformers import AutoTokenizer, AutoModel
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
 
@@ -424,10 +420,20 @@ class HuggingFaceEncoderEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
+        
+        try:
+            import torch
+            from torch import Tensor
+            from transformers import BatchEncoding
+            from transformers import AutoTokenizer, AutoModel
+        except ImportError as e:
+            raise ImportError(
+                "Can not import torch and transformers successfully"
+            ) from e
 
         self.client = AutoModel\
             .from_pretrained(self.model_name, **self.model_kwargs)\
-            .to(torch.device(self.device))
+            .to(self.device)
         self.tokenizer = AutoTokenizer\
             .from_pretrained(self.tokenizer_name, **self.tokenizer_kwargs)
 
@@ -444,31 +450,31 @@ class HuggingFaceEncoderEmbeddings(BaseModel, Embeddings):
         for i, text in enumerate(texts):
             batch.append(text)
             if len(batch) == self.batch_size or i == len(texts) - 1:
-                tokens: BatchEncoding = self.tokenizer(
+                tokens: Type["BatchEncoding"] = self.tokenizer(
                     batch, 
                     padding=True, 
                     add_special_tokens=self.add_special_tokens, 
                     max_length=self.max_length, 
                     truncation=self.truncation, 
                     return_tensors='pt'
-                ).to(torch.device(self.device))
+                ).to(self.device)
 
                 self.client.eval()
-                with torch.no_grad():
-                    embd_vecs: Optional[Tensor] = None
-                    if self.use_cls_embedding:
-                        embd_vecs = self.client(**tokens)["last_hidden_state"][:, 0, :]
-                    else:
-                        valid_length: Tensor = tokens.attention_mask.sum(dim=1)
-                        # Keep each embedding at least has valid length larger or 
-                        # equal with 1
-                        valid_length[valid_length == 0] = 1
-                        valid_length = valid_length.reshape(valid_length.shape[0], -1)
-                        
-                        hidden_states: Tensor = self.client(**tokens)["last_hidden_state"]
-                        hidden_states = hidden_states * tokens.attention_mask.unsqueeze(2)
-                        
-                        embd_vecs = torch.sum(hidden_states, dim=1) / valid_length
+                embd_vecs: Optional[Type["Tensor"]] = None
+                if self.use_cls_embedding:
+                    embd_vecs = self.client(**tokens)["last_hidden_state"][:, 0, :]
+                else:
+                    valid_length: Type["Tensor"] = tokens.attention_mask.sum(dim=1)
+                    # Keep each embedding at least has valid length larger or 
+                    # equal with 1
+                    valid_length[valid_length == 0] = 1
+                    valid_length = valid_length.reshape(valid_length.shape[0], -1)
+                    
+                    hidden_states: Type["Tensor"] = \
+                        self.client(**tokens)["last_hidden_state"]
+                    hidden_states = hidden_states * tokens.attention_mask.unsqueeze(2)
+                    
+                    embd_vecs = hidden_states.sum(dim=1) / valid_length
 
                 out_embds.extend(embd_vecs.tolist())
                 batch = []
