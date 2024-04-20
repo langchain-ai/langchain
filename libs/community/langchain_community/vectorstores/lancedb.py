@@ -75,9 +75,10 @@ class LanceDB(VectorStore):
 
         if isinstance(connection, lancedb.db.LanceDBConnection):
             self._connection = connection
-        elif isinstance(connection, str):
+        elif isinstance(connection, (str, lancedb.db.LanceTable)):
             raise ValueError(
-                "`connection` has to be a lancedb.db.LanceDBConnection object."
+                "`connection` has to be a lancedb.db.LanceDBConnection object.\
+                `lancedb.db.LanceTable` is deprecated."
             )
         else:
             if self.api_key is None:
