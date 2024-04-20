@@ -154,7 +154,11 @@ def _format_message_content(content: Any) -> Any:
         # Remove unexpected block types
         formatted_content = []
         for block in content:
-            if isinstance(block, dict) and "type" in block and block["type"] != "text":
+            if (
+                isinstance(block, dict)
+                and "type" in block
+                and block["type"] == "tool_use"
+            ):
                 continue
             else:
                 formatted_content.append(block)

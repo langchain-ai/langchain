@@ -35,6 +35,7 @@ from langchain_core.language_models import (
     FakeStreamingListLLM,
 )
 from langchain_core.load import dumpd, dumps
+from langchain_core.load.load import loads
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -76,7 +77,7 @@ from langchain_core.runnables import (
     add,
     chain,
 )
-from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.base import RunnableMap, RunnableSerializable
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
@@ -3552,6 +3553,9 @@ async def test_map_astream_iterator_input() -> None:
     assert final_value.get("chat").content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == llm_res
+
+    simple_map = RunnableMap(passthrough=RunnablePassthrough())
+    assert loads(dumps(simple_map)) == simple_map
 
 
 def test_with_config_with_config() -> None:
