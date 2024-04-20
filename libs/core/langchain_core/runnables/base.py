@@ -1336,6 +1336,37 @@ class Runnable(Generic[Input, Output], ABC):
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """
         Bind arguments to a Runnable, returning a new Runnable.
+
+        Useful when a runnable in a chain requires an argument that is not
+        in the output of the previous runnable or included in the user input.
+
+        Example:
+
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatOllama
+            from langchain_core.output_parsers import StrOutputParser
+
+            llm = ChatOllama(model='llama2')
+
+            # Without bind.
+            chain = (
+                llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two three four five.'
+
+            # With bind.
+            chain = (
+                llm.bind(stop=["three"])
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two'
+
         """
         return RunnableBinding(bound=self, kwargs=kwargs, config={})
 
@@ -2003,6 +2034,33 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
+        """Configure particular runnable fields at runtime.
+
+        .. code-block:: python
+
+            from langchain_core.runnables import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(max_tokens=20).configurable_fields(
+                max_tokens=ConfigurableField(
+                    id="output_token_number",
+                    name="Max tokens in the output",
+                    description="The maximum number of tokens in the output",
+                )
+            )
+
+            # max_tokens = 20
+            print(
+                "max_tokens_20: ",
+                model.invoke("tell me something about chess").content
+            )
+
+            # max_tokens = 200
+            print("max_tokens_200: ", model.with_config(
+                configurable={"output_token_number": 200}
+                ).invoke("tell me something about chess").content
+            )
+        """
         from langchain_core.runnables.configurable import RunnableConfigurableFields
 
         for key in kwargs:
@@ -2022,6 +2080,32 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         prefix_keys: bool = False,
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
+        """Configure alternatives for runnables that can be set at runtime.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.runnables.utils import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatAnthropic(
+                model_name="claude-3-sonnet-20240229"
+            ).configurable_alternatives(
+                ConfigurableField(id="llm"),
+                default_key="anthropic",
+                openai=ChatOpenAI()
+            )
+
+            # uses the default model ChatAnthropic
+            print(model.invoke("which organization created you?").content)
+
+            # uses ChatOpenaAI
+            print(
+                model.with_config(
+                    configurable={"llm": "openai"}
+                ).invoke("which organization created you?").content
+            )
+        """
         from langchain_core.runnables.configurable import (
             RunnableConfigurableAlternatives,
         )
@@ -2052,7 +2136,7 @@ def _seq_input_schema(
                 **{
                     k: (v.annotation, v.default)
                     for k, v in next_input_schema.__fields__.items()
-                    if k not in first.mapper.steps
+                    if k not in first.mapper.steps__
                 },
             )
     elif isinstance(first, RunnablePick):
@@ -2897,11 +2981,11 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                 print(output)  # noqa: T201
     """
 
-    steps: Mapping[str, Runnable[Input, Any]]
+    steps__: Mapping[str, Runnable[Input, Any]]
 
     def __init__(
         self,
-        __steps: Optional[
+        steps__: Optional[
             Mapping[
                 str,
                 Union[
@@ -2917,10 +3001,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
         ],
     ) -> None:
-        merged = {**__steps} if __steps is not None else {}
+        merged = {**steps__} if steps__ is not None else {}
         merged.update(kwargs)
         super().__init__(  # type: ignore[call-arg]
-            steps={key: coerce_to_runnable(r) for key, r in merged.items()}
+            steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
         )
 
     @classmethod
@@ -2938,12 +3022,12 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
-        name = name or self.name or f"RunnableParallel<{','.join(self.steps.keys())}>"
+        name = name or self.name or f"RunnableParallel<{','.join(self.steps__.keys())}>"
         return super().get_name(suffix, name=name)
 
     @property
     def InputType(self) -> Any:
-        for step in self.steps.values():
+        for step in self.steps__.values():
             if step.InputType:
                 return step.InputType
 
@@ -2954,14 +3038,14 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     ) -> Type[BaseModel]:
         if all(
             s.get_input_schema(config).schema().get("type", "object") == "object"
-            for s in self.steps.values()
+            for s in self.steps__.values()
         ):
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model(  # type: ignore[call-overload]
                 self.get_name("Input"),
                 **{
                     k: (v.annotation, v.default)
-                    for step in self.steps.values()
+                    for step in self.steps__.values()
                     for k, v in step.get_input_schema(config).__fields__.items()
                     if k != "__root__"
                 },
@@ -2975,13 +3059,13 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             self.get_name("Output"),
-            **{k: (v.OutputType, None) for k, v in self.steps.items()},
+            **{k: (v.OutputType, None) for k, v in self.steps__.items()},
         )
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
-            spec for step in self.steps.values() for spec in step.config_specs
+            spec for step in self.steps__.values() for spec in step.config_specs
         )
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
@@ -2990,7 +3074,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         graph = Graph()
         input_node = graph.add_node(self.get_input_schema(config))
         output_node = graph.add_node(self.get_output_schema(config))
-        for step in self.steps.values():
+        for step in self.steps__.values():
             step_graph = step.get_graph()
             step_graph.trim_first_node()
             step_graph.trim_last_node()
@@ -3012,7 +3096,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     def __repr__(self) -> str:
         map_for_repr = ",\n  ".join(
             f"{k}: {indent_lines_after_first(repr(v), '  ' + k + ': ')}"
-            for k, v in self.steps.items()
+            for k, v in self.steps__.items()
         )
         return "{\n  " + map_for_repr + "\n}"
 
@@ -3043,7 +3127,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = dict(self.steps)
+            steps = dict(self.steps__)
             with get_executor_for_config(config) as executor:
                 futures = [
                     executor.submit(
@@ -3086,7 +3170,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = dict(self.steps)
+            steps = dict(self.steps__)
             results = await asyncio.gather(
                 *(
                     step.ainvoke(
@@ -3115,7 +3199,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         config: RunnableConfig,
     ) -> Iterator[AddableDict]:
         # Shallow copy steps to ignore mutations while in progress
-        steps = dict(self.steps)
+        steps = dict(self.steps__)
         # Each step gets a copy of the input iterator,
         # which is consumed in parallel in a separate thread.
         input_copies = list(safetee(input, len(steps), lock=threading.Lock()))
@@ -3180,7 +3264,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         config: RunnableConfig,
     ) -> AsyncIterator[AddableDict]:
         # Shallow copy steps to ignore mutations while in progress
-        steps = dict(self.steps)
+        steps = dict(self.steps__)
         # Each step gets a copy of the input iterator,
         # which is consumed in parallel in a separate thread.
         input_copies = list(atee(input, len(steps), lock=asyncio.Lock()))
@@ -3668,7 +3752,13 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             objects = []
 
-        return [obj for obj in objects if isinstance(obj, Runnable)]
+        deps: List[Runnable] = []
+        for obj in objects:
+            if isinstance(obj, Runnable):
+                deps.append(obj)
+            elif isinstance(getattr(obj, "__self__", None), Runnable):
+                deps.append(obj.__self__)
+        return deps
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -4807,6 +4897,45 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             kwargs=self.kwargs,
             config=self.config,
         )
+
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self.bound, name)
+
+        if callable(attr) and (
+            config_param := inspect.signature(attr).parameters.get("config")
+        ):
+            if config_param.kind == inspect.Parameter.KEYWORD_ONLY:
+
+                @wraps(attr)
+                def wrapper(*args: Any, **kwargs: Any) -> Any:
+                    return attr(
+                        *args,
+                        config=merge_configs(self.config, kwargs.pop("config", None)),
+                        **kwargs,
+                    )
+
+                return wrapper
+            elif config_param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                idx = list(inspect.signature(attr).parameters).index("config")
+
+                @wraps(attr)
+                def wrapper(*args: Any, **kwargs: Any) -> Any:
+                    if len(args) >= idx + 1:
+                        argsl = list(args)
+                        argsl[idx] = merge_configs(self.config, argsl[idx])
+                        return attr(*argsl, **kwargs)
+                    else:
+                        return attr(
+                            *args,
+                            config=merge_configs(
+                                self.config, kwargs.pop("config", None)
+                            ),
+                            **kwargs,
+                        )
+
+                return wrapper
+
+        return attr
 
 
 RunnableLike = Union[
