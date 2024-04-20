@@ -188,7 +188,8 @@ class Chroma(VectorStore):
         # Populate IDs
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in uris]
-        embeddings = None
+        user_embeddings = kwargs.get("embeddings",None)
+        embeddings = user_embeddings if user_embeddings else None 
         # Set embeddings
         if self._embedding_function is not None and hasattr(
             self._embedding_function, "embed_image"
@@ -269,7 +270,8 @@ class Chroma(VectorStore):
         # TODO: Handle the case where the user doesn't provide ids on the Collection
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
-        embeddings = None
+        user_embeddings = kwargs.get("embeddings",None)
+        embeddings = user_embeddings if user_embeddings else None
         texts = list(texts)
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(texts)
