@@ -263,7 +263,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             run_manager=run_manager.get_sync(),
         )
 
-    @deprecated("0.1.43", alternative="invoke", removal="0.2.0")
+    @deprecated(since="0.1.43", alternative="invoke", removal="0.2.0")
     def get_relevant_documents(
         self,
         query: str,
@@ -327,7 +327,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             )
             return result
 
-    @deprecated("0.1.43", alternative="invoke", removal="0.2.0")
+    @deprecated(since="0.1.43", alternative="invoke", removal="0.2.0")
     async def aget_relevant_documents(
         self,
         query: str,
