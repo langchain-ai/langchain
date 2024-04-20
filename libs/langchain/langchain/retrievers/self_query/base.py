@@ -15,7 +15,6 @@ from langchain_community.vectorstores import (
     MyScale,
     OpenSearchVectorSearch,
     PGVector,
-    Pinecone,
     Qdrant,
     Redis,
     SupabaseVectorStore,
@@ -26,6 +25,9 @@ from langchain_community.vectorstores import (
 )
 from langchain_community.vectorstores import (
     ElasticsearchStore as ElasticsearchStoreCommunity,
+)
+from langchain_community.vectorstores import (
+    Pinecone as CommunityPinecone,
 )
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -73,7 +75,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,
         PGVector: PGVectorTranslator,
-        Pinecone: PineconeTranslator,
+        CommunityPinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
         Dingo: DingoDBTranslator,
@@ -118,6 +120,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
             if isinstance(vectorstore, ElasticsearchStore):
                 return ElasticsearchTranslator()
+        except ImportError:
+            pass
+
+        try:
+            from langchain_pinecone import Pinecone
+
+            if isinstance(vectorstore, Pinecone):
+                return PineconeTranslator()
         except ImportError:
             pass
 
