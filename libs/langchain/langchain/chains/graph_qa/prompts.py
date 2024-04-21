@@ -54,12 +54,12 @@ Do not return just the attributes requested in the question, but all related nod
 Do not change the order of the relationships, the arrows should always point from the "start" to the "end".
 
 Schema:
-{graph_schema}
+{schema}
 
 The question is:
 {question}"""
 CYPHER_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["graph_schema", "question"], template=CYPHER_GENERATION_TEMPLATE
+    input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
 )
 
 NEBULAGRAPH_EXTRA_INSTRUCTIONS = """

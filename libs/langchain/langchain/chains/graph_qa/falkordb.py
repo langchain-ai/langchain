@@ -123,7 +123,7 @@ class FalkorDBQAChain(Chain):
         intermediate_steps: List = []
 
         generated_cypher = self.cypher_generation_chain.run(
-            {"question": question, "graph_schema": self.graph.schema}, callbacks=callbacks
+            {"question": question, "schema": self.graph.schema}, callbacks=callbacks
         )
 
         # Extract Cypher code if it is wrapped in backticks
