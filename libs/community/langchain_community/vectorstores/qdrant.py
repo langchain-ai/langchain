@@ -1394,16 +1394,16 @@ class Qdrant(VectorStore):
         elif client is not None:
             pass
         elif path is not None:
-            client, async_client = cls._generate_clients(path = path, **kwargs)
+            sync_client, async_client = cls._generate_clients(path = path, **kwargs)
             
         else:
             raise ValueError("Either 'client' or 'path' must be provided.")
         
         return cls(
-                    client = client, 
+                    client = sync_client, 
+                    async_client = async_client,
                     collection_name = collection_name, 
-                    embedding = embedding, 
-                    async_client=async_client    
+                    embeddings = embedding, 
                     **kwargs
                 )
 
