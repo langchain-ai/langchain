@@ -369,7 +369,9 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
         name = (
-            name or self.name or f"RunnableAssign<{','.join(self.mapper.steps.keys())}>"
+            name
+            or self.name
+            or f"RunnableAssign<{','.join(self.mapper.steps__.keys())}>"
         )
         return super().get_name(suffix, name=name)
 
@@ -488,7 +490,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         **kwargs: Any,
     ) -> Iterator[Dict[str, Any]]:
         # collect mapper keys
-        mapper_keys = set(self.mapper.steps.keys())
+        mapper_keys = set(self.mapper.steps__.keys())
         # create two streams, one for the map and one for the passthrough
         for_passthrough, for_map = safetee(input, 2, lock=threading.Lock())
 
@@ -544,7 +546,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         **kwargs: Any,
     ) -> AsyncIterator[Dict[str, Any]]:
         # collect mapper keys
-        mapper_keys = set(self.mapper.steps.keys())
+        mapper_keys = set(self.mapper.steps__.keys())
         # create two streams, one for the map and one for the passthrough
         for_passthrough, for_map = atee(input, 2, lock=asyncio.Lock())
         # create map output stream
