@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List
 
 import pytest
 from ai21.models import ChatMessage as J2ChatMessage
@@ -30,29 +30,31 @@ _JAMBA_MODEL_NAME = "jamba-instruct-preview"
     argnames=["model", "message", "expected_ai21_message"],
     argvalues=[
         (
-                _J2_MODEL_NAME,
-                HumanMessage(content="Human Message Content"),
-                J2ChatMessage(role=RoleType.USER, text="Human Message Content"),
+            _J2_MODEL_NAME,
+            HumanMessage(content="Human Message Content"),
+            J2ChatMessage(role=RoleType.USER, text="Human Message Content"),
         ),
         (
-                _J2_MODEL_NAME,
-                AIMessage(content="AI Message Content"),
-                J2ChatMessage(role=RoleType.ASSISTANT, text="AI Message Content"),
+            _J2_MODEL_NAME,
+            AIMessage(content="AI Message Content"),
+            J2ChatMessage(role=RoleType.ASSISTANT, text="AI Message Content"),
         ),
         (
-                _JAMBA_MODEL_NAME,
-                HumanMessage(content="Human Message Content"),
-                ChatMessage(role=RoleType.USER, content="Human Message Content"),
+            _JAMBA_MODEL_NAME,
+            HumanMessage(content="Human Message Content"),
+            ChatMessage(role=RoleType.USER, content="Human Message Content"),
         ),
         (
-                _JAMBA_MODEL_NAME,
-                AIMessage(content="AI Message Content"),
-                ChatMessage(role=RoleType.ASSISTANT, content="AI Message Content"),
+            _JAMBA_MODEL_NAME,
+            AIMessage(content="AI Message Content"),
+            ChatMessage(role=RoleType.ASSISTANT, content="AI Message Content"),
         ),
     ],
 )
 def test_convert_message_to_ai21_message(
-        message: BaseMessage, expected_ai21_message: ChatMessage, chat_adapter: ChatAdapter
+    message: BaseMessage,
+    expected_ai21_message: ChatMessage,
+    chat_adapter: ChatAdapter,
 ) -> None:
     ai21_message = chat_adapter._convert_message_to_ai21_message(message)
     assert ai21_message == expected_ai21_message
@@ -66,18 +68,18 @@ def test_convert_message_to_ai21_message(
     argnames=["model", "message"],
     argvalues=[
         (
-                _J2_MODEL_NAME,
-                SystemMessage(content="System Message Content"),
+            _J2_MODEL_NAME,
+            SystemMessage(content="System Message Content"),
         ),
         (
-                _J2_MODEL_NAME,
-                LangChainChatMessage(content="Chat Message Content", role="human"),
+            _J2_MODEL_NAME,
+            LangChainChatMessage(content="Chat Message Content", role="human"),
         ),
     ],
 )
 def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
-        message: BaseMessage,
-        chat_adapter: ChatAdapter,
+    message: BaseMessage,
+    chat_adapter: ChatAdapter,
 ) -> None:
     with pytest.raises(ValueError) as e:
         chat_adapter._convert_message_to_ai21_message(message)
@@ -97,64 +99,79 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
     argnames=["model", "messages", "expected_messages"],
     argvalues=[
         (
-                _J2_MODEL_NAME,
-                [
-                    HumanMessage(content="Human Message Content 1"),
-                    HumanMessage(content="Human Message Content 2"),
+            _J2_MODEL_NAME,
+            [
+                HumanMessage(content="Human Message Content 1"),
+                HumanMessage(content="Human Message Content 2"),
+            ],
+            {
+                "system": "",
+                "messages": [
+                    J2ChatMessage(
+                        role=RoleType.USER,
+                        text="Human Message Content 1",
+                    ),
+                    J2ChatMessage(
+                        role=RoleType.USER,
+                        text="Human Message Content 2",
+                    ),
                 ],
-                {
-                    "system": "",
-                    "messages": [
-                        J2ChatMessage(role=RoleType.USER, text="Human Message Content 1"),
-                        J2ChatMessage(role=RoleType.USER, text="Human Message Content 2"),
-                    ],
-                }
+            },
         ),
         (
-                _J2_MODEL_NAME,
-                [
-                    SystemMessage(content="System Message Content 1"),
-                    HumanMessage(content="Human Message Content 1"),
+            _J2_MODEL_NAME,
+            [
+                SystemMessage(content="System Message Content 1"),
+                HumanMessage(content="Human Message Content 1"),
+            ],
+            {
+                "system": "System Message Content 1",
+                "messages": [
+                    J2ChatMessage(
+                        role=RoleType.USER,
+                        text="Human Message Content 1",
+                    ),
                 ],
-                {
-                    "system": "System Message Content 1",
-                    "messages": [
-                        J2ChatMessage(role=RoleType.USER, text="Human Message Content 1"),
-                    ],
-                }
+            },
         ),
         (
-                _JAMBA_MODEL_NAME,
-                [
-                    HumanMessage(content="Human Message Content 1"),
-                    HumanMessage(content="Human Message Content 2"),
-                ],
-                {
-                    "messages": [
-                        ChatMessage(role=RoleType.USER, content="Human Message Content 1"),
-                        ChatMessage(role=RoleType.USER, content="Human Message Content 2"),
-                    ]
-                },
+            _JAMBA_MODEL_NAME,
+            [
+                HumanMessage(content="Human Message Content 1"),
+                HumanMessage(content="Human Message Content 2"),
+            ],
+            {
+                "messages": [
+                    ChatMessage(
+                        role=RoleType.USER,
+                        content="Human Message Content 1",
+                    ),
+                    ChatMessage(
+                        role=RoleType.USER,
+                        content="Human Message Content 2",
+                    ),
+                ]
+            },
         ),
         (
-                _JAMBA_MODEL_NAME,
-                [
-                    SystemMessage(content="System Message Content 1"),
-                    HumanMessage(content="Human Message Content 1"),
+            _JAMBA_MODEL_NAME,
+            [
+                SystemMessage(content="System Message Content 1"),
+                HumanMessage(content="Human Message Content 1"),
+            ],
+            {
+                "messages": [
+                    ChatMessage(role="system", content="System Message Content 1"),
+                    ChatMessage(role="user", content="Human Message Content 1"),
                 ],
-                {
-                    "messages": [
-                        ChatMessage(role="system", content="System Message Content 1"),
-                        ChatMessage(role="user", content="Human Message Content 1"),
-                    ],
-                }
+            },
         ),
     ],
 )
 def test_convert_messages(
-        chat_adapter: ChatAdapter,
-        messages: List[BaseMessage],
-        expected_messages: List[ChatMessage],
+    chat_adapter: ChatAdapter,
+    messages: List[BaseMessage],
+    expected_messages: List[ChatMessage],
 ) -> None:
     converted_messages = chat_adapter.convert_messages(messages)
     assert converted_messages == expected_messages
