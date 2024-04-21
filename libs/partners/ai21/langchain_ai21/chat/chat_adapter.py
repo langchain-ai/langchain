@@ -119,7 +119,10 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         role: _ROLE_TYPE,
         content: str,
     ) -> ChatMessage:
-        return ChatMessage(role=str(role), content=content)
+        return ChatMessage(
+            role=role.value if isinstance(role, RoleType) else role,
+            content=content,
+        )
 
     def call(self, client: Any, **params: Any) -> BaseMessage:
         response = client.chat.completions.create(**params)
