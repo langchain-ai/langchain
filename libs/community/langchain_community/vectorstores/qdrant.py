@@ -80,7 +80,6 @@ class Qdrant(VectorStore):
             collection_name = "MyCollection"
             qdrant = Qdrant(client, collection_name, embedding_function)
     """
-    
 
     CONTENT_KEY = "page_content"
     METADATA_KEY = "metadata"
@@ -1373,7 +1372,7 @@ class Qdrant(VectorStore):
     def from_existing_client(
         cls: Type[Qdrant],
         client: Optional[Any] = None,
-        path: str = None,
+        path: Optional[str] = None,
         collection_name: str = None,
         embedding: Embeddings = None, 
     ) -> Qdrant:
@@ -1388,7 +1387,8 @@ class Qdrant(VectorStore):
 
         if client and path:
             raise QdrantException(
-                "Please provide `None` for either `client` or `path`."
+                "Both `client` and `path` are passed."
+                "Provide only one of them."
             )    
         elif client is not None:
             pass
@@ -1405,10 +1405,6 @@ class Qdrant(VectorStore):
             raise ValueError("Either 'client' or 'path' must be provided.")
         
         return cls(client, collection_name, embedding)
-
-        
-
-
 
     @classmethod
     @sync_call_fallback
