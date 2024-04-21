@@ -1372,6 +1372,7 @@ class Qdrant(VectorStore):
     def from_existing_client(
         cls: Type[Qdrant],
         client: Optional[Any] = None,
+        async_client: Optional[Any] =None,
         path: Optional[str] = None,
         collection_name: str = None,
         embedding: Embeddings = None,
@@ -1385,22 +1386,21 @@ class Qdrant(VectorStore):
         
         if not (collection_name and embedding):
             raise ValueError("Both 'collection_name' and 'embedding' are necessary.")
-
-        if client and path:
-            raise QdrantException(
+         
+        if client is not None and path is not None:
+            raise ValueError(
                 "Both `client` and `path` are passed."
                 "Provide only one of them."
             )    
-        elif client is not None:
-            pass
-        elif path is not None:
-            sync_client, async_client = cls._generate_clients(path = path, **kwargs)
-            
+        elif client is None and path is not None:
+            client, async_client = cls._generate_clients(path = path, **kwargs)
+        elif client is not None and path is None:
+            client=client
         else:
             raise ValueError("Either 'client' or 'path' must be provided.")
         
         return cls(
-                    client = sync_client, 
+                    client = client, 
                     async_client = async_client,
                     collection_name = collection_name, 
                     embeddings = embedding, 
