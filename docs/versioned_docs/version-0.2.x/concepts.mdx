@@ -6,7 +6,7 @@ This section contains introductions to key parts of LangChain.
 
 ## Architecture
 
-LangChain as a framework consists of several pieces.
+LangChain as a framework consists of several pieces. The below diagram shows how they relate.
 
 <ThemedImage
   alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
@@ -17,15 +17,47 @@ LangChain as a framework consists of several pieces.
   title="LangChain Framework Overview"
 />
 
-Concretely, the framework consists of the following open-source libraries:
+### `langchain-core`
+This package contains base abstractions of different components and ways to chain them together.
+The interfaces for core components like LLMs, vectorstores, retrievers and more are defined here.
+No third party integrations are defined here.
+The dependencies are kept purposefully very lightweight.
 
-- **`langchain-core`**: Base abstractions of different components and ways to chain them together.
-- **`langchain-community`**: Third party integrations.
-  - Partner packages (e.g. **`langchain-openai`**, **`langchain-anthropic`**, etc.): Some integrations have been further split into their own lightweight packages that only depend on **`langchain-core`**.
-- **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-- **[langgraph](/docs/langgraph)**: Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
-- **[langserve](/docs/langserve)**: Deploy LangChain chains as REST APIs.
-- **[LangSmith](/docs/langsmith)**: A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
+### `langchain-community`
+
+This package contains the long tail of third party integrations.
+Key partner packages are separated out (see below).
+This contains all integrations for various components (LLMs, vectorstores, retrievers).
+All dependencies in this package are optional, so as not to bloat it.
+
+### Partner packages
+
+While the long tail of integrations are in `langchain-community`, we split popular integrations into their own packages (eg `langchain-openai`, `langchain-anthropic`, etc).
+This was done in order to better manage and version these important integrations.
+
+### `langchain`
+
+The main `langchain` package contains chains, agents, and retrieval strategies that make up an application's cognitive architecture.
+These are all implementations that the LangChain team developed, as opposed third party integrations.
+All chains, agents, and retrieval strategies here are NOT specific to any one integration, but rather generic across all integrations.
+
+### [langgraph](/docs/langgraph)
+
+Not currently in this repo, `langgraph` is an extension of `langchain` aimed at
+building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+
+While `langchain` contains basic agent implementations, the agents you can construct with `langgraph` are more
+customizable and controllable, and it is therefor recommended that you go there for agents.
+
+At some point in the future, we will change `langchain` agents to be built on top of `langgraph`.
+
+### [langserve](/docs/langserve)
+
+A package to deploy LangChain chains as REST APIs. Makes it easy to get a production ready API up and running.
+
+### [LangSmith](/docs/langsmith)
+
+A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
 
 ## Installation
 
@@ -44,47 +76,83 @@ For working with LangSmith, you will need to set up a LangSmith developer accoun
 After that, you can enable it by setting environment variables:
 
 ```shell
+export LANGCHAIN_TRACING_V2=true
 export LANGCHAIN_API_KEY=ls__...
 ```
 
-# Components
+## Components
 
 LangChain provides standard, extendable interfaces and external integrations for various components useful for building with LLMs.
+Some components LangChain implements, some components we rely on third-party integrations for, and others are a mix.
 
-## Models
+### LLMs
+Language models that takes a string as input and returns a string.
+These are traditionally older models (newer models generally are `ChatModels`, see below).
 
-LangChain has useful components for calling different types of language models, formatting prompt inputs, and streaming model outputs:
+Although the underlying models are string in, string out, the LangChain wrappers also allow these models to take messages as input.
+This makes them interchangeable with ChatModels.
+When messages are passed in as input, they will be formatted into a string under the hood before being passed to the underlying model.
 
-### [Prompt templates](/docs/modules/model_io/prompts/)
-Formats input provided by a user in a reusable way. Used guide a model's response, helping it understand the context and generate relevant and coherent language-based output.
+LangChain does not provide any LLMs, rather we rely on third party integrations.
 
-### [Example Selectors](/docs/modules/model_io/prompts/example_selectors)
-Select examples to include in the prompt as few shot examples. There are generally a few ways of doing this, the two main ones being randomly or by semantic similarity.
-
-### [Chat models](/docs/modules/model_io/chat/)
+### Chat models
 Language models that uses chat messages as inputs and returns chat messages as outputs (as opposed to using plain text).
-Implementations include [GPT-4](/docs/integrations/chat/openai/) and [Claude 3](/docs/integrations/chat/anthropic/).
+These are traditionally newer models (older models are generally `LLMs`, see above).
+
+Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input.
+This makes them interchangeable with LLMs (and simpler to use).
+When a string is passed in as input, it will be converted to a HumanMessage under the hood before being passed to the underlying model.
+
+LangChain does not provide any ChatModels, rather we rely on third party integrations.
+
+We have some standardized parameters when constructing ChatModels:
+- `model_name`: the name of the model
+# TODO: bagatur
+
+ChatModels also accept other parameters that are specific to that integration.
 
 ### Message types
 
-Some language models take a list of messages as input and return a message. There are a few different types of messages. All messages have a `role` and a `content` property. The `role` describes WHO is saying the message. LangChain has different message classes for different roles. The `content` property describes the content of the message. This can be a few different things:
+Some language models take a list of messages as input and return a message.
+There are a few different types of messages.
+All messages have a `role`, `content`, and `response_metadata` property.
+
+The `role` describes WHO is saying the message.
+LangChain has different message classes for different roles.
+
+The `content` property describes the content of the message.
+This can be a few different things:
 
 - A string (most models deal this type of content)
 - A List of dictionaries (this is used for multi-modal input, where the dictionary contains information about that input type and that input location)
 
-In addition, messages have an `additional_kwargs` property. This is where additional information about messages can be passed. This is largely used for input parameters that are *provider specific* and not general. The best known example of this is `function_call` from OpenAI.
-
 #### HumanMessage
 
-This represents a message from the user. Generally consists only of content.
+This represents a message from the user.
 
 #### AIMessage
 
-This represents a message from the model. This may have `additional_kwargs` in it - for example `tool_calls` if using OpenAI tool calling.
+This represents a message from the model. In addition to the `content` property, these messages also have:
+
+**`response_metadata`**
+
+The `response_metadata` property contains additional metadata about the response. The data here is often specific to each model provider.
+This is where information like log-probs and token usage may be stored.
+
+**`tool_calls`**
+
+These represent a decision from an language model to call a tool. They are included as part of an `AIMessage` output.
+They can be accessed from there with the `.tool_calls` property.
+
+This property returns a list of dictionaries. Each dictionary has the following keys:
+
+- `name`: The name of the tool that should be called.
+- `args`: The arguments to that tool.
+- `id`: The id of that tool call.
 
 #### SystemMessage
 
-This represents a system message, which tells the model how to behave. This generally only consists of content. Not every model supports this.
+This represents a system message, which tells the model how to behave. Not every model provider supports this.
 
 #### FunctionMessage
 
@@ -94,31 +162,120 @@ This represents the result of a function call. In addition to `role` and `conten
 
 This represents the result of a tool call. This is distinct from a FunctionMessage in order to match OpenAI's `function` and `tool` message types. In addition to `role` and `content`, this message has a `tool_call_id` parameter which conveys the id of the call to the tool that was called to produce this result.
 
-### [LLMs](/docs/modules/model_io/llms/)
-Language models that takes a string as input and returns a string.
-Implementations include [GPT-3](/docs/integrations/llms/openai/).
 
-### [Output parsers](/docs/modules/model_io/output_parsers/)
+### Prompt templates
+Formats input provided by a user in a reusable way.
+Used to guide a model's response, helping it understand the context and generate relevant and coherent language-based output.
+
+Prompt Templates take as input a dictionary, where each key represents a variable in the prompt template to fill in.
+
+Prompt Templates output a PromptValue. This PromptValue can be passed to an LLM or a ChatModel, and can also be cast to a string or a list of messages.
+The reason this PromptValue exists is to make it easy to switch between strings and messages.
+
+There are a few different types of prompt templates
+
+#### String PromptTemplates
+
+These prompt templates are used to format a single string, and generally are used for simpler inputs.
+For example, a common way to construct and use a PromptTemplate is as follows:
+
+```python
+from langchain_core.prompts import PromptTemplate
+
+prompt_template = PromptTemplate.from_template("Tell me a joke about {topic}")
+
+prompt_template.invoke({"topic": "cats"})
+```
+
+#### ChatPromptTemplates
+
+These prompt templates are used to format a list of messages. These "templates" consist of a list of templates themselves.
+For example, a common way to construct and use a ChatPromptTemplate is as follows:
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+
+prompt_template = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant"),
+    ("user", "Tell me a joke about {topic}"
+])
+
+prompt_template.invoke({"topic": "cats"})
+```
+
+In the above example, this ChatPromptTemplate will construct two messages when called.
+The first is a system message, that has no variables to format.
+The second is a HumanMessage, and will be formatted by the `topic` variable the user passes in.
+
+#### MessagesPlaceholder
+
+This prompt template is responsible for adding a list of messages in a particular place.
+In the above ChatPromptTemplate, we saw how we could format two messages, each one a string.
+But what if we wanted the user to pass in a list of messages that we would slot into a particular spot?
+This is how you use MessagesPlaceholder.
+
+```python
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage
+
+prompt_template = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant"),
+    MessagesPlaceholder("msgs")
+])
+
+prompt_template.invoke({"msgs": [HumanMessage(content="hi!")]})
+```
+
+This will produce a list of two messages, the first one being a system message, and the second one being the HumanMessage we passed in.
+If we had passed in 5 messages, then it would have produced 6 messages in total (the system message plus the 5 passed in).
+This is useful for letting a list of messages be slotted into a particular spot.
+
+An alternative way to accomplish the same thing without using the `MessagesPlaceholder` class explicitly is:
+
+```python
+prompt_template = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant"),
+    ("placeholder", "{msgs}") # <-- This is the changed part
+])
+```
+
+### Example Selectors
+One common prompting technique for achieving better performance is to include examples as part of the prompt.
+This gives the language model concrete examples of how it should behave.
+Sometimes these examples are hardcoded into the prompt, but for more advanced situations it may be nice to dynamically select them.
+Example Selectors are classes responsible for selecting and then formatting examples into prompts.
+
+
+### Output parsers
 Responsible for taking the output of a model and transforming it to a more suitable format for downstream tasks.
 Useful when you are using LLMs to generate structured data, or to normalize output from chat models and LLMs.
-Some implementations can handle streamed output from models and "transform" individual chunks into a different format.
 
-Many common use-cases in LangChain follow this pattern of formatting inputs with a `prompt template`, calling a `model`, and
-formatting outputs with an `output parser`.
 
-![Flowchart illustrating the Model I/O process with steps Format, Predict, and Parse, showing the transformation from input variables to structured output.](/img/model_io.jpg "Model Input/Output Process Diagram")
+### Document
 
-## Retrieval
+A Document object in LangChain contains information about some data. It has two attributes:
 
-Retrieval of data is a key component of providing LLMs with user-specific data that is not part of the model's training set, commonly referred to as **Retrieval-Augmented Generation** (RAG).
-In this process, external data is retrieved and then passed to the LLM during the generation step.
+- `page_content: str`: The content of this document. Currently is only a string.
+- `metadata: dict`: Arbitrary metadata associated with this document. Can track the document id, file name, etc.
 
-### [Document loaders](/docs/modules/data_connection/document_loaders/)
-Load data from a source as text and associated metadata.
-Useful for retrieval-augmented generation (RAG).
-Implementations include loaders for [PDF file content](/docs/modules/data_connection/document_loaders/pdf/) and [GitHub repos](/docs/integrations/document_loaders/github/#load-github-file-content).
+### Document loaders
 
-### [Text splitters](/docs/modules/data_connection/document_transformers/)
+These classes load Document objects. LangChain has hundreds of integrations with various data sources to load data from: Slack, Notion, Google Drive, etc.
+
+Each DocumentLoader has its own specific parameters, but they can all be invoked in the same way with the `.load` method.
+An example use case is as follows:
+
+```python
+from langchain_community.document_loaders.csv_loader import CSVLoader
+
+loader = CSVLoader(
+    ...  # <-- Integration specific parameters here
+)
+data = loader.load()
+```
+
+### Text splitters
+
 Once you've loaded documents, you'll often want to transform them to better suit your application. The simplest example is you may want to split a long document into smaller chunks that can fit into your model's context window. LangChain has a number of built-in document transformers that make it easy to split, combine, filter, and otherwise manipulate documents.
 
 When you want to deal with long pieces of text, it is necessary to split up that text into chunks. As simple as this sounds, there is a lot of potential complexity here. Ideally, you want to keep the semantically related pieces of text together. What "semantically related" means could depend on the type of text. This notebook showcases several ways to do that.
@@ -134,27 +291,26 @@ That means there are two different axes along which you can customize your text 
 1. How the text is split
 2. How the chunk size is measured
 
-Implementations include [generic text splitters](/docs/modules/data_connection/document_transformers/recursive_text_splitter/)
-and [more specialized ones](/docs/modules/data_connection/document_transformers/code_splitter/) for code in various languages.
-
-### [Embedding models](/docs/modules/data_connection/text_embedding/)
+### Embedding models
 The Embeddings class is a class designed for interfacing with text embedding models. There are lots of embedding model providers (OpenAI, Cohere, Hugging Face, etc) - this class is designed to provide a standard interface for all of them.
 
 Embeddings create a vector representation of a piece of text. This is useful because it means we can think about text in the vector space, and do things like semantic search where we look for pieces of text that are most similar in the vector space.
 
 The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former takes as input multiple texts, while the latter takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
 
-Implementations include [`mistral-embed`](/docs/integrations/text_embedding/mistralai/) and OpenAI's [`text-embedding-3-large`](/docs/integrations/text_embedding/openai/).
-
-### [Vectorstores](/docs/modules/data_connection/vectorstores/)
+### Vectorstores
 One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
 and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
 A vector store takes care of storing embedded data and performing vector search for you.
 
+Vectorstores can be converted to the retriever interface by doing:
 
-Implementations include [PGVector](/docs/integrations/vectorstores/pgvector/) and [LanceDB](/docs/integrations/vectorstores/lancedb/).
+```python
+vectorstore = MyVectorStore()
+retriever = vectorstore.as_retriever()
+```
 
-### [Retrievers](/docs/modules/data_connection/retrievers/)
+### Retrievers
 A retriever is an interface that returns documents given an unstructured query.
 It is more general than a vector store.
 A retriever does not need to be able to store documents, only to return (or retrieve) them.
@@ -162,12 +318,7 @@ Retrievers can be created from vectorstores, but are also broad enough to includ
 
 Retrievers accept a string query as input and return a list of Document's as output.
 
-## Composition
-
-This section contains higher-level components that combine other arbitrary systems (e.g. external APIs and services) and/or LangChain primitives together.
-A good primer for this section would be reading the sections on [LangChain Expression Language](/docs/concepts/#langchain-expression-language) and becoming familiar with constructing sequences via piping and the various primitives offered.
-
-### [Tools](/docs/modules/tools/)
+### Tools
 Tools are interfaces that an agent, chain, or LLM can use to interact with the world.
 They combine a few things:
 
@@ -181,15 +332,13 @@ It is useful to have all this information because this information can be used t
 
 The simpler the input to a tool is, the easier it is for an LLM to be able to use it.
 Many agents will only work with tools that have a single string input.
-For a list of agent types and which ones work with more complicated inputs, please see [this documentation](/docs/modules/agents/agent_types)
 
 Importantly, the name, description, and JSON schema (if used) are all used in the prompt. Therefore, it is really important that they are clear and describe exactly how the tool should be used. You may need to change the default name, description, or JSON schema if the LLM is not understanding how to use the tool.
-Implementations include [web search](/docs/integrations/tools/tavily_search/) and [Twilio SMS](/docs/integrations/tools/twilio/).
+
 
 ### Toolkits
 
 Toolkits are collections of tools that are designed to be used together for specific tasks. They have convenient loading methods.
-For a complete list of available ready-made toolkits, visit [Integrations](/docs/integrations/toolkits/).
 
 All Toolkits expose a `get_tools` method which returns a list of tools.
 You can therefore do:
@@ -200,42 +349,105 @@ toolkit = ExampleTookit(...)
 
 # Get list of tools
 tools = toolkit.get_tools()
-
-# Create agent
-agent = create_agent_method(llm, tools, prompt)
 ```
 
-### [Agents](/docs/modules/agents/)
+### Agents
+
+:::note
+
+The information here refers to a specific agent architecture.
+This is a high level agent architecture, and while it makes it easy to get started it can also be restrictive as you try to build more advanced agents.
+If you are interested in building more customizable, highly controllable agents, then please check out [LangGraph](https://github.com/langchain-ai/langgraph)
+
+:::
+
 Interfaces that allow a language model to choose an action to take at a given step.
 When run in a loop using an executor, they can autonomously solve abstract, multi-step problems.
-Implementations can rely on specific model functionality like [tool calling](/docs/modules/agents/agent_types/tool_calling/) for performance
-or use a more generalized prompt-based approach like [ReAct](/docs/modules/agents/agent_types/react/).
 
-### [Chains](/docs/modules/chains/)
-Sequences of calls, whether to an LLM, a tool, or a data preprocessing step. These are primarily composed using LangChain Expression Language,
-but also include some more opaque object-oriented classes.
+#### AgentAction
+
+This is a dataclass that represents the action an agent should take.
+It has a `tool` property (which is the name of the tool that should be invoked) and a `tool_input` property (the input to that tool)
+
+#### AgentFinish
+
+This represents the final result from an agent, when it is ready to return to the user.
+It contains a `return_values` key-value mapping, which contains the final agent output.
+Usually, this contains an `output` key containing a string that is the agent's response.
+
+#### Intermediate Steps
+
+These represent previous agent actions and corresponding outputs from this CURRENT agent run.
+These are important to pass to future iteration so the agent knows what work it has already done.
+This is typed as a `List[Tuple[AgentAction, Any]]`.
+Note that observation is currently left as type `Any` to be maximally flexible.
+In practice, this is often a string.
+
+#### Agent
+
+This is the chain responsible for deciding what step to take next.
+This is usually powered by a language model, a prompt, and an output parser.
+
+Different agents have different prompting styles for reasoning, different ways of encoding inputs, and different ways of parsing the output.
+You can also **easily build custom agents**, should you need further control.
+
+#### Agent Inputs
+
+The inputs to an agent are a key-value mapping.
+There is only one required key: `intermediate_steps`, which corresponds to `Intermediate Steps` as described above.
+
+Generally, the PromptTemplate takes care of transforming these pairs into a format that can best be passed into the LLM.
+
+#### Agent Outputs
+
+The output is the next action(s) to take or the final response to send to the user (`AgentAction`s or `AgentFinish`).
+Concretely, this can be typed as `Union[AgentAction, List[AgentAction], AgentFinish]`.
+
+The output parser is responsible for taking the raw LLM output and transforming it into one of these three types.
+
+#### AgentExecutor
+
+The agent executor is the runtime for an agent.
+This is what actually calls the agent, executes the actions it chooses, passes the action outputs back to the agent, and repeats.
+In pseudocode, this looks roughly like:
+
+```python
+next_action = agent.get_action(...)
+while next_action != AgentFinish:
+    observation = run(next_action)
+    next_action = agent.get_action(..., next_action, observation)
+return next_action
+```
+
+While this may seem simple, there are several complexities this runtime handles for you, including:
+
+1. Handling cases where the agent selects a non-existent tool
+2. Handling cases where the tool errors
+3. Handling cases where the agent produces output that cannot be parsed into a tool invocation
+4. Logging and observability at all levels (agent decisions, tool calls) to stdout and/or to [LangSmith](/docs/langsmith).
+
 
 ## LangChain Expression Language
 
 LangChain Expression Language, or LCEL, is a declarative way to easily compose chains together.
 LCEL was designed from day 1 to **support putting prototypes in production, with no code changes**, from the simplest “prompt + LLM” chain to the most complex chains (we’ve seen folks successfully run LCEL chains with 100s of steps in production). To highlight a few of the reasons you might want to use LCEL:
 
-[**First-class streaming support**](/docs/expression_language/streaming)
+**First-class streaming support**
 When you build your chains with LCEL you get the best possible time-to-first-token (time elapsed until the first chunk of output comes out). For some chains this means eg. we stream tokens straight from an LLM to a streaming output parser, and you get back parsed, incremental chunks of output at the same rate as the LLM provider outputs the raw tokens.
 
-[**Async support**](/docs/expression_language/interface)
+**Async support**
 Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langsmith) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
 
-[**Optimized parallel execution**](/docs/expression_language/primitives/parallel)
+**Optimized parallel execution**
 Whenever your LCEL chains have steps that can be executed in parallel (eg if you fetch documents from multiple retrievers) we automatically do it, both in the sync and the async interfaces, for the smallest possible latency.
 
-[**Retries and fallbacks**](/docs/guides/productionization/fallbacks)
+**Retries and fallbacks**
 Configure retries and fallbacks for any part of your LCEL chain. This is a great way to make your chains more reliable at scale. We’re currently working on adding streaming support for retries/fallbacks, so you can get the added reliability without any latency cost.
 
-[**Access intermediate results**](/docs/expression_language/interface#async-stream-events-beta)
+**Access intermediate results**
 For more complex chains it’s often very useful to access the results of intermediate steps even before the final output is produced. This can be used to let end-users know something is happening, or even just to debug your chain. You can stream intermediate results, and it’s available on every [LangServe](/docs/langserve) server.
 
-[**Input and output schemas**](/docs/expression_language/interface#input-schema)
+**Input and output schemas**
 Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
 
 [**Seamless LangSmith tracing**](/docs/langsmith)
@@ -247,7 +459,7 @@ Any chain created with LCEL can be easily deployed using [LangServe](/docs/langs
 
 ### Interface
 
-To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about [in this section](/docs/expression_language/primitives).
+To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
 
 This is a standard interface, which makes it easy to define custom chains as well as invoke them in a standard way.
 The standard interface includes:
@@ -258,11 +470,11 @@ The standard interface includes:
 
 These also have corresponding async methods that should be used with [asyncio](https://docs.python.org/3/library/asyncio.html) `await` syntax for concurrency:
 
-- [`astream`](#async-stream): stream back chunks of the response async
-- [`ainvoke`](#async-invoke): call the chain on an input async
-- [`abatch`](#async-batch): call the chain on a list of inputs async
-- [`astream_log`](#async-stream-intermediate-steps): stream back intermediate steps as they happen, in addition to the final response
-- [`astream_events`](#async-stream-events): **beta** stream events as they happen in the chain (introduced in `langchain-core` 0.1.14)
+- `astream`: stream back chunks of the response async
+- `ainvoke`: call the chain on an input async
+- `abatch`: call the chain on a list of inputs async
+- `astream_log`: stream back intermediate steps as they happen, in addition to the final response
+- `astream_events`: **beta** stream events as they happen in the chain (introduced in `langchain-core` 0.1.14)
 
 The **input type** and **output type** varies by component:
 
@@ -277,51 +489,5 @@ The **input type** and **output type** varies by component:
 
 
 All runnables expose input and output **schemas** to inspect the inputs and outputs:
-- [`input_schema`](#input-schema): an input Pydantic model auto-generated from the structure of the Runnable
-- [`output_schema`](#output-schema): an output Pydantic model auto-generated from the structure of the Runnable
-
-### Primitives
-
-The following are all different build in runnables or runnable methods.
-
-#### The Pipe Operator
-
-One key advantage of the `Runnable` interface is that any two runnables can be "chained" together into sequences. The output of the previous runnable's `.invoke()` call is passed as input to the next runnable. This can be done using the pipe operator (`|`), or the more explicit `.pipe()` method, which does the same thing. The resulting `RunnableSequence` is itself a runnable, which means it can be invoked, streamed, or piped just like any other runnable.
-
-For example:
-
-```python
-from langchain_anthropic import ChatAnthropic
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-
-prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
-model = ChatAnthropic(model_name="claude-3-haiku-20240307")
-
-chain = prompt | model | StrOutputParser()
-```
-Prompts and models are both runnable, and the output type from the prompt call is the same as the input type of the chat model, so we can chain them together. We can then invoke the resulting sequence like any other runnable:
-
-```python
-chain.invoke({"topic": "bears"})
-```
-
-**Coercion**
-
-We can even combine this chain with more runnables to create another chain. This may involve some input/output formatting using other types of runnables, depending on the required inputs and outputs of the chain components.
-
-For example, let's say we wanted to compose the joke generating chain with another chain that evaluates whether or not the generated joke was funny.
-
-We would need to be careful with how we format the input into the next chain. In the below example, the dict in the chain is automatically parsed and converted into a [`RunnableParallel`](/docs/expression_language/primitives/parallel), which runs all of its values in parallel and returns a dict with the results.
-
-This happens to be the same format the next prompt template expects. Here it is in action:
-
-```python
-from langchain_core.output_parsers import StrOutputParser
-
-analysis_prompt = ChatPromptTemplate.from_template("is this a funny joke? {joke}")
-
-composed_chain = {"joke": chain} | analysis_prompt | model | StrOutputParser()
-
-composed_chain.invoke({"topic": "bears"})
-```
+- `input_schema`: an input Pydantic model auto-generated from the structure of the Runnable
+- `output_schema`: an output Pydantic model auto-generated from the structure of the Runnable
