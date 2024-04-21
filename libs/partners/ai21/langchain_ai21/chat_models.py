@@ -111,7 +111,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         **kwargs: Any,
     ) -> Mapping[str, Any]:
         params = {}
-        system, ai21_messages = self._chat_adapter.convert_messages(messages)
+        converted_messages = self._chat_adapter.convert_messages(messages)
 
         if stop is not None:
             if "stop" in kwargs:
@@ -119,8 +119,7 @@ class ChatAI21(BaseChatModel, AI21Base):
             params["stop_sequences"] = stop
 
         return {
-            "system": system or "",
-            "messages": ai21_messages,
+            **converted_messages,
             **self._default_params,
             **params,
             **kwargs,
