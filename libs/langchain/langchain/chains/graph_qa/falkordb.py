@@ -27,7 +27,7 @@ def extract_cypher(text: str) -> str:
         Cypher code extracted from the text.
     """
     # The pattern to find Cypher code enclosed in triple backticks
-    pattern = r"```(.*?)```"
+    pattern = r"```(?:cypher)?(?:(?:\\n)|(?:\n))?(.*?)(?:(?:\\n)|(?:\n))?```"
 
     # Find all matches in the input text
     matches = re.findall(pattern, text, re.DOTALL)
@@ -86,15 +86,23 @@ class FalkorDBQAChain(Chain):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLanguageModel,
+        llm: BaseLanguageModel = None,
+        qa_llm: BaseLanguageModel = None,
+        cypher_llm: BaseLanguageModel = None,
         *,
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         cypher_prompt: BasePromptTemplate = CYPHER_GENERATION_PROMPT,
         **kwargs: Any,
     ) -> FalkorDBQAChain:
         """Initialize from LLM."""
-        qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
-        cypher_generation_chain = LLMChain(llm=llm, prompt=cypher_prompt)
+
+        if not llm and (not qa_llm or not cypher_llm):
+            raise ValueError(
+                "Either llm or qa_llm and cypher_llm must be provided."
+            )
+            
+        qa_chain = LLMChain(llm=qa_llm or llm, prompt=qa_prompt)
+        cypher_generation_chain = LLMChain(llm=cypher_llm or llm, prompt=cypher_prompt)
 
         return cls(
             qa_chain=qa_chain,
@@ -115,7 +123,7 @@ class FalkorDBQAChain(Chain):
         intermediate_steps: List = []
 
         generated_cypher = self.cypher_generation_chain.run(
-            {"question": question, "schema": self.graph.schema}, callbacks=callbacks
+            {"question": question, "graph_schema": self.graph.schema}, callbacks=callbacks
         )
 
         # Extract Cypher code if it is wrapped in backticks
@@ -129,7 +137,11 @@ class FalkorDBQAChain(Chain):
         intermediate_steps.append({"query": generated_cypher})
 
         # Retrieve and limit the number of results
-        context = self.graph.query(generated_cypher)[: self.top_k]
+        output = self.graph.query(generated_cypher)[: self.top_k]
+        for l in range(len(output)):
+            for i in range(len(output[l])):
+                output[l][i] = str(output[l][i])
+        context =  str(output).strip()
 
         if self.return_direct:
             final_result = context
