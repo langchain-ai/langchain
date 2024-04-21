@@ -185,8 +185,13 @@ class ChatMaritalk(SimpleChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        if "httpx" not in sys.modules:
+        try:
             import httpx
+        except ImportError:
+            raise ImportError(
+                "Could not import httpx python package. "
+                "Please install it with `pip install httpx`."
+            )
 
         headers = {"Authorization": f"Key {self.api_key}"}
         stopping_tokens = stop if stop is not None else []
