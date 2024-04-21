@@ -25,7 +25,6 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to add message history](/docs/how_to/message_history)
 - [How to route execution within a chain](/docs/how_to/routing)
 - [How to inspect your runnables](/docs/how_to/inspect)
-- [How to use `@chain` decorator to create a runnable](/docs/how_to/decorator)
 - [How to manage prompt size](/docs/how_to/prompt_size)
 - [How to string together multiple chains](/docs/how_to/multiple_chains)
 
