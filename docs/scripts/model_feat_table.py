@@ -20,13 +20,46 @@ CHAT_MODEL_FEAT_TABLE_CORRECTION = {
     "ChatMLflowAIGateway": {"_agenerate": False},
     "PromptLayerChatOpenAI": {"_stream": False, "_astream": False},
     "ChatKonko": {"_astream": False, "_agenerate": False},
-    "ChatAnthropic": {"tool_calling": True, "package": "langchain-anthropic"},
-    "ChatMistralAI": {"tool_calling": True, "package": "langchain-mistralai"},
-    "ChatFireworks": {"tool_calling": True, "package": "langchain-fireworks"},
-    "ChatOpenAI": {"tool_calling": True, "package": "langchain-openai"},
-    "ChatVertexAI": {"tool_calling": True, "package": "langchain-google-vertexai"},
-    "ChatGroq": {"tool_calling": "partial", "package": "langchain-groq"},
-    "ChatCohere": {"tool_calling": "partial", "package": "langchain-cohere"},
+    "ChatAnthropic": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-anthropic",
+    },
+    "ChatMistralAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-mistralai",
+    },
+    "ChatFireworks": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-fireworks",
+    },
+    "AzureChatOpenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-openai",
+    },
+    "ChatOpenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-openai",
+    },
+    "ChatVertexAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-google-vertexai",
+    },
+    "ChatGroq": {
+        "tool_calling": "partial",
+        "structured_output": True,
+        "package": "langchain-groq",
+    },
+    "ChatCohere": {
+        "tool_calling": "partial",
+        "structured_output": True,
+        "package": "langchain-cohere",
+    },
 }
 
 
@@ -152,6 +185,7 @@ def get_chat_model_table() -> str:
         "_stream",
         "_astream",
         "tool_calling",
+        "structured_output",
         "package",
     ]
     title = [
@@ -160,7 +194,8 @@ def get_chat_model_table() -> str:
         "Async invoke",
         "Stream",
         "Async stream",
-        "Tool calling",
+        "[Tool calling](/docs/modules/model_io/chat/function_calling/)",
+        "[Structured output](/docs/modules/model_io/chat/structured_output/)",
         "Python Package",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]

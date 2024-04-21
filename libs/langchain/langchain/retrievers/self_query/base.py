@@ -7,6 +7,7 @@ from langchain_community.vectorstores import (
     AstraDB,
     Chroma,
     DashVector,
+    DatabricksVectorSearch,
     DeepLake,
     Dingo,
     Milvus,
@@ -26,6 +27,10 @@ from langchain_community.vectorstores import (
 from langchain_community.vectorstores import (
     ElasticsearchStore as ElasticsearchStoreCommunity,
 )
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field, root_validator
@@ -33,16 +38,15 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_core.vectorstores import VectorStore
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.astradb import AstraDBTranslator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.dashvector import DashvectorTranslator
+from langchain.retrievers.self_query.databricks_vector_search import (
+    DatabricksVectorSearchTranslator,
+)
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.retrievers.self_query.dingo import DingoDBTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
@@ -85,7 +89,8 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         OpenSearchVectorSearch: OpenSearchTranslator,
         MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
-
+    if isinstance(vectorstore, DatabricksVectorSearch):
+        return DatabricksVectorSearchTranslator()
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):
