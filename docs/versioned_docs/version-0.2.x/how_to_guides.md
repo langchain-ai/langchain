@@ -25,8 +25,6 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to add message history](/docs/how_to/message_history)
 - [How to route execution within a chain](/docs/how_to/routing)
 - [How to inspect your runnables](/docs/how_to/inspect)
-- [How to manage prompt size](/docs/how_to/prompt_size)
-- [How to string together multiple chains](/docs/how_to/multiple_chains)
 
 ## Components
 
@@ -132,6 +130,7 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to access intermediate steps](/docs/how_to/intermediate_steps)
 - [How to cap the maximum number of iterations](/docs/how_to/max_iterations)
 - [How to set a time limit for agents](/docs/how_to/max_time_limit)
+- [How to manage prompt size](/docs/how_to/prompt_size)
 
 ## Use Cases
 
