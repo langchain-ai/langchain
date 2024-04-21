@@ -117,7 +117,7 @@ if TYPE_CHECKING:
         ConcurrentLoader,  # noqa: F401
     )
     from langchain_community.document_loaders.confluence import (
-        ConfluenceLoader,  # noqa: F401
+        ConfluenceLoader, ContentFormat  # noqa: F401
     )
     from langchain_community.document_loaders.conllu import (
         CoNLLULoader,  # noqa: F401
@@ -549,6 +549,7 @@ __all__ = [
     "CollegeConfidentialLoader",
     "ConcurrentLoader",
     "ConfluenceLoader",
+    "ContentFormat",
     "CouchbaseLoader",
     "CubeSemanticLoader",
     "DataFrameLoader",
@@ -735,6 +736,7 @@ _module_lookup = {
     "CollegeConfidentialLoader": "langchain_community.document_loaders.college_confidential",  # noqa: E501
     "ConcurrentLoader": "langchain_community.document_loaders.concurrent",
     "ConfluenceLoader": "langchain_community.document_loaders.confluence",
+    "ContentFormat": "langchain_community.document_loaders.confluence",
     "CouchbaseLoader": "langchain_community.document_loaders.couchbase",
     "CubeSemanticLoader": "langchain_community.document_loaders.cube_semantic",
     "DataFrameLoader": "langchain_community.document_loaders.dataframe",
