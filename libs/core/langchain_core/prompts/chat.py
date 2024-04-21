@@ -406,7 +406,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     def from_template(
         cls: Type[_StringImageMessagePromptTemplateT],
         template: Union[str, List[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
+        *,
         template_format: str = "f-string",
+        partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _StringImageMessagePromptTemplateT:
         """Create a class from a string template.
@@ -414,6 +416,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Args:
             template: a template.
             template_format: format of the template.
+            partial_variables: A dictionary of variables that can be used too partially.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -421,7 +424,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """
         if isinstance(template, str):
             prompt: Union[StringPromptTemplate, List] = PromptTemplate.from_template(
-                template, template_format=template_format
+                template,
+                template_format=template_format,
+                partial_variables=partial_variables,
             )
             return cls(prompt=prompt, **kwargs)
         elif isinstance(template, list):
@@ -434,7 +439,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]  # noqa: E501
                     prompt.append(
                         PromptTemplate.from_template(
-                            text, template_format=template_format
+                            text,
+                            template_format=template_format,
+                            partial_variables=partial_variables,
                         )
                     )
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:

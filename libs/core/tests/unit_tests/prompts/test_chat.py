@@ -99,6 +99,28 @@ def test_create_chat_prompt_template_from_template_partial() -> None:
     assert output_prompt.prompt == expected_prompt
 
 
+def test_create_system_message_prompt_template_from_template_partial() -> None:
+    """Create a system message prompt template with partials."""
+
+    graph_creator_content = """
+    Your instructions are:
+    {instructions}
+    History:
+    {history}
+    """
+    json_prompt_instructions = {}
+    graph_analyst_template = SystemMessagePromptTemplate.from_template(
+        template=graph_creator_content,
+        input_variables=["history"],
+        partial_variables={"instructions": json_prompt_instructions},
+    )
+    assert graph_analyst_template.format(history="history") == SystemMessage(
+        content="\n    Your instructions are:\n  "
+        "  {}\n    History:\n    "
+        "history\n    "
+    )
+
+
 def test_message_prompt_template_from_template_file() -> None:
     expected = ChatMessagePromptTemplate(
         prompt=PromptTemplate(
