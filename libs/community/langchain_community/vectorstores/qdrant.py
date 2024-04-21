@@ -1374,7 +1374,8 @@ class Qdrant(VectorStore):
         client: Optional[Any] = None,
         path: Optional[str] = None,
         collection_name: str = None,
-        embedding: Embeddings = None, 
+        embedding: Embeddings = None,
+        **kwargs: Any
     ) -> Qdrant:
         """
         Get instance of an existing Qdrant store either locally or with client. 
@@ -1393,18 +1394,18 @@ class Qdrant(VectorStore):
         elif client is not None:
             pass
         elif path is not None:
-            try:
-                import qdrant_client
-            except ImportError:
-                raise ImportError(
-                    "Could not import qdrant-client python package. "
-                    "Please install it with `pip install qdrant-client`."
-                )
-            client = qdrant_client.QdrantClient(path = path)
+            client, async_client = cls._generate_clients(path = path, **kwargs)
+            
         else:
             raise ValueError("Either 'client' or 'path' must be provided.")
         
-        return cls(client, collection_name, embedding)
+        return cls(
+                    client = client, 
+                    collection_name = collection_name, 
+                    embedding = embedding, 
+                    async_client=async_client    
+                    **kwargs
+                )
 
     @classmethod
     @sync_call_fallback
