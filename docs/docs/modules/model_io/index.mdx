@@ -209,7 +209,7 @@ They bundle up all the logic for going from user input into a fully formatted pr
 This can start off very simple - for example, a prompt to produce the above string would just be:
 
 ```python
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 prompt = PromptTemplate.from_template("What is a good name for a company that makes {product}?")
 prompt.format(product="colorful socks")
@@ -231,7 +231,7 @@ Each `ChatMessageTemplate` contains instructions for how to format that `ChatMes
 Let's take a look at this below:
 
 ```python
-from langchain.prompts.chat import ChatPromptTemplate
+from langchain_core.prompts.chat import ChatPromptTemplate
 
 template = "You are a helpful assistant that translates {input_language} to {output_language}."
 human_template = "{text}"
