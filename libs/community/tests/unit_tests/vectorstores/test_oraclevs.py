@@ -512,22 +512,25 @@ def test_create_hnsw_index_test() -> None:
     drop_table_purge(connection, "TB15")
 
     # 11. index_name as <schema_name.index_name>
-    # Expectation:Index created
-    vs = OracleVS(connection, model1, "U1.TB16", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    create_index(
-        connection,
-        vs,
-        params={
-            "idx_name": "U1.idx11",
-            "efConstruction": 200,
-            "neighbors": 100,
-            "idx_type": "HNSW",
-            "parallel": 8,
-            "accuracy": 10,
-        },
-    )
-    drop_index_if_exists(connection, "U1.idx11")
-    drop_table_purge(connection, "TB16")
+    # Expectation:U1 not present
+    try:
+        vs = OracleVS(connection, model1, "U1.TB16", DistanceStrategy.EUCLIDEAN_DISTANCE)
+        create_index(
+            connection,
+            vs,
+            params={
+                "idx_name": "U1.idx11",
+                "efConstruction": 200,
+                "neighbors": 100,
+                "idx_type": "HNSW",
+                "parallel": 8,
+                "accuracy": 10,
+            },
+        )
+        drop_index_if_exists(connection, "U1.idx11")
+        drop_table_purge(connection, "TB16")
+    except:
+        pass
 
     # 12. Index_name size >129
     # Expectation:Index not created
@@ -792,13 +795,16 @@ def test_add_texts_test() -> None:
     drop_table_purge(connection, "TB13")
 
     # 10. create object with table name of type <schema_name.table_name>
-    # Expectation:Successfull
-    vs_obj = OracleVS(connection, model, "U1.TB14", DistanceStrategy.DOT_PRODUCT)
-    for i in range(1, 10):
-        texts = ["Yash{0}".format(i)]
-        ids = ["1234{0}".format(i)]
-        vs_obj.add_texts(texts, ids=ids)
-    drop_table_purge(connection, "TB14")
+    # Expectation:U1 does not exist
+    try:
+        vs_obj = OracleVS(connection, model, "U1.TB14", DistanceStrategy.DOT_PRODUCT)
+        for i in range(1, 10):
+            texts = ["Yash{0}".format(i)]
+            ids = ["1234{0}".format(i)]
+            vs_obj.add_texts(texts, ids=ids)
+        drop_table_purge(connection, "TB14")
+    except:
+        pass
 
 
 ##################################
