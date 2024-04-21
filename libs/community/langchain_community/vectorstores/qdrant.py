@@ -80,6 +80,7 @@ class Qdrant(VectorStore):
             collection_name = "MyCollection"
             qdrant = Qdrant(client, collection_name, embedding_function)
     """
+    
 
     CONTENT_KEY = "page_content"
     METADATA_KEY = "metadata"
@@ -1366,6 +1367,48 @@ class Qdrant(VectorStore):
         )
         qdrant.add_texts(texts, metadatas, ids, batch_size)
         return qdrant
+
+
+    @classmethod
+    def from_existing_client(
+        cls: Type[Qdrant],
+        client: Optional[Any] = None,
+        path: str = None,
+        collection_name: str = None,
+        embedding: Embeddings = None, 
+    ) -> Qdrant:
+        """
+        Get instance of an existing Qdrant store either locally or with client. 
+        This method will return the instance of the store without inserting any new
+        embeddings
+        """
+        
+        if not (collection_name and embedding):
+            raise ValueError("Both 'collection_name' and 'embedding' are necessary.")
+
+        if client and path:
+            raise QdrantException(
+                "Please provide `None` for either `client` or `path`."
+            )    
+        elif client is not None:
+            pass
+        elif path is not None:
+            try:
+                import qdrant_client
+            except ImportError:
+                raise ImportError(
+                    "Could not import qdrant-client python package. "
+                    "Please install it with `pip install qdrant-client`."
+                )
+            client = qdrant_client.QdrantClient(path = path)
+        else:
+            raise ValueError("Either 'client' or 'path' must be provided.")
+        
+        return cls(client, collection_name, embedding)
+
+        
+
+
 
     @classmethod
     @sync_call_fallback
