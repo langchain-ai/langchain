@@ -21,6 +21,7 @@ from typing import (
     Union,
     overload,
 )
+from uuid import uuid4
 
 from langchain_core._api import beta
 from langchain_core.callbacks import (
@@ -46,6 +47,8 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
+    ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
@@ -73,18 +76,31 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
     from gigachat.models import FunctionCall, MessagesRole
 
     additional_kwargs: Dict = {}
+    tool_calls = []
     if function_call := message.function_call:
         if isinstance(function_call, FunctionCall):
-            additional_kwargs["function_call"] = dict(function_call)
+            function_call = dict(function_call)
+            additional_kwargs["function_call"] = function_call
         elif isinstance(function_call, dict):
             additional_kwargs["function_call"] = function_call
+        tool_calls = [
+            ToolCall(
+                name=function_call["name"],
+                args=function_call["arguments"],
+                id=str(uuid4()),
+            )
+        ]
 
     if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)
     elif message.role == MessagesRole.USER:
         return HumanMessage(content=message.content)
     elif message.role == MessagesRole.ASSISTANT:
-        return AIMessage(content=message.content, additional_kwargs=additional_kwargs)
+        return AIMessage(
+            content=message.content,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+        )
     else:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
@@ -105,6 +121,8 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     elif isinstance(message, ChatMessage):
         return Messages(role=MessagesRole(message.role), content=message.content)
     elif isinstance(message, FunctionMessage):
+        return Messages(role=MessagesRole.FUNCTION, content=message.content)
+    elif isinstance(message, ToolMessage):
         return Messages(role=MessagesRole.FUNCTION, content=message.content)
     else:
         raise TypeError(f"Got unknown type {message}")
