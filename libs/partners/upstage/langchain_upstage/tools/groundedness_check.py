@@ -17,7 +17,7 @@ class GroundednessCheckInput(BaseModel):
 
     context: str = Field(description="context in which the answer should be verified")
     assistant_message: str = Field(
-        description="assistant's reply or any text that is subject to groundness check"
+        description="assistant's reply or a text that is subject to groundedness check"
     )
 
 
