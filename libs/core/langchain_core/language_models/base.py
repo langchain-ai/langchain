@@ -98,7 +98,7 @@ class BaseLanguageModel(
     """Tags to add to the run trace."""
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
-    token_encoder: Optional[Callable[[str], List[int]]] = Field(
+    custom_get_token_ids: Optional[Callable[[str], List[int]]] = Field(
         default=None, exclude=True
     )
     """Optional encoder to use for counting tokens."""
@@ -315,8 +315,8 @@ class BaseLanguageModel(
             A list of ids corresponding to the tokens in the text, in order they occur
                 in the text.
         """
-        if self.token_encoder is not None:
-            return self.token_encoder(text)
+        if self.custom_get_token_ids is not None:
+            return self.custom_get_token_ids(text)
         else:
             return _get_token_ids_default_method(text)
 
