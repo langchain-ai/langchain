@@ -1,16 +1,10 @@
-"""**Memory** maintains Chain state, incorporating context from past runs.
-
-**Class hierarchy for Memory:**
-
-.. code-block::
-
-    BaseMemory --> <name>Memory --> <name>Memory  # Examples: BaseChatMemory -> MotorheadMemory
-
-"""  # noqa: E501
+"""Memory classes that help store and retrieve various bits of information."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.runnables import run_in_executor
@@ -81,3 +75,53 @@ class BaseMemory(Serializable, ABC):
     async def aclear(self) -> None:
         """Clear memory contents."""
         await run_in_executor(None, self.clear)
+
+
+class BaseEntityStore(BaseModel, ABC):
+    """Abstract base class for Entity store."""
+
+    @abstractmethod
+    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        """Get entity value from store."""
+        pass
+
+    @abstractmethod
+    def set(self, key: str, value: Optional[str]) -> None:
+        """Set entity value in store."""
+        pass
+
+    @abstractmethod
+    def delete(self, key: str) -> None:
+        """Delete entity value from store."""
+        pass
+
+    @abstractmethod
+    def exists(self, key: str) -> bool:
+        """Check if entity exists in store."""
+        pass
+
+    @abstractmethod
+    def clear(self) -> None:
+        """Delete all entities from store."""
+        pass
+
+
+class InMemoryEntityStore(BaseEntityStore):
+    """In-memory Entity store."""
+
+    store: Dict[str, Optional[str]] = {}
+
+    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        return self.store.get(key, default)
+
+    def set(self, key: str, value: Optional[str]) -> None:
+        self.store[key] = value
+
+    def delete(self, key: str) -> None:
+        del self.store[key]
+
+    def exists(self, key: str) -> bool:
+        return key in self.store
+
+    def clear(self) -> None:
+        return self.store.clear()
