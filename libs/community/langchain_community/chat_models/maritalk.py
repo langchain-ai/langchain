@@ -146,7 +146,7 @@ class ChatMaritalk(BaseChatModel):
                  describing the error.
         """
         try:
-            url = "https://chat.maritaca.ai/api/chat/inference"
+            url = "https://chat-dev.maritaca.ai/api/chat/inference"
             headers = {"authorization": f"Key {self.api_key}"}
             stopping_tokens = stop if stop is not None else []
 
@@ -197,7 +197,7 @@ class ChatMaritalk(BaseChatModel):
         try:
             import httpx
 
-            url = "https://chat.maritaca.ai/api/chat/inference"
+            url = "https://chat-dev.maritaca.ai/api/chat/inference"
             headers = {"authorization": f"Key {self.api_key}"}
             stopping_tokens = stop if stop is not None else []
 
@@ -260,7 +260,7 @@ class ChatMaritalk(BaseChatModel):
             }
 
             response = requests.post(
-                "https://chat.maritaca.ai/api/chat/inference",
+                "https://chat-dev.maritaca.ai/api/chat/inference",
                 data=json.dumps(data),
                 headers=headers,
                 stream=True
@@ -322,7 +322,7 @@ class ChatMaritalk(BaseChatModel):
             async with httpx.AsyncClient() as client:
                 async with client.stream(
                     "POST",
-                    "https://chat.maritaca.ai/api/chat/inference",
+                    "https://chat-dev.maritaca.ai/api/chat/inference",
                     data=json.dumps(data),
                     headers=headers,
                 ) as response:
