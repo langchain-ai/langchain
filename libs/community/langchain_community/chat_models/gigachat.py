@@ -79,17 +79,17 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
     tool_calls = []
     if function_call := message.function_call:
         if isinstance(function_call, FunctionCall):
-            function_call = dict(function_call)
-            additional_kwargs["function_call"] = function_call
+            additional_kwargs["function_call"] = dict(function_call)
         elif isinstance(function_call, dict):
             additional_kwargs["function_call"] = function_call
-        tool_calls = [
-            ToolCall(
-                name=function_call["name"],
-                args=function_call["arguments"],
-                id=str(uuid4()),
-            )
-        ]
+        if additional_kwargs.get("function_call") is not None:
+            tool_calls = [
+                ToolCall(
+                    name=additional_kwargs["function_call"]["name"],
+                    args=additional_kwargs["function_call"]["arguments"],
+                    id=str(uuid4()),
+                )
+            ]
 
     if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)
