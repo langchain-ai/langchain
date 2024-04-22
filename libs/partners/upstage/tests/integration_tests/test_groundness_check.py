@@ -9,7 +9,7 @@ def test_langchain_upstage_groundedness_check() -> None:
     assert output.response_metadata["model_name"] == tool.api_wrapper.model_name
 
 
-async def test_langchain_upstage_groundness_check_async() -> None:
+async def test_langchain_upstage_groundedness_check_async() -> None:
     """Test Upstage Groundedness Check asynchronous."""
     tool = GroundednessCheck()
     output = await tool.arun({"context": "foo bar", "assistant_message": "bar foo"})
