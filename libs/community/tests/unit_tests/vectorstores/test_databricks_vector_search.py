@@ -219,7 +219,7 @@ def test_init_direct_access_index() -> None:
 @pytest.mark.requires("databricks", "databricks.vector_search")
 def test_init_fail_no_index() -> None:
     with pytest.raises(TypeError):
-        DatabricksVectorSearch()
+        DatabricksVectorSearch()  # type: ignore[call-arg]
 
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
@@ -420,7 +420,7 @@ def test_add_texts_with_metadata() -> None:
                 DEFAULT_PRIMARY_KEY: id_,
                 DEFAULT_TEXT_COLUMN: text,
                 DEFAULT_VECTOR_COLUMN: vector,
-                **metadata,
+                **metadata,  # type: ignore[arg-type]
             }
             for text, vector, id_, metadata in zip(
                 fake_texts, vectors, added_ids, metadatas
@@ -567,7 +567,7 @@ def test_mmr_parameters(index_details: dict) -> None:
                 "filters": filters,
             },
         )
-        search_result = retriever.get_relevant_documents(query)
+        search_result = retriever.invoke(query)
 
     mock_mmr.assert_called_once()
     assert mock_mmr.call_args[1]["lambda_mult"] == lambda_mult
@@ -593,7 +593,7 @@ def test_similarity_score_threshold(index_details: dict, threshold: float) -> No
         search_type="similarity_score_threshold",
         search_kwargs={"k": limit, "score_threshold": threshold},
     )
-    search_result = retriever.get_relevant_documents(query)
+    search_result = retriever.invoke(query)
     if uniform_response_score >= threshold:
         assert len(search_result) == len(fake_texts)
     else:

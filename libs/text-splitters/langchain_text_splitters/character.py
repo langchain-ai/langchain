@@ -571,6 +571,23 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.LUA:
+            return [
+                # Split along variable and table definitions
+                "\nlocal ",
+                # Split along function definitions
+                "\nfunction ",
+                # Split along control flow statements
+                "\nif ",
+                "\nfor ",
+                "\nwhile ",
+                "\nrepeat ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         elif language == Language.HASKELL:
             return [
                 # Split along function definitions
