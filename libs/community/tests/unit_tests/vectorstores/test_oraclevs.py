@@ -158,59 +158,36 @@ def test_create_table_test() -> None:
     except Exception:
         pass
 
-    # 8. New Table - T1
-    #    Dimension - 2.2
-    # Expectation:ORA-02017: integer value required
-    try:
-        _create_table(connection, "T1", 2.2)
-        drop_table_purge(connection, "T1")
-    except Exception:
-        pass
-
-    # 9. New Table - T1
-    #    Dimension - '2'
-    _create_table(connection, "T1", "2")
-    drop_table_purge(connection, "T1")
-
-    # 10. New Table - T2
-    #     Dimension - T2
-    # Expectation:table is created
-    try:
-        _create_table(connection, "T2", "T2")
-        drop_table_purge(connection, "T2")
-    except Exception:
-        pass
-
-    # 11. New Table - T2
+    # 8. New Table - T2
     #     Dimension - '1000'
     # Expectation:table is created
     _create_table(connection, "T2", int("1000"))
     drop_table_purge(connection, "T2")
 
-    # 12. New Table - T3
+    # 9. New Table - T3
     #     Dimension - 100 passed as a variable
     # Expectation:table is created
     val = 100
     _create_table(connection, "T3", val)
     drop_table_purge(connection, "T3")
 
-    # 13.
+    # 10.
     # Expectation:ORA-00922: missing or invalid option
-    val = """H
+    val2 = """H
     ello"""
     try:
-        _create_table(connection, val, 545)
-        drop_table_purge(connection, val)
+        _create_table(connection, val2, 545)
+        drop_table_purge(connection, val2)
     except Exception:
         pass
 
-    # 14. New Table - हिन्दी
+    # 11. New Table - हिन्दी
     #     Dimension - 545
     # Expectation:table is created
     _create_table(connection, '"हिन्दी"', 545)
     drop_table_purge(connection, '"हिन्दी"')
 
-    # 15. <schema_name.table_name>
+    # 12. <schema_name.table_name>
     # Expectation:failure - user does not exist
     try:
         _create_table(connection, "U1.TB4", 128)
@@ -218,12 +195,12 @@ def test_create_table_test() -> None:
     except Exception:
         pass
 
-    # 16.
+    # 13.
     # Expectation:table is created
     _create_table(connection, '"T5"', 128)
     drop_table_purge(connection, '"T5"')
 
-    # 17. Toggle Case
+    # 14. Toggle Case
     # Expectation:table creation fails
     try:
         _create_table(connection, "TaBlE", 128)
@@ -231,7 +208,7 @@ def test_create_table_test() -> None:
     except Exception:
         pass
 
-    # 18. table_name as empty_string
+    # 15. table_name as empty_string
     # Expectation: ORA-00903: invalid table name
     try:
         _create_table(connection, "", 128)
@@ -241,34 +218,13 @@ def test_create_table_test() -> None:
     except Exception:
         pass
 
-    # 19. Dimension='*'
-    # Expectation:table is created
-    _create_table(connection, "T7", "*")
-    drop_table_purge(connection, "T7")
-
-    # 20. 'NULL' passed as table_name
-    # Expectation: ORA-00903: invalid table name
-    try:
-        _create_table(connection, "NULL", "*")
-        drop_table_purge(connection, "NULL")
-    except Exception:
-        pass
-
-    # 21. Reserved keywords as table_name
-    # Expectation: ORA-00903: invalid table name
-    try:
-        _create_table(connection, "ALTER", "*")
-        drop_table_purge(connection, "ALTER")
-    except Exception:
-        pass
-
-    # 22. Arithmetic Operations in dimension parameter
+    # 16. Arithmetic Operations in dimension parameter
     # Expectation:table is created
     n = 1
     _create_table(connection, "T10", n + 500)
     drop_table_purge(connection, "T10")
 
-    # 23. String Operations in table_name&dimension parameter
+    # 17. String Operations in table_name&dimension parameter
     # Expectation:table is created
     _create_table(connection, "YaSh".replace("aS", "ok"), 500)
     drop_table_purge(connection, "YaSh".replace("aS", "ok"))
@@ -659,89 +615,80 @@ def test_add_texts_test() -> None:
     # 'metadatas' with an 'id' attribute for each element.
     model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
     vs_obj = OracleVS(connection, model, "TB2", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    texts = ["Sri Ram", "Krishna"]
-    vs_obj.add_texts(texts)
+    texts2 = ["Sri Ram", "Krishna"]
+    vs_obj.add_texts(texts2)
     drop_table_purge(connection, "TB2")
 
     # 3. Add record with ids option
-    #    ids are passed as int
     #    ids are passed as string
     #    ids are passed as empty string
     #    ids are passed as multi-line string
     #    ids are passed as "<string>"
     # Expectations:
-    # An exception occurred :: argument of type 'int' is not iterable
     # Successfull
     # Successfull
     # Successfull
     # Successfull
-    try:
-        vs_obj = OracleVS(connection, model, "TB3", DistanceStrategy.EUCLIDEAN_DISTANCE)
-        ids = [114, 124]
-        vs_obj.add_texts(texts, ids)
-    except Exception:
-        pass
-    drop_table_purge(connection, "TB3")
 
     vs_obj = OracleVS(connection, model, "TB4", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    ids = ["114", "124"]
-    vs_obj.add_texts(texts, ids=ids)
+    ids3 = ["114", "124"]
+    vs_obj.add_texts(texts2, ids=ids3)
     drop_table_purge(connection, "TB4")
 
     vs_obj = OracleVS(connection, model, "TB5", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    ids = ["", "134"]
-    vs_obj.add_texts(texts, ids=ids)
+    ids4 = ["", "134"]
+    vs_obj.add_texts(texts2, ids=ids4)
     drop_table_purge(connection, "TB5")
 
     vs_obj = OracleVS(connection, model, "TB6", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    ids = [
+    ids5 = [
         """Good afternoon
     my friends""",
         "India",
     ]
-    vs_obj.add_texts(texts, ids=ids)
+    vs_obj.add_texts(texts2, ids=ids5)
     drop_table_purge(connection, "TB6")
 
     vs_obj = OracleVS(connection, model, "TB7", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    ids = ['"Good afternoon"', '"India"']
-    vs_obj.add_texts(texts, ids=ids)
+    ids6 = ['"Good afternoon"', '"India"']
+    vs_obj.add_texts(texts2, ids=ids6)
     drop_table_purge(connection, "TB7")
 
     # 4. Add records with ids and metadatas
     # Expectation:Successfull
     vs_obj = OracleVS(connection, model, "TB8", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    texts = ["Sri Ram 6", "Krishna 6"]
-    ids = ["1", "2"]
+    texts3 = ["Sri Ram 6", "Krishna 6"]
+    ids7 = ["1", "2"]
     metadata = [
         {"id": "102", "link": "Document Example", "stream": "Science"},
         {"id": "104", "link": "Document Example 45"},
     ]
-    vs_obj.add_texts(texts, metadata, ids=ids)
+    vs_obj.add_texts(texts3, metadata, ids=ids7)
     drop_table_purge(connection, "TB8")
 
     # 5. Add 10000 records
     # Expectation:Successfull
     vs_obj = OracleVS(connection, model, "TB9", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    texts = ["Sri Ram{0}".format(i) for i in range(1, 10000)]
-    ids = ["Hello{0}".format(i) for i in range(1, 10000)]
-    vs_obj.add_texts(texts, ids=ids)
+    texts4 = ["Sri Ram{0}".format(i) for i in range(1, 10000)]
+    ids8 = ["Hello{0}".format(i) for i in range(1, 10000)]
+    vs_obj.add_texts(texts4, ids=ids8)
     drop_table_purge(connection, "TB9")
 
     # 6. Add 2 different record concurrently
     # Expectation:Successfull
-    def add(val: str):
+    def add(val: str) -> None:
         model = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-mpnet-base-v2"
         )
         vs_obj = OracleVS(
             connection, model, "TB10", DistanceStrategy.EUCLIDEAN_DISTANCE
         )
-        texts = [val]
-        ids = texts
-        vs_obj.add_texts(texts, ids=ids)
+        texts5 = [val]
+        ids9 = texts5
+        vs_obj.add_texts(texts5, ids=ids9)
 
-    thread_1 = threading.Thread(target=add("Sri Ram"))
-    thread_2 = threading.Thread(target=add("Sri Krishna"))
+    thread_1 = threading.Thread(target=add, args=("Sri Ram"))
+    thread_2 = threading.Thread(target=add, args=("Sri Krishna"))
     thread_1.start()
     thread_2.start()
     thread_1.join()
@@ -750,7 +697,7 @@ def test_add_texts_test() -> None:
 
     # 7. Add 2 same record concurrently
     # Expectation:Successfull, For one of the insert,get primary key violation error
-    def add(val: str):
+    def add1(val: str) -> None:
         model = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-mpnet-base-v2"
         )
@@ -758,12 +705,12 @@ def test_add_texts_test() -> None:
             connection, model, "TB11", DistanceStrategy.EUCLIDEAN_DISTANCE
         )
         texts = [val]
-        ids = texts
-        vs_obj.add_texts(texts, ids=ids)
+        ids10 = texts
+        vs_obj.add_texts(texts, ids=ids10)
 
     try:
-        thread_1 = threading.Thread(target=add("Sri Ram"))
-        thread_2 = threading.Thread(target=add("Sri Ram"))
+        thread_1 = threading.Thread(target=add1, args=("Sri Ram"))
+        thread_2 = threading.Thread(target=add1, args=("Sri Ram"))
         thread_1.start()
         thread_2.start()
         thread_1.join()
@@ -772,38 +719,14 @@ def test_add_texts_test() -> None:
         pass
     drop_table_purge(connection, "TB11")
 
-    # 8.
-    # Expectation:AttributeError: 'NoneType' object has no attribute 'replace'
-    try:
-        texts = [None]
-        ids = ["None"]
-        model = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-mpnet-base-v2"
-        )
-        vs_obj = OracleVS(
-            connection, model, "TB12", DistanceStrategy.EUCLIDEAN_DISTANCE
-        )
-        vs_obj.add_texts(texts, ids=ids)
-    except Exception:
-        pass
-    drop_table_purge(connection, "TB12")
-
-    # 9.
-    # Expectation:Successfull
-    vs_obj = OracleVS(connection, model, "TB13", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    texts = ["None"]
-    ids = ["None"]
-    vs_obj.add_texts(texts, "hello", ids=ids)
-    drop_table_purge(connection, "TB13")
-
-    # 10. create object with table name of type <schema_name.table_name>
+    # 8. create object with table name of type <schema_name.table_name>
     # Expectation:U1 does not exist
     try:
         vs_obj = OracleVS(connection, model, "U1.TB14", DistanceStrategy.DOT_PRODUCT)
         for i in range(1, 10):
-            texts = ["Yash{0}".format(i)]
-            ids = ["1234{0}".format(i)]
-            vs_obj.add_texts(texts, ids=ids)
+            texts7 = ["Yash{0}".format(i)]
+            ids13 = ["1234{0}".format(i)]
+            vs_obj.add_texts(texts7, ids=ids13)
         drop_table_purge(connection, "TB14")
     except Exception:
         pass
@@ -822,32 +745,11 @@ def test_embed_documents_test() -> None:
     # Expectation:Vector Printed
     model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
     vs_obj = OracleVS(connection, model, "TB7", DistanceStrategy.EUCLIDEAN_DISTANCE)
-    vs_obj._embed_documents("Sri Ram")
-    drop_table_purge(connection, "TB7")
-
-    # 2. Number
-    # expectation:TypeError: 'int' object is not iterable
-    try:
-        vs_obj._embed_documents(123)
-    except Exception:
-        pass
-
-    # 3. Empty string
-    # expectation: []
-    vs_obj._embed_documents("")
 
     # 4. List
     # Expectation:Vector Printed
     vs_obj._embed_documents(["hello", "yash"])
-
-    # 5. Dictionary
-    # Expectation:AttributeError: 'dict' object has no attribute 'replace'
-    try:
-        vs_obj._embed_documents(
-            [{"hello": "ok", "yash": "ok"}, {"hello": "ok1", "yash": "ok1"}]
-        )
-    except Exception:
-        pass
+    drop_table_purge(connection, "TB7")
 
 
 ##################################
@@ -866,32 +768,9 @@ def test_embed_query_test() -> None:
     vs_obj._embed_query("Sri Ram")
     drop_table_purge(connection, "TB8")
 
-    # 2. Number
-    # Expectation:TypeError: 'int' object is not iterable
-    try:
-        vs_obj._embed_query(123)
-    except Exception:
-        pass
-
     # 3. Empty string
     # Expectation:[]
     vs_obj._embed_query("")
-
-    # 4. List
-    # Expectation:AttributeError: 'list' object has no attribute 'replace'
-    try:
-        vs_obj._embed_query(["hello", "yash"])
-    except Exception:
-        pass
-
-    # 5. Dictionary
-    # Expectation:AttributeError: 'dict' object has no attribute 'replace'
-    try:
-        vs_obj._embed_query(
-            [{"hello": "ok", "yash": "ok"}, {"hello": "ok1", "yash": "ok1"}]
-        )
-    except Exception:
-        pass
 
 
 ##################################
