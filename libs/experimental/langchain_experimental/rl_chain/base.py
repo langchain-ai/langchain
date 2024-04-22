@@ -16,10 +16,10 @@ from typing import (
     Union,
 )
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain.prompts import (
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.prompts import (
     BasePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
