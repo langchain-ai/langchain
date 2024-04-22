@@ -237,8 +237,8 @@ class BaseConversationalRetrievalChain(Chain):
 @deprecated(
     since="0.1.17",
     alternative=(
-        "Use create_history_aware_retriever together with create_retrieval_chain. "
-        "See example in docstring."
+        "create_history_aware_retriever together with create_retrieval_chain "
+        "(see example in docstring)"
     ),
     removal="0.3.0",
 )

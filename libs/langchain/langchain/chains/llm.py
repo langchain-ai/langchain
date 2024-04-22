@@ -37,7 +37,7 @@ from langchain.chains.base import Chain
 
 @deprecated(
     since="0.1.17",
-    alternative="Generate a RunnableSequence, e.g., `prompt | llm`.",
+    alternative="RunnableSequence, e.g., `prompt | llm`",
     removal="0.3.0",
 )
 class LLMChain(Chain):
