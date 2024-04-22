@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import json
 import logging
 from typing import (
     Any,
@@ -36,6 +37,8 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
+    ToolMessageChunk,
 )
 from langchain_core.output_parsers.openai_tools import (
     make_invalid_tool_call,
@@ -95,8 +98,14 @@ def convert_dict_to_message(
                     )
         else:
             additional_kwargs = {}
+
         return (
-            AIMessageChunk(content=content)
+            AIMessageChunk(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                tool_calls=tool_calls,
+                invalid_tool_calls=invalid_tool_calls,
+            )
             if is_chunk
             else AIMessage(
                 content=content,
@@ -111,6 +120,23 @@ def convert_dict_to_message(
             if is_chunk
             else SystemMessage(content=content)
         )
+    elif role == "tool":
+        additional_kwargs = {}
+        if "name" in _dict:
+            additional_kwargs["name"] = _dict["name"]
+        return (
+            ToolMessageChunk(
+                content=_dict.get("content", ""),
+                tool_call_id=_dict.get("tool_call_id"),
+                additional_kwargs=additional_kwargs,
+            )
+            if is_chunk
+            else ToolMessage(
+                content=_dict.get("content", ""),
+                tool_call_id=_dict.get("tool_call_id"),
+                additional_kwargs=additional_kwargs,
+            )
+        )
     else:
         return (
             ChatMessageChunk(role=role, content=content)
@@ -124,11 +150,25 @@ def convert_message_chunk_to_message(message_chunk: BaseMessageChunk) -> BaseMes
     if isinstance(message_chunk, HumanMessageChunk):
         return HumanMessage(content=message_chunk.content)
     elif isinstance(message_chunk, AIMessageChunk):
-        return AIMessage(content=message_chunk.content)
+        # assert message_chunk is None
+        return (
+            AIMessage(
+                content=message_chunk.content,
+                tool_calls=message_chunk.additional_kwargs["tool_calls"],
+            )
+            if "tool_calls" in message_chunk.additional_kwargs
+            else AIMessage(content=message_chunk.content)
+        )
     elif isinstance(message_chunk, SystemMessageChunk):
         return SystemMessage(content=message_chunk.content)
     elif isinstance(message_chunk, ChatMessageChunk):
         return ChatMessage(role=message_chunk.role, content=message_chunk.content)
+    elif isinstance(message_chunk, ToolMessageChunk):
+        return ToolMessage(
+            content=message_chunk.content,
+            tool_call_id=message_chunk.tool_call_id,
+            name=message_chunk.name,
+        )
     else:
         raise TypeError(f"Got unknown type {message_chunk}")
 
@@ -143,8 +183,17 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "tool_call_id": message.tool_call_id,
+            "content": message.content,
+            "name": message.name,
+        }
     else:
         raise TypeError(f"Got unknown type {message}")
     return message_dict
@@ -380,9 +429,30 @@ class ChatTongyi(BaseChatModel):
         params: Dict[str, Any] = self._invocation_params(
             messages=messages, stop=stop, stream=True, **kwargs
         )
+        prev_msg_content = ""
+
         for stream_resp, is_last_chunk in generate_with_last_element_mark(
             self.stream_completion_with_retry(**params)
         ):
+            choice = stream_resp["output"]["choices"][0]
+            message = choice["message"]
+            if (
+                choice["finish_reason"] == "null"
+                and message["content"] == ""
+                and "tool_calls" not in message
+            ):
+                continue
+
+            # If it's a tool call response, wait until it's finished
+            if "tool_calls" in message and choice["finish_reason"] == "null":
+                continue
+
+            # If we are streaming without `incremental_output = True`,
+            # we need to chop off the previous message content
+            if not params.get("incremental_output", False):
+                message["content"] = message["content"].replace(prev_msg_content, "")
+                prev_msg_content += message["content"]
+
             chunk = ChatGenerationChunk(
                 **self._chat_generation_from_qwen_resp(
                     stream_resp, is_chunk=True, is_last_chunk=is_last_chunk
@@ -420,14 +490,13 @@ class ChatTongyi(BaseChatModel):
         params = {**self._default_params, **kwargs}
         if stop is not None:
             params["stop"] = stop
-        if params.get("stream"):
+        # According to the Tongyi official docs,
+        # `incremental_output` with `tools` is not supported yet
+        if params.get("stream") and not params.get("tools"):
             params["incremental_output"] = True
 
         message_dicts = [convert_message_to_dict(m) for m in messages]
 
-        # According to the docs, the last message should be a `user` message
-        if message_dicts[-1]["role"] != "user":
-            raise ValueError("Last message should be user message.")
         # And the `system` message should be the first message if present
         system_message_indices = [
             i for i, m in enumerate(message_dicts) if m["role"] == "system"
@@ -477,63 +546,22 @@ class ChatTongyi(BaseChatModel):
             message=convert_message_chunk_to_message(chunk.message),
             generation_info=chunk.generation_info,
         )
-        
+
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
-
-        Assumes model is compatible with OpenAI tool-calling API.
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
                 models, callables, and BaseTools will be automatically converted to
                 their schema dictionary representation.
-            tool_choice: Which tool to require the model to call.
-                Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
-                (if any), or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        if tool_choice is not None and tool_choice:
-            if len(formatted_tools) != 1:
-                raise ValueError(
-                    "When specifying `tool_choice`, you must provide exactly one "
-                    f"tool. Received {len(formatted_tools)} tools."
-                )
-            if isinstance(tool_choice, str):
-                if tool_choice not in ("auto", "none"):
-                    tool_choice = {
-                        "type": "function",
-                        "function": {"name": tool_choice},
-                    }
-            elif isinstance(tool_choice, bool):
-                tool_choice = {
-                    "type": "function",
-                    "function": {"name": formatted_tools[0]["function"]["name"]},
-                }
-            elif isinstance(tool_choice, dict):
-                if (
-                    formatted_tools[0]["function"]["name"]
-                    != tool_choice["function"]["name"]
-                ):
-                    raise ValueError(
-                        f"Tool choice {tool_choice} was specified, but the only "
-                        f"provided tool was {formatted_tools[0]['function']['name']}."
-                    )
-            else:
-                raise ValueError(
-                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
-                    f"Received: {tool_choice}"
-                )
-            kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
