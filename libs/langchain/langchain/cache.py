@@ -14,8 +14,8 @@ from langchain_community.cache import (
     SQLAlchemyMd5Cache,
     SQLiteCache,
     UpstashRedisCache,
+    InMemoryCache,
 )
-from langchain_core.caches import InMemoryCache
 
 __all__ = [
     "FullLLMCache",
@@ -26,6 +26,7 @@ __all__ = [
     "RedisSemanticCache",
     "GPTCache",
     "MomentoCache",
+    "InMemoryCache",
     "CassandraCache",
     "CassandraSemanticCache",
     "FullMd5LLMCache",
