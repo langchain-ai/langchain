@@ -60,6 +60,10 @@ class ChatAI21(BaseChatModel, AI21Base):
     count_penalty: Optional[Any] = None
     """A penalty applied to tokens based on their frequency 
     in the generated responses."""
+
+    n: Optional[int] = None
+    """The number of responses to generate for a given prompt."""
+
     _chat_adapter: ChatAdapter
 
     @root_validator()
