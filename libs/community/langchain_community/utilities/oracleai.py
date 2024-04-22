@@ -40,7 +40,7 @@ class OracleSummary:
         self.proxy = proxy
         self.summary_params = params
 
-    def get_summary(self, docs) -> List[str]:
+    def get_summary(self, docs: Any) -> List[str]:
         """Get the summary of the input docs.
         Args:
             docs: The documents to generate summary for.
@@ -50,9 +50,9 @@ class OracleSummary:
         """
 
         if docs is None:
-            return None
+            return []
 
-        results = []
+        results: List[str] = []
         try:
             oracledb.defaults.fetch_lobs = False
             cursor = self.conn.cursor()

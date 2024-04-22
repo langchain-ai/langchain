@@ -52,7 +52,9 @@ class OracleEmbeddings(BaseModel, Embeddings):
     """
 
     @staticmethod
-    def load_onnx_model(conn: Connection, dir: str, onnx_file: str, model_name: str):
+    def load_onnx_model(
+        conn: Connection, dir: str, onnx_file: str, model_name: str
+    ) -> None:
         """Load an ONNX model to Oracle Database.
         Args:
             conn: Oracle Connection,
@@ -99,7 +101,7 @@ class OracleEmbeddings(BaseModel, Embeddings):
         if texts is None:
             return None
 
-        embeddings = []
+        embeddings: List[List[float]] = []
         try:
             # returns strings or bytes instead of a locator
             oracledb.defaults.fetch_lobs = False

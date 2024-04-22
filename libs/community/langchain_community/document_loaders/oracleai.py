@@ -20,7 +20,7 @@ import struct
 import sys
 import time
 import traceback
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 if True:
     sys.path.append(sys.path.pop(0))
@@ -41,15 +41,15 @@ logger = logging.getLogger(__name__)
 class ParseOracleDocMetadata(HTMLParser):
     """Parse Oracle doc metadata..."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.reset()
         self.match = False
-        self.metadata = {}
+        self.metadata: Dict[str, Any] = {}
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
         if tag == "meta":
-            entry = ""
+            entry: Optional[str] = ""
             for name, value in attrs:
                 if name == "name":
                     entry = value
@@ -59,12 +59,12 @@ class ParseOracleDocMetadata(HTMLParser):
         elif tag == "title":
             self.match = True
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         if self.match:
             self.metadata["title"] = data
             self.match = False
 
-    def get_metadata(self):
+    def get_metadata(self) -> Dict[str, Any]:
         return self.metadata
 
 
@@ -75,7 +75,7 @@ class OracleDocReader:
     """Read a file"""
 
     @staticmethod
-    def generate_object_id(input_string=None):
+    def generate_object_id(input_string: Union[str, None] = None) -> str:
         out_length = 32  # output length
         hash_len = 8  # hash value length
 
@@ -110,7 +110,9 @@ class OracleDocReader:
         return object_id_hex
 
     @staticmethod
-    def read_file(conn: Connection, file_path: str, params: dict) -> Document:
+    def read_file(
+        conn: Connection, file_path: str, params: dict
+    ) -> Union[Document, None]:
         """Read a file using OracleReader
         Args:
             conn: Oracle Connection,
@@ -152,10 +154,12 @@ class OracleDocReader:
             if mdata is None:
                 metadata = {}
             else:
-                data = str(mdata.getvalue())
-                if data.startswith("<!DOCTYPE html") or data.startswith("<HTML>"):
+                doc_data = str(mdata.getvalue())
+                if doc_data.startswith("<!DOCTYPE html") or doc_data.startswith(
+                    "<HTML>"
+                ):
                     p = ParseOracleDocMetadata()
-                    p.feed(data)
+                    p.feed(doc_data)
                     metadata = p.get_metadata()
 
             doc_id = OracleDocReader.generate_object_id(conn.username + "$" + file_path)
@@ -193,8 +197,8 @@ class OracleDocLoader(BaseLoader):
         """Load data into LangChain Document objects..."""
 
         ncols = 0
-        results = []
-        metadata = {}
+        results: List[Document] = []
+        metadata: Dict[str, Any] = {}
         m_params = {"plaintext": "false"}
 
         try:
@@ -370,7 +374,7 @@ class OracleDocLoader(BaseLoader):
 class OracleTextSplitter(TextSplitter):
     """Splitting text using Oracle chunker."""
 
-    def __init__(self, conn, params, **kwargs: Any) -> None:
+    def __init__(self, conn: Connection, params: Dict[str, Any], **kwargs: Any) -> None:
         """Initialize."""
         self.conn = conn
         self.params = params
