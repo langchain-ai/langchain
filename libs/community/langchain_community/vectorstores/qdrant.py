@@ -1369,36 +1369,19 @@ class Qdrant(VectorStore):
 
 
     @classmethod
-    def from_existing_client(
+    def from_existing_index(
         cls: Type[Qdrant],
-        client: Optional[Any] = None,
-        async_client: Optional[Any] =None,
-        path: Optional[str] = None,
-        collection_name: str = None,
-        embedding: Embeddings = None,
+        embedding: Embeddings,
+        path: str,
+        collection_name: str,
         **kwargs: Any
     ) -> Qdrant:
         """
-        Get instance of an existing Qdrant store either locally or with client. 
+        Get instance of an existing Qdrant vector database stored locally. 
         This method will return the instance of the store without inserting any new
         embeddings
         """
-        
-        if not (collection_name and embedding):
-            raise ValueError("Both 'collection_name' and 'embedding' are necessary.")
-         
-        if client is not None and path is not None:
-            raise ValueError(
-                "Both `client` and `path` are passed."
-                "Provide only one of them."
-            )    
-        elif client is None and path is not None:
-            client, async_client = cls._generate_clients(path = path, **kwargs)
-        elif client is not None and path is None:
-            client=client
-        else:
-            raise ValueError("Either 'client' or 'path' must be provided.")
-        
+        client, async_client = cls._generate_clients(path = path, **kwargs)
         return cls(
                     client = client, 
                     async_client = async_client,
