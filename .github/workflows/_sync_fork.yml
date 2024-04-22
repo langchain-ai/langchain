@@ -1,0 +1,52 @@
+name: Sync with upstream
+run-name: Sync by @${{ github.actor }}
+
+on: workflow_dispatch
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+          ref: dev
+
+      - name: Set up Git config
+        run: |
+          git config --global user.email "github_actions@no-reply.com"
+          git config --global user.name "Github actions"
+
+      - name: Fetch upstream changes
+        run: |
+          git remote add upstream https://github.com/langchain-ai/langchain.git
+          git fetch upstream
+
+      - name: Merge changes from upstream
+        run: git merge -Xours --allow-unrelated-histories upstream/master
+
+      - name: Fix gigachain naming
+        run: |
+          echo "Fix gigachain naming"
+          chmod +x .github/scripts/fix_gigachain_naming.sh
+          .github/scripts/fix_gigachain_naming.sh
+          git add -A
+          git commit -m "fix naming"
+
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+          base: dev
+          branch: "auto-pr-branch"
+          title: Sync with upstream changes
+          draft: true
+          body: Automatically syncing fork repository with upstream changes
+        continue-on-error: true
+
+      - name: Echo on error
+        if: failure()
+        run: |
+          echo "Can be some problems with WORKFLOW_TOKEN. It is located in repository secrets(vaild for 90 days). Regenerate it or put there new personal access token."
