@@ -3,11 +3,9 @@
 -e ../libs/core
 -e ../libs/experimental
 -e ../libs/text-splitters
--e ../libs/partners/*/
 langchain-cohere
 langchain-astradb
 langchain-nvidia-ai-endpoints
-langchain-nvidia-trt
 langchain-elasticsearch
 langchain-postgres
 urllib3==1.26.18

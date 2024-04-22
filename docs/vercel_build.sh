@@ -14,6 +14,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install --upgrade pip
 python3 -m pip install -r vercel_requirements.txt
+python3 -m pip install -e ../libs/partners/*/
 
 # autogenerate integrations tables
 python3 scripts/model_feat_table.py
