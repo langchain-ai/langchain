@@ -16,7 +16,7 @@ _BASE_URL = "https://api.python.langchain.com/en/latest/"
 code_block_re = re.compile(r"^(```python\n)(.*?)(```\n)", re.DOTALL | re.MULTILINE)
 # Regular expression to match langchain import lines
 _IMPORT_RE = re.compile(
-    r"from\s+(langchain(?:_\w+)?\.\w+(?:\.\w+)*?)\s+import\s+"
+    r"from\s+(langchain(?:_\w+)?(?:\.\w+)*?)\s+import\s+"
     r"((?:\w+(?:,\s*)?)*"  # Match zero or more words separated by a comma+optional ws
     r"(?:\s*\(.*?\))?)",  # Match optional parentheses block
     re.DOTALL,  # Match newlines as well
@@ -64,7 +64,6 @@ def main():
     global_imports = {}
 
     for file in find_files(args.docs_dir):
-        print(f"Adding links for imports in {file}")  # noqa: T201
         file_imports = replace_imports(file)
 
         if file_imports:
@@ -179,6 +178,8 @@ def replace_imports(file):
     # Use re.sub to replace each Python code block
     data = code_block_re.sub(replacer, data)
 
+    if all_imports:
+        print(f"Adding {len(all_imports)} links for imports in {file}")  # noqa: T201
     with open(file, "w") as f:
         f.write(data)
     return all_imports
