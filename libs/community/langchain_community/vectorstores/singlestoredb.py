@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from enum import Enum
 import json
 import re
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -41,12 +41,12 @@ class SingleStoreDB(VectorStore):
 
     class SearchStrategy(str, Enum):
         """Enumerator of the Search strategies for searching in the vectorstore."""
+
         VECTOR_ONLY = "VECTOR_ONLY"
         TEXT_ONLY = "TEXT_ONLY"
         FILTER_BY_TEXT = "FILTER_BY_TEXT"
         FILTER_BY_VECTOR = "FILTER_BY_VECTOR"
         WEIGHTED_SUM = "WEIGHTED_SUM"
-
 
     def _get_connection(self: SingleStoreDB) -> Any:
         try:
@@ -288,30 +288,13 @@ class SingleStoreDB(VectorStore):
             try:
                 full_text_index = ""
                 if self.use_full_text_search:
-                    full_text_index = ", FULLTEXT({})".format(
-                        self.content_field
-                    )
+                    full_text_index = ", FULLTEXT({})".format(self.content_field)
                 if self.use_vector_index:
                     index_options = ""
                     if self.vector_index_options and len(self.vector_index_options) > 0:
                         index_options = "INDEX_OPTIONS '{}'".format(
                             json.dumps(self.vector_index_options)
                         )
-                    print("""CREATE TABLE IF NOT EXISTS {}
-                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-                        {} VECTOR({}, F32) NOT NULL, {} JSON,
-                        VECTOR INDEX {} ({}) {}{});""".format(
-                            self.table_name,
-                            self.id_field,
-                            self.content_field,
-                            self.vector_field,
-                            self.vector_size,
-                            self.metadata_field,
-                            self.vector_index_name,
-                            self.vector_field,
-                            index_options,
-                            full_text_index,
-                        ))
                     cur.execute(
                         """CREATE TABLE IF NOT EXISTS {}
                         ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
@@ -430,14 +413,15 @@ class SingleStoreDB(VectorStore):
         return []
 
     def similarity_search(
-        self, query: str,
+        self,
+        query: str,
         k: int = 4,
         filter: Optional[dict] = None,
         search_strategy: SearchStrategy = SearchStrategy.VECTOR_ONLY,
         filter_threshold: float = 0,
         text_weight: float = 0.5,
         vector_weight: float = 0.5,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[Document]:
         """Returns the most similar indexed documents to the query text.
 
@@ -464,7 +448,9 @@ class SingleStoreDB(VectorStore):
                     {"metadata_field": "metadata_value"})
         """
         docs_and_scores = self.similarity_search_with_score(
-            query=query, k=k, filter=filter,
+            query=query,
+            k=k,
+            filter=filter,
             search_strategy=search_strategy,
             filter_threshold=filter_threshold,
             text_weight=text_weight,
@@ -495,8 +481,25 @@ class SingleStoreDB(VectorStore):
             List of Documents most similar to the query and score for each
         """
 
-        if search_strategy != SingleStoreDB.SearchStrategy.VECTOR_ONLY and not self.use_full_text_search:
-            raise ValueError("Search strategy {} is not supported when use_full_text_search is False".format(search_strategy))
+        if (
+            search_strategy != SingleStoreDB.SearchStrategy.VECTOR_ONLY
+            and not self.use_full_text_search
+        ):
+            raise ValueError(
+                "Search strategy {} is not supported when use_full_text_search is False".format(
+                    search_strategy
+                )
+            )
+
+        if (
+            search_strategy == SingleStoreDB.SearchStrategy.WEIGHTED_SUM
+            and self.distance_strategy != DistanceStrategy.DOT_PRODUCT
+        ):
+            raise ValueError(
+                "Search strategy {} is not supported with distance strategy {}".format(
+                    search_strategy, self.distance_strategy
+                )
+            )
 
         # Creates embedding vector from user query
         embedding = []
@@ -508,12 +511,17 @@ class SingleStoreDB(VectorStore):
         result = []
         where_clause: str = ""
         where_clause_values: List[Any] = []
-        if filter or search_strategy in [SingleStoreDB.SearchStrategy.FILTER_BY_TEXT, SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR]:
+        if filter or search_strategy in [
+            SingleStoreDB.SearchStrategy.FILTER_BY_TEXT,
+            SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR,
+        ]:
             where_clause = "WHERE "
             arguments = []
 
             if search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_TEXT:
-                arguments.append("MATCH ({}) AGAINST (%s) > %s".format(self.content_field))
+                arguments.append(
+                    "MATCH ({}) AGAINST (%s) > %s".format(self.content_field)
+                )
                 where_clause_values.append(query)
                 where_clause_values.append(float(filter_threshold))
 
@@ -522,7 +530,8 @@ class SingleStoreDB(VectorStore):
                     self.distance_strategy.name
                     if isinstance(self.distance_strategy, DistanceStrategy)
                     else self.distance_strategy,
-                    self.vector_field)
+                    self.vector_field,
+                )
                 if self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
                     condition += "< %s"
                 else:
@@ -559,24 +568,22 @@ class SingleStoreDB(VectorStore):
         try:
             cur = conn.cursor()
             try:
-                if search_strategy == SingleStoreDB.SearchStrategy.VECTOR_ONLY or search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_TEXT:
-                    print( """SELECT {}, {}, {}({}, JSON_ARRAY_PACK(%s)) as __score
-                        FROM {} {} ORDER BY __score {} LIMIT %s""".format(
-                            self.content_field,
-                            self.metadata_field,
-                            self.distance_strategy.name
-                            if isinstance(self.distance_strategy, DistanceStrategy)
-                            else self.distance_strategy,
-                            self.vector_field,
-                            self.table_name,
-                            where_clause,
-                            ORDERING_DIRECTIVE[self.distance_strategy],
-                        ) % (("[{}]".format(",".join(map(str, embedding))),)
-                        + tuple(where_clause_values)
-                        + (k,)))
+                if (
+                    search_strategy == SingleStoreDB.SearchStrategy.VECTOR_ONLY
+                    or search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_TEXT
+                ):
+                    search_options = ""
+                    if (
+                        self.use_vector_index
+                        and search_strategy
+                        == SingleStoreDB.SearchStrategy.FILTER_BY_TEXT
+                    ):
+                        search_options = "SEARCH_OPTIONS '{\"k\":%d}'" % (
+                            k * vector_select_count_multiplier
+                        )
                     cur.execute(
                         """SELECT {}, {}, {}({}, JSON_ARRAY_PACK(%s)) as __score
-                        FROM {} {} ORDER BY __score {} LIMIT %s""".format(
+                        FROM {} {} ORDER BY __score {}{} LIMIT %s""".format(
                             self.content_field,
                             self.metadata_field,
                             self.distance_strategy.name
@@ -585,24 +592,17 @@ class SingleStoreDB(VectorStore):
                             self.vector_field,
                             self.table_name,
                             where_clause,
+                            search_options,
                             ORDERING_DIRECTIVE[self.distance_strategy],
                         ),
                         ("[{}]".format(",".join(map(str, embedding))),)
                         + tuple(where_clause_values)
                         + (k,),
                     )
-                elif search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR or search_strategy == SingleStoreDB.SearchStrategy.TEXT_ONLY:
-                    print("""SELECT {}, {}, MATCH ({}) AGAINST (%s) as __score
-                        FROM {} {} ORDER BY __score DESC LIMIT %s""".format(
-                            self.content_field,
-                            self.metadata_field,
-                            self.content_field,
-                            self.table_name,
-                            where_clause,
-                        ) %
-                        ((query,)
-                        + tuple(where_clause_values)
-                        + (k,)))
+                elif (
+                    search_strategy == SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR
+                    or search_strategy == SingleStoreDB.SearchStrategy.TEXT_ONLY
+                ):
                     cur.execute(
                         """SELECT {}, {}, MATCH ({}) AGAINST (%s) as __score
                         FROM {} {} ORDER BY __score DESC LIMIT %s""".format(
@@ -612,18 +612,16 @@ class SingleStoreDB(VectorStore):
                             self.table_name,
                             where_clause,
                         ),
-                        (query,)
-                        + tuple(where_clause_values)
-                        + (k,),
+                        (query,) + tuple(where_clause_values) + (k,),
                     )
                 elif search_strategy == SingleStoreDB.SearchStrategy.WEIGHTED_SUM:
-                    cur.execute(
+                    print(
                         """SELECT {}, {}, __score1 * %s + __score2 * %s as __score
                         FROM (
-                            SELECT {}, {}, {} MATCH ({}) AGAINST (%s) as __score1 FROM {} {}
+                            SELECT {}, {}, {}, MATCH ({}) AGAINST (%s) as __score1 FROM {} {}
                         ) r1 FULL OUTER JOIN (
                             SELECT {}, {}({}, JSON_ARRAY_PACK(%s)) as __score2 FROM {} {}
-                            ORDER BY __score2 {} LIMIT %s * %s
+                            ORDER BY __score2 {} LIMIT %s 
                         ) r2 ON r1.{} = r2.{} ORDER BY __score {} LIMIT %s""".format(
                             self.content_field,
                             self.metadata_field,
@@ -640,16 +638,57 @@ class SingleStoreDB(VectorStore):
                             self.vector_field,
                             self.table_name,
                             where_clause,
+                            ORDERING_DIRECTIVE[self.distance_strategy],
+                            self.id_field,
+                            self.id_field,
+                            ORDERING_DIRECTIVE[self.distance_strategy],
+                        )
+                        % (
+                            (text_weight, vector_weight, query)
+                            + tuple(where_clause_values)
+                            + ("[{}]".format(",".join(map(str, embedding))),)
+                            + tuple(where_clause_values)
+                            + (k * vector_select_count_multiplier, k)
+                        )
+                    )
+                    cur.execute(
+                        """SELECT {}, {}, __score1 * %s + __score2 * %s as __score
+                        FROM (
+                            SELECT {}, {}, {}, MATCH ({}) AGAINST (%s) as __score1 FROM {} {}
+                        ) r1 FULL OUTER JOIN (
+                            SELECT {}, {}({}, JSON_ARRAY_PACK(%s)) as __score2 FROM {} {}
+                            ORDER BY __score2 {} LIMIT %s
+                        ) r2 ON r1.{} = r2.{} ORDER BY __score {} LIMIT %s""".format(
+                            self.content_field,
+                            self.metadata_field,
+                            self.id_field,
+                            self.content_field,
+                            self.metadata_field,
+                            self.content_field,
+                            self.table_name,
+                            where_clause,
+                            self.id_field,
+                            self.distance_strategy.name
+                            if isinstance(self.distance_strategy, DistanceStrategy)
+                            else self.distance_strategy,
+                            self.vector_field,
+                            self.table_name,
+                            where_clause,
+                            ORDERING_DIRECTIVE[self.distance_strategy],
                             self.id_field,
                             self.id_field,
                             ORDERING_DIRECTIVE[self.distance_strategy],
                         ),
-                        ("[{}]".format(",".join(map(str, embedding))), vector_weight, query, text_weight)
+                        (text_weight, vector_weight, query)
                         + tuple(where_clause_values)
-                        + (k,),
+                        + ("[{}]".format(",".join(map(str, embedding))),)
+                        + tuple(where_clause_values)
+                        + (k * vector_select_count_multiplier, k),
                     )
                 else:
-                    raise ValueError("Invalid search strategy: {}".format(search_strategy))
+                    raise ValueError(
+                        "Invalid search strategy: {}".format(search_strategy)
+                    )
 
                 for row in cur.fetchall():
                     doc = Document(page_content=row[0], metadata=row[1])
