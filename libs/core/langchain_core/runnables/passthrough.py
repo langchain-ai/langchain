@@ -253,7 +253,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                     got_first_chunk = True
                 else:
                     try:
-                        final = final + chunk
+                        final = final + chunk  # type: ignore[operator]
                     except TypeError:
                         final = chunk
 
@@ -291,7 +291,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                     got_first_chunk = True
                 else:
                     try:
-                        final = final + chunk
+                        final = final + chunk  # type: ignore[operator]
                     except TypeError:
                         final = chunk
 
