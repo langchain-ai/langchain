@@ -13,7 +13,7 @@ from langchain_upstage import ChatUpstage
 
 
 class GroundednessCheckInput(BaseModel):
-    """Input for the Groundness Check tool."""
+    """Input for the Groundedness Check tool."""
 
     context: str = Field(description="context in which the answer should be verified")
     assistant_message: str = Field(
