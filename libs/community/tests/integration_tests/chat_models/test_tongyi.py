@@ -8,7 +8,7 @@ from langchain_core.messages.ai import AIMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.pydantic_v1 import SecretStr, BaseModel
+from langchain_core.pydantic_v1 import BaseModel, SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.chat_models.tongyi import ChatTongyi
@@ -163,7 +163,7 @@ def test_tool_use() -> None:
     assert len(ai_msg.tool_calls) == 1
     tool_call = ai_msg.tool_calls[0]
     assert "args" in tool_call
-    
+
     tool_msg = ToolMessage(
         "sally_green_hair",
         tool_call_id=ai_msg.tool_calls[0]["id"],
