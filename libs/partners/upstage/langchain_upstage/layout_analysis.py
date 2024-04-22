@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import Iterator, List, Literal, Optional, Union
 
+from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_core.documents import Document
 
@@ -65,7 +66,7 @@ def get_from_param_or_env(
         )
 
 
-class LayoutAnalysis:
+class LayoutAnalysis(BaseLoader):
     """Upstage Layout Analysis.
 
     To use, you should have the environment variable `UPSTAGE_DOCUMENT_AI_API_KEY`
