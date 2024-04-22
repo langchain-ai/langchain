@@ -521,6 +521,8 @@ class BaseOpenAI(BaseLLM):
 
     def get_token_ids(self, text: str) -> List[int]:
         """Get the token IDs using the tiktoken package."""
+        if self.token_encoder is not None:
+            return self.token_encoder(text)
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
