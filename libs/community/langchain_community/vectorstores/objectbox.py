@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 from typing import (
     Any,
     Iterable,
@@ -9,15 +10,14 @@ from typing import (
 )
 
 import numpy as np
+import objectbox
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-import objectbox
 from objectbox.model import *
 from objectbox.model.properties import *
 
 DIRECTORY = "data"
-# TODO: get directory from constructor
 
 
 class ObjectBox(VectorStore):
@@ -26,19 +26,24 @@ class ObjectBox(VectorStore):
     To use, you should have the `objectbox` python package installed and `flatbuffers`.
     Args:
         embedding_function: Embedding function to use.
-        vector_box: initializing objectbox
+        embedding_dimensions: Dimensions of the embeddings.
+        db_directory: Path to the database where data will be stored.
+        clear_db: Flag for deleting all the data in the database.
+        entity_model: Creates an objectbox entity.
+        db: Registers the model with objectbox.
+        vector_box: Initializing objectbox.
     """
 
     def __init__(
         self,
-        embedding_function: Embeddings,
+        embedding: Embeddings,
         embedding_dimensions: int,
-        db_name: Optional[str] = None,
+        db_directory: Optional[str] = None,
         clear_db: Optional[bool] = False,
     ):
-        self._embedding_function = embedding_function
+        self._embedding = embedding
         self._embedding_dimensions = embedding_dimensions
-        self._db_name = db_name
+        self.db_directory = db_directory
         self._clear_db = clear_db
         self._entity_model = self._create_entity_class()
         self._db = self._create_objectbox_db()
@@ -78,7 +83,7 @@ class ObjectBox(VectorStore):
         Returns:
             List of ids for the newly inserted documents
         """
-        embeddings = self._embedding_function.embed_documents(list(texts))
+        embeddings = self._embedding.embed_documents(list(texts))
         ids = []
         with self._db.write_tx():
             for idx, text in enumerate(texts):
@@ -101,8 +106,53 @@ class ObjectBox(VectorStore):
 
         async def _similarity_search() -> List[Document]:
             qb = self._vector_box.query()
-            embedded_query = self._embedding_function.embed_query(query)
+            embedded_query = self._embedding.embed_query(query)
             qb.nearest_neighbors_f32("embeddings", embedded_query, k)
+            query_build = qb.build()
+            query_result = query_build.find()
+            return [
+                Document(page_content=result.text, metadata={"id": result.id})
+                for result in query_result
+            ]
+
+        return asyncio.run(_similarity_search())
+
+    def similarity_search_with_score(
+        self, query: str, k: int, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with distance."""
+
+        async def _similarity_search_with_score() -> List[Document]:
+            qb = self._vector_box.query()
+            embedded_query = self._embedding.embed_query(query)
+            qb.nearest_neighbors_f32("embeddings", embedded_query, k)
+            query_build = qb.build()
+            query_result = query_build.find_with_scores()
+            return [
+                (
+                    Document(page_content=result[0].text, metadata={"id": result[0].id}),
+                    result[1],
+                )
+                for result in query_result
+            ]
+
+        return asyncio.run(_similarity_search_with_score())
+
+    def similarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+
+        Returns:
+            List of Documents most similar to the query vector.
+        """
+        async def _similarity_search() -> List[Document]:
+            qb = self._vector_box.query()
+            qb.nearest_neighbors_f32("embeddings", embedding, k)
             query_build = qb.build()
             query_result = query_build.find()
             return [
@@ -149,11 +199,7 @@ class ObjectBox(VectorStore):
         return ob
 
     def _create_objectbox_db(self):
-        db_path = (
-            DIRECTORY
-            if self._db_name is None
-            else os.path.join(DIRECTORY, self._db_name)
-        )
+        db_path = "data" if self.db_directory is None else self.db_directory
         if self._clear_db and path.exists(db_path):
             shutil.rmtree(db_path)
         model = objectbox.Model()
@@ -165,6 +211,7 @@ class ObjectBox(VectorStore):
     def _create_entity_class(self):
         """Dynamically define an Entity class according to the parameters."""
 
+        # TODO: add metadata too? -> ignore metadata -> also put it somewhere for log (gitlab)
         @Entity(id=1, uid=1)
         class VectorEntity:
             id = Id(id=1, uid=1001)
