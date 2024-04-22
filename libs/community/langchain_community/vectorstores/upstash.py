@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 from langchain_core.documents import Document
@@ -62,7 +62,7 @@ class UpstashVectorStore(VectorStore):
         async_index: Optional[AsyncIndex] = None,
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
-        embedding: Optional[Embeddings] = None,
+        embedding: Optional[Union[Embeddings, bool]] = None,
     ):
         """
         Constructor for UpstashVectorStore.
@@ -78,7 +78,10 @@ class UpstashVectorStore(VectorStore):
             functions are needed
             index_url: URL of the UpstashVector index.
             index_token: Token of the UpstashVector index.
-            embedding: Embeddings object.
+            embedding: Embeddings object or a boolean. When false, no embedding
+                is applied. If true, Upstash embeddings are used. When Upstash
+                embeddings are used, text is sent directly to Upstash and
+                embedding is applied there instead of embedding in Langchain.
 
         Example:
             .. code-block:: python
@@ -143,27 +146,37 @@ class UpstashVectorStore(VectorStore):
         self._text_key = text_key
 
     @property
-    def embeddings(self) -> Optional[Embeddings]:
+    def embeddings(self) -> Optional[Union[Embeddings, bool]]:
         """Access the query embedding object if available."""
         return self._embeddings
 
-    def _embed_documents(self, texts: Iterable[str]) -> List[List[float]]:
+    def _embed_documents(self, texts: Iterable[str]) -> Union[List[List[float], List[str]]]:
         """Embed strings using the embeddings object"""
         if not self._embeddings:
             raise ValueError(
                 "No embeddings object provided. "
                 "Pass an embeddings object to the constructor."
             )
-        return self._embeddings.embed_documents(list(texts))
+        if isinstance(self._embeddings, Embeddings):
+            return self._embeddings.embed_documents(list(texts))
+        
+        # using self._embeddings is True, Upstash embeddings will be used.
+        # returning list of text as List[str]
+        return list(texts)
 
-    def _embed_query(self, text: str) -> List[float]:
+    def _embed_query(self, text: str) -> Union[List[float], str]:
         """Embed query text using the embeddings object."""
         if not self._embeddings:
             raise ValueError(
                 "No embeddings object provided. "
                 "Pass an embeddings object to the constructor."
             )
-        return self._embeddings.embed_query(text)
+        if isinstance(self._embeddings, Embeddings):
+            return self._embeddings.embed_query(text)
+        
+        # using self._embeddings is True, Upstash embeddings will be used.
+        # returning query as it is
+        return text
 
     def add_documents(
         self,
@@ -229,7 +242,7 @@ class UpstashVectorStore(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
 
-        return self.aadd_texts(
+        return await self.aadd_texts(
             texts,
             metadatas=metadatas,
             ids=ids,
@@ -405,15 +418,20 @@ class UpstashVectorStore(VectorStore):
 
     def similarity_search_by_vector_with_score(
         self,
-        embedding: List[float],
+        embedding: Union[List[float], str],
         k: int = 4,
         filter: Optional[str] = None,
         **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
+        payload = (
+            {"data": embedding}
+            if isinstance(embedding, str)
+            else {"vector": embedding}
+        )
         results = self._index.query(
-            vector=embedding,
+            **payload,
             top_k=k,
             include_metadata=True,
             filter=filter,
@@ -424,15 +442,20 @@ class UpstashVectorStore(VectorStore):
 
     async def asimilarity_search_by_vector_with_score(
         self,
-        embedding: List[float],
+        embedding: Union[List[float], str],
         k: int = 4,
         filter: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
+        payload = (
+            {"data": embedding}
+            if isinstance(embedding, str)
+            else {"vector": embedding}
+        )
         results = await self._async_index.query(
-            vector=embedding,
+            **payload,
             top_k=k,
             include_metadata=True,
             filter=filter,
@@ -487,7 +510,7 @@ class UpstashVectorStore(VectorStore):
 
     def similarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Union[List[float], str],
         k: int = 4,
         filter: Optional[str] = None,
         **kwargs: Any,
@@ -509,7 +532,7 @@ class UpstashVectorStore(VectorStore):
 
     async def asimilarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Union[List[float], str],
         k: int = 4,
         filter: Optional[str] = None,
         **kwargs: Any,
@@ -584,6 +607,7 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        assert isinstance(self.embeddings, Embeddings)
         results = self._index.query(
             vector=embedding,
             top_k=fetch_k,
@@ -631,6 +655,7 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        assert isinstance(self.embeddings, Embeddings)
         results = await self._async_index.query(
             vector=embedding,
             top_k=fetch_k,
@@ -763,6 +788,52 @@ class UpstashVectorStore(VectorStore):
         )
 
         vector_store.add_texts(
+            texts,
+            metadatas=metadatas,
+            ids=ids,
+            batch_size=batch_size,
+            embedding_chunk_size=embedding_chunk_size,
+        )
+        return vector_store
+
+    @classmethod
+    async def afrom_texts(
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        embedding_chunk_size: int = 1000,
+        batch_size: int = 32,
+        text_key: str = "text",
+        index: Optional[Index] = None,
+        async_index: Optional[AsyncIndex] = None,
+        index_url: Optional[str] = None,
+        index_token: Optional[str] = None,
+    ) -> UpstashVectorStore:
+        """Create a new UpstashVectorStore from a list of texts.
+
+        Example:
+            .. code-block:: python
+                from langchain_community.vectorstores.upstash import UpstashVectorStore
+                from langchain_community.embeddings import OpenAIEmbeddings
+
+                embeddings = OpenAIEmbeddings()
+                vector_store = UpstashVectorStore.from_texts(
+                    texts,
+                    embeddings,
+                )
+        """
+        vector_store = cls(
+            embedding=embedding,
+            text_key=text_key,
+            index=index,
+            async_index=async_index,
+            index_url=index_url,
+            index_token=index_token,
+        )
+
+        await vector_store.aadd_texts(
             texts,
             metadatas=metadatas,
             ids=ids,
