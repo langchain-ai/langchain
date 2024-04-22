@@ -33,3 +33,4 @@ python3 scripts/resolve_local_links.py docs/langgraph.md https://github.com/lang
 
 # render
 quarto render docs/
+python3 scripts/generate_api_reference_links.py --docs_dir docs
