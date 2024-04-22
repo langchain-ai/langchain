@@ -23,7 +23,7 @@ import inspect
 import typing
 import uuid
 import warnings
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from functools import partial
 from inspect import signature
 from typing import (
@@ -1080,3 +1080,11 @@ args: {"expression": {"type": "string"}}
         args_schema = str(tool.args)
         tool_strings.append(f"{tool.name}: {tool.description}, args: {args_schema}")
     return "\n".join(tool_strings)
+
+
+class BaseToolkit(BaseModel, ABC):
+    """Base Toolkit representing a collection of related tools."""
+
+    @abstractmethod
+    def get_tools(self) -> List[BaseTool]:
+        """Get the tools in the toolkit."""
