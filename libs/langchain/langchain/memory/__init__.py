@@ -103,4 +103,8 @@ __all__ = [
     "ZepChatMessageHistory",
     "ZepMemory",
     "UpstashRedisChatMessageHistory",
+    "RedisEntityStore",
+    "SQLiteEntityStore",
+    "UpstashRedisEntityStore",
+    "InMemoryEntityStore",
 ]

@@ -4,9 +4,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
-
 from langchain_core.load.serializable import Serializable
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import run_in_executor
 
 
