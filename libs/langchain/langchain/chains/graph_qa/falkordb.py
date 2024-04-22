@@ -138,9 +138,9 @@ class FalkorDBQAChain(Chain):
 
         # Retrieve and limit the number of results
         output = self.graph.query(generated_cypher)[: self.top_k]
-        for l in range(len(output)):
-            for i in range(len(output[l])):
-                output[l][i] = str(output[l][i])
+        for el in range(len(output)):
+            for node in range(len(output[el])):
+                output[el][node] = str(output[el][node])
         context =  str(output).strip()
 
         if self.return_direct:
