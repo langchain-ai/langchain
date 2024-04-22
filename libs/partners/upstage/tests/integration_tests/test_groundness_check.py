@@ -1,7 +1,7 @@
 from langchain_upstage import GroundednessCheck
 
 
-def test_langchain_upstage_groundness_check() -> None:
+def test_langchain_upstage_groundedness_check() -> None:
     """Test Upstage Groundedness Check."""
     tool = GroundednessCheck()
     output = tool.run({"context": "foo bar", "assistant_message": "bar foo"})
