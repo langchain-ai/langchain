@@ -13,7 +13,9 @@ export PATH=$PATH:$(pwd)/quarto-1.3.450/bin/
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install --upgrade pip
-python3 -m pip install -r vercel_requirements.txt
+python3 -m pip install --upgrade uv
+python3 -m uv pip install -r vercel_requirements.txt
+python3 -m uv pip install -e $(ls ../libs/partners | grep -vE "airbyte|ibm|.md" | xargs -I {} echo "../libs/partners/{}")
 
 # autogenerate integrations tables
 python3 scripts/model_feat_table.py
