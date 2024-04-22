@@ -124,7 +124,7 @@ def test_multimodal() -> None:
         "text": "What is shown in this image?",
     }
     message = HumanMessage(content=[text_message, image_message])
-    output = llm([message])
+    output = llm.invoke([message])
     assert isinstance(output.content, str)
 
 
@@ -151,7 +151,7 @@ def test_multimodal_history() -> None:
         )
     )
     message3 = HumanMessage(content="What time of day is it?")
-    response = llm([message1, message2, message3])
+    response = llm.invoke([message1, message2, message3])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 

@@ -11,7 +11,7 @@ from langchain_community.llms.promptlayer_openai import PromptLayerOpenAIChat
 def test_promptlayer_openai_chat_call() -> None:
     """Test valid call to promptlayer openai."""
     llm = PromptLayerOpenAIChat(max_tokens=10)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -30,7 +30,7 @@ def test_promptlayer_openai_chat_stop_error() -> None:
     """Test promptlayer openai stop logic on bad configuration."""
     llm = PromptLayerOpenAIChat(stop="3", temperature=0)
     with pytest.raises(ValueError):
-        llm("write an ordered list of five items", stop=["\n"])
+        llm.invoke("write an ordered list of five items", stop=["\n"])
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:
