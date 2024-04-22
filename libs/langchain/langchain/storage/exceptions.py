@@ -1,3 +1,3 @@
-from langchain_community.storage.exceptions import InvalidKeyException
+from langchain_core.stores import InvalidKeyException
 
 __all__ = ["InvalidKeyException"]
