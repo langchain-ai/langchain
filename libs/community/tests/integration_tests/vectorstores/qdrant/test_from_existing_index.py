@@ -1,5 +1,4 @@
 import tempfile
-from typing import Optional
 
 import pytest
 
