@@ -3,10 +3,8 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from langchain_community.chat_models.azure_openai import AzureChatOpenAI
-from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
@@ -26,6 +24,10 @@ from langchain.evaluation.criteria.eval_chain import (
 )
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.schema import RUN_KEY
+
+if TYPE_CHECKING:
+    from langchain_community.chat_models.azure_openai import AzureChatOpenAI
+    from langchain_community.chat_models.openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
