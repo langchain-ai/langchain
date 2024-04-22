@@ -108,7 +108,7 @@ def test_create_system_message_prompt_template_from_template_partial() -> None:
     History:
     {history}
     """
-    json_prompt_instructions = {}
+    json_prompt_instructions: dict = {}
     graph_analyst_template = SystemMessagePromptTemplate.from_template(
         template=graph_creator_content,
         input_variables=["history"],
