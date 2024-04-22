@@ -7,7 +7,6 @@ from langchain_community.cache import (
     FullLLMCache,
     FullMd5LLMCache,
     GPTCache,
-    InMemoryCache,
     MomentoCache,
     RedisCache,
     RedisSemanticCache,
@@ -16,9 +15,9 @@ from langchain_community.cache import (
     SQLiteCache,
     UpstashRedisCache,
 )
+from langchain_core.caches import InMemoryCache
 
 __all__ = [
-    "InMemoryCache",
     "FullLLMCache",
     "SQLAlchemyCache",
     "SQLiteCache",
