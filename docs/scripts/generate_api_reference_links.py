@@ -70,7 +70,9 @@ def main():
         if file_imports:
             # Use relative file path as key
             relative_path = (
-                os.path.relpath(file, args.docs_dir).replace(".mdx", "/").replace(".md", "/")
+                os.path.relpath(file, args.docs_dir)
+                .replace(".mdx", "/")
+                .replace(".md", "/")
             )
 
             doc_url = f"https://python.langchain.com/docs/{relative_path}"
