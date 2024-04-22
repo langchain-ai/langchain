@@ -44,7 +44,7 @@ class LLMChain(Chain):
     """Chain to run queries against LLMs.
 
     This class is deprecated. See below for an example implementation using
-    `create_retrieval_chain`:
+    LangChain runnables:
 
         .. code-block:: python
 
