@@ -45,6 +45,11 @@ from langchain_community.chat_message_histories import (
     XataChatMessageHistory,
     ZepChatMessageHistory,
 )
+from langchain_community.memory.entity import (
+    RedisEntityStore,
+    SQLiteEntityStore,
+    UpstashRedisEntityStore,
+)
 from langchain_core.memory import InMemoryEntityStore
 
 from langchain.memory.buffer import (
@@ -55,9 +60,6 @@ from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import (
     ConversationEntityMemory,
-    RedisEntityStore,
-    SQLiteEntityStore,
-    UpstashRedisEntityStore,
 )
 from langchain.memory.kg import ConversationKGMemory
 from langchain.memory.motorhead_memory import MotorheadMemory
@@ -92,16 +94,13 @@ __all__ = [
     "PostgresChatMessageHistory",
     "ReadOnlySharedMemory",
     "RedisChatMessageHistory",
-    "RedisEntityStore",
     "SingleStoreDBChatMessageHistory",
     "SQLChatMessageHistory",
-    "SQLiteEntityStore",
     "SimpleMemory",
     "StreamlitChatMessageHistory",
     "VectorStoreRetrieverMemory",
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "ZepMemory",
-    "UpstashRedisEntityStore",
     "UpstashRedisChatMessageHistory",
 ]
