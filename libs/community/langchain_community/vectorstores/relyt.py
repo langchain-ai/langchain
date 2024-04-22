@@ -4,10 +4,8 @@ import logging
 import uuid
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
-from pgvecto_rs.sqlalchemy import Vector
-from sqlalchemy import REAL, Column, String, Table, create_engine, insert, text
-from sqlalchemy.dialects.postgresql import ARRAY, JSON, TEXT
-from sqlalchemy.orm.session import Session
+from sqlalchemy import Column, String, Table, create_engine, insert, text
+from sqlalchemy.dialects.postgresql import JSON, TEXT
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -65,6 +63,12 @@ class Relyt(VectorStore):
         """
         try:
             from pgvecto_rs.sdk import PGVectoRs
+            PGVectoRs(
+                db_url=connection_string,
+                collection_name=collection_name,
+                dimension=embedding_dimension,
+                recreate=pre_delete_collection,
+            )
         except ImportError as e:
             raise ImportError(
                 "Unable to import pgvector_rs.sdk , please install with "
@@ -165,7 +169,8 @@ class Relyt(VectorStore):
                     index_statement = text(
                         f"""
                         CREATE INDEX {index_name}
-                        ON {self.collection_name} USING vectors (embedding vector_l2_ops)
+                        ON {self.collection_name}
+                        USING vectors (embedding vector_l2_ops)
                         WITH (options = $$
                         optimizing.optimizing_threads = 30
                         segment.max_growing_segment_size = 600
@@ -208,6 +213,8 @@ class Relyt(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        from pgvecto_rs.sqlalchemy import Vector
+
         if ids is None:
             ids = [str(uuid.uuid1()) for _ in texts]
 
@@ -382,6 +389,8 @@ class Relyt(VectorStore):
         Args:
             ids: List of ids to delete.
         """
+        from pgvecto_rs.sqlalchemy import Vector
+
         if ids is None:
             raise ValueError("No ids provided to delete.")
 

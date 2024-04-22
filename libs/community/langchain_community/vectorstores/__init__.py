@@ -196,6 +196,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.redis import (
         Redis,  # noqa: F401
     )
+    from langchain_community.vectorstores.relyt import (
+        Relyt,  # noqa: F401
+    )
     from langchain_community.vectorstores.rocksetdb import (
         Rockset,  # noqa: F401
     )
@@ -344,6 +347,7 @@ __all__ = [
     "Pinecone",
     "Qdrant",
     "Redis",
+    "Relyt",
     "Rockset",
     "SKLearnVectorStore",
     "SQLiteVSS",
