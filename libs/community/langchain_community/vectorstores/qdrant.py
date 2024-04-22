@@ -1367,28 +1367,27 @@ class Qdrant(VectorStore):
         qdrant.add_texts(texts, metadatas, ids, batch_size)
         return qdrant
 
-
     @classmethod
     def from_existing_index(
         cls: Type[Qdrant],
         embedding: Embeddings,
         path: str,
         collection_name: str,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Qdrant:
         """
-        Get instance of an existing Qdrant vector database stored locally. 
+        Get instance of an existing Qdrant vector database stored locally.
         This method will return the instance of the store without inserting any new
         embeddings
         """
-        client, async_client = cls._generate_clients(path = path, **kwargs)
+        client, async_client = cls._generate_clients(path=path, **kwargs)
         return cls(
-                    client = client, 
-                    async_client = async_client,
-                    collection_name = collection_name, 
-                    embeddings = embedding, 
-                    **kwargs
-                )
+            client=client,
+            async_client=async_client,
+            collection_name=collection_name,
+            embeddings=embedding,
+            **kwargs,
+        )
 
     @classmethod
     @sync_call_fallback
