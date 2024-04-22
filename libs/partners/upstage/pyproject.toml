@@ -62,7 +62,7 @@ langchain-core = { path = "../../core", develop = true }
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.ruff]
 select = [
