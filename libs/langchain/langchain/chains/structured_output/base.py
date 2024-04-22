@@ -268,7 +268,7 @@ def create_structured_output_runnable(
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = create_structured_output_runnable(
-                    doc_schema, 
+                    dog_schema, 
                     llm, 
                     mode="openai-tools", 
                     enforce_function_usage=True, 

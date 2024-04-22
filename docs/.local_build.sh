@@ -27,8 +27,10 @@ cp -r docs/templates/* versioned_docs/version-0.2.x/templates/
 cp docs/langserve.md versioned_docs/version-0.2.x/
 cp docs/langgraph.md versioned_docs/version-0.2.x/
 
-yarn
-
 poetry run python scripts/resolve_versioned_links_in_markdown.py versioned_docs/version-0.2.x/ /docs/0.2.x/
 
-poetry run quarto preview docs
+poetry run quarto render docs
+poetry run python scripts/generate_api_reference_links.py  --docs_dir docs
+
+yarn
+yarn start
