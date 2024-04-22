@@ -241,3 +241,82 @@ def test_upstash_add_documents_mixed_metadata() -> None:
     assert sorted(search, key=lambda d: d.page_content) == sorted(
         docs, key=lambda d: d.page_content
     )
+
+def test_upstash_similarity_search_with_metadata() -> None:
+    store = UpstashVectorStore(embedding=FakeEmbeddings())
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="bar", metadata={"waldo": 1}),
+        Document(page_content="baz", metadata={"waldo": 1}),
+        Document(page_content="fred", metadata={"waldo": 2}),
+    ]
+    ids = ["0", "1", "3", "4"]
+    store.add_documents(docs, ids=ids)
+    wait_for_indexing(store)
+
+    result = store.similarity_search(
+        query="foo",
+        k=5,
+        filter="waldo = 1"
+    )
+
+    assert result == [
+        Document(page_content="bar", metadata={"waldo": 1}),
+        Document(page_content="baz", metadata={"waldo": 1}),
+    ]
+
+    result = store.similarity_search_with_score(
+        query="foo",
+        k=5,
+        filter="waldo = 2"
+    )
+
+    assert len(result) == 1
+    assert result[0][0] == Document(page_content="fred", metadata={"waldo": 2})
+    assert round(result[0][1], 2) == 0.85
+
+def test_upstash_similarity_search_by_vector_with_metadata() -> None:
+    store = UpstashVectorStore(embedding=FakeEmbeddings())
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="bar", metadata={"waldo": 1}),
+        Document(page_content="baz", metadata={"waldo": 1}),
+        Document(page_content="fred", metadata={"waldo": 2}),
+    ]
+    ids = ["0", "1", "3", "4"]
+    store.add_documents(docs, ids=ids)
+    wait_for_indexing(store)
+
+    result = store.similarity_search_by_vector_with_score(
+        embedding=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+        k=5,
+        filter="waldo = 1"
+    )
+
+    assert len(result) == 2
+    assert result[0] == (Document(page_content='bar', metadata={'waldo': 1}), 1.0)
+    assert result[1][0] == Document(page_content='baz', metadata={'waldo': 1})
+    assert round(result[1][1], 2) == 0.98
+
+def test_upstash_max_marginal_relevance_search_with_metadata() -> None:
+    store = UpstashVectorStore(embedding=FakeEmbeddings())
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="bar", metadata={"waldo": 1}),
+        Document(page_content="baz", metadata={"waldo": 1}),
+        Document(page_content="fred", metadata={"waldo": 2}),
+    ]
+    ids = ["0", "1", "3", "4"]
+    store.add_documents(docs, ids=ids)
+    wait_for_indexing(store)
+
+    result = store.max_marginal_relevance_search(
+        query="foo",
+        k=3,
+        filter="waldo = 1"
+    )
+
+    assert result == [
+        Document(page_content='bar', metadata={'waldo': 1}),
+        Document(page_content='baz', metadata={'waldo': 1})
+    ]

@@ -349,6 +349,8 @@ class UpstashVectorStore(VectorStore):
         self,
         query: str,
         k: int = 4,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Retrieve texts most similar to query and
         convert the result to `Document` objects.
@@ -356,18 +358,21 @@ class UpstashVectorStore(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: Optional metadata filter in str format
 
         Returns:
             List of Documents most similar to the query and score for each
         """
         return self.similarity_search_by_vector_with_score(
-            self._embed_query(query), k=k
+            self._embed_query(query), k=k, filter=filter, **kwargs
         )
 
     async def asimilarity_search_with_score(
         self,
         query: str,
         k: int = 4,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Retrieve texts most similar to query and
         convert the result to `Document` objects.
@@ -375,12 +380,13 @@ class UpstashVectorStore(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: Optional metadata filter in str format
 
         Returns:
             List of Documents most similar to the query and score for each
         """
         return await self.asimilarity_search_by_vector_with_score(
-            self._embed_query(query), k=k
+            self._embed_query(query), k=k, filter=filter, **kwargs
         )
 
     def _process_results(self, results: List) -> List[Tuple[Document, float]]:
@@ -401,6 +407,8 @@ class UpstashVectorStore(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
+        filter: Optional[str] = None,
+        **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
@@ -408,6 +416,8 @@ class UpstashVectorStore(VectorStore):
             vector=embedding,
             top_k=k,
             include_metadata=True,
+            filter=filter,
+            **kwargs
         )
 
         return self._process_results(results)
@@ -416,6 +426,8 @@ class UpstashVectorStore(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
@@ -423,6 +435,8 @@ class UpstashVectorStore(VectorStore):
             vector=embedding,
             top_k=k,
             include_metadata=True,
+            filter=filter,
+            **kwargs
         )
 
         return self._process_results(results)
@@ -431,65 +445,87 @@ class UpstashVectorStore(VectorStore):
         self,
         query: str,
         k: int = 4,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return documents most similar to query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: Optional metadata filter in str format
 
         Returns:
             List of Documents most similar to the query and score for each
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        docs_and_scores = self.similarity_search_with_score(
+            query, k=k, filter=filter, **kwargs
+        )
         return [doc for doc, _ in docs_and_scores]
 
     async def asimilarity_search(
         self,
         query: str,
         k: int = 4,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return documents most similar to query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: Optional metadata filter in str format
 
         Returns:
             List of Documents most similar to the query
         """
-        docs_and_scores = await self.asimilarity_search_with_score(query, k=k)
+        docs_and_scores = await self.asimilarity_search_with_score(
+            query, k=k, filter=filter, **kwargs
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return documents closest to the given embedding.
 
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: Optional metadata filter in str format
 
         Returns:
             List of Documents most similar to the query
         """
-        docs_and_scores = self.similarity_search_by_vector_with_score(embedding, k=k)
+        docs_and_scores = self.similarity_search_by_vector_with_score(
+            embedding, k=k, filter=filter, **kwargs
+        )
         return [doc for doc, _ in docs_and_scores]
 
     async def asimilarity_search_by_vector(
-        self, embedding: List[float], k: int = 4
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return documents closest to the given embedding.
 
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filter: Optional metadata filter in str format
 
         Returns:
             List of Documents most similar to the query
         """
         docs_and_scores = await self.asimilarity_search_by_vector_with_score(
-            embedding, k=k
+            embedding, k=k, filter=filter, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -497,23 +533,29 @@ class UpstashVectorStore(VectorStore):
         self,
         query: str,
         k: int = 4,
+        filter: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
         Since Upstash always returns relevance scores, default implementation is used.
         """
-        return self.similarity_search_with_score(query, k=k, **kwargs)
+        return self.similarity_search_with_score(
+            query, k=k, filter=filter, **kwargs
+        )
 
     async def _asimilarity_search_with_relevance_scores(
         self,
         query: str,
         k: int = 4,
+        filter: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
         Since Upstash always returns relevance scores, default implementation is used.
         """
-        return await self.asimilarity_search_with_score(query, k=k, **kwargs)
+        return await self.asimilarity_search_with_score(
+            query, k=k, filter=filter, **kwargs
+        )
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -521,6 +563,8 @@ class UpstashVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -535,6 +579,8 @@ class UpstashVectorStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Optional metadata filter in str format
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -543,6 +589,8 @@ class UpstashVectorStore(VectorStore):
             top_k=fetch_k,
             include_vectors=True,
             include_metadata=True,
+            filter=filter,
+            **kwargs
         )
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
@@ -562,6 +610,8 @@ class UpstashVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -576,6 +626,8 @@ class UpstashVectorStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Optional metadata filter in str format
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -584,6 +636,8 @@ class UpstashVectorStore(VectorStore):
             top_k=fetch_k,
             include_vectors=True,
             include_metadata=True,
+            filter=filter,
+            **kwargs
         )
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
@@ -603,6 +657,8 @@ class UpstashVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -617,12 +673,19 @@ class UpstashVectorStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Optional metadata filter in str format
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         embedding = self._embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
-            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult
+            embedding=embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs
         )
 
     async def amax_marginal_relevance_search(
@@ -631,6 +694,8 @@ class UpstashVectorStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -645,12 +710,19 @@ class UpstashVectorStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Optional metadata filter in str format
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         embedding = self._embed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
-            embedding=embedding, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult
+            embedding=embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            **kwargs
         )
 
     @classmethod
