@@ -3,7 +3,7 @@
 -e ../libs/core
 -e ../libs/experimental
 -e ../libs/text-splitters
--e ../libs/parners/*/
+-e ../libs/partners/*/
 langchain-cohere
 langchain-astradb
 langchain-nvidia-ai-endpoints
