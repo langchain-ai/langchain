@@ -11,7 +11,7 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 
 @pytest.mark.parametrize("collection_name", ["custom-collection"])
 def test_qdrant_from_existing_index_uses_same_collection(
-    collection_name: Optional[str],
+    collection_name: str,
 ) -> None:
     """Test if the Qdrant.from_existing_client reuses the some client."""
     from qdrant_client import QdrantClient
