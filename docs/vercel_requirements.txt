@@ -3,11 +3,7 @@
 -e ../libs/core
 -e ../libs/experimental
 -e ../libs/text-splitters
-langchain-google-vertexai
-langchain-google-genai
-langchain-google-community
 langchain-cohere
-langchain-aws
 langchain-astradb
 langchain-nvidia-ai-endpoints
 langchain-nvidia-trt
