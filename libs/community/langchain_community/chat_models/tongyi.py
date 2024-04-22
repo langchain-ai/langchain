@@ -10,8 +10,11 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
+    Sequence,
+    Type,
     Union,
     cast,
 )
@@ -20,6 +23,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -42,8 +46,11 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator, BaseModel
+from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.runnables import Runnable
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -470,3 +477,63 @@ class ChatTongyi(BaseChatModel):
             message=convert_message_chunk_to_message(chunk.message),
             generation_info=chunk.generation_info,
         )
+        
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any), or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice is not None and tool_choice:
+            if len(formatted_tools) != 1:
+                raise ValueError(
+                    "When specifying `tool_choice`, you must provide exactly one "
+                    f"tool. Received {len(formatted_tools)} tools."
+                )
+            if isinstance(tool_choice, str):
+                if tool_choice not in ("auto", "none"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+            elif isinstance(tool_choice, bool):
+                tool_choice = {
+                    "type": "function",
+                    "function": {"name": formatted_tools[0]["function"]["name"]},
+                }
+            elif isinstance(tool_choice, dict):
+                if (
+                    formatted_tools[0]["function"]["name"]
+                    != tool_choice["function"]["name"]
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tool was {formatted_tools[0]['function']['name']}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
