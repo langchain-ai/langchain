@@ -12,7 +12,7 @@ on:
       working-directory:
         required: true
         type: string
-        default: "libs/langchain"
+        default: 'libs/langchain'
 
 env:
   PYTHON_VERSION: "3.11"

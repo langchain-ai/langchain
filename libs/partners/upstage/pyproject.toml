@@ -56,7 +56,7 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
@@ -66,9 +66,9 @@ langchain-core = {path = "../../core", develop = true}
 
 [tool.ruff]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
 ]
 
 [tool.mypy]
