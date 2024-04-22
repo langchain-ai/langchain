@@ -23,4 +23,5 @@ wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md 
 poetry run quarto render docs
 poetry run python scripts/generate_api_reference_links.py  --docs_dir docs
 
+yarn
 yarn start
