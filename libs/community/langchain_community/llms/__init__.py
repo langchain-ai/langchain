@@ -549,9 +549,9 @@ def _import_titan_takeoff() -> Type[BaseLLM]:
 
 
 def _import_titan_takeoff_pro() -> Type[BaseLLM]:
-    from langchain_community.llms.titan_takeoff_pro import TitanTakeoffPro
+    from langchain_community.llms.titan_takeoff import TitanTakeoff
 
-    return TitanTakeoffPro
+    return TitanTakeoff
 
 
 def _import_together() -> Type[BaseLLM]:

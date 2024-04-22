@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.0.33"
+version = "0.0.34"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.43"
+langchain-core = "^0.1.45"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -53,7 +53,7 @@ mwxml = {version = "^0.3.3", optional = true}
 esprima = {version = "^4.0.1", optional = true}
 streamlit = {version = "^1.18.0", optional = true, python = ">=3.8.1,<3.9.7 || >3.9.7,<4.0"}
 psychicapi = {version = "^0.8.0", optional = true}
-cassio = {version = "^0.1.0", optional = true}
+cassio = {version = "^0.1.6", optional = true}
 sympy = {version = "^1.12", optional = true}
 rapidfuzz = {version = "^3.1.1", optional = true}
 jsonschema = {version = ">1", optional = true}
@@ -153,7 +153,7 @@ pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
 openai = "^1"
 python-dotenv = "^1.0.0"
-cassio = "^0.1.0"
+cassio = "^0.1.6"
 tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 langchain-core = { path = "../core", develop = true }
