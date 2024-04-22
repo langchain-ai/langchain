@@ -514,7 +514,9 @@ def test_create_hnsw_index_test() -> None:
     # 11. index_name as <schema_name.index_name>
     # Expectation:U1 not present
     try:
-        vs = OracleVS(connection, model1, "U1.TB16", DistanceStrategy.EUCLIDEAN_DISTANCE)
+        vs = OracleVS(
+            connection, model1, "U1.TB16", DistanceStrategy.EUCLIDEAN_DISTANCE
+        )
         create_index(
             connection,
             vs,
@@ -529,7 +531,7 @@ def test_create_hnsw_index_test() -> None:
         )
         drop_index_if_exists(connection, "U1.idx11")
         drop_table_purge(connection, "TB16")
-    except:
+    except Exception:
         pass
 
     # 12. Index_name size >129
@@ -803,7 +805,7 @@ def test_add_texts_test() -> None:
             ids = ["1234{0}".format(i)]
             vs_obj.add_texts(texts, ids=ids)
         drop_table_purge(connection, "TB14")
-    except:
+    except Exception:
         pass
 
 
