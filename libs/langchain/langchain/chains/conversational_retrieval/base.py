@@ -246,7 +246,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     """Chain for having a conversation based on retrieved documents.
 
     This class is deprecated. See below for an example implementation using
-    `create_retrieval_chain`. Additional walkthroughs can be found at 
+    `create_retrieval_chain`. Additional walkthroughs can be found at
     https://python.langchain.com/docs/use_cases/question_answering/chat_history
 
         .. code-block:: python
@@ -301,7 +301,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
                 ]
             )
             question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-            rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+            rag_chain = create_retrieval_chain(
+                history_aware_retriever, question_answer_chain
+            )
 
             # Usage:
             chat_history = []  # Collect chat history here (a sequence of messages)
