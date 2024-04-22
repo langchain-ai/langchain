@@ -73,7 +73,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):  # type: ignore[misc]
         ) + self.token_counter(cast(str, time_prompt.content))
         memory: VectorStoreRetriever = kwargs["memory"]
         previous_messages = kwargs["messages"]
-        relevant_docs = memory.get_relevant_documents(str(previous_messages[-10:]))
+        relevant_docs = memory.invoke(str(previous_messages[-10:]))
         relevant_memory = [d.page_content for d in relevant_docs]
         relevant_memory_tokens = sum(
             [self.token_counter(doc) for doc in relevant_memory]
