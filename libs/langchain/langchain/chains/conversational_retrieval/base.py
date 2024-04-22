@@ -300,6 +300,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
                     ("human", "{input}"),
                 ]
             )
+            # Below we use create_stuff_documents_chain to feed all retrieved context
+            # into the LLM. Note that we can also use StuffDocumentsChain and other
+            # instances of BaseCombineDocumentsChain.
             question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
             rag_chain = create_retrieval_chain(
                 history_aware_retriever, question_answer_chain
