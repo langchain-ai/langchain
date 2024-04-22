@@ -83,6 +83,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "TileDB",
         "TimescaleVector",
         "TencentVectorDB",
+        "UpstashVectorStore",
         "EcloudESVectorStore",
         "Vald",
         "VDMS",

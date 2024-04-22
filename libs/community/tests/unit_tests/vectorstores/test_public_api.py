@@ -76,6 +76,7 @@ _EXPECTED = [
     "Tigris",
     "TimescaleVector",
     "Typesense",
+    "UpstashVectorStore",
     "USearch",
     "Vald",
     "VDMS",
