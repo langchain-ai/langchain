@@ -4,21 +4,6 @@ import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 import CodeBlock from "@theme-original/CodeBlock";
 
-function Setup({ apiKeyName, packageName }) {
-  const apiKeyText = `import getpass
-import os
-
-os.environ["${apiKeyName}"] = getpass.getpass()`;
-  return (
-    <>
-      <h5>Install dependencies</h5>
-      <CodeBlock language="bash">{`pip install -qU ${packageName}`}</CodeBlock>
-      <h5>Set environment variables</h5>
-      <CodeBlock language="python">{apiKeyText}</CodeBlock>
-    </>
-  );
-}
-
 /**
  * @typedef {Object} ChatModelTabsProps - Component props.
  * @property {string} [openaiParams] - Parameters for OpenAI chat model. Defaults to `model="gpt-3.5-turbo-0125"`
@@ -146,19 +131,23 @@ export default function ChatModelTabs(props) {
     <Tabs groupId="modelTabs">
       {tabItems
         .filter((tabItem) => !tabItem.shouldHide)
-        .map((tabItem) => (
-          <TabItem
-            value={tabItem.value}
-            label={tabItem.label}
-            default={tabItem.default}
-          >
-            <Setup
-              apiKeyName={tabItem.apiKeyName}
-              packageName={tabItem.packageName}
-            />
-            <CodeBlock language="python">{tabItem.text}</CodeBlock>
-          </TabItem>
-        ))}
+        .map((tabItem) => {
+          const apiKeyText = `import getpass
+import os
+
+os.environ["${tabItem.apiKeyName}"] = getpass.getpass()`;
+          return (
+            <TabItem
+              value={tabItem.value}
+              label={tabItem.label}
+              default={tabItem.default}
+            >
+              <CodeBlock language="bash">{`pip install -qU ${tabItem.packageName}`}</CodeBlock>              
+              <CodeBlock language="python">{apiKeyText + "\n\n" + tabItem.text}</CodeBlock>
+            </TabItem>
+          );
+        })
+      }
     </Tabs>
   );
 }

@@ -48,3 +48,4 @@ quarto render docs/
 quarto render versioned_docs/version-0.2.x/
 
 python3 scripts/resolve_versioned_links_in_markdown.py versioned_docs/version-0.2.x/ /docs/0.2.x/
+python3 scripts/generate_api_reference_links.py --docs_dir docs
