@@ -31,8 +31,8 @@ However, these guides will help you quickly accomplish common tasks.
 ### Prompts
 - [How to use few shot examples](/docs/how_to/few_shot_examples)
 - [How to use few shot examples in chat models](/docs/how_to/few_shot_examples_chat/)
-- [How to partial prompt templates](/docs/how_to/prompts_partial)
-- [How to compose two prompts together](/docs/how_to/prompts_composition)
+- [How to partially format prompt templates](/docs/how_to/prompts_partial)
+- [How to compose prompts together](/docs/how_to/prompts_composition)
 
 ### Example Selectors
 - [How to use example selectors](/docs/how_to/example_selectors)
@@ -42,10 +42,10 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to select examples by maximal marginal relevance](/docs/how_to/example_selectors_mmr)
 
 ### Chat Models
-- [How to do function/tool calling](/docs/how_to/function_calling)
+- [How to do function/tool calling](/docs/how_to/tool_calling)
 - [How to get models to return structured output](/docs/how_to/structured_output)
 - [How to cache model responses](/docs/how_to/chat_model_caching)
-- [How to get log probabilities](/docs/how_to/logprobs)
+- [How to get log probabilities from model calls](/docs/how_to/logprobs)
 - [How to create a custom chat model class](/docs/how_to/custom_chat_model)
 - [How to stream a response back](/docs/how_to/chat_streaming)
 - [How to track token usage](/docs/how_to/chat_token_usage_tracking)
