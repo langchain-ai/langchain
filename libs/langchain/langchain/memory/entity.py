@@ -1,13 +1,13 @@
 import logging
-from abc import ABC, abstractmethod
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional
 
 from langchain_community.utilities.redis import get_client
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.memory import BaseEntityStore, InMemoryEntityStore
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import Field
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -18,56 +18,6 @@ from langchain.memory.prompt import (
 from langchain.memory.utils import get_prompt_input_key
 
 logger = logging.getLogger(__name__)
-
-
-class BaseEntityStore(BaseModel, ABC):
-    """Abstract base class for Entity store."""
-
-    @abstractmethod
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        """Get entity value from store."""
-        pass
-
-    @abstractmethod
-    def set(self, key: str, value: Optional[str]) -> None:
-        """Set entity value in store."""
-        pass
-
-    @abstractmethod
-    def delete(self, key: str) -> None:
-        """Delete entity value from store."""
-        pass
-
-    @abstractmethod
-    def exists(self, key: str) -> bool:
-        """Check if entity exists in store."""
-        pass
-
-    @abstractmethod
-    def clear(self) -> None:
-        """Delete all entities from store."""
-        pass
-
-
-class InMemoryEntityStore(BaseEntityStore):
-    """In-memory Entity store."""
-
-    store: Dict[str, Optional[str]] = {}
-
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        return self.store.get(key, default)
-
-    def set(self, key: str, value: Optional[str]) -> None:
-        self.store[key] = value
-
-    def delete(self, key: str) -> None:
-        del self.store[key]
-
-    def exists(self, key: str) -> bool:
-        return key in self.store
-
-    def clear(self) -> None:
-        return self.store.clear()
 
 
 class UpstashRedisEntityStore(BaseEntityStore):
