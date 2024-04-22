@@ -31,16 +31,21 @@ def validate_api_key(api_key: str) -> None:
         raise ValueError("API Key is required for Upstage Document Loader")
 
 
-def validate_file_path(file_path: Union[str, Path]) -> None:
+def validate_file_path(file_path: Union[str, Path, list[str], list[Path]]) -> None:
     """
     Validates if a file exists at the given file path.
 
     Args:
-        file_path (Union[str, Path]): The path to the file.
+        file_path (Union[str, Path, list[str], list[Path]): The file path(s) to be
+                                                            validated.
 
     Raises:
-        FileNotFoundError: If the file does not exist at the given file path.
+        FileNotFoundError: If the file or any of the files in the list do not exist.
     """
+    if isinstance(file_path, list):
+        for path in file_path:
+            validate_file_path(path)
+        return
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -83,7 +88,7 @@ class LayoutAnalysis(BaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, Path],
+        file_path: Union[str, Path, list[str], list[Path]],
         output_type: OutputType = "text",
         split: SplitType = "none",
         api_key: Optional[str] = None,
@@ -93,7 +98,8 @@ class LayoutAnalysis(BaseLoader):
         Initializes an instance of the Upstage document loader.
 
         Args:
-            file_path (Union[str, Path]): The path to the file to be loaded.
+            file_path (Union[str, Path, list[str], list[Path]): The path to the document
+                                                                to be loaded.
             output_type (OutputType, optional): The desired output type.
                                                 Defaults to "text".
             split (SplitType, optional): The type of splitting to be applied.
@@ -108,7 +114,6 @@ class LayoutAnalysis(BaseLoader):
         self.file_path = file_path
         self.output_type = output_type
         self.split = split
-        self.file_name = os.path.basename(file_path)
         self.api_key = get_from_param_or_env(
             "UPSTAGE_DOCUMENT_AI_API_KEY", api_key, "UPSTAGE_DOCUMENT_AI_API_KEY"
         )
@@ -124,15 +129,33 @@ class LayoutAnalysis(BaseLoader):
         Returns:
             A list of Document objects representing the parsed layout analysis.
         """
-        blob = Blob.from_path(self.file_path)
 
-        parser = LayoutAnalysisParser(
-            self.api_key,
-            split=self.split,
-            output_type=self.output_type,
-            use_ocr=self.use_ocr,
-        )
-        return list(parser.lazy_parse(blob, is_batch=True))
+        if isinstance(self.file_path, list):
+            result = []
+
+            for file_path in self.file_path:
+                blob = Blob.from_path(file_path)
+
+                parser = LayoutAnalysisParser(
+                    self.api_key,
+                    split=self.split,
+                    output_type=self.output_type,
+                    use_ocr=self.use_ocr,
+                )
+                result.extend(list(parser.lazy_parse(blob, is_batch=True)))
+
+            return result
+
+        else:
+            blob = Blob.from_path(self.file_path)
+
+            parser = LayoutAnalysisParser(
+                self.api_key,
+                split=self.split,
+                output_type=self.output_type,
+                use_ocr=self.use_ocr,
+            )
+            return list(parser.lazy_parse(blob, is_batch=True))
 
     def lazy_load(self) -> Iterator[Document]:
         """
@@ -142,12 +165,24 @@ class LayoutAnalysis(BaseLoader):
             An iterator of Document objects representing the parsed layout analysis.
         """
 
-        blob = Blob.from_path(self.file_path)
+        if isinstance(self.file_path, list):
+            for file_path in self.file_path:
+                blob = Blob.from_path(file_path)
 
-        parser = LayoutAnalysisParser(
-            self.api_key,
-            split=self.split,
-            output_type=self.output_type,
-            use_ocr=self.use_ocr,
-        )
-        yield from parser.lazy_parse(blob)
+                parser = LayoutAnalysisParser(
+                    self.api_key,
+                    split=self.split,
+                    output_type=self.output_type,
+                    use_ocr=self.use_ocr,
+                )
+                yield from parser.lazy_parse(blob, is_batch=True)
+        else:
+            blob = Blob.from_path(self.file_path)
+
+            parser = LayoutAnalysisParser(
+                self.api_key,
+                split=self.split,
+                output_type=self.output_type,
+                use_ocr=self.use_ocr,
+            )
+            yield from parser.lazy_parse(blob)
