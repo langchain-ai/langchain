@@ -219,7 +219,7 @@ def test_init_direct_access_index() -> None:
 @pytest.mark.requires("databricks", "databricks.vector_search")
 def test_init_fail_no_index() -> None:
     with pytest.raises(TypeError):
-        DatabricksVectorSearch()
+        DatabricksVectorSearch()  # type: ignore[call-arg]
 
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
@@ -420,7 +420,7 @@ def test_add_texts_with_metadata() -> None:
                 DEFAULT_PRIMARY_KEY: id_,
                 DEFAULT_TEXT_COLUMN: text,
                 DEFAULT_VECTOR_COLUMN: vector,
-                **metadata,
+                **metadata,  # type: ignore[arg-type]
             }
             for text, vector, id_, metadata in zip(
                 fake_texts, vectors, added_ids, metadatas

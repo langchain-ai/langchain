@@ -24,7 +24,11 @@ from multiple components and prompt values. Prompt classes and functions make co
                                                                       SystemMessagePromptTemplate
 
 """  # noqa: E501
-from langchain_core.prompts.base import BasePromptTemplate, format_document
+from langchain_core.prompts.base import (
+    BasePromptTemplate,
+    aformat_document,
+    format_document,
+)
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseChatPromptTemplate,
@@ -67,6 +71,7 @@ __all__ = [
     "SystemMessagePromptTemplate",
     "load_prompt",
     "format_document",
+    "aformat_document",
     "check_valid_template",
     "get_template_variables",
     "jinja2_formatter",

@@ -298,7 +298,7 @@ class BaseLanguageModel(
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {}
+        return self.lc_attributes
 
     def get_token_ids(self, text: str) -> List[int]:
         """Return the ordered ids of the tokens in a text.
