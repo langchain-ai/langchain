@@ -25,7 +25,7 @@ def test_long_context_reorder() -> None:
         search_kwargs={"k": 10}
     )
     reordering = LongContextReorder()
-    docs = retriever.get_relevant_documents("Tell me about the Celtics")
+    docs = retriever.invoke("Tell me about the Celtics")
     actual = reordering.transform_documents(docs)
 
     # First 2 and Last 2 elements must contain the most relevant
