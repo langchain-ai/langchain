@@ -12,7 +12,7 @@ export PATH=$PATH:$(pwd)/quarto-1.3.450/bin/
 # setup python env
 python3 -m pip install --upgrade pip
 python3 -m pip install --upgrade uv
-uv venv
+python3 -m uv venv
 source .venv/bin/activate
 uv pip install -r vercel_requirements.txt
 
