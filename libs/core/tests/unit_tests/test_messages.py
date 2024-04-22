@@ -13,6 +13,8 @@ from langchain_core.messages import (
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
+    ToolCall,
+    ToolCallChunk,
     ToolMessage,
     convert_to_messages,
     get_buffer_string,
@@ -20,6 +22,7 @@ from langchain_core.messages import (
     messages_from_dict,
     messages_to_dict,
 )
+from langchain_core.utils._merge import merge_lists
 
 
 def test_message_chunks() -> None:
@@ -67,6 +70,55 @@ def test_message_chunks() -> None:
             },
         )
     ), "MessageChunk + MessageChunk should be a MessageChunk with merged additional_kwargs"  # noqa: E501
+
+    # Test tool calls
+    assert (
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
+        )
+        + AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                ToolCallChunk(name=None, args='{"arg1": "val', id=None, index=0)
+            ],
+        )
+        + AIMessageChunk(
+            content="",
+            tool_call_chunks=[ToolCallChunk(name=None, args='ue}"', id=None, index=0)],
+        )
+    ) == AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            ToolCallChunk(name="tool1", args='{"arg1": "value}"', id="1", index=0)
+        ],
+    )
+
+    assert (
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
+        )
+        + AIMessageChunk(
+            content="",
+            tool_call_chunks=[ToolCallChunk(name="tool1", args="a", id=None, index=1)],
+        )
+        # Don't merge if `index` field does not match.
+    ) == AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            ToolCallChunk(name="tool1", args="", id="1", index=0),
+            ToolCallChunk(name="tool1", args="a", id=None, index=1),
+        ],
+    )
+
+    ai_msg_chunk = AIMessageChunk(content="")
+    tool_calls_msg_chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[ToolCallChunk(name="tool1", args="a", id=None, index=1)],
+    )
+    assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
+    assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
 
 
 def test_chat_message_chunks() -> None:
@@ -128,6 +180,7 @@ class TestGetBufferString(unittest.TestCase):
         self.func_msg = FunctionMessage(name="func", content="function")
         self.tool_msg = ToolMessage(tool_call_id="tool_id", content="tool")
         self.chat_msg = ChatMessage(role="Chat", content="chat")
+        self.tool_calls_msg = AIMessage(content="tool")
 
     def test_empty_input(self) -> None:
         self.assertEqual(get_buffer_string([]), "")
@@ -163,6 +216,7 @@ class TestGetBufferString(unittest.TestCase):
             self.func_msg,
             self.tool_msg,
             self.chat_msg,
+            self.tool_calls_msg,
         ]
         expected_output = "\n".join(
             [
@@ -172,6 +226,7 @@ class TestGetBufferString(unittest.TestCase):
                 "Function: function",
                 "Tool: tool",
                 "Chat: chat",
+                "AI: tool",
             ]
         )
         self.assertEqual(
@@ -189,6 +244,19 @@ def test_multiple_msg() -> None:
         human_msg,
         ai_msg,
         sys_msg,
+    ]
+    assert messages_from_dict(messages_to_dict(msgs)) == msgs
+
+    # Test with tool calls
+    msgs = [
+        AIMessage(
+            content="",
+            tool_calls=[ToolCall(name="a", args={"b": 1}, id=None)],
+        ),
+        AIMessage(
+            content="",
+            tool_calls=[ToolCall(name="c", args={"c": 2}, id=None)],
+        ),
     ]
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
 
@@ -221,6 +289,30 @@ def test_message_chunk_to_message() -> None:
     assert message_chunk_to_message(
         FunctionMessageChunk(name="hello", content="I am")
     ) == FunctionMessage(name="hello", content="I am")
+
+    chunk = AIMessageChunk(
+        content="I am",
+        tool_call_chunks=[
+            ToolCallChunk(name="tool1", args='{"a": 1}', id="1", index=0),
+            ToolCallChunk(name="tool2", args='{"b": ', id="2", index=0),
+            ToolCallChunk(name="tool3", args=None, id="3", index=0),
+            ToolCallChunk(name="tool4", args="abc", id="4", index=0),
+        ],
+    )
+    expected = AIMessage(
+        content="I am",
+        tool_calls=[
+            {"name": "tool1", "args": {"a": 1}, "id": "1"},
+            {"name": "tool2", "args": {}, "id": "2"},
+        ],
+        invalid_tool_calls=[
+            {"name": "tool3", "args": None, "id": "3", "error": "Malformed args."},
+            {"name": "tool4", "args": "abc", "id": "4", "error": "Malformed args."},
+        ],
+    )
+    assert message_chunk_to_message(chunk) == expected
+    assert AIMessage(**expected.dict()) == expected
+    assert AIMessageChunk(**chunk.dict()) == chunk
 
 
 def test_tool_calls_merge() -> None:
@@ -542,3 +634,35 @@ def test_message_name_chat(MessageClass: Type) -> None:
 
     msg3 = MessageClass(content="foo", role="user")
     assert msg3.name is None
+
+
+def test_merge_tool_calls() -> None:
+    tool_call_1 = ToolCallChunk(name="tool1", args="", id="1", index=0)
+    tool_call_2 = ToolCallChunk(name=None, args='{"arg1": "val', id=None, index=0)
+    tool_call_3 = ToolCallChunk(name=None, args='ue}"', id=None, index=0)
+    merged = merge_lists([tool_call_1], [tool_call_2])
+    assert merged is not None
+    assert merged == [{"name": "tool1", "args": '{"arg1": "val', "id": "1", "index": 0}]
+    merged = merge_lists(merged, [tool_call_3])
+    assert merged is not None
+    assert merged == [
+        {"name": "tool1", "args": '{"arg1": "value}"', "id": "1", "index": 0}
+    ]
+
+    left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id="1", index=None)
+    right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id="1", index=None)
+    merged = merge_lists([left], [right])
+    assert merged is not None
+    assert len(merged) == 2
+
+    left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id=None, index=None)
+    right = ToolCallChunk(name="tool1", args='{"arg2": "value2"}', id=None, index=None)
+    merged = merge_lists([left], [right])
+    assert merged is not None
+    assert len(merged) == 2
+
+    left = ToolCallChunk(name="tool1", args='{"arg1": "value1"}', id="1", index=0)
+    right = ToolCallChunk(name="tool2", args='{"arg2": "value2"}', id=None, index=1)
+    merged = merge_lists([left], [right])
+    assert merged is not None
+    assert len(merged) == 2

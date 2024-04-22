@@ -134,7 +134,7 @@ def _load_map_reduce_documents_chain(
     )
 
 
-def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:
+def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:  # type: ignore[valid-type]
     combine_documents_chain = None
     collapse_documents_chain = None
 
@@ -187,7 +187,7 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
             config.pop("collapse_document_chain_path"), **kwargs
         )
 
-    return ReduceDocumentsChain(
+    return ReduceDocumentsChain(  # type: ignore[misc]
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_documents_chain,
         **config,
@@ -383,7 +383,7 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
         raise ValueError("`database` must be present.")
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
-        chain = load_chain_from_config(llm_chain_config, **kwargs, **kwargs)
+        chain = load_chain_from_config(llm_chain_config, **kwargs)
         return SQLDatabaseChain(llm_chain=chain, database=database, **config)
     if "llm" in config:
         llm_config = config.pop("llm")
