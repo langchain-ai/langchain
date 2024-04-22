@@ -139,6 +139,7 @@ class Llamafile(LLM):
             "streaming",
             "tags",
             "verbose",
+            "token_encoder",
         ]
         attrs = [
             k for k in get_pydantic_field_names(self.__class__) if k not in ignore_keys
