@@ -76,6 +76,7 @@ def convert_dict_to_message(
     """Convert a dict to a message."""
     role = _dict["role"]
     content = _dict["content"]
+
     if role == "user":
         return (
             HumanMessageChunk(content=content)
@@ -87,13 +88,26 @@ def convert_dict_to_message(
         invalid_tool_calls = []
         if "tool_calls" in _dict:
             additional_kwargs = {"tool_calls": _dict["tool_calls"]}
-            for raw_tool_call in _dict["tool_calls"]:
-                try:
-                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
-                except Exception as e:
-                    invalid_tool_calls.append(
-                        make_invalid_tool_call(raw_tool_call, str(e))
-                    )
+
+            for index, value in enumerate(_dict["tool_calls"]):
+                if is_chunk:
+                    try:
+                        tool_calls.append(
+                            {
+                                "name": value["function"].get("name"),
+                                "args": value["function"].get("arguments"),
+                                "id": value.get("id"),
+                                # Tongyi does not respond with index, use index in the list instead
+                                "index": index,
+                            }
+                        )
+                    except KeyError:
+                        pass
+                else:
+                    try:
+                        tool_calls.append(parse_tool_call(value, return_id=True))
+                    except Exception as e:
+                        invalid_tool_calls.append(make_invalid_tool_call(value, str(e)))
         else:
             additional_kwargs = {}
 
@@ -101,8 +115,8 @@ def convert_dict_to_message(
             AIMessageChunk(
                 content=content,
                 additional_kwargs=additional_kwargs,
-                tool_calls=tool_calls,
-                invalid_tool_calls=invalid_tool_calls,
+                tool_call_chunks=tool_calls,
+                id=_dict.get("id"),
             )
             if is_chunk
             else AIMessage(
@@ -439,10 +453,6 @@ class ChatTongyi(BaseChatModel):
                 and message["content"] == ""
                 and "tool_calls" not in message
             ):
-                continue
-
-            # If it's a tool call response, wait until it's finished
-            if "tool_calls" in message and choice["finish_reason"] == "null":
                 continue
 
             # If we are streaming without `incremental_output = True`,
