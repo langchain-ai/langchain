@@ -28,24 +28,33 @@ def test_invoke(model: str) -> None:
 
 @pytest.mark.parametrize(
     ids=[
-        "when_j2_model",
-        "when_jamba_model",
+        "when_j2_model_num_results_is_1",
+        "when_j2_model_num_results_is_3",
+        "when_jamba_model_n_is_1",
+        "when_jamba_model_n_is_3",
     ],
-    argnames=["model"],
+    argnames=["model", "num_results"],
     argvalues=[
-        (J2_CHAT_MODEL_NAME,),
-        (JAMBA_CHAT_MODEL_NAME,),
+        (J2_CHAT_MODEL_NAME, 1),
+        (J2_CHAT_MODEL_NAME, 3),
+        (JAMBA_CHAT_MODEL_NAME, 1),
+        (JAMBA_CHAT_MODEL_NAME, 3),
     ],
 )
-def test_generation(model: str) -> None:
-    """Test invoke tokens from AI21."""
-    llm = ChatAI21(model=model)
-    message = HumanMessage(content="Hello")
+def test_generation(model: str, num_results: int) -> None:
+    """Test generation with multiple models and different result counts."""
+    # Determine the configuration key based on the model type
+    config_key = "n" if model == JAMBA_CHAT_MODEL_NAME else "num_results"
 
-    result = llm.generate([[message], [message]], config=dict(tags=["foo"]))
+    # Create the model instance using the appropriate key for the result count
+    llm = ChatAI21(model=model, **{config_key: num_results})
+
+    message = HumanMessage(content="Hello, this is a test. Can you help me please?")
+
+    result = llm.generate([[message]], config=dict(tags=["foo"]))
 
     for generations in result.generations:
-        assert len(generations) == 1
+        assert len(generations) == num_results
         for generation in generations:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)

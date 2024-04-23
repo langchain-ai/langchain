@@ -64,7 +64,7 @@ class ChatAdapter(ABC):
         pass
 
     @abstractmethod
-    def call(self, client: Any, **params: Any) -> BaseMessage:
+    def call(self, client: Any, **params: Any) -> List[BaseMessage]:
         pass
 
     def _get_system_message_from_message(self, message: BaseMessage) -> str:
@@ -100,10 +100,9 @@ class J2ChatAdapter(ChatAdapter):
     ) -> J2ChatMessage:
         return J2ChatMessage(role=RoleType(role), text=content)
 
-    def call(self, client: Any, **params: Any) -> BaseMessage:
+    def call(self, client: Any, **params: Any) -> List[BaseMessage]:
         response = client.chat.create(**params)
-        outputs = response.outputs
-        return AIMessage(content=outputs[0].text)
+        return [AIMessage(output.text) for output in response.outputs]
 
 
 class JambaChatCompletionsAdapter(ChatAdapter):
@@ -124,7 +123,6 @@ class JambaChatCompletionsAdapter(ChatAdapter):
             content=content,
         )
 
-    def call(self, client: Any, **params: Any) -> BaseMessage:
+    def call(self, client: Any, **params: Any) -> List[BaseMessage]:
         response = client.chat.completions.create(**params)
-        choices = response.choices
-        return AIMessage(content=choices[0].message.content)
+        return [AIMessage(choice.message.content) for choice in response.choices]

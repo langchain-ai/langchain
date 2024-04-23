@@ -61,8 +61,8 @@ class ChatAI21(BaseChatModel, AI21Base):
     """A penalty applied to tokens based on their frequency 
     in the generated responses."""
 
-    n: Optional[int] = None
-    """The number of responses to generate for a given prompt."""
+    n: int = 1
+    """Number of chat completions to generate for each prompt."""
 
     _chat_adapter: ChatAdapter
 
@@ -95,6 +95,7 @@ class ChatAI21(BaseChatModel, AI21Base):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "top_k_return": self.top_k_return,
+            "n": self.n,
         }
 
         if self.count_penalty is not None:
@@ -137,9 +138,9 @@ class ChatAI21(BaseChatModel, AI21Base):
         **kwargs: Any,
     ) -> ChatResult:
         params = self._build_params_for_request(messages=messages, stop=stop, **kwargs)
-        message = self._chat_adapter.call(self.client, **params)
-
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        messages = self._chat_adapter.call(self.client, **params)
+        generations = [ChatGeneration(message=message) for message in messages]
+        return ChatResult(generations=generations)
 
     async def _agenerate(
         self,
