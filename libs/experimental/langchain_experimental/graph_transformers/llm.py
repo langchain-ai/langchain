@@ -1,4 +1,6 @@
-from typing import Any, List, Optional, Sequence
+import asyncio
+import json
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
@@ -92,9 +94,14 @@ def optional_enum_field(
         return Field(..., description=description + additional_info, **field_kwargs)
 
 
+class _Graph(BaseModel):
+    nodes: Optional[List]
+    relationships: Optional[List]
+
+
 def create_simple_model(
     node_labels: Optional[List[str]] = None, rel_types: Optional[List[str]] = None
-) -> Any:
+) -> Type[_Graph]:
     """
     Simple model allows to limit node and/or relationship types.
     Doesn't have any node or relationship properties.
@@ -111,13 +118,23 @@ def create_simple_model(
     class SimpleRelationship(BaseModel):
         """Represents a directed relationship between two nodes in a graph."""
 
-        source: SimpleNode = Field(description="The source node of the relationship.")
-        target: SimpleNode = Field(description="The target node of the relationship.")
+        source_node_id: str = Field(
+            description="Name or human-readable unique identifier of source node"
+        )
+        source_node_type: str = optional_enum_field(
+            node_labels, description="The type or label of the source node."
+        )
+        target_node_id: str = Field(
+            description="Name or human-readable unique identifier of target node"
+        )
+        target_node_type: str = optional_enum_field(
+            node_labels, description="The type or label of the target node."
+        )
         type: str = optional_enum_field(
             rel_types, description="The type of the relationship.", is_rel=True
         )
 
-    class DynamicGraph(BaseModel):
+    class DynamicGraph(_Graph):
         """Represents a graph document consisting of nodes and relationships."""
 
         nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")
@@ -130,37 +147,156 @@ def create_simple_model(
 
 def map_to_base_node(node: Any) -> Node:
     """Map the SimpleNode to the base Node."""
-    return Node(id=node.id.title(), type=node.type.capitalize())
+    return Node(id=node.id, type=node.type)
 
 
 def map_to_base_relationship(rel: Any) -> Relationship:
     """Map the SimpleRelationship to the base Relationship."""
-    source = map_to_base_node(rel.source)
-    target = map_to_base_node(rel.target)
-    return Relationship(
-        source=source, target=target, type=rel.type.replace(" ", "_").upper()
-    )
+    source = Node(id=rel.source_node_id, type=rel.source_node_type)
+    target = Node(id=rel.target_node_id, type=rel.target_node_type)
+    return Relationship(source=source, target=target, type=rel.type)
+
+
+def _parse_and_clean_json(
+    argument_json: Dict[str, Any],
+) -> Tuple[List[Node], List[Relationship]]:
+    nodes = []
+    for node in argument_json["nodes"]:
+        if not node.get("id"):  # Id is mandatory, skip this node
+            continue
+        nodes.append(
+            Node(
+                id=node["id"],
+                type=node.get("type"),
+            )
+        )
+    relationships = []
+    for rel in argument_json["relationships"]:
+        # Mandatory props
+        if (
+            not rel.get("source_node_id")
+            or not rel.get("target_node_id")
+            or not rel.get("type")
+        ):
+            continue
+
+        # Node type copying if needed from node list
+        if not rel.get("source_node_type"):
+            try:
+                rel["source_node_type"] = [
+                    el.get("type")
+                    for el in argument_json["nodes"]
+                    if el["id"] == rel["source_node_id"]
+                ][0]
+            except IndexError:
+                rel["source_node_type"] = None
+        if not rel.get("target_node_type"):
+            try:
+                rel["target_node_type"] = [
+                    el.get("type")
+                    for el in argument_json["nodes"]
+                    if el["id"] == rel["target_node_id"]
+                ][0]
+            except IndexError:
+                rel["target_node_type"] = None
+
+        source_node = Node(
+            id=rel["source_node_id"],
+            type=rel["source_node_type"],
+        )
+        target_node = Node(
+            id=rel["target_node_id"],
+            type=rel["target_node_type"],
+        )
+        relationships.append(
+            Relationship(
+                source=source_node,
+                target=target_node,
+                type=rel["type"],
+            )
+        )
+    return nodes, relationships
+
+
+def _format_nodes(nodes: List[Node]) -> List[Node]:
+    return [
+        Node(
+            id=el.id.title() if isinstance(el.id, str) else el.id,
+            type=el.type.capitalize(),
+        )
+        for el in nodes
+    ]
+
+
+def _format_relationships(rels: List[Relationship]) -> List[Relationship]:
+    return [
+        Relationship(
+            source=_format_nodes([el.source])[0],
+            target=_format_nodes([el.target])[0],
+            type=el.type.replace(" ", "_").upper(),
+        )
+        for el in rels
+    ]
+
+
+def _convert_to_graph_document(
+    raw_schema: Dict[Any, Any],
+) -> Tuple[List[Node], List[Relationship]]:
+    # If there are validation errors
+    if not raw_schema["parsed"]:
+        try:
+            try:  # OpenAI type response
+                argument_json = json.loads(
+                    raw_schema["raw"].additional_kwargs["tool_calls"][0]["function"][
+                        "arguments"
+                    ]
+                )
+            except Exception:  # Google type response
+                argument_json = json.loads(
+                    raw_schema["raw"].additional_kwargs["function_call"]["arguments"]
+                )
+
+            nodes, relationships = _parse_and_clean_json(argument_json)
+        except Exception:  # If we can't parse JSON
+            return ([], [])
+    else:  # If there are no validation errors use parsed pydantic object
+        parsed_schema: _Graph = raw_schema["parsed"]
+        nodes = (
+            [map_to_base_node(node) for node in parsed_schema.nodes]
+            if parsed_schema.nodes
+            else []
+        )
+
+        relationships = (
+            [map_to_base_relationship(rel) for rel in parsed_schema.relationships]
+            if parsed_schema.relationships
+            else []
+        )
+    # Title / Capitalize
+    return _format_nodes(nodes), _format_relationships(relationships)
 
 
 class LLMGraphTransformer:
-    """
-    A class designed to transform documents into graph-based documents using a LLM.
+    """Transform documents into graph-based documents using a LLM.
+
     It allows specifying constraints on the types of nodes and relationships to include
     in the output graph. The class doesn't support neither extract and node or
     relationship properties
 
     Args:
         llm (BaseLanguageModel): An instance of a language model supporting structured
-        output. allowed_nodes (List[str], optional): Specifies which node types are
-        allowed in the graph. Defaults to an empty list, allowing all node types.
+          output.
+        allowed_nodes (List[str], optional): Specifies which node types are
+          allowed in the graph. Defaults to an empty list, allowing all node types.
         allowed_relationships (List[str], optional): Specifies which relationship types
-        are allowed in the graph. Defaults to an empty list, allowing all relationship
-        types.
-        prompt (Optional[ChatPromptTemplate], optional): The prompt to pass to the to
-        the LLM with additional instructions.
+          are allowed in the graph. Defaults to an empty list, allowing all relationship
+          types.
+        prompt (Optional[ChatPromptTemplate], optional): The prompt to pass to
+          the LLM with additional instructions.
         strict_mode (bool, optional): Determines whether the transformer should apply
-        filtering to strictly adhere to `allowed_nodes` and `allowed_relationships`.
-        Defaults to True.
+          filtering to strictly adhere to `allowed_nodes` and `allowed_relationships`.
+          Defaults to True.
+
     Example:
         .. code-block:: python
             from langchain_experimental.graph_transformers import LLMGraphTransformer
@@ -181,7 +317,7 @@ class LLMGraphTransformer:
         llm: BaseLanguageModel,
         allowed_nodes: List[str] = [],
         allowed_relationships: List[str] = [],
-        prompt: Optional[ChatPromptTemplate] = default_prompt,
+        prompt: ChatPromptTemplate = default_prompt,
         strict_mode: bool = True,
     ) -> None:
         if not hasattr(llm, "with_structured_output"):
@@ -195,7 +331,7 @@ class LLMGraphTransformer:
 
         # Define chain
         schema = create_simple_model(allowed_nodes, allowed_relationships)
-        structured_llm = llm.with_structured_output(schema)
+        structured_llm = llm.with_structured_output(schema, include_raw=True)
         self.chain = prompt | structured_llm
 
     def process_response(self, document: Document) -> GraphDocument:
@@ -205,47 +341,31 @@ class LLMGraphTransformer:
         """
         text = document.page_content
         raw_schema = self.chain.invoke({"input": text})
-        if raw_schema.nodes:
-            nodes = [map_to_base_node(node) for node in raw_schema.nodes]
-        else:
-            nodes = []
-        if raw_schema.relationships:
-            relationships = [
-                map_to_base_relationship(rel) for rel in raw_schema.relationships
-            ]
-        else:
-            relationships = []
+        raw_schema = cast(Dict[Any, Any], raw_schema)
+        nodes, relationships = _convert_to_graph_document(raw_schema)
 
         # Strict mode filtering
         if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
-            if self.allowed_relationships and self.allowed_nodes:
-                nodes = [node for node in nodes if node.type in self.allowed_nodes]
-                relationships = [
-                    rel
-                    for rel in relationships
-                    if rel.type in self.allowed_relationships
-                    and rel.source.type in self.allowed_nodes
-                    and rel.target.type in self.allowed_nodes
+            if self.allowed_nodes:
+                lower_allowed_nodes = [el.lower() for el in self.allowed_nodes]
+                nodes = [
+                    node for node in nodes if node.type.lower() in lower_allowed_nodes
                 ]
-            elif self.allowed_nodes and not self.allowed_relationships:
-                nodes = [node for node in nodes if node.type in self.allowed_nodes]
                 relationships = [
                     rel
                     for rel in relationships
-                    if rel.source.type in self.allowed_nodes
-                    and rel.target.type in self.allowed_nodes
+                    if rel.source.type.lower() in lower_allowed_nodes
+                    and rel.target.type.lower() in lower_allowed_nodes
                 ]
-            if self.allowed_relationships and not self.allowed_nodes:
+            if self.allowed_relationships:
                 relationships = [
                     rel
                     for rel in relationships
-                    if rel.type in self.allowed_relationships
+                    if rel.type.lower()
+                    in [el.lower() for el in self.allowed_relationships]
                 ]
 
-        graph_document = GraphDocument(
-            nodes=nodes, relationships=relationships, source=document
-        )
-        return graph_document
+        return GraphDocument(nodes=nodes, relationships=relationships, source=document)
 
     def convert_to_graph_documents(
         self, documents: Sequence[Document]
@@ -259,8 +379,49 @@ class LLMGraphTransformer:
         Returns:
             Sequence[GraphDocument]: The transformed documents as graphs.
         """
-        results = []
-        for document in documents:
-            graph_document = self.process_response(document)
-            results.append(graph_document)
+        return [self.process_response(document) for document in documents]
+
+    async def aprocess_response(self, document: Document) -> GraphDocument:
+        """
+        Asynchronously processes a single document, transforming it into a
+        graph document.
+        """
+        text = document.page_content
+        raw_schema = await self.chain.ainvoke({"input": text})
+        raw_schema = cast(Dict[Any, Any], raw_schema)
+        nodes, relationships = _convert_to_graph_document(raw_schema)
+
+        if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
+            if self.allowed_nodes:
+                lower_allowed_nodes = [el.lower() for el in self.allowed_nodes]
+                nodes = [
+                    node for node in nodes if node.type.lower() in lower_allowed_nodes
+                ]
+                relationships = [
+                    rel
+                    for rel in relationships
+                    if rel.source.type.lower() in lower_allowed_nodes
+                    and rel.target.type.lower() in lower_allowed_nodes
+                ]
+            if self.allowed_relationships:
+                relationships = [
+                    rel
+                    for rel in relationships
+                    if rel.type.lower()
+                    in [el.lower() for el in self.allowed_relationships]
+                ]
+
+        return GraphDocument(nodes=nodes, relationships=relationships, source=document)
+
+    async def aconvert_to_graph_documents(
+        self, documents: Sequence[Document]
+    ) -> List[GraphDocument]:
+        """
+        Asynchronously convert a sequence of documents into graph documents.
+        """
+        tasks = [
+            asyncio.create_task(self.aprocess_response(document))
+            for document in documents
+        ]
+        results = await asyncio.gather(*tasks)
         return results

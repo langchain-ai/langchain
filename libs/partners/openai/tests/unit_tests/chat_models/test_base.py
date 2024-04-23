@@ -9,11 +9,17 @@ from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
     HumanMessage,
+    InvalidToolCall,
     SystemMessage,
+    ToolCall,
+    ToolMessage,
 )
 
 from langchain_openai import ChatOpenAI
-from langchain_openai.chat_models.base import _convert_dict_to_message
+from langchain_openai.chat_models.base import (
+    _convert_dict_to_message,
+    _convert_message_to_dict,
+)
 
 
 def test_openai_model_param() -> None:
@@ -43,6 +49,7 @@ def test__convert_dict_to_message_human() -> None:
     result = _convert_dict_to_message(message)
     expected_output = HumanMessage(content="foo")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_human_with_name() -> None:
@@ -50,6 +57,7 @@ def test__convert_dict_to_message_human_with_name() -> None:
     result = _convert_dict_to_message(message)
     expected_output = HumanMessage(content="foo", name="test")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_ai() -> None:
@@ -57,6 +65,7 @@ def test__convert_dict_to_message_ai() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(content="foo")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_ai_with_name() -> None:
@@ -64,6 +73,7 @@ def test__convert_dict_to_message_ai_with_name() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(content="foo", name="test")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_system() -> None:
@@ -71,6 +81,7 @@ def test__convert_dict_to_message_system() -> None:
     result = _convert_dict_to_message(message)
     expected_output = SystemMessage(content="foo")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
 
 
 def test__convert_dict_to_message_system_with_name() -> None:
@@ -78,6 +89,89 @@ def test__convert_dict_to_message_system_with_name() -> None:
     result = _convert_dict_to_message(message)
     expected_output = SystemMessage(content="foo", name="test")
     assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_tool() -> None:
+    message = {"role": "tool", "content": "foo", "tool_call_id": "bar"}
+    result = _convert_dict_to_message(message)
+    expected_output = ToolMessage(content="foo", tool_call_id="bar")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_tool_call() -> None:
+    raw_tool_call = {
+        "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
+        "function": {
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
+            "name": "GenerateUsername",
+        },
+        "type": "function",
+    }
+    message = {"role": "assistant", "content": None, "tool_calls": [raw_tool_call]}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        additional_kwargs={"tool_calls": [raw_tool_call]},
+        tool_calls=[
+            ToolCall(
+                name="GenerateUsername",
+                args={"name": "Sally", "hair_color": "green"},
+                id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
+            )
+        ],
+    )
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+    # Test malformed tool call
+    raw_tool_calls: list = [
+        {
+            "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
+            "function": {
+                "arguments": "oops",
+                "name": "GenerateUsername",
+            },
+            "type": "function",
+        },
+        {
+            "id": "call_abc123",
+            "function": {
+                "arguments": '{"name": "Sally", "hair_color": "green"}',
+                "name": "GenerateUsername",
+            },
+            "type": "function",
+        },
+    ]
+    raw_tool_calls = list(sorted(raw_tool_calls, key=lambda x: x["id"]))
+    message = {"role": "assistant", "content": None, "tool_calls": raw_tool_calls}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        additional_kwargs={"tool_calls": raw_tool_calls},
+        invalid_tool_calls=[
+            InvalidToolCall(
+                name="GenerateUsername",
+                args="oops",
+                id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
+                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
+            ),
+        ],
+        tool_calls=[
+            ToolCall(
+                name="GenerateUsername",
+                args={"name": "Sally", "hair_color": "green"},
+                id="call_abc123",
+            ),
+        ],
+    )
+    assert result == expected_output
+    reverted_message_dict = _convert_message_to_dict(expected_output)
+    reverted_message_dict["tool_calls"] = list(
+        sorted(reverted_message_dict["tool_calls"], key=lambda x: x["id"])
+    )
+    assert reverted_message_dict == message
 
 
 @pytest.fixture

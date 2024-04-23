@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "intel-rag-xeon"
+version = "0.0.1"
+description = "Run a RAG app on Intel Xeon Scalable Processors"
+authors = [
+    "Liang Lv <liang1.lv@intel.com>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+langchain = "^0.1"
+fastapi = "^0.104.0"
+sse-starlette = "^1.6.5"
+sentence-transformers = "2.2.2"
+tiktoken = ">=0.5.1"
+chromadb = ">=0.4.14"
+beautifulsoup4 = ">=4.12.2"
+
+[tool.poetry.dependencies.unstructured]
+version = "^0.10.27"
+extras = [
+    "pdf",
+]
+
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.24.1"
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "intel_rag_xeon.chain"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Intel"
+integrations = ["Intel", "HuggingFace"]
+tags = ["vectordbs"]
+
+[tool.poe.tasks.start]
+cmd = "uvicorn langchain_cli.dev_scripts:create_demo_server --reload --port $port --host $host"
+args = [
+    { name = "port", help = "port to run on", default = "8000" },
+    { name = "host", help = "host to run on", default = "127.0.0.1" },
+]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

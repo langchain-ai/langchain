@@ -69,7 +69,6 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_context,
     accepts_run_manager,
-    adapt_first_streaming_chunk,
     create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -438,12 +437,86 @@ class Runnable(Generic[Input, Output], ABC):
         *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
         name: Optional[str] = None,
     ) -> RunnableSerializable[Input, Other]:
-        """Compose this runnable with another object to create a RunnableSequence."""
+        """Compose this Runnable with Runnable-like objects to make a RunnableSequence.
+
+        Equivalent to `RunnableSequence(self, *others)` or `self | others[0] | ...`
+
+        Example:
+            .. code-block:: python
+
+                from langchain_core.runnables import RunnableLambda
+
+                def add_one(x: int) -> int:
+                    return x + 1
+
+                def mul_two(x: int) -> int:
+                    return x * 2
+
+                runnable_1 = RunnableLambda(add_one)
+                runnable_2 = RunnableLambda(mul_two)
+                sequence = runnable_1.pipe(runnable_2)
+                # Or equivalently:
+                # sequence = runnable_1 | runnable_2
+                # sequence = RunnableSequence(first=runnable_1, last=runnable_2)
+                sequence.invoke(1)
+                await sequence.ainvoke(1)
+                # -> 4
+
+                sequence.batch([1, 2, 3])
+                await sequence.abatch([1, 2, 3])
+                # -> [4, 6, 8]
+        """
         return RunnableSequence(self, *others, name=name)
 
     def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the dict output of this runnable.
-        Returns a new runnable."""
+
+        Pick single key:
+            .. code-block:: python
+
+                import json
+
+                from langchain_core.runnables import RunnableLambda, RunnableMap
+
+                as_str = RunnableLambda(str)
+                as_json = RunnableLambda(json.loads)
+                chain = RunnableMap(str=as_str, json=as_json)
+
+                chain.invoke("[1, 2, 3]")
+                # -> {"str": "[1, 2, 3]", "json": [1, 2, 3]}
+
+                json_only_chain = chain.pick("json")
+                json_only_chain.invoke("[1, 2, 3]")
+                # -> [1, 2, 3]
+
+        Pick list of keys:
+            .. code-block:: python
+
+                from typing import Any
+
+                import json
+
+                from langchain_core.runnables import RunnableLambda, RunnableMap
+
+                as_str = RunnableLambda(str)
+                as_json = RunnableLambda(json.loads)
+                def as_bytes(x: Any) -> bytes:
+                    return bytes(x, "utf-8")
+
+                chain = RunnableMap(
+                    str=as_str,
+                    json=as_json,
+                    bytes=RunnableLambda(as_bytes)
+                )
+
+                chain.invoke("[1, 2, 3]")
+                # -> {"str": "[1, 2, 3]", "json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+
+                json_and_bytes_chain = chain.pick(["json", "bytes"])
+                json_and_bytes_chain.invoke("[1, 2, 3]")
+                # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
+
+        """  # noqa: E501
         from langchain_core.runnables.passthrough import RunnablePick
 
         return self | RunnablePick(keys)
@@ -1206,21 +1279,22 @@ class Runnable(Generic[Input, Output], ABC):
         final: Input
         got_first_val = False
 
-        for chunk in input:
+        for ichunk in input:
+            # The default implementation of transform is to buffer input and
+            # then call stream.
+            # It'll attempt to gather all input into a single chunk using
+            # the `+` operator.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk,
+            # and we'll iterate until we get to the last chunk.
             if not got_first_val:
-                final = adapt_first_streaming_chunk(chunk)  # type: ignore
+                final = ichunk
                 got_first_val = True
             else:
-                # Make a best effort to gather, for any type that supports `+`
-                # This method should throw an error if gathering fails.
                 try:
-                    final = final + chunk  # type: ignore[operator]
+                    final = final + ichunk  # type: ignore[operator]
                 except TypeError:
-                    raise TypeError(
-                        f"Failed while trying to add together "
-                        f"type {type(final)} and {type(chunk)}."
-                        f"These types should be addable for transform to work."
-                    )
+                    final = ichunk
 
         if got_first_val:
             yield from self.stream(final, config, **kwargs)
@@ -1239,21 +1313,22 @@ class Runnable(Generic[Input, Output], ABC):
         final: Input
         got_first_val = False
 
-        async for chunk in input:
+        async for ichunk in input:
+            # The default implementation of transform is to buffer input and
+            # then call stream.
+            # It'll attempt to gather all input into a single chunk using
+            # the `+` operator.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk,
+            # and we'll iterate until we get to the last chunk.
             if not got_first_val:
-                final = adapt_first_streaming_chunk(chunk)  # type: ignore
+                final = ichunk
                 got_first_val = True
             else:
-                # Make a best effort to gather, for any type that supports `+`
-                # This method should throw an error if gathering fails.
                 try:
-                    final = final + chunk  # type: ignore[operator]
+                    final = final + ichunk  # type: ignore[operator]
                 except TypeError:
-                    raise TypeError(
-                        f"Failed while trying to add together "
-                        f"type {type(final)} and {type(chunk)}."
-                        f"These types should be addable for atransform to work."
-                    )
+                    final = ichunk
 
         if got_first_val:
             async for output in self.astream(final, config, **kwargs):
@@ -1262,6 +1337,37 @@ class Runnable(Generic[Input, Output], ABC):
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
         """
         Bind arguments to a Runnable, returning a new Runnable.
+
+        Useful when a runnable in a chain requires an argument that is not
+        in the output of the previous runnable or included in the user input.
+
+        Example:
+
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatOllama
+            from langchain_core.output_parsers import StrOutputParser
+
+            llm = ChatOllama(model='llama2')
+
+            # Without bind.
+            chain = (
+                llm
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two three four five.'
+
+            # With bind.
+            chain = (
+                llm.bind(stop=["three"])
+                | StrOutputParser()
+            )
+
+            chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
+            # Output is 'One two'
+
         """
         return RunnableBinding(bound=self, kwargs=kwargs, config={})
 
@@ -1300,6 +1406,26 @@ class Runnable(Generic[Input, Output], ABC):
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
         added to the run.
+
+        Example:
+
+        .. code-block:: python
+            from langchain_core.runnables import RunnableLambda
+            import time
+
+            def test_runnable(time_to_sleep : int):
+                time.sleep(time_to_sleep)
+
+            def fn_start(run_obj : Runnable):
+                print("start_time:", run_obj.start_time)
+
+            def fn_end(run_obj : Runnable):
+                print("end_time:", run_obj.end_time)
+
+            RunnableLambda(test_runnable).with_listeners(
+                on_start=fn_start,
+                on_end=fn_end
+                ).invoke(2)
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
@@ -1397,6 +1523,18 @@ class Runnable(Generic[Input, Output], ABC):
         """
         Return a new Runnable that maps a list of inputs to a list of outputs,
         by calling invoke() with each input.
+
+        Example:
+
+            .. code-block:: python
+
+                    from langchain_core.runnables import RunnableLambda
+
+                    def _lambda(x: int) -> int:
+                        return x + 1
+
+                    runnable = RunnableLambda(_lambda)
+                    print(runnable.map().invoke([1, 2, 3])) # [2, 3, 4]
         """
         return RunnableEach(bound=self)
 
@@ -1897,6 +2035,33 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
+        """Configure particular runnable fields at runtime.
+
+        .. code-block:: python
+
+            from langchain_core.runnables import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(max_tokens=20).configurable_fields(
+                max_tokens=ConfigurableField(
+                    id="output_token_number",
+                    name="Max tokens in the output",
+                    description="The maximum number of tokens in the output",
+                )
+            )
+
+            # max_tokens = 20
+            print(
+                "max_tokens_20: ",
+                model.invoke("tell me something about chess").content
+            )
+
+            # max_tokens = 200
+            print("max_tokens_200: ", model.with_config(
+                configurable={"output_token_number": 200}
+                ).invoke("tell me something about chess").content
+            )
+        """
         from langchain_core.runnables.configurable import RunnableConfigurableFields
 
         for key in kwargs:
@@ -1916,6 +2081,32 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         prefix_keys: bool = False,
         **kwargs: Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ) -> RunnableSerializable[Input, Output]:
+        """Configure alternatives for runnables that can be set at runtime.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.runnables.utils import ConfigurableField
+            from langchain_openai import ChatOpenAI
+
+            model = ChatAnthropic(
+                model_name="claude-3-sonnet-20240229"
+            ).configurable_alternatives(
+                ConfigurableField(id="llm"),
+                default_key="anthropic",
+                openai=ChatOpenAI()
+            )
+
+            # uses the default model ChatAnthropic
+            print(model.invoke("which organization created you?").content)
+
+            # uses ChatOpenaAI
+            print(
+                model.with_config(
+                    configurable={"llm": "openai"}
+                ).invoke("which organization created you?").content
+            )
+        """
         from langchain_core.runnables.configurable import (
             RunnableConfigurableAlternatives,
         )
@@ -1946,7 +2137,7 @@ def _seq_input_schema(
                 **{
                     k: (v.annotation, v.default)
                     for k, v in next_input_schema.__fields__.items()
-                    if k not in first.mapper.steps
+                    if k not in first.mapper.steps__
                 },
             )
     elif isinstance(first, RunnablePick):
@@ -2791,11 +2982,11 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                 print(output)  # noqa: T201
     """
 
-    steps: Mapping[str, Runnable[Input, Any]]
+    steps__: Mapping[str, Runnable[Input, Any]]
 
     def __init__(
         self,
-        __steps: Optional[
+        steps__: Optional[
             Mapping[
                 str,
                 Union[
@@ -2811,10 +3002,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
         ],
     ) -> None:
-        merged = {**__steps} if __steps is not None else {}
+        merged = {**steps__} if steps__ is not None else {}
         merged.update(kwargs)
         super().__init__(  # type: ignore[call-arg]
-            steps={key: coerce_to_runnable(r) for key, r in merged.items()}
+            steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
         )
 
     @classmethod
@@ -2832,12 +3023,12 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
-        name = name or self.name or f"RunnableParallel<{','.join(self.steps.keys())}>"
+        name = name or self.name or f"RunnableParallel<{','.join(self.steps__.keys())}>"
         return super().get_name(suffix, name=name)
 
     @property
     def InputType(self) -> Any:
-        for step in self.steps.values():
+        for step in self.steps__.values():
             if step.InputType:
                 return step.InputType
 
@@ -2848,14 +3039,14 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     ) -> Type[BaseModel]:
         if all(
             s.get_input_schema(config).schema().get("type", "object") == "object"
-            for s in self.steps.values()
+            for s in self.steps__.values()
         ):
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model(  # type: ignore[call-overload]
                 self.get_name("Input"),
                 **{
                     k: (v.annotation, v.default)
-                    for step in self.steps.values()
+                    for step in self.steps__.values()
                     for k, v in step.get_input_schema(config).__fields__.items()
                     if k != "__root__"
                 },
@@ -2869,13 +3060,13 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(  # type: ignore[call-overload]
             self.get_name("Output"),
-            **{k: (v.OutputType, None) for k, v in self.steps.items()},
+            **{k: (v.OutputType, None) for k, v in self.steps__.items()},
         )
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return get_unique_config_specs(
-            spec for step in self.steps.values() for spec in step.config_specs
+            spec for step in self.steps__.values() for spec in step.config_specs
         )
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
@@ -2884,7 +3075,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         graph = Graph()
         input_node = graph.add_node(self.get_input_schema(config))
         output_node = graph.add_node(self.get_output_schema(config))
-        for step in self.steps.values():
+        for step in self.steps__.values():
             step_graph = step.get_graph()
             step_graph.trim_first_node()
             step_graph.trim_last_node()
@@ -2906,7 +3097,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     def __repr__(self) -> str:
         map_for_repr = ",\n  ".join(
             f"{k}: {indent_lines_after_first(repr(v), '  ' + k + ': ')}"
-            for k, v in self.steps.items()
+            for k, v in self.steps__.items()
         )
         return "{\n  " + map_for_repr + "\n}"
 
@@ -2937,7 +3128,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = dict(self.steps)
+            steps = dict(self.steps__)
             with get_executor_for_config(config) as executor:
                 futures = [
                     executor.submit(
@@ -2980,7 +3171,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         # gather results from all steps
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
-            steps = dict(self.steps)
+            steps = dict(self.steps__)
             results = await asyncio.gather(
                 *(
                     step.ainvoke(
@@ -3009,7 +3200,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         config: RunnableConfig,
     ) -> Iterator[AddableDict]:
         # Shallow copy steps to ignore mutations while in progress
-        steps = dict(self.steps)
+        steps = dict(self.steps__)
         # Each step gets a copy of the input iterator,
         # which is consumed in parallel in a separate thread.
         input_copies = list(safetee(input, len(steps), lock=threading.Lock()))
@@ -3074,7 +3265,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
         config: RunnableConfig,
     ) -> AsyncIterator[AddableDict]:
         # Shallow copy steps to ignore mutations while in progress
-        steps = dict(self.steps)
+        steps = dict(self.steps__)
         # Each step gets a copy of the input iterator,
         # which is consumed in parallel in a separate thread.
         input_copies = list(atee(input, len(steps), lock=asyncio.Lock()))
@@ -3562,7 +3753,13 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             objects = []
 
-        return [obj for obj in objects if isinstance(obj, Runnable)]
+        deps: List[Runnable] = []
+        for obj in objects:
+            if isinstance(obj, Runnable):
+                deps.append(obj)
+            elif isinstance(getattr(obj, "__self__", None), Runnable):
+                deps.append(obj.__self__)
+        return deps
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -3802,10 +3999,16 @@ class RunnableLambda(Runnable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Iterator[Output]:
-        final: Optional[Input] = None
+        final: Input
+        got_first_val = False
         for ichunk in input:
-            if final is None:
-                final = adapt_first_streaming_chunk(ichunk)  # type: ignore
+            # By definitions, RunnableLambdas consume all input before emitting output.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk.
+            # So we'll iterate until we get to the last chunk!
+            if not got_first_val:
+                final = ichunk
+                got_first_val = True
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -3886,10 +4089,16 @@ class RunnableLambda(Runnable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
-        final: Optional[Input] = None
+        final: Input
+        got_first_val = False
         async for ichunk in input:
-            if final is None:
-                final = adapt_first_streaming_chunk(ichunk)
+            # By definitions, RunnableLambdas consume all input before emitting output.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk.
+            # So we'll iterate until we get to the last chunk!
+            if not got_first_val:
+                final = ichunk
+                got_first_val = True
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -4701,6 +4910,45 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             kwargs=self.kwargs,
             config=self.config,
         )
+
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self.bound, name)
+
+        if callable(attr) and (
+            config_param := inspect.signature(attr).parameters.get("config")
+        ):
+            if config_param.kind == inspect.Parameter.KEYWORD_ONLY:
+
+                @wraps(attr)
+                def wrapper(*args: Any, **kwargs: Any) -> Any:
+                    return attr(
+                        *args,
+                        config=merge_configs(self.config, kwargs.pop("config", None)),
+                        **kwargs,
+                    )
+
+                return wrapper
+            elif config_param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                idx = list(inspect.signature(attr).parameters).index("config")
+
+                @wraps(attr)
+                def wrapper(*args: Any, **kwargs: Any) -> Any:
+                    if len(args) >= idx + 1:
+                        argsl = list(args)
+                        argsl[idx] = merge_configs(self.config, argsl[idx])
+                        return attr(*argsl, **kwargs)
+                    else:
+                        return attr(
+                            *args,
+                            config=merge_configs(
+                                self.config, kwargs.pop("config", None)
+                            ),
+                            **kwargs,
+                        )
+
+                return wrapper
+
+        return attr
 
 
 RunnableLike = Union[

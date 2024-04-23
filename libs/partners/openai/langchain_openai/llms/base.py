@@ -371,6 +371,13 @@ class BaseOpenAI(BaseLLM):
                     # dict. For the transition period, we deep convert it to dict.
                     response = response.model_dump()
 
+                # Sometimes the AI Model calling will get error, we should raise it.
+                # Otherwise, the next code 'choices.extend(response["choices"])'
+                # will throw a "TypeError: 'NoneType' object is not iterable" error
+                # to mask the true error. Because 'response["choices"]' is None.
+                if response.get("error"):
+                    raise ValueError(response.get("error"))
+
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
                 if not system_fingerprint:
@@ -514,6 +521,8 @@ class BaseOpenAI(BaseLLM):
 
     def get_token_ids(self, text: str) -> List[int]:
         """Get the token IDs using the tiktoken package."""
+        if self.custom_get_token_ids is not None:
+            return self.custom_get_token_ids(text)
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
             return super().get_num_tokens(text)

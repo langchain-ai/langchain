@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import List
 
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.exceptions import OutputParserException
 

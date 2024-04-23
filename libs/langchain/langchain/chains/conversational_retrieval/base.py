@@ -314,8 +314,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         run_manager: CallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        docs = self.retriever.get_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        docs = self.retriever.invoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
         return self._reduce_tokens_below_limit(docs)
 
@@ -327,8 +327,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        docs = await self.retriever.aget_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        docs = await self.retriever.ainvoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
         return self._reduce_tokens_below_limit(docs)
 
