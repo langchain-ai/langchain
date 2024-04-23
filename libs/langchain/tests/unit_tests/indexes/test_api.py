@@ -6,9 +6,9 @@ def test_all() -> None:
     assert __all__ == sorted(__all__, key=str.lower)
     assert __all__ == [
         "aindex",
-        "GraphIndexCreator",
         "index",
         "IndexingResult",
+        "GraphIndexCreator",
         "SQLRecordManager",
         "VectorstoreIndexCreator",
     ]
