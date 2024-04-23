@@ -16,6 +16,7 @@ from langchain_core.language_models import (
     BaseLanguageModel,
     LanguageModelInput,
 )
+from langchain_core.legacy.chains.base import Chain
 from langchain_core.load.dump import dumpd
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
@@ -31,8 +32,6 @@ from langchain_core.runnables import (
 )
 from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
-
-from langchain_core.legacy.chains.base import Chain
 
 
 @deprecated(

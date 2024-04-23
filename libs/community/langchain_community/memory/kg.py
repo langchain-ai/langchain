@@ -7,17 +7,16 @@ from langchain_community.graphs.networkx_graph import (
     parse_triples,
 )
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
-from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Field
-
-from langchain.chains.llm import LLMChain
-from langchain.memory.chat_memory import BaseChatMemory
-from langchain.memory.prompt import (
+from langchain_core.legacy.chains.llm import LLMChain
+from langchain_core.legacy.memory.chat_memory import BaseChatMemory
+from langchain_core.legacy.memory.prompt import (
     ENTITY_EXTRACTION_PROMPT,
     KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
 )
-from langchain.memory.utils import get_prompt_input_key
+from langchain_core.legacy.memory.utils import get_prompt_input_key
+from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import Field
 
 
 class ConversationKGMemory(BaseChatMemory):

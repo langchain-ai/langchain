@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from langchain_community.chat_message_histories import ZepChatMessageHistory
-
-from langchain.memory import ConversationBufferMemory
+from langchain_core.legacy.memory import ConversationBufferMemory
 
 
 class ZepMemory(ConversationBufferMemory):
