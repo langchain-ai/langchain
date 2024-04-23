@@ -98,7 +98,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             except IOError:  # huggingface_hub GatedRepoError
                 warnings.warn(
                     "Could not download mistral tokenizer from Huggingface for "
-                    "calculating batch sizes. Set a Huggingface token via the"
+                    "calculating batch sizes. Set a Huggingface token via the "
                     "HF_TOKEN environment variable to download the real tokenizer. "
                     "Falling back to a dummy tokenizer that uses `len()`."
                 )
