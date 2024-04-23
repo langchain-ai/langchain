@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 _BASE_URL = "https://api.python.langchain.com/en/latest/"
 
 # Regular expression to match Python code blocks
-code_block_re = re.compile(r"^(```python\n)(.*?)(```\n)", re.DOTALL | re.MULTILINE)
+code_block_re = re.compile(r"^(```\s?python\n)(.*?)(```)", re.DOTALL | re.MULTILINE)
 # Regular expression to match langchain import lines
 _IMPORT_RE = re.compile(
     r"from\s+(langchain(?:_\w+)?(?:\.\w+)*?)\s+import\s+"
