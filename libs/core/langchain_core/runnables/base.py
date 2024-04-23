@@ -69,7 +69,6 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_context,
     accepts_run_manager,
-    adapt_first_streaming_chunk,
     create_model,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -1280,21 +1279,22 @@ class Runnable(Generic[Input, Output], ABC):
         final: Input
         got_first_val = False
 
-        for chunk in input:
+        for ichunk in input:
+            # The default implementation of transform is to buffer input and
+            # then call stream.
+            # It'll attempt to gather all input into a single chunk using
+            # the `+` operator.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk,
+            # and we'll iterate until we get to the last chunk.
             if not got_first_val:
-                final = adapt_first_streaming_chunk(chunk)  # type: ignore
+                final = ichunk
                 got_first_val = True
             else:
-                # Make a best effort to gather, for any type that supports `+`
-                # This method should throw an error if gathering fails.
                 try:
-                    final = final + chunk  # type: ignore[operator]
+                    final = final + ichunk  # type: ignore[operator]
                 except TypeError:
-                    raise TypeError(
-                        f"Failed while trying to add together "
-                        f"type {type(final)} and {type(chunk)}."
-                        f"These types should be addable for transform to work."
-                    )
+                    final = ichunk
 
         if got_first_val:
             yield from self.stream(final, config, **kwargs)
@@ -1313,21 +1313,22 @@ class Runnable(Generic[Input, Output], ABC):
         final: Input
         got_first_val = False
 
-        async for chunk in input:
+        async for ichunk in input:
+            # The default implementation of transform is to buffer input and
+            # then call stream.
+            # It'll attempt to gather all input into a single chunk using
+            # the `+` operator.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk,
+            # and we'll iterate until we get to the last chunk.
             if not got_first_val:
-                final = adapt_first_streaming_chunk(chunk)  # type: ignore
+                final = ichunk
                 got_first_val = True
             else:
-                # Make a best effort to gather, for any type that supports `+`
-                # This method should throw an error if gathering fails.
                 try:
-                    final = final + chunk  # type: ignore[operator]
+                    final = final + ichunk  # type: ignore[operator]
                 except TypeError:
-                    raise TypeError(
-                        f"Failed while trying to add together "
-                        f"type {type(final)} and {type(chunk)}."
-                        f"These types should be addable for atransform to work."
-                    )
+                    final = ichunk
 
         if got_first_val:
             async for output in self.astream(final, config, **kwargs):
@@ -3998,10 +3999,16 @@ class RunnableLambda(Runnable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Iterator[Output]:
-        final: Optional[Input] = None
+        final: Input
+        got_first_val = False
         for ichunk in input:
-            if final is None:
-                final = adapt_first_streaming_chunk(ichunk)  # type: ignore
+            # By definitions, RunnableLambdas consume all input before emitting output.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk.
+            # So we'll iterate until we get to the last chunk!
+            if not got_first_val:
+                final = ichunk
+                got_first_val = True
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
@@ -4082,10 +4089,16 @@ class RunnableLambda(Runnable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
-        final: Optional[Input] = None
+        final: Input
+        got_first_val = False
         async for ichunk in input:
-            if final is None:
-                final = adapt_first_streaming_chunk(ichunk)
+            # By definitions, RunnableLambdas consume all input before emitting output.
+            # If the input is not addable, then we'll assume that we can
+            # only operate on the last chunk.
+            # So we'll iterate until we get to the last chunk!
+            if not got_first_val:
+                final = ichunk
+                got_first_val = True
             else:
                 try:
                     final = final + ichunk  # type: ignore[operator]
