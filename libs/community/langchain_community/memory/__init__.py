@@ -1,7 +1,7 @@
 from langchain_community.memory.entity import (
     RedisEntityStore,
-    UpstashRedisEntityStore,
     SQLiteEntityStore,
+    UpstashRedisEntityStore,
 )
 from langchain_community.memory.kg import ConversationKGMemory
 from langchain_community.memory.motorhead_memory import MotorheadMemory

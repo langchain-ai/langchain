@@ -2,8 +2,9 @@ import logging
 from itertools import islice
 from typing import Any, Iterable, Optional
 
-from langchain_community.utilities.redis import get_client
 from langchain_core.legacy.memory.entity import BaseEntityStore
+
+from langchain_community.utilities.redis import get_client
 
 logger = logging.getLogger(__name__)
 
@@ -265,5 +266,3 @@ class SQLiteEntityStore(BaseEntityStore):
         """
         with self.conn:
             self.conn.execute(query)
-
-
