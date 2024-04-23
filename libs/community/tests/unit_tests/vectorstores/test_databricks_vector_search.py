@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Set
 from unittest.mock import MagicMock, patch
 
 import pytest
+from langchain_core.documents import DocumentSearchHit
 
 from langchain_community.vectorstores import DatabricksVectorSearch
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -598,6 +599,12 @@ def test_similarity_score_threshold(index_details: dict, threshold: float) -> No
         assert len(search_result) == len(fake_texts)
     else:
         assert len(search_result) == 0
+    result_with_scores: List[DocumentSearchHit] = retriever.invoke(
+        query, include_score=True
+    )
+    for idx, result in enumerate(result_with_scores):
+        assert result.score >= threshold
+        assert result.page_content == search_result[idx].page_content
 
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
