@@ -25,10 +25,6 @@ from langchain.evaluation.criteria.eval_chain import (
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.schema import RUN_KEY
 
-if TYPE_CHECKING:
-    from langchain_community.chat_models.azure_openai import AzureChatOpenAI
-    from langchain_community.chat_models.openai import ChatOpenAI
-
 logger = logging.getLogger(__name__)
 
 _FIND_DOUBLE_BRACKETS = re.compile(r"\[\[(.*?)\]\]")
@@ -256,10 +252,8 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
             ValueError: If the input variables are not as expected.
 
         """
-        if not (
-            isinstance(llm, (ChatOpenAI, AzureChatOpenAI))
-            and llm.model_name.startswith("gpt-4")
-        ):
+        # Check if the model is GPT-4 if not raise a warning
+        if not hasattr(llm, "model_name") or not llm.model_name.startswith("gpt-4"):
             logger.warning(
                 "This chain was only tested with GPT-4. \
 Performance may be significantly worse with other models."
