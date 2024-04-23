@@ -39,6 +39,22 @@ BASIC_EXAMPLE_LLM_PARAMETERS = {
         apply_to_punctuation=True,
         apply_to_emojis=True,
     ),
+}
+
+BASIC_EXAMPLE_CHAT_PARAMETERS = {
+    "num_results": 3,
+    "max_tokens": 20,
+    "min_tokens": 10,
+    "temperature": 0.5,
+    "top_p": 0.5,
+    "top_k_return": 0,
+    "frequency_penalty": Penalty(scale=0.2, apply_to_numbers=True),
+    "presence_penalty": Penalty(scale=0.2, apply_to_stopwords=True),
+    "count_penalty": Penalty(
+        scale=0.2,
+        apply_to_punctuation=True,
+        apply_to_emojis=True,
+    ),
     "n": 3,
 }
 
@@ -70,6 +86,22 @@ SEGMENTS = [
 
 
 BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT = {
+    "num_results": 3,
+    "max_tokens": 20,
+    "min_tokens": 10,
+    "temperature": 0.5,
+    "top_p": 0.5,
+    "top_k_return": 0,
+    "frequency_penalty": Penalty(scale=0.2, apply_to_numbers=True).to_dict(),
+    "presence_penalty": Penalty(scale=0.2, apply_to_stopwords=True).to_dict(),
+    "count_penalty": Penalty(
+        scale=0.2,
+        apply_to_punctuation=True,
+        apply_to_emojis=True,
+    ).to_dict(),
+}
+
+BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT = {
     "num_results": 3,
     "max_tokens": 20,
     "min_tokens": 10,
