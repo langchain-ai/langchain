@@ -32,7 +32,7 @@ from langchain_core.runnables import (
 from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
 
-from langchain.chains.base import Chain
+from langchain_core.legacy.chains.base import Chain
 
 
 @deprecated(

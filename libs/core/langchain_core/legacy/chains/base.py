@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import yaml
+from langchain.schema import RUN_KEY
+
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -17,8 +19,8 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain_core.legacy.memory import BaseMemory
 from langchain_core.load.dump import dumpd
-from langchain_core.memory import BaseMemory
 from langchain_core.outputs import RunInfo
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator, validator
 from langchain_core.runnables import (
@@ -29,13 +31,11 @@ from langchain_core.runnables import (
 )
 from langchain_core.runnables.utils import create_model
 
-from langchain.schema import RUN_KEY
-
 logger = logging.getLogger(__name__)
 
 
 def _get_verbosity() -> bool:
-    from langchain.globals import get_verbose
+    from langchain_core.globals import get_verbose
 
     return get_verbose()
 
