@@ -10,8 +10,15 @@ from langchain_core.pydantic_v1 import Field
 from azure.core.credentials import AccessToken
 from langchain_core.runnables.config import run_in_executor
 from azure.identity import DefaultAzureCredential
+import importlib.metadata
 import requests
 
+
+try:
+    _package_version = importlib.metadata.version('langchain-azure')
+except importlib.metadata.PackageNotFoundError:
+    _package_version = "0.0.0"
+USER_AGENT = f"langchain-azure/{_package_version} (Language=Python)"
 
 def _access_token_provider_factory() -> Callable[[], Optional[str]]:
     """Factory function for creating an access token provider function.
@@ -69,8 +76,8 @@ class RemoteFileMetadata:
     def from_dict(data: dict) -> "RemoteFileMetadata":
         """Create a RemoteFileMetadata object from a dictionary."""
         return RemoteFileMetadata(
-            filename=data["filename"],
-            size_in_bytes=data["bytes"]
+            filename=data.get("filename"),
+            size_in_bytes=data.get("size"),
         )
 
 
@@ -114,6 +121,7 @@ class SessionsPythonREPLTool(BaseTool):
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
         }
         body = {
             "properties": {
@@ -161,6 +169,7 @@ class SessionsPythonREPLTool(BaseTool):
         api_url = self._build_url(f"python/uploadFile?identifier={self.session_id}")
         headers = {
             "Authorization": f"Bearer {access_token}",
+            "User-Agent": USER_AGENT,
         }
         payload = {}
         files=[
@@ -171,7 +180,7 @@ class SessionsPythonREPLTool(BaseTool):
         response.raise_for_status()
 
         response_json = response.json()
-        return RemoteFileMetadata.from_dict(response_json)
+        return RemoteFileMetadata.from_dict(response_json['$values'][0])
     
     def download_file(self, *, remote_file_path: str, local_file_path: str = None) -> Optional[BufferedReader]:
         """Download a file from the session pool.
@@ -187,6 +196,7 @@ class SessionsPythonREPLTool(BaseTool):
         api_url = self._build_url(f"python/downloadFile?identifier={self.session_id}&filename={remote_file_path}")
         headers = {
             "Authorization": f"Bearer {access_token}",
+            "User-Agent": USER_AGENT,
         }
 
         response = requests.get(api_url, headers=headers)
@@ -209,6 +219,7 @@ class SessionsPythonREPLTool(BaseTool):
         api_url = self._build_url(f"python/files?identifier={self.session_id}")
         headers = {
             "Authorization": f"Bearer {access_token}",
+            "User-Agent": USER_AGENT,
         }
 
         response = requests.get(api_url, headers=headers)
