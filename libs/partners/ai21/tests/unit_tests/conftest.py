@@ -39,6 +39,7 @@ BASIC_EXAMPLE_LLM_PARAMETERS = {
         apply_to_punctuation=True,
         apply_to_emojis=True,
     ),
+    "n": 3,
 }
 
 SEGMENTS = [
@@ -82,6 +83,7 @@ BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT = {
         apply_to_punctuation=True,
         apply_to_emojis=True,
     ).to_dict(),
+    "n": 3,
 }
 
 
