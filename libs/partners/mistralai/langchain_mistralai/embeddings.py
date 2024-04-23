@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from typing import Dict, Iterable, List, Optional
 
 import httpx
@@ -17,6 +18,13 @@ from tokenizers import Tokenizer  # type: ignore
 logger = logging.getLogger(__name__)
 
 MAX_TOKENS = 16_000
+
+
+class DummyTokenizer:
+    """Dummy tokenizer for when tokenizer cannot be accessed (e.g., via Huggingface)"""
+
+    def encode_batch(self, texts: List[str]) -> List[List[str]]:
+        return [list(text) for text in texts]
 
 
 class MistralAIEmbeddings(BaseModel, Embeddings):
@@ -83,9 +91,16 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             timeout=values["timeout"],
         )
         if values["tokenizer"] is None:
-            values["tokenizer"] = Tokenizer.from_pretrained(
-                "mistralai/Mixtral-8x7B-v0.1"
-            )
+            try:
+                values["tokenizer"] = Tokenizer.from_pretrained(
+                    "mistralai/Mixtral-8x7B-v0.1"
+                )
+            except IOError:  # huggingface_hub GatedRepoError
+                warnings.warn(
+                    "Using dummy tokenizer, set a Huggingface token via the "
+                    "HF_TOKEN environment variable to use a real tokenizer."
+                )
+                values["tokenizer"] = DummyTokenizer()
         return values
 
     def _get_batches(self, texts: List[str]) -> Iterable[List[str]]:
