@@ -697,6 +697,11 @@ class VectorStoreRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         include_score: bool = False,
     ) -> List[Document]:
+        if include_score and self.search_type != "similarity_score_threshold":
+            raise ValueError(
+                "include_score is only supported "
+                "for search_type=similarity_score_threshold"
+            )
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         elif self.search_type == "similarity_score_threshold":
@@ -726,6 +731,11 @@ class VectorStoreRetriever(BaseRetriever):
         run_manager: AsyncCallbackManagerForRetrieverRun,
         include_score: bool = False,
     ) -> List[Document]:
+        if include_score and self.search_type != "similarity_score_threshold":
+            raise ValueError(
+                "include_score is only supported "
+                "for search_type=similarity_score_threshold"
+            )
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(
                 query, **self.search_kwargs
