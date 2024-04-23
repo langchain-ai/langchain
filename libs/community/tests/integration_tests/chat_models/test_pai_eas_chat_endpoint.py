@@ -14,7 +14,7 @@ def test_pai_eas_call() -> None:
         eas_service_url=os.getenv("EAS_SERVICE_URL"),
         eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),
     )
-    response = chat(messages=[HumanMessage(content="Say foo:")])
+    response = chat.invoke([HumanMessage(content="Say foo:")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -26,8 +26,8 @@ def test_multiple_history() -> None:
         eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),
     )
 
-    response = chat(
-        messages=[
+    response = chat.invoke(
+        [
             HumanMessage(content="Hello."),
             AIMessage(content="Hello!"),
             HumanMessage(content="How are you doing?"),
@@ -46,8 +46,8 @@ def test_stream() -> None:
     )
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    response = chat(
-        messages=[
+    response = chat.invoke(
+        [
             HumanMessage(content="Hello."),
             AIMessage(content="Hello!"),
             HumanMessage(content="Who are you?"),
