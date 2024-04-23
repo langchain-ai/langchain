@@ -463,7 +463,7 @@ class OracleVS(VectorStore):
     @_handle_exceptions
     def add_texts(
         self,
-        texts: List[str],
+        texts: Iterable[str],
         metadatas: Optional[List[Dict[Any, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
@@ -476,6 +476,7 @@ class OracleVS(VectorStore):
           the vector store.
           kwargs: vectorstore specific parameters
         """
+        texts = list(texts)
         if ids:
             # If ids are provided, hash them to maintain consistency
             processed_ids = [
@@ -564,7 +565,12 @@ class OracleVS(VectorStore):
         clob_value = ""
         if result:
             if isinstance(result, oracledb.LOB):
-                clob_value = result.read()
+                raw_data = result.read()
+                if isinstance(raw_data, bytes):
+                    clob_value = raw_data.decode(
+                        'utf-8')  # Specify the correct encoding
+                else:
+                    clob_value = raw_data
             elif isinstance(result, str):
                 clob_value = result
             else:
@@ -670,8 +676,10 @@ class OracleVS(VectorStore):
                     distance = result[3]
                     # Assuming result[4] is already in the correct format;
                     # adjust if necessary
-                    embedding = np.array(result[4]) if result[4] else np.array([])
-                    documents.append((document, distance, embedding))
+                    current_embedding = np.array(result[4],
+                                                 dtype=np.float32) if result[
+                      4] else np.empty(0, dtype=np.float32)
+                    documents.append((document, distance, current_embedding))
         return documents  # type: ignore
 
     @_handle_exceptions
@@ -850,7 +858,7 @@ class OracleVS(VectorStore):
     @classmethod
     @_handle_exceptions
     def from_texts(
-        cls: Type[OracleVS],
+        cls: Type[VST],
         texts: Iterable[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
