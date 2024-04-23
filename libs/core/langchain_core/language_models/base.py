@@ -5,6 +5,7 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Mapping,
@@ -97,6 +98,10 @@ class BaseLanguageModel(
     """Tags to add to the run trace."""
     metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
+    custom_get_token_ids: Optional[Callable[[str], List[int]]] = Field(
+        default=None, exclude=True
+    )
+    """Optional encoder to use for counting tokens."""
 
     @validator("verbose", pre=True, always=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
@@ -310,7 +315,10 @@ class BaseLanguageModel(
             A list of ids corresponding to the tokens in the text, in order they occur
                 in the text.
         """
-        return _get_token_ids_default_method(text)
+        if self.custom_get_token_ids is not None:
+            return self.custom_get_token_ids(text)
+        else:
+            return _get_token_ids_default_method(text)
 
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text.
