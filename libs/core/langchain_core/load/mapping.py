@@ -3,6 +3,13 @@ from typing import Dict, Tuple
 # First value is the value that it is serialized as
 # Second value is the path to load it from
 SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
+    ("langchain", "chains", "llm", "LLMChain"): (
+        "langchain_core",
+        "legacy",
+        "chains",
+        "llm",
+        "LLMChain",
+    ),
     ("langchain", "schema", "messages", "AIMessage"): (
         "langchain_core",
         "messages",
