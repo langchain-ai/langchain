@@ -71,7 +71,7 @@ class RandomEmbeddings(Embeddings):
 class IncrementalEmbeddings(Embeddings):
     """Fake embeddings with incremental vectors. For testing purposes."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.counter = 0
 
     def set_counter(self, counter: int) -> None:
@@ -97,27 +97,42 @@ def texts() -> List[str]:
 def snow_rain_docs() -> List[Document]:
     return [
         Document(
-            page_content="In the parched desert, a sudden rainstorm brought relief, as the droplets danced upon the thirsty earth, rejuvenating the landscape with the sweet scent of petrichor.",
+            page_content="""In the parched desert, a sudden rainstorm brought relief,
+            as the droplets danced upon the thirsty earth, rejuvenating the landscape
+            with the sweet scent of petrichor.""",
             metadata={"count": "1", "category": "rain", "group": "a"},
         ),
         Document(
-            page_content="Amidst the bustling cityscape, the rain fell relentlessly, creating a symphony of pitter-patter on the pavement, while umbrellas bloomed like colorful flowers in a sea of gray.",
+            page_content="""Amidst the bustling cityscape, the rain fell relentlessly,
+            creating a symphony of pitter-patter on the pavement, while umbrellas
+            bloomed like colorful flowers in a sea of gray.""",
             metadata={"count": "2", "category": "rain", "group": "a"},
         ),
         Document(
-            page_content="High in the mountains, the rain transformed into a delicate mist, enveloping the peaks in a mystical veil, where each droplet seemed to whisper secrets to the ancient rocks below.",
+            page_content="""High in the mountains, the rain transformed into a delicate
+            mist, enveloping the peaks in a mystical veil, where each droplet seemed to
+            whisper secrets to the ancient rocks below.""",
             metadata={"count": "3", "category": "rain", "group": "b"},
         ),
         Document(
-            page_content="Blanketing the countryside in a soft, pristine layer, the snowfall painted a serene tableau, muffling the world in a tranquil hush as delicate flakes settled upon the branches of trees like nature's own lacework.",
+            page_content="""Blanketing the countryside in a soft, pristine layer, the
+            snowfall painted a serene tableau, muffling the world in a tranquil hush
+            as delicate flakes settled upon the branches of trees like nature's own 
+            lacework.""",
             metadata={"count": "1", "category": "snow", "group": "b"},
         ),
         Document(
-            page_content="In the urban landscape, snow descended, transforming bustling streets into a winter wonderland, where the laughter of children echoed amidst the flurry of snowballs and the twinkle of holiday lights.",
+            page_content="""In the urban landscape, snow descended, transforming
+            bustling streets into a winter wonderland, where the laughter of
+            children echoed amidst the flurry of snowballs and the twinkle of
+            holiday lights.""",
             metadata={"count": "2", "category": "snow", "group": "a"},
         ),
         Document(
-            page_content="Atop the rugged peaks, snow fell with an unyielding intensity, sculpting the landscape into a pristine alpine paradise, where the frozen crystals shimmered under the moonlight, casting a spell of enchantment over the wilderness below.",
+            page_content="""Atop the rugged peaks, snow fell with an unyielding
+            intensity, sculpting the landscape into a pristine alpine paradise,
+            where the frozen crystals shimmered under the moonlight, casting a
+            spell of enchantment over the wilderness below.""",
             metadata={"count": "3", "category": "snow", "group": "a"},
         ),
     ]
@@ -577,12 +592,11 @@ def test_singlestoredb_text_only_search(snow_rain_docs: List[Document]) -> None:
     )
     assert len(output) == 2
     assert (
-        output[0].page_content
-        == "In the parched desert, a sudden rainstorm brought relief, as the droplets danced upon the thirsty earth, rejuvenating the landscape with the sweet scent of petrichor."
+        "In the parched desert, a sudden rainstorm brought relief,"
+        in output[0].page_content
     )
     assert (
-        output[1].page_content
-        == "Blanketing the countryside in a soft, pristine layer, the snowfall painted a serene tableau, muffling the world in a tranquil hush as delicate flakes settled upon the branches of trees like nature's own lacework."
+        "Blanketing the countryside in a soft, pristine layer" in output[1].page_content
     )
 
     output = docsearch.similarity_search(
@@ -592,8 +606,8 @@ def test_singlestoredb_text_only_search(snow_rain_docs: List[Document]) -> None:
     )
     assert len(output) == 3
     assert (
-        output[0].page_content
-        == "Blanketing the countryside in a soft, pristine layer, the snowfall painted a serene tableau, muffling the world in a tranquil hush as delicate flakes settled upon the branches of trees like nature's own lacework."
+        "Blanketing the countryside in a soft, pristine layer,"
+        in output[0].page_content
     )
     drop(table_name)
 
@@ -620,8 +634,8 @@ def test_singlestoredb_filter_by_text_search(snow_rain_docs: List[Document]) -> 
     )
     assert len(output) == 1
     assert (
-        output[0].page_content
-        == "In the parched desert, a sudden rainstorm brought relief, as the droplets danced upon the thirsty earth, rejuvenating the landscape with the sweet scent of petrichor."
+        "In the parched desert, a sudden rainstorm brought relief"
+        in output[0].page_content
     )
     drop(table_name)
 
@@ -649,8 +663,8 @@ def test_singlestoredb_filter_by_vector_search1(snow_rain_docs: List[Document]) 
     )
     assert len(output) == 1
     assert (
-        output[0].page_content
-        == "High in the mountains, the rain transformed into a delicate mist, enveloping the peaks in a mystical veil, where each droplet seemed to whisper secrets to the ancient rocks below."
+        "High in the mountains, the rain transformed into a delicate"
+        in output[0].page_content
     )
     drop(table_name)
 
@@ -679,8 +693,8 @@ def test_singlestoredb_filter_by_vector_search2(snow_rain_docs: List[Document]) 
     )
     assert len(output) == 1
     assert (
-        output[0].page_content
-        == "Amidst the bustling cityscape, the rain fell relentlessly, creating a symphony of pitter-patter on the pavement, while umbrellas bloomed like colorful flowers in a sea of gray."
+        "Amidst the bustling cityscape, the rain fell relentlessly"
+        in output[0].page_content
     )
     drop(table_name)
 
@@ -703,16 +717,13 @@ def test_singlestoredb_weighted_sum_search_unsupported_strategy(
         distance_strategy=DistanceStrategy.EUCLIDEAN_DISTANCE,
     )
     try:
-        output = docsearch.similarity_search(
+        docsearch.similarity_search(
             "rainstorm in parched desert, rain",
             k=1,
             search_strategy=SingleStoreDB.SearchStrategy.WEIGHTED_SUM,
         )
     except ValueError as e:
-        assert (
-            str(e)
-            == "Search strategy WEIGHTED_SUM is not supported with distance strategy EUCLIDEAN_DISTANCE"
-        )
+        assert "Search strategy WEIGHTED_SUM is not" in str(e)
     drop(table_name)
 
 
@@ -738,7 +749,6 @@ def test_singlestoredb_weighted_sum_search(snow_rain_docs: List[Document]) -> No
     )
     assert len(output) == 1
     assert (
-        output[0].page_content
-        == "Atop the rugged peaks, snow fell with an unyielding intensity, sculpting the landscape into a pristine alpine paradise, where the frozen crystals shimmered under the moonlight, casting a spell of enchantment over the wilderness below."
+        "Atop the rugged peaks, snow fell with an unyielding" in output[0].page_content
     )
     drop(table_name)

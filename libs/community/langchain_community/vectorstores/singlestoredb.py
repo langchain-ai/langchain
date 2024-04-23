@@ -125,10 +125,13 @@ class SingleStoreDB(VectorStore):
                 Should be set to the same value as the size of the vectors
                 stored in the vector_field.
 
-            use_full_text_search (bool, optional): Toggles the use a full-text index on the document content.
-                Defaults to False. If set to True, the table will be created with a full-text index on the content field,
-                and the simularity_search method will all using TEXT_ONLY, FILTER_BY_TEXT, FILTER_BY_VECTOR, and WIGHTED_SUM
-                search strategies.
+            use_full_text_search (bool, optional): Toggles the use a full-text index
+                on the document content. Defaults to False. If set to True, the table
+                will be created with a full-text index on the content field,
+                and the simularity_search method will all using TEXT_ONLY,
+                FILTER_BY_TEXT, FILTER_BY_VECTOR, and WIGHTED_SUM search strategies.
+                If set to False, the simularity_search method will only allow
+                VECTOR_ONLY search strategy.
 
             Following arguments pertain to the connection pool:
 
@@ -297,9 +300,9 @@ class SingleStoreDB(VectorStore):
                         )
                     cur.execute(
                         """CREATE TABLE IF NOT EXISTS {}
-                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-                        {} VECTOR({}, F32) NOT NULL, {} JSON,
-                        VECTOR INDEX {} ({}) {}{});""".format(
+                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} LONGTEXT CHARACTER
+                        SET utf8mb4 COLLATE utf8mb4_general_ci, {} VECTOR({}, F32)
+                        NOT NULL, {} JSON, VECTOR INDEX {} ({}) {}{});""".format(
                             self.table_name,
                             self.id_field,
                             self.content_field,
@@ -315,8 +318,9 @@ class SingleStoreDB(VectorStore):
                 else:
                     cur.execute(
                         """CREATE TABLE IF NOT EXISTS {}
-                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-                        {} BLOB, {} JSON{});""".format(
+                        ({} BIGINT AUTO_INCREMENT PRIMARY KEY, {} LONGTEXT CHARACTER
+                        SET utf8mb4 COLLATE utf8mb4_general_ci, {} BLOB, {} JSON{});
+                        """.format(
                             self.table_name,
                             self.id_field,
                             self.content_field,
@@ -392,7 +396,8 @@ class SingleStoreDB(VectorStore):
                         else self.embedding.embed_documents([text])[0]
                     )
                     cur.execute(
-                        "INSERT INTO {}({}, {}, {}) VALUES (%s, JSON_ARRAY_PACK(%s), %s)".format(
+                        """INSERT INTO {}({}, {}, {})
+                        VALUES (%s, JSON_ARRAY_PACK(%s), %s)""".format(
                             self.table_name,
                             self.content_field,
                             self.vector_field,
@@ -486,9 +491,8 @@ class SingleStoreDB(VectorStore):
             and not self.use_full_text_search
         ):
             raise ValueError(
-                "Search strategy {} is not supported when use_full_text_search is False".format(
-                    search_strategy
-                )
+                """Search strategy {} is not supported
+                when use_full_text_search is False""".format(search_strategy)
             )
 
         if (
@@ -615,49 +619,13 @@ class SingleStoreDB(VectorStore):
                         (query,) + tuple(where_clause_values) + (k,),
                     )
                 elif search_strategy == SingleStoreDB.SearchStrategy.WEIGHTED_SUM:
-                    print(
-                        """SELECT {}, {}, __score1 * %s + __score2 * %s as __score
-                        FROM (
-                            SELECT {}, {}, {}, MATCH ({}) AGAINST (%s) as __score1 FROM {} {}
-                        ) r1 FULL OUTER JOIN (
-                            SELECT {}, {}({}, JSON_ARRAY_PACK(%s)) as __score2 FROM {} {}
-                            ORDER BY __score2 {} LIMIT %s 
-                        ) r2 ON r1.{} = r2.{} ORDER BY __score {} LIMIT %s""".format(
-                            self.content_field,
-                            self.metadata_field,
-                            self.id_field,
-                            self.content_field,
-                            self.metadata_field,
-                            self.content_field,
-                            self.table_name,
-                            where_clause,
-                            self.id_field,
-                            self.distance_strategy.name
-                            if isinstance(self.distance_strategy, DistanceStrategy)
-                            else self.distance_strategy,
-                            self.vector_field,
-                            self.table_name,
-                            where_clause,
-                            ORDERING_DIRECTIVE[self.distance_strategy],
-                            self.id_field,
-                            self.id_field,
-                            ORDERING_DIRECTIVE[self.distance_strategy],
-                        )
-                        % (
-                            (text_weight, vector_weight, query)
-                            + tuple(where_clause_values)
-                            + ("[{}]".format(",".join(map(str, embedding))),)
-                            + tuple(where_clause_values)
-                            + (k * vector_select_count_multiplier, k)
-                        )
-                    )
                     cur.execute(
                         """SELECT {}, {}, __score1 * %s + __score2 * %s as __score
                         FROM (
-                            SELECT {}, {}, {}, MATCH ({}) AGAINST (%s) as __score1 FROM {} {}
-                        ) r1 FULL OUTER JOIN (
-                            SELECT {}, {}({}, JSON_ARRAY_PACK(%s)) as __score2 FROM {} {}
-                            ORDER BY __score2 {} LIMIT %s
+                            SELECT {}, {}, {}, MATCH ({}) AGAINST (%s) as __score1 
+                        FROM {} {}) r1 FULL OUTER JOIN (
+                            SELECT {}, {}({}, JSON_ARRAY_PACK(%s)) as __score2
+                            FROM {} {} ORDER BY __score2 {} LIMIT %s
                         ) r2 ON r1.{} = r2.{} ORDER BY __score {} LIMIT %s""".format(
                             self.content_field,
                             self.metadata_field,
