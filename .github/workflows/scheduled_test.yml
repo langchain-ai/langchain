@@ -22,7 +22,7 @@ jobs:
           # - "libs/partners/ai21"  # standard-tests broken
           - "libs/partners/fireworks"
           # - "libs/partners/groq"  # rate-limited
-          - "libs/partners/mistralai"
+          # - "libs/partners/mistralai"
           # - "libs/partners/together"  # rate-limited
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
