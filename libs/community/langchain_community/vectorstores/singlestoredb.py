@@ -93,7 +93,8 @@ class SingleStoreDB(VectorStore):
                 - EUCLIDEAN_DISTANCE: Computes the Euclidean distance between
                     two vectors. This metric considers the geometric distance in
                     the vector space, and might be more suitable for embeddings
-                    that rely on spatial relationships.
+                    that rely on spatial relationships. This metric is not
+                    compatible with the WEIGHTED_SUM search strategy.
 
             table_name (str, optional): Specifies the name of the table in use.
                 Defaults to "embeddings".
@@ -103,6 +104,8 @@ class SingleStoreDB(VectorStore):
                 Defaults to "metadata".
             vector_field (str, optional): Specifies the field to store the vector.
                 Defaults to "vector".
+            id_field (str, optional): Specifies the field to store the id.
+                Defaults to "id".
 
             use_vector_index (bool, optional): Toggles the use of a vector index.
                 Works only with SingleStoreDB 8.5 or later. Defaults to False.
@@ -234,6 +237,18 @@ class SingleStoreDB(VectorStore):
                 vectorstore = SingleStoreDB(
                     OpenAIEmbeddings(),
                     use_vector_index=True,
+                )
+
+            Using full-text index:
+
+            .. code-block:: python
+                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_community.vectorstores import SingleStoreDB
+
+                os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
+                vectorstore = SingleStoreDB(
+                    OpenAIEmbeddings(),
+                    use_full_text_search=True,
                 )
         """
 
@@ -426,6 +441,7 @@ class SingleStoreDB(VectorStore):
         filter_threshold: float = 0,
         text_weight: float = 0.5,
         vector_weight: float = 0.5,
+        vector_select_count_multiplier: int = 10,
         **kwargs: Any,
     ) -> List[Document]:
         """Returns the most similar indexed documents to the query text.
@@ -436,11 +452,47 @@ class SingleStoreDB(VectorStore):
             query (str): The query text for which to find similar documents.
             k (int): The number of documents to return. Default is 4.
             filter (dict): A dictionary of metadata fields and values to filter by.
+                Default is None.
+            search_strategy (SearchStrategy): The search strategy to use.
+                Default is SearchStrategy.VECTOR_ONLY.
+                Available options are:
+                - SearchStrategy.VECTOR_ONLY: Searches only by vector similarity.
+                - SearchStrategy.TEXT_ONLY: Searches only by text similarity. This
+                    option is only available if use_full_text_search is True.
+                - SearchStrategy.FILTER_BY_TEXT: Filters by text similarity and
+                    searches by vector similarity. This option is only available if
+                    use_full_text_search is True.
+                - SearchStrategy.FILTER_BY_VECTOR: Filters by vector similarity and
+                    searches by text similarity. This option is only available if
+                    use_full_text_search is True.
+                - SearchStrategy.WEIGHTED_SUM: Searches by a weighted sum of text and
+                    vector similarity. This option is only available if
+                    use_full_text_search is True and distance_strategy is DOT_PRODUCT.
+            filter_threshold (float): The threshold for filtering by text or vector
+                similarity. Default is 0. This option has effect only if search_strategy
+                is SearchStrategy.FILTER_BY_TEXT or SearchStrategy.FILTER_BY_VECTOR.
+            text_weight (float): The weight of text similarity in the weighted sum
+                search strategy. Default is 0.5. This option has effect only if
+                search_strategy is SearchStrategy.WEIGHTED_SUM.
+            vector_weight (float): The weight of vector similarity in the weighted sum
+                search strategy. Default is 0.5. This option has effect only if
+                search_strategy is SearchStrategy.WEIGHTED_SUM.
+            vector_select_count_multiplier (int): The multiplier for the number of
+                vectors to select when using the vector index. Default is 10.
+                This parameter has effect only if use_vector_index is True and
+                search_strategy is SearchStrategy.WEIGHTED_SUM or
+                SearchStrategy.FILTER_BY_TEXT.
+                The number of vectors selected will
+                be k * vector_select_count_multiplier.
+                This is needed due to the limitations of the vector index.
+
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
 
         Examples:
+
+            Basic Usage:
             .. code-block:: python
                 from langchain_community.vectorstores import SingleStoreDB
                 from langchain_community.embeddings import OpenAIEmbeddings
@@ -449,8 +501,39 @@ class SingleStoreDB(VectorStore):
                     OpenAIEmbeddings(),
                     host="username:password@localhost:3306/database"
                 )
-                s2.similarity_search("query text", 1,
-                    {"metadata_field": "metadata_value"})
+                results = s2.similarity_search("query text", 1,
+                                    {"metadata_field": "metadata_value"})
+
+            Different Search Strategies:
+            .. code-block:: python
+                from langchain_community.vectorstores import SingleStoreDB
+                from langchain_community.embeddings import OpenAIEmbeddings
+                s2 = SingleStoreDB.from_documents(
+                    docs,
+                    OpenAIEmbeddings(),
+                    host="username:password@localhost:3306/database",
+                    use_full_text_search=True,
+                    use_vector_index=True,
+                )
+                results = s2.similarity_search("query text", 1,
+                        search_strategy=SingleStoreDB.SearchStrategy.FILTER_BY_TEXT,
+                        filter_threshold=0.5)
+
+            Weighted Sum Search Strategy:
+            .. code-block:: python
+                from langchain_community.vectorstores import SingleStoreDB
+                from langchain_community.embeddings import OpenAIEmbeddings
+                s2 = SingleStoreDB.from_documents(
+                    docs,
+                    OpenAIEmbeddings(),
+                    host="username:password@localhost:3306/database",
+                    use_full_text_search=True,
+                    use_vector_index=True,
+                )
+                results = s2.similarity_search("query text", 1,
+                    search_strategy=SingleStoreDB.SearchStrategy.WEIGHTED_SUM,
+                    text_weight=0.3,
+                    vector_weight=0.7)
         """
         docs_and_scores = self.similarity_search_with_score(
             query=query,
@@ -460,6 +543,8 @@ class SingleStoreDB(VectorStore):
             filter_threshold=filter_threshold,
             text_weight=text_weight,
             vector_weight=vector_weight,
+            vector_select_count_multiplier=vector_select_count_multiplier,
+            **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -473,6 +558,7 @@ class SingleStoreDB(VectorStore):
         text_weight: float = 0.5,
         vector_weight: float = 0.5,
         vector_select_count_multiplier: int = 10,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query. Uses cosine similarity.
 
@@ -481,9 +567,89 @@ class SingleStoreDB(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             filter: A dictionary of metadata fields and values to filter by.
                     Defaults to None.
-
+            search_strategy (SearchStrategy): The search strategy to use.
+                Default is SearchStrategy.VECTOR_ONLY.
+                Available options are:
+                - SearchStrategy.VECTOR_ONLY: Searches only by vector similarity.
+                - SearchStrategy.TEXT_ONLY: Searches only by text similarity. This
+                    option is only available if use_full_text_search is True.
+                - SearchStrategy.FILTER_BY_TEXT: Filters by text similarity and
+                    searches by vector similarity. This option is only available if
+                    use_full_text_search is True.
+                - SearchStrategy.FILTER_BY_VECTOR: Filters by vector similarity and
+                    searches by text similarity. This option is only available if
+                    use_full_text_search is True.
+                - SearchStrategy.WEIGHTED_SUM: Searches by a weighted sum of text and
+                    vector similarity. This option is only available if
+                    use_full_text_search is True and distance_strategy is DOT_PRODUCT.
+            filter_threshold (float): The threshold for filtering by text or vector
+                similarity. Default is 0. This option has effect only if search_strategy
+                is SearchStrategy.FILTER_BY_TEXT or SearchStrategy.FILTER_BY_VECTOR.
+            text_weight (float): The weight of text similarity in the weighted sum
+                search strategy. Default is 0.5. This option has effect only if
+                search_strategy is SearchStrategy.WEIGHTED_SUM.
+            vector_weight (float): The weight of vector similarity in the weighted sum
+                search strategy. Default is 0.5. This option has effect only if
+                search_strategy is SearchStrategy.WEIGHTED_SUM.
+            vector_select_count_multiplier (int): The multiplier for the number of
+                vectors to select when using the vector index. Default is 10.
+                This parameter has effect only if use_vector_index is True and
+                search_strategy is SearchStrategy.WEIGHTED_SUM or
+                SearchStrategy.FILTER_BY_TEXT.
+                The number of vectors selected will
+                be k * vector_select_count_multiplier.
+                This is needed due to the limitations of the vector index.
         Returns:
             List of Documents most similar to the query and score for each
+            document.
+
+        Raises:
+            ValueError: If the search strategy is not supported with the
+                distance strategy.
+
+        Examples:
+            Basic Usage:
+            .. code-block:: python
+                from langchain_community.vectorstores import SingleStoreDB
+                from langchain_community.embeddings import OpenAIEmbeddings
+                s2 = SingleStoreDB.from_documents(
+                    docs,
+                    OpenAIEmbeddings(),
+                    host="username:password@localhost:3306/database"
+                )
+                results = s2.similarity_search_with_score("query text", 1,
+                                    {"metadata_field": "metadata_value"})
+
+            Different Search Strategies:
+            .. code-block:: python
+                from langchain_community.vectorstores import SingleStoreDB
+                from langchain_community.embeddings import OpenAIEmbeddings
+                s2 = SingleStoreDB.from_documents(
+                    docs,
+                    OpenAIEmbeddings(),
+                    host="username:password@localhost:3306/database",
+                    use_full_text_search=True,
+                    use_vector_index=True,
+                )
+                results = s2.similarity_search_with_score("query text", 1,
+                        search_strategy=SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR,
+                        filter_threshold=0.5)
+
+            Weighted Sum Search Strategy:
+            .. code-block:: python
+                from langchain_community.vectorstores import SingleStoreDB
+                from langchain_community.embeddings import OpenAIEmbeddings
+                s2 = SingleStoreDB.from_documents(
+                    docs,
+                    OpenAIEmbeddings(),
+                    host="username:password@localhost:3306/database",
+                    use_full_text_search=True,
+                    use_vector_index=True,
+                )
+                results = s2.similarity_search_with_score("query text", 1,
+                    search_strategy=SingleStoreDB.SearchStrategy.WEIGHTED_SUM,
+                    text_weight=0.3,
+                    vector_weight=0.7)
         """
 
         if (
@@ -695,6 +861,93 @@ class SingleStoreDB(VectorStore):
             2. Creates a new table for the embeddings in SingleStoreDB.
             3. Adds the documents to the newly created table.
         This is intended to be a quick way to get started.
+        Args:
+            texts (List[str]): List of texts to add to the vectorstore.
+            embedding (Embeddings): A text embedding model.
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
+                Defaults to None.
+            distance_strategy (DistanceStrategy, optional):
+                Determines the strategy employed for calculating
+                the distance between vectors in the embedding space.
+                Defaults to DOT_PRODUCT.
+                Available options are:
+                - DOT_PRODUCT: Computes the scalar product of two vectors.
+                    This is the default behavior
+                - EUCLIDEAN_DISTANCE: Computes the Euclidean distance between
+                    two vectors. This metric considers the geometric distance in
+                    the vector space, and might be more suitable for embeddings
+                    that rely on spatial relationships. This metric is not
+                    compatible with the WEIGHTED_SUM search strategy.
+            table_name (str, optional): Specifies the name of the table in use.
+                Defaults to "embeddings".
+            content_field (str, optional): Specifies the field to store the content.
+                Defaults to "content".
+            metadata_field (str, optional): Specifies the field to store metadata.
+                Defaults to "metadata".
+            vector_field (str, optional): Specifies the field to store the vector.
+                Defaults to "vector".
+            id_field (str, optional): Specifies the field to store the id.
+                Defaults to "id".
+            use_vector_index (bool, optional): Toggles the use of a vector index.
+                Works only with SingleStoreDB 8.5 or later. Defaults to False.
+                If set to True, vector_size parameter is required to be set to
+                a proper value.
+            vector_index_name (str, optional): Specifies the name of the vector index.
+                Defaults to empty. Will be ignored if use_vector_index is set to False.
+            vector_index_options (dict, optional): Specifies the options for
+                the vector index. Defaults to {}.
+                Will be ignored if use_vector_index is set to False. The options are:
+                index_type (str, optional): Specifies the type of the index.
+                    Defaults to IVF_PQFS.
+                For more options, please refer to the SingleStoreDB documentation:
+                https://docs.singlestore.com/cloud/reference/sql-reference/vector-functions/vector-indexing/
+            vector_size (int, optional): Specifies the size of the vector.
+                Defaults to 1536. Required if use_vector_index is set to True.
+                Should be set to the same value as the size of the vectors
+                stored in the vector_field.
+            use_full_text_search (bool, optional): Toggles the use a full-text index
+                on the document content. Defaults to False. If set to True, the table
+                will be created with a full-text index on the content field,
+                and the simularity_search method will all using TEXT_ONLY,
+                FILTER_BY_TEXT, FILTER_BY_VECTOR, and WIGHTED_SUM search strategies.
+                If set to False, the simularity_search method will only allow
+                VECTOR_ONLY search strategy.
+
+            pool_size (int, optional): Determines the number of active connections in
+                the pool. Defaults to 5.
+            max_overflow (int, optional): Determines the maximum number of connections
+                allowed beyond the pool_size. Defaults to 10.
+            timeout (float, optional): Specifies the maximum wait time in seconds for
+                establishing a connection. Defaults to 30.
+
+            Additional optional arguments provide further customization over the
+            database connection:
+
+            pure_python (bool, optional): Toggles the connector mode. If True,
+                operates in pure Python mode.
+            local_infile (bool, optional): Allows local file uploads.
+            charset (str, optional): Specifies the character set for string values.
+            ssl_key (str, optional): Specifies the path of the file containing the SSL
+                key.
+            ssl_cert (str, optional): Specifies the path of the file containing the SSL
+                certificate.
+            ssl_ca (str, optional): Specifies the path of the file containing the SSL
+                certificate authority.
+            ssl_cipher (str, optional): Sets the SSL cipher list.
+            ssl_disabled (bool, optional): Disables SSL usage.
+            ssl_verify_cert (bool, optional): Verifies the server's certificate.
+                Automatically enabled if ``ssl_ca`` is specified.
+            ssl_verify_identity (bool, optional): Verifies the server's identity.
+            conv (dict[int, Callable], optional): A dictionary of data conversion
+                functions.
+            credential_type (str, optional): Specifies the type of authentication to
+                use: auth.PASSWORD, auth.JWT, or auth.BROWSER_SSO.
+            autocommit (bool, optional): Enables autocommits.
+            results_type (str, optional): Determines the structure of the query results:
+                tuples, namedtuples, dicts.
+            results_format (str, optional): Deprecated. This option has been renamed to
+                results_type.
+
         Example:
             .. code-block:: python
                 from langchain_community.vectorstores import SingleStoreDB
