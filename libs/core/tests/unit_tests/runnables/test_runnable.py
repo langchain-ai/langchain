@@ -5478,11 +5478,13 @@ async def test_default_atransform_with_dicts() -> None:
     assert chunks == [{"foo": "n"}]
 
     # Test with addable dict
-    async def chunk_iterator() -> AsyncIterator[Dict[str, str]]:
+    async def chunk_iterator_with_addable() -> AsyncIterator[Dict[str, str]]:
         yield AddableDict({"foo": "a"})
         yield AddableDict({"foo": "n"})
 
-    chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+    chunks = [
+        chunk async for chunk in runnable.atransform(chunk_iterator_with_addable())
+    ]
 
     assert chunks == [{"foo": "an"}]
 
