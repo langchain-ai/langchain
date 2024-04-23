@@ -42,7 +42,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
         default_prompt: Optional[PromptTemplate] = None,
         default_chain: Optional[Chain] = None,
         *,
-        default_chain_llm: BaseLanguageModel = None,
+        default_chain_llm: Optional[BaseLanguageModel] = None,
         **kwargs: Any,
     ) -> MultiRetrievalQAChain:
         if default_prompt and not default_retriever:
