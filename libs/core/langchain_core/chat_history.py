@@ -16,7 +16,9 @@
 """  # noqa: E501
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import List, Sequence, Union
 
 from langchain_core.messages import (
@@ -24,7 +26,10 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     get_buffer_string,
+    messages_from_dict,
+    messages_to_dict,
 )
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import run_in_executor
 
 
@@ -184,3 +189,61 @@ class BaseChatMessageHistory(ABC):
     def __str__(self) -> str:
         """Return a string representation of the chat history."""
         return get_buffer_string(self.messages)
+
+
+class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
+    """In memory implementation of chat message history.
+
+    Stores messages in an in memory list.
+    """
+
+    messages: List[BaseMessage] = Field(default_factory=list)
+
+    async def aget_messages(self) -> List[BaseMessage]:
+        return self.messages
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        self.messages.append(message)
+
+    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
+        """Add messages to the store"""
+        self.add_messages(messages)
+
+    def clear(self) -> None:
+        self.messages = []
+
+    async def aclear(self) -> None:
+        self.clear()
+
+
+class FileChatMessageHistory(BaseChatMessageHistory):
+    """Chat message history that stores history in a local file."""
+
+    def __init__(self, file_path: str) -> None:
+        """Initialize the file path for the chat history.
+
+        Args:
+            file_path: The path to the local file to store the chat history.
+        """
+        self.file_path = Path(file_path)
+        if not self.file_path.exists():
+            self.file_path.touch()
+            self.file_path.write_text(json.dumps([]))
+
+    @property
+    def messages(self) -> List[BaseMessage]:  # type: ignore
+        """Retrieve the messages from the local file"""
+        items = json.loads(self.file_path.read_text())
+        messages = messages_from_dict(items)
+        return messages
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Append the message to the record in the local file"""
+        messages = messages_to_dict(self.messages)
+        messages.append(messages_to_dict([message])[0])
+        self.file_path.write_text(json.dumps(messages))
+
+    def clear(self) -> None:
+        """Clear session memory from the local file"""
+        self.file_path.write_text(json.dumps([]))
