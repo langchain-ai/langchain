@@ -97,8 +97,10 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 )
             except IOError:  # huggingface_hub GatedRepoError
                 warnings.warn(
-                    "Using dummy tokenizer, set a Huggingface token via the "
-                    "HF_TOKEN environment variable to use a real tokenizer."
+                    "Could not download mistral tokenizer from Huggingface for "
+                    "calculating batch sizes. Set a Huggingface token via the"
+                    "HF_TOKEN environment variable to download the real tokenizer. "
+                    "Falling back to a dummy tokenizer that uses `len()`."
                 )
                 values["tokenizer"] = DummyTokenizer()
         return values
@@ -115,7 +117,10 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         for text, text_tokens in zip(texts, text_token_lengths):
             if batch_tokens + text_tokens > MAX_TOKENS:
-                yield batch
+                if len(batch) > 0:
+                    # edge case where first batch exceeds max tokens
+                    # should not yield an empty batch.
+                    yield batch
                 batch = [text]
                 batch_tokens = text_tokens
             else:
