@@ -219,7 +219,7 @@ def test_parse_chat_history_correct() -> None:
 def test_vertexai_single_call_fails_no_message() -> None:
     chat = ChatVertexAI()
     with pytest.raises(ValueError) as exc_info:
-        _ = chat([])
+        _ = chat.invoke([])
     assert (
         str(exc_info.value)
         == "You should provide at least one message to start the chat!"
