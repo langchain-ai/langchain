@@ -30,3 +30,21 @@ class Document(Serializable):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "document"]
+
+
+class DocumentSearchHit(Document):
+    """Class for storing a document and fields associated with retrieval."""
+
+    score: float
+    """Score associated with the document's relevance to a query."""
+    type: Literal["DocumentSearchHit"] = "DocumentSearchHit"  # type: ignore[assignment] # noqa: E501
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this class is serializable."""
+        return True
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "document_search_hit"]
