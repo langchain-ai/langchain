@@ -4258,9 +4258,10 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> List[Output]:
-        return self.bound.batch(
-            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
-        )
+        configs = [
+            patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
+        ]
+        return self.bound.batch(inputs, configs, **kwargs)
 
     def invoke(
         self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -4274,9 +4275,10 @@ class RunnableEachBase(RunnableSerializable[List[Input], List[Output]]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> List[Output]:
-        return await self.bound.abatch(
-            inputs, patch_config(config, callbacks=run_manager.get_child()), **kwargs
-        )
+        configs = [
+            patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
+        ]
+        return await self.bound.abatch(inputs, configs, **kwargs)
 
     async def ainvoke(
         self, input: List[Input], config: Optional[RunnableConfig] = None, **kwargs: Any

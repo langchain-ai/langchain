@@ -5480,3 +5480,67 @@ async def test_passthrough_atransform_with_dicts() -> None:
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
     assert chunks == [{"foo": "a"}, {"foo": "n"}]
+
+
+def test_listeners() -> None:
+    from langchain_core.runnables import RunnableLambda
+    from langchain_core.tracers.schemas import Run
+
+    def fake_chain(inputs: dict) -> dict:
+        return {**inputs, "key": "extra"}
+
+    shared_state = {}
+
+    def on_start(run: Run) -> None:
+        shared_state[run.id] = {"inputs": run.inputs}
+
+    def on_end(run: Run) -> None:
+        shared_state[run.id]["outputs"] = run.inputs
+
+    chain = (
+        RunnableLambda(fake_chain)
+        .with_listeners(on_end=on_end, on_start=on_start)
+        .map()
+    )
+
+    data = [{"name": "one"}, {"name": "two"}]
+    chain.invoke(data, config={"max_concurrency": 1})
+    # FYI: This test might be flaky since listeners if listeners
+    # are called in a separate thread
+    # We'll probably want to add a very short sleep here to deal with that
+    assert len(shared_state) == 2
+    # More test code to verify that the outputs are as expected
+
+    # Test should also cover the .batch() version
+
+
+async def test_listeners_async() -> None:
+    from langchain_core.runnables import RunnableLambda
+    from langchain_core.tracers.schemas import Run
+
+    def fake_chain(inputs: dict) -> dict:
+        return {**inputs, "key": "extra"}
+
+    shared_state = {}
+
+    def on_start(run: Run) -> None:
+        shared_state[run.id] = {"inputs": run.inputs}
+
+    def on_end(run: Run) -> None:
+        shared_state[run.id]["outputs"] = run.inputs
+
+    chain: Runnable = (
+        RunnableLambda(fake_chain)
+        .with_listeners(on_end=on_end, on_start=on_start)
+        .map()
+    )
+
+    data = [{"name": "one"}, {"name": "two"}]
+    await chain.ainvoke(data, config={"max_concurrency": 1})
+    # FYI: This test might be flaky since listeners if listeners
+    # are called in a separate thread
+    # We'll probably want to add a very short sleep here to deal with that
+    assert len(shared_state) == 2
+    # More test code to verify that the outputs are as expected
+
+    # Test should also cover the .batch() version
