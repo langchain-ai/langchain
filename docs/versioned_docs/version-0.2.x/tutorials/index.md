@@ -4,6 +4,8 @@ New to LangChain?
 Or to LLM app development in general? 
 Well, you came to the right place: read this material to quickly get up and running.
 
+[Build a Simple LLM Application](/docs/tutorials/llm_chain)
+
 [Build a Retrieval Augmented Generation (RAG) Application](/docs/tutorials/rag)
 
 [Build an Extraction Service](/docs/tutorials/extraction)
@@ -22,9 +24,7 @@ Well, you came to the right place: read this material to quickly get up and runn
 
 [Build a local RAG application](/docs/tutorials/local_rag)
 
-[Build an application to Question Answering over a Graph Database](/docs/tutorials/graph)
-
-[Build a coding helper](/docs/tutorials/code_understanding)
+[Build a Question Answering application over a Graph Database](/docs/tutorials/graph)
 
 [Generate synthetic data](/docs/tutorials/data_generation)
 
