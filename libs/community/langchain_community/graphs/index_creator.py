@@ -1,13 +1,14 @@
 from typing import Optional, Type
 
-from pydantic import BaseModel
+
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain_community.graphs import NetworkxEntityGraph
 from langchain_community.graphs.networkx_graph import KG_TRIPLE_DELIMITER
 from langchain_community.graphs.networkx_graph import parse_triples
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.prompts import BasePromptTemplate
-from langchain_core.prompts.prompt import PromptTemplate
 
 # flake8: noqa
 
