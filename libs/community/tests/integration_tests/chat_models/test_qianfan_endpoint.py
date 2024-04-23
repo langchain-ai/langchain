@@ -133,9 +133,7 @@ def test_endpoint_param() -> None:
     """Test user custom model deployments like some open source models."""
     chat = QianfanChatEndpoint()
     response = chat.invoke(
-        [
-            HumanMessage(endpoint="qianfan_bloomz_7b_compressed", content="Hello")
-        ]
+        [HumanMessage(endpoint="qianfan_bloomz_7b_compressed", content="Hello")]
     )
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)

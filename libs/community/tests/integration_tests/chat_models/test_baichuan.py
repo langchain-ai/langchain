@@ -49,7 +49,9 @@ def test_chat_baichuan_with_temperature() -> None:
 def test_chat_baichuan_with_kwargs() -> None:
     chat = ChatBaichuan()
     message = HumanMessage(content="百川192K API是什么时候上线的？")
-    response = chat.invoke([message], temperature=0.88, top_p=0.7, with_search_enhance=True)
+    response = chat.invoke(
+        [message], temperature=0.88, top_p=0.7, with_search_enhance=True
+    )
     print(response)  # noqa: T201
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
