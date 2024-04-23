@@ -1,5 +1,3 @@
-from langchain_core.legacy.memory.simple import SimpleMemory
+from langchain_core.legacy.memory import SimpleMemory
 
-__all__ = [
-    "SimpleMemory",
-]
+__all__ = ["SimpleMemory"]
