@@ -1,7 +1,7 @@
 import itertools
 import random
 import uuid
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -599,8 +599,8 @@ def test_similarity_score_threshold(index_details: dict, threshold: float) -> No
         assert len(search_result) == len(fake_texts)
     else:
         assert len(search_result) == 0
-    result_with_scores: List[DocumentSearchHit] = retriever.invoke(
-        query, include_score=True
+    result_with_scores = cast(
+        List[DocumentSearchHit], retriever.invoke(query, include_score=True)
     )
     for idx, result in enumerate(result_with_scores):
         assert result.score >= threshold

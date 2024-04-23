@@ -37,7 +37,6 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
 )
 
 from langchain_core.documents import DocumentSearchHit
@@ -697,7 +696,7 @@ class VectorStoreRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
         include_score: bool = False,
-    ) -> List[Union[Document, DocumentSearchHit]]:
+    ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
         elif self.search_type == "similarity_score_threshold":
