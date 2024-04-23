@@ -25,6 +25,7 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
 from langchain_core.runnables import (
@@ -262,6 +263,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             run_manager=run_manager.get_sync(),
         )
 
+    @deprecated(since="0.1.46", alternative="invoke", removal="0.3.0")
     def get_relevant_documents(
         self,
         query: str,
@@ -325,6 +327,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             )
             return result
 
+    @deprecated(since="0.1.46", alternative="ainvoke", removal="0.3.0")
     async def aget_relevant_documents(
         self,
         query: str,
