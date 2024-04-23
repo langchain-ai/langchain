@@ -218,8 +218,8 @@ class RetrievalQA(BaseRetrievalQA):
         run_manager: CallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        return self.retriever.get_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        return self.retriever.invoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
 
     async def _aget_docs(
@@ -229,8 +229,8 @@ class RetrievalQA(BaseRetrievalQA):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        return await self.retriever.aget_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        return await self.retriever.ainvoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
 
     @property
