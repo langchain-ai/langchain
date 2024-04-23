@@ -1444,7 +1444,11 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        include_score: bool = False,
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(query, **self.search_kwargs)
@@ -1472,7 +1476,11 @@ class RedisVectorStoreRetriever(VectorStoreRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        include_score: bool = False,
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = await self.vectorstore.asimilarity_search(
