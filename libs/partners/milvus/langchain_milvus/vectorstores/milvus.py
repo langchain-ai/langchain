@@ -5,12 +5,9 @@ from typing import Any, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
-from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-
-from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +19,78 @@ DEFAULT_MILVUS_CONNECTION = {
     "secure": False,
 }
 
-@deprecated(
-    since="0.0.35",
-    removal="0.2.0",
-    alternative_import="langchain_milvus.MilvusVectorStore"
-)
+Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
+
+
+def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
+    """Row-wise cosine similarity between two equal-width matrices."""
+    if len(X) == 0 or len(Y) == 0:
+        return np.array([])
+
+    X = np.array(X)
+    Y = np.array(Y)
+    if X.shape[1] != Y.shape[1]:
+        raise ValueError(
+            f"Number of columns in X and Y must be the same. X has shape {X.shape} "
+            f"and Y has shape {Y.shape}."
+        )
+    try:
+        import simsimd as simd
+
+        X = np.array(X, dtype=np.float32)
+        Y = np.array(Y, dtype=np.float32)
+        Z = 1 - simd.cdist(X, Y, metric="cosine")
+        if isinstance(Z, float):
+            return np.array([Z])
+        return np.array(Z)
+    except ImportError:
+        logger.debug(
+            "Unable to import simsimd, defaulting to NumPy implementation. If you want "
+            "to use simsimd please install with `pip install simsimd`."
+        )
+        X_norm = np.linalg.norm(X, axis=1)
+        Y_norm = np.linalg.norm(Y, axis=1)
+        # Ignore divide by zero errors run time warnings as those are handled below.
+        with np.errstate(divide="ignore", invalid="ignore"):
+            similarity = np.dot(X, Y.T) / np.outer(X_norm, Y_norm)
+        similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
+        return similarity
+
+
+def maximal_marginal_relevance(
+    query_embedding: np.ndarray,
+    embedding_list: list,
+    lambda_mult: float = 0.5,
+    k: int = 4,
+) -> List[int]:
+    """Calculate maximal marginal relevance."""
+    if min(k, len(embedding_list)) <= 0:
+        return []
+    if query_embedding.ndim == 1:
+        query_embedding = np.expand_dims(query_embedding, axis=0)
+    similarity_to_query = cosine_similarity(query_embedding, embedding_list)[0]
+    most_similar = int(np.argmax(similarity_to_query))
+    idxs = [most_similar]
+    selected = np.array([embedding_list[most_similar]])
+    while len(idxs) < min(k, len(embedding_list)):
+        best_score = -np.inf
+        idx_to_add = -1
+        similarity_to_selected = cosine_similarity(embedding_list, selected)
+        for i, query_score in enumerate(similarity_to_query):
+            if i in idxs:
+                continue
+            redundant_score = max(similarity_to_selected[i])
+            equation_score = (
+                lambda_mult * query_score - (1 - lambda_mult) * redundant_score
+            )
+            if equation_score > best_score:
+                best_score = equation_score
+                idx_to_add = i
+        idxs.append(idx_to_add)
+        selected = np.append(selected, [embedding_list[idx_to_add]], axis=0)
+    return idxs
+
+
 class Milvus(VectorStore):
     """`Milvus` vector store.
 
@@ -101,8 +165,8 @@ class Milvus(VectorStore):
     Example:
         .. code-block:: python
 
-        from langchain_community.vectorstores import Milvus
-        from langchain_community.embeddings import OpenAIEmbeddings
+        from langchain_milvus.vectorstores import Milvus
+        from langchain_openai.embeddings import OpenAIEmbeddings
 
         embedding = OpenAIEmbeddings()
         # Connect to a milvus instance on localhost
@@ -144,7 +208,7 @@ class Milvus(VectorStore):
         try:
             from pymilvus import Collection, utility
         except ImportError:
-            raise ImportError(
+            raise ValueError(
                 "Could not import pymilvus python package. "
                 "Please install it with `pip install pymilvus`."
             )
@@ -1086,3 +1150,4 @@ class Milvus(VectorStore):
                 "Failed to upsert entities: %s error: %s", self.collection_name, exc
             )
             raise exc
+
