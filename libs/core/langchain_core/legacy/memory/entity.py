@@ -2,8 +2,6 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import Field
-
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.legacy.chains import LLMChain
 from langchain_core.legacy.memory import BaseChatMemory
@@ -14,7 +12,7 @@ from langchain_core.legacy.memory.prompt import (
 from langchain_core.legacy.memory.utils import get_prompt_input_key
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 

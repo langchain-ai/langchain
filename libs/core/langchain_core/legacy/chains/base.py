@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import yaml
-from langchain.schema import RUN_KEY
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -38,6 +37,9 @@ def _get_verbosity() -> bool:
     from langchain_core.globals import get_verbose
 
     return get_verbose()
+
+
+RUN_KEY = "__run"
 
 
 class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):

@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from langchain_core.memory import CombinedMemory, ConversationBufferMemory
+from langchain_core.legacy.memory import CombinedMemory, ConversationBufferMemory
 
 
 @pytest.fixture()

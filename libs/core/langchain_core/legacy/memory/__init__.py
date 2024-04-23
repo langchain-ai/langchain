@@ -9,11 +9,7 @@ from langchain_core.legacy.memory.combined import CombinedMemory
 from langchain_core.legacy.memory.entity import (
     ConversationEntityMemory,
     InMemoryEntityStore,
-    RedisEntityStore,
-    SQLiteEntityStore,
-    UpstashRedisEntityStore,
 )
-from langchain_core.legacy.memory.kg import ConversationKGMemory
 from langchain_core.legacy.memory.readonly import ReadOnlySharedMemory
 from langchain_core.legacy.memory.simple import SimpleMemory
 from langchain_core.legacy.memory.summary import ConversationSummaryMemory
@@ -28,15 +24,12 @@ __all__ = [
     "ConversationBufferMemory",
     "ConversationBufferWindowMemory",
     "ConversationEntityMemory",
-    "ConversationKGMemory",
     "ConversationStringBufferMemory",
     "ConversationSummaryBufferMemory",
     "ConversationSummaryMemory",
     "ConversationTokenBufferMemory",
     "InMemoryEntityStore",
     "ReadOnlySharedMemory",
-    "RedisEntityStore",
-    "SQLiteEntityStore",
     "SimpleMemory",
     "VectorStoreRetrieverMemory",
 ]
