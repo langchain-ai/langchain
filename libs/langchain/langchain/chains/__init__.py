@@ -48,7 +48,7 @@ _module_lookup = {
     "GraphSparqlQAChain": "langchain.chains.graph_qa.sparql",
     "create_history_aware_retriever": "langchain.chains.history_aware_retriever",
     "HypotheticalDocumentEmbedder": "langchain.chains.hyde.base",
-    "LLMChain": "langchain.chains.llm",
+    "LLMChain": "langchain_core.legacy.chains.llm",
     "LLMCheckerChain": "langchain.chains.llm_checker.base",
     "LLMMathChain": "langchain.chains.llm_math.base",
     "LLMRequestsChain": "langchain.chains.llm_requests",

@@ -26,9 +26,6 @@
 
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
-from langchain_community.memory.kg import ConversationKGMemory
-from langchain_community.memory.motorhead_memory import MotorheadMemory
-from langchain_community.memory.zep_memory import ZepMemory
 from langchain_community.chat_message_histories import (
     AstraDBChatMessageHistory,
     CassandraChatMessageHistory,
@@ -48,7 +45,28 @@ from langchain_community.chat_message_histories import (
     XataChatMessageHistory,
     ZepChatMessageHistory,
 )
-from langchain_core.legacy.memory.readonly import ReadOnlySharedMemory
+from langchain_community.memory import (
+    ConversationKGMemory,
+    MotorheadMemory,
+    RedisEntityStore,
+    SQLiteEntityStore,
+    UpstashRedisEntityStore,
+    ZepMemory,
+)
+from langchain_core.legacy.memory import (
+    CombinedMemory,
+    ConversationBufferMemory,
+    ConversationBufferWindowMemory,
+    ConversationEntityMemory,
+    ConversationStringBufferMemory,
+    ConversationSummaryBufferMemory,
+    ConversationSummaryMemory,
+    ConversationTokenBufferMemory,
+    InMemoryEntityStore,
+    ReadOnlySharedMemory,
+    SimpleMemory,
+    VectorStoreRetrieverMemory,
+)
 
 __all__ = [
     "AstraDBChatMessageHistory",
