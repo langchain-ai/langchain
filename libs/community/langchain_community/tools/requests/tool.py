@@ -1,7 +1,7 @@
 # flake8: noqa
 """Tools for making requests to an API endpoint."""
 import json
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, Type
 
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.callbacks import (
@@ -10,6 +10,8 @@ from langchain_core.callbacks import (
 )
 
 from langchain_community.utilities.requests import GenericRequestsWrapper
+from langchain_core.tools import BaseTool
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 
@@ -21,6 +23,12 @@ def _parse_input(text: str) -> Dict[str, Any]:
 def _clean_url(url: str) -> str:
     """Strips quotes from the url."""
     return url.strip("\"'")
+
+class BaseRequestsToolSchema(BaseModel):
+    """Input for the BaseRequestsTool tool."""
+
+    url: str = Field(description="""Endpoint to be used for the request""")
+
 
 
 class BaseRequestsTool(BaseModel):
@@ -54,6 +62,7 @@ class RequestsGetTool(BaseRequestsTool, BaseTool):
     content from a website. Input should be a  url (i.e. https://www.google.com).
     The output will be the text response of the GET request.
     """
+    args_schema: Type[BaseModel] = BaseRequestsToolSchema
 
     def _run(
         self, url: str, run_manager: Optional[CallbackManagerForToolRun] = None
@@ -81,6 +90,7 @@ class RequestsPostTool(BaseRequestsTool, BaseTool):
     Be careful to always use double quotes for strings in the json string
     The output will be the text response of the POST request.
     """
+    args_schema: Type[BaseModel] = BaseRequestsToolSchema
 
     def _run(
         self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
@@ -118,7 +128,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
     Be careful to always use double quotes for strings in the json string
     The output will be the text response of the PATCH request.
     """
-
+    args_schema: Type[BaseModel] = BaseRequestsToolSchema
     def _run(
         self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Union[str, Dict[str, Any]]:
@@ -155,7 +165,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
     Be careful to always use double quotes for strings in the json string.
     The output will be the text response of the PUT request.
     """
-
+    args_schema: Type[BaseModel] = BaseRequestsToolSchema
     def _run(
         self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Union[str, Dict[str, Any]]:
@@ -190,6 +200,7 @@ class RequestsDeleteTool(BaseRequestsTool, BaseTool):
     Input should be a specific url, and the output will be the text
     response of the DELETE request.
     """
+    args_schema: Type[BaseModel] = BaseRequestsToolSchema
 
     def _run(
         self,
