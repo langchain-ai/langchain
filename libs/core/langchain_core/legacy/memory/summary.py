@@ -4,13 +4,12 @@ from typing import Any, Dict, List, Type
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
-from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, root_validator
-
 from langchain_core.legacy.chains.llm import LLMChain
 from langchain_core.legacy.memory.chat_memory import BaseChatMemory
 from langchain_core.legacy.memory.prompt import SUMMARY_PROMPT
+from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_string
+from langchain_core.prompts import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class SummarizerMixin(BaseModel):

@@ -1,10 +1,10 @@
 from langchain_core.legacy.memory.base import BaseMemory
-from langchain_core.legacy.memory.chat_memory import BaseChatMemory
 from langchain_core.legacy.memory.buffer import (
     ConversationBufferMemory,
     ConversationStringBufferMemory,
 )
 from langchain_core.legacy.memory.buffer_window import ConversationBufferWindowMemory
+from langchain_core.legacy.memory.chat_memory import BaseChatMemory
 from langchain_core.legacy.memory.combined import CombinedMemory
 from langchain_core.legacy.memory.entity import (
     ConversationEntityMemory,

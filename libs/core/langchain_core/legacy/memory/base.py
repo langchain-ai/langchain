@@ -69,7 +69,7 @@ class BaseMemory(Serializable, ABC):
         """Save the context of this chain run to memory."""
 
     async def asave_context(
-            self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self, inputs: Dict[str, Any], outputs: Dict[str, str]
     ) -> None:
         """Save the context of this chain run to memory."""
         await run_in_executor(None, self.save_context, inputs, outputs)

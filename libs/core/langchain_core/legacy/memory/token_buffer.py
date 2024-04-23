@@ -1,9 +1,8 @@
 from typing import Any, Dict, List
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import BaseMessage, get_buffer_string
-
 from langchain_core.legacy.memory.chat_memory import BaseChatMemory
+from langchain_core.messages import BaseMessage, get_buffer_string
 
 
 class ConversationTokenBufferMemory(BaseChatMemory):
