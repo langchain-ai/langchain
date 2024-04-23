@@ -5,10 +5,12 @@ import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.outputs import (
@@ -478,15 +480,87 @@ class GenerateUsername(BaseModel):
 
 
 def test_tool_use() -> None:
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
     msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
+
+    assert isinstance(ai_msg, AIMessage)
+    assert isinstance(ai_msg.tool_calls, list)
+    assert len(ai_msg.tool_calls) == 1
+    tool_call = ai_msg.tool_calls[0]
+    assert "args" in tool_call
+
     tool_msg = ToolMessage(
         "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
     )
     msgs.extend([ai_msg, tool_msg])
     llm_with_tool.invoke(msgs)
+
+    # Test streaming
+    ai_messages = llm_with_tool.stream(msgs)
+    first = True
+    for message in ai_messages:
+        if first:
+            gathered = message
+            first = False
+        else:
+            gathered = gathered + message  # type: ignore
+    assert isinstance(gathered, AIMessageChunk)
+    assert isinstance(gathered.tool_call_chunks, list)
+    assert len(gathered.tool_call_chunks) == 1
+    tool_call_chunk = gathered.tool_call_chunks[0]
+    assert "args" in tool_call_chunk
+
+    streaming_tool_msg = ToolMessage(
+        "sally_green_hair",
+        tool_call_id=gathered.additional_kwargs["tool_calls"][0]["id"],
+    )
+    msgs.extend([gathered, streaming_tool_msg])
+    llm_with_tool.invoke(msgs)
+
+
+def test_manual_tool_call_msg() -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
+    msgs: List = [
+        HumanMessage("Sally has green hair, what would her username be?"),
+        AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(
+                    name="GenerateUsername",
+                    args={"name": "Sally", "hair_color": "green"},
+                    id="foo",
+                )
+            ],
+        ),
+        ToolMessage("sally_green_hair", tool_call_id="foo"),
+    ]
+    output: AIMessage = cast(AIMessage, llm_with_tool.invoke(msgs))
+    assert output.content
+    # Should not have called the tool again.
+    assert not output.tool_calls and not output.invalid_tool_calls
+
+    # OpenAI should error when tool call id doesn't match across AIMessage and
+    # ToolMessage
+    msgs = [
+        HumanMessage("Sally has green hair, what would her username be?"),
+        AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(
+                    name="GenerateUsername",
+                    args={"name": "Sally", "hair_color": "green"},
+                    id="bar",
+                )
+            ],
+        ),
+        ToolMessage("sally_green_hair", tool_call_id="foo"),
+    ]
+    with pytest.raises(Exception):
+        llm_with_tool.invoke(msgs)
 
 
 def test_openai_structured_output() -> None:
