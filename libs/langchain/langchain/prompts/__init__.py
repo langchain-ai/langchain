@@ -27,6 +27,9 @@ from multiple components. Prompt classes and functions make constructing
                     ChatPromptValue
 
 """  # noqa: E501
+from langchain_community.example_selectors.ngram_overlap import (
+    NGramOverlapExampleSelector,
+)
 from langchain_core.example_selectors import (
     LengthBasedExampleSelector,
     MaxMarginalRelevanceExampleSelector,
@@ -50,7 +53,6 @@ from langchain_core.prompts import (
     load_prompt,
 )
 
-from langchain.prompts.example_selector import NGramOverlapExampleSelector
 from langchain.prompts.prompt import Prompt
 
 __all__ = [
