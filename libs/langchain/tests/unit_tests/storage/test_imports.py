@@ -7,6 +7,7 @@ EXPECTED_ALL = [
     "InMemoryByteStore",
     "LocalFileStore",
     "RedisStore",
+    "InvalidKeyException",
     "create_lc_store",
     "create_kv_docstore",
     "UpstashRedisByteStore",
