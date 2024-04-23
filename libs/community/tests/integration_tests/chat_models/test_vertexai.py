@@ -50,7 +50,7 @@ def test_vertexai_single_call(model_name: str) -> None:
     else:
         model = ChatVertexAI()
     message = HumanMessage(content="Hello")
-    response = model([message])
+    response = model.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -104,7 +104,7 @@ def test_vertexai_single_call_with_context() -> None:
     )
     context = SystemMessage(content=raw_context)
     message = HumanMessage(content=question)
-    response = model([context, message])
+    response = model.invoke([context, message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -166,7 +166,7 @@ def test_vertexai_single_call_with_examples() -> None:
     output = AIMessage(content=text_answer)
     context = SystemMessage(content=raw_context)
     message = HumanMessage(content=question)
-    response = model([context, message], examples=[inp, output])
+    response = model.invoke([context, message], examples=[inp, output])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -183,7 +183,7 @@ def test_vertexai_single_call_with_history(model_name: str) -> None:
     message1 = HumanMessage(content=text_question1)
     message2 = AIMessage(content=text_answer1)
     message3 = HumanMessage(content=text_question2)
-    response = model([message1, message2, message3])
+    response = model.invoke([message1, message2, message3])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -251,9 +251,9 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
         model = ChatVertexAI(**prompt_params)
         message = HumanMessage(content=user_prompt)
         if stop:
-            response = model([message], stop=[stop])
+            response = model.invoke([message], stop=[stop])
         else:
-            response = model([message])
+            response = model.invoke([message])
 
         assert response.content == response_text
         mock_send_message.assert_called_once_with(user_prompt, candidate_count=1)
