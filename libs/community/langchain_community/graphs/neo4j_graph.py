@@ -151,6 +151,7 @@ class Neo4jGraph(GraphStore):
             embedding-like properties from database responses. Default is False.
     refresh_schema (bool): A flag whether to refresh schema information
             at initialization. Default is True.
+    driver_config (Dict): Configuration passed to Neo4j Driver.
 
     *Security note*: Make sure that the database connection uses credentials
         that are narrowly-scoped to only include necessary permissions.
