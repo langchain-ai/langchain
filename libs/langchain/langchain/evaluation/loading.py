@@ -139,7 +139,7 @@ def load_evaluator(
                     raise ImportError(
                         "Could not import langchain_openai or fallback onto "
                         "langchain_community. Please install langchain_openai "
-                        "or specify a language model explicitly."
+                        "or specify a language model explicitly. "
                         "It's recommended to install langchain_openai AND "
                         "specify a language model explicitly."
                     )
