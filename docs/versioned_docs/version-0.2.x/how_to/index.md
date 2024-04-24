@@ -122,6 +122,15 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to handle errors when calling tools](/docs/how_to/tools_error)
 
 ### Agents
+
+:::note
+
+The information here refers to a specific agent architecture.
+This is a high level agent architecture, and while it makes it easy to get started it can also be restrictive as you try to build more advanced agents.
+If you are interested in building more customizable, highly controllable agents, then please check out [LangGraph](https://github.com/langchain-ai/langgraph)
+
+:::
+
 - [How to create a custom agent](/docs/how_to/custom_agent)
 - [How to stream responses from an agent](/docs/how_to/agents_streaming)
 - [How to run an agent as an iterator](/docs/how_to/agent_iter)
