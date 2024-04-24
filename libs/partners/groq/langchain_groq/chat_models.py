@@ -23,7 +23,6 @@ from typing import (
     cast,
 )
 
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -469,7 +468,7 @@ class ChatGroq(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
-                    if k in overall_token_usage:
+                    if k in overall_token_usage and v is not None:
                         overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
@@ -595,7 +594,6 @@ class ChatGroq(BaseChatModel):
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
-    @beta()
     def with_structured_output(
         self,
         schema: Optional[Union[Dict, Type[BaseModel]]] = None,
