@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
 
-from langchain_community.chat_message_histories import FileChatMessageHistory
+from langchain_core.chat_history import FileChatMessageHistory
+from langchain_core.messages import AIMessage, HumanMessage
 
 
 @pytest.fixture
