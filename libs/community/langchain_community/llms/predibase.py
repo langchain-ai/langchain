@@ -149,7 +149,8 @@ class Predibase(LLM):
 found in the Predibase repository of fine-tuned adapters."""
                     ) from ge
             else:
-                # The adapter version is omitted, hence look for the adapter ID in the HuggingFace repository.
+                # The adapter version is omitted,
+                # hence look for the adapter ID in the HuggingFace repository.
                 try:
                     response = lorax_client.generate(
                         prompt=prompt,
