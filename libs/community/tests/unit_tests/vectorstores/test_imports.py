@@ -82,6 +82,7 @@ EXPECTED_ALL = [
     "TileDB",
     "TimescaleVector",
     "Typesense",
+    "UpstashVectorStore",
     "USearch",
     "VDMS",
     "Vald",

@@ -33,10 +33,10 @@ class UpstashVectorStore(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores.upstash import UpstashVectorStore
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_openai import OpenAIEmbeddings
+            from langchain_community.vectorstores import UpstashVectorStore
 
-            embeddings = OpenAIEmbeddings()
+            embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
             vectorstore = UpstashVectorStore(
                 embedding=embeddings,
                 index_url="...",
