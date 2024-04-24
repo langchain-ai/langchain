@@ -60,6 +60,10 @@ try:
     from langchain.chains import LLMChain
     from langchain.chains.prompt_selector import ConditionalPromptSelector
 
+    DEFAULT_TEXT_SPLITTER = RecursiveCharacterTextSplitter(
+        chunk_size=1500, chunk_overlap=150
+    )
+
     class WebResearchRetriever(BaseRetriever):
         """`Google Search API` retriever."""
 
@@ -90,9 +94,7 @@ try:
             search: GoogleSearchAPIWrapper,
             prompt: Optional[BasePromptTemplate] = None,
             num_search_results: int = 1,
-            text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
-                chunk_size=1500, chunk_overlap=150
-            ),
+            text_splitter: RecursiveCharacterTextSplitter = DEFAULT_TEXT_SPLITTER,
         ) -> "WebResearchRetriever":
             """Initialize from llm using default template.
 
