@@ -4,7 +4,6 @@ import base64
 import json
 import logging
 import uuid
-import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,12 +18,14 @@ from typing import (
 )
 
 import numpy as np
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import get_from_env
 from langchain_core.vectorstores import VectorStore
 
@@ -701,12 +702,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         if "search_type" in values:
             search_type = values["search_type"]
             if search_type not in (
-                allowed_search_types := (
-                    "similarity",
-                    "hybrid",
-                    "semantic_hybrid",
-                    "similarity_score_threshold",
-                )
+                allowed_search_types := ("similarity", "hybrid", "semantic_hybrid")
             ):
                 raise ValueError(
                     f"search_type of {search_type} not allowed. Valid values are: "
@@ -726,23 +722,16 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
             docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
         elif self.search_type == "semantic_hybrid":
             docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
-        elif self.search_type == "similarity_score_threshold":
-            docs_and_similarities = (
-                self.vectorstore.similarity_search_with_relevance_scores(
-                    query, **self.search_kwargs
-                )
-            )
-            docs = [doc for doc, _ in docs_and_similarities]
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
 
     async def _aget_relevant_documents(
-        self, *args: Any, **kwargs: Any
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> List[Document]:
-        warnings.warn(
-            "AzureSearchVectorStoreRetriever does not properly support async."
-        )
-        return await run_in_executor(
-            None, self._get_relevant_documents, *args, **kwargs
+        raise NotImplementedError(
+            "AzureSearchVectorStoreRetriever does not support async"
         )
