@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from abc import ABC
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional
-
+from typing import Any, Dict, List, Mapping, Optional, Iterator
+import json
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-
+from langchain_core.outputs import GenerationChunk
 from langchain_community.llms.utils import enforce_stop_tokens
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
@@ -272,7 +272,46 @@ class OCIGenAI(LLM, OCIGenAIBase):
 
                response = llm.invoke("Tell me a joke.")
         """
-
+        if self.is_stream:
+            text = ""
+            for chunk in self._stream(prompt, stop, run_manager, **kwargs):
+                text += chunk.text
+            if stop is not None:
+                text = enforce_stop_tokens(text, stop)
+            return text
+        
         invocation_obj = self._prepare_invocation_object(prompt, stop, kwargs)
         response = self.client.generate_text(invocation_obj)
         return self._process_response(response, stop)
+
+    def _stream(
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> Iterator[GenerationChunk]:
+            """Stream OCIGenAI LLM on given prompt.
+
+            Args:
+                prompt: The prompt to pass into the model.
+                stop: Optional list of stop words to use when generating.
+
+            Returns:
+                An iterator of GenerationChunks.
+
+            Example:
+                .. code-block:: python
+
+                response = llm.stream("Tell me a joke.")
+            """
+
+            self.is_stream = True
+            invocation_obj = self._prepare_invocation_object(prompt, stop, kwargs)
+            response = self.client.generate_text(invocation_obj)
+            
+            for event in response.data.events():
+                chunk = GenerationChunk(text=json.loads(event.data)["text"])
+                if run_manager:
+                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                yield chunk
