@@ -4,10 +4,8 @@ from typing import List
 
 from langchain_core.chat_history import (
     BaseChatMessageHistory,
-    messages_from_dict,
-    messages_to_dict,
 )
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, messages_from_dict, messages_to_dict
 
 
 class FileChatMessageHistory(BaseChatMessageHistory):
