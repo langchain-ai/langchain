@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import List
 
 from langchain_core.chat_history import (
     BaseChatMessageHistory,
