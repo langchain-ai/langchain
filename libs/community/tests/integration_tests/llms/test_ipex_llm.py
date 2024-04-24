@@ -1,5 +1,6 @@
 """Test IPEX LLM"""
 import os
+from typing import Any
 
 import pytest
 from langchain_core.outputs import LLMResult
@@ -10,10 +11,10 @@ model_ids_to_test = os.getenv("TEST_IPEXLLM_MODEL_IDS") or ""
 skip_if_no_model_ids = pytest.mark.skipif(
     not model_ids_to_test, reason="TEST_IPEXLLM_MODEL_IDS environment variable not set."
 )
-model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(",")]
+model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(",")]  # type: ignore
 
 
-def load_model(model_id: str) -> None:
+def load_model(model_id: str) -> Any:
     llm = IpexLLM.from_model_id(
         model_id=model_id,
         model_kwargs={"temperature": 0, "max_length": 16, "trust_remote_code": True},
@@ -21,7 +22,7 @@ def load_model(model_id: str) -> None:
     return llm
 
 
-def load_model_more_types(model_id: str, load_in_low_bit: str) -> None:
+def load_model_more_types(model_id: str, load_in_low_bit: str) -> Any:
     llm = IpexLLM.from_model_id(
         model_id=model_id,
         load_in_low_bit=load_in_low_bit,
