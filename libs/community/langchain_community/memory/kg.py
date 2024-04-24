@@ -136,5 +136,5 @@ try:
             self.kg.clear()
 except ImportError:
     # Placeholder object
-    class ConversationKGMemory:
+    class ConversationKGMemory:  # type: ignore[no-redef]
         pass

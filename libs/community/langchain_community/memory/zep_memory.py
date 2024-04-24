@@ -125,5 +125,5 @@ try:
             self.chat_memory.add_ai_message(output_str, metadata=metadata)
 except ImportError:
     # Placeholder object
-    class ZepMemory:
+    class ZepMemory:  # type: ignore[no-redef]
         pass
