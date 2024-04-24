@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, get_args
 from unittest.mock import MagicMock, Mock, patch
 
-from langchain_upstage import UpstageLayoutAnalysis
+from langchain_upstage import UpstageLayoutAnalysisLoader
 from langchain_upstage.layout_analysis import OutputType, SplitType
 
 MOCK_RESPONSE_JSON: Dict[str, Any] = {
@@ -48,13 +48,13 @@ EXAMPLE_PDF_PATH = Path(__file__).parent.parent / "examples/solar.pdf"
 
 def test_initialization() -> None:
     """Test layout analysis document loader initialization."""
-    UpstageLayoutAnalysis(file_path=EXAMPLE_PDF_PATH, api_key="bar")
+    UpstageLayoutAnalysisLoader(file_path=EXAMPLE_PDF_PATH, api_key="bar")
 
 
 def test_layout_analysis_param() -> None:
     for output_type in get_args(OutputType):
         for split in get_args(SplitType):
-            loader = UpstageLayoutAnalysis(
+            loader = UpstageLayoutAnalysisLoader(
                 file_path=EXAMPLE_PDF_PATH,
                 api_key="bar",
                 output_type=output_type,
@@ -72,7 +72,7 @@ def test_none_split_text_output(mock_post: Mock) -> None:
         status_code=200, json=MagicMock(return_value=MOCK_RESPONSE_JSON)
     )
 
-    loader = UpstageLayoutAnalysis(
+    loader = UpstageLayoutAnalysisLoader(
         file_path=EXAMPLE_PDF_PATH,
         output_type="text",
         split="none",
@@ -93,7 +93,7 @@ def test_element_split_text_output(mock_post: Mock) -> None:
         status_code=200, json=MagicMock(return_value=MOCK_RESPONSE_JSON)
     )
 
-    loader = UpstageLayoutAnalysis(
+    loader = UpstageLayoutAnalysisLoader(
         file_path=EXAMPLE_PDF_PATH,
         output_type="text",
         split="element",
@@ -117,7 +117,7 @@ def test_page_split_text_output(mock_post: Mock) -> None:
         status_code=200, json=MagicMock(return_value=MOCK_RESPONSE_JSON)
     )
 
-    loader = UpstageLayoutAnalysis(
+    loader = UpstageLayoutAnalysisLoader(
         file_path=EXAMPLE_PDF_PATH,
         output_type="text",
         split="page",
@@ -139,7 +139,7 @@ def test_none_split_html_output(mock_post: Mock) -> None:
         status_code=200, json=MagicMock(return_value=MOCK_RESPONSE_JSON)
     )
 
-    loader = UpstageLayoutAnalysis(
+    loader = UpstageLayoutAnalysisLoader(
         file_path=EXAMPLE_PDF_PATH,
         output_type="html",
         split="none",
@@ -160,7 +160,7 @@ def test_element_split_html_output(mock_post: Mock) -> None:
         status_code=200, json=MagicMock(return_value=MOCK_RESPONSE_JSON)
     )
 
-    loader = UpstageLayoutAnalysis(
+    loader = UpstageLayoutAnalysisLoader(
         file_path=EXAMPLE_PDF_PATH,
         output_type="html",
         split="element",
@@ -184,7 +184,7 @@ def test_page_split_html_output(mock_post: Mock) -> None:
         status_code=200, json=MagicMock(return_value=MOCK_RESPONSE_JSON)
     )
 
-    loader = UpstageLayoutAnalysis(
+    loader = UpstageLayoutAnalysisLoader(
         file_path=EXAMPLE_PDF_PATH,
         output_type="html",
         split="page",

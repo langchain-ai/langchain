@@ -70,7 +70,7 @@ def get_from_param_or_env(
         )
 
 
-class UpstageLayoutAnalysis(BaseLoader):
+class UpstageLayoutAnalysisLoader(BaseLoader):
     """Upstage Layout Analysis.
 
     To use, you should have the environment variable `UPSTAGE_DOCUMENT_AI_API_KEY`
