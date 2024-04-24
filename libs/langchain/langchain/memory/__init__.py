@@ -67,7 +67,6 @@ from langchain.memory.summary import ConversationSummaryMemory
 from langchain.memory.summary_buffer import ConversationSummaryBufferMemory
 from langchain.memory.token_buffer import ConversationTokenBufferMemory
 from langchain.memory.vectorstore import VectorStoreRetrieverMemory
-from langchain.memory.zep_memory import ZepMemory
 
 __all__ = [
     "AstraDBChatMessageHistory",

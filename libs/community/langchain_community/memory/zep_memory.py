@@ -49,7 +49,7 @@ try:
         For more information on the zep-python package, see:
         https://github.com/getzep/zep-python
 
-        """
+        """  # noqa: E501
 
         chat_memory: ZepChatMessageHistory
 
@@ -87,7 +87,7 @@ try:
                                             Defaults to "history".
                                             Ensure that this matches the key used in
                                             chain's prompt template.
-            """
+            """  # noqa: E501
             chat_message_history = ZepChatMessageHistory(
                 session_id=session_id,
                 url=url,
@@ -115,7 +115,7 @@ try:
                 inputs (Dict[str, Any]): The inputs to the chain.
                 outputs (Dict[str, str]): The outputs from the chain.
                 metadata (Optional[Dict[str, Any]], optional): Any metadata to save with
-                                                               the context. Defaults to None
+                                                           the context. Defaults to None
 
             Returns:
                 None
