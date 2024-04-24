@@ -42,7 +42,8 @@ DEFAULT_INSERT_BATCH_SIZE = 128
 
 
 class AsyncDocumentDBVectorSearch(VectorStore):
-    """`Amazon DocumentDB (with MongoDB compatibility)` async vector store built with `motor`.
+    """`Amazon DocumentDB (with MongoDB compatibility)` async vector store
+    built with `motor`.
     Please refer to the official Vector Search documentation for more details:
     https://docs.aws.amazon.com/documentdb/latest/developerguide/vector-search.html
 
@@ -125,8 +126,8 @@ class AsyncDocumentDBVectorSearch(VectorStore):
             an instance of the vector store
         """
         try:
+            from motor.core import AgnosticClient  # noqa: F811 F401
             from motor.motor_asyncio import AsyncIOMotorClient
-            from motor.core import AgnosticClient  # noqa: F811
         except ImportError:
             raise ImportError(
                 "Could not import motor, please install it with " "`pip install motor`."

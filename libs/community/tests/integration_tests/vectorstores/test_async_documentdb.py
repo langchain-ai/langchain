@@ -1,6 +1,7 @@
 """Test DocumentDBVectorSearch functionality."""
 import logging
 import os
+
 # from time import sleep
 from asyncio import sleep
 from typing import Any, Optional
@@ -10,8 +11,8 @@ from langchain_core.documents import Document
 
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.async_documentdb import (
-    DocumentDBSimilarityType,
     AsyncDocumentDBVectorSearch,
+    DocumentDBSimilarityType,
 )
 
 logging.basicConfig(level=logging.DEBUG)
@@ -31,8 +32,8 @@ similarity_algorithm = DocumentDBSimilarityType.COS
 
 
 def prepare_collection() -> Any:
-    from motor.motor_asyncio import AsyncIOMotorClient
     from motor.core import AgnosticClient
+    from motor.motor_asyncio import AsyncIOMotorClient
 
     test_client: AgnosticClient = AsyncIOMotorClient(CONNECTION_STRING)
     return test_client[DB_NAME][COLLECTION_NAME]
