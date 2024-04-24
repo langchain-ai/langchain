@@ -21,7 +21,7 @@ class Predibase(LLM):
     otherwise, an error is raised.  If the fine-tuned adapter is hosted at Predibase,
     then `adapter_version` in the adapter repository must be specified.
 
-    An optional `predibase_sdk_version` parameter defaults to the latest Predibase SDK version.
+    An optional `predibase_sdk_version` parameter defaults to latest SDK version.
     """
 
     model: str
@@ -87,8 +87,9 @@ class Predibase(LLM):
             result: GeneratedResponse
             if self.adapter_id:
                 """
-                Attempt to retrieve the fine-tuned adapter from a Predibase repository.
-                If absent, then load the fine-tuned adapter from a HuggingFace repository.
+                Attempt to retrieve the fine-tuned adapter from a Predibase
+                repository.  If absent, then load the fine-tuned adapter
+                from a HuggingFace repository.
                 """
                 adapter_model: Union[Model, HuggingFaceLLM]
                 try:
@@ -144,7 +145,8 @@ class Predibase(LLM):
                     )
                 except GenerationError as ge:
                     raise ValueError(
-                        f'An adapter with the ID "{pb_adapter_id}" cannot be found in the Predibase repository of fine-tuned adapters.'
+                        f"""An adapter with the ID "{pb_adapter_id}" cannot be \
+found in the Predibase repository of fine-tuned adapters."""
                     ) from ge
             else:
                 # The adapter version is omitted, hence look for the adapter ID in the HuggingFace repository.
@@ -157,8 +159,9 @@ class Predibase(LLM):
                     )
                 except GenerationError as ge:
                     raise ValueError(
-                        f"""Either an adapter with the ID "{self.adapter_id}" cannot be found in a HuggingFace repository, \
-or it is incompatible with the base model (please make sure that the adapter configuration is consistent).
+                        f"""Either an adapter with the ID "{self.adapter_id}" \
+cannot be found in a HuggingFace repository, or it is incompatible with the \
+base model (please make sure that the adapter configuration is consistent).
 """
                     ) from ge
         else:
@@ -169,8 +172,10 @@ or it is incompatible with the base model (please make sure that the adapter con
                 )
             except requests.JSONDecodeError as jde:
                 raise ValueError(
-                    f"""An LLM with the deployment ID "{self.model}" cannot be found at Predibase \
-(please refer to "https://docs.predibase.com/user-guide/inference/models" for the list of supported models).
+                    f"""An LLM with the deployment ID "{self.model}" cannot be found \
+at Predibase (please refer to \
+"https://docs.predibase.com/user-guide/inference/models" for the list of \
+supported models).
 """
                 ) from jde
         response_text = response.generated_text
