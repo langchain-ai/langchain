@@ -17,8 +17,8 @@ from langchain_ai21.chat_models import (
     ChatAI21,
 )
 from tests.unit_tests.conftest import (
-    BASIC_EXAMPLE_LLM_PARAMETERS,
-    BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
+    BASIC_EXAMPLE_CHAT_PARAMETERS,
+    BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
     DUMMY_API_KEY,
     temporarily_unset_api_key,
 )
@@ -80,7 +80,7 @@ def test_invoke(mock_client_with_chat: Mock) -> None:
         model="j2-ultra",
         api_key=DUMMY_API_KEY,
         client=mock_client_with_chat,
-        **BASIC_EXAMPLE_LLM_PARAMETERS,
+        **BASIC_EXAMPLE_CHAT_PARAMETERS,
     )
     llm.invoke(input=chat_input, config=dict(tags=["foo"]), stop=["\n"])
 
@@ -89,7 +89,7 @@ def test_invoke(mock_client_with_chat: Mock) -> None:
         messages=[ChatMessage(role=RoleType.USER, text=chat_input)],
         system="",
         stop_sequences=["\n"],
-        **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
+        **BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
     )
 
 
@@ -106,7 +106,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
     llm = ChatAI21(
         model="j2-ultra",
         client=mock_client_with_chat,
-        **BASIC_EXAMPLE_LLM_PARAMETERS,
+        **BASIC_EXAMPLE_CHAT_PARAMETERS,
     )
 
     llm.generate(messages=[messages0, messages1])
@@ -125,7 +125,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
                     ChatMessage(role=RoleType.USER, text=str(messages0[2].content)),
                 ],
                 system="",
-                **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
+                **BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
             ),
             call(
                 model="j2-ultra",
@@ -133,7 +133,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
                     ChatMessage(role=RoleType.USER, text=str(messages1[1].content)),
                 ],
                 system="system message",
-                **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
+                **BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
             ),
         ]
     )
