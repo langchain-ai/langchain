@@ -201,7 +201,6 @@ class BaseLanguageModel(
                 prompt and additional model provider-specific output.
         """
 
-    @beta()
     def with_structured_output(
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
