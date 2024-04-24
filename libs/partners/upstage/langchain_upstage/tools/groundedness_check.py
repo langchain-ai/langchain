@@ -1,5 +1,5 @@
 import os
-from typing import Literal, Optional, Type
+from typing import Literal, Optional, Type, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -74,16 +74,18 @@ class GroundednessCheck(BaseTool):
         context: str,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Literal["grounded", "notGrounded", "notSure"]:
+    ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
         """Use the tool."""
         response = self.api_wrapper.invoke([HumanMessage(context), AIMessage(query)])
-        return response.content
+        return str(response.content)
 
     async def _arun(
         self,
         context: str,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> Literal["grounded", "notGrounded", "notSure"]:
-        response = await self.api_wrapper.ainvoke([HumanMessage(context), AIMessage(query)])
-        return response.content
+    ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
+        response = await self.api_wrapper.ainvoke(
+            [HumanMessage(context), AIMessage(query)]
+        )
+        return str(response.content)
