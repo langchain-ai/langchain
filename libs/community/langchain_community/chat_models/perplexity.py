@@ -1,4 +1,5 @@
 """Wrapper around Perplexity APIs."""
+
 from __future__ import annotations
 
 import logging
@@ -67,9 +68,8 @@ class ChatPerplexity(BaseChatModel):
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
-        None,
-        alias="timeout"
-        )
+        None, alias="timeout"
+    )
     """Timeout for requests to PerplexityChat completion API. Default is 600 seconds."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
