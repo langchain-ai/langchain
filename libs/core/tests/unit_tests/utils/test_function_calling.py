@@ -82,6 +82,7 @@ def dummy_instance_method() -> object:
                 arg2: one of 'bar', 'baz'
             """
             pass
+
     return Dummy
 
 
@@ -97,6 +98,7 @@ def dummy_class_method() -> object:
                 arg2: one of 'bar', 'baz'
             """
             pass
+
     return Dummy
 
 
@@ -125,8 +127,15 @@ def test_convert_to_openai_function(
         },
     }
 
-    for fn in (pydantic, function, dummy_tool, json_schema, expected,
-               dummy_instance_method.dummy_function, dummy_class_method.dummy_function):
+    for fn in (
+        pydantic,
+        function,
+        dummy_tool,
+        json_schema,
+        expected,
+        dummy_instance_method.dummy_function,
+        dummy_class_method.dummy_function,
+    ):
         actual = convert_to_openai_function(fn)  # type: ignore
         assert actual == expected
 
