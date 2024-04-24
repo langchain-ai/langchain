@@ -260,7 +260,7 @@ class ChildTool(BaseTool):
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
             run_id=config.pop("run_id", None),
-            configurable=config.get("configurable"),
+            config=config,
             **kwargs,
         )
 
@@ -278,7 +278,7 @@ class ChildTool(BaseTool):
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
             run_id=config.pop("run_id", None),
-            configurable=config.get("configurable"),
+            config=config,
             **kwargs,
         )
 
@@ -360,7 +360,7 @@ class ChildTool(BaseTool):
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
-        configurable: Optional[dict] = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -394,9 +394,8 @@ class ChildTool(BaseTool):
         )
         try:
             child_config = patch_config(
-                {"tags": tags or [], "metadata": metadata or {}},
+                config,
                 callbacks=run_manager.get_child(),
-                configurable=configurable,
             )
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
@@ -463,7 +462,7 @@ class ChildTool(BaseTool):
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
-        configurable: Optional[dict] = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -495,9 +494,8 @@ class ChildTool(BaseTool):
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             child_config = patch_config(
-                {"tags": tags or [], "metadata": metadata or {}},
+                config,
                 callbacks=run_manager.get_child(),
-                configurable=configurable,
             )
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
