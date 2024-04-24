@@ -14,10 +14,10 @@ class TestAI21Standard(ChatModelIntegrationTests):
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatAI21
 
-    @pytest.fixture
-    def chat_model_params(self) -> dict:
+    @pytest.fixture(params=["j2-ultra", "jamba-instruct"])
+    def chat_model_params(self, request: pytest.FixtureRequest) -> dict:
         return {
-            "model": "j2-ultra",
+            "model": request.param,
         }
 
     @pytest.mark.xfail(reason="Emits AIMessage instead of AIMessageChunk.")
