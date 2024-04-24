@@ -2,7 +2,7 @@
 
 import os
 from time import sleep
-from typing import List, Union, Dict
+from typing import List, Tuple
 
 import pytest
 from langchain_core.documents import Document
@@ -15,11 +15,11 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 
 
 @pytest.fixture(scope="function", autouse=True)
-def fixture():
+def fixture() -> None:
     index = Index.from_env()
     embedding_index = Index(
         url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
-        token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"]
+        token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"],
     )
 
     index.reset()
@@ -29,25 +29,22 @@ def fixture():
     wait_for_indexing(embedding_index)
 
 
-def wait_for_indexing(store: UpstashVectorStore):
+def wait_for_indexing(store: UpstashVectorStore) -> None:
     while store.info().pending_vector_count != 0:
         # Wait for indexing to complete
         sleep(0.5)
 
 
 def check_response_with_score(
-        result: List[Dict[str, Union[Document, float]]],
-        expected: List[Dict[str, Union[Document, float]]]
-    ):
+    result: List[Tuple[Document, float]],
+    expected: List[Tuple[Document, float]],
+) -> None:
     """
     check the result of a search with scores with an expected value
 
     scores in result will be rounded by two digits
     """
-    result = list(map(
-        lambda result: (result[0], round(result[1], 2)),
-        result
-    ))
+    result = list(map(lambda result: (result[0], round(result[1], 2)), result))
 
     assert result == expected
 
@@ -268,6 +265,7 @@ def test_upstash_add_documents_mixed_metadata() -> None:
         docs, key=lambda d: d.page_content
     )
 
+
 def test_upstash_similarity_search_with_metadata() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
     docs = [
@@ -280,29 +278,19 @@ def test_upstash_similarity_search_with_metadata() -> None:
     store.add_documents(docs, ids=ids)
     wait_for_indexing(store)
 
-    result = store.similarity_search(
-        query="foo",
-        k=5,
-        filter="waldo = 1"
-    )
+    result = store.similarity_search(query="foo", k=5, filter="waldo = 1")
 
     assert result == [
         Document(page_content="bar", metadata={"waldo": 1}),
         Document(page_content="baz", metadata={"waldo": 1}),
     ]
 
-    result = store.similarity_search_with_score(
-        query="foo",
-        k=5,
-        filter="waldo = 2"
-    )
+    result = store.similarity_search_with_score(query="foo", k=5, filter="waldo = 2")
 
     check_response_with_score(
-        result,
-        [
-            (Document(page_content='fred', metadata={'waldo': 2}), 0.85)
-        ]
+        result, [(Document(page_content="fred", metadata={"waldo": 2}), 0.85)]
     )
+
 
 @pytest.mark.asyncio
 async def test_upstash_similarity_search_with_metadata_async() -> None:
@@ -317,11 +305,7 @@ async def test_upstash_similarity_search_with_metadata_async() -> None:
     store.add_documents(docs, ids=ids)
     wait_for_indexing(store)
 
-    result = await store.asimilarity_search(
-        query="foo",
-        k=5,
-        filter="waldo = 1"
-    )
+    result = await store.asimilarity_search(query="foo", k=5, filter="waldo = 1")
 
     assert result == [
         Document(page_content="bar", metadata={"waldo": 1}),
@@ -329,17 +313,13 @@ async def test_upstash_similarity_search_with_metadata_async() -> None:
     ]
 
     result = await store.asimilarity_search_with_score(
-        query="foo",
-        k=5,
-        filter="waldo = 2"
+        query="foo", k=5, filter="waldo = 2"
     )
 
     check_response_with_score(
-        result,
-        [
-            (Document(page_content='fred', metadata={'waldo': 2}), 0.85)
-        ]
+        result, [(Document(page_content="fred", metadata={"waldo": 2}), 0.85)]
     )
+
 
 def test_upstash_similarity_search_by_vector_with_metadata() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
@@ -356,16 +336,17 @@ def test_upstash_similarity_search_by_vector_with_metadata() -> None:
     result = store.similarity_search_by_vector_with_score(
         embedding=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
         k=5,
-        filter="waldo = 1"
+        filter="waldo = 1",
     )
 
     check_response_with_score(
         result,
         [
-            (Document(page_content='bar', metadata={'waldo': 1}), 1.0),
-            (Document(page_content='baz', metadata={'waldo': 1}), 0.98)
-        ]
+            (Document(page_content="bar", metadata={"waldo": 1}), 1.0),
+            (Document(page_content="baz", metadata={"waldo": 1}), 0.98),
+        ],
     )
+
 
 @pytest.mark.asyncio
 async def test_upstash_similarity_search_by_vector_with_metadata_async() -> None:
@@ -383,16 +364,17 @@ async def test_upstash_similarity_search_by_vector_with_metadata_async() -> None
     result = await store.asimilarity_search_by_vector_with_score(
         embedding=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
         k=5,
-        filter="waldo = 1"
+        filter="waldo = 1",
     )
 
     check_response_with_score(
         result,
         [
-            (Document(page_content='bar', metadata={'waldo': 1}), 1.0),
-            (Document(page_content='baz', metadata={'waldo': 1}), 0.98)
-        ]
+            (Document(page_content="bar", metadata={"waldo": 1}), 1.0),
+            (Document(page_content="baz", metadata={"waldo": 1}), 0.98),
+        ],
     )
+
 
 def test_upstash_max_marginal_relevance_search_with_metadata() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
@@ -406,16 +388,13 @@ def test_upstash_max_marginal_relevance_search_with_metadata() -> None:
     store.add_documents(docs, ids=ids)
     wait_for_indexing(store)
 
-    result = store.max_marginal_relevance_search(
-        query="foo",
-        k=3,
-        filter="waldo = 1"
-    )
+    result = store.max_marginal_relevance_search(query="foo", k=3, filter="waldo = 1")
 
     assert result == [
-        Document(page_content='bar', metadata={'waldo': 1}),
-        Document(page_content='baz', metadata={'waldo': 1})
+        Document(page_content="bar", metadata={"waldo": 1}),
+        Document(page_content="baz", metadata={"waldo": 1}),
     ]
+
 
 @pytest.mark.asyncio
 async def test_upstash_max_marginal_relevance_search_with_metadata_async() -> None:
@@ -431,18 +410,16 @@ async def test_upstash_max_marginal_relevance_search_with_metadata_async() -> No
     wait_for_indexing(store)
 
     result = await store.amax_marginal_relevance_search(
-        query="foo",
-        k=3,
-        filter="waldo = 1"
+        query="foo", k=3, filter="waldo = 1"
     )
 
     assert result == [
-        Document(page_content='bar', metadata={'waldo': 1}),
-        Document(page_content='baz', metadata={'waldo': 1})
+        Document(page_content="bar", metadata={"waldo": 1}),
+        Document(page_content="baz", metadata={"waldo": 1}),
     ]
 
 
-def test_embeddings_configurations():
+def test_embeddings_configurations() -> None:
     """
     test the behavior of the vector store for different `embeddings` parameter
     values
@@ -453,10 +430,7 @@ def test_embeddings_configurations():
     assert embedding == [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
 
     embedding = store._embed_documents(["doc1", "doc2"])
-    assert embedding == [
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    ]
+    assert embedding == [[1, 1, 1, 1, 1, 1, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 
     # case 2: pass False as embedding
     store = UpstashVectorStore(embedding=False)
@@ -465,13 +439,13 @@ def test_embeddings_configurations():
 
     with pytest.raises(ValueError):
         embedding = store._embed_documents(["doc1", "doc2"])
-    
+
     # case 3: pass True as embedding
     # Upstash embeddings will be used
     store = UpstashVectorStore(
         index=Index(
             url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
-            token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"]
+            token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"],
         ),
         embedding=True,
     )
@@ -480,12 +454,12 @@ def test_embeddings_configurations():
     embedding = store._embed_documents(["doc1", "doc2"])
     assert embedding == ["doc1", "doc2"]
 
-def test_embedding_index():
 
+def test_embedding_index() -> None:
     store = UpstashVectorStore(
         index=Index(
             url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
-            token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"]
+            token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"],
         ),
         embedding=True,
     )
@@ -502,34 +476,31 @@ def test_embedding_index():
     wait_for_indexing(store)
 
     # similarity search
-    result = store.similarity_search_with_score(
-        query="eagle",
-        k=2
-    )
+    result = store.similarity_search_with_score(query="eagle", k=2)
     check_response_with_score(
         result,
         [
-            (Document(page_content='penguin', metadata={'topic': 'bird'}), 0.82),
-            (Document(page_content='albatros', metadata={'topic': 'bird'}), 0.78)
-        ]
+            (Document(page_content="penguin", metadata={"topic": "bird"}), 0.82),
+            (Document(page_content="albatros", metadata={"topic": "bird"}), 0.78),
+        ],
     )
 
     # similarity search with relevance score
-    result = store.similarity_search_with_relevance_scores(
-        query="mozart",
-        k=2
-    )
+    result = store.similarity_search_with_relevance_scores(query="mozart", k=2)
     check_response_with_score(
         result,
         [
-            (Document(page_content='beethoven', metadata={'topic': 'composer'}), 0.88),
-            (Document(page_content='rachmaninoff', metadata={'topic': 'composer'}), 0.84)
-        ]
+            (Document(page_content="beethoven", metadata={"topic": "composer"}), 0.88),
+            (
+                Document(page_content="rachmaninoff", metadata={"topic": "composer"}),
+                0.84,
+            ),
+        ],
     )
 
-@pytest.mark.asyncio
-async def test_embedding_index_async():
 
+@pytest.mark.asyncio
+async def test_embedding_index_async() -> None:
     store = UpstashVectorStore(
         index_url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
         index_token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"],
@@ -548,27 +519,24 @@ async def test_embedding_index_async():
     wait_for_indexing(store)
 
     # similarity search
-    result = await store.asimilarity_search_with_score(
-        query="eagle",
-        k=2
-    )
+    result = await store.asimilarity_search_with_score(query="eagle", k=2)
     check_response_with_score(
         result,
         [
-            (Document(page_content='penguin', metadata={'topic': 'bird'}), 0.82),
-            (Document(page_content='albatros', metadata={'topic': 'bird'}), 0.78)
-        ]
+            (Document(page_content="penguin", metadata={"topic": "bird"}), 0.82),
+            (Document(page_content="albatros", metadata={"topic": "bird"}), 0.78),
+        ],
     )
-    
+
     # similarity search with relevance score
-    result = await store.asimilarity_search_with_relevance_scores(
-        query="mozart",
-        k=2
-    )
+    result = await store.asimilarity_search_with_relevance_scores(query="mozart", k=2)
     check_response_with_score(
         result,
         [
-            (Document(page_content='beethoven', metadata={'topic': 'composer'}), 0.88),
-            (Document(page_content='rachmaninoff', metadata={'topic': 'composer'}), 0.84)
-        ]
+            (Document(page_content="beethoven", metadata={"topic": "composer"}), 0.88),
+            (
+                Document(page_content="rachmaninoff", metadata={"topic": "composer"}),
+                0.84,
+            ),
+        ],
     )

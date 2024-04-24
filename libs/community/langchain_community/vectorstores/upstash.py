@@ -150,7 +150,9 @@ class UpstashVectorStore(VectorStore):
         """Access the query embedding object if available."""
         return self._embeddings
 
-    def _embed_documents(self, texts: Iterable[str]) -> Union[List[List[float], List[str]]]:
+    def _embed_documents(
+        self, texts: Iterable[str]
+    ) -> Union[List[List[float], List[str]]]:
         """Embed strings using the embeddings object"""
         if not self._embeddings:
             raise ValueError(
@@ -159,7 +161,7 @@ class UpstashVectorStore(VectorStore):
             )
         if isinstance(self._embeddings, Embeddings):
             return self._embeddings.embed_documents(list(texts))
-        
+
         # using self._embeddings is True, Upstash embeddings will be used.
         # returning list of text as List[str]
         return list(texts)
@@ -173,7 +175,7 @@ class UpstashVectorStore(VectorStore):
             )
         if isinstance(self._embeddings, Embeddings):
             return self._embeddings.embed_query(text)
-        
+
         # using self._embeddings is True, Upstash embeddings will be used.
         # returning query as it is
         return text
@@ -421,21 +423,15 @@ class UpstashVectorStore(VectorStore):
         embedding: Union[List[float], str],
         k: int = 4,
         filter: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
         payload = (
-            {"data": embedding}
-            if isinstance(embedding, str)
-            else {"vector": embedding}
+            {"data": embedding} if isinstance(embedding, str) else {"vector": embedding}
         )
         results = self._index.query(
-            **payload,
-            top_k=k,
-            include_metadata=True,
-            filter=filter,
-            **kwargs
+            **payload, top_k=k, include_metadata=True, filter=filter, **kwargs
         )
 
         return self._process_results(results)
@@ -450,16 +446,10 @@ class UpstashVectorStore(VectorStore):
         """Return texts whose embedding is closest to the given embedding"""
 
         payload = (
-            {"data": embedding}
-            if isinstance(embedding, str)
-            else {"vector": embedding}
+            {"data": embedding} if isinstance(embedding, str) else {"vector": embedding}
         )
         results = await self._async_index.query(
-            **payload,
-            top_k=k,
-            include_metadata=True,
-            filter=filter,
-            **kwargs
+            **payload, top_k=k, include_metadata=True, filter=filter, **kwargs
         )
 
         return self._process_results(results)
@@ -562,9 +552,7 @@ class UpstashVectorStore(VectorStore):
         """
         Since Upstash always returns relevance scores, default implementation is used.
         """
-        return self.similarity_search_with_score(
-            query, k=k, filter=filter, **kwargs
-        )
+        return self.similarity_search_with_score(query, k=k, filter=filter, **kwargs)
 
     async def _asimilarity_search_with_relevance_scores(
         self,
@@ -614,7 +602,7 @@ class UpstashVectorStore(VectorStore):
             include_vectors=True,
             include_metadata=True,
             filter=filter,
-            **kwargs
+            **kwargs,
         )
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
@@ -662,7 +650,7 @@ class UpstashVectorStore(VectorStore):
             include_vectors=True,
             include_metadata=True,
             filter=filter,
-            **kwargs
+            **kwargs,
         )
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
@@ -710,7 +698,7 @@ class UpstashVectorStore(VectorStore):
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
-            **kwargs
+            **kwargs,
         )
 
     async def amax_marginal_relevance_search(
@@ -747,7 +735,7 @@ class UpstashVectorStore(VectorStore):
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
             filter=filter,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
