@@ -1,5 +1,4 @@
 """Test embedding model integration."""
-
 import os
 
 import pytest
