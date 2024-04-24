@@ -22,7 +22,7 @@ from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
 )
 
 TYPE_4B_FILTERING_TEST_CASES = [
-    # Test $nin, wich is missing in TYPE_4_FILTERING_TEST_CASES
+    # Test $nin, which is missing in TYPE_4_FILTERING_TEST_CASES
     (
         {"name": {"$nin": ["adam", "bob"]}},
         [3],
