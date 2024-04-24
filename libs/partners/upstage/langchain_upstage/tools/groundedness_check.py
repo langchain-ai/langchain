@@ -1,11 +1,11 @@
 import os
-from typing import Optional, Type
+from typing import Literal, Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
 
@@ -74,14 +74,16 @@ class GroundednessCheck(BaseTool):
         context: str,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> BaseMessage:
+    ) -> Literal["grounded", "notGrounded", "notSure"]:
         """Use the tool."""
-        return self.api_wrapper.invoke([HumanMessage(context), AIMessage(query)])
+        response = self.api_wrapper.invoke([HumanMessage(context), AIMessage(query)])
+        return response.content
 
     async def _arun(
         self,
         context: str,
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-    ) -> BaseMessage:
-        return await self.api_wrapper.ainvoke([HumanMessage(context), AIMessage(query)])
+    ) -> Literal["grounded", "notGrounded", "notSure"]:
+        response = await self.api_wrapper.ainvoke([HumanMessage(context), AIMessage(query)])
+        return response.content
