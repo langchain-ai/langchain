@@ -102,6 +102,7 @@ class J2ChatAdapter(ChatAdapter):
 
     def call(self, client: Any, **params: Any) -> List[BaseMessage]:
         response = client.chat.create(**params)
+
         return [AIMessage(output.text) for output in response.outputs]
 
 
@@ -125,4 +126,5 @@ class JambaChatCompletionsAdapter(ChatAdapter):
 
     def call(self, client: Any, **params: Any) -> List[BaseMessage]:
         response = client.chat.completions.create(**params)
+
         return [AIMessage(choice.message.content) for choice in response.choices]

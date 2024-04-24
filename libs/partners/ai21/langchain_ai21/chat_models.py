@@ -140,6 +140,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         params = self._build_params_for_request(messages=messages, stop=stop, **kwargs)
         messages = self._chat_adapter.call(self.client, **params)
         generations = [ChatGeneration(message=message) for message in messages]
+
         return ChatResult(generations=generations)
 
     async def _agenerate(
