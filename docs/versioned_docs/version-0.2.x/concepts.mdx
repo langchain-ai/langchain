@@ -18,30 +18,30 @@ LangChain as a framework consists of several pieces. The below diagram shows how
 />
 
 ### `langchain-core`
-This package contains base abstractions of different components and ways to chain them together.
+This package contains base abstractions of different components and ways to compose them together.
 The interfaces for core components like LLMs, vectorstores, retrievers and more are defined here.
 No third party integrations are defined here.
 The dependencies are kept purposefully very lightweight.
 
 ### `langchain-community`
 
-This package contains the long tail of third party integrations.
+This package contains third party integrations that are maintained by the LangChain community.
 Key partner packages are separated out (see below).
 This contains all integrations for various components (LLMs, vectorstores, retrievers).
-All dependencies in this package are optional, so as not to bloat it.
+All dependencies in this package are optional to keep the package as lightweight as possible.
 
 ### Partner packages
 
-While the long tail of integrations are in `langchain-community`, we split popular integrations into their own packages (eg `langchain-openai`, `langchain-anthropic`, etc).
-This was done in order to better manage and version these important integrations.
+While the long tail of integrations are in `langchain-community`, we split popular integrations into their own packages (e.g. `langchain-openai`, `langchain-anthropic`, etc).
+This was done in order to improve support for these important integrations.
 
 ### `langchain`
 
 The main `langchain` package contains chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-These are all implementations that the LangChain team developed, as opposed third party integrations.
+These are NOT third party integrations.
 All chains, agents, and retrieval strategies here are NOT specific to any one integration, but rather generic across all integrations.
 
-### [langgraph](/docs/langgraph)
+### [LangGraph](/docs/langgraph)
 
 Not currently in this repo, `langgraph` is an extension of `langchain` aimed at
 building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
@@ -61,8 +61,6 @@ A developer platform that lets you debug, test, evaluate, and monitor LLM applic
 
 ## Installation
 
-There are a few different ways to think about installing LangChain.
-
 If you want to work with high level abstractions, you should install the `langchain` package.
 
 ```shell
@@ -80,6 +78,71 @@ export LANGCHAIN_TRACING_V2=true
 export LANGCHAIN_API_KEY=ls__...
 ```
 
+## LangChain Expression Language
+
+LangChain Expression Language, or LCEL, is a declarative way to easily compose chains together.
+LCEL was designed from day 1 to **support putting prototypes in production, with no code changes**, from the simplest “prompt + LLM” chain to the most complex chains (we’ve seen folks successfully run LCEL chains with 100s of steps in production). To highlight a few of the reasons you might want to use LCEL:
+
+**First-class streaming support**
+When you build your chains with LCEL you get the best possible time-to-first-token (time elapsed until the first chunk of output comes out). For some chains this means eg. we stream tokens straight from an LLM to a streaming output parser, and you get back parsed, incremental chunks of output at the same rate as the LLM provider outputs the raw tokens.
+
+**Async support**
+Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langsmith) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
+
+**Optimized parallel execution**
+Whenever your LCEL chains have steps that can be executed in parallel (eg if you fetch documents from multiple retrievers) we automatically do it, both in the sync and the async interfaces, for the smallest possible latency.
+
+**Retries and fallbacks**
+Configure retries and fallbacks for any part of your LCEL chain. This is a great way to make your chains more reliable at scale. We’re currently working on adding streaming support for retries/fallbacks, so you can get the added reliability without any latency cost.
+
+**Access intermediate results**
+For more complex chains it’s often very useful to access the results of intermediate steps even before the final output is produced. This can be used to let end-users know something is happening, or even just to debug your chain. You can stream intermediate results, and it’s available on every [LangServe](/docs/langserve) server.
+
+**Input and output schemas**
+Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
+
+[**Seamless LangSmith tracing**](/docs/langsmith)
+As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
+With LCEL, **all** steps are automatically logged to [LangSmith](/docs/langsmith/) for maximum observability and debuggability.
+
+[**Seamless LangServe deployment**](/docs/langserve)
+Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
+
+### Interface
+
+To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
+
+This is a standard interface, which makes it easy to define custom chains as well as invoke them in a standard way.
+The standard interface includes:
+
+- [`stream`](#stream): stream back chunks of the response
+- [`invoke`](#invoke): call the chain on an input
+- [`batch`](#batch): call the chain on a list of inputs
+
+These also have corresponding async methods that should be used with [asyncio](https://docs.python.org/3/library/asyncio.html) `await` syntax for concurrency:
+
+- `astream`: stream back chunks of the response async
+- `ainvoke`: call the chain on an input async
+- `abatch`: call the chain on a list of inputs async
+- `astream_log`: stream back intermediate steps as they happen, in addition to the final response
+- `astream_events`: **beta** stream events as they happen in the chain (introduced in `langchain-core` 0.1.14)
+
+The **input type** and **output type** varies by component:
+
+| Component | Input Type | Output Type |
+| --- | --- | --- |
+| Prompt | Dictionary | PromptValue |
+| ChatModel | Single string, list of chat messages or a PromptValue | ChatMessage |
+| LLM | Single string, list of chat messages or a PromptValue | String |
+| OutputParser | The output of an LLM or ChatModel | Depends on the parser |
+| Retriever | Single string | List of Documents |
+| Tool | Single string or dictionary, depending on the tool | Depends on the tool |
+
+
+All runnables expose input and output **schemas** to inspect the inputs and outputs:
+- `input_schema`: an input Pydantic model auto-generated from the structure of the Runnable
+- `output_schema`: an output Pydantic model auto-generated from the structure of the Runnable
+
 ## Components
 
 LangChain provides standard, extendable interfaces and external integrations for various components useful for building with LLMs.
@@ -96,8 +159,9 @@ When messages are passed in as input, they will be formatted into a string under
 LangChain does not provide any LLMs, rather we rely on third party integrations.
 
 ### Chat models
-Language models that uses chat messages as inputs and returns chat messages as outputs (as opposed to using plain text).
+Language models that use a sequence of messages as inputs and return chat messages as outputs (as opposed to using plain text).
 These are traditionally newer models (older models are generally `LLMs`, see above).
+Chat models support the assignment of distinct roles to conversation messages, helping to distinguish messages from the AI, users, and instructions such as system messages.
 
 Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input.
 This makes them interchangeable with LLMs (and simpler to use).
@@ -106,7 +170,7 @@ When a string is passed in as input, it will be converted to a HumanMessage unde
 LangChain does not provide any ChatModels, rather we rely on third party integrations.
 
 We have some standardized parameters when constructing ChatModels:
-- `model_name`: the name of the model
+- `model`: the name of the model
 
 ChatModels also accept other parameters that are specific to that integration.
 
@@ -201,7 +265,7 @@ This represents the result of a tool call. This is distinct from a FunctionMessa
 
 
 ### Prompt templates
-Formats input provided by a user in a reusable way.
+Prompt templates help to translate user input and parameters into instructions for a language model.
 Used to guide a model's response, helping it understand the context and generate relevant and coherent language-based output.
 
 Prompt Templates take as input a dictionary, where each key represents a variable in the prompt template to fill in.
@@ -576,67 +640,3 @@ While this may seem simple, there are several complexities this runtime handles 
 4. Logging and observability at all levels (agent decisions, tool calls) to stdout and/or to [LangSmith](/docs/langsmith).
 
 
-## LangChain Expression Language
-
-LangChain Expression Language, or LCEL, is a declarative way to easily compose chains together.
-LCEL was designed from day 1 to **support putting prototypes in production, with no code changes**, from the simplest “prompt + LLM” chain to the most complex chains (we’ve seen folks successfully run LCEL chains with 100s of steps in production). To highlight a few of the reasons you might want to use LCEL:
-
-**First-class streaming support**
-When you build your chains with LCEL you get the best possible time-to-first-token (time elapsed until the first chunk of output comes out). For some chains this means eg. we stream tokens straight from an LLM to a streaming output parser, and you get back parsed, incremental chunks of output at the same rate as the LLM provider outputs the raw tokens.
-
-**Async support**
-Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langsmith) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
-
-**Optimized parallel execution**
-Whenever your LCEL chains have steps that can be executed in parallel (eg if you fetch documents from multiple retrievers) we automatically do it, both in the sync and the async interfaces, for the smallest possible latency.
-
-**Retries and fallbacks**
-Configure retries and fallbacks for any part of your LCEL chain. This is a great way to make your chains more reliable at scale. We’re currently working on adding streaming support for retries/fallbacks, so you can get the added reliability without any latency cost.
-
-**Access intermediate results**
-For more complex chains it’s often very useful to access the results of intermediate steps even before the final output is produced. This can be used to let end-users know something is happening, or even just to debug your chain. You can stream intermediate results, and it’s available on every [LangServe](/docs/langserve) server.
-
-**Input and output schemas**
-Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
-
-[**Seamless LangSmith tracing**](/docs/langsmith)
-As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
-With LCEL, **all** steps are automatically logged to [LangSmith](/docs/langsmith/) for maximum observability and debuggability.
-
-[**Seamless LangServe deployment**](/docs/langserve)
-Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
-
-### Interface
-
-To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
-
-This is a standard interface, which makes it easy to define custom chains as well as invoke them in a standard way.
-The standard interface includes:
-
-- [`stream`](#stream): stream back chunks of the response
-- [`invoke`](#invoke): call the chain on an input
-- [`batch`](#batch): call the chain on a list of inputs
-
-These also have corresponding async methods that should be used with [asyncio](https://docs.python.org/3/library/asyncio.html) `await` syntax for concurrency:
-
-- `astream`: stream back chunks of the response async
-- `ainvoke`: call the chain on an input async
-- `abatch`: call the chain on a list of inputs async
-- `astream_log`: stream back intermediate steps as they happen, in addition to the final response
-- `astream_events`: **beta** stream events as they happen in the chain (introduced in `langchain-core` 0.1.14)
-
-The **input type** and **output type** varies by component:
-
-| Component | Input Type | Output Type |
-| --- | --- | --- |
-| Prompt | Dictionary | PromptValue |
-| ChatModel | Single string, list of chat messages or a PromptValue | ChatMessage |
-| LLM | Single string, list of chat messages or a PromptValue | String |
-| OutputParser | The output of an LLM or ChatModel | Depends on the parser |
-| Retriever | Single string | List of Documents |
-| Tool | Single string or dictionary, depending on the tool | Depends on the tool |
-
-
-All runnables expose input and output **schemas** to inspect the inputs and outputs:
-- `input_schema`: an input Pydantic model auto-generated from the structure of the Runnable
-- `output_schema`: an output Pydantic model auto-generated from the structure of the Runnable
