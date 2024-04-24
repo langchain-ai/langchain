@@ -7,6 +7,7 @@ from langchain_community.vectorstores import (
     AstraDB,
     Chroma,
     DashVector,
+    DatabricksVectorSearch,
     DeepLake,
     Dingo,
     Milvus,
@@ -14,7 +15,6 @@ from langchain_community.vectorstores import (
     MyScale,
     OpenSearchVectorSearch,
     PGVector,
-    Pinecone,
     Qdrant,
     Redis,
     SupabaseVectorStore,
@@ -25,6 +25,9 @@ from langchain_community.vectorstores import (
 )
 from langchain_community.vectorstores import (
     ElasticsearchStore as ElasticsearchStoreCommunity,
+)
+from langchain_community.vectorstores import (
+    Pinecone as CommunityPinecone,
 )
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -43,6 +46,9 @@ from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.astradb import AstraDBTranslator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
 from langchain.retrievers.self_query.dashvector import DashvectorTranslator
+from langchain.retrievers.self_query.databricks_vector_search import (
+    DatabricksVectorSearchTranslator,
+)
 from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
 from langchain.retrievers.self_query.dingo import DingoDBTranslator
 from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
@@ -69,7 +75,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,
         PGVector: PGVectorTranslator,
-        Pinecone: PineconeTranslator,
+        CommunityPinecone: PineconeTranslator,
         Chroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
         Dingo: DingoDBTranslator,
@@ -85,7 +91,8 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         OpenSearchVectorSearch: OpenSearchTranslator,
         MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
-
+    if isinstance(vectorstore, DatabricksVectorSearch):
+        return DatabricksVectorSearchTranslator()
     if isinstance(vectorstore, Qdrant):
         return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
     elif isinstance(vectorstore, MyScale):
@@ -102,19 +109,27 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     else:
         try:
             from langchain_astradb.vectorstores import AstraDBVectorStore
-
-            if isinstance(vectorstore, AstraDBVectorStore):
-                return AstraDBTranslator()
         except ImportError:
             pass
+        else:
+            if isinstance(vectorstore, AstraDBVectorStore):
+                return AstraDBTranslator()
 
         try:
             from langchain_elasticsearch.vectorstores import ElasticsearchStore
-
-            if isinstance(vectorstore, ElasticsearchStore):
-                return ElasticsearchTranslator()
         except ImportError:
             pass
+        else:
+            if isinstance(vectorstore, ElasticsearchStore):
+                return ElasticsearchTranslator()
+
+        try:
+            from langchain_pinecone import Pinecone
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, Pinecone):
+                return PineconeTranslator()
 
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
