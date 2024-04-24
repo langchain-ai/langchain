@@ -469,7 +469,7 @@ class ChatGroq(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
-                    if k in overall_token_usage:
+                    if k in overall_token_usage and v is not None:
                         overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
