@@ -127,7 +127,7 @@ class ChatGroq(BaseChatModel):
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
     http_async_client: Union[Any, None] = None
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
         http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
