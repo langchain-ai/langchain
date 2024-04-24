@@ -16,7 +16,7 @@ class GroundednessCheckInput(BaseModel):
     """Input for the Groundedness Check tool."""
 
     context: str = Field(description="context in which the answer should be verified")
-    assistant_message: str = Field(
+    query: str = Field(
         description="assistant's reply or a text that is subject to groundedness check"
     )
 
@@ -72,20 +72,16 @@ class GroundednessCheck(BaseTool):
     def _run(
         self,
         context: str,
-        assistant_message: str,
+        query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> BaseMessage:
         """Use the tool."""
-        return self.api_wrapper.invoke(
-            [HumanMessage(context), AIMessage(assistant_message)]
-        )
+        return self.api_wrapper.invoke([HumanMessage(context), AIMessage(query)])
 
     async def _arun(
         self,
         context: str,
-        assistant_message: str,
+        query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> BaseMessage:
-        return await self.api_wrapper.ainvoke(
-            [HumanMessage(context), AIMessage(assistant_message)]
-        )
+        return await self.api_wrapper.ainvoke([HumanMessage(context), AIMessage(query)])
