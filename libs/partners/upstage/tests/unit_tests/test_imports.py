@@ -3,8 +3,8 @@ from langchain_upstage import __all__
 EXPECTED_ALL = [
     "ChatUpstage",
     "UpstageEmbeddings",
-    "LayoutAnalysis",
-    "LayoutAnalysisParser",
+    "UpstageLayoutAnalysis",
+    "UpstageLayoutAnalysisParser",
     "GroundednessCheck",
 ]
 

@@ -100,7 +100,7 @@ def get_from_param_or_env(
         )
 
 
-class LayoutAnalysisParser(BaseBlobParser):
+class UpstageLayoutAnalysisParser(BaseBlobParser):
     """Upstage Layout Analysis Parser.
 
     To use, you should have the environment variable `UPSTAGE_DOCUMENT_AI_API_KEY`
@@ -109,9 +109,9 @@ class LayoutAnalysisParser(BaseBlobParser):
     Example:
         .. code-block:: python
 
-            from langchain_upstage import LayoutAnalysisParser
+            from langchain_upstage import UpstageLayoutAnalysisParser
 
-            loader = LayoutAnalysisParser(split="page", output_type="text")
+            loader = UpstageLayoutAnalysisParser(split="page", output_type="text")
     """
 
     def __init__(

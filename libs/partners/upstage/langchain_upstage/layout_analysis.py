@@ -5,7 +5,7 @@ from typing import Iterator, List, Literal, Optional, Union
 from langchain_core.document_loaders import BaseLoader, Blob
 from langchain_core.documents import Document
 
-from .layout_analysis_parsers import LayoutAnalysisParser
+from .layout_analysis_parsers import UpstageLayoutAnalysisParser
 
 DEFAULT_PAGE_BATCH_SIZE = 10
 
@@ -70,7 +70,7 @@ def get_from_param_or_env(
         )
 
 
-class LayoutAnalysis(BaseLoader):
+class UpstageLayoutAnalysis(BaseLoader):
     """Upstage Layout Analysis.
 
     To use, you should have the environment variable `UPSTAGE_DOCUMENT_AI_API_KEY`
@@ -79,10 +79,12 @@ class LayoutAnalysis(BaseLoader):
     Example:
         .. code-block:: python
 
-            from langchain_upstage import LayoutAnalysis
+            from langchain_upstage import UpstageLayoutAnalysis
 
             file_path = "/PATH/TO/YOUR/FILE.pdf"
-            loader = LayoutAnalysis(file_path, split="page", output_type="text")
+            loader = UpstageLayoutAnalysis(
+                        file_path, split="page", output_type="text"
+                     )
     """
 
     def __init__(
@@ -124,7 +126,7 @@ class LayoutAnalysis(BaseLoader):
 
     def load(self) -> List[Document]:
         """
-        Loads and parses the document using the LayoutAnalysisParser.
+        Loads and parses the document using the UpstageLayoutAnalysisParser.
 
         Returns:
             A list of Document objects representing the parsed layout analysis.
@@ -136,7 +138,7 @@ class LayoutAnalysis(BaseLoader):
             for file_path in self.file_path:
                 blob = Blob.from_path(file_path)
 
-                parser = LayoutAnalysisParser(
+                parser = UpstageLayoutAnalysisParser(
                     self.api_key,
                     split=self.split,
                     output_type=self.output_type,
@@ -149,7 +151,7 @@ class LayoutAnalysis(BaseLoader):
         else:
             blob = Blob.from_path(self.file_path)
 
-            parser = LayoutAnalysisParser(
+            parser = UpstageLayoutAnalysisParser(
                 self.api_key,
                 split=self.split,
                 output_type=self.output_type,
@@ -159,7 +161,7 @@ class LayoutAnalysis(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """
-        Lazily loads and parses the document using the LayoutAnalysisParser.
+        Lazily loads and parses the document using the UpstageLayoutAnalysisParser.
 
         Returns:
             An iterator of Document objects representing the parsed layout analysis.
@@ -169,7 +171,7 @@ class LayoutAnalysis(BaseLoader):
             for file_path in self.file_path:
                 blob = Blob.from_path(file_path)
 
-                parser = LayoutAnalysisParser(
+                parser = UpstageLayoutAnalysisParser(
                     self.api_key,
                     split=self.split,
                     output_type=self.output_type,
@@ -179,7 +181,7 @@ class LayoutAnalysis(BaseLoader):
         else:
             blob = Blob.from_path(self.file_path)
 
-            parser = LayoutAnalysisParser(
+            parser = UpstageLayoutAnalysisParser(
                 self.api_key,
                 split=self.split,
                 output_type=self.output_type,
