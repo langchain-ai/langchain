@@ -30,6 +30,9 @@ from langchain_core.indexing.base import RecordManager
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.vectorstores import VectorStore
 
+# Magic UUID to use as a namespace for hashing.
+# Used to try and generate a unique UUID for each document
+# from hashing the document content and metadata.
 NAMESPACE_UUID = uuid.UUID(int=1984)
 
 
