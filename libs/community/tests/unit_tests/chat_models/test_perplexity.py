@@ -1,4 +1,5 @@
 """Test Perplexity Chat API wrapper."""
+
 import os
 
 import pytest
@@ -26,10 +27,16 @@ def test_perplexity_initialization() -> None:
     # Verify that chat perplexity can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
     for model in [
-        ChatPerplexity(model="test", timeout=1, api_key="test",
-        temperature=0.7, verbose=True),
-        ChatPerplexity(model="test", request_timeout=1,
-        pplx_api_key="test", temperature=0.7, verbose=True)
-        ]:
+        ChatPerplexity(
+            model="test", timeout=1, api_key="test", temperature=0.7, verbose=True
+        ),
+        ChatPerplexity(
+            model="test",
+            request_timeout=1,
+            pplx_api_key="test",
+            temperature=0.7,
+            verbose=True,
+        ),
+    ]:
         assert model.request_timeout == 1
         assert model.pplx_api_key == "test"
