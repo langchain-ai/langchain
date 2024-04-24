@@ -364,7 +364,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             return super_schema
 
     def _get_input_messages(
-        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage]]
+        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
