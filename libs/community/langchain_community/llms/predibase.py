@@ -114,7 +114,7 @@ class Predibase(LLM):
         from predibase import Predibase
 
         os.environ["PREDIBASE_GATEWAY"] = "https://api.app.predibase.com"
-        predibase: Predibase = Predibase(api_token=self.predibase_api_key)
+        predibase: Predibase = Predibase(api_token=self.predibase_api_key.get_secret_value())
 
         import requests
         from lorax.client import Client as LoraxClient
