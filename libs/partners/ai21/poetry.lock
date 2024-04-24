@@ -2,13 +2,13 @@
 
 [[package]]
 name = "ai21"
-version = "2.2.0"
+version = "2.2.1"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "ai21-2.2.0-py3-none-any.whl", hash = "sha256:4d8427134a34a9041433863cea3eb1546a2bf26261921f5dcbf471d8c2d00c2b"},
-    {file = "ai21-2.2.0.tar.gz", hash = "sha256:a7b8cd136de00ff530e640463ff4f25221cb678e3943c0ec1b7d227c678de38b"},
+    {file = "ai21-2.2.1-py3-none-any.whl", hash = "sha256:c2727656b07a1284fc8f1f2fb1b065059f6fa5fcab8af2f45b0767086a044771"},
+    {file = "ai21-2.2.1.tar.gz", hash = "sha256:69e659071e9bbadae7349465bc388312bcff30e22fb7d7a9de4319e2925acfff"},
 ]
 
 [package.dependencies]
@@ -364,7 +364,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.44"
+version = "0.1.45"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1250,4 +1250,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a71e4ba07e02a6b43b8883db0483bc6554fe52062f9dbddcb85c7871f90778f3"
+content-hash = "892d39e8c2a50b049e3c2bb8f39b8a2126273d9644944456bd9900f6d15c5cb2"
