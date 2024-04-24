@@ -122,7 +122,7 @@ class Predibase(LLM):
         from lorax.types import Response
 
         lorax_client: LoraxClient = predibase.deployments.client(
-            deployment_ref=self.model_name
+            deployment_ref=self.model
         )
 
         response: Response
@@ -167,7 +167,7 @@ or it is incompatible with the base model (please make sure that the adapter con
                 )
             except requests.JSONDecodeError as jde:
                 raise ValueError(
-                    f"""An LLM with the deployment ID "{self.model_name}" cannot be found at Predibase \
+                    f"""An LLM with the deployment ID "{self.model}" cannot be found at Predibase \
 (please refer to "https://docs.predibase.com/user-guide/inference/models" for the list of supported models).
 """
                 ) from jde
