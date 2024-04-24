@@ -216,7 +216,6 @@ jobs:
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
-          UPSTAGE_DOCUMENT_AI_API_KEY: ${{ secrets.UPSTAGE_DOCUMENT_AI_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
