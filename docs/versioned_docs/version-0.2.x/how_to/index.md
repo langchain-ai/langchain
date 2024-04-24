@@ -10,8 +10,6 @@ However, these guides will help you quickly accomplish common tasks.
 - [How to use a chat model to call tools](/docs/how_to/tool_calling/)
 - [How to stream](/docs/how_to/streaming)
 - [How to debug your LLM apps](/docs/how_to/debugging/)
-- How to test your LLM application
-- How to deploy your LLM application
 
 ## LangChain Expression Language (LCEL)
 
