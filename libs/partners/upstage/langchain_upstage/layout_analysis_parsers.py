@@ -6,8 +6,7 @@ from typing import Dict, Iterator, List, Literal, Optional, Union
 import fitz  # type: ignore
 import requests
 from fitz import Document as fitzDocument
-from langchain_community.document_loaders.base import BaseBlobParser
-from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_core.document_loaders import BaseBlobParser, Blob
 from langchain_core.documents import Document
 
 LAYOUT_ANALYSIS_URL = "https://api.upstage.ai/v1/document-ai/layout-analysis"
