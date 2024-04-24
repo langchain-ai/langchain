@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
@@ -610,11 +611,15 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)
 
+    @deprecated(since="0.1.17", removal="0.3.0")
     def persist(self) -> None:
         """Persist the collection.
 
         This can be used to explicitly persist the data to disk.
         It will also be called automatically when the object is destroyed.
+
+        Since Chroma 0.4.x the manual persistence method is no longer
+        supported. 
         """
         if self._persist_directory is None:
             raise ValueError(
