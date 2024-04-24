@@ -6,10 +6,12 @@ from langchain_core.outputs import LLMResult
 
 from langchain_community.llms.bigdl_llm import BigdlLLM
 
-model_ids_to_test = os.getenv('TEST_BIGDLLLM_MODEL_IDS') or ""
-skip_if_no_model_ids = pytest.mark.skipif(not model_ids_to_test, 
-    reason="TEST_BIGDLLLM_MODEL_IDS environment variable not set.")
-model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(',')]
+model_ids_to_test = os.getenv("TEST_BIGDLLLM_MODEL_IDS") or ""
+skip_if_no_model_ids = pytest.mark.skipif(
+    not model_ids_to_test,
+    reason="TEST_BIGDLLLM_MODEL_IDS environment variable not set.",
+)
+model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(",")]
 
 
 @skip_if_no_model_ids
@@ -17,7 +19,7 @@ model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(',
     "model_id",
     model_ids_to_test,
 )
-def test_call(model_id:str) -> None:
+def test_call(model_id: str) -> None:
     """Test valid call to bigdl-llm."""
     llm = BigdlLLM.from_model_id(
         model_id=model_id,
@@ -32,7 +34,7 @@ def test_call(model_id:str) -> None:
     "model_id",
     model_ids_to_test,
 )
-def test_generate(model_id:str) -> None:
+def test_generate(model_id: str) -> None:
     """Test valid call to bigdl-llm."""
     llm = BigdlLLM.from_model_id(
         model_id=model_id,
