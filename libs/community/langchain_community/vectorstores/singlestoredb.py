@@ -188,7 +188,7 @@ class SingleStoreDB(VectorStore):
 
             .. code-block:: python
 
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
                 vectorstore = SingleStoreDB(
@@ -200,7 +200,7 @@ class SingleStoreDB(VectorStore):
 
             .. code-block:: python
 
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
                 vectorstore = SingleStoreDB(
@@ -220,7 +220,7 @@ class SingleStoreDB(VectorStore):
 
             .. code-block:: python
 
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
                 os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
@@ -230,7 +230,7 @@ class SingleStoreDB(VectorStore):
 
             .. code-block:: python
 
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
                 os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
@@ -242,7 +242,7 @@ class SingleStoreDB(VectorStore):
             Using full-text index:
 
             .. code-block:: python
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
                 os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
@@ -494,8 +494,10 @@ class SingleStoreDB(VectorStore):
 
             Basic Usage:
             .. code-block:: python
+
                 from langchain_community.vectorstores import SingleStoreDB
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
+
                 s2 = SingleStoreDB.from_documents(
                     docs,
                     OpenAIEmbeddings(),
@@ -506,8 +508,10 @@ class SingleStoreDB(VectorStore):
 
             Different Search Strategies:
             .. code-block:: python
+
                 from langchain_community.vectorstores import SingleStoreDB
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
+
                 s2 = SingleStoreDB.from_documents(
                     docs,
                     OpenAIEmbeddings(),
@@ -521,8 +525,10 @@ class SingleStoreDB(VectorStore):
 
             Weighted Sum Search Strategy:
             .. code-block:: python
+
                 from langchain_community.vectorstores import SingleStoreDB
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
+
                 s2 = SingleStoreDB.from_documents(
                     docs,
                     OpenAIEmbeddings(),
@@ -610,8 +616,10 @@ class SingleStoreDB(VectorStore):
         Examples:
             Basic Usage:
             .. code-block:: python
+
                 from langchain_community.vectorstores import SingleStoreDB
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
+
                 s2 = SingleStoreDB.from_documents(
                     docs,
                     OpenAIEmbeddings(),
@@ -621,9 +629,12 @@ class SingleStoreDB(VectorStore):
                                     {"metadata_field": "metadata_value"})
 
             Different Search Strategies:
+
             .. code-block:: python
+
                 from langchain_community.vectorstores import SingleStoreDB
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
+
                 s2 = SingleStoreDB.from_documents(
                     docs,
                     OpenAIEmbeddings(),
@@ -637,8 +648,10 @@ class SingleStoreDB(VectorStore):
 
             Weighted Sum Search Strategy:
             .. code-block:: python
+
                 from langchain_community.vectorstores import SingleStoreDB
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
+
                 s2 = SingleStoreDB.from_documents(
                     docs,
                     OpenAIEmbeddings(),
@@ -950,8 +963,10 @@ class SingleStoreDB(VectorStore):
 
         Example:
             .. code-block:: python
+
                 from langchain_community.vectorstores import SingleStoreDB
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_openai import OpenAIEmbeddings
+
                 s2 = SingleStoreDB.from_texts(
                     texts,
                     OpenAIEmbeddings(),
