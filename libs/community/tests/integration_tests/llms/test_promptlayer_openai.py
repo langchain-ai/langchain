@@ -36,9 +36,9 @@ def test_promptlayer_openai_stop_valid() -> None:
     """Test promptlayer openai stop logic on valid configuration."""
     query = "write an ordered list of five items"
     first_llm = PromptLayerOpenAI(stop="3", temperature=0)
-    first_output = first_llm(query)
+    first_output = first_llm.invoke(query)
     second_llm = PromptLayerOpenAI(temperature=0)
-    second_output = second_llm(query, stop=["3"])
+    second_output = second_llm.invoke(query, stop=["3"])
     # Because it stops on new lines, shouldn't return anything
     assert first_output == second_output
 
