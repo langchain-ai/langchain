@@ -51,7 +51,7 @@ def test_stream() -> None:
             HumanMessage(content="Who are you?"),
         ],
         stream=True,
-        callbacks=callback_manager,
+        config={"callbacks": callback_manager},
     )
     assert callback_handler.llm_streams > 0
     assert isinstance(response.content, str)

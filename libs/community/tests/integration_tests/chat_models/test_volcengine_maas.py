@@ -43,7 +43,7 @@ def test_stream() -> None:
             HumanMessage(content="How are you?"),
         ],
         stream=True,
-        callbacks=callback_manager,
+        config={"callbacks": callback_manager},
     )
     assert callback_handler.llm_streams > 0
     assert isinstance(response.content, str)
@@ -63,7 +63,7 @@ def test_stop() -> None:
             HumanMessage(content="repeat: hello world"),
         ],
         stream=True,
-        callbacks=callback_manager,
+        config={"callbacks": callback_manager},
         stop=["world"],
     )
     assert callback_handler.llm_streams > 0
