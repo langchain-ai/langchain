@@ -22,6 +22,8 @@ class SharePointLoader(O365BaseLoader):
     """ The path to the folder to load data from."""
     object_ids: Optional[List[str]] = None
     """ The IDs of the objects to load data from."""
+    folder_id: Optional[str] = None
+    """ The ID of the folder to load data from."""
 
     @property
     def _file_types(self) -> Sequence[_FileType]:
@@ -51,6 +53,18 @@ class SharePointLoader(O365BaseLoader):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
                 yield from blob_parser.lazy_parse(blob)
+        if self.folder_id:
+            target_folder = drive.get_item(self.folder_id)
+            if not isinstance(target_folder, Folder):
+                raise ValueError(f"There isn't a folder with path {self.folder_path}.")
+            for blob in self._load_from_folder(target_folder):
+                yield from blob_parser.lazy_parse(blob)
         if self.object_ids:
             for blob in self._load_from_object_ids(drive, self.object_ids):
+                yield from blob_parser.lazy_parse(blob)
+        if not (self.folder_path or self.folder_id or self.object_ids):
+            target_folder = drive.get_root_folder()
+            if not isinstance(target_folder, Folder):
+                raise ValueError("Unable to fetch root folder")
+            for blob in self._load_from_folder(target_folder):
                 yield from blob_parser.lazy_parse(blob)

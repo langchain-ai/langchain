@@ -10,19 +10,21 @@ env:
 
 jobs:
   build:
-    defaults:
-      run:
-        working-directory: libs/langchain
     runs-on: ubuntu-latest
-    environment: Scheduled testing
     strategy:
       matrix:
         python-version:
           - "3.8"
-          - "3.9"
-          - "3.10"
           - "3.11"
-    name: Python ${{ matrix.python-version }}
+        working-directory:
+          - "libs/partners/openai"
+          - "libs/partners/anthropic"
+          - "libs/partners/ai21"
+          - "libs/partners/fireworks"
+          - "libs/partners/groq"
+          - "libs/partners/mistralai"
+          - "libs/partners/together"
+    name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,7 +33,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: libs/langchain
+          working-directory: ${{ matrix.working-directory }}
           cache-key: scheduled
 
       - name: 'Authenticate to Google Cloud'
@@ -40,26 +42,15 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
-
       - name: Install dependencies
-        working-directory: libs/langchain
+        working-directory: ${{ matrix.working-directory }}
         shell: bash
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
           poetry install --with=test_integration,test
 
-      - name: Install deps outside pyproject
-        if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
-        shell: bash
-        run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
-
-      - name: Run tests
+      - name: Run integration tests
+        working-directory: ${{ matrix.working-directory }}
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -70,11 +61,16 @@ jobs:
           AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
           AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
           AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+          AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
-          make scheduled_tests
+          make integration_test
 
       - name: Ensure the tests did not create any additional files
+        working-directory: ${{ matrix.working-directory }}
         shell: bash
         run: |
           set -eu

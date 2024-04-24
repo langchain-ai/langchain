@@ -35,6 +35,7 @@ from langchain_core.language_models import (
     FakeStreamingListLLM,
 )
 from langchain_core.load import dumpd, dumps
+from langchain_core.load.load import loads
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -76,7 +77,7 @@ from langchain_core.runnables import (
     add,
     chain,
 )
-from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.base import RunnableMap, RunnableSerializable
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
@@ -357,6 +358,27 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             }
         },
         "definitions": {
+            "ToolCall": {
+                "title": "ToolCall",
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "args": {"title": "Args", "type": "object"},
+                    "id": {"title": "Id", "type": "string"},
+                },
+                "required": ["name", "args", "id"],
+            },
+            "InvalidToolCall": {
+                "title": "InvalidToolCall",
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "args": {"title": "Args", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
+                    "error": {"title": "Error", "type": "string"},
+                },
+                "required": ["name", "args", "id", "error"],
+            },
             "AIMessage": {
                 "title": "AIMessage",
                 "description": "Message from an AI.",
@@ -388,12 +410,24 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["ai"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
                         "type": "boolean",
+                    },
+                    "tool_calls": {
+                        "title": "Tool Calls",
+                        "default": [],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/ToolCall"},
+                    },
+                    "invalid_tool_calls": {
+                        "title": "Invalid Tool Calls",
+                        "default": [],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/InvalidToolCall"},
                     },
                 },
                 "required": ["content"],
@@ -429,8 +463,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["human"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
@@ -470,8 +504,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["chat"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "role": {"title": "Role", "type": "string"},
                 },
                 "required": ["content", "role"],
@@ -507,8 +541,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["system"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                 },
                 "required": ["content"],
             },
@@ -543,8 +577,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["function"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                 },
                 "required": ["content", "name"],
             },
@@ -579,8 +613,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["tool"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "tool_call_id": {"title": "Tool Call Id", "type": "string"},
                 },
                 "required": ["content", "tool_call_id"],
@@ -3520,6 +3554,9 @@ async def test_map_astream_iterator_input() -> None:
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == llm_res
 
+    simple_map = RunnableMap(passthrough=RunnablePassthrough())
+    assert loads(dumps(simple_map)) == simple_map
+
 
 def test_with_config_with_config() -> None:
     llm = FakeListLLM(responses=["i'm a textbot"])
@@ -5364,11 +5401,21 @@ def test_transform_of_runnable_lambda_with_dicts() -> None:
     runnable = RunnableLambda(lambda x: x)
     chunks = iter(
         [
-            {"foo": "a"},
             {"foo": "n"},
         ]
     )
-    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+    assert list(runnable.transform(chunks)) == [{"foo": "n"}]
+
+    # Test as part of a sequence
+    seq = runnable | runnable
+    chunks = iter(
+        [
+            {"foo": "n"},
+        ]
+    )
+    assert list(seq.transform(chunks)) == [{"foo": "n"}]
+    # Test some other edge cases
+    assert list(seq.stream({"foo": "n"})) == [{"foo": "n"}]
 
 
 async def test_atransform_of_runnable_lambda_with_dicts() -> None:
@@ -5383,7 +5430,11 @@ async def test_atransform_of_runnable_lambda_with_dicts() -> None:
         yield {"foo": "n"}
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
-    assert chunks == [{"foo": "an"}]
+    assert chunks == [{"foo": "n"}]
+
+    seq = runnable | runnable
+    chunks = [chunk async for chunk in seq.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "n"}]
 
 
 def test_default_transform_with_dicts() -> None:
@@ -5403,7 +5454,8 @@ def test_default_transform_with_dicts() -> None:
         ]
     )
 
-    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+    assert list(runnable.transform(chunks)) == [{"foo": "n"}]
+    assert list(runnable.stream({"foo": "n"})) == [{"foo": "n"}]
 
 
 async def test_default_atransform_with_dicts() -> None:
@@ -5422,6 +5474,17 @@ async def test_default_atransform_with_dicts() -> None:
         yield {"foo": "n"}
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+
+    assert chunks == [{"foo": "n"}]
+
+    # Test with addable dict
+    async def chunk_iterator_with_addable() -> AsyncIterator[Dict[str, str]]:
+        yield AddableDict({"foo": "a"})
+        yield AddableDict({"foo": "n"})
+
+    chunks = [
+        chunk async for chunk in runnable.atransform(chunk_iterator_with_addable())
+    ]
 
     assert chunks == [{"foo": "an"}]
 

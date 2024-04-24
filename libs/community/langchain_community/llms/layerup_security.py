@@ -9,6 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 def default_guardrail_violation_handler(violation: dict) -> str:
+    """Default guardrail violation handler.
+
+    Args:
+        violation (dict): The violation dictionary.
+
+    Returns:
+        str: The canned response.
+    """
     if violation.get("canned_response"):
         return violation["canned_response"]
     guardrail_name = (
@@ -22,6 +30,8 @@ def default_guardrail_violation_handler(violation: dict) -> str:
 
 
 class LayerupSecurity(LLM):
+    """Layerup Security LLM service."""
+
     llm: LLM
     layerup_api_key: str
     layerup_api_base_url: str = "https://api.uselayerup.com/v1"

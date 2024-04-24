@@ -89,7 +89,7 @@ def _convert_delta_to_message_chunk(
 
 
 class ChatSparkLLM(BaseChatModel):
-    """Wrapper around iFlyTek's Spark large language model.
+    """iFlyTek Spark large language model.
 
     To use, you should pass `app_id`, `api_key`, `api_secret`
     as a named parameter to the constructor OR set environment
@@ -141,10 +141,15 @@ class ChatSparkLLM(BaseChatModel):
     spark_llm_domain: Optional[str] = None
     spark_user_id: str = "lc_user"
     streaming: bool = False
-    request_timeout: int = 30
+    request_timeout: int = Field(30, alias="timeout")
     temperature: float = 0.5
     top_k: int = 4
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:

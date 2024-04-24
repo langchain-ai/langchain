@@ -46,8 +46,8 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
         self, inputs: Dict[str, Any], *, run_manager: CallbackManagerForChainRun
     ) -> List[Document]:
         question = inputs[self.question_key]
-        docs = self.retriever.get_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        docs = self.retriever.invoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
         return self._reduce_tokens_below_limit(docs)
 
@@ -55,8 +55,8 @@ class RetrievalQAWithSourcesChain(BaseQAWithSourcesChain):
         self, inputs: Dict[str, Any], *, run_manager: AsyncCallbackManagerForChainRun
     ) -> List[Document]:
         question = inputs[self.question_key]
-        docs = await self.retriever.aget_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        docs = await self.retriever.ainvoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
         return self._reduce_tokens_below_limit(docs)
 

@@ -9,6 +9,8 @@ from langchain_core.pydantic_v1 import Field
 
 
 class RerankRequest:
+    """Request for reranking."""
+
     def __init__(self, query: Any = None, passages: Any = None):
         self.query = query
         self.passages = passages if passages is not None else []
@@ -153,3 +155,12 @@ class OpenVINOReranker(BaseDocumentCompressor):
             )
             final_results.append(doc)
         return final_results
+
+    def save_model(
+        self,
+        model_path: str,
+    ) -> bool:
+        self.ov_model.half()
+        self.ov_model.save_pretrained(model_path)
+        self.tokenizer.save_pretrained(model_path)
+        return True
