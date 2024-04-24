@@ -22,12 +22,8 @@ from __future__ import annotations
 import inspect
 import uuid
 import warnings
-<<<<<<< Updated upstream
 from abc import ABC, abstractmethod
-=======
-from abc import abstractmethod
 from contextvars import copy_context
->>>>>>> Stashed changes
 from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
@@ -398,16 +394,20 @@ class ChildTool(BaseTool):
         )
         try:
             child_config = patch_config(
-                {"configurable": configurable or {}}, callbacks=run_manager.get_child()
+                {"tags": tags or [], "metadata": metadata or {}},
+                callbacks=run_manager.get_child(),
+                configurable=configurable,
             )
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
             parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
-            observation = context.run(
-                self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
+            observation = (
+                context.run(
+                    self._run, *tool_args, run_manager=run_manager, **tool_kwargs
+                )
                 if new_arg_supported
-                else self._run(*tool_args, **tool_kwargs)
+                else context.run(self._run, *tool_args, **tool_kwargs)
             )
         except ValidationError as e:
             if not self.handle_validation_error:
@@ -495,14 +495,18 @@ class ChildTool(BaseTool):
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             child_config = patch_config(
-                {"configurable": configurable or {}}, callbacks=run_manager.get_child()
+                {"tags": tags or [], "metadata": metadata or {}},
+                callbacks=run_manager.get_child(),
+                configurable=configurable,
             )
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
-            observation = context.run(
-                await self._arun(*tool_args, run_manager=run_manager, **tool_kwargs)
+            observation = (
+                await context.run(
+                    self._arun, *tool_args, run_manager=run_manager, **tool_kwargs
+                )
                 if new_arg_supported
-                else await self._arun(*tool_args, **tool_kwargs)
+                else await context.run(self._arun, *tool_args, **tool_kwargs)
             )
         except ValidationError as e:
             if not self.handle_validation_error:
