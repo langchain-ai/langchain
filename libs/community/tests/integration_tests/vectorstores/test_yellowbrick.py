@@ -2,8 +2,7 @@ from typing import List, Optional
 
 import pytest
 
-# from tests.integration_tests.vectorstores.fake_embeddings import (
-from fake_embeddings import (
+from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     fake_texts,
 )
