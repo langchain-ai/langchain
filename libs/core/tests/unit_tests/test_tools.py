@@ -1,5 +1,6 @@
 """Test the base tool implementation."""
 
+import asyncio
 import json
 from datetime import datetime
 from enum import Enum
@@ -13,6 +14,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.runnables import ensure_config
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
@@ -871,3 +873,30 @@ def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> No
     else:
         with pytest.raises(ValidationError):
             foo.invoke(inputs)  # type: ignore
+
+
+def test_tool_pass_context() -> None:
+    @tool
+    def foo(bar: str) -> str:
+        """The foo."""
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        assert bar == "baz"
+        return bar
+
+    assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
+
+
+async def test_async_tool_pass_context() -> None:
+    @tool
+    async def foo(bar: str) -> str:
+        """The foo."""
+        await asyncio.sleep(0.0001)
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        assert bar == "baz"
+        return bar
+
+    assert (
+        await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
+    )

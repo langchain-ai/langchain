@@ -19,6 +19,7 @@ tool for the job.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import uuid
 import warnings
@@ -66,6 +67,7 @@ from langchain_core.runnables.config import (
     run_in_executor,
     var_child_runnable_config,
 )
+from langchain_core.runnables.utils import accepts_context
 
 
 class SchemaAnnotationError(TypeError):
@@ -499,13 +501,18 @@ class ChildTool(BaseTool):
             )
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
-            observation = (
-                await context.run(
+            coro = (
+                context.run(
                     self._arun, *tool_args, run_manager=run_manager, **tool_kwargs
                 )
                 if new_arg_supported
-                else await context.run(self._arun, *tool_args, **tool_kwargs)
+                else context.run(self._arun, *tool_args, **tool_kwargs)
             )
+            if accepts_context(asyncio.create_task):
+                observation = await asyncio.create_task(coro, context=context)  # type: ignore
+            else:
+                observation = await coro
+
         except ValidationError as e:
             if not self.handle_validation_error:
                 raise e
