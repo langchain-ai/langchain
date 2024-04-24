@@ -31,12 +31,35 @@ from langchain_community.vectorstores.upstash import UpstashVectorStore
 import os
 
 os.environ["UPSTASH_VECTOR_REST_URL"] = "<UPSTASH_VECTOR_REST_URL>"
-os.environ["UPSTASH_VECTOR_TOKEN"] = "<UPSTASH_VECTOR_TOKEN>"
+os.environ["UPSTASH_VECTOR_REST_TOKEN"] = "<UPSTASH_VECTOR_REST_TOKEN>"
 
 store = UpstashVectorStore(
     embedding=embeddings
 )
 ```
+
+An alternative way of `UpstashVectorStore` is to pass `embedding=True`. This is a unique
+feature of the `UpstashVectorStore` thanks to the ability of the Upstash Vector indexes
+to have an associated embedding model. In this configuration, documents we want to insert or
+queries we want to search for are simply sent to Upstash Vector as text. In the background,
+Upstash Vector embeds these text and executes the request with these embeddings. To use this
+feature, [create an Upstash Vector index by selecting a model](https://upstash.com/docs/vector/features/embeddingmodels#using-a-model)
+and simply pass `embedding=True`:
+
+```python
+from langchain_community.vectorstores.upstash import UpstashVectorStore
+import os
+
+os.environ["UPSTASH_VECTOR_REST_URL"] = "<UPSTASH_VECTOR_REST_URL>"
+os.environ["UPSTASH_VECTOR_REST_TOKEN"] = "<UPSTASH_VECTOR_REST_TOKEN>"
+
+store = UpstashVectorStore(
+    embedding=True
+)
+```
+
+See [Upstash Vector documentation](https://upstash.com/docs/vector/features/embeddingmodels)
+for more detail on embedding models.
 
 ### Inserting Vectors
 
@@ -101,6 +124,19 @@ result = store.similarity_search_by_vector(
     k=5
 )
 ```
+
+When searching, you can also utilize the `filter` parameter which will allow you to filter by metadata:
+
+```python
+result = store.similarity_search(
+    "The United States of America",
+    k=5,
+    filter="type = 'country'"
+)
+```
+
+See [Upstash Vector documentation](https://upstash.com/docs/vector/features/filtering)
+for more details on metadata filtering.
 
 ### Deleting Vectors
 
