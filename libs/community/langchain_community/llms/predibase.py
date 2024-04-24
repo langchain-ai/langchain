@@ -1,5 +1,4 @@
 import os
-
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -111,7 +110,7 @@ class Predibase(LLM):
                     options=options,
                 )
             return result.response
-        
+
         from predibase import Predibase
 
         os.environ["PREDIBASE_GATEWAY"] = "https://api.app.predibase.com"
@@ -176,20 +175,18 @@ or it is incompatible with the base model (please make sure that the adapter con
 
         return response_text
 
-
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         return {
             **{"model_kwargs": self.model_kwargs},
         }
-    
+
     def _is_deprecated_sdk_version(self) -> bool:
         try:
             import semantic_version
-            from semantic_version.base import Version
-
             from predibase.version import __version__ as current_version
+            from semantic_version.base import Version
 
             sdk_semver_deprecated: Version = semantic_version.Version(
                 version_string="2024.4.8"
