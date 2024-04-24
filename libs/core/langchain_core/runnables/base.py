@@ -2409,8 +2409,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 step_graph.trim_first_node()
             if step is not self.last:
                 step_graph.trim_last_node()
-            graph.extend(step_graph)
-            step_first_node = step_graph.first_node()
+            step_first_node, _ = graph.extend(step_graph)
             if not step_first_node:
                 raise ValueError(f"Runnable {step} has no first node")
             if current_last_node:
@@ -3082,11 +3081,9 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
             if not step_graph:
                 graph.add_edge(input_node, output_node)
             else:
-                graph.extend(step_graph)
-                step_first_node = step_graph.first_node()
+                step_first_node, step_last_node = graph.extend(step_graph)
                 if not step_first_node:
                     raise ValueError(f"Runnable {step} has no first node")
-                step_last_node = step_graph.last_node()
                 if not step_last_node:
                     raise ValueError(f"Runnable {step} has no last node")
                 graph.add_edge(input_node, step_first_node)
@@ -3779,11 +3776,9 @@ class RunnableLambda(Runnable[Input, Output]):
                 if not dep_graph:
                     graph.add_edge(input_node, output_node)
                 else:
-                    graph.extend(dep_graph)
-                    dep_first_node = dep_graph.first_node()
+                    dep_first_node, dep_last_node = graph.extend(dep_graph)
                     if not dep_first_node:
                         raise ValueError(f"Runnable {dep} has no first node")
-                    dep_last_node = dep_graph.last_node()
                     if not dep_last_node:
                         raise ValueError(f"Runnable {dep} has no last node")
                     graph.add_edge(input_node, dep_first_node)
