@@ -16,9 +16,7 @@
 """  # noqa: E501
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import List, Sequence, Union
 
 from langchain_core.messages import (
@@ -26,8 +24,6 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     get_buffer_string,
-    messages_from_dict,
-    messages_to_dict,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import run_in_executor
@@ -215,5 +211,3 @@ class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
 
     async def aclear(self) -> None:
         self.clear()
-
-
