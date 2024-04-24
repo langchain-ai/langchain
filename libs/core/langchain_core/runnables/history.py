@@ -368,6 +368,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
+        if isinstance(input_val, dict):
+            input_val = input_val[self.input_messages_key or "input"]
+
         if isinstance(input_val, str):
             from langchain_core.messages import HumanMessage
 
@@ -432,8 +435,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         # Get the input messages
         inputs = load(run.inputs)
-        input_val = inputs[self.input_messages_key or "input"]
-        input_messages = self._get_input_messages(input_val)
+        input_messages = self._get_input_messages(inputs)
 
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
