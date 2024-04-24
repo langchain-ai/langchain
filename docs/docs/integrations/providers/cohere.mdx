@@ -83,7 +83,7 @@ from langchain.retrievers import CohereRagRetriever
 from langchain_core.documents import Document
 
 rag = CohereRagRetriever(llm=ChatCohere())
-print(rag.get_relevant_documents("What is cohere ai?"))
+print(rag.invoke("What is cohere ai?"))
 ```
 
 Usage of the Cohere [RAG Retriever](/docs/integrations/retrievers/cohere)
