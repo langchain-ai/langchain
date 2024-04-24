@@ -364,7 +364,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             return super_schema
 
     def _get_input_messages(
-        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage]]
+        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
@@ -395,7 +395,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
-        print(output_val)
+
         if isinstance(output_val, dict):
             if self.output_messages_key:
                 key = self.output_messages_key
@@ -403,8 +403,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 key = list(output_val.keys())[0]
             else:
                 key = "output"
+            # If you are wrapping a chat model directly
+            # The output is actually this weird generations object
             if key not in output_val and "generations" in output_val:
-                output_val = output_val['generations'][0][0]['message']
+                output_val = output_val["generations"][0][0]["message"]
             else:
                 output_val = output_val[key]
 
