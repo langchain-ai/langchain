@@ -3,10 +3,6 @@ for Llama-2-chat, Llama-2-instruct and Vicuna models.
 """
 from typing import Any, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
 from langchain.schema import (
     AIMessage,
     BaseMessage,
@@ -15,6 +11,10 @@ from langchain.schema import (
     HumanMessage,
     LLMResult,
     SystemMessage,
+)
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LLM, BaseChatModel
 
@@ -143,6 +143,23 @@ class Llama2Chat(ChatWrapper):
     ai_n_beg: str = " "
     ai_n_end: str = " </s>"
     usr_n_beg: str = "<s>[INST] "
+    usr_n_end: str = " [/INST]"
+    usr_0_beg: str = ""
+    usr_0_end: str = " [/INST]"
+
+
+class Mixtral(ChatWrapper):
+    """See https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1#instruction-format"""  # noqa: E501
+
+    @property
+    def _llm_type(self) -> str:
+        return "mixtral"
+
+    sys_beg: str = "<s>[INST] "
+    sys_end: str = "\n"
+    ai_n_beg: str = " "
+    ai_n_end: str = " </s>"
+    usr_n_beg: str = " [INST] "
     usr_n_end: str = " [/INST]"
     usr_0_beg: str = ""
     usr_0_end: str = " [/INST]"

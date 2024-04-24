@@ -14,6 +14,7 @@ from typing import (
 )
 
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -58,6 +59,11 @@ def embed_with_retry(embeddings: VoyageEmbeddings, **kwargs: Any) -> Any:
     return _embed_with_retry(**kwargs)
 
 
+@deprecated(
+    since="0.0.29",
+    removal="0.2",
+    alternative_import="langchain_voyageai.VoyageAIEmbeddings",
+)
 class VoyageEmbeddings(BaseModel, Embeddings):
     """Voyage embedding models.
 

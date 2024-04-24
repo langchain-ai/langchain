@@ -10,7 +10,7 @@ class ChatDatabricks(ChatMlflow):
     """`Databricks` chat models API.
 
     To use, you should have the ``mlflow`` python package installed.
-    For more information, see https://mlflow.org/docs/latest/llms/deployments/databricks.html.
+    For more information, see https://mlflow.org/docs/latest/llms/deployments.
 
     Example:
         .. code-block:: python
@@ -19,9 +19,16 @@ class ChatDatabricks(ChatMlflow):
 
             chat = ChatDatabricks(
                 target_uri="databricks",
-                endpoint="chat",
+                endpoint="databricks-llama-2-70b-chat",
                 temperature-0.1,
             )
+
+            # single input invocation
+            print(chat_model.invoke("What is MLflow?").content)
+
+            # single input invocation with streaming response
+            for chunk in chat_model.stream("What is MLflow?"):
+                print(chunk.content, end="|")
     """
 
     target_uri: str = "databricks"

@@ -20,8 +20,10 @@ tool for the job.
 from __future__ import annotations
 
 import inspect
+import uuid
 import warnings
-from abc import abstractmethod
+from abc import ABC, abstractmethod
+from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -31,9 +33,17 @@ from langchain_core.callbacks import (
     BaseCallbackManager,
     CallbackManager,
     CallbackManagerForToolRun,
+)
+from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.load.serializable import Serializable
+from langchain_core.prompts import (
+    BasePromptTemplate,
+    PromptTemplate,
+    aformat_document,
+    format_document,
+)
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
@@ -43,6 +53,7 @@ from langchain_core.pydantic_v1 import (
     root_validator,
     validate_arguments,
 )
+from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
@@ -243,6 +254,7 @@ class ChildTool(BaseTool):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             **kwargs,
         )
 
@@ -259,6 +271,7 @@ class ChildTool(BaseTool):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             **kwargs,
         )
 
@@ -339,6 +352,7 @@ class ChildTool(BaseTool):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -362,6 +376,7 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            run_id=run_id,
             # Inputs by definition should always be dicts.
             # For now, it's unclear whether this assumption is ever violated,
             # but if it is we will send a `None` value to the callback instead
@@ -410,17 +425,13 @@ class ChildTool(BaseTool):
                     f"Got unexpected type of `handle_tool_error`. Expected bool, str "
                     f"or callable. Received: {self.handle_tool_error}"
                 )
-            run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color="red", name=self.name, **kwargs)
             return observation
         except (Exception, KeyboardInterrupt) as e:
             run_manager.on_tool_error(e)
             raise e
         else:
-            run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color=color, name=self.name, **kwargs)
             return observation
 
     async def arun(
@@ -434,6 +445,7 @@ class ChildTool(BaseTool):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -457,6 +469,7 @@ class ChildTool(BaseTool):
             color=start_color,
             name=run_name,
             inputs=tool_input,
+            run_id=run_id,
             **kwargs,
         )
         try:
@@ -502,7 +515,7 @@ class ChildTool(BaseTool):
                     f"or callable. Received: {self.handle_tool_error}"
                 )
             await run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
+                observation, color="red", name=self.name, **kwargs
             )
             return observation
         except (Exception, KeyboardInterrupt) as e:
@@ -510,7 +523,7 @@ class ChildTool(BaseTool):
             raise e
         else:
             await run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
+                observation, color=color, name=self.name, **kwargs
             )
             return observation
 
@@ -560,7 +573,8 @@ class Tool(BaseTool):
         all_args = list(args) + list(kwargs.values())
         if len(all_args) != 1:
             raise ToolException(
-                f"Too many arguments to single-input tool {self.name}."
+                f"""Too many arguments to single-input tool {self.name}.
+                Consider using StructuredTool instead."""
                 f" Args: {all_args}"
             )
         return tuple(all_args), {}
@@ -619,7 +633,7 @@ class Tool(BaseTool):
         self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
-        super(Tool, self).__init__(
+        super(Tool, self).__init__(  # type: ignore[call-arg]
             name=name, func=func, description=description, **kwargs
         )
 
@@ -795,7 +809,7 @@ class StructuredTool(BaseTool):
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=_args_schema,
+            args_schema=_args_schema,  # type: ignore[arg-type]
             description=description,
             return_direct=return_direct,
             **kwargs,
@@ -916,3 +930,119 @@ def tool(
         return _partial
     else:
         raise ValueError("Too many arguments for tool decorator")
+
+
+class RetrieverInput(BaseModel):
+    """Input to the retriever."""
+
+    query: str = Field(description="query to look up in retriever")
+
+
+def _get_relevant_documents(
+    query: str,
+    retriever: BaseRetriever,
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+    callbacks: Callbacks = None,
+) -> str:
+    docs = retriever.invoke(query, config={"callbacks": callbacks})
+    return document_separator.join(
+        format_document(doc, document_prompt) for doc in docs
+    )
+
+
+async def _aget_relevant_documents(
+    query: str,
+    retriever: BaseRetriever,
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+    callbacks: Callbacks = None,
+) -> str:
+    docs = await retriever.ainvoke(query, config={"callbacks": callbacks})
+    return document_separator.join(
+        [await aformat_document(doc, document_prompt) for doc in docs]
+    )
+
+
+def create_retriever_tool(
+    retriever: BaseRetriever,
+    name: str,
+    description: str,
+    *,
+    document_prompt: Optional[BasePromptTemplate] = None,
+    document_separator: str = "\n\n",
+) -> Tool:
+    """Create a tool to do retrieval of documents.
+
+    Args:
+        retriever: The retriever to use for the retrieval
+        name: The name for the tool. This will be passed to the language model,
+            so should be unique and somewhat descriptive.
+        description: The description for the tool. This will be passed to the language
+            model, so should be descriptive.
+
+    Returns:
+        Tool class to pass to an agent
+    """
+    document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    func = partial(
+        _get_relevant_documents,
+        retriever=retriever,
+        document_prompt=document_prompt,
+        document_separator=document_separator,
+    )
+    afunc = partial(
+        _aget_relevant_documents,
+        retriever=retriever,
+        document_prompt=document_prompt,
+        document_separator=document_separator,
+    )
+    return Tool(
+        name=name,
+        description=description,
+        func=func,
+        coroutine=afunc,
+        args_schema=RetrieverInput,
+    )
+
+
+ToolsRenderer = Callable[[List[BaseTool]], str]
+
+
+def render_text_description(tools: List[BaseTool]) -> str:
+    """Render the tool name and description in plain text.
+
+    Output will be in the format of:
+
+    .. code-block:: markdown
+
+        search: This tool is used for search
+        calculator: This tool is used for math
+    """
+    return "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+
+
+def render_text_description_and_args(tools: List[BaseTool]) -> str:
+    """Render the tool name, description, and args in plain text.
+
+    Output will be in the format of:
+
+    .. code-block:: markdown
+
+        search: This tool is used for search, args: {"query": {"type": "string"}}
+        calculator: This tool is used for math, \
+args: {"expression": {"type": "string"}}
+    """
+    tool_strings = []
+    for tool in tools:
+        args_schema = str(tool.args)
+        tool_strings.append(f"{tool.name}: {tool.description}, args: {args_schema}")
+    return "\n".join(tool_strings)
+
+
+class BaseToolkit(BaseModel, ABC):
+    """Base Toolkit representing a collection of related tools."""
+
+    @abstractmethod
+    def get_tools(self) -> List[BaseTool]:
+        """Get the tools in the toolkit."""

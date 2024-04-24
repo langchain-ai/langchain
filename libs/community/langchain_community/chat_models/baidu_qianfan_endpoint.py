@@ -50,16 +50,23 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
     content = _dict.get("result", "") or ""
+    additional_kwargs: Mapping[str, Any] = {}
     if _dict.get("function_call"):
         additional_kwargs = {"function_call": dict(_dict["function_call"])}
         if "thoughts" in additional_kwargs["function_call"]:
             # align to api sample, which affects the llm function_call output
             additional_kwargs["function_call"].pop("thoughts")
-    else:
-        additional_kwargs = {}
+
+    additional_kwargs = {**_dict.get("body", {}), **additional_kwargs}
     return AIMessage(
         content=content,
-        additional_kwargs={**_dict.get("body", {}), **additional_kwargs},
+        additional_kwargs=dict(
+            finish_reason=additional_kwargs.get("finish_reason", ""),
+            request_id=additional_kwargs["id"],
+            object=additional_kwargs.get("object", ""),
+            search_info=additional_kwargs.get("search_info", []),
+            function_call=additional_kwargs.get("function_call", {}),
+        ),
     )
 
 
@@ -96,7 +103,7 @@ class QianfanChatEndpoint(BaseChatModel):
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
 
-    request_timeout: Optional[int] = 60
+    request_timeout: Optional[int] = Field(60, alias="timeout")
     """request timeout for chat http requests"""
 
     top_p: Optional[float] = 0.8
@@ -117,6 +124,11 @@ class QianfanChatEndpoint(BaseChatModel):
 
     endpoint: Optional[str] = None
     """Endpoint of the Qianfan LLM, required if custom model used."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -264,6 +276,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 },
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stop"] = stop
         response_payload = self.client.do(**params)
         lc_msg = _convert_dict_to_message(response_payload)
         gen = ChatGeneration(
@@ -309,6 +322,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 },
             )
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stop"] = stop
         response_payload = await self.client.ado(**params)
         lc_msg = _convert_dict_to_message(response_payload)
         generations = []
@@ -332,6 +346,7 @@ class QianfanChatEndpoint(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stop"] = stop
         params["stream"] = True
         for res in self.client.do(**params):
             if res:
@@ -358,6 +373,7 @@ class QianfanChatEndpoint(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         params = self._convert_prompt_msg_params(messages, **kwargs)
+        params["stop"] = stop
         params["stream"] = True
         async for res in await self.client.ado(**params):
             if res:

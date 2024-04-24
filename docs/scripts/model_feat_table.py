@@ -15,11 +15,53 @@ LLM_FEAT_TABLE_CORRECTION = {
     "PromptLayerOpenAI": {"batch_generate": False, "batch_agenerate": False},
 }
 CHAT_MODEL_IGNORE = ("FakeListChatModel", "HumanInputChatModel")
+
 CHAT_MODEL_FEAT_TABLE_CORRECTION = {
     "ChatMLflowAIGateway": {"_agenerate": False},
     "PromptLayerChatOpenAI": {"_stream": False, "_astream": False},
     "ChatKonko": {"_astream": False, "_agenerate": False},
+    "ChatAnthropic": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-anthropic",
+    },
+    "ChatMistralAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-mistralai",
+    },
+    "ChatFireworks": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-fireworks",
+    },
+    "AzureChatOpenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-openai",
+    },
+    "ChatOpenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-openai",
+    },
+    "ChatVertexAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-google-vertexai",
+    },
+    "ChatGroq": {
+        "tool_calling": "partial",
+        "structured_output": True,
+        "package": "langchain-groq",
+    },
+    "ChatCohere": {
+        "tool_calling": "partial",
+        "structured_output": True,
+        "package": "langchain-cohere",
+    },
 }
+
 
 LLM_TEMPLATE = """\
 ---
@@ -56,7 +98,8 @@ All ChatModels implement the Runnable interface, which comes with default implem
 - *Batch* support defaults to calling the underlying ChatModel in parallel for each input by making use of a thread pool executor (in the sync batch case) or `asyncio.gather` (in the async batch case). The concurrency can be controlled with the `max_concurrency` key in `RunnableConfig`.
 
 Each ChatModel integration can optionally provide native implementations to truly enable async or streaming.
-The table shows, for each integration, which features have been implemented with native support.
+The table shows, for each integration, which features have been implemented with native support. 
+Yellow circles (🟡) indicates partial support - for example, if the model supports tool calling but not tool messages for agents.
 
 {table}
 
@@ -101,6 +144,7 @@ def get_llm_table():
         "_astream",
         "batch_generate",
         "batch_agenerate",
+        "tool_calling",
     ]
     title = [
         "Model",
@@ -110,6 +154,7 @@ def get_llm_table():
         "Async stream",
         "Batch",
         "Async batch",
+        "Tool calling",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
@@ -117,7 +162,8 @@ def get_llm_table():
     return "\n".join(["|".join(row) for row in rows])
 
 
-def get_chat_model_table():
+def get_chat_model_table() -> str:
+    """Get the table of chat models."""
     feat_table = {}
     for cm in chat_models.__all__:
         feat_table[cm] = {}
@@ -133,11 +179,42 @@ def get_chat_model_table():
         for k, v in {**feat_table, **CHAT_MODEL_FEAT_TABLE_CORRECTION}.items()
         if k not in CHAT_MODEL_IGNORE
     }
-    header = ["model", "_agenerate", "_stream", "_astream"]
-    title = ["Model", "Invoke", "Async invoke", "Stream", "Async stream"]
+    header = [
+        "model",
+        "_agenerate",
+        "_stream",
+        "_astream",
+        "tool_calling",
+        "structured_output",
+        "package",
+    ]
+    title = [
+        "Model",
+        "Invoke",
+        "Async invoke",
+        "Stream",
+        "Async stream",
+        "[Tool calling](/docs/modules/model_io/chat/function_calling/)",
+        "[Structured output](/docs/modules/model_io/chat/structured_output/)",
+        "Python Package",
+    ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
-        rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
+        # Fields are in the order of the header
+        row = [llm, "✅"]
+        for h in header[1:]:
+            value = feats.get(h)
+            index = header.index(h)
+            if h == "package":
+                row.append(value or "langchain-community")
+            else:
+                if value == "partial":
+                    row.append("🟡")
+                elif value is True:
+                    row.append("✅")
+                else:
+                    row.append("❌")
+        rows.append(row)
     return "\n".join(["|".join(row) for row in rows])
 
 

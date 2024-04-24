@@ -46,9 +46,9 @@ class HuggingFaceEndpoint(LLM):
             print(llm("What is Deep Learning?"))
 
             # Streaming response example
-            from langchain_community.callbacks import streaming_stdout
+            from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-            callbacks = [streaming_stdout.StreamingStdOutCallbackHandler()]
+            callbacks = [StreamingStdOutCallbackHandler()]
             llm = HuggingFaceEndpoint(
                 endpoint_url="http://localhost:8010/",
                 max_new_tokens=512,
@@ -63,7 +63,7 @@ class HuggingFaceEndpoint(LLM):
             )
             print(llm("What is Deep Learning?"))
 
-    """
+    """  # noqa: E501
 
     endpoint_url: Optional[str] = None
     """Endpoint URL to use."""
@@ -326,9 +326,10 @@ class HuggingFaceEndpoint(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
+
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
             # break if stop sequence found
             if stop_seq_found:
@@ -361,9 +362,10 @@ class HuggingFaceEndpoint(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
+
                 if run_manager:
                     await run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
             # break if stop sequence found
             if stop_seq_found:

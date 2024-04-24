@@ -6,6 +6,7 @@ import pytest
 from _pytest.fixtures import FixtureRequest
 from langchain_community.chat_models import FakeListChatModel
 from langchain_community.llms import FakeListLLM
+from langchain_core.caches import InMemoryCache
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load import dumps
@@ -14,10 +15,7 @@ from langchain_core.outputs import ChatGeneration, Generation
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from langchain.cache import (
-    InMemoryCache,
-    SQLAlchemyCache,
-)
+from langchain.cache import SQLAlchemyCache
 from langchain.globals import get_llm_cache, set_llm_cache
 
 
@@ -67,7 +65,7 @@ async def test_llm_caching() -> None:
             llm_string=create_llm_string(llm),
             return_val=[Generation(text=cached_response)],
         )
-        assert llm(prompt) == cached_response
+        assert llm.invoke(prompt) == cached_response
         # async test
         await llm_cache.aupdate(
             prompt=prompt,

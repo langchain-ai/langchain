@@ -12,7 +12,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_openai import OpenAI
 from langchain.memory import VectorStoreRetrieverMemory
 from langchain.chains import ConversationChain
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 ```
 
 ### Initialize your vector store
@@ -23,7 +23,7 @@ Depending on the store you choose, this step may look different. Consult the rel
 ```python
 import faiss
 
-from langchain.docstore import InMemoryDocstore
+from langchain_community.docstore import InMemoryDocstore
 from langchain_community.vectorstores import FAISS
 
 

@@ -30,6 +30,8 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
             of a single chat session.
         database_name: name of the database to use
         collection_name: name of the collection to use
+        create_index: whether to create an index with name SessionId. Set to False if
+            such an index already exists.
     """
 
     def __init__(
@@ -38,6 +40,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         database_name: str = DEFAULT_DBNAME,
         collection_name: str = DEFAULT_COLLECTION_NAME,
+        create_index: bool = True,
     ):
         from pymongo import MongoClient, errors
 
@@ -53,7 +56,8 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
-        self.collection.create_index("SessionId")
+        if create_index:
+            self.collection.create_index("SessionId")
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore

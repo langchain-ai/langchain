@@ -58,6 +58,7 @@ class SQLDatabase:
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
         max_string_length: int = 300,
+        lazy_table_reflection: bool = False,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -113,15 +114,17 @@ class SQLDatabase:
             )
 
         self._max_string_length = max_string_length
+        self._view_support = view_support
 
         self._metadata = metadata or MetaData()
-        # including view support if view_support = true
-        self._metadata.reflect(
-            views=view_support,
-            bind=self._engine,
-            only=list(self._usable_tables),
-            schema=self._schema,
-        )
+        if not lazy_table_reflection:
+            # including view support if view_support = true
+            self._metadata.reflect(
+                views=view_support,
+                bind=self._engine,
+                only=list(self._usable_tables),
+                schema=self._schema,
+            )
 
     @classmethod
     def from_uri(
@@ -306,6 +309,16 @@ class SQLDatabase:
             if missing_tables:
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
+
+        metadata_table_names = [tbl.name for tbl in self._metadata.sorted_tables]
+        to_reflect = set(all_table_names) - set(metadata_table_names)
+        if to_reflect:
+            self._metadata.reflect(
+                views=self._view_support,
+                bind=self._engine,
+                only=list(to_reflect),
+                schema=self._schema,
+            )
 
         meta_tables = [
             tbl

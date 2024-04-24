@@ -69,7 +69,9 @@ def _get_search_client(
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
-    semantic_configurations: Optional[SemanticConfiguration] = None,
+    semantic_configurations: Optional[
+        Union[SemanticConfiguration, List[SemanticConfiguration]]
+    ] = None,
     scoring_profiles: Optional[List[ScoringProfile]] = None,
     default_scoring_profile: Optional[str] = None,
     default_fields: Optional[List[SearchField]] = None,
@@ -175,8 +177,15 @@ def _get_search_client(
             )
 
         # Create the semantic settings with the configuration
-        semantic_search = None
-        if semantic_configurations is None and semantic_configuration_name is not None:
+        if semantic_configurations:
+            if not isinstance(semantic_configurations, list):
+                semantic_configurations = [semantic_configurations]
+            semantic_search = SemanticSearch(
+                configurations=semantic_configurations,
+                default_configuration_name=semantic_configuration_name,
+            )
+        elif semantic_configuration_name:
+            # use default semantic configuration
             semantic_configuration = SemanticConfiguration(
                 name=semantic_configuration_name,
                 prioritized_fields=SemanticPrioritizedFields(
@@ -184,6 +193,9 @@ def _get_search_client(
                 ),
             )
             semantic_search = SemanticSearch(configurations=[semantic_configuration])
+        else:
+            # don't use semantic search
+            semantic_search = None
 
         # Create the search index with the semantic settings and vector search
         index = SearchIndex(
@@ -218,7 +230,9 @@ class AzureSearch(VectorStore):
         semantic_configuration_name: Optional[str] = None,
         fields: Optional[List[SearchField]] = None,
         vector_search: Optional[VectorSearch] = None,
-        semantic_configurations: Optional[SemanticConfiguration] = None,
+        semantic_configurations: Optional[
+            Union[SemanticConfiguration, List[SemanticConfiguration]]
+        ] = None,
         scoring_profiles: Optional[List[ScoringProfile]] = None,
         default_scoring_profile: Optional[str] = None,
         cors_options: Optional[CorsOptions] = None,
@@ -465,7 +479,7 @@ class AzureSearch(VectorStore):
     def hybrid_search_with_score(
         self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to query with an hybrid query.
+        """Return docs most similar to query with a hybrid query.
 
         Args:
             query: Text to look up documents similar to.
@@ -544,7 +558,7 @@ class AzureSearch(VectorStore):
     def semantic_hybrid_search_with_score_and_rerank(
         self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float, float]]:
-        """Return docs most similar to query with an hybrid query.
+        """Return docs most similar to query with a hybrid query.
 
         Args:
             query: Text to look up documents similar to.
@@ -604,7 +618,7 @@ class AzureSearch(VectorStore):
                             if result.get("@search.captions")
                             else {},
                             "answers": semantic_answers_dict.get(
-                                json.loads(result["metadata"]).get("key"),
+                                result.get(FIELDS_ID, ""),
                                 "",
                             ),
                         },
@@ -626,6 +640,7 @@ class AzureSearch(VectorStore):
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
         index_name: str = "langchain-index",
+        fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
     ) -> AzureSearch:
         # Creating a new Azure Search instance
@@ -634,9 +649,35 @@ class AzureSearch(VectorStore):
             azure_search_key,
             index_name,
             embedding,
+            fields=fields,
         )
         azure_search.add_texts(texts, metadatas, **kwargs)
         return azure_search
+
+    def as_retriever(self, **kwargs: Any) -> AzureSearchVectorStoreRetriever:  # type: ignore
+        """Return AzureSearchVectorStoreRetriever initialized from this VectorStore.
+
+        Args:
+            search_type (Optional[str]): Defines the type of search that
+                the Retriever should perform.
+                Can be "similarity" (default), "hybrid", or
+                    "semantic_hybrid".
+            search_kwargs (Optional[Dict]): Keyword arguments to pass to the
+                search function. Can include things like:
+                    k: Amount of documents to return (Default: 4)
+                    score_threshold: Minimum relevance threshold
+                        for similarity_score_threshold
+                    fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
+                    lambda_mult: Diversity of results returned by MMR;
+                        1 for minimum diversity and 0 for maximum. (Default: 0.5)
+                    filter: Filter by document metadata
+
+        Returns:
+            AzureSearchVectorStoreRetriever: Retriever class for VectorStore.
+        """
+        tags = kwargs.pop("tags", None) or []
+        tags.extend(self._get_retriever_tags())
+        return AzureSearchVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
 
 
 class AzureSearchVectorStoreRetriever(BaseRetriever):
@@ -660,8 +701,18 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]
-            if search_type not in ("similarity", "hybrid", "semantic_hybrid"):
-                raise ValueError(f"search_type of {search_type} not allowed.")
+            if search_type not in (
+                allowed_search_types := (
+                    "similarity",
+                    "similarity_score_threshold",
+                    "hybrid",
+                    "semantic_hybrid",
+                )
+            ):
+                raise ValueError(
+                    f"search_type of {search_type} not allowed. Valid values are: "
+                    f"{allowed_search_types}"
+                )
         return values
 
     def _get_relevant_documents(
@@ -672,6 +723,13 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
+        elif self.search_type == "similarity_score_threshold":
+            docs = [
+                doc
+                for doc, _ in self.vectorstore.similarity_search_with_relevance_scores(
+                    query, k=self.k, **kwargs
+                )
+            ]
         elif self.search_type == "hybrid":
             docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
         elif self.search_type == "semantic_hybrid":

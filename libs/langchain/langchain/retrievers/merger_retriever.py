@@ -72,15 +72,18 @@ class MergerRetriever(BaseRetriever):
 
         # Get the results of all retrievers.
         retriever_docs = [
-            retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child("retriever_{}".format(i + 1))
+            retriever.invoke(
+                query,
+                config={
+                    "callbacks": run_manager.get_child("retriever_{}".format(i + 1))
+                },
             )
             for i, retriever in enumerate(self.retrievers)
         ]
 
         # Merge the results of the retrievers.
         merged_documents = []
-        max_docs = max(len(docs) for docs in retriever_docs)
+        max_docs = max(map(len, retriever_docs), default=0)
         for i in range(max_docs):
             for retriever, doc in zip(self.retrievers, retriever_docs):
                 if i < len(doc):
@@ -104,8 +107,11 @@ class MergerRetriever(BaseRetriever):
         # Get the results of all retrievers.
         retriever_docs = await asyncio.gather(
             *(
-                retriever.aget_relevant_documents(
-                    query, callbacks=run_manager.get_child("retriever_{}".format(i + 1))
+                retriever.ainvoke(
+                    query,
+                    config={
+                        "callbacks": run_manager.get_child("retriever_{}".format(i + 1))
+                    },
                 )
                 for i, retriever in enumerate(self.retrievers)
             )
@@ -113,7 +119,7 @@ class MergerRetriever(BaseRetriever):
 
         # Merge the results of the retrievers.
         merged_documents = []
-        max_docs = max(len(docs) for docs in retriever_docs)
+        max_docs = max(map(len, retriever_docs), default=0)
         for i in range(max_docs):
             for retriever, doc in zip(self.retrievers, retriever_docs):
                 if i < len(doc):
