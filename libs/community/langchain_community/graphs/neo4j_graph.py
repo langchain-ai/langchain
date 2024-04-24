@@ -174,7 +174,8 @@ class Neo4jGraph(GraphStore):
         timeout: Optional[float] = None,
         sanitize: bool = False,
         refresh_schema: bool = True,
-        driver_config: Dict = {},
+        *,
+        driver_config: Optional[Dict] = None,
     ) -> None:
         """Create a new Neo4j graph wrapper instance."""
         try:
@@ -197,7 +198,7 @@ class Neo4jGraph(GraphStore):
         )
 
         self._driver = neo4j.GraphDatabase.driver(
-            url, auth=(username, password), **driver_config
+            url, auth=(username, password), **(driver_config or {})
         )
         self._database = database
         self.timeout = timeout
