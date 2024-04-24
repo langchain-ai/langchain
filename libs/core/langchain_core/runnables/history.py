@@ -395,7 +395,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
-        print(output_val)
         if isinstance(output_val, dict):
             if self.output_messages_key:
                 key = self.output_messages_key
