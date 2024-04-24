@@ -312,6 +312,8 @@ class LayoutAnalysisParser(BaseBlobParser):
                     start_page += num_pages
 
             else:
+                if not blob.path:
+                    raise ValueError("Blob path is required for non-PDF files.")
                 with open(blob.path, "rb") as f:
                     response = self._get_response({"document": f})
                     result = parse_output(response, self.output_type)
@@ -339,6 +341,8 @@ class LayoutAnalysisParser(BaseBlobParser):
                     start_page += num_pages
 
             else:
+                if not blob.path:
+                    raise ValueError("Blob path is required for non-PDF files.")
                 with open(blob.path, "rb") as f:
                     response = self._get_response({"document": f})
 
@@ -358,6 +362,8 @@ class LayoutAnalysisParser(BaseBlobParser):
 
                     start_page += num_pages
             else:
+                if not blob.path:
+                    raise ValueError("Blob path is required for non-PDF files.")
                 with open(blob.path, "rb") as f:
                     response = self._get_response({"document": f})
 
