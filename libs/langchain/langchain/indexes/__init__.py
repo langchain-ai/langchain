@@ -20,9 +20,9 @@ from langchain.indexes.vectorstore import VectorstoreIndexCreator
 __all__ = [
     # Keep sorted
     "aindex",
+    "GraphIndexCreator",
     "index",
     "IndexingResult",
     "SQLRecordManager",
-    "GraphIndexCreator",
     "VectorstoreIndexCreator",
 ]
