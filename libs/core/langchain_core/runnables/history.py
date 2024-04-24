@@ -25,6 +25,7 @@ from langchain_core.runnables.utils import (
 )
 
 if TYPE_CHECKING:
+    from langchain_core.language_models import LanguageModelInput, LanguageModelOutput
     from langchain_core.messages import BaseMessage
     from langchain_core.runnables.config import RunnableConfig
     from langchain_core.tracers.schemas import Run
@@ -229,8 +230,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def __init__(
         self,
         runnable: Runnable[
-            MessagesOrDictWithMessages,
-            Union[str, BaseMessage, MessagesOrDictWithMessages],
+            Union[MessagesOrDictWithMessages, LanguageModelInput],
+            Union[str, BaseMessage, MessagesOrDictWithMessages, LanguageModelOutput],
         ],
         get_session_history: GetSessionHistoryCallable,
         *,
