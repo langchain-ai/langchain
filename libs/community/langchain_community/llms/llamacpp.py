@@ -278,7 +278,7 @@ class LlamaCpp(LLM):
 
                 from langchain_community.llms import LlamaCpp
                 llm = LlamaCpp(model_path="/path/to/local/llama/model.bin")
-                llm("This is a prompt.")
+                llm.invoke("This is a prompt.")
         """
         if self.streaming:
             # If streaming is enabled, we use the stream

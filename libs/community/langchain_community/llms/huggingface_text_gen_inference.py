@@ -36,7 +36,7 @@ class HuggingFaceTextGenInference(LLM):
                 temperature=0.01,
                 repetition_penalty=1.03,
             )
-            print(llm("What is Deep Learning?"))  # noqa: T201
+            print(llm.invoke("What is Deep Learning?"))  # noqa: T201
 
             # Streaming response example
             from langchain_community.callbacks import streaming_stdout
@@ -53,7 +53,7 @@ class HuggingFaceTextGenInference(LLM):
                 callbacks=callbacks,
                 streaming=True
             )
-            print(llm("What is Deep Learning?"))  # noqa: T201
+            print(llm.invoke("What is Deep Learning?"))  # noqa: T201
 
     """
 
