@@ -1,0 +1,37 @@
+# TigerGraph
+
+>[TigerGraph](https://www.tigergraph.com/tigergraph-db/) is a natively distributed and high-performance graph database.
+> The storage of data in a graph format of vertices and edges leads to rich relationships, 
+> ideal for grouding LLM responses.
+ 
+A big example of the `TigerGraph` and `LangChain` integration [presented here](https://github.com/tigergraph/graph-ml-notebooks/blob/main/applications/large_language_models/TigerGraph_LangChain_Demo.ipynb).
+
+## Installation and Setup
+
+Follow instructions [how to connect to the `TigerGraph` database](https://docs.tigergraph.com/pytigergraph/current/getting-started/connection).
+
+Install the Python SDK:
+
+```bash
+pip install pyTigerGraph
+```
+
+## Example
+
+To utilize the `TigerGraph InquiryAI` functionality, you can import `TigerGraph` from `langchain_community.graphs`.
+
+```python
+import pyTigerGraph as tg
+
+conn = tg.TigerGraphConnection(host="DATABASE_HOST_HERE", graphname="GRAPH_NAME_HERE", username="USERNAME_HERE", password="PASSWORD_HERE")
+
+### ==== CONFIGURE INQUIRYAI HOST ====
+conn.ai.configureInquiryAIHost("INQUIRYAI_HOST_HERE")
+
+from langchain_community.graphs import TigerGraph
+
+graph = TigerGraph(conn)
+result = graph.query("How many servers are there?")
+print(result)
+```
+
