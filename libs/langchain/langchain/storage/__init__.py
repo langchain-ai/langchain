@@ -13,11 +13,11 @@ from langchain_core.stores import (
     InMemoryByteStore,
     InMemoryStore,
     InvalidKeyException,
-    LocalFileStore,
 )
 
 from langchain.storage._lc_store import create_kv_docstore, create_lc_store
 from langchain.storage.encoder_backed import EncoderBackedStore
+from langchain.storage.file_system import LocalFileStore
 from langchain.utils.interactive_env import is_interactive_env
 
 

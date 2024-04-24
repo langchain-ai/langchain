@@ -4,7 +4,8 @@ from typing import Generator
 
 import pytest
 
-from langchain_core.stores import InvalidKeyException, LocalFileStore
+from langchain_core.stores import InvalidKeyException
+from langchain.storage.file_system import LocalFileStore
 
 
 @pytest.fixture

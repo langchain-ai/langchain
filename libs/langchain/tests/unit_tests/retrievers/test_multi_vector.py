@@ -1,9 +1,9 @@
 from typing import Any, List
 
 from langchain_core.documents import Document
-from langchain_core.stores import InMemoryStore
 
 from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain.storage import InMemoryStore
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 
