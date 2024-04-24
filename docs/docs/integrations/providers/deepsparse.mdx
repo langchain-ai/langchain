@@ -22,7 +22,7 @@ It provides a unified interface for all models:
 ```python
 llm = DeepSparse(model='zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base-none')
 
-print(llm('def fib():'))
+print(llm.invoke('def fib():'))
 ```
 
 Additional parameters can be passed using the `config` parameter:
