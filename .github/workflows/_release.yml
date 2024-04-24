@@ -71,7 +71,8 @@ jobs:
   test-pypi-publish:
     needs:
       - build
-    uses: ./.github/workflows/_test_release.yml
+    uses:
+      ./.github/workflows/_test_release.yml
     with:
       working-directory: ${{ inputs.working-directory }}
     secrets: inherit
@@ -174,11 +175,11 @@ jobs:
           make tests
         working-directory: ${{ inputs.working-directory }}
 
-      - name: "Authenticate to Google Cloud"
-        id: "auth"
+      - name: 'Authenticate to Google Cloud'
+        id: 'auth'
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
       - name: Run integration tests
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
