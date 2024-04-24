@@ -19,7 +19,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-from langchain_core._api import beta, deprecated
+from langchain_core._api import deprecated
 from langchain_core.messages import (
     AnyMessage,
     BaseMessage,

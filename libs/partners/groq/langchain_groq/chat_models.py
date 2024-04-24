@@ -23,7 +23,6 @@ from typing import (
     cast,
 )
 
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,

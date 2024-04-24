@@ -24,7 +24,6 @@ from typing import (
 )
 
 from fireworks.client import AsyncFireworks, Fireworks  # type: ignore
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,

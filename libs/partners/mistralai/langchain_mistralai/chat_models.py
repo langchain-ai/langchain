@@ -22,7 +22,6 @@ from typing import (
 
 import httpx
 from httpx_sse import EventSource, aconnect_sse, connect_sse
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
