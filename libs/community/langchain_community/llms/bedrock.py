@@ -339,7 +339,7 @@ class BedrockBase(BaseModel, ABC):
         "amazon": "stopSequences",
         "ai21": "stop_sequences",
         "cohere": "stop_sequences",
-        "mistral": "stop_sequences",
+        "mistral": "stop",
     }
 
     guardrails: Optional[Mapping[str, Any]] = {
