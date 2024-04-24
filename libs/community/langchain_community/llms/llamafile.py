@@ -139,6 +139,7 @@ class Llamafile(LLM):
             "streaming",
             "tags",
             "verbose",
+            "custom_get_token_ids",
         ]
         attrs = [
             k for k in get_pydantic_field_names(self.__class__) if k not in ignore_keys
@@ -297,9 +298,10 @@ class Llamafile(LLM):
         for raw_chunk in response.iter_lines(decode_unicode=True):
             content = self._get_chunk_content(raw_chunk)
             chunk = GenerationChunk(text=content)
-            yield chunk
+
             if run_manager:
                 run_manager.on_llm_new_token(token=chunk.text)
+            yield chunk
 
     def _get_chunk_content(self, chunk: str) -> str:
         """When streaming is turned on, llamafile server returns lines like:

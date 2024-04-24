@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from typing import Dict, Iterable, List, Optional
 
 import httpx
@@ -19,6 +20,13 @@ logger = logging.getLogger(__name__)
 MAX_TOKENS = 16_000
 
 
+class DummyTokenizer:
+    """Dummy tokenizer for when tokenizer cannot be accessed (e.g., via Huggingface)"""
+
+    def encode_batch(self, texts: List[str]) -> List[List[str]]:
+        return [list(text) for text in texts]
+
+
 class MistralAIEmbeddings(BaseModel, Embeddings):
     """MistralAI embedding models.
 
@@ -29,15 +37,16 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_mistralai import MistralAIEmbeddings
+
             mistral = MistralAIEmbeddings(
                 model="mistral-embed",
-                mistral_api_key="my-api-key"
+                api_key="my-api-key"
             )
     """
 
     client: httpx.Client = Field(default=None)  #: :meta private:
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
-    mistral_api_key: Optional[SecretStr] = None
+    mistral_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     endpoint: str = "https://api.mistral.ai/v1/"
     max_retries: int = 5
     timeout: int = 120
@@ -49,6 +58,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     class Config:
         extra = Extra.forbid
         arbitrary_types_allowed = True
+        allow_population_by_field_name = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -81,9 +91,18 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             timeout=values["timeout"],
         )
         if values["tokenizer"] is None:
-            values["tokenizer"] = Tokenizer.from_pretrained(
-                "mistralai/Mixtral-8x7B-v0.1"
-            )
+            try:
+                values["tokenizer"] = Tokenizer.from_pretrained(
+                    "mistralai/Mixtral-8x7B-v0.1"
+                )
+            except IOError:  # huggingface_hub GatedRepoError
+                warnings.warn(
+                    "Could not download mistral tokenizer from Huggingface for "
+                    "calculating batch sizes. Set a Huggingface token via the "
+                    "HF_TOKEN environment variable to download the real tokenizer. "
+                    "Falling back to a dummy tokenizer that uses `len()`."
+                )
+                values["tokenizer"] = DummyTokenizer()
         return values
 
     def _get_batches(self, texts: List[str]) -> Iterable[List[str]]:
@@ -98,7 +117,10 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         for text, text_tokens in zip(texts, text_token_lengths):
             if batch_tokens + text_tokens > MAX_TOKENS:
-                yield batch
+                if len(batch) > 0:
+                    # edge case where first batch exceeds max tokens
+                    # should not yield an empty batch.
+                    yield batch
                 batch = [text]
                 batch_tokens = text_tokens
             else:

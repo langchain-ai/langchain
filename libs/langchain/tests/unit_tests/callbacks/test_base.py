@@ -1,6 +1,6 @@
-from langchain.callbacks.base import __all__
+from langchain_core.callbacks import __all__
 
-EXPECTED_ALL = [
+EXPECTED_ALL = {
     "RetrieverManagerMixin",
     "LLMManagerMixin",
     "ChainManagerMixin",
@@ -11,8 +11,8 @@ EXPECTED_ALL = [
     "AsyncCallbackHandler",
     "BaseCallbackManager",
     "Callbacks",
-]
+}
 
 
 def test_all_imports() -> None:
-    assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__).issuperset(EXPECTED_ALL)

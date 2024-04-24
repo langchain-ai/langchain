@@ -513,7 +513,7 @@ def test_singlestoredb_as_retriever(texts: List[str]) -> None:
         host=TEST_SINGLESTOREDB_URL,
     )
     retriever = docsearch.as_retriever(search_kwargs={"k": 2})
-    output = retriever.get_relevant_documents("foo")
+    output = retriever.invoke("foo")
     assert output == [
         Document(
             page_content="foo",
