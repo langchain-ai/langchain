@@ -12,8 +12,8 @@ via a set of transformations from some source content (e.g., indexing children
 documents that were derived from parent documents by chunking.)
 """
 from langchain_community.graphs.index_creator import GraphIndexCreator
+from langchain_core.indexing.api import IndexingResult, aindex, index
 
-from langchain.indexes._api import IndexingResult, aindex, index
 from langchain.indexes._sql_record_manager import SQLRecordManager
 from langchain.indexes.vectorstore import VectorstoreIndexCreator
 
