@@ -121,7 +121,7 @@ class Predibase(LLM):
         from lorax.errors import GenerationError
         from lorax.types import Response
 
-        lorax_client: LoraxClient = self._client.deployments.client(
+        lorax_client: LoraxClient = predibase.deployments.client(
             deployment_ref=self.model_name
         )
 
