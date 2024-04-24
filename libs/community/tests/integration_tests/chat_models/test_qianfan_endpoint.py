@@ -100,7 +100,7 @@ def test_initialization() -> None:
 def test_default_call() -> None:
     """Test default model.invoke(`ERNIE-Bot`) call."""
     chat = QianfanChatEndpoint()
-    response = chat.invoke(messages=[HumanMessage(content="Hello")])
+    response = chat.invoke([HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
