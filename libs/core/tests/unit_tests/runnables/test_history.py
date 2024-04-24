@@ -7,6 +7,12 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.utils import ConfigurableFieldSpec
 from tests.unit_tests.fake.memory import ChatMessageHistory
+from langchain_core.callbacks import (
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 
 
 def test_interfaces() -> None:
@@ -125,6 +131,38 @@ def test_output_message() -> None:
     assert output == AIMessage(content="you said: hello")
     output = with_history.invoke({"input": "good bye"}, config)
     assert output == AIMessage(content="you said: hello\ngood bye")
+
+
+def test_input_messages_output_message() -> None:
+    class LengthChatModel(BaseChatModel):
+        """A fake chat model that returns the length of the messages passed in."""
+
+        def _generate(
+                self,
+                messages: List[BaseMessage],
+                stop: Optional[List[str]] = None,
+                run_manager: Optional[CallbackManagerForLLMRun] = None,
+                **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call"""
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content=str(len(messages))))])
+
+        @property
+        def _llm_type(self) -> str:
+            return "length-fake-chat-model"
+
+
+    runnable = LengthChatModel()
+    get_session_history = _get_get_session_history()
+    with_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history,
+    )
+    config: RunnableConfig = {"configurable": {"session_id": "4"}}
+    output = with_history.invoke([HumanMessage(content="hi")], config)
+    assert output.content == "1"
+    output = with_history.invoke([HumanMessage(content="hi")], config)
+    assert output.content == "3"
 
 
 def test_output_messages() -> None:
