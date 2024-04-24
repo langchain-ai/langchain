@@ -6,10 +6,16 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.searchapi import SearchApiAPIWrapper
+from typing import Type
+
+class SearchAPIRunInput(BaseModel):
+    """Input for SearchAPIRun."""
+
+    query: str = Field(..., description="Query for SearchApi.io search API")
 
 
 class SearchAPIRun(BaseTool):
@@ -22,6 +28,7 @@ class SearchAPIRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: SearchApiAPIWrapper
+    args_schema: Type[BaseModel] = SearchAPIRunInput
 
     def _run(
         self,
