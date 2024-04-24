@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import uuid
+from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,7 +18,6 @@ from typing import (
     Union,
     cast,
 )
-from types import FunctionType, MethodType
 
 from typing_extensions import TypedDict
 
