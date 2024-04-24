@@ -199,7 +199,7 @@ class TextGen(LLM):
 
                 from langchain_community.llms import TextGen
                 llm = TextGen(model_url="http://localhost:5000")
-                llm("Write a story about llamas.")
+                llm.invoke("Write a story about llamas.")
         """
         if self.streaming:
             combined_text_output = ""
@@ -245,7 +245,7 @@ class TextGen(LLM):
 
                 from langchain_community.llms import TextGen
                 llm = TextGen(model_url="http://localhost:5000")
-                llm("Write a story about llamas.")
+                llm.invoke("Write a story about llamas.")
         """
         if self.streaming:
             combined_text_output = ""

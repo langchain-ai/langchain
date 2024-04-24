@@ -10,7 +10,7 @@ def test_call() -> None:
         model_id="lmsys/vicuna-7b-v1.5",
         model_kwargs={"temperature": 0, "max_length": 16, "trust_remote_code": True},
     )
-    output = llm("Hello!")
+    output = llm.invoke("Hello!")
     assert isinstance(output, str)
 
 

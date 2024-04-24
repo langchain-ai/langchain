@@ -8,7 +8,7 @@ from langchain_community.llms.tongyi import Tongyi
 def test_tongyi_call() -> None:
     """Test valid call to tongyi."""
     llm = Tongyi()
-    output = llm("who are you")
+    output = llm.invoke("who are you")
     assert isinstance(output, str)
 
 
