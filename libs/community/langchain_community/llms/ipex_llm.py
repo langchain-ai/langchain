@@ -42,7 +42,7 @@ class IpexLLM(LLM):
         cls,
         model_id: str,
         tokenizer_id: Optional[str] = None,
-        load_in_4bit: Optional[bool] = True,
+        load_in_4bit: bool = True,
         load_in_low_bit: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
         **kwargs: Any,
@@ -53,6 +53,13 @@ class IpexLLM(LLM):
         Args:
             model_id: Path for the huggingface repo id to be downloaded or
                       the huggingface checkpoint folder.
+            tokenizer_id: Path for the huggingface repo id to be downloaded or
+                      the huggingface checkpoint folder which contains the tokenizer.
+            load_in_4bit: "Whether to load model in 4bit.
+                      Unused if `load_in_low_bit` is not None.
+            load_in_low_bit: Which low bit precisions to use when loading model.
+                      Example values: 'sym_int4', 'asym_int4', 'fp4', 'nf4', 'fp8', etc.
+                      Overrides `load_in_4bit` if specified.
             model_kwargs: Keyword arguments to pass to the model and tokenizer.
             kwargs: Extra arguments to pass to the model and tokenizer.
 
@@ -85,6 +92,8 @@ class IpexLLM(LLM):
         Args:
 
             model_id: Path for the ipex-llm transformers low-bit model folder.
+            tokenizer_id: Path for the huggingface repo id or local model folder
+                      which contains the tokenizer.
             model_kwargs: Keyword arguments to pass to the model and tokenizer.
             kwargs: Extra arguments to pass to the model and tokenizer.
 
@@ -105,11 +114,11 @@ class IpexLLM(LLM):
     @classmethod
     def _load_model(
         cls,
-        model_id,
+        model_id: str,
         tokenizer_id: Optional[str] = None,
-        low_bit_model: Optional[bool] = False,
-        load_in_4bit: Optional[bool] = True,
+        load_in_4bit: bool = False,
         load_in_low_bit: Optional[str] = None,
+        low_bit_model: bool = False,
         model_kwargs: Optional[dict] = None,
         kwargs: Optional[dict] = None,
     ) -> Any:
@@ -137,13 +146,22 @@ class IpexLLM(LLM):
         except Exception:
             tokenizer = LlamaTokenizer.from_pretrained(_tokenizer_id, **_model_kwargs)
 
+        # restore model_kwargs
+        if "trust_remote_code" in _model_kwargs:
+            _model_kwargs = {
+                k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
+            }
+
         # load model with AutoModelForCausalLM and falls back to AutoModel on failure.
-        load_kwargs = {"use_cache": True, "trust_remote_code": True}
+        load_kwargs = {
+            "use_cache": True,
+            "trust_remote_code": True,
+        }
 
         if not low_bit_model:
             if load_in_low_bit is not None:
                 load_function_name = "from_pretrained"
-                load_kwargs["load_in_low_bit"] = load_in_low_bit
+                load_kwargs["load_in_low_bit"] = load_in_low_bit  # type: ignore
             else:
                 load_function_name = "from_pretrained"
                 load_kwargs["load_in_4bit"] = load_in_4bit
@@ -168,12 +186,6 @@ class IpexLLM(LLM):
                 load_kwargs=load_kwargs,
                 model_kwargs=_model_kwargs,
             )
-
-        # restore model_kwargs
-        if "trust_remote_code" in _model_kwargs:
-            _model_kwargs = {
-                k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
-            }
 
         return cls(
             model_id=model_id,
