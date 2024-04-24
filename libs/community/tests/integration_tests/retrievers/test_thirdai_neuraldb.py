@@ -26,7 +26,7 @@ def assert_result_correctness(documents: list) -> None:
 def test_neuraldb_retriever_from_scratch(test_csv: str) -> None:
     retriever = NeuralDBRetriever.from_scratch()
     retriever.insert([test_csv])
-    documents = retriever.get_relevant_documents("column")
+    documents = retriever.invoke("column")
     assert_result_correctness(documents)
 
 
@@ -40,7 +40,7 @@ def test_neuraldb_retriever_from_checkpoint(test_csv: str) -> None:
         retriever.insert([test_csv])
         retriever.save(checkpoint)
         loaded_retriever = NeuralDBRetriever.from_checkpoint(checkpoint)
-        documents = loaded_retriever.get_relevant_documents("column")
+        documents = loaded_retriever.invoke("column")
         assert_result_correctness(documents)
     finally:
         if os.path.exists(checkpoint):

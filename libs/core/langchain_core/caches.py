@@ -22,7 +22,7 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 from langchain_core.outputs import Generation
 from langchain_core.runnables import run_in_executor
@@ -105,3 +105,37 @@ class BaseCache(ABC):
     async def aclear(self, **kwargs: Any) -> None:
         """Clear cache that can take additional keyword arguments."""
         return await run_in_executor(None, self.clear, **kwargs)
+
+
+class InMemoryCache(BaseCache):
+    """Cache that stores things in memory."""
+
+    def __init__(self) -> None:
+        """Initialize with empty cache."""
+        self._cache: Dict[Tuple[str, str], RETURN_VAL_TYPE] = {}
+
+    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        return self._cache.get((prompt, llm_string), None)
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        """Update cache based on prompt and llm_string."""
+        self._cache[(prompt, llm_string)] = return_val
+
+    def clear(self, **kwargs: Any) -> None:
+        """Clear cache."""
+        self._cache = {}
+
+    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+        """Look up based on prompt and llm_string."""
+        return self.lookup(prompt, llm_string)
+
+    async def aupdate(
+        self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
+    ) -> None:
+        """Update cache based on prompt and llm_string."""
+        self.update(prompt, llm_string, return_val)
+
+    async def aclear(self, **kwargs: Any) -> None:
+        """Clear cache."""
+        self.clear()
