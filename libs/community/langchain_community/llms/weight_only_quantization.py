@@ -222,7 +222,7 @@ class WeightOnlyQuantPipeline(LLM):
                     model_id="google/flan-t5-large",
                     task="text2text-generation",
                 )
-                llm("This is a prompt.")
+                llm.invoke("This is a prompt.")
         """
         response = self.pipeline(prompt)
         if self.pipeline.task == "text-generation":
