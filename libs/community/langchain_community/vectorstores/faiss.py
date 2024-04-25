@@ -802,6 +802,124 @@ class FAISS(VectorStore):
         )
         return docs
 
+    def sentence_window_retrieval_search(
+        self, query: str, k: int = 4, window_size: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Returns docs selected by sentence window retrieval
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            window_size (int, optional): The number of neighboring indices to include
+                to make up the final document. Defaults to 4.
+
+        Returns:
+            List of Documents selected by sentence window retrieval
+        """
+
+        faiss = dependable_faiss_import()
+
+        vector_ = self._embed_query(query)
+        vector = np.array([vector_], dtype=np.float32)
+        if self._normalize_L2:
+            faiss.normalize_L2(vector)
+
+        # Retrieve the top k indices that matches the query
+        scores, indices = self.index.search(vector, k)
+
+        doc_list = []
+        for index_val in indices[0]:
+            doc_list.append(self.get_sentence_window_document(index_val, window_size))
+
+        return doc_list
+
+    def get_sentence_window_document(
+        self, primary_index: int, window_size: int
+    ) -> Document:
+        """For a given index in the vector database, retrieves the adjacent
+        `window_size` indices to augment the retrieval window.
+
+        This is a helper function for the Sentence Window Retrieval method.
+
+        The adjacent pieces of text are retrieved only from the same source
+        as the given index.
+
+        Args:
+            primary_index (int): Primary index around which we retrieve additional text
+            window_size (int): Defines the number of indices before and after
+                the primary index, to be included in the final output
+
+        Returns:
+            Document: A modified document that contains the text from the original index
+                as well as text from its surrounding indices
+        """
+
+        start_index = max(0, primary_index - window_size)
+        end_index = min(primary_index + window_size, len(self.index_to_docstore_id) - 1)
+        primary_doc = self.docstore.search(self.index_to_docstore_id[primary_index])
+
+        if window_size < 0:
+            raise ValueError("window_size should be an integer greater than 0")
+
+        assert isinstance(primary_doc, Document)
+        primary_doc_source = primary_doc.metadata.get("source", None)
+
+        # Retrieving content for neighboring indices
+        page_content_list = []
+        pages = []
+        for index in range(start_index, end_index + 1):
+            doc = self.docstore.search(self.index_to_docstore_id[index])
+            assert isinstance(doc, Document)
+
+            if doc.metadata.get("source", None) == primary_doc_source:
+                # We only want to include adjacent indices that are
+                # from the same source text. If source is not provided,
+                # then this condition is relaxed
+                page_content_list.append(doc.page_content)
+                pages.append(doc.metadata["page"])
+
+        # Creating new output Document
+        assert isinstance(doc, Document)
+
+        page_content = " ".join(page_content_list)
+
+        metadata = {
+            "primary_index": primary_index,
+            "page": list(set(pages)),
+            "type": "sentence_window",
+        }
+
+        if primary_doc_source:
+            metadata["source"] = primary_doc_source
+
+        output_doc = Document(page_content=page_content, metadata=metadata)
+
+        return output_doc
+
+    async def asentence_window_retrieval_search(
+        self, query: str, k: int = 4, window_size: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Returns docs selected by sentence window retrieval
+
+        Args:
+            query (str): Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            window_size (int, optional): The number of neighboring indices to include
+                to make up the final document. Defaults to 4.
+
+        Returns:
+            List of Documents selected by sentence window retrieval
+        """
+
+        return await run_in_executor(
+            None,
+            self.sentence_window_retrieval_search,
+            query=query,
+            k=k,
+            window_size=window_size,
+            **kwargs,
+        )
+
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by ID. These are the IDs in the vectorstore.
 
@@ -1222,9 +1340,11 @@ class FAISS(VectorStore):
 
         def filter_func(metadata: Dict[str, Any]) -> bool:
             return all(
-                metadata.get(key) in value
-                if isinstance(value, list)
-                else metadata.get(key) == value
+                (
+                    metadata.get(key) in value
+                    if isinstance(value, list)
+                    else metadata.get(key) == value
+                )
                 for key, value in filter.items()  # type: ignore
             )
 

@@ -18,6 +18,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 
     Embeddings, Document
 """  # noqa: E501
+
 from __future__ import annotations
 
 import logging
@@ -537,6 +538,12 @@ class VectorStore(ABC):
             **kwargs,
         )
 
+    def sentence_window_retrieval_search(
+        self, query: str, **kwargs: Any
+    ) -> List[Document]:
+        """Return docs selected using the sentence window retrieval."""
+        raise NotImplementedError
+
     @classmethod
     def from_documents(
         cls: Type[VST],
@@ -598,8 +605,8 @@ class VectorStore(ABC):
         Args:
             search_type (Optional[str]): Defines the type of search that
                 the Retriever should perform.
-                Can be "similarity" (default), "mmr", or
-                "similarity_score_threshold".
+                Can be "similarity" (default), "mmr", "similarity_score_threshold" or
+                "sentence_window_retrieval".
             search_kwargs (Optional[Dict]): Keyword arguments to pass to the
                 search function. Can include things like:
                     k: Amount of documents to return (Default: 4)
@@ -609,6 +616,8 @@ class VectorStore(ABC):
                     lambda_mult: Diversity of results returned by MMR;
                         1 for minimum diversity and 0 for maximum. (Default: 0.5)
                     filter: Filter by document metadata
+                    window_size: The number of neighboring indices to include to make
+                        up the final document (Sentence Window Retrieval)
 
         Returns:
             VectorStoreRetriever: Retriever class for VectorStore.
@@ -664,6 +673,7 @@ class VectorStoreRetriever(BaseRetriever):
         "similarity",
         "similarity_score_threshold",
         "mmr",
+        "sentence_window_retrieval",
     )
 
     class Config:
@@ -687,6 +697,18 @@ class VectorStoreRetriever(BaseRetriever):
                     "`score_threshold` is not specified with a float value(0~1) "
                     "in `search_kwargs`."
                 )
+
+        if search_type == "sentence_window_retrieval":
+            window_size = values["search_kwargs"].get("window_size")
+            if window_size is not None and (not isinstance(window_size, int)):
+                raise ValueError("`window_size` should be an integer")
+
+            if "FAISS" not in values["tags"]:
+                raise ValueError(
+                    """sentence_window_retrieval is currently only available
+                     for FAISS database"""
+                )
+
         return values
 
     def _get_relevant_documents(
@@ -703,6 +725,10 @@ class VectorStoreRetriever(BaseRetriever):
             docs = [doc for doc, _ in docs_and_similarities]
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
+                query, **self.search_kwargs
+            )
+        elif self.search_type == "sentence_window_retrieval":
+            docs = self.vectorstore.sentence_window_retrieval_search(
                 query, **self.search_kwargs
             )
         else:
@@ -727,6 +753,8 @@ class VectorStoreRetriever(BaseRetriever):
             docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs
             )
+        elif self.search_type == "sentence_window_retrieval":
+            raise NotImplementedError
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
