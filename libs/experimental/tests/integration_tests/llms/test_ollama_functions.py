@@ -11,9 +11,7 @@ class TestOllamaFunctions(unittest.TestCase):
     """
 
     def test_default_ollama_functions(self) -> None:
-        base_model = OllamaFunctions(
-            model="llama3", format="json"
-        )
+        base_model = OllamaFunctions(model="llama3", format="json")
 
         # bind functions
         model = base_model.bind_tools(
