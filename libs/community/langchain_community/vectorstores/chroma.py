@@ -611,7 +611,14 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)
 
-    @deprecated(since="0.1.17", removal="0.3.0")
+    @deprecated(
+        since="0.1.17",
+        message=(
+            "Since Chroma 0.4.x the manual persistence method is no longer "
+            "supported as docs are automatically persisted."
+        ),
+        removal="0.3.0",
+    )
     def persist(self) -> None:
         """Persist the collection.
 
@@ -619,7 +626,7 @@ class Chroma(VectorStore):
         It will also be called automatically when the object is destroyed.
 
         Since Chroma 0.4.x the manual persistence method is no longer
-        supported. 
+        supported as docs are automatically persisted.
         """
         if self._persist_directory is None:
             raise ValueError(
