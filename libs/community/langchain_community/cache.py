@@ -1115,7 +1115,8 @@ class CassandraCache(BaseCache):
     ) -> None:
         """
         A wrapper around `delete` with the LLM being passed.
-        In case the llm(prompt) calls have a `stop` param, you should pass it here
+        In case the llm.invoke(prompt) calls have a `stop` param, you should
+        pass it here
         """
         llm_string = get_prompts(
             {**llm.dict(), **{"stop": stop}},
@@ -1505,7 +1506,8 @@ class AstraDBCache(BaseCache):
     ) -> None:
         """
         A wrapper around `delete` with the LLM being passed.
-        In case the llm(prompt) calls have a `stop` param, you should pass it here
+        In case the llm.invoke(prompt) calls have a `stop` param, you should
+        pass it here
         """
         llm_string = get_prompts(
             {**llm.dict(), **{"stop": stop}},
@@ -1518,7 +1520,8 @@ class AstraDBCache(BaseCache):
     ) -> None:
         """
         A wrapper around `adelete` with the LLM being passed.
-        In case the llm(prompt) calls have a `stop` param, you should pass it here
+        In case the llm.invoke(prompt) calls have a `stop` param, you should
+        pass it here
         """
         llm_string = (
             await aget_prompts(
@@ -1998,7 +2001,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
             k=1,
             kind=self.kind,
             ef_search=self.ef_search,
-            score_threshold=self.score_threshold,
+            score_threshold=self.score_threshold,  # type: ignore[arg-type]
         )
         if results:
             for document in results:

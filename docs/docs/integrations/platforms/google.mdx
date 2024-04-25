@@ -4,6 +4,9 @@ All functionality related to [Google Cloud Platform](https://cloud.google.com/) 
 
 ## LLMs
 
+We recommend individual developers to start with Gemini API (`langchain-google-genai`) and move to Vertex AI (`langchain-google-vertexai`) when they need access to commercial support and higher rate limits. If you’re already Cloud-friendly or Cloud-native, then you can get started in Vertex AI straight away.
+Please, find more information [here](https://ai.google.dev/gemini-api/docs/migrate-to-cloud).
+
 ### Google Generative AI
 
 Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `GoogleGenerativeAI` class.
@@ -229,7 +232,7 @@ pip install langchain-google-cloud-sql-pg
 See [usage example](/docs/integrations/document_loaders/google_cloud_sql_pg).
 
 ```python
-from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgreSQLLoader
+from langchain_google_cloud_sql_pg import PostgresEngine, PostgresLoader
 ```
 
 ### Cloud Storage
@@ -486,6 +489,36 @@ See [usage example](/docs/integrations/vectorstores/google_spanner).
 from langchain_google_spanner import SpannerVectorStore
 ```
 
+### Firestore (Native Mode)
+
+> [Google Cloud Firestore](https://cloud.google.com/firestore/docs/) is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+Install the python package:
+
+```bash
+pip install langchain-google-firestore
+```
+
+See [usage example](/docs/integrations/vectorstores/google_firestore).
+
+```python
+from langchain_google_firestore import FirestoreVectorstore
+```
+
+### Cloud SQL for MySQL
+
+> [Google Cloud SQL for MySQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your MySQL relational databases on Google Cloud.
+Install the python package:
+
+```bash
+pip install langchain-google-cloud-sql-mysql
+```
+
+See [usage example](/docs/integrations/vectorstores/google_cloud_sql_mysql).
+
+```python
+from langchain_google_cloud_sql_mysql import MySQLEngine, MySQLVectorStore
+```
+
 ### Cloud SQL for PostgreSQL
 
 > [Google Cloud SQL for PostgreSQL](https://cloud.google.com/sql) is a fully-managed database service that helps you set up, maintain, manage, and administer your PostgreSQL relational databases on Google Cloud.
@@ -498,7 +531,7 @@ pip install langchain-google-cloud-sql-pg
 See [usage example](/docs/integrations/vectorstores/google_cloud_sql_pg).
 
 ```python
-from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgresVectorStore
+from langchain_google_cloud_sql_pg import PostgresEngine, PostgresVectorStore
 ```
 
 ### Vertex AI Vector Search
@@ -590,7 +623,7 @@ docai_wh_retriever = GoogleDocumentAIWarehouseRetriever(
     project_number=...
 )
 query = ...
-documents = docai_wh_retriever.get_relevant_documents(
+documents = docai_wh_retriever.invoke(
     query, user_ldap=...
 )
 ```
@@ -783,7 +816,7 @@ See [usage example](/docs/integrations/memory/google_sql_pg).
 
 
 ```python
-from langchain_google_cloud_sql_pg import PostgreSQLEngine, PostgreSQLChatMessageHistory
+from langchain_google_cloud_sql_pg import PostgresEngine, PostgresChatMessageHistory
 ```
 
 ### Cloud SQL for MySQL

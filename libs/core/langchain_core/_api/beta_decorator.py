@@ -121,7 +121,7 @@ def beta(
             if not _obj_type:
                 _obj_type = "class"
             wrapped = obj.__init__  # type: ignore
-            _name = _name or obj.__name__
+            _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
@@ -147,10 +147,11 @@ def beta(
                 return cast(T, obj)
 
         elif isinstance(obj, property):
+            # note(erick): this block doesn't seem to be used?
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or obj.fget.__name__
+            _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
             class _beta_property(property):
@@ -189,10 +190,12 @@ def beta(
                 )
 
         else:
+            _name = _name or obj.__qualname__
             if not _obj_type:
-                _obj_type = "function"
+                # edge case: when a function is within another function
+                # within a test, this will call it a "method" not a "function"
+                _obj_type = "function" if "." not in _name else "method"
             wrapped = obj
-            _name = _name or obj.__name__
             old_doc = wrapped.__doc__
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:

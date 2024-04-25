@@ -12,7 +12,7 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 
 class Vald(VectorStore):
-    """Wrapper around Vald vector database.
+    """Vald vector database.
 
     To use, you should have the ``vald-client-python`` python package installed.
 

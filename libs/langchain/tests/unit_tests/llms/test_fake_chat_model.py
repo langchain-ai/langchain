@@ -3,10 +3,10 @@ from itertools import cycle
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
+from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
-from langchain.callbacks.base import AsyncCallbackHandler
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
 from tests.unit_tests.stubs import AnyStr
 

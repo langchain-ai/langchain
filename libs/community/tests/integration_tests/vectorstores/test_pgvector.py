@@ -227,6 +227,45 @@ def test_pgvector_with_filter_nin_set() -> None:
     ]
 
 
+def test_pg_vector_with_or_filter() -> None:
+    """Test end to end construction and search with specific OR filter."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection_filter",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        metadatas=metadatas,
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search_with_score(
+        "foo", k=3, filter={"page": {"OR": [{"EQ": "0"}, {"EQ": "2"}]}}
+    )
+    assert output == [
+        (Document(page_content="foo", metadata={"page": "0"}), 0.0),
+        (Document(page_content="baz", metadata={"page": "2"}), 0.0013003906671379406),
+    ]
+
+
+def test_pg_vector_with_and_filter() -> None:
+    """Test end to end construction and search with specific AND filter."""
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    docsearch = PGVector.from_texts(
+        texts=texts,
+        collection_name="test_collection_filter",
+        embedding=FakeEmbeddingsWithAdaDimension(),
+        metadatas=metadatas,
+        connection_string=CONNECTION_STRING,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search_with_score(
+        "foo", k=3, filter={"page": {"AND": [{"IN": ["0", "1"]}, {"NIN": ["1"]}]}}
+    )
+    assert output == [(Document(page_content="foo", metadata={"page": "0"}), 0.0)]
+
+
 def test_pgvector_delete_docs() -> None:
     """Add and delete documents."""
     texts = ["foo", "bar", "baz"]
@@ -293,7 +332,7 @@ def test_pgvector_retriever_search_threshold() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.999},
     )
-    output = retriever.get_relevant_documents("summer")
+    output = retriever.invoke("summer")
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
         Document(page_content="bar", metadata={"page": "1"}),
@@ -318,7 +357,7 @@ def test_pgvector_retriever_search_threshold_custom_normalization_fn() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.5},
     )
-    output = retriever.get_relevant_documents("foo")
+    output = retriever.invoke("foo")
     assert output == []
 
 

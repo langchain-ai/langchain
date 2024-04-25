@@ -15,8 +15,7 @@ OUTPUT_TYPE = TypeVar("OUTPUT_TYPE", bound=Union[str, List[List[float]], Iterato
 
 
 class LineIterator:
-    """
-    A helper class for parsing the byte stream input.
+    """Parse the byte stream input.
 
     The output of the model will be in the following format:
 
@@ -74,7 +73,7 @@ class LineIterator:
 
 
 class ContentHandlerBase(Generic[INPUT_TYPE, OUTPUT_TYPE]):
-    """A handler class to transform input from LLM to a
+    """Handler class to transform input from LLM to a
     format that SageMaker endpoint expects.
 
     Similarly, the class handles transforming output from the
