@@ -17,7 +17,7 @@ def test_chat_upstage_system_message() -> None:
     chat = ChatUpstage(max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
-    response = chat([system_message, human_message])
+    response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
