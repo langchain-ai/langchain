@@ -9,14 +9,14 @@ from langchain_community.llms.loading import load_llm
 def test_ai21_call() -> None:
     """Test valid call to ai21."""
     llm = AI21(maxTokens=10)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
 def test_ai21_call_experimental() -> None:
     """Test valid call to ai21 with an experimental model."""
     llm = AI21(maxTokens=10, model="j1-grande-instruct")
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
