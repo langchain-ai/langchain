@@ -22,7 +22,6 @@ def load_model(model_id: str) -> Any:
     return llm
 
 
-
 def load_model_more_types(model_id: str, load_in_low_bit: str) -> Any:
     llm = IpexLLM.from_model_id(
         model_id=model_id,
