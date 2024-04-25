@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Tuple
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,

@@ -4,6 +4,7 @@ from typing import Any, Dict, List, cast
 
 from langchain_core.documents import Document
 
+from langchain_community.graphs import Neo4jGraph
 from langchain_community.vectorstores.neo4j_vector import (
     Neo4jVector,
     SearchType,
@@ -900,5 +901,22 @@ OPTIONS {indexConfig: {
 
     output = relationship_index.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo-text", metadata={"foo": "bar"})]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_passing_graph_object() -> None:
+    """Test end to end construction and search with passing graph object."""
+    graph = Neo4jGraph()
+    # Rewrite env vars to make sure it fails if env is used
+    os.environ["NEO4J_URI"] = "foo"
+    docsearch = Neo4jVector.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        graph=graph,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
 
     drop_vector_indexes(docsearch)

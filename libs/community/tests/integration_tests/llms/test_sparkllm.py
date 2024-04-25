@@ -7,7 +7,7 @@ from langchain_community.llms.sparkllm import SparkLLM
 def test_call() -> None:
     """Test valid call to sparkllm."""
     llm = SparkLLM()
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
