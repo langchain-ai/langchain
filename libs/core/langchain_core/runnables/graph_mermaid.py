@@ -14,8 +14,10 @@ from langchain_core.runnables.graph import (
 def draw_mermaid(
     nodes: Dict[str, str],
     edges: List[Edge],
+    *,
     first_node_label: Optional[str] = None,
     last_node_label: Optional[str] = None,
+    with_styles: bool = True,
     curve_style: CurveStyle = CurveStyle.LINEAR,
     node_colors: NodeColors = NodeColors(),
     wrap_label_n_words: int = 9,
@@ -35,32 +37,44 @@ def draw_mermaid(
     """
     # Initialize Mermaid graph configuration
     mermaid_graph = (
-        f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}'"
-        f"}}}}}}%%\ngraph TD;\n"
+        (
+            f"%%{{init: {{'flowchart': {{'curve': '{curve_style.value}'"
+            f"}}}}}}%%\ngraph TD;\n"
+        )
+        if with_styles
+        else "graph TD;\n"
     )
 
-    # Node formatting templates
-    default_class_label = "default"
-    format_dict = {default_class_label: "{0}([{0}]):::otherclass"}
-    if first_node_label is not None:
-        format_dict[first_node_label] = "{0}[{0}]:::startclass"
-    if last_node_label is not None:
-        format_dict[last_node_label] = "{0}[{0}]:::endclass"
+    if with_styles:
+        # Node formatting templates
+        default_class_label = "default"
+        format_dict = {default_class_label: "{0}([{1}]):::otherclass"}
+        if first_node_label is not None:
+            format_dict[first_node_label] = "{0}[{0}]:::startclass"
+        if last_node_label is not None:
+            format_dict[last_node_label] = "{0}[{0}]:::endclass"
 
-    # Add nodes to the graph
-    for node in nodes.values():
-        node_label = format_dict.get(node, format_dict[default_class_label]).format(
-            _escape_node_label(node)
-        )
-        mermaid_graph += f"\t{node_label};\n"
+        # Add nodes to the graph
+        for node in nodes.values():
+            node_label = format_dict.get(node, format_dict[default_class_label]).format(
+                _escape_node_label(node), _escape_node_label(node.split(":", 1)[-1])
+            )
+            mermaid_graph += f"\t{node_label};\n"
 
+    subgraph = ""
     # Add edges to the graph
     for edge in edges:
+        src_prefix = edge.source.split(":")[0]
+        tgt_prefix = edge.target.split(":")[0]
+        # exit subgraph if source or target is not in the same subgraph
+        if subgraph and (subgraph != src_prefix or subgraph != tgt_prefix):
+            mermaid_graph += "\tend\n"
+            subgraph = ""
+        # enter subgraph if source and target are in the same subgraph
+        if not subgraph and src_prefix and src_prefix == tgt_prefix:
+            mermaid_graph += f"\tsubgraph {src_prefix}\n"
+            subgraph = src_prefix
         adjusted_edge = _adjust_mermaid_edge(edge=edge, nodes=nodes)
-        if (
-            adjusted_edge is None
-        ):  # Ignore if it is connection between source and intermediate node
-            continue
 
         source, target = adjusted_edge
 
@@ -76,16 +90,25 @@ def draw_mermaid(
                         for i in range(0, len(words), wrap_label_n_words)
                     ]
                 )
-            edge_label = f" -- {edge_data} --> "
+            if edge.conditional:
+                edge_label = f" -. {edge_data} .-> "
+            else:
+                edge_label = f" -- {edge_data} --> "
         else:
-            edge_label = " --> "
+            if edge.conditional:
+                edge_label = " -.-> "
+            else:
+                edge_label = " --> "
         mermaid_graph += (
             f"\t{_escape_node_label(source)}{edge_label}"
             f"{_escape_node_label(target)};\n"
         )
+    if subgraph:
+        mermaid_graph += "end\n"
 
     # Add custom styles for nodes
-    mermaid_graph += _generate_mermaid_graph_styles(node_colors)
+    if with_styles:
+        mermaid_graph += _generate_mermaid_graph_styles(node_colors)
     return mermaid_graph
 
 
@@ -97,7 +120,7 @@ def _escape_node_label(node_label: str) -> str:
 def _adjust_mermaid_edge(
     edge: Edge,
     nodes: Dict[str, str],
-) -> Optional[Tuple[str, str]]:
+) -> Tuple[str, str]:
     """Adjusts Mermaid edge to map conditional nodes to pure nodes."""
     source_node_label = nodes.get(edge.source, edge.source)
     target_node_label = nodes.get(edge.target, edge.target)

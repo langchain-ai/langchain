@@ -21,7 +21,7 @@ def test_chat_premai() -> None:
     """Test ChatPremAI wrapper."""
     chat = ChatPremAI(project_id=8)
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -31,7 +31,7 @@ def test_chat_prem_system_message() -> None:
     chat = ChatPremAI(project_id=8)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
-    response = chat([system_message, human_message])
+    response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 

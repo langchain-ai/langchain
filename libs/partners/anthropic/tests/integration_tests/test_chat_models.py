@@ -9,9 +9,12 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     HumanMessage,
+    SystemMessage,
+    ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
@@ -105,7 +108,7 @@ def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     chat = ChatAnthropic(model="test")
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -262,6 +265,50 @@ def test_tool_use() -> None:
     assert tool_call_chunk["name"] == "get_weather"
     assert isinstance(tool_call_chunk["args"], str)
     assert "location" in json.loads(tool_call_chunk["args"])
+
+
+def test_anthropic_with_empty_text_block() -> None:
+    """Anthropic SDK can return an empty text block."""
+
+    @tool
+    def type_letter(letter: str) -> str:
+        """Type the given letter."""
+        return "OK"
+
+    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(
+        [type_letter]
+    )
+
+    messages = [
+        SystemMessage(
+            content="Repeat the given string using the provided tools. Do not write "
+            "anything else or provide any explanations. For example, "
+            "if the string is 'abc', you must print the "
+            "letters 'a', 'b', and 'c' one at a time and in that order. "
+        ),
+        HumanMessage(content="dog"),
+        AIMessage(
+            content=[
+                {"text": "", "type": "text"},
+                {
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "input": {"letter": "d"},
+                    "name": "type_letter",
+                    "type": "tool_use",
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "type_letter",
+                    "args": {"letter": "d"},
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                },
+            ],
+        ),
+        ToolMessage(content="OK", tool_call_id="toolu_01V6d6W32QGGSmQm4BT98EKk"),
+    ]
+
+    model.invoke(messages)
 
 
 def test_with_structured_output() -> None:
