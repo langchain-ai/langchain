@@ -47,9 +47,9 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         Args:
             documents: A sequence of Document objects containing HTML content.
             unwanted_tags: A list of tags to be removed from the HTML.
-            unwanted_classnames: A list of class names to be removed from the HTML
             tags_to_extract: A list of tags whose content will be extracted.
             remove_lines: If set to True, unnecessary lines will be removed.
+            unwanted_classnames: A list of class names to be removed from the HTML
             remove_comments: If set to True, comments will be removed.
 
         Returns:
