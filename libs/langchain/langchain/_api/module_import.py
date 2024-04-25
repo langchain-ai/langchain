@@ -21,8 +21,8 @@ ROOT = HERE.parent.parent
 
 def _get_current_module(path: str) -> str:
     """Convert a path to a module name."""
-    path = pathlib.Path(os.path.abspath(path))
-    relative_path = path.relative_to(ROOT).with_suffix("")
+    path_as_pathlib = pathlib.Path(os.path.abspath(path))
+    relative_path = path_as_pathlib.relative_to(ROOT).with_suffix("")
     posix_path = relative_path.as_posix()
     norm_path = os.path.normpath(str(posix_path))
     fully_qualified_module = norm_path.replace("/", ".")
