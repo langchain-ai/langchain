@@ -8,6 +8,7 @@ import random
 import time
 import uuid
 import warnings
+from contextlib import contextmanager
 from io import StringIO
 from typing import (
     Any,
@@ -111,6 +112,14 @@ class Yellowbrick(VectorStore):
         if self._connection:
             self._connection.close()
 
+    @contextmanager
+    def _get_cursor(self) -> Any:
+        cursor = self._get_connection().cursor()
+        try:
+            yield cursor
+        finally:
+            cursor.close()
+
     def _get_connection(self) -> Any:
         import psycopg2
         from psycopg2 import Error, OperationalError
@@ -123,7 +132,7 @@ class Yellowbrick(VectorStore):
             self.last_used_time = current_time
         elif (current_time - self.last_used_time) > self.idle_threshold_seconds:
             try:
-                with self._connection.cursor() as cursor:
+                with self._get_cursor() as cursor:
                     cursor.execute("SELECT 1")
             except (OperationalError, Error):
                 self._connection = psycopg2.connect(self.connection_string)
@@ -137,44 +146,43 @@ class Yellowbrick(VectorStore):
         """
         from psycopg2 import sql
 
-        cursor = self._get_connection().cursor()
-        cursor.execute(
-            sql.SQL(
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                sql.SQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS {t} (
+                    doc_id UUID NOT NULL,
+                    text VARCHAR(60000) NOT NULL,
+                    metadata VARCHAR(1024) NOT NULL,
+                    CONSTRAINT {c} PRIMARY KEY (doc_id))
+                    DISTRIBUTE ON (doc_id) SORT ON (doc_id)
                 """
-                CREATE TABLE IF NOT EXISTS {t} (
-                doc_id UUID NOT NULL,
-                text VARCHAR(60000) NOT NULL,
-                metadata VARCHAR(1024) NOT NULL,
-                CONSTRAINT {c} PRIMARY KEY (doc_id))
-                DISTRIBUTE ON (doc_id) SORT ON (doc_id)
-            """
-            ).format(
-                t=sql.Identifier(self._table + self.CONTENT_TABLE),
-                c=sql.Identifier(self._table + self.CONTENT_TABLE + "_pk_doc_id"),
+                ).format(
+                    t=sql.Identifier(self._table + self.CONTENT_TABLE),
+                    c=sql.Identifier(self._table + self.CONTENT_TABLE + "_pk_doc_id"),
+                )
             )
-        )
-        cursor.execute(
-            sql.SQL(
+            cursor.execute(
+                sql.SQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS {t1} (
+                    doc_id UUID NOT NULL,
+                    embedding_id SMALLINT NOT NULL,
+                    embedding FLOAT NOT NULL,
+                    CONSTRAINT {c1} PRIMARY KEY (doc_id, embedding_id),
+                    CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
+                    DISTRIBUTE ON (doc_id) SORT ON (doc_id)
                 """
-                CREATE TABLE IF NOT EXISTS {t1} (
-                doc_id UUID NOT NULL,
-                embedding_id SMALLINT NOT NULL,
-                embedding FLOAT NOT NULL,
-                CONSTRAINT {c1} PRIMARY KEY (doc_id, embedding_id),
-                CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
-                DISTRIBUTE ON (doc_id) SORT ON (doc_id)
-            """
-            ).format(
-                t1=sql.Identifier(self._table),
-                t2=sql.Identifier(self._table + self.CONTENT_TABLE),
-                c1=sql.Identifier(
-                    self._table + self.CONTENT_TABLE + "_pk_doc_id_embedding_id"
-                ),
-                c2=sql.Identifier(self._table + self.CONTENT_TABLE + "_fk_doc_id"),
+                ).format(
+                    t1=sql.Identifier(self._table),
+                    t2=sql.Identifier(self._table + self.CONTENT_TABLE),
+                    c1=sql.Identifier(
+                        self._table + self.CONTENT_TABLE + "_pk_doc_id_embedding_id"
+                    ),
+                    c2=sql.Identifier(self._table + self.CONTENT_TABLE + "_fk_doc_id"),
+                )
             )
-        )
-        self._get_connection().commit()
-        cursor.close()
+            self._get_connection().commit()
 
     def drop(self, table: str) -> None:
         """
@@ -182,26 +190,25 @@ class Yellowbrick(VectorStore):
         """
         from psycopg2 import sql
 
-        cursor = self._get_connection().cursor()
-        cursor.execute(
-            sql.SQL("DROP TABLE IF EXISTS {} CASCADE").format(sql.Identifier(table))
-        )
-        self._get_connection().commit()
-        cursor.close()
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                sql.SQL("DROP TABLE IF EXISTS {} CASCADE").format(sql.Identifier(table))
+            )
+            self._get_connection().commit()
 
     def _check_database_utf8(self) -> bool:
         """
         Helper function: Test the database is UTF-8 encoded
         """
-        cursor = self._get_connection().cursor()
-        query = """
-            SELECT pg_encoding_to_char(encoding)
-            FROM pg_database
-            WHERE datname = current_database();
-        """
-        cursor.execute(query)
-        encoding = cursor.fetchone()[0]
-        cursor.close()
+        with self._get_cursor() as cursor:
+            query = """
+                SELECT pg_encoding_to_char(encoding)
+                FROM pg_database
+                WHERE datname = current_database();
+            """
+            cursor.execute(query)
+            encoding = cursor.fetchone()[0]
+
         if encoding.lower() == "utf8" or encoding.lower() == "utf-8":
             return True
         else:
@@ -228,44 +235,41 @@ class Yellowbrick(VectorStore):
 
         index_params = kwargs.get("index_params", Yellowbrick.IndexParams())
 
-        conn = self._get_connection()
-        cursor = conn.cursor()
+        with self._get_cursor() as cursor:
+            content_io = StringIO()
+            embeddings_io = StringIO()
+            content_writer = csv.writer(
+                content_io, delimiter="\t", quotechar='"', quoting=csv.QUOTE_MINIMAL
+            )
+            embeddings_writer = csv.writer(
+                embeddings_io, delimiter="\t", quotechar='"', quoting=csv.QUOTE_MINIMAL
+            )
+            current_batch_size = 0
 
-        content_io = StringIO()
-        embeddings_io = StringIO()
-        content_writer = csv.writer(
-            content_io, delimiter="\t", quotechar='"', quoting=csv.QUOTE_MINIMAL
-        )
-        embeddings_writer = csv.writer(
-            embeddings_io, delimiter="\t", quotechar='"', quoting=csv.QUOTE_MINIMAL
-        )
-        current_batch_size = 0
+            for i, text in enumerate(texts):
+                doc_uuid = str(uuid.uuid4())
+                results.append(doc_uuid)
 
-        for i, text in enumerate(texts):
-            doc_uuid = str(uuid.uuid4())
-            results.append(doc_uuid)
+                content_writer.writerow([doc_uuid, text, json.dumps(metadatas[i])])
 
-            content_writer.writerow([doc_uuid, text, json.dumps(metadatas[i])])
+                for embedding_id, embedding in enumerate(embeddings[i]):
+                    embeddings_writer.writerow([doc_uuid, embedding_id, embedding])
 
-            for embedding_id, embedding in enumerate(embeddings[i]):
-                embeddings_writer.writerow([doc_uuid, embedding_id, embedding])
+                current_batch_size += 1
 
-            current_batch_size += 1
+                if current_batch_size >= batch_size:
+                    self._copy_to_db(cursor, content_io, embeddings_io, self._table)
 
-            if current_batch_size >= batch_size:
+                    content_io.seek(0)
+                    content_io.truncate(0)
+                    embeddings_io.seek(0)
+                    embeddings_io.truncate(0)
+                    current_batch_size = 0
+
+            if current_batch_size > 0:
                 self._copy_to_db(cursor, content_io, embeddings_io, self._table)
 
-                content_io.seek(0)
-                content_io.truncate(0)
-                embeddings_io.seek(0)
-                embeddings_io.truncate(0)
-                current_batch_size = 0
-
-        if current_batch_size > 0:
-            self._copy_to_db(cursor, content_io, embeddings_io, self._table)
-
-        conn.commit()
-        cursor.close()
+            self._get_connection().commit()
 
         if index_params.index_type == Yellowbrick.IndexType.LSH:
             self.update_index(index_params, uuid.UUID(doc_uuid))
@@ -352,131 +356,130 @@ class Yellowbrick(VectorStore):
 
         index_params = kwargs.get("index_params", Yellowbrick.IndexParams())
 
-        cursor = self._get_connection().cursor()
-
-        tmp_embeddings_table = "tmp_" + self._table
-        tmp_doc_id = self._generate_vector_uuid(embedding)
-        create_table_query = sql.SQL(
-            """ 
-            CREATE TEMPORARY TABLE {} (
-            doc_id UUID,
-            embedding_id SMALLINT,
-            embedding FLOAT)
-            DISTRIBUTE REPLICATE
-        """
-        ).format(sql.Identifier(tmp_embeddings_table))
-        cursor.execute(create_table_query)
-
-        data_input = [
-            (str(tmp_doc_id), embedding_id, embedding_value)
-            for embedding_id, embedding_value in enumerate(embedding)
-        ]
-
-        insert_query = sql.SQL(
-            "INSERT INTO {table} (doc_id, embedding_id, embedding) VALUES %s"
-        ).format(table=sql.Identifier(tmp_embeddings_table))
-        execute_values(cursor, insert_query, data_input)
-        self._get_connection().commit()
-
-        if index_params.index_type == Yellowbrick.IndexType.LSH:
-            input_hash_table = self._table + "_tmp_hash"
-            self._generate_lsh_hashes(
-                embedding_table=tmp_embeddings_table, target_hash_table=input_hash_table
-            )
-            sql_query = sql.SQL(
-                """
-                WITH index_docs AS (
-                SELECT
-                    t1.doc_id,
-                    SUM(ABS(t1.hash-t2.hash)) as hamming_distance
-                FROM
-                    {lsh_index} t1
-                INNER JOIN
-                    {input_hash_table} t2
-                ON t1.hash_index = t2.hash_index
-                GROUP BY t1.doc_id
-                HAVING hamming_distance <= {hamming_distance}
-                )
-                SELECT
-                    text,
-                    metadata,
-                    SUM(v1.embedding * v2.embedding) /
-                    (SQRT(SUM(v1.embedding * v1.embedding)) *
-                    SQRT(SUM(v2.embedding * v2.embedding))) AS score
-                FROM
-                    {v1} v1
-                INNER JOIN
-                    {v2} v2
-                ON v1.embedding_id = v2.embedding_id
-                INNER JOIN
-                    {v3} v3
-                ON v2.doc_id = v3.doc_id
-                INNER JOIN
-                    index_docs v4
-                ON v2.doc_id = v4.doc_id
-                GROUP BY v3.doc_id, v3.text, v3.metadata
-                ORDER BY score DESC
-                LIMIT %s
+        with self._get_cursor() as cursor:
+            tmp_embeddings_table = "tmp_" + self._table
+            tmp_doc_id = self._generate_vector_uuid(embedding)
+            create_table_query = sql.SQL(
+                """ 
+                CREATE TEMPORARY TABLE {} (
+                doc_id UUID,
+                embedding_id SMALLINT,
+                embedding FLOAT)
+                DISTRIBUTE REPLICATE
             """
-            ).format(
-                v1=sql.Identifier(tmp_embeddings_table),
-                v2=sql.Identifier(self._table),
-                v3=sql.Identifier(self._table + self.CONTENT_TABLE),
-                lsh_index=sql.Identifier(self._table + self.LSH_INDEX_TABLE),
-                input_hash_table=sql.Identifier(input_hash_table),
-                hamming_distance=sql.Literal(
-                    index_params.get_param("hamming_distance", 0)
-                ),
-            )
-            cursor.execute(
-                sql_query,
-                (k,),
-            )
-            self.drop(input_hash_table)
-        else:
-            sql_query = sql.SQL(
-                """
-                SELECT 
-                    text,
-                    metadata,
-                    score
-                FROM
-                    (SELECT
-                        v2.doc_id doc_id,
-                        SUM(v1.embedding * v2.embedding) /
+            ).format(sql.Identifier(tmp_embeddings_table))
+            cursor.execute(create_table_query)
+
+            data_input = [
+                (str(tmp_doc_id), embedding_id, embedding_value)
+                for embedding_id, embedding_value in enumerate(embedding)
+            ]
+
+            insert_query = sql.SQL(
+                "INSERT INTO {table} (doc_id, embedding_id, embedding) VALUES %s"
+            ).format(table=sql.Identifier(tmp_embeddings_table))
+            execute_values(cursor, insert_query, data_input)
+            self._get_connection().commit()
+
+            if index_params.index_type == Yellowbrick.IndexType.LSH:
+                input_hash_table = self._table + "_tmp_hash"
+                self._generate_lsh_hashes(
+                    embedding_table=tmp_embeddings_table,
+                    target_hash_table=input_hash_table,
+                )
+                sql_query = sql.SQL(
+                    """
+                    WITH index_docs AS (
+                    SELECT
+                        t1.doc_id,
+                        SUM(ABS(t1.hash-t2.hash)) as hamming_distance
+                    FROM
+                        {lsh_index} t1
+                    INNER JOIN
+                        {input_hash_table} t2
+                    ON t1.hash_index = t2.hash_index
+                    GROUP BY t1.doc_id
+                    HAVING hamming_distance <= {hamming_distance}
+                    )
+                    SELECT
+                        text,
+                        metadata,
+                       SUM(v1.embedding * v2.embedding) /
                         (SQRT(SUM(v1.embedding * v1.embedding)) *
-                        SQRT(SUM(v2.embedding * v2.embedding))) AS score
+                       SQRT(SUM(v2.embedding * v2.embedding))) AS score
                     FROM
                         {v1} v1
                     INNER JOIN
                         {v2} v2
                     ON v1.embedding_id = v2.embedding_id
-                    GROUP BY v2.doc_id
-                    ORDER BY score DESC LIMIT %s
-                    ) v4
-                INNER JOIN
-                    {v3} v3
-                ON v4.doc_id = v3.doc_id
-                ORDER BY score DESC
-            """
-            ).format(
-                v1=sql.Identifier(tmp_embeddings_table),
-                v2=sql.Identifier(self._table),
-                v3=sql.Identifier(self._table + self.CONTENT_TABLE),
-            )
-            cursor.execute(sql_query, (k,))
+                    INNER JOIN
+                        {v3} v3
+                    ON v2.doc_id = v3.doc_id
+                    INNER JOIN
+                        index_docs v4
+                    ON v2.doc_id = v4.doc_id
+                    GROUP BY v3.doc_id, v3.text, v3.metadata
+                    ORDER BY score DESC
+                    LIMIT %s
+                """
+                ).format(
+                    v1=sql.Identifier(tmp_embeddings_table),
+                    v2=sql.Identifier(self._table),
+                    v3=sql.Identifier(self._table + self.CONTENT_TABLE),
+                    lsh_index=sql.Identifier(self._table + self.LSH_INDEX_TABLE),
+                    input_hash_table=sql.Identifier(input_hash_table),
+                    hamming_distance=sql.Literal(
+                        index_params.get_param("hamming_distance", 0)
+                    ),
+                )
+                cursor.execute(
+                    sql_query,
+                    (k,),
+                )
+                self.drop(input_hash_table)
+            else:
+                sql_query = sql.SQL(
+                    """
+                    SELECT 
+                        text,
+                        metadata,
+                        score
+                    FROM
+                        (SELECT
+                            v2.doc_id doc_id,
+                            SUM(v1.embedding * v2.embedding) /
+                            (SQRT(SUM(v1.embedding * v1.embedding)) *
+                            SQRT(SUM(v2.embedding * v2.embedding))) AS score
+                        FROM
+                            {v1} v1
+                        INNER JOIN
+                            {v2} v2
+                        ON v1.embedding_id = v2.embedding_id
+                        GROUP BY v2.doc_id
+                        ORDER BY score DESC LIMIT %s
+                        ) v4
+                    INNER JOIN
+                        {v3} v3
+                    ON v4.doc_id = v3.doc_id
+                    ORDER BY score DESC
+                """
+                ).format(
+                    v1=sql.Identifier(tmp_embeddings_table),
+                    v2=sql.Identifier(self._table),
+                    v3=sql.Identifier(self._table + self.CONTENT_TABLE),
+                )
+                cursor.execute(sql_query, (k,))
 
-        self.drop(tmp_embeddings_table)
+            self.drop(tmp_embeddings_table)
 
-        results = cursor.fetchall()
+            results = cursor.fetchall()
 
-        documents: List[Tuple[Document, float]] = []
-        for result in results:
-            metadata = json.loads(result[1]) or {}
-            doc = Document(page_content=result[0], metadata=metadata)
-            documents.append((doc, result[2]))
+            documents: List[Tuple[Document, float]] = []
+            for result in results:
+                metadata = json.loads(result[1]) or {}
+                doc = Document(page_content=result[0], metadata=metadata)
+                documents.append((doc, result[2]))
 
-        cursor.close()
         return documents
 
     def similarity_search(
@@ -599,107 +602,108 @@ class Yellowbrick(VectorStore):
             group_by=group_by,
         )
 
-        cursor = self._get_connection().cursor()
-        cursor.execute(input_query)
-        self._get_connection().commit()
-        cursor.close()
+        with self._get_cursor() as cursor:
+            cursor.execute(input_query)
+            self._get_connection().commit()
 
     def _populate_hyperplanes(self, num_hyperplanes: int) -> None:
         """Generate random hyperplanes and store in Yellowbrick"""
         from psycopg2 import sql
 
-        cursor = self._get_connection().cursor()
-
-        cursor.execute(
-            sql.SQL("SELECT COUNT(*) FROM {};").format(
-                sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE)
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                sql.SQL("SELECT COUNT(*) FROM {};").format(
+                    sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE)
+                )
             )
-        )
-        if cursor.fetchone()[0] > 0:
-            cursor.close()
-            return
+            if cursor.fetchone()[0] > 0:
+                return
 
-        cursor.execute(
-            sql.SQL("SELECT MAX(embedding_id) FROM {};").format(
-                sql.Identifier(self._table)
+            cursor.execute(
+                sql.SQL("SELECT MAX(embedding_id) FROM {};").format(
+                    sql.Identifier(self._table)
+                )
             )
-        )
-        num_dimensions = cursor.fetchone()[0]
-        num_dimensions += 1
+            num_dimensions = cursor.fetchone()[0]
+            num_dimensions += 1
 
-        insert_query = sql.SQL(
+            insert_query = sql.SQL(
+                """
+                WITH parameters AS (
+                    SELECT {num_hyperplanes} AS num_hyperplanes,
+                        {dims_per_hyperplane} AS dims_per_hyperplane
+                ),
+                seed AS (
+                    SELECT setseed({seed_value})
+                )
+                INSERT INTO {hyperplanes_table} (id, hyperplane_id, hyperplane)
+                    SELECT id, hyperplane_id, (random() * 2 - 1) AS hyperplane
+                    FROM
+                    (SELECT range-1 id FROM sys.rowgenerator
+                        WHERE range BETWEEN 1 AND
+                        (SELECT num_hyperplanes FROM parameters) AND
+                        worker_lid = 0 AND thread_id = 0) a,
+                    (SELECT range-1 hyperplane_id FROM sys.rowgenerator
+                        WHERE range BETWEEN 1 AND
+                        (SELECT dims_per_hyperplane FROM parameters) AND
+                        worker_lid = 0 AND thread_id = 0) b
             """
-            WITH parameters AS (
-                SELECT {num_hyperplanes} AS num_hyperplanes,
-                    {dims_per_hyperplane} AS dims_per_hyperplane
-            ),
-            seed AS (
-                SELECT setseed({seed_value})
+            ).format(
+                num_hyperplanes=sql.Literal(num_hyperplanes),
+                dims_per_hyperplane=sql.Literal(num_dimensions),
+                hyperplanes_table=sql.Identifier(
+                    self._table + self.LSH_HYPERPLANE_TABLE
+                ),
+                seed_value=sql.Literal(self._seed),
             )
-            INSERT INTO {hyperplanes_table} (id, hyperplane_id, hyperplane)
-                SELECT id, hyperplane_id, (random() * 2 - 1) AS hyperplane
-                FROM
-                (SELECT range-1 id FROM sys.rowgenerator
-                    WHERE range BETWEEN 1 AND
-                    (SELECT num_hyperplanes FROM parameters) AND
-                    worker_lid = 0 AND thread_id = 0) a,
-                (SELECT range-1 hyperplane_id FROM sys.rowgenerator
-                    WHERE range BETWEEN 1 AND
-                    (SELECT dims_per_hyperplane FROM parameters) AND
-                    worker_lid = 0 AND thread_id = 0) b
-        """
-        ).format(
-            num_hyperplanes=sql.Literal(num_hyperplanes),
-            dims_per_hyperplane=sql.Literal(num_dimensions),
-            hyperplanes_table=sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE),
-            seed_value=sql.Literal(self._seed),
-        )
-        cursor.execute(insert_query)
-        self._get_connection().commit()
-        cursor.close()
+            cursor.execute(insert_query)
+            self._get_connection().commit()
 
     def _create_lsh_index_tables(self) -> None:
         """Create LSH index and hyperplane tables"""
         from psycopg2 import sql
 
-        cursor = self._get_connection().cursor()
-        cursor.execute(
-            sql.SQL(
+        with self._get_cursor() as cursor:
+            cursor.execute(
+                sql.SQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS {t1} (
+                    doc_id UUID NOT NULL,
+                    hash_index SMALLINT NOT NULL,
+                    hash SMALLINT NOT NULL,
+                    CONSTRAINT {c1} PRIMARY KEY (doc_id, hash_index),
+                    CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
+                    DISTRIBUTE ON (doc_id) SORT ON (doc_id)
                 """
-                CREATE TABLE IF NOT EXISTS {t1} (
-                doc_id UUID NOT NULL,
-                hash_index SMALLINT NOT NULL,
-                hash SMALLINT NOT NULL,
-                CONSTRAINT {c1} PRIMARY KEY (doc_id, hash_index),
-                CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
-                DISTRIBUTE ON (doc_id) SORT ON (doc_id)
-            """
-            ).format(
-                t1=sql.Identifier(self._table + self.LSH_INDEX_TABLE),
-                t2=sql.Identifier(self._table + self.CONTENT_TABLE),
-                c1=sql.Identifier(self._table + self.LSH_INDEX_TABLE + "_pk_doc_id"),
-                c2=sql.Identifier(self._table + self.LSH_INDEX_TABLE + "_fk_doc_id"),
+                ).format(
+                    t1=sql.Identifier(self._table + self.LSH_INDEX_TABLE),
+                    t2=sql.Identifier(self._table + self.CONTENT_TABLE),
+                    c1=sql.Identifier(
+                        self._table + self.LSH_INDEX_TABLE + "_pk_doc_id"
+                    ),
+                    c2=sql.Identifier(
+                        self._table + self.LSH_INDEX_TABLE + "_fk_doc_id"
+                    ),
+                )
             )
-        )
-        cursor.execute(
-            sql.SQL(
+            cursor.execute(
+                sql.SQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS {t} (
+                    id SMALLINT NOT NULL,
+                    hyperplane_id SMALLINT NOT NULL,
+                    hyperplane FLOAT NOT NULL,
+                    CONSTRAINT {c} PRIMARY KEY (id, hyperplane_id))
+                    DISTRIBUTE REPLICATE SORT ON (id)
                 """
-                CREATE TABLE IF NOT EXISTS {t} (
-                id SMALLINT NOT NULL,
-                hyperplane_id SMALLINT NOT NULL,
-                hyperplane FLOAT NOT NULL,
-                CONSTRAINT {c} PRIMARY KEY (id, hyperplane_id))
-                DISTRIBUTE REPLICATE SORT ON (id)
-            """
-            ).format(
-                t=sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE),
-                c=sql.Identifier(
-                    self._table + self.LSH_HYPERPLANE_TABLE + "_pk_id_hp_id"
-                ),
+                ).format(
+                    t=sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE),
+                    c=sql.Identifier(
+                        self._table + self.LSH_HYPERPLANE_TABLE + "_pk_id_hp_id"
+                    ),
+                )
             )
-        )
-        self._get_connection().commit()
-        cursor.close()
+            self._get_connection().commit()
 
     def _drop_lsh_index_tables(self) -> None:
         """Drop LSH index tables"""
