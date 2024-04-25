@@ -17,7 +17,7 @@ def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     chat = ChatAnthropic(model="test")
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -44,7 +44,7 @@ def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
     chat = ChatAnthropic(model="test", streaming=True)
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -61,7 +61,7 @@ def test_anthropic_streaming_callback() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Write me a sentence with 10 words.")
-    chat([message])
+    chat.invoke([message])
     assert callback_handler.llm_streams > 1
 
 
