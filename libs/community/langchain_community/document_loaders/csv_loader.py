@@ -98,7 +98,7 @@ class CSVLoader(BaseLoader):
                 )
             content = "\n".join(
                 f"""{k.strip() if k is not None else k}: {v.strip()
-                if v is isinstance(v, str) else ','.join(map(str.strip, v))
+                if isinstance(v, str) else ','.join(map(str.strip, v))
                 if isinstance(v, list) else v}"""
                 for k, v in row.items()
                 if k not in self.metadata_columns
