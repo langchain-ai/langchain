@@ -26,9 +26,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _metadata_extractor(raw_html: str, url: str) -> dict:
+def _metadata_extractor(raw_html: str, url: str, content_type: str) -> dict:
     """Extract metadata from raw html using BeautifulSoup."""
-    metadata = {"source": url}
+    metadata = {"source": url, "content_type": content_type}
 
     try:
         from bs4 import BeautifulSoup
@@ -86,7 +86,7 @@ class RecursiveUrlLoader(BaseLoader):
         max_depth: Optional[int] = 2,
         use_async: Optional[bool] = None,
         extractor: Optional[Callable[[str], str]] = None,
-        metadata_extractor: Optional[Callable[[str, str], dict]] = None,
+        metadata_extractor: Optional[Callable[[str, str, str], dict]] = None,
         exclude_dirs: Optional[Sequence[str]] = (),
         timeout: Optional[int] = 10,
         prevent_outside: bool = True,
@@ -184,7 +184,9 @@ class RecursiveUrlLoader(BaseLoader):
         if content:
             yield Document(
                 page_content=content,
-                metadata=self.metadata_extractor(response.text, url),
+                metadata=self.metadata_extractor(
+                    response.text, url, response.headers.get("Content-Type", "")
+                ),
             )
 
         # Store the visited links and recursively visit the children
@@ -270,7 +272,9 @@ class RecursiveUrlLoader(BaseLoader):
             results.append(
                 Document(
                     page_content=content,
-                    metadata=self.metadata_extractor(text, url),
+                    metadata=self.metadata_extractor(
+                        text, url, response.headers.get("Content-Type", "")
+                    ),
                 )
             )
         if depth < self.max_depth - 1:
