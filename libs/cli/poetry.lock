@@ -121,6 +121,9 @@ files = [
     {file = "annotated_types-0.6.0.tar.gz", hash = "sha256:563339e807e53ffd9c267e99fc6d9ea23eb8443c08f112651963e24e22f84a5d"},
 ]
 
+[package.dependencies]
+typing-extensions = {version = ">=4.0.0", markers = "python_version < \"3.9\""}
+
 [[package]]
 name = "anyio"
 version = "4.3.0"
@@ -1428,6 +1431,7 @@ files = [
 [package.dependencies]
 markdown-it-py = ">=2.2.0"
 pygments = ">=2.13.0,<3.0.0"
+typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.9\""}
 
 [package.extras]
 jupyter = ["ipywidgets (>=7.5.1,<9)"]
@@ -1884,5 +1888,5 @@ serve = []
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.9,<4.0"
-content-hash = "02088661eda0feceec29d959b1b7fd2241ad8d28f588166971f2b8b55e175ae8"
+python-versions = ">=3.8.1,<4.0"
+content-hash = "4576fb13ecd9e13bc6c85e4cd6f56520708c7c1468f4b81bc6a346b128c9f695"
