@@ -6,6 +6,7 @@ from typing_extensions import Annotated
 from langchain_cli.namespaces import app as app_namespace
 from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
+from langchain_cli.namespaces import migrate as migrate_namespace
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 __version__ = "0.0.22rc0"
@@ -21,6 +22,9 @@ app.add_typer(
     help=integration_namespace.__doc__,
 )
 
+app.add_typer(
+    migrate_namespace.package_cli, name="migrate", help=migrate_namespace.__doc__
+)
 
 def version_callback(show_version: bool) -> None:
     if show_version:

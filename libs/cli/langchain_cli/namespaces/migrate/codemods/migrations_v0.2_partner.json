@@ -1,0 +1,14 @@
+[
+  [
+    "langchain.chat_models.ChatOpenAI",
+    "langchain_openai.ChatOpenAI"
+  ],
+  [
+    "langchain.chat_models.ChatOpenAI",
+    "langchain_openai.ChatOpenAI"
+  ],
+  [
+    "langchain.chat_models.ChatAnthropic",
+    "langchain_anthropic.ChatAnthropic"
+  ]
+]
