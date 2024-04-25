@@ -86,10 +86,21 @@ _FUNCTIONS: Any = [
 ]
 
 
+def test_initialization() -> None:
+    """Test chat model initialization."""
+
+    for model in [
+        QianfanChatEndpoint(model="BLOOMZ-7B", timeout=40),
+        QianfanChatEndpoint(model="BLOOMZ-7B", request_timeout=40),
+    ]:
+        assert model.model == "BLOOMZ-7B"
+        assert model.request_timeout == 40
+
+
 def test_default_call() -> None:
-    """Test default model(`ERNIE-Bot`) call."""
+    """Test default model.invoke(`ERNIE-Bot`) call."""
     chat = QianfanChatEndpoint()
-    response = chat(messages=[HumanMessage(content="Hello")])
+    response = chat.invoke([HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -97,7 +108,7 @@ def test_default_call() -> None:
 def test_model() -> None:
     """Test model kwarg works."""
     chat = QianfanChatEndpoint(model="BLOOMZ-7B")
-    response = chat(messages=[HumanMessage(content="Hello")])
+    response = chat.invoke([HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -105,7 +116,7 @@ def test_model() -> None:
 def test_model_param() -> None:
     """Test model params works."""
     chat = QianfanChatEndpoint()
-    response = chat(model="BLOOMZ-7B", messages=[HumanMessage(content="Hello")])
+    response = chat.invoke([HumanMessage(content="Hello")], model="BLOOMZ-7B")
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -113,7 +124,7 @@ def test_model_param() -> None:
 def test_endpoint() -> None:
     """Test user custom model deployments like some open source models."""
     chat = QianfanChatEndpoint(endpoint="qianfan_bloomz_7b_compressed")
-    response = chat(messages=[HumanMessage(content="Hello")])
+    response = chat.invoke([HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -121,10 +132,8 @@ def test_endpoint() -> None:
 def test_endpoint_param() -> None:
     """Test user custom model deployments like some open source models."""
     chat = QianfanChatEndpoint()
-    response = chat(
-        messages=[
-            HumanMessage(endpoint="qianfan_bloomz_7b_compressed", content="Hello")
-        ]
+    response = chat.invoke(
+        [HumanMessage(endpoint="qianfan_bloomz_7b_compressed", content="Hello")]
     )
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
@@ -134,8 +143,8 @@ def test_multiple_history() -> None:
     """Tests multiple history works."""
     chat = QianfanChatEndpoint()
 
-    response = chat(
-        messages=[
+    response = chat.invoke(
+        [
             HumanMessage(content="Hello."),
             AIMessage(content="Hello!"),
             HumanMessage(content="How are you doing?"),
@@ -169,14 +178,14 @@ def test_stream() -> None:
     chat = QianfanChatEndpoint(streaming=True)
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    response = chat(
-        messages=[
+    response = chat.invoke(
+        [
             HumanMessage(content="Hello."),
             AIMessage(content="Hello!"),
             HumanMessage(content="Who are you?"),
         ],
         stream=True,
-        callbacks=callback_manager,
+        config={"callbacks": callback_manager},
     )
     assert callback_handler.llm_streams > 0
     assert isinstance(response.content, str)
