@@ -22,10 +22,11 @@ class BigdlLLM(IpexLLM):
     def from_model_id(
         cls,
         model_id: str,
+        model_kwargs: Optional[dict] = None,
+        *,
         tokenizer_id: Optional[str] = None,
         load_in_4bit: bool = True,
         load_in_low_bit: Optional[str] = None,
-        model_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> LLM:
         """
@@ -105,8 +106,9 @@ class BigdlLLM(IpexLLM):
     def from_model_id_low_bit(
         cls,
         model_id: str,
-        tokenizer_id: Optional[str] = None,
         model_kwargs: Optional[dict] = None,
+        *,
+        tokenizer_id: Optional[str] = None,
         **kwargs: Any,
     ) -> LLM:
         """
