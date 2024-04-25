@@ -247,7 +247,7 @@ class Yellowbrick(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        index_params = kwargs.get("index_params", Yellowbrick.IndexParams())
+        index_params = kwargs.get("index_params") or Yellowbrick.IndexParams()
 
         with self._get_cursor() as cursor:
             content_io = StringIO()
@@ -310,6 +310,52 @@ class Yellowbrick(VectorStore):
             embeddings_io,
         )
 
+    def migrate_schema_v1_to_v2(self) -> None:
+        from psycopg2 import sql
+
+        try:
+            with self._get_connection() as conn:
+                with self._get_cursor() as cursor:
+                    # Rename old table
+                    alter_table_query = sql.SQL(
+                        "ALTER TABLE {t1} RENAME TO {t2}"
+                    ).format(
+                        t1=sql.Identifier(self._table),
+                        t2=sql.Identifier(self._table + "_v1"),
+                    )
+                    cursor.execute(alter_table_query)
+
+                    self._create_table()
+
+                    # Migrate data to new table
+                    insert_query = sql.SQL(
+                        """
+                        INSERT INTO {t1} (doc_id, embedding_id, embedding) 
+                        SELECT id, embedding_id, embedding FROM {t2}
+                    """
+                    ).format(
+                        t1=sql.Identifier(self._table),
+                        t2=sql.Identifier(self._table + "_v1"),
+                    )
+                    cursor.execute(insert_query)
+
+                    # Migrate content to a content-specific table if necessary
+                    insert_content_query = sql.SQL(
+                        """
+                        INSERT INTO {t1} (doc_id, text, metadata) 
+                        SELECT DISTINCT id, text, metadata FROM {t2}
+                    """
+                    ).format(
+                        t1=sql.Identifier(self._table + self.CONTENT_TABLE),
+                        t2=sql.Identifier(self._table + "_v1"),
+                    )
+                    cursor.execute(insert_content_query)
+
+                    conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise Exception("Failed to migrate schema: {}".format(str(e)))
+
     @classmethod
     def from_texts(
         cls: Type[Yellowbrick],
@@ -366,7 +412,7 @@ class Yellowbrick(VectorStore):
         from psycopg2 import sql
         from psycopg2.extras import execute_values
 
-        index_params = kwargs.get("index_params", Yellowbrick.IndexParams())
+        index_params = kwargs.get("index_params") or Yellowbrick.IndexParams()
 
         with self._get_cursor() as cursor:
             tmp_embeddings_table = "tmp_" + self._table
