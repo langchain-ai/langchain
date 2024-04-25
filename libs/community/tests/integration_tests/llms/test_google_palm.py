@@ -25,7 +25,7 @@ def test_google_generativeai_call(model_name: str) -> None:
         llm = GooglePalm(max_output_tokens=10, model_name=model_name)
     else:
         llm = GooglePalm(max_output_tokens=10)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
     assert llm._llm_type == "google_palm"
     if model_name and "gemini" in model_name:

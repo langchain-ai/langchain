@@ -43,7 +43,7 @@ class HuggingFaceEndpoint(LLM):
                 repetition_penalty=1.03,
                 huggingfacehub_api_token="my-api-key"
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))
 
             # Streaming response example
             from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -61,7 +61,7 @@ class HuggingFaceEndpoint(LLM):
                 streaming=True,
                 huggingfacehub_api_token="my-api-key"
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))
 
     """  # noqa: E501
 

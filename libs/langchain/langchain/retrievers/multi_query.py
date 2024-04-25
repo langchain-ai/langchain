@@ -136,8 +136,8 @@ class MultiQueryRetriever(BaseRetriever):
         """
         document_lists = await asyncio.gather(
             *(
-                self.retriever.aget_relevant_documents(
-                    query, callbacks=run_manager.get_child()
+                self.retriever.ainvoke(
+                    query, config={"callbacks": run_manager.get_child()}
                 )
                 for query in queries
             )
@@ -196,8 +196,8 @@ class MultiQueryRetriever(BaseRetriever):
         """
         documents = []
         for query in queries:
-            docs = self.retriever.get_relevant_documents(
-                query, callbacks=run_manager.get_child()
+            docs = self.retriever.invoke(
+                query, config={"callbacks": run_manager.get_child()}
             )
             documents.extend(docs)
         return documents

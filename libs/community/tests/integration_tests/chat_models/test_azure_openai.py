@@ -40,7 +40,7 @@ def llm() -> AzureChatOpenAI:
 def test_chat_openai(llm: AzureChatOpenAI) -> None:
     """Test AzureChatOpenAI wrapper."""
     message = HumanMessage(content="Hello")
-    response = llm([message])
+    response = llm.invoke([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -87,7 +87,7 @@ def test_chat_openai_streaming() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
 

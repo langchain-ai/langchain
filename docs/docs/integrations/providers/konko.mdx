@@ -44,7 +44,7 @@ See a usage [example](/docs/integrations/llms/konko).
   from langchain.llms import Konko
   llm = Konko(max_tokens=800, model='mistralai/Mistral-7B-v0.1')
   prompt = "Generate a Product Description for Apple Iphone 15"
-  response = llm(prompt)
+  response = llm.invoke(prompt)
   ```
 
 ## Chat Models
