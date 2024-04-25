@@ -10,8 +10,8 @@ from langchain.base_language import BaseLanguageModel
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts.prompt import PromptTemplate
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain_experimental import pydantic_v1 as pydantic
 from langchain_experimental.cpal.constants import Constant
