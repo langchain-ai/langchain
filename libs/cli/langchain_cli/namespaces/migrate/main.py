@@ -67,7 +67,7 @@ def main(
         ):
             raise Exit()
     console = Console(log_time=True)
-    console.log("Start upgrade-langchain")
+    console.log("Start langchain-cli migrate")
     # NOTE: LIBCST_PARSER_TYPE=native is required according to https://github.com/Instagram/LibCST/issues/487.
     os.environ["LIBCST_PARSER_TYPE"] = "native"
 
