@@ -81,6 +81,7 @@ def test_generate(mock_client_with_completion: Mock) -> None:
         [prompt0, prompt1],
         stop=stop,
     )
+    ai21.batch()
 
     # Assertions
     mock_client_with_completion.count_tokens.assert_has_calls(
