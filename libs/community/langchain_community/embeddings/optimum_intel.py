@@ -178,7 +178,7 @@ For more information, please visit:
                 "Unable to import pandas, please install with `pip install -U pandas`."
             ) from e
         try:
-            import tqdm
+            from tqdm import tqdm
         except ImportError as e:
             raise ImportError(
                 "Unable to import tqdm, please install with `pip install -U tqdm`."
