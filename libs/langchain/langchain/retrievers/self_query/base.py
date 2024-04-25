@@ -38,10 +38,10 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
+from langchain_core.structured_query import StructuredQuery, Visitor
 from langchain_core.vectorstores import VectorStore
 
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
-from langchain.chains.query_constructor.ir import StructuredQuery, Visitor
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers.self_query.astradb import AstraDBTranslator
 from langchain.retrievers.self_query.chroma import ChromaTranslator
