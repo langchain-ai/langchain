@@ -25,7 +25,7 @@ def test_anthropic_model_param() -> None:
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     llm = Anthropic(model="claude-instant-1")
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -49,7 +49,7 @@ def test_anthropic_streaming_callback() -> None:
         callback_manager=callback_manager,
         verbose=True,
     )
-    llm("Write me a sentence with 100 words.")
+    llm.invoke("Write me a sentence with 100 words.")
     assert callback_handler.llm_streams > 1
 
 
