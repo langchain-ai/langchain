@@ -18,6 +18,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    Union,
 )
 
 from langchain_core.embeddings import Embeddings
@@ -62,7 +63,7 @@ class Yellowbrick(VectorStore):
     def __init__(
         self,
         embedding: Embeddings,
-        connection_string: str,
+        connection_info: Union[str, Any],
         table: str,
         *,
         idle_threshold_seconds: Optional[int] = 300,
@@ -72,7 +73,8 @@ class Yellowbrick(VectorStore):
         """Initialize with yellowbrick client.
         Args:
             embedding: Embedding operator
-            connection_string: Format 'postgres://username:password@host:port/database'
+            connection_info: Format 'postgres://username:password@host:port/database'
+            or connection object
             table: Table used to store / retrieve embeddings from
         """
 
@@ -88,12 +90,21 @@ class Yellowbrick(VectorStore):
         self.LSH_HYPERPLANE_TABLE: str = "_lsh_hyperplane"
         self.CONTENT_TABLE: str = "_content"
 
-        self.connection_string = connection_string
+        if isinstance(connection_info, str):
+            self.connection_string = connection_info
+            self._connection = psycopg2.connect(self.connection_string)
+        elif isinstance(connection_info, psycopg2.extensions.connection):
+            self.connection = connection_info
+        else:
+            raise ValueError(
+                """connection_info must be either a connection string 
+                or a psycopg2 connection object"""
+            )
+
         self._table = table
         self._embedding = embedding
         self._max_embedding_len = None
         self.idle_threshold_seconds = idle_threshold_seconds
-        self._connection = psycopg2.connect(self.connection_string)
         self.last_used_time = time.time()
         self._check_database_utf8()
 
@@ -128,14 +139,20 @@ class Yellowbrick(VectorStore):
         if self.idle_threshold_seconds is None:
             self.idle_threshold_seconds = 300
         if self._connection.closed:
-            self._connection = psycopg2.connect(self.connection_string)
-            self.last_used_time = current_time
+            if self.connection_string:
+                self._connection = psycopg2.connect(self.connection_string)
+                self.last_used_time = current_time
+            else:
+                self._connection = None
         elif (current_time - self.last_used_time) > self.idle_threshold_seconds:
             try:
                 with self._get_cursor() as cursor:
                     cursor.execute("SELECT 1")
             except (OperationalError, Error):
-                self._connection = psycopg2.connect(self.connection_string)
+                if self.connection_string:
+                    self._connection = psycopg2.connect(self.connection_string)
+                else:
+                    self._connection = None
             self.last_used_time = current_time
 
         return self._connection
@@ -212,10 +229,7 @@ class Yellowbrick(VectorStore):
         if encoding.lower() == "utf8" or encoding.lower() == "utf-8":
             return True
         else:
-            raise Exception(
-                f"Database \
-           '{self.connection_string.split('/')[-1]}' encoding is not UTF-8"
-            )
+            raise Exception("Database encoding is not UTF-8")
 
         return False
 
@@ -302,7 +316,7 @@ class Yellowbrick(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        connection_string: str = "",
+        connection_info: Union[str, Any] = None,
         table: str = "langchain",
         drop: Optional[bool] = False,
         **kwargs: Any,
@@ -311,16 +325,14 @@ class Yellowbrick(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            connection_string: URI to Yellowbrick instance
+            connection_info: URI to Yellowbrick instance or a connection object
             embedding: Embedding function
             table: table to store embeddings
             kwargs: vectorstore specific parameters
         """
-        if connection_string is None:
-            raise ValueError("connection_string must be provided")
         vss = cls(
             embedding=embedding,
-            connection_string=connection_string,
+            connection_info=connection_info,
             table=table,
             drop=drop,
         )
