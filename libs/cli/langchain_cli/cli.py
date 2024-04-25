@@ -22,9 +22,8 @@ app.add_typer(
     help=integration_namespace.__doc__,
 )
 
-app.add_typer(
-    migrate_namespace.app, name="migrate", help=migrate_namespace.__doc__
-)
+app.add_typer(migrate_namespace.app, name="migrate", help=migrate_namespace.__doc__)
+
 
 def version_callback(show_version: bool) -> None:
     if show_version:

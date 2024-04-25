@@ -12,17 +12,15 @@ This codemod deals with the following cases:
 """
 from __future__ import annotations
 
+import json
+import os
 from dataclasses import dataclass
-from typing import Dict, List, Sequence, Tuple, Any, Callable, Iterable, TypeVar
-
+from typing import Callable, Dict, Iterable, List, Sequence, Tuple, TypeVar
 
 import libcst as cst
 import libcst.matchers as m
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
-
-import json
-import os
 
 HERE = os.path.dirname(__file__)
 

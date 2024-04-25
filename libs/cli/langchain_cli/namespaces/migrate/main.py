@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple, Type, TypeVar, Union
 
 import libcst as cst
+import rich
+import typer
 from libcst.codemod import CodemodContext, ContextAwareTransformer
 from libcst.helpers import calculate_module_and_package
 from libcst.metadata import FullRepoManager, FullyQualifiedNameProvider, ScopeProvider
@@ -55,6 +57,15 @@ def main(
     ),
 ):
     """Migrate langchain to the most recent version."""
+    if not diff:
+        rich.print("[bold red]Alert![/ bold red]", end=": ")
+        if not typer.confirm(
+            "The migration process will modify your files. "
+            "The migration is a `best-effort` process and is not expected to "
+            "be perfect. "
+            "Do you want to continue?"
+        ):
+            raise Exit()
     console = Console(log_time=True)
     console.log("Start upgrade-langchain")
     # NOTE: LIBCST_PARSER_TYPE=native is required according to https://github.com/Instagram/LibCST/issues/487.
@@ -176,8 +187,8 @@ def run_codemods(
         return None, None
     except cst.ParserSyntaxError as exc:
         return (
-            f"A syntax error happened on {filename}. This file cannot be formatted.\n"
-            "Check https://github.com/pydantic/bump-pydantic/issues/124 for more information.\n"
+            f"A syntax error happened on {filename}. This file cannot be "
+            f"formatted.\n"
             f"{exc}"
         ), None
     except Exception:
