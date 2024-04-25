@@ -80,7 +80,9 @@ class GroundednessCheck(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
         """Use the tool."""
-        response = self.api_wrapper.invoke([HumanMessage(context), AIMessage(query)])
+        response = self.api_wrapper.invoke(
+            [HumanMessage(context), AIMessage(query)], stream=False
+        )
         return str(response.content)
 
     async def _arun(
@@ -90,6 +92,6 @@ class GroundednessCheck(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
         response = await self.api_wrapper.ainvoke(
-            [HumanMessage(context), AIMessage(query)]
+            [HumanMessage(context), AIMessage(query)], stream=False
         )
         return str(response.content)
