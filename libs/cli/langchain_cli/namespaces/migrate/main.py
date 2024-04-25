@@ -1,3 +1,4 @@
+"""Migrate LangChain to the most recent version."""
 # Adapted from bump-pydantic
 # https://github.com/pydantic/bump-pydantic
 import difflib
@@ -23,8 +24,6 @@ from langchain_cli.namespaces.migrate.codemods import Rule, gather_codemods
 from langchain_cli.namespaces.migrate.glob_helpers import match_glob
 
 app = Typer(invoke_without_command=True, add_completion=False)
-
-entrypoint = functools.partial(app, windows_expand_args=False)
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -55,9 +54,9 @@ def main(
         help="Show the version and exit.",
     ),
 ):
-    """Upgrade langchain."""
+    """Migrate langchain to the most recent version."""
     console = Console(log_time=True)
-    console.log("Start upgrade-langchain-.")
+    console.log("Start upgrade-langchain")
     # NOTE: LIBCST_PARSER_TYPE=native is required according to https://github.com/Instagram/LibCST/issues/487.
     os.environ["LIBCST_PARSER_TYPE"] = "native"
 

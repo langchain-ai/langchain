@@ -4,11 +4,13 @@ from typing import List, Type
 from libcst.codemod import ContextAwareTransformer
 from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
 
-from langchain_upgrade.codemods.replace_imports import ReplaceImportsCodemod
+from langchain_cli.namespaces.migrate.codemods.replace_imports import (
+    ReplaceImportsCodemod,
+)
 
 
 class Rule(str, Enum):
-    R001 = "BP001"
+    R001 = "R001"
     """Replace imports that have been moved."""
 
 
