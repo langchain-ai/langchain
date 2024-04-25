@@ -17,7 +17,7 @@ def test_dappier_chat() -> None:
         dappier_model="dm_01hpsxyfm2fwdt2zet9cg6fdxt",
     )
     message = HumanMessage(content="Who are you ?")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 

@@ -19,6 +19,22 @@ def test_api_key_masked_when_passed_via_constructor(
     assert captured.out == "**********"
 
 
+def test_specifying_predibase_sdk_version_argument() -> None:
+    llm = Predibase(
+        model="my_llm",
+        predibase_api_key="secret-api-key",
+    )
+    assert not llm.predibase_sdk_version
+
+    legacy_predibase_sdk_version = "2024.4.8"
+    llm = Predibase(
+        model="my_llm",
+        predibase_api_key="secret-api-key",
+        predibase_sdk_version=legacy_predibase_sdk_version,
+    )
+    assert llm.predibase_sdk_version == legacy_predibase_sdk_version
+
+
 def test_specifying_adapter_id_argument() -> None:
     llm = Predibase(model="my_llm", predibase_api_key="secret-api-key")
     assert not llm.adapter_id
@@ -33,8 +49,8 @@ def test_specifying_adapter_id_argument() -> None:
 
     llm = Predibase(
         model="my_llm",
-        adapter_id="my-other-hf-adapter",
         predibase_api_key="secret-api-key",
+        adapter_id="my-other-hf-adapter",
     )
     assert llm.adapter_id == "my-other-hf-adapter"
     assert llm.adapter_version is None
@@ -55,9 +71,9 @@ def test_specifying_adapter_id_and_adapter_version_arguments() -> None:
 
     llm = Predibase(
         model="my_llm",
+        predibase_api_key="secret-api-key",
         adapter_id="my-other-hf-adapter",
         adapter_version=3,
-        predibase_api_key="secret-api-key",
     )
     assert llm.adapter_id == "my-other-hf-adapter"
     assert llm.adapter_version == 3

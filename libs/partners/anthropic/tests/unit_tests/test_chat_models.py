@@ -165,6 +165,25 @@ def test__merge_messages() -> None:
     assert expected == actual
 
 
+def test__merge_messages_mutation() -> None:
+    original_messages = [
+        HumanMessage([{"type": "text", "text": "bar"}]),
+        HumanMessage("next thing"),
+    ]
+    messages = [
+        HumanMessage([{"type": "text", "text": "bar"}]),
+        HumanMessage("next thing"),
+    ]
+    expected = [
+        HumanMessage(
+            [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}]
+        ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+    assert messages == original_messages
+
+
 @pytest.fixture()
 def pydantic() -> Type[BaseModel]:
     class dummy_function(BaseModel):
