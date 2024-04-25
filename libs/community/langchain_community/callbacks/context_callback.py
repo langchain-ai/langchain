@@ -58,7 +58,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
         ...     SystemMessage(content="You translate English to French."),
         ...     HumanMessage(content="I love programming with LangChain."),
         ... ]
-        >>> chat(messages)
+        >>> chat.invoke(messages)
 
     Chain Example:
         >>> from langchain.chains import LLMChain

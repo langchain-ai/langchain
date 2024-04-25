@@ -173,6 +173,29 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         """Return type of llm."""
         return "anthropic-llm"
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model": self.model,
+            "max_tokens": self.max_tokens_to_sample,
+            "temperature": self.temperature,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "model_kwargs": self.model_kwargs,
+            "streaming": self.streaming,
+            "default_request_timeout": self.default_request_timeout,
+            "max_retries": self.max_retries,
+        }
+
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
             raise NameError("Please ensure the anthropic package is loaded")
@@ -209,7 +232,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
                 prompt = "What are the biggest risks facing humanity?"
                 prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                response = model(prompt)
+                response = model.invoke(prompt)
 
         """
         if self.streaming:
