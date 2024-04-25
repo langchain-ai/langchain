@@ -16,7 +16,7 @@ def test_edenai_call() -> None:
 
     text_moderation = EdenAiTextModerationTool(providers=["openai"], language="en")
 
-    output = text_moderation("i hate you")
+    output = text_moderation.invoke("i hate you")
 
     assert text_moderation.name == "edenai_explicit_content_detection_text"
     assert text_moderation.feature == "text"

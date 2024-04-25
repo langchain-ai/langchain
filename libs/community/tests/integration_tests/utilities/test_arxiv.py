@@ -151,7 +151,7 @@ def _load_arxiv_from_universal_entry(**kwargs: Any) -> BaseTool:
 
 def test_load_arxiv_from_universal_entry() -> None:
     arxiv_tool = _load_arxiv_from_universal_entry()
-    output = arxiv_tool("Caprice Stanley")
+    output = arxiv_tool.invoke("Caprice Stanley")
     assert (
         "On Mixing Behavior of a Family of Random Walks" in output
     ), "failed to fetch a valid result"

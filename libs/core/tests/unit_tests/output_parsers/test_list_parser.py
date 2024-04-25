@@ -26,10 +26,29 @@ def test_single_item() -> None:
     assert list(parser.transform(iter([text]))) == [[a] for a in expected]
 
 
+def test_multiple_items_with_spaces() -> None:
+    """Test that a string with multiple comma-separated items
+    with spaces is parsed to a list."""
+    parser = CommaSeparatedListOutputParser()
+    text = "foo, bar, baz"
+    expected = ["foo", "bar", "baz"]
+
+    assert parser.parse(text) == expected
+    assert add(parser.transform(t for t in text)) == expected
+    assert list(parser.transform(t for t in text)) == [[a] for a in expected]
+    assert list(parser.transform(t for t in text.splitlines(keepends=True))) == [
+        [a] for a in expected
+    ]
+    assert list(
+        parser.transform(" " + t if i > 0 else t for i, t in enumerate(text.split(" ")))
+    ) == [[a] for a in expected]
+    assert list(parser.transform(iter([text]))) == [[a] for a in expected]
+
+
 def test_multiple_items() -> None:
     """Test that a string with multiple comma-separated items is parsed to a list."""
     parser = CommaSeparatedListOutputParser()
-    text = "foo, bar, baz"
+    text = "foo,bar,baz"
     expected = ["foo", "bar", "baz"]
 
     assert parser.parse(text) == expected

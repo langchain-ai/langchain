@@ -43,7 +43,7 @@ def test_gpt_router_call() -> None:
     )
     chat = GPTRouter(models_priority_list=[anthropic_claude])
     message = HumanMessage(content="Hello World")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -56,7 +56,7 @@ def test_gpt_router_call_incorrect_model() -> None:
     chat = GPTRouter(models_priority_list=[anthropic_claude])
     message = HumanMessage(content="Hello World")
     with pytest.raises(Exception):
-        chat([message])
+        chat.invoke([message])
 
 
 def test_gpt_router_generate() -> None:
@@ -85,7 +85,7 @@ def test_gpt_router_streaming() -> None:
     )
     chat = GPTRouter(models_priority_list=[anthropic_claude], streaming=True)
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -104,5 +104,5 @@ def test_gpt_router_streaming_callback() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Write me a 5 line poem.")
-    chat([message])
+    chat.invoke([message])
     assert callback_handler.llm_streams > 1

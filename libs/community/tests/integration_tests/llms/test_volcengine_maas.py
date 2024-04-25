@@ -37,7 +37,7 @@ def test_api_key_masked_when_passed_via_constructor(
 def test_default_call() -> None:
     """Test valid call to volc engine."""
     llm = VolcEngineMaasLLM()
-    output = llm("tell me a joke")
+    output = llm.invoke("tell me a joke")
     assert isinstance(output, str)
 
 
