@@ -86,10 +86,10 @@ class FalkorDBQAChain(Chain):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLanguageModel = None,
-        qa_llm: BaseLanguageModel = None,
-        cypher_llm: BaseLanguageModel = None,
+        llm: Optional[BaseLanguageModel] = None,
         *,
+        qa_llm: Optional[BaseLanguageModel] = None,
+        cypher_llm: Optional[BaseLanguageModel] = None,
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         cypher_prompt: BasePromptTemplate = CYPHER_GENERATION_PROMPT,
         **kwargs: Any,
