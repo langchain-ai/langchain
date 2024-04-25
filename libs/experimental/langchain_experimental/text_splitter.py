@@ -112,7 +112,7 @@ class SemanticChunker(BaseDocumentTransformer):
         breakpoint_threshold_type: BreakpointThresholdType = "percentile",
         breakpoint_threshold_amount: Optional[float] = None,
         number_of_chunks: Optional[int] = None,
-        sentence_split_regex: str = r"(?<=[.?!])\s+"
+        sentence_split_regex: str = r"(?<=[.?!])\s+",
     ):
         self._add_start_index = add_start_index
         self.embeddings = embeddings
@@ -190,7 +190,6 @@ class SemanticChunker(BaseDocumentTransformer):
     def split_text(
         self,
         text: str,
-        regex: str = r"(?<=[.?!])\s+",
     ) -> List[str]:
         # Splitting the essay (by default on '.', '?', and '!')
         single_sentences_list = re.split(self.sentence_split_regex, text)
