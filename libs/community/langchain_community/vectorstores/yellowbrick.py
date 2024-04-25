@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import enum
 import json
 import logging
 import random
@@ -10,6 +11,7 @@ import warnings
 from io import StringIO
 from typing import (
     Any,
+    Dict,
     Iterable,
     List,
     Optional,
@@ -34,16 +36,33 @@ class Yellowbrick(VectorStore):
             ...
     """
 
-    LSH_INDEX_TABLE: str = "_lsh_index"
-    LSH_HYPERPLANE_TABLE: str = "_lsh_hyperplane"
-    CONTENT_TABLE: str = "_content"
+    class IndexType(str, enum.Enum):
+        """Enumerator for the supported Index types within Yellowbrick."""
+
+        NONE = "none"
+        LSH = "lsh"
+        DEFAULT = NONE
+
+    class IndexParams:
+        """Parameters for configuring a Yellowbrick index."""
+
+        def __init__(
+            self,
+            index_type: "Yellowbrick.IndexType" = "Yellowbrick.IndexType.DEFAULT",
+            params: Optional[Dict[str, Any]] = None,
+        ):
+            self.index_type = index_type
+            self.params = params or {}
+
+        def get_param(self, key: str, default: Any = None):
+            return self.params.get(key, default)
 
     def __init__(
         self,
         embedding: Embeddings,
         connection_string: str,
         table: str,
-        use_lsh: Optional[bool] = False,
+        *,
         idle_threshold_seconds: Optional[int] = 300,
         seed: Optional[float] = 0.42,
         drop: Optional[bool] = False,
@@ -63,6 +82,10 @@ class Yellowbrick(VectorStore):
         if not isinstance(embedding, Embeddings):
             warnings.warn("embeddings input must be Embeddings object.")
 
+        self.LSH_INDEX_TABLE: str = "_lsh_index"
+        self.LSH_HYPERPLANE_TABLE: str = "_lsh_hyperplane"
+        self.CONTENT_TABLE: str = "_content"
+
         self.connection_string = connection_string
         self._table = table
         self._embedding = embedding
@@ -73,14 +96,11 @@ class Yellowbrick(VectorStore):
         self._check_database_utf8()
 
         if drop:
-            self._drop_table(self._table)
-            self._drop_table(self._table + self.CONTENT_TABLE)
+            self.drop(self._table)
+            self.drop(self._table + self.CONTENT_TABLE)
             self._drop_lsh_index_tables()
 
         self._create_table()
-
-        self._use_lsh = use_lsh
-        self._hamming_distance = 0
 
         if seed is not None:
             random.seed(seed)
@@ -89,24 +109,6 @@ class Yellowbrick(VectorStore):
     def __del__(self) -> None:
         if self._connection:
             self._connection.close()
-
-    @property
-    def use_lsh(self) -> bool:
-        return self._use_lsh
-
-    @use_lsh.setter
-    def use_lsh(self, use_lsh: bool) -> None:
-        self._use_lsh = use_lsh
-        if self._use_lsh:
-            self._create_lsh_index_tables()
-
-    @property
-    def hamming_distance(self) -> bool:
-        return self._hamming_distance
-
-    @hamming_distance.setter
-    def hamming_distance(self, hamming_distance: int) -> None:
-        self._hamming_distance = hamming_distance
 
     def _get_connection(self):
         import psycopg2
@@ -171,7 +173,7 @@ class Yellowbrick(VectorStore):
         self._get_connection().commit()
         cursor.close()
 
-    def _drop_table(self, table: str) -> None:
+    def drop(self, table: str) -> None:
         """
         Helper function: Drop data
         """
@@ -219,6 +221,8 @@ class Yellowbrick(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
+        index_params = kwargs.get("index_params", Yellowbrick.IndexParams())
+
         conn = self._get_connection()
         cursor = conn.cursor()
 
@@ -258,8 +262,8 @@ class Yellowbrick(VectorStore):
         conn.commit()
         cursor.close()
 
-        if self.use_lsh:
-            self.update_lsh_index(doc_uuid)
+        if index_params.index_type == Yellowbrick.IndexType.LSH:
+            self.update_index(index_params, doc_uuid)
 
     def _copy_to_db(self, cursor, content_io, embeddings_io, table_name):
         content_io.seek(0)
@@ -283,7 +287,6 @@ class Yellowbrick(VectorStore):
         metadatas: Optional[List[dict]] = None,
         connection_string: str = "",
         table: str = "langchain",
-        use_lsh: Optional[bool] = False,
         drop: Optional[bool] = False,
         **kwargs: Any,
     ) -> Yellowbrick:
@@ -302,10 +305,9 @@ class Yellowbrick(VectorStore):
             embedding=embedding,
             connection_string=connection_string,
             table=table,
-            use_lsh=use_lsh,
             drop=drop,
         )
-        vss.add_texts(texts=texts, metadatas=metadatas)
+        vss.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return vss
 
     def _generate_vector_uuid(self, vector: List[float]) -> uuid:
@@ -335,6 +337,8 @@ class Yellowbrick(VectorStore):
         from psycopg2 import sql
         from psycopg2.extras import execute_values
 
+        index_params = kwargs.get("index_params", Yellowbrick.IndexParams())
+
         cursor = self._get_connection().cursor()
 
         tmp_embeddings_table = "tmp_" + self._table
@@ -361,7 +365,7 @@ class Yellowbrick(VectorStore):
         execute_values(cursor, insert_query, data_input)
         self._get_connection().commit()
 
-        if self._use_lsh:
+        if index_params.index_type == Yellowbrick.IndexType.LSH:
             input_hash_table = self._table + "_tmp_hash"
             self._generate_lsh_hashes(
                 embedding_table=tmp_embeddings_table, target_hash_table=input_hash_table
@@ -407,13 +411,15 @@ class Yellowbrick(VectorStore):
                 v3=sql.Identifier(self._table + self.CONTENT_TABLE),
                 lsh_index=sql.Identifier(self._table + self.LSH_INDEX_TABLE),
                 input_hash_table=sql.Identifier(input_hash_table),
-                hamming_distance=sql.Literal(self._hamming_distance),
+                hamming_distance=sql.Literal(
+                    index_params.get_param("hamming_distance", 0)
+                ),
             )
             cursor.execute(
                 sql_query,
                 (k,),
             )
-            self._drop_table(input_hash_table)
+            self.drop(input_hash_table)
         else:
             sql_query = sql.SQL(
                 """
@@ -447,7 +453,7 @@ class Yellowbrick(VectorStore):
             )
             cursor.execute(sql_query, (k,))
 
-        self._drop_table(tmp_embeddings_table)
+        self.drop(tmp_embeddings_table)
 
         results = cursor.fetchall()
 
@@ -477,7 +483,7 @@ class Yellowbrick(VectorStore):
         """
         embedding = self._embedding.embed_query(query)
         documents = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k
+            embedding=embedding, k=k, **kwargs
         )
         return [doc for doc, _ in documents]
 
@@ -498,7 +504,7 @@ class Yellowbrick(VectorStore):
         """
         embedding = self._embedding.embed_query(query)
         documents = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k
+            embedding=embedding, k=k, **kwargs
         )
         return documents
 
@@ -518,7 +524,7 @@ class Yellowbrick(VectorStore):
             List[Document]: List of documents
         """
         documents = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k
+            embedding=embedding, k=k, **kwargs
         )
         return [doc for doc, _ in documents]
 
@@ -684,20 +690,23 @@ class Yellowbrick(VectorStore):
 
     def _drop_lsh_index_tables(self) -> None:
         """Drop LSH index tables"""
-        self._drop_table(self._table + self.LSH_INDEX_TABLE)
-        self._drop_table(self._table + self.LSH_HYPERPLANE_TABLE)
+        self.drop(self._table + self.LSH_INDEX_TABLE)
+        self.drop(self._table + self.LSH_HYPERPLANE_TABLE)
 
-    def create_lsh_index(self, num_hyperplanes: int) -> None:
-        """Create LSH index from existing vectors using stored hyperplanes"""
-        self._drop_lsh_index_tables()
-        self._create_lsh_index_tables()
-        self._populate_hyperplanes(num_hyperplanes)
-        self._generate_lsh_hashes(embedding_table=self._table)
+    def create_index(self, index_params: Yellowbrick.IndexParams) -> None:
+        """Create index from existing vectors"""
+        if index_params.index_type == Yellowbrick.IndexType.LSH:
+            self._drop_lsh_index_tables()
+            self._create_lsh_index_tables()
+            self._populate_hyperplanes(index_params.get_param("num_hyperplanes", 128))
+            self._generate_lsh_hashes(embedding_table=self._table)
 
-    def drop_lsh_index(self) -> None:
-        """Drop the LSH index"""
-        self._drop_lsh_index_tables()
+    def drop_index(self, index_params: Yellowbrick.IndexParams) -> None:
+        """Drop an index"""
+        if index_params.index_type == Yellowbrick.IndexType.LSH:
+            self._drop_lsh_index_tables()
 
-    def update_lsh_index(self, doc_id: uuid) -> None:
-        """Update LSH index with a new or modified embedding in the embeddings table"""
-        self._generate_lsh_hashes(embedding_table=self._table, doc_id=doc_id)
+    def update_index(self, index_params: Yellowbrick.IndexParams, doc_id: uuid) -> None:
+        """Update an index with a new or modified embedding in the embeddings table"""
+        if index_params.index_type == Yellowbrick.IndexType.LSH:
+            self._generate_lsh_hashes(embedding_table=self._table, doc_id=doc_id)
