@@ -1,5 +1,5 @@
-from tests.unit_tests.integration.case import Case
-from tests.unit_tests.integration.file import File
+from tests.unit_tests.migrate.integration.case import Case
+from tests.unit_tests.migrate.integration.file import File
 
 cases = [
     Case(

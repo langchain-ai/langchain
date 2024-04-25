@@ -1,7 +1,7 @@
-from tests.unit_tests.integration.case import Case
-from tests.unit_tests.integration.cases import imports
-from tests.unit_tests.integration.file import File
-from tests.unit_tests.integration.folder import Folder
+from tests.unit_tests.migrate.integration.case import Case
+from tests.unit_tests.migrate.integration.cases import imports
+from tests.unit_tests.migrate.integration.file import File
+from tests.unit_tests.migrate.integration.folder import Folder
 
 cases = [
     Case(
