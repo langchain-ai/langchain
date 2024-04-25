@@ -287,6 +287,7 @@ class PebbloSafeLoader(BaseLoader):
 
     def _send_discover(self) -> None:
         """Send app discovery payload to pebblo-server. Internal method."""
+        pebblo_resp = None
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -326,6 +327,18 @@ class PebbloSafeLoader(BaseLoader):
         if self.api_key:
             try:
                 headers.update({"x-api-key": self.api_key})
+                if pebblo_resp:
+                    pebblo_resp_docs = json.loads(pebblo_resp.text).get("docs")
+                    payload.update(
+                        {
+                            "pebbloServerVersion": pebblo_resp_docs.get(
+                                "pebbloServerVersion"
+                            ),
+                            "pebbloClientVersion": pebblo_resp_docs.get(
+                                "pebbloClientVersion"
+                            ),
+                        }
+                    )
                 pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{APP_DISCOVER_URL}"
                 pebblo_cloud_response = requests.post(
                     pebblo_cloud_url, headers=headers, json=payload, timeout=20
