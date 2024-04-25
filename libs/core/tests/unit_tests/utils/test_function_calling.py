@@ -71,35 +71,27 @@ def json_schema() -> Dict:
     }
 
 
-@pytest.fixture()
-def dummy_instance_method() -> object:
-    class Dummy:
-        def dummy_function(self, arg1: int, arg2: Literal["bar", "baz"]) -> None:
-            """dummy function
+class Dummy:
+    def dummy_function(self, arg1: int, arg2: Literal["bar", "baz"]) -> None:
+        """dummy function
 
-            Args:
-                arg1: foo
-                arg2: one of 'bar', 'baz'
-            """
-            pass
-
-    return Dummy
+        Args:
+            arg1: foo
+            arg2: one of 'bar', 'baz'
+        """
+        pass
 
 
-@pytest.fixture()
-def dummy_class_method() -> object:
-    class Dummy:
-        @classmethod
-        def dummy_function(cls, arg1: int, arg2: Literal["bar", "baz"]) -> None:
-            """dummy function
+class DummyWithClassMethod:
+    @classmethod
+    def dummy_function(cls, arg1: int, arg2: Literal["bar", "baz"]) -> None:
+        """dummy function
 
-            Args:
-                arg1: foo
-                arg2: one of 'bar', 'baz'
-            """
-            pass
-
-    return Dummy
+        Args:
+            arg1: foo
+            arg2: one of 'bar', 'baz'
+        """
+        pass
 
 
 def test_convert_to_openai_function(
@@ -107,8 +99,6 @@ def test_convert_to_openai_function(
     function: Callable,
     dummy_tool: BaseTool,
     json_schema: Dict,
-    dummy_instance_method: object,
-    dummy_class_method: object,
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -133,8 +123,8 @@ def test_convert_to_openai_function(
         dummy_tool,
         json_schema,
         expected,
-        dummy_instance_method.dummy_function,
-        dummy_class_method.dummy_function,
+        Dummy().dummy_function,
+        DummyWithClassMethod.dummy_function,
     ):
         actual = convert_to_openai_function(fn)  # type: ignore
         assert actual == expected
