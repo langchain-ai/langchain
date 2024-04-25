@@ -40,7 +40,6 @@ from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
-    adapt_first_streaming_chunk,
     create_model,
 )
 from langchain_core.utils.aiter import atee, py_anext
@@ -243,16 +242,22 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
         else:
-            final = None
+            final: Other
+            got_first_chunk = False
 
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
-                if final is None:
-                    final = adapt_first_streaming_chunk(chunk)
-                else:
-                    final = final + chunk
 
-            if final is not None:
+                if not got_first_chunk:
+                    final = chunk
+                    got_first_chunk = True
+                else:
+                    try:
+                        final = final + chunk  # type: ignore[operator]
+                    except TypeError:
+                        final = chunk
+
+            if got_first_chunk:
                 call_func_with_variable_args(
                     self.func, final, ensure_config(config), **kwargs
                 )
@@ -269,18 +274,28 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             ):
                 yield chunk
         else:
-            final = None
+            got_first_chunk = False
 
             async for chunk in self._atransform_stream_with_config(
                 input, identity, config
             ):
                 yield chunk
-                if final is None:
-                    final = adapt_first_streaming_chunk(chunk)
-                else:
-                    final = final + chunk
 
-            if final is not None:
+                # By definitions, a function will operate on the aggregated
+                # input. So we'll aggregate the input until we get to the last
+                # chunk.
+                # If the input is not addable, then we'll assume that we can
+                # only operate on the last chunk.
+                if not got_first_chunk:
+                    final = chunk
+                    got_first_chunk = True
+                else:
+                    try:
+                        final = final + chunk  # type: ignore[operator]
+                    except TypeError:
+                        final = chunk
+
+            if got_first_chunk:
                 config = ensure_config(config)
                 if self.afunc is not None:
                     await acall_func_with_variable_args(

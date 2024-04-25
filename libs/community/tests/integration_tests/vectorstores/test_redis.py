@@ -399,7 +399,7 @@ def test_redis_as_retriever() -> None:
     )
 
     retriever = docsearch.as_retriever(search_type="similarity", search_kwargs={"k": 3})
-    results = retriever.get_relevant_documents("foo")
+    results = retriever.invoke("foo")
     assert len(results) == 3
     assert all([d.page_content == "foo" for d in results])
 
@@ -414,7 +414,7 @@ def test_redis_retriever_distance_threshold() -> None:
         search_type="similarity_distance_threshold",
         search_kwargs={"k": 3, "distance_threshold": 0.1},
     )
-    results = retriever.get_relevant_documents("foo")
+    results = retriever.invoke("foo")
     assert len(results) == 2
 
     assert drop(docsearch.index_name)
@@ -428,7 +428,7 @@ def test_redis_retriever_score_threshold() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.91},
     )
-    results = retriever.get_relevant_documents("foo")
+    results = retriever.invoke("foo")
     assert len(results) == 2
 
     assert drop(docsearch.index_name)
