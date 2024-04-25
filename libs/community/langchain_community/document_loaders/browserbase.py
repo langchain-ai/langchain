@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Sequence
+from typing import Iterator, List, Optional, Tuple, Union
 
 from langchain_core.documents import Document
 
@@ -14,9 +14,10 @@ class BrowserbaseLoader(BaseLoader):
 
     def __init__(
         self,
-        urls: Sequence[str],
+        urls: Union[List[str], Tuple[str, ...]],
+        *,
         api_key: Optional[str] = None,
-        text_content: str = False,
+        text_content: bool = False,
     ):
         self.urls = urls
         self.text_content = text_content
