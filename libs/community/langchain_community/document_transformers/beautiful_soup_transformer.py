@@ -98,7 +98,9 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return str(soup)
 
     @staticmethod
-    def remove_unwanted_tags(html_content: str, unwanted_tags: List[str]) -> str:
+    def remove_unwanted_tags(
+        html_content: str, unwanted_tags: Union[List[str], Tuple[str]]
+    ) -> str:
         """
         Remove unwanted tags from a given HTML content.
 
@@ -119,7 +121,10 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def extract_tags(
-        html_content: str, tags: List[str], *, remove_comments: bool = False
+        html_content: str,
+        tags: Union[List[str], Tuple[str]],
+        *,
+        remove_comments: bool = False,
     ) -> str:
         """
         Extract specific tags from a given HTML content.
