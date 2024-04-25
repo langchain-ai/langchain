@@ -41,20 +41,21 @@ class Yellowbrick(VectorStore):
 
         NONE = "none"
         LSH = "lsh"
-        DEFAULT = NONE
 
     class IndexParams:
         """Parameters for configuring a Yellowbrick index."""
 
         def __init__(
             self,
-            index_type: "Yellowbrick.IndexType" = "Yellowbrick.IndexType.DEFAULT",
+            index_type: Optional["Yellowbrick.IndexType"] = None,
             params: Optional[Dict[str, Any]] = None,
         ):
+            if index_type is None:
+                index_type = Yellowbrick.IndexType.NONE
             self.index_type = index_type
             self.params = params or {}
 
-        def get_param(self, key: str, default: Any = None):
+        def get_param(self, key: str, default: Any = None) -> Any:
             return self.params.get(key, default)
 
     def __init__(
@@ -110,11 +111,13 @@ class Yellowbrick(VectorStore):
         if self._connection:
             self._connection.close()
 
-    def _get_connection(self):
+    def _get_connection(self) -> Any:
         import psycopg2
         from psycopg2 import Error, OperationalError
 
         current_time = time.time()
+        if self.idle_threshold_seconds is None:
+            self.idle_threshold_seconds = 300
         if self._connection.closed:
             self._connection = psycopg2.connect(self.connection_string)
             self.last_used_time = current_time
@@ -207,6 +210,8 @@ class Yellowbrick(VectorStore):
            '{self.connection_string.split('/')[-1]}' encoding is not UTF-8"
             )
 
+        return False
+
     def add_texts(
         self,
         texts: Iterable[str],
@@ -263,9 +268,17 @@ class Yellowbrick(VectorStore):
         cursor.close()
 
         if index_params.index_type == Yellowbrick.IndexType.LSH:
-            self.update_index(index_params, doc_uuid)
+            self.update_index(index_params, uuid.UUID(doc_uuid))
 
-    def _copy_to_db(self, cursor, content_io, embeddings_io, table_name):
+        return results
+
+    def _copy_to_db(
+        self,
+        cursor: Any,
+        content_io: StringIO,
+        embeddings_io: StringIO,
+        table_name: str,
+    ) -> None:
         content_io.seek(0)
         embeddings_io.seek(0)
         cursor.copy_expert(
@@ -310,7 +323,7 @@ class Yellowbrick(VectorStore):
         vss.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return vss
 
-    def _generate_vector_uuid(self, vector: List[float]) -> uuid:
+    def _generate_vector_uuid(self, vector: List[float]) -> uuid.UUID:
         import hashlib
 
         vector_str = ",".join(map(str, vector))
@@ -532,7 +545,7 @@ class Yellowbrick(VectorStore):
         self,
         embedding_table: str,
         target_hash_table: Optional[str] = None,
-        doc_id: Optional[uuid] = None,
+        doc_id: Optional[uuid.UUID] = None,
     ) -> None:
         """Generate hashes for vectors"""
         from psycopg2 import sql
@@ -706,7 +719,9 @@ class Yellowbrick(VectorStore):
         if index_params.index_type == Yellowbrick.IndexType.LSH:
             self._drop_lsh_index_tables()
 
-    def update_index(self, index_params: Yellowbrick.IndexParams, doc_id: uuid) -> None:
+    def update_index(
+        self, index_params: Yellowbrick.IndexParams, doc_id: uuid.UUID
+    ) -> None:
         """Update an index with a new or modified embedding in the embeddings table"""
         if index_params.index_type == Yellowbrick.IndexType.LSH:
             self._generate_lsh_hashes(embedding_table=self._table, doc_id=doc_id)
