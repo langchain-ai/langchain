@@ -123,7 +123,7 @@ def test_convert_to_openai_function(
         dummy_tool,
         json_schema,
         expected,
-        Dummy().dummy_function,
+        Dummy.dummy_function,
         DummyWithClassMethod.dummy_function,
     ):
         actual = convert_to_openai_function(fn)  # type: ignore
