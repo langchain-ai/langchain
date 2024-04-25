@@ -12,8 +12,7 @@ from langchain_community.vectorstores.redis.filters import (
     RedisText,
 )
 from langchain_community.vectorstores.redis.schema import RedisModel
-
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,

@@ -15,7 +15,7 @@ def test_konko_call() -> None:
         temperature=0.2,
         max_tokens=250,
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
 
     assert llm._llm_type == "konko"
     assert isinstance(output, str)
