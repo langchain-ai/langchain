@@ -22,6 +22,7 @@ def load_model(model_id: str) -> Any:
     return llm
 
 
+
 def load_model_more_types(model_id: str, load_in_low_bit: str) -> Any:
     llm = IpexLLM.from_model_id(
         model_id=model_id,
@@ -39,7 +40,7 @@ def load_model_more_types(model_id: str, load_in_low_bit: str) -> Any:
 def test_call(model_id: str) -> None:
     """Test valid call."""
     llm = load_model(model_id)
-    output = llm("Hello!")
+    output = llm.invoke("Hello!")
     assert isinstance(output, str)
 
 
@@ -51,7 +52,7 @@ def test_call(model_id: str) -> None:
 def test_asym_int4(model_id: str) -> None:
     """Test asym int4 data type."""
     llm = load_model_more_types(model_id=model_id, load_in_low_bit="asym_int4")
-    output = llm("Hello!")
+    output = llm.invoke("Hello!")
     assert isinstance(output, str)
 
 
@@ -84,5 +85,5 @@ def test_save_load_lowbit(model_id: str) -> None:
         tokenizer_id=model_id,
         model_kwargs={"temperature": 0, "max_length": 16, "trust_remote_code": True},
     )
-    output = loaded_llm("Hello!")
+    output = loaded_llm.invoke("Hello!")
     assert isinstance(output, str)

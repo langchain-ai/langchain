@@ -25,7 +25,7 @@ def test_call(model_id: str) -> None:
         model_id=model_id,
         model_kwargs={"temperature": 0, "max_length": 16, "trust_remote_code": True},
     )
-    output = llm("Hello!")
+    output = llm.invoke("Hello!")
     assert isinstance(output, str)
 
 
