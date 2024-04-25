@@ -12,7 +12,7 @@ const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "🦜️🔗 LangChain",
-  tagline: "LangChain Python Docs",
+//  tagline: "LangChain Python Docs",
   favicon: "img/brand/favicon.png",
   // Set the production url of your site here
   url: "https://python.langchain.com",
@@ -146,27 +146,35 @@ const config = {
       },
       image: "img/brand/theme-image.png",
       navbar: {
-        logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
+        logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png", href: "docs/langchain_ai"},
         items: [
           {
-            to: "/docs/modules",
-            label: "Components",
+            type: "docSidebar",
             position: "left",
+            sidebarId: "docs",
+            label: "Get started",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "learn",
+            label: "Learn",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "develop",
+            label: "Develop",
           },
           {
             type: "docSidebar",
             position: "left",
             sidebarId: "integrations",
-            label: "Integrations",
-          },
-          {
-            to: "/docs/guides",
-            label: "Guides",
-            position: "left",
+            label: "Integrate",
           },
           {
             href: "https://api.python.langchain.com",
-            label: "API Reference",
+            label: "API",
             position: "left",
           },
           {
