@@ -5,13 +5,12 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.chat_message_histories import Neo4jChatMessageHistory
 from langchain_community.graphs import Neo4jGraph
 
-assert os.environ.get("NEO4J_URI") is not None
-assert os.environ.get("NEO4J_USERNAME") is not None
-assert os.environ.get("NEO4J_PASSWORD") is not None
-
 
 def test_add_messages() -> None:
     """Basic testing: adding messages to the Neo4jChatMessageHistory."""
+    assert os.environ.get("NEO4J_URI") is not None
+    assert os.environ.get("NEO4J_USERNAME") is not None
+    assert os.environ.get("NEO4J_PASSWORD") is not None
     message_store = Neo4jChatMessageHistory("23334")
     message_store.clear()
     assert len(message_store.messages) == 0
@@ -52,6 +51,9 @@ def test_add_messages() -> None:
 
 def test_add_messages_graph_object() -> None:
     """Basic testing: Passing driver through graph object."""
+    assert os.environ.get("NEO4J_URI") is not None
+    assert os.environ.get("NEO4J_USERNAME") is not None
+    assert os.environ.get("NEO4J_PASSWORD") is not None
     graph = Neo4jGraph()
     # rewrite env for testing
     os.environ["NEO4J_USERNAME"] = "foo"
