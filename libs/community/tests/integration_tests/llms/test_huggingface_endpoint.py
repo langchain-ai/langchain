@@ -13,7 +13,7 @@ def test_huggingface_endpoint_call_error() -> None:
     """Test valid call to HuggingFace that errors."""
     llm = HuggingFaceEndpoint(endpoint_url="", model_kwargs={"max_new_tokens": -1})
     with pytest.raises(ValueError):
-        llm("Say foo:")
+        llm.invoke("Say foo:")
 
 
 def test_saving_loading_endpoint_llm(tmp_path: Path) -> None:
@@ -29,7 +29,7 @@ def test_saving_loading_endpoint_llm(tmp_path: Path) -> None:
 def test_huggingface_text_generation() -> None:
     """Test valid call to HuggingFace text generation model."""
     llm = HuggingFaceEndpoint(repo_id="gpt2", model_kwargs={"max_new_tokens": 10})
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     print(output)  # noqa: T201
     assert isinstance(output, str)
 
@@ -37,14 +37,14 @@ def test_huggingface_text_generation() -> None:
 def test_huggingface_text2text_generation() -> None:
     """Test valid call to HuggingFace text2text model."""
     llm = HuggingFaceEndpoint(repo_id="google/flan-t5-xl")
-    output = llm("The capital of New York is")
+    output = llm.invoke("The capital of New York is")
     assert output == "Albany"
 
 
 def test_huggingface_summarization() -> None:
     """Test valid call to HuggingFace summarization model."""
     llm = HuggingFaceEndpoint(repo_id="facebook/bart-large-cnn")
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -52,7 +52,7 @@ def test_huggingface_call_error() -> None:
     """Test valid call to HuggingFace that errors."""
     llm = HuggingFaceEndpoint(repo_id="gpt2", model_kwargs={"max_new_tokens": -1})
     with pytest.raises(ValueError):
-        llm("Say foo:")
+        llm.invoke("Say foo:")
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:
