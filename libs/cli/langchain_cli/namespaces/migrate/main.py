@@ -18,10 +18,9 @@ from libcst.helpers import calculate_module_and_package
 from libcst.metadata import FullRepoManager, FullyQualifiedNameProvider, ScopeProvider
 from rich.console import Console
 from rich.progress import Progress
-from typer import Argument, Exit, Option, Typer, echo
+from typer import Argument, Exit, Option, Typer
 from typing_extensions import ParamSpec
 
-from langchain_cli import __version__
 from langchain_cli.namespaces.migrate.codemods import Rule, gather_codemods
 from langchain_cli.namespaces.migrate.glob_helpers import match_glob
 
@@ -33,12 +32,6 @@ T = TypeVar("T")
 DEFAULT_IGNORES = [".venv/**"]
 
 
-def version_callback(value: bool):
-    if value:
-        echo(f"bump-pydantic version: {__version__}")
-        raise Exit()
-
-
 @app.callback()
 def main(
     path: Path = Argument(..., exists=True, dir_okay=True, allow_dash=False),
@@ -48,17 +41,10 @@ def main(
         default=DEFAULT_IGNORES, help="Ignore a path glob pattern."
     ),
     log_file: Path = Option("log.txt", help="Log errors to this file."),
-    version: bool = Option(
-        None,
-        "--version",
-        callback=version_callback,
-        is_eager=True,
-        help="Show the version and exit.",
-    ),
 ):
     """Migrate langchain to the most recent version."""
     if not diff:
-        rich.print("[bold red]Alert![/ bold red]", end=": ")
+        rich.print("[bold red]Alert![/ bold red] langchain-cli migrate", end=": ")
         if not typer.confirm(
             "The migration process will modify your files. "
             "The migration is a `best-effort` process and is not expected to "

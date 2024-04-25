@@ -25,10 +25,11 @@ class TestReplaceImportsCommand(CodemodTest):
 
     def test_mixed_imports(self) -> None:
         before = """
-        from langchain.chat_models import ChatOpenAI, ChatAnthropic
+        from langchain.chat_models import ChatOpenAI, ChatAnthropic, foo
         """
         after = """
-        from langchain.chat_models import ChatAnthropic
+        from langchain.chat_models import foo
+        from langchain_anthropic import ChatAnthropic
         from langchain_openai import ChatOpenAI
         """
         self.assertCodemod(before, after)
