@@ -1,14 +1,15 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
-
-from langchain_experimental.pydantic_v1 import root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
@@ -41,25 +42,20 @@ DEFAULT_RESPONSE_FUNCTION = {
 }
 
 
-class OllamaFunctions(BaseChatModel):
+class OllamaFunctions(ChatOllama):
     """Function chat model that uses Ollama API."""
 
-    llm: ChatOllama
+    tool_system_prompt_template: str = DEFAULT_SYSTEM_TEMPLATE
 
-    tool_system_prompt_template: str
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
 
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
-        values["llm"] = values.get("llm") or ChatOllama(**values, format="json")
-        values["tool_system_prompt_template"] = (
-            values.get("tool_system_prompt_template") or DEFAULT_SYSTEM_TEMPLATE
-        )
-        return values
-
-    @property
-    def model(self) -> BaseChatModel:
-        """For backwards compatibility."""
-        return self.llm
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        return self.bind(functions=tools, **kwargs)
 
     def _generate(
         self,
@@ -69,6 +65,9 @@ class OllamaFunctions(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         functions = kwargs.get("functions", [])
+
+        if "functions" in kwargs:
+            del kwargs["functions"]
         if "function_call" in kwargs:
             functions = [
                 fn for fn in functions if fn["name"] == kwargs["function_call"]["name"]
@@ -87,19 +86,19 @@ function in "functions".'
         system_message = system_message_prompt_template.format(
             tools=json.dumps(functions, indent=2)
         )
-        if "functions" in kwargs:
-            del kwargs["functions"]
-        response_message = self.llm.invoke(
-            [system_message] + messages, stop=stop, callbacks=run_manager, **kwargs
+        response_message = super()._generate(
+            [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
         )
-        chat_generation_content = response_message.content
+        chat_generation_content = response_message.generations[0].text
         if not isinstance(chat_generation_content, str):
             raise ValueError("OllamaFunctions does not support non-string output.")
         try:
             parsed_chat_result = json.loads(chat_generation_content)
         except json.JSONDecodeError:
             raise ValueError(
-                f'"{self.llm.model}" did not respond with valid JSON. Please try again.'
+                f"""'{self.model}' did not respond with valid JSON. 
+                Please try again. 
+                Response: {chat_generation_content}"""
             )
         called_tool_name = parsed_chat_result["tool"]
         called_tool_arguments = parsed_chat_result["tool_input"]
@@ -108,7 +107,7 @@ function in "functions".'
         )
         if called_tool is None:
             raise ValueError(
-                f"Failed to parse a function call from {self.llm.model} \
+                f"Failed to parse a function call from {self.model} \
 output: {chat_generation_content}"
             )
         if called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]:

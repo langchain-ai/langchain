@@ -2,8 +2,6 @@
 
 import unittest
 
-from langchain_community.chat_models.ollama import ChatOllama
-
 from langchain_experimental.llms.ollama_functions import OllamaFunctions
 
 
@@ -13,12 +11,13 @@ class TestOllamaFunctions(unittest.TestCase):
     """
 
     def test_default_ollama_functions(self) -> None:
-        base_model = OllamaFunctions(model="mistral")
-        self.assertIsInstance(base_model.model, ChatOllama)
+        base_model = OllamaFunctions(
+            model="llama3", format="json"
+        )
 
         # bind functions
-        model = base_model.bind(
-            functions=[
+        model = base_model.bind_tools(
+            tools=[
                 {
                     "name": "get_current_weather",
                     "description": "Get the current weather in a given location",
