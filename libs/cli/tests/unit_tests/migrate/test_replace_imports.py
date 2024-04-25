@@ -1,3 +1,9 @@
+# ruff: noqa: E402
+import pytest
+
+pytest.importorskip("libcst")
+
+
 from libcst.codemod import CodemodTest
 
 from langchain_cli.namespaces.migrate.codemods.replace_imports import (

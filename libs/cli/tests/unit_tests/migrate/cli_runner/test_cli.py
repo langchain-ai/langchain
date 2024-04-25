@@ -1,4 +1,9 @@
+# ruff: noqa: E402
 from __future__ import annotations
+
+import pytest
+
+pytest.importorskip("libcst")
 
 import difflib
 from pathlib import Path
@@ -6,9 +11,8 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from langchain_cli.namespaces.migrate.main import app
-
-from .cases import before, expected
-from .folder import Folder
+from tests.unit_tests.migrate.cli_runner.cases import before, expected
+from tests.unit_tests.migrate.cli_runner.folder import Folder
 
 
 def find_issue(current: Folder, expected: Folder) -> str:
