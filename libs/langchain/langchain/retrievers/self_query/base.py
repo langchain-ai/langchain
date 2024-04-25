@@ -124,11 +124,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
                 return ElasticsearchTranslator()
 
         try:
-            from langchain_pinecone import Pinecone
+            from langchain_pinecone import PineconeVectorStore
         except ImportError:
             pass
         else:
-            if isinstance(vectorstore, Pinecone):
+            if isinstance(vectorstore, PineconeVectorStore):
                 return PineconeTranslator()
 
         raise ValueError(
