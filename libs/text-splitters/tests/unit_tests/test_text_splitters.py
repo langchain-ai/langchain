@@ -1225,10 +1225,7 @@ def test_md_header_text_splitter_with_invisible_characters(characters: str) -> N
     """Test markdown splitter by header: Fenced code block."""
 
     markdown_document = (
-        f"{characters}# Foo\n\n"
-        "foo()\n"
-        f"{characters}## Bar\n\n"
-        "bar()"
+        f"{characters}# Foo\n\n" "foo()\n" f"{characters}## Bar\n\n" "bar()"
     )
 
     headers_to_split_on = [
@@ -1243,11 +1240,11 @@ def test_md_header_text_splitter_with_invisible_characters(characters: str) -> N
 
     expected_output = [
         Document(
-            page_content=f"foo()",
+            page_content="foo()",
             metadata={"Header 1": "Foo"},
         ),
         Document(
-            page_content=f"bar()",
+            page_content="bar()",
             metadata={"Header 1": "Foo", "Header 2": "Bar"},
         ),
     ]
