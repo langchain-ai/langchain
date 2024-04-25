@@ -29,7 +29,7 @@ openai.api_base = "https://oai.hconeai.com/v1"
 
 llm = OpenAI(temperature=0.9, headers={"Helicone-Cache-Enabled": "true"})
 text = "What is a helicone?"
-print(llm(text))
+print(llm.invoke(text))
 ```
 
 [Helicone caching docs](https://docs.helicone.ai/advanced-usage/caching)
@@ -47,7 +47,7 @@ llm = OpenAI(temperature=0.9, headers={
         "Helicone-Property-App": "mobile",
       })
 text = "What is a helicone?"
-print(llm(text))
+print(llm.invoke(text))
 ```
 
 [Helicone property docs](https://docs.helicone.ai/advanced-usage/custom-properties)

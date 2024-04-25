@@ -1,4 +1,4 @@
-from typing import Any, Iterator, List, Sequence, cast
+from typing import Any, Iterator, List, Sequence, Tuple, Union, cast
 
 from langchain_core.documents import BaseDocumentTransformer, Document
 
@@ -33,10 +33,11 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
     def transform_documents(
         self,
         documents: Sequence[Document],
-        unwanted_tags: List[str] = ["script", "style"],
-        tags_to_extract: List[str] = ["p", "li", "div", "a"],
+        unwanted_tags: Union[List[str], Tuple[str, ...]] = ("script", "style"),
+        tags_to_extract: Union[List[str], Tuple[str, ...]] = ("p", "li", "div", "a"),
         remove_lines: bool = True,
         *,
+        unwanted_classnames: Union[Tuple[str, ...], List[str]] = (),
         remove_comments: bool = False,
         **kwargs: Any,
     ) -> Sequence[Document]:
@@ -48,6 +49,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
             unwanted_tags: A list of tags to be removed from the HTML.
             tags_to_extract: A list of tags whose content will be extracted.
             remove_lines: If set to True, unnecessary lines will be removed.
+            unwanted_classnames: A list of class names to be removed from the HTML
             remove_comments: If set to True, comments will be removed.
 
         Returns:
@@ -55,6 +57,10 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         """
         for doc in documents:
             cleaned_content = doc.page_content
+
+            cleaned_content = self.remove_unwanted_classnames(
+                cleaned_content, unwanted_classnames
+            )
 
             cleaned_content = self.remove_unwanted_tags(cleaned_content, unwanted_tags)
 
@@ -70,7 +76,31 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return documents
 
     @staticmethod
-    def remove_unwanted_tags(html_content: str, unwanted_tags: List[str]) -> str:
+    def remove_unwanted_classnames(
+        html_content: str, unwanted_classnames: Union[List[str], Tuple[str, ...]]
+    ) -> str:
+        """
+        Remove unwanted classname from a given HTML content.
+
+        Args:
+            html_content: The original HTML content string.
+            unwanted_classnames: A list of classnames to be removed from the HTML.
+
+        Returns:
+            A cleaned HTML string with unwanted classnames removed.
+        """
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(html_content, "html.parser")
+        for classname in unwanted_classnames:
+            for element in soup.find_all(class_=classname):
+                element.decompose()
+        return str(soup)
+
+    @staticmethod
+    def remove_unwanted_tags(
+        html_content: str, unwanted_tags: Union[List[str], Tuple[str, ...]]
+    ) -> str:
         """
         Remove unwanted tags from a given HTML content.
 
@@ -91,7 +121,10 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def extract_tags(
-        html_content: str, tags: List[str], *, remove_comments: bool = False
+        html_content: str,
+        tags: Union[List[str], Tuple[str, ...]],
+        *,
+        remove_comments: bool = False,
     ) -> str:
         """
         Extract specific tags from a given HTML content.

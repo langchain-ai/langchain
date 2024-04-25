@@ -11,7 +11,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 def test_default_call() -> None:
     """Test valid chat call to volc engine."""
     chat = VolcEngineMaasChat()
-    response = chat(messages=[HumanMessage(content="Hello")])
+    response = chat.invoke([HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -20,8 +20,8 @@ def test_multiple_history() -> None:
     """Tests multiple history works."""
     chat = VolcEngineMaasChat()
 
-    response = chat(
-        messages=[
+    response = chat.invoke(
+        [
             HumanMessage(content="Hello"),
             AIMessage(content="Hello!"),
             HumanMessage(content="How are you?"),
@@ -36,14 +36,14 @@ def test_stream() -> None:
     chat = VolcEngineMaasChat(streaming=True)
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    response = chat(
-        messages=[
+    response = chat.invoke(
+        [
             HumanMessage(content="Hello"),
             AIMessage(content="Hello!"),
             HumanMessage(content="How are you?"),
         ],
         stream=True,
-        callbacks=callback_manager,
+        config={"callbacks": callback_manager},
     )
     assert callback_handler.llm_streams > 0
     assert isinstance(response.content, str)
@@ -56,14 +56,14 @@ def test_stop() -> None:
     )
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    response = chat(
-        messages=[
+    response = chat.invoke(
+        [
             HumanMessage(content="repeat: hello world"),
             AIMessage(content="hello world"),
             HumanMessage(content="repeat: hello world"),
         ],
         stream=True,
-        callbacks=callback_manager,
+        config={"callbacks": callback_manager},
         stop=["world"],
     )
     assert callback_handler.llm_streams > 0
