@@ -19,7 +19,7 @@ def test_edenai_call() -> None:
         providers=["amazon"], language="en", voice="MALE"
     )
 
-    output = text2speech("hello")
+    output = text2speech.invoke("hello")
     parsed_url = urlparse(output)
 
     assert text2speech.name == "edenai_text_to_speech"

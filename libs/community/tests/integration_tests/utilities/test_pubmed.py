@@ -147,7 +147,7 @@ def test_load_pupmed_from_universal_entry() -> None:
         "Examining the Validity of ChatGPT in Identifying "
         "Relevant Nephrology Literature"
     )
-    output = pubmed_tool(search_string)
+    output = pubmed_tool.invoke(search_string)
     test_string = (
         "Examining the Validity of ChatGPT in Identifying "
         "Relevant Nephrology Literature: Findings and Implications"
