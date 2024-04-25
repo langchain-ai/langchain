@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import sys
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -884,9 +885,13 @@ def test_tool_pass_context() -> None:
         assert bar == "baz"
         return bar
 
-    assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
+    assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="requires python3.11 or higher",
+)
 async def test_async_tool_pass_context() -> None:
     @tool
     async def foo(bar: str) -> str:
@@ -898,5 +903,5 @@ async def test_async_tool_pass_context() -> None:
         return bar
 
     assert (
-        await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
+        await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
     )
