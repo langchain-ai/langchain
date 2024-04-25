@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
@@ -450,7 +450,8 @@ class HuggingFaceEncoderEmbeddings(BaseModel, Embeddings):
         for i, text in enumerate(texts):
             batch.append(text)
             if len(batch) == self.batch_size or i == len(texts) - 1:
-                tokens: Type["BatchEncoding"] = self.tokenizer(
+                # transformer.BatchEncoding
+                tokens = self.tokenizer(
                     batch, 
                     padding=True, 
                     add_special_tokens=self.add_special_tokens, 
@@ -460,17 +461,20 @@ class HuggingFaceEncoderEmbeddings(BaseModel, Embeddings):
                 ).to(self.device)
 
                 self.client.eval()
-                embd_vecs: Optional[Type["Tensor"]] = None
+                # torch.Tensor
+                embd_vecs = None
                 if self.use_cls_embedding:
                     embd_vecs = self.client(**tokens)["last_hidden_state"][:, 0, :]
                 else:
-                    valid_length: Type["Tensor"] = tokens.attention_mask.sum(dim=1)
+                    # torch.Tensor
+                    valid_length = tokens.attention_mask.sum(dim=1)
                     # Keep each embedding at least has valid length larger or 
                     # equal with 1
                     valid_length[valid_length == 0] = 1
                     valid_length = valid_length.reshape(valid_length.shape[0], -1)
                     
-                    hidden_states: Type["Tensor"] = \
+                    # torch.Tensor
+                    hidden_states = \
                         self.client(**tokens)["last_hidden_state"]
                     hidden_states = hidden_states * tokens.attention_mask.unsqueeze(2)
                     
