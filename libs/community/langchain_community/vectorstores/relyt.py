@@ -63,6 +63,7 @@ class Relyt(VectorStore):
         """
         try:
             from pgvecto_rs.sdk import PGVectoRs
+
             PGVectoRs(
                 db_url=connection_string,
                 collection_name=collection_name,
