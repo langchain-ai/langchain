@@ -33,11 +33,11 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
     def transform_documents(
         self,
         documents: Sequence[Document],
-        unwanted_tags: Union[List[str], Tuple[str]] = ("script", "style"),
-        tags_to_extract: Union[List[str], Tuple[str]] = ("p", "li", "div", "a"),
+        unwanted_tags: Union[List[str], Tuple[str, ...]] = ("script", "style"),
+        tags_to_extract: Union[List[str], Tuple[str, ...]] = ("p", "li", "div", "a"),
         remove_lines: bool = True,
         *,
-        unwanted_classnames: Union[Tuple[str], List[str]] = (),
+        unwanted_classnames: Union[Tuple[str, ...], List[str]] = (),
         remove_comments: bool = False,
         **kwargs: Any,
     ) -> Sequence[Document]:
@@ -77,7 +77,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def remove_unwanted_classnames(
-        html_content: str, unwanted_classnames: Union[List[str], Tuple[str]]
+        html_content: str, unwanted_classnames: Union[List[str], Tuple[str, ...]]
     ) -> str:
         """
         Remove unwanted classname from a given HTML content.
@@ -99,7 +99,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
 
     @staticmethod
     def remove_unwanted_tags(
-        html_content: str, unwanted_tags: Union[List[str], Tuple[str]]
+        html_content: str, unwanted_tags: Union[List[str], Tuple[str, ...]]
     ) -> str:
         """
         Remove unwanted tags from a given HTML content.
@@ -122,7 +122,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
     @staticmethod
     def extract_tags(
         html_content: str,
-        tags: Union[List[str], Tuple[str]],
+        tags: Union[List[str], Tuple[str, ...]],
         *,
         remove_comments: bool = False,
     ) -> str:
