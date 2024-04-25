@@ -22,7 +22,6 @@ from typing import (
 
 import httpx
 from httpx_sse import EventSource, aconnect_sse, connect_sse
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -148,9 +147,7 @@ async def _aiter_sse(
 ) -> AsyncIterator[Dict]:
     """Iterate over the server-sent events."""
     async with event_source_mgr as event_source:
-        # TODO(Team): Remove after this is fixed in httpx dependency
-        # https://github.com/florimondmanca/httpx-sse/pull/25/files
-        await _araise_on_error(event_source._response)
+        await _araise_on_error(event_source.response)
         async for event in event_source.aiter_sse():
             if event.data == "[DONE]":
                 return
@@ -317,8 +314,7 @@ class ChatMistralAI(BaseChatModel):
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
-
-    model: str = "mistral-small"
+    model: str = Field(default="mistral-small", alias="model_name")
     temperature: float = 0.7
     max_tokens: Optional[int] = None
     top_p: float = 1
@@ -370,9 +366,7 @@ class ChatMistralAI(BaseChatModel):
                     with connect_sse(
                         self.client, "POST", "/chat/completions", json=kwargs
                     ) as event_source:
-                        # TODO(Team): Remove after this is fixed in httpx dependency
-                        # https://github.com/florimondmanca/httpx-sse/pull/25/files
-                        _raise_on_error(event_source._response)
+                        _raise_on_error(event_source.response)
                         for event in event_source.iter_sse():
                             if event.data == "[DONE]":
                                 return
@@ -593,7 +587,6 @@ class ChatMistralAI(BaseChatModel):
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
 
-    @beta()
     def with_structured_output(
         self,
         schema: Union[Dict, Type[BaseModel]],

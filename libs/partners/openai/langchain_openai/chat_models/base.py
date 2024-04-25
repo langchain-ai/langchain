@@ -29,7 +29,6 @@ from typing import (
 
 import openai
 import tiktoken
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -154,7 +153,11 @@ def _format_message_content(content: Any) -> Any:
         # Remove unexpected block types
         formatted_content = []
         for block in content:
-            if isinstance(block, dict) and "type" in block and block["type"] != "text":
+            if (
+                isinstance(block, dict)
+                and "type" in block
+                and block["type"] == "tool_use"
+            ):
                 continue
             else:
                 formatted_content.append(block)
@@ -881,7 +884,6 @@ class ChatOpenAI(BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
-    @beta()
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
