@@ -157,6 +157,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "base",
         "Document",
     ),
+    ("langchain", "schema", "document_search_hit", "DocumentSearchHit"): (
+        "langchain_core",
+        "documents",
+        "base",
+        "DocumentSearchHit",
+    ),
     ("langchain", "output_parsers", "fix", "OutputFixingParser"): (
         "langchain",
         "output_parsers",
@@ -665,6 +671,12 @@ OLD_CORE_NAMESPACES_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "documents",
         "base",
         "Document",
+    ),
+    ("langchain_core", "documents", "base", "DocumentSearchHit"): (
+        "langchain_core",
+        "documents",
+        "base",
+        "DocumentSearchHit",
     ),
     ("langchain_core", "prompts", "chat", "AIMessagePromptTemplate"): (
         "langchain_core",
