@@ -190,6 +190,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.figma import (
         FigmaFileLoader,  # noqa: F401
     )
+    from langchain_community.document_loaders.firecrawl import (
+        FireCrawlLoader,  # noqa: F401
+    )
     from langchain_community.document_loaders.gcs_directory import (
         GCSDirectoryLoader,  # noqa: F401
     )
@@ -208,6 +211,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.github import (
         GithubFileLoader,  # noqa: F401
         GitHubIssuesLoader,  # noqa: F401
+    )
+    from langchain_community.document_loaders.glue_catalog import (
+        GlueCatalogLoader,  # noqa: F401
     )
     from langchain_community.document_loaders.google_speech_to_text import (
         GoogleSpeechToTextLoader,  # noqa: F401
@@ -564,6 +570,7 @@ __all__ = [
     "FacebookChatLoader",
     "FaunaLoader",
     "FigmaFileLoader",
+    "FireCrawlLoader",
     "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
@@ -750,6 +757,7 @@ _module_lookup = {
     "FacebookChatLoader": "langchain_community.document_loaders.facebook_chat",
     "FaunaLoader": "langchain_community.document_loaders.fauna",
     "FigmaFileLoader": "langchain_community.document_loaders.figma",
+    "FireCrawlLoader": "langchain_community.document_loaders.firecrawl",
     "FileSystemBlobLoader": "langchain_community.document_loaders.blob_loaders",
     "GCSDirectoryLoader": "langchain_community.document_loaders.gcs_directory",
     "GCSFileLoader": "langchain_community.document_loaders.gcs_file",
@@ -758,6 +766,7 @@ _module_lookup = {
     "GitLoader": "langchain_community.document_loaders.git",
     "GitbookLoader": "langchain_community.document_loaders.gitbook",
     "GithubFileLoader": "langchain_community.document_loaders.github",
+    "GlueCatalogLoader": "langchain_community.document_loaders.glue_catalog",
     "GoogleApiClient": "langchain_community.document_loaders.youtube",
     "GoogleApiYoutubeLoader": "langchain_community.document_loaders.youtube",
     "GoogleDriveLoader": "langchain_community.document_loaders.googledrive",
