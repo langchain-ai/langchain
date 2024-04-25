@@ -87,8 +87,6 @@ class RecursiveUrlLoader(BaseLoader):
         use_async: Optional[bool] = None,
         extractor: Optional[Callable[[str], str]] = None,
         metadata_extractor: Optional[Callable[[str, str], dict]] = None,
-        autoset_encoding: bool = True,
-        encoding: Optional[str] = None,
         exclude_dirs: Optional[Sequence[str]] = (),
         timeout: Optional[int] = 10,
         prevent_outside: bool = True,
@@ -98,6 +96,8 @@ class RecursiveUrlLoader(BaseLoader):
         continue_on_failure: bool = True,
         *,
         base_url: Optional[str] = None,
+        autoset_encoding: bool = True,
+        encoding: Optional[str] = None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
@@ -114,11 +114,6 @@ class RecursiveUrlLoader(BaseLoader):
                 source url (args in that order). Default extractor will attempt
                 to use BeautifulSoup4 to extract the title, description and language
                 of the page.
-            autoset_encoding: Whether to automatically set the encoding of the response.
-                If True, the encoding of the response will be set to the apparent
-                encoding, unless the `encoding` argument has already been explicitly set.
-            encoding: The encoding of the response. If manually set, the encoding will be
-                set to given value, regardless of the `autoset_encoding` argument.
             exclude_dirs: A list of subdirectories to exclude.
             timeout: The timeout for the requests, in the unit of seconds. If None then
                 connection will not timeout.
@@ -130,6 +125,11 @@ class RecursiveUrlLoader(BaseLoader):
             continue_on_failure: If True, continue if getting or parsing a link raises
                 an exception. Otherwise, raise the exception.
             base_url: The base url to check for outside links against.
+            autoset_encoding: Whether to automatically set the encoding of the response.
+                If True, the encoding of the response will be set to the apparent
+                encoding, unless the `encoding` argument has already been explicitly set.
+            encoding: The encoding of the response. If manually set, the encoding will be
+                set to given value, regardless of the `autoset_encoding` argument.
         """
 
         self.url = url
