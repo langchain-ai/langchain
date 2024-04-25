@@ -95,6 +95,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.brave_search import (
         BraveSearchLoader,  # noqa: F401
     )
+    from langchain_community.document_loaders.browserbase import (
+        BrowserbaseLoader,  # noqa: F401
+    )
     from langchain_community.document_loaders.browserless import (
         BrowserlessLoader,  # noqa: F401
     )
@@ -541,6 +544,7 @@ __all__ = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
+    "BrowserbaseLoader",
     "BrowserlessLoader",
     "CSVLoader",
     "CassandraLoader",
@@ -727,6 +731,7 @@ _module_lookup = {
     "BlobLoader": "langchain_community.document_loaders.blob_loaders",
     "BlockchainDocumentLoader": "langchain_community.document_loaders.blockchain",
     "BraveSearchLoader": "langchain_community.document_loaders.brave_search",
+    "BrowserbaseLoader": "langchain_community.document_loaders.browserbase",
     "BrowserlessLoader": "langchain_community.document_loaders.browserless",
     "CSVLoader": "langchain_community.document_loaders.csv_loader",
     "CassandraLoader": "langchain_community.document_loaders.cassandra",
