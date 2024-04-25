@@ -6,5 +6,5 @@ from langchain_community.llms.writer import Writer
 def test_writer_call() -> None:
     """Test valid call to Writer."""
     llm = Writer()
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)

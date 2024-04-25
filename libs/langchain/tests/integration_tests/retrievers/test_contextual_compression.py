@@ -21,6 +21,6 @@ def test_contextual_compression_retriever_get_relevant_docs() -> None:
         base_compressor=base_compressor, base_retriever=base_retriever
     )
 
-    actual = retriever.get_relevant_documents("Tell me about the Celtics")
+    actual = retriever.invoke("Tell me about the Celtics")
     assert len(actual) == 2
     assert texts[-1] not in [d.page_content for d in actual]
