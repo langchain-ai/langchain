@@ -15,7 +15,7 @@ def test_edenai_call() -> None:
     """Test simple call to edenai's image moderation endpoint."""
     image_moderation = EdenAiExplicitImageTool(providers=["amazon"])
 
-    output = image_moderation("https://static.javatpoint.com/images/objects.jpg")
+    output = image_moderation.invoke("https://static.javatpoint.com/images/objects.jpg")
 
     assert image_moderation.name == "edenai_image_explicit_content_detection"
     assert image_moderation.feature == "image"
