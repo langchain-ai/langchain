@@ -108,7 +108,7 @@ def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     chat = ChatAnthropic(model="test")
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 

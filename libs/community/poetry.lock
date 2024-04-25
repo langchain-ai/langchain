@@ -782,19 +782,19 @@ graph = ["gremlinpython (==3.4.6)"]
 
 [[package]]
 name = "cassio"
-version = "0.1.5"
+version = "0.1.6"
 description = "A framework-agnostic Python library to seamlessly integrate Apache Cassandra(R) with ML/LLM/genAI workloads."
 optional = false
-python-versions = ">=3.8"
+python-versions = "<4.0,>=3.8"
 files = [
-    {file = "cassio-0.1.5-py3-none-any.whl", hash = "sha256:cf1d11f255c040bc0aede4963ca020840133377aa54f7f15d2f819d6553d52ce"},
-    {file = "cassio-0.1.5.tar.gz", hash = "sha256:88c50c34d46a1bfffca1e0b600318a6efef45e6c18a56ddabe208cbede8dcc27"},
+    {file = "cassio-0.1.6-py3-none-any.whl", hash = "sha256:2ab767da43acdd850b2fb0eead7f0fd9cbb2884bb3864c6b0721dd589cbfe23a"},
+    {file = "cassio-0.1.6.tar.gz", hash = "sha256:338ed89bd3dfdd7225b72ae70af2d7e058eb30582814b9f146a70f84a8d345f7"},
 ]
 
 [package.dependencies]
-cassandra-driver = ">=3.28.0"
+cassandra-driver = ">=3.28.0,<4.0.0"
 numpy = ">=1.0"
-requests = ">=2"
+requests = ">=2.31.0,<3.0.0"
 
 [[package]]
 name = "cerberus"
@@ -3758,7 +3758,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.44"
+version = "0.1.46"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -9321,4 +9321,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "7459e51d29180cc49805e873f358971198bace0ef8bc09ce82a3e02584972030"
+content-hash = "b066cbf8a1f02cae88c6c099e916d805fe6eb8685fd15c093d66cf52ea363fa5"

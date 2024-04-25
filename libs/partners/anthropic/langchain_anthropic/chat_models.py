@@ -95,11 +95,12 @@ def _format_image(image_url: str) -> Dict:
 
 
 def _merge_messages(
-    messages: List[BaseMessage],
+    messages: Sequence[BaseMessage],
 ) -> List[Union[SystemMessage, AIMessage, HumanMessage]]:
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
     for curr in messages:
+        curr = curr.copy(deep=True)
         if isinstance(curr, ToolMessage):
             if isinstance(curr.content, str):
                 curr = HumanMessage(
@@ -579,7 +580,6 @@ class ChatAnthropic(BaseChatModel):
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
         return self.bind(tools=formatted_tools, **kwargs)
 
-    @beta()
     def with_structured_output(
         self,
         schema: Union[Dict, Type[BaseModel]],

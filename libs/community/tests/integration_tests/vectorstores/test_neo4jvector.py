@@ -4,6 +4,7 @@ from typing import Any, Dict, List, cast
 
 from langchain_core.documents import Document
 
+from langchain_community.graphs import Neo4jGraph
 from langchain_community.vectorstores.neo4j_vector import (
     Neo4jVector,
     SearchType,
@@ -43,7 +44,9 @@ def drop_vector_indexes(store: Neo4jVector) -> None:
                               """
     )
     for index in all_indexes:
-        store.query(f"DROP INDEX {index['name']}")
+        store.query(f"DROP INDEX `{index['name']}`")
+
+    store.query("MATCH (n) DETACH DELETE n;")
 
 
 class FakeEmbeddingsWithOsDimension(FakeEmbeddings):
@@ -239,7 +242,7 @@ def test_neo4jvector_retriever_search_threshold() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.9999},
     )
-    output = retriever.get_relevant_documents("foo")
+    output = retriever.invoke("foo")
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
     ]
@@ -811,4 +814,109 @@ def test_metadata_filters_type1() -> None:
                 del doc.metadata[key]
 
         assert output == expected_output
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_relationship_index() -> None:
+    """Test end to end construction and search."""
+    embeddings = FakeEmbeddingsWithOsDimension()
+    docsearch = Neo4jVector.from_texts(
+        texts=texts,
+        embedding=embeddings,
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+    )
+    # Ingest data
+    docsearch.query(
+        (
+            "CREATE ()-[:REL {text: 'foo', embedding: $e1}]->()"
+            ", ()-[:REL {text: 'far', embedding: $e2}]->()"
+        ),
+        params={
+            "e1": embeddings.embed_query("foo"),
+            "e2": embeddings.embed_query("bar"),
+        },
+    )
+    # Create relationship index
+    docsearch.query(
+        """CREATE VECTOR INDEX `relationship`
+FOR ()-[r:REL]-() ON (r.embedding)
+OPTIONS {indexConfig: {
+ `vector.dimensions`: 1536,
+ `vector.similarity_function`: 'cosine'
+}}
+"""
+    )
+    relationship_index = Neo4jVector.from_existing_relationship_index(
+        embeddings, index_name="relationship"
+    )
+
+    output = relationship_index.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_relationship_index_retrieval() -> None:
+    """Test end to end construction and search."""
+    embeddings = FakeEmbeddingsWithOsDimension()
+    docsearch = Neo4jVector.from_texts(
+        texts=texts,
+        embedding=embeddings,
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+    )
+    # Ingest data
+    docsearch.query(
+        (
+            "CREATE ({node:'text'})-[:REL {text: 'foo', embedding: $e1}]->()"
+            ", ({node:'text'})-[:REL {text: 'far', embedding: $e2}]->()"
+        ),
+        params={
+            "e1": embeddings.embed_query("foo"),
+            "e2": embeddings.embed_query("bar"),
+        },
+    )
+    # Create relationship index
+    docsearch.query(
+        """CREATE VECTOR INDEX `relationship`
+FOR ()-[r:REL]-() ON (r.embedding)
+OPTIONS {indexConfig: {
+ `vector.dimensions`: 1536,
+ `vector.similarity_function`: 'cosine'
+}}
+"""
+    )
+    retrieval_query = (
+        "RETURN relationship.text + '-' + startNode(relationship).node "
+        "AS text, score, {foo:'bar'} AS metadata"
+    )
+    relationship_index = Neo4jVector.from_existing_relationship_index(
+        embeddings, index_name="relationship", retrieval_query=retrieval_query
+    )
+
+    output = relationship_index.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo-text", metadata={"foo": "bar"})]
+
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_passing_graph_object() -> None:
+    """Test end to end construction and search with passing graph object."""
+    graph = Neo4jGraph()
+    # Rewrite env vars to make sure it fails if env is used
+    os.environ["NEO4J_URI"] = "foo"
+    docsearch = Neo4jVector.from_texts(
+        texts=texts,
+        embedding=FakeEmbeddingsWithOsDimension(),
+        graph=graph,
+        pre_delete_collection=True,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
     drop_vector_indexes(docsearch)

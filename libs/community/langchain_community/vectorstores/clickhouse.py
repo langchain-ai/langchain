@@ -72,7 +72,7 @@ class ClickhouseSettings(BaseSettings):
     username: Optional[str] = None
     password: Optional[str] = None
 
-    index_type: str = "annoy"
+    index_type: Optional[str] = "annoy"
     # Annoy supports L2Distance and cosineDistance.
     index_param: Optional[Union[List, Dict]] = ["'L2Distance'", 100]
     index_query_params: Dict[str, str] = {}
@@ -172,23 +172,15 @@ class Clickhouse(VectorStore):
                 else ""
             )
             if isinstance(self.config.index_param, Dict)
-            else ",".join([str(p) for p in self.config.index_param])
-            if isinstance(self.config.index_param, List)
-            else self.config.index_param
+            else (
+                ",".join([str(p) for p in self.config.index_param])
+                if isinstance(self.config.index_param, List)
+                else self.config.index_param
+            )
         )
 
-        self.schema = f"""\
-CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-    {self.config.column_map['id']} Nullable(String),
-    {self.config.column_map['document']} Nullable(String),
-    {self.config.column_map['embedding']} Array(Float32),
-    {self.config.column_map['metadata']} JSON,
-    {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
-    CONSTRAINT cons_vec_len CHECK length({self.config.column_map['embedding']}) = {dim},
-    INDEX vec_idx {self.config.column_map['embedding']} TYPE \
-{self.config.index_type}({index_params}) GRANULARITY 1000
-) ENGINE = MergeTree ORDER BY uuid SETTINGS index_granularity = 8192\
-"""
+        self.schema = self._schema(dim, index_params)
+
         self.dim = dim
         self.BS = "\\"
         self.must_escape = ("\\", "'")
@@ -205,9 +197,52 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         )
         # Enable JSON type
         self.client.command("SET allow_experimental_object_type=1")
-        # Enable index
-        self.client.command(f"SET allow_experimental_{self.config.index_type}_index=1")
+        if self.config.index_type:
+            # Enable index
+            self.client.command(
+                f"SET allow_experimental_{self.config.index_type}_index=1"
+            )
         self.client.command(self.schema)
+
+    def _schema(self, dim: int, index_params: Optional[str] = "") -> str:
+        """Create table schema
+        :param dim: dimension of embeddings
+        :param index_params: parameters used for index
+
+        This function returns a `CREATE TABLE` statement based on the value of
+        `self.config.index_type`.
+        If an index type is specified that index will be created, otherwise
+        no index will be created.
+        In the case of there being no index, a linear scan will be performed
+        when the embedding field is queried.
+        """
+
+        if self.config.index_type:
+            return f"""\
+        CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
+            {self.config.column_map['id']} Nullable(String),
+            {self.config.column_map['document']} Nullable(String),
+            {self.config.column_map['embedding']} Array(Float32),
+            {self.config.column_map['metadata']} JSON,
+            {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
+            CONSTRAINT cons_vec_len CHECK length(
+                {self.config.column_map['embedding']}) = {dim},
+            INDEX vec_idx {self.config.column_map['embedding']} TYPE \
+        {self.config.index_type}({index_params}) GRANULARITY 1000
+        ) ENGINE = MergeTree ORDER BY uuid SETTINGS index_granularity = 8192\
+        """
+        else:
+            return f"""\
+                CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
+                    {self.config.column_map['id']} Nullable(String),
+                    {self.config.column_map['document']} Nullable(String),
+                    {self.config.column_map['embedding']} Array(Float32),
+                    {self.config.column_map['metadata']} JSON,
+                    {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
+                    CONSTRAINT cons_vec_len CHECK length({
+                        self.config.column_map['embedding']}) = {dim}
+                ) ENGINE = MergeTree ORDER BY uuid
+                """
 
     @property
     def embeddings(self) -> Embeddings:
