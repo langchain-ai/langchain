@@ -186,6 +186,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "Aerospike",
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
