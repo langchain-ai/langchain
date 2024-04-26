@@ -53,7 +53,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> List[Dict[str, str]]:
 
 
 class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
-    """Wrapper around YandexGPT large language models.
+    """YandexGPT large language models.
 
     There are two authentication options for the service account
     with the ``ai.languageModels.user`` role:

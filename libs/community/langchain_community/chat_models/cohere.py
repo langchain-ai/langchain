@@ -172,9 +172,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
 
         if hasattr(self.async_client, "chat_stream"):  # detect and support sdk v5
-            stream = self.async_client.chat_stream(**request)
+            stream = await self.async_client.chat_stream(**request)
         else:
-            stream = self.async_client.chat(**request, stream=True)
+            stream = await self.async_client.chat(**request, stream=True)
 
         async for data in stream:
             if data.event_type == "text-generation":

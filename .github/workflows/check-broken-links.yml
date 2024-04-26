@@ -22,7 +22,3 @@ jobs:
       - name: Check broken links
         run: yarn check-broken-links
         working-directory: ./docs
-      - name: Check broken links for .mdx files
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
-        with:
-          file-extension: '.mdx'

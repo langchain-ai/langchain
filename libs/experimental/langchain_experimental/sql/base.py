@@ -4,20 +4,21 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sql_database.prompt import DECIDER_PROMPT, PROMPT, SQL_PROMPTS
-from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BasePromptTemplate
 from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
 from langchain_community.utilities.sql_database import SQLDatabase
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
 SQL_QUERY = "SQLQuery:"
+SQL_RESULT = "SQLResult:"
 
 
 class SQLDatabaseChain(Chain):
@@ -143,6 +144,8 @@ class SQLDatabaseChain(Chain):
                 intermediate_steps.append({"sql_cmd": sql_cmd})  # input: sql exec
                 if SQL_QUERY in sql_cmd:
                     sql_cmd = sql_cmd.split(SQL_QUERY)[1].strip()
+                if SQL_RESULT in sql_cmd:
+                    sql_cmd = sql_cmd.split(SQL_RESULT)[0].strip()
                 result = self.database.run(sql_cmd)
                 intermediate_steps.append(str(result))  # output: sql exec
             else:

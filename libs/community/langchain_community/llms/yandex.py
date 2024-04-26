@@ -54,6 +54,9 @@ class _BaseYandexGPT(Serializable):
     """Maximum number of retries to make when generating."""
     sleep_interval: float = 1.0
     """Delay between API requests"""
+    disable_request_logging: bool = False
+    """YandexGPT API logs all request data by default. 
+    If you provide personal data, confidential information, disable logging."""
     _grpc_metadata: Sequence
 
     @property
@@ -104,6 +107,13 @@ class _BaseYandexGPT(Serializable):
             values[
                 "model_uri"
             ] = f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+        if values["disable_request_logging"]:
+            values["_grpc_metadata"].append(
+                (
+                    "x-data-logging-enabled",
+                    "false",
+                )
+            )
         return values
 
 

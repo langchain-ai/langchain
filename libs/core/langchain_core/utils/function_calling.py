@@ -308,7 +308,7 @@ def convert_to_openai_function(
     elif isinstance(function, type) and issubclass(function, BaseModel):
         return cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
-        return format_tool_to_openai_function(function)
+        return cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
         return convert_python_function_to_openai_function(function)
     else:
