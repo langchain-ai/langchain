@@ -23,7 +23,7 @@ def test_gradient_acall() -> None:
         gradient_access_token=gradient_access_token,
         gradient_workspace_id=gradient_workspace_id,
     )
-    output = llm("Say hello:", temperature=0.2, max_tokens=250)
+    output = llm.invoke("Say hello:", temperature=0.2, max_tokens=250)
 
     assert llm._llm_type == "gradient"
 

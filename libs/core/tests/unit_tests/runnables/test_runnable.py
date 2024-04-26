@@ -5401,11 +5401,21 @@ def test_transform_of_runnable_lambda_with_dicts() -> None:
     runnable = RunnableLambda(lambda x: x)
     chunks = iter(
         [
-            {"foo": "a"},
             {"foo": "n"},
         ]
     )
-    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+    assert list(runnable.transform(chunks)) == [{"foo": "n"}]
+
+    # Test as part of a sequence
+    seq = runnable | runnable
+    chunks = iter(
+        [
+            {"foo": "n"},
+        ]
+    )
+    assert list(seq.transform(chunks)) == [{"foo": "n"}]
+    # Test some other edge cases
+    assert list(seq.stream({"foo": "n"})) == [{"foo": "n"}]
 
 
 async def test_atransform_of_runnable_lambda_with_dicts() -> None:
@@ -5420,7 +5430,11 @@ async def test_atransform_of_runnable_lambda_with_dicts() -> None:
         yield {"foo": "n"}
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
-    assert chunks == [{"foo": "an"}]
+    assert chunks == [{"foo": "n"}]
+
+    seq = runnable | runnable
+    chunks = [chunk async for chunk in seq.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "n"}]
 
 
 def test_default_transform_with_dicts() -> None:
@@ -5440,7 +5454,8 @@ def test_default_transform_with_dicts() -> None:
         ]
     )
 
-    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+    assert list(runnable.transform(chunks)) == [{"foo": "n"}]
+    assert list(runnable.stream({"foo": "n"})) == [{"foo": "n"}]
 
 
 async def test_default_atransform_with_dicts() -> None:
@@ -5459,6 +5474,17 @@ async def test_default_atransform_with_dicts() -> None:
         yield {"foo": "n"}
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+
+    assert chunks == [{"foo": "n"}]
+
+    # Test with addable dict
+    async def chunk_iterator_with_addable() -> AsyncIterator[Dict[str, str]]:
+        yield AddableDict({"foo": "a"})
+        yield AddableDict({"foo": "n"})
+
+    chunks = [
+        chunk async for chunk in runnable.atransform(chunk_iterator_with_addable())
+    ]
 
     assert chunks == [{"foo": "an"}]
 
