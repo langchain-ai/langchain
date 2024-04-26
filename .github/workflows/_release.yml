@@ -13,6 +13,11 @@ on:
         required: true
         type: string
         default: 'libs/langchain'
+      dangerous-nonmaster-release:
+        required: false
+        type: boolean
+        default: false
+        description: "Release from a non-master branch (danger!)"
 
 env:
   PYTHON_VERSION: "3.11"
@@ -20,7 +25,7 @@ env:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
     runs-on: ubuntu-latest
 
@@ -301,4 +306,4 @@ jobs:
           draft: false
           generateReleaseNotes: true
           tag: v${{ needs.build.outputs.version }}
-          commit: master
+          commit: ${{ github.sha }}
