@@ -55,6 +55,10 @@ nav, h1, h2, h3, h4 {
   font-family: 'Manrope';
 }
 
+.docs-version-0\.2\.x .hidden-0\.2\.x {
+  display: none;
+}
+
 .footer__links {
   margin-top: 1rem;
   margin-bottom: 3rem;

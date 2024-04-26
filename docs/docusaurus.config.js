@@ -164,6 +164,7 @@ const config = {
             docId: "modules/index",
             label: "Components",
             position: "left",
+            className: "hidden-0\.2\.x",
           },
           {
             type: "docSidebar",
