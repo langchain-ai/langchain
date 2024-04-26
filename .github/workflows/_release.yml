@@ -80,6 +80,7 @@ jobs:
       ./.github/workflows/_test_release.yml
     with:
       working-directory: ${{ inputs.working-directory }}
+      dangerous-nonmaster-release: ${{ inputs.dangerous-nonmaster-release }}
     secrets: inherit
 
   pre-release-checks:
