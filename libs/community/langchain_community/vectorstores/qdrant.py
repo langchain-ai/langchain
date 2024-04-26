@@ -1386,7 +1386,7 @@ class Qdrant(VectorStore):
         **kwargs: Any,
     ) -> Qdrant:
         """
-        Get instance of an existing Qdrant collection stored locally.
+        Get instance of an existing Qdrant collection.
         This method will return the instance of the store without inserting any new
         embeddings
         """
