@@ -938,7 +938,7 @@ def test_create_schema_from_function_with_descriptions() -> None:
         Args:
             bar: int
         """
-        raise NotImplementedError()
+        raise bar
 
     schema = create_schema_from_function("foo_annotated", foo_annotated)
     assert schema.schema() == {
@@ -953,6 +953,30 @@ def test_create_schema_from_function_with_descriptions() -> None:
         },
         "required": ["bar"],
     }
+
+
+def test_annotated_tool_typing() -> None:
+    @tool
+    def foo(bar: Annotated[int, "This is bar", {"gte": 5}, "it's useful"]) -> str:
+        """The foo."""
+        return str(bar)
+
+    assert foo.invoke({"bar": 5}) == "5"  # type: ignore
+    with pytest.raises(ValidationError):
+        foo.invoke({"bar": 4})  # type: ignore
+
+
+async def test_annotated_async_tool_typing() -> None:
+    @tool
+    async def foo(bar: Annotated[int, "This is bar", {"gte": 5}, "it's useful"]) -> str:
+        """The foo."""
+        return str(bar)
+
+    assert await foo.ainvoke({"bar": 5}) == "5"  # type: ignore
+    with pytest.raises(ValidationError):
+        await foo.ainvoke({"bar": 4})  # type: ignore
+
+
 def test_tool_pass_context() -> None:
     @tool
     def foo(bar: str) -> str:
