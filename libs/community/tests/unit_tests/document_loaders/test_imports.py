@@ -89,6 +89,7 @@ EXPECTED_ALL = [
     "IuguLoader",
     "JSONLoader",
     "JoplinLoader",
+    "KineticaLoader",
     "LLMSherpaFileLoader",
     "LarkSuiteDocLoader",
     "LakeFSLoader",
