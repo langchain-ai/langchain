@@ -712,7 +712,11 @@ class VectorStoreRetriever(BaseRetriever):
             )
             if include_score:
                 return [
-                    DocumentSearchHit(page_content=doc.page_content, score=score)
+                    DocumentSearchHit(
+                        page_content=doc.page_content,
+                        metadata=doc.metadata,
+                        score=score,
+                    )
                     for doc, score in docs_and_similarities
                 ]
             docs = [doc for doc, _ in docs_and_similarities]
@@ -748,7 +752,11 @@ class VectorStoreRetriever(BaseRetriever):
             )
             if include_score:
                 return [
-                    DocumentSearchHit(page_content=doc.page_content, score=score)
+                    DocumentSearchHit(
+                        page_content=doc.page_content,
+                        metadata=doc.metadata,
+                        score=score,
+                    )
                     for doc, score in docs_and_similarities
                 ]
             docs = [doc for doc, _ in docs_and_similarities]

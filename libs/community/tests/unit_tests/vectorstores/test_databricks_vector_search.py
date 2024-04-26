@@ -605,6 +605,7 @@ def test_similarity_score_threshold(index_details: dict, threshold: float) -> No
     for idx, result in enumerate(result_with_scores):
         assert result.score >= threshold
         assert result.page_content == search_result[idx].page_content
+        assert result.metadata == search_result[idx].metadata
 
 
 @pytest.mark.requires("databricks", "databricks.vector_search")

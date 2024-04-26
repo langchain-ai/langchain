@@ -199,7 +199,9 @@ class SelfQueryRetriever(BaseRetriever):
                 query, **search_kwargs
             )
             return [
-                DocumentSearchHit(page_content=doc.page_content, score=score)
+                DocumentSearchHit(
+                    page_content=doc.page_content, metadata=doc.metadata, score=score
+                )
                 for doc, score in docs_and_scores
             ]
         else:
@@ -214,7 +216,9 @@ class SelfQueryRetriever(BaseRetriever):
                 query, **search_kwargs
             )
             return [
-                DocumentSearchHit(page_content=doc.page_content, score=score)
+                DocumentSearchHit(
+                    page_content=doc.page_content, metadata=doc.metadata, score=score
+                )
                 for doc, score in docs_and_scores
             ]
         else:
