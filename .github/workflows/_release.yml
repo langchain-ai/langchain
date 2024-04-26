@@ -17,6 +17,7 @@ on:
         required: false
         type: boolean
         default: false
+        description: "Release from a non-master branch (danger!)"
 
 env:
   PYTHON_VERSION: "3.11"
