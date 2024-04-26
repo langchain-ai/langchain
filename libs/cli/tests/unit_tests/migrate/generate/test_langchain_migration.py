@@ -3,7 +3,8 @@ from langchain_cli.namespaces.migrate.generate.langchain import (
 )
 
 
-def test_foo():
+def test_create_json_agent_migration() -> None:
+    """Test the migration of create_json_agent from langchain to langchain_community."""
     raw_migrations = generate_simplified_migrations()
     json_agent_migrations = [
         migration for migration in raw_migrations if "create_json_agent" in migration[0]
