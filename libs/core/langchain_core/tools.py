@@ -165,6 +165,7 @@ def create_schema_from_function(
         del inferred_model.__fields__["run_manager"]
     if "callbacks" in inferred_model.__fields__:
         del inferred_model.__fields__["callbacks"]
+    breakpoint()
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func)
     # TODO: we could pass through additional metadata here
