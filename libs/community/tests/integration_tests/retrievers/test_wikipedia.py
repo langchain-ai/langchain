@@ -25,7 +25,7 @@ def assert_docs(docs: List[Document], all_meta: bool = False) -> None:
 
 
 def test_load_success(retriever: WikipediaRetriever) -> None:
-    docs = retriever.get_relevant_documents("HUNTER X HUNTER")
+    docs = retriever.invoke("HUNTER X HUNTER")
     assert len(docs) > 1
     assert len(docs) <= 3
     assert_docs(docs, all_meta=False)
@@ -33,7 +33,7 @@ def test_load_success(retriever: WikipediaRetriever) -> None:
 
 def test_load_success_all_meta(retriever: WikipediaRetriever) -> None:
     retriever.load_all_available_meta = True
-    docs = retriever.get_relevant_documents("HUNTER X HUNTER")
+    docs = retriever.invoke("HUNTER X HUNTER")
     assert len(docs) > 1
     assert len(docs) <= 3
     assert_docs(docs, all_meta=True)
@@ -43,7 +43,7 @@ def test_load_success_init_args() -> None:
     retriever = WikipediaRetriever(
         lang="en", top_k_results=1, load_all_available_meta=True
     )
-    docs = retriever.get_relevant_documents("HUNTER X HUNTER")
+    docs = retriever.invoke("HUNTER X HUNTER")
     assert len(docs) == 1
     assert_docs(docs, all_meta=True)
 
@@ -52,13 +52,13 @@ def test_load_success_init_args_more() -> None:
     retriever = WikipediaRetriever(
         lang="en", top_k_results=20, load_all_available_meta=False
     )
-    docs = retriever.get_relevant_documents("HUNTER X HUNTER")
+    docs = retriever.invoke("HUNTER X HUNTER")
     assert len(docs) == 20
     assert_docs(docs, all_meta=False)
 
 
 def test_load_no_result(retriever: WikipediaRetriever) -> None:
-    docs = retriever.get_relevant_documents(
+    docs = retriever.invoke(
         "NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL_NORESULTCALL"
     )
     assert not docs

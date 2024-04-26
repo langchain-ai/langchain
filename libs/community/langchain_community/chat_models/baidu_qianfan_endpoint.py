@@ -250,7 +250,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
         Example:
             .. code-block:: python
-                response = qianfan_model("Tell me a joke.")
+                response = qianfan_model.invoke("Tell me a joke.")
         """
         if self.streaming:
             completion = ""

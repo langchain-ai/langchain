@@ -6,6 +6,7 @@ import pathlib
 import platform
 from typing import Optional, Tuple
 
+from langchain_core.documents import Document
 from langchain_core.env import get_runtime_environment
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -59,6 +60,10 @@ LOADER_TYPE_MAPPING = {
 SUPPORTED_LOADERS = (*file_loader, *dir_loader, *in_memory)
 
 logger = logging.getLogger(__name__)
+
+
+class IndexedDocument(Document):
+    id: str
 
 
 class Runtime(BaseModel):
