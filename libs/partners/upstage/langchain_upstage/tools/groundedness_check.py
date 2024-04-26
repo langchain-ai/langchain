@@ -5,6 +5,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
@@ -17,7 +18,7 @@ class GroundednessCheckInput(BaseModel):
     """Input for the Groundedness Check tool."""
 
     context: str = Field(description="context in which the answer should be verified")
-    query: str = Field(
+    answer: Union[str, list[Document]] = Field(
         description="assistant's reply or a text that is subject to groundedness check"
     )
 
@@ -73,25 +74,32 @@ class GroundednessCheck(BaseTool):
         )
         super().__init__(upstage_api_key=upstage_api_key, api_wrapper=api_wrapper)
 
+    def formatDocumentsAsString(self, docs: list[Document]) -> str:
+        return "\n".join([doc.page_content for doc in docs])
+
     def _run(
         self,
         context: str,
-        query: str,
+        answer: Union[str, list[Document]],
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
         """Use the tool."""
+        if isinstance(answer, list):
+            answer = self.formatDocumentsAsString(answer)
         response = self.api_wrapper.invoke(
-            [HumanMessage(context), AIMessage(query)], stream=False
+            [HumanMessage(context), AIMessage(answer)], stream=False
         )
         return str(response.content)
 
     async def _arun(
         self,
         context: str,
-        query: str,
+        answer: Union[str, list[Document]],
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
+        if isinstance(answer, list):
+            answer = self.formatDocumentsAsString(answer)
         response = await self.api_wrapper.ainvoke(
-            [HumanMessage(context), AIMessage(query)], stream=False
+            [HumanMessage(context), AIMessage(answer)], stream=False
         )
         return str(response.content)
