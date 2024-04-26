@@ -28,4 +28,19 @@ def test_generate_migrations() -> None:
             "langchain_community.chat_models.azure_openai.AzureChatOpenAI",
             "langchain_openai.AzureChatOpenAI",
         ),
+        ("langchain_community.llms.AzureOpenAI", "langchain_openai.AzureOpenAI"),
+        ("langchain_community.llms.OpenAI", "langchain_openai.OpenAI"),
+        (
+            "langchain_community.embeddings.AzureOpenAIEmbeddings",
+            "langchain_openai.AzureOpenAIEmbeddings",
+        ),
+        (
+            "langchain_community.embeddings.OpenAIEmbeddings",
+            "langchain_openai.OpenAIEmbeddings",
+        ),
+        (
+            "langchain_community.chat_models.AzureChatOpenAI",
+            "langchain_openai.AzureChatOpenAI",
+        ),
+        ("langchain_community.chat_models.ChatOpenAI", "langchain_openai.ChatOpenAI"),
     ]
