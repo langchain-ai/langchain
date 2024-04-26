@@ -13,6 +13,10 @@ on:
         required: true
         type: string
         default: 'libs/langchain'
+      dangerous-nonmaster-release:
+        required: false
+        type: boolean
+        default: false
 
 env:
   PYTHON_VERSION: "3.11"
@@ -20,7 +24,7 @@ env:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
     runs-on: ubuntu-latest
 
