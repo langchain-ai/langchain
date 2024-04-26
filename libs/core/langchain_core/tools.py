@@ -21,13 +21,25 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import typing
 import uuid
 import warnings
 from abc import ABC, abstractmethod
 from contextvars import copy_context
 from functools import partial
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -76,7 +88,10 @@ class SchemaAnnotationError(TypeError):
 
 
 def _create_subset_model(
-    name: str, model: Type[BaseModel], field_names: list
+    name: str,
+    model: Type[BaseModel],
+    field_names: list,
+    descriptions: Optional[Mapping[str, str]] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
@@ -88,6 +103,10 @@ def _create_subset_model(
             if field.required and not field.allow_none
             else Optional[field.outer_type_]
         )
+        # Inject the description into the field_info
+        description = descriptions.get(field_name) if descriptions else None
+        if description:
+            field.field_info.description = description
         fields[field_name] = (t, field.field_info)
     rtn = create_model(name, **fields)  # type: ignore
     return rtn
@@ -101,6 +120,24 @@ def _get_filtered_args(
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
     return {k: schema[k] for k in valid_keys if k not in ("run_manager", "callbacks")}
+
+
+def _get_description_from_annotation(ann: Any) -> Optional[str]:
+    possible_descriptions = [
+        arg for arg in typing.get_args(ann) if isinstance(arg, str)
+    ]
+    return "\n".join(possible_descriptions) if possible_descriptions else None
+
+
+def _get_descriptions(func: Callable) -> Dict[str, str]:
+    """Get the descriptions from a function's signature."""
+    descriptions = {}
+    for param in inspect.signature(func).parameters.values():
+        if param.annotation is not inspect.Parameter.empty:
+            description = _get_description_from_annotation(param.annotation)
+            if description:
+                descriptions[param.name] = description
+    return descriptions
 
 
 class _SchemaConfig:
@@ -128,10 +165,16 @@ def create_schema_from_function(
         del inferred_model.__fields__["run_manager"]
     if "callbacks" in inferred_model.__fields__:
         del inferred_model.__fields__["callbacks"]
+    breakpoint()
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func)
+    # TODO: we could pass through additional metadata here
+    descriptions = _get_descriptions(func)
     return _create_subset_model(
-        f"{model_name}Schema", inferred_model, list(valid_properties)
+        f"{model_name}Schema",
+        inferred_model,
+        list(valid_properties),
+        descriptions=descriptions,
     )
 
 
