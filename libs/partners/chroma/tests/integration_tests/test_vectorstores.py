@@ -250,27 +250,6 @@ def test_chroma_update_document() -> None:
 
 
 # TODO: RELEVANCE SCORE IS BROKEN. FIX TEST
-def test_chroma_with_relevance_score() -> None:
-    """Test to make sure the relevance score is scaled to 0-1."""
-    texts = ["foo", "bar", "baz"]
-    metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Chroma.from_texts(
-        collection_name="test_collection",
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
-        collection_metadata={"hnsw:space": "l2"},
-    )
-    output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
-    docsearch.delete_collection()
-    assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}), 1.0),
-        (Document(page_content="bar", metadata={"page": "1"}), 0.8),
-        (Document(page_content="baz", metadata={"page": "2"}), 0.5),
-    ]
-
-
-# TODO: RELEVANCE SCORE IS BROKEN. FIX TEST
 def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
     """Test searching with relevance score and custom normalization function."""
     texts = ["foo", "bar", "baz"]

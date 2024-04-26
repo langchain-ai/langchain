@@ -40,7 +40,7 @@ def test_vertex_call(model_name: str) -> None:
         if model_name
         else VertexAI(temperature=0.0)
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -116,7 +116,7 @@ def test_model_garden(
         result_arg=result_arg,
         location=location,
     )
-    output = llm("What is the meaning of life?")
+    output = llm.invoke("What is the meaning of life?")
     assert isinstance(output, str)
     assert llm._llm_type == "vertexai_model_garden"
 

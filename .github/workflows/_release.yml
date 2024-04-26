@@ -112,7 +112,7 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         # Here we use:
-        # - The default regular PyPI index as the *primary* index, meaning 
+        # - The default regular PyPI index as the *primary* index, meaning
         #   that it takes priority (https://pypi.org/simple)
         # - The test PyPI index as an extra index, so that any dependencies that
         #   are not found on test PyPI can be resolved and installed anyway.
@@ -215,6 +215,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for airbyte
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
           VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+          UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
