@@ -3,6 +3,14 @@
 import unittest
 
 from langchain_experimental.llms.ollama_functions import OllamaFunctions
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+from langchain_core.messages import AIMessage
+
+
+class Joke(BaseModel):
+    setup: str = Field(description="The setup of the joke")
+    punchline: str = Field(description="The punchline to the joke")
 
 
 class TestOllamaFunctions(unittest.TestCase):
@@ -25,7 +33,7 @@ class TestOllamaFunctions(unittest.TestCase):
                             "location": {
                                 "type": "string",
                                 "description": "The city and state, "
-                                "e.g. San Francisco, CA",
+                                               "e.g. San Francisco, CA",
                             },
                             "unit": {
                                 "type": "string",
@@ -44,3 +52,20 @@ class TestOllamaFunctions(unittest.TestCase):
         function_call = res.additional_kwargs.get("function_call")
         assert function_call
         self.assertEqual(function_call.get("name"), "get_current_weather")
+
+    def test_ollama_structured_output(self) -> None:
+        model = OllamaFunctions(model="phi3")
+        structured_llm = model.with_structured_output(Joke, include_raw=False)
+
+        res = structured_llm.invoke("Tell me a joke about cats")
+        assert isinstance(res, Joke)
+
+    def test_ollama_structured_output_raw(self) -> None:
+        model = OllamaFunctions(model="phi3")
+        structured_llm = model.with_structured_output(Joke, include_raw=True)
+
+        res = structured_llm.invoke("Tell me a joke about cars")
+        assert "raw" in res
+        assert "parsed" in res
+        assert isinstance(res["raw"], AIMessage)
+        assert isinstance(res["parsed"], Joke)

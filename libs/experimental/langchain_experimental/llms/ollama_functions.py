@@ -1,15 +1,39 @@
 import json
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from operator import itemgetter
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Type,
+    TypedDict,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.json import JsonOutputParser
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
+from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableLambda
+from langchain_core.runnables.base import RunnableMap
+from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
+from pydantic.v1.main import ModelMetaclass
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
@@ -42,6 +66,41 @@ DEFAULT_RESPONSE_FUNCTION = {
 }
 
 
+_BM = TypeVar("_BM", bound=BaseModel)
+_DictOrPydanticClass = Union[Dict[str, Any], Type[_BM]]
+_DictOrPydantic = Union[Dict, _BM]
+
+
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and issubclass(type(obj), ModelMetaclass)
+
+def convert_to_ollama_tool(tool: Any) -> Dict:
+    """Convert a tool to an Ollama tool."""
+    schema = tool.construct().schema()
+    definition = {
+        'name': schema['title'],
+        'properties': schema['properties']
+    }
+    if 'required' in schema:
+        definition['required'] = schema['required']
+
+    return definition
+
+class _AllReturnType(TypedDict):
+    raw: BaseMessage
+    parsed: Optional[_DictOrPydantic]
+    parsing_error: Optional[BaseException]
+
+
+def parse_response(message: BaseMessage) -> str:
+    """Parse a response from Ollama into a dict."""
+    if isinstance(message, AIMessage):
+        kwargs = message.additional_kwargs
+        if "function_call" in kwargs:
+            if "arguments" in kwargs["function_call"]:
+                return kwargs["function_call"]["arguments"]
+    raise ValueError(f"Message is not an AIMessage: {message}")
+
 class OllamaFunctions(ChatOllama):
     """Function chat model that uses Ollama API."""
 
@@ -57,6 +116,164 @@ class OllamaFunctions(ChatOllama):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(functions=tools, **kwargs)
 
+    @overload
+    def with_structured_output(
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        include_raw: Literal[True] = True,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _AllReturnType]:
+        ...
+
+    @overload
+    def with_structured_output(
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        include_raw: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        ...
+
+    def with_structured_output(
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the OpenAI function-calling spec or be a valid JSON schema
+                with top level 'title' and 'description' keys specified.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns as output:
+
+                If include_raw is True then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_DictOrPydantic]
+                    parsing_error: Optional[BaseException]
+
+                If include_raw is False then just _DictOrPydantic is returned,
+                where _DictOrPydantic depends on the schema:
+
+                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
+                    class.
+
+                If schema is a dict then _DictOrPydantic is a dict.
+
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
+
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+                #     'parsing_error': None
+                # }
+
+        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+                from langchain_core.pydantic_v1 import BaseModel
+                from langchain_core.utils.function_calling import convert_to_openai_tool
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                dict_schema = convert_to_openai_tool(AnswerWithJustification)
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_structured_output(dict_schema)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+
+
+        """  # noqa: E501
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if schema is None:
+            raise ValueError(
+                "schema must be specified when method is 'function_calling'. "
+                "Received None."
+            )
+        llm = self.bind_tools(tools=[schema], format="json")
+        if is_pydantic_schema:
+            output_parser: OutputParserLike = PydanticOutputParser(
+                pydantic_object=schema
+            )
+        else:
+            key_name = convert_to_ollama_tool(schema)["function"]["name"]
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
+            )
+
+        parser = RunnableLambda(parse_response) | output_parser
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | parser
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -65,7 +282,6 @@ class OllamaFunctions(ChatOllama):
         **kwargs: Any,
     ) -> ChatResult:
         functions = kwargs.get("functions", [])
-
         if "functions" in kwargs:
             del kwargs["functions"]
         if "function_call" in kwargs:
@@ -80,6 +296,8 @@ function in "functions".'
             del kwargs["function_call"]
         elif not functions:
             functions.append(DEFAULT_RESPONSE_FUNCTION)
+        if _is_pydantic_class(functions[0]):
+            functions = [convert_to_ollama_tool(fn) for fn in functions]
         system_message_prompt_template = SystemMessagePromptTemplate.from_template(
             self.tool_system_prompt_template
         )
