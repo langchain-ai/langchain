@@ -961,7 +961,7 @@
   ],
   [
     "langchain.callbacks.streamlit._InternalStreamlitCallbackHandler",
-    "langchain_community.callbacks.streamlit.streamlit_callback_handler._InternalStreamlitCallbackHandler"
+    "langchain_community.callbacks.streamlit.streamlit_callback_handler.StreamlitCallbackHandler"
   ],
   [
     "langchain.callbacks.streamlit.mutable_expander.ChildType",
@@ -1953,7 +1953,7 @@
   ],
   [
     "langchain.document_loaders.PagedPDFSplitter",
-    "langchain_community.document_loaders.pdf.PagedPDFSplitter"
+    "langchain_community.document_loaders.PyPDFLoader"
   ],
   [
     "langchain.document_loaders.PlaywrightURLLoader",
@@ -2069,7 +2069,7 @@
   ],
   [
     "langchain.document_loaders.TelegramChatLoader",
-    "langchain_community.document_loaders.telegram.TelegramChatLoader"
+    "langchain_community.document_loaders.TelegramChatLoader"
   ],
   [
     "langchain.document_loaders.TensorflowDatasetLoader",
@@ -3377,7 +3377,7 @@
   ],
   [
     "langchain.embeddings.SentenceTransformerEmbeddings",
-    "langchain_community.embeddings.huggingface.SentenceTransformerEmbeddings"
+    "langchain_community.embeddings.SentenceTransformerEmbeddings"
   ],
   [
     "langchain.embeddings.GooglePalmEmbeddings",
@@ -3673,7 +3673,7 @@
   ],
   [
     "langchain.embeddings.sentence_transformer.SentenceTransformerEmbeddings",
-    "langchain_community.embeddings.huggingface.SentenceTransformerEmbeddings"
+    "langchain_community.embeddings.SentenceTransformerEmbeddings"
   ],
   [
     "langchain.embeddings.spacy_embeddings.SpacyEmbeddings",
@@ -4905,7 +4905,7 @@
   ],
   [
     "langchain.requests.RequestsWrapper",
-    "langchain_community.utilities.requests.RequestsWrapper"
+    "langchain_community.utilities.TextRequestsWrapper"
   ],
   [
     "langchain.requests.TextRequestsWrapper",
@@ -7113,7 +7113,7 @@
   ],
   [
     "langchain.utilities.RequestsWrapper",
-    "langchain_community.utilities.requests.RequestsWrapper"
+    "langchain_community.utilities.TextRequestsWrapper"
   ],
   [
     "langchain.utilities.SteamWebAPIWrapper",
@@ -7409,7 +7409,7 @@
   ],
   [
     "langchain.utilities.requests.RequestsWrapper",
-    "langchain_community.utilities.requests.RequestsWrapper"
+    "langchain_community.utilities.TextRequestsWrapper"
   ],
   [
     "langchain.utilities.scenexplain.SceneXplainAPIWrapper",

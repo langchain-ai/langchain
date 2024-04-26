@@ -4,7 +4,7 @@ import pkgutil
 
 import click
 
-from langchain_cli.namespaces.migrate.generate.langchain import (
+from langchain_cli.namespaces.migrate.generate.generic import (
     generate_simplified_migrations,
 )
 from langchain_cli.namespaces.migrate.generate.partner import (
@@ -20,14 +20,26 @@ def cli():
 
 @cli.command()
 @click.option(
+    "--pkg1",
+    default="langchain",
+)
+@click.option(
+    "--pkg2",
+    default="langchain_community",
+)
+@click.option(
     "--output",
-    default="langchain_migrations.json",
+    default=None,
     help="Output file for the migration script.",
 )
-def langchain(output: str) -> None:
+def generic(pkg1: str, pkg2: str, output: str) -> None:
     """Generate a migration script."""
     click.echo("Migration script generated.")
-    migrations = generate_simplified_migrations()
+    migrations = generate_simplified_migrations(pkg1, pkg2)
+
+    if output is None:
+        output = f"{pkg1}_to_{pkg2}.json"
+
     with open(output, "w") as f:
         f.write(json.dumps(migrations, indent=2, sort_keys=True))
 
