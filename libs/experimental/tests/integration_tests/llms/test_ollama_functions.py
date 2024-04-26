@@ -2,10 +2,13 @@
 
 import unittest
 
-from langchain_experimental.llms.ollama_functions import OllamaFunctions
+from langchain_core.messages import AIMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 
-from langchain_core.messages import AIMessage
+from langchain_experimental.llms.ollama_functions import (
+    OllamaFunctions,
+    convert_to_ollama_tool,
+)
 
 
 class Joke(BaseModel):
@@ -33,7 +36,7 @@ class TestOllamaFunctions(unittest.TestCase):
                             "location": {
                                 "type": "string",
                                 "description": "The city and state, "
-                                               "e.g. San Francisco, CA",
+                                "e.g. San Francisco, CA",
                             },
                             "unit": {
                                 "type": "string",
@@ -59,6 +62,15 @@ class TestOllamaFunctions(unittest.TestCase):
 
         res = structured_llm.invoke("Tell me a joke about cats")
         assert isinstance(res, Joke)
+
+    def test_ollama_structured_output_with_json(self) -> None:
+        model = OllamaFunctions(model="phi3")
+        joke_schema = convert_to_ollama_tool(Joke)
+        structured_llm = model.with_structured_output(joke_schema, include_raw=False)
+
+        res = structured_llm.invoke("Tell me a joke about cats")
+        assert "setup" in res
+        assert "punchline" in res
 
     def test_ollama_structured_output_raw(self) -> None:
         model = OllamaFunctions(model="phi3")
