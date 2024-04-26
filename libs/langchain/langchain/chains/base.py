@@ -181,6 +181,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         tags = config.get("tags")
         metadata = config.get("metadata")
         run_name = config.get("run_name") or self.get_name()
+        run_id = config.get("run_id")
         include_run_info = kwargs.get("include_run_info", False)
         return_only_outputs = kwargs.get("return_only_outputs", False)
 
@@ -198,6 +199,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         run_manager = await callback_manager.on_chain_start(
             dumpd(self),
             inputs,
+            run_id,
             name=run_name,
         )
         try:
