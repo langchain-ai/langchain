@@ -14,7 +14,7 @@ from langchain_core.utils import convert_to_secret_str
 from langchain_upstage import ChatUpstage
 
 
-class GroundednessCheckInput(BaseModel):
+class UpstageGroundednessCheckInput(BaseModel):
     """Input for the Groundedness Check tool."""
 
     context: Union[str, list[Document]] = Field(
@@ -25,7 +25,7 @@ class GroundednessCheckInput(BaseModel):
     )
 
 
-class GroundednessCheck(BaseTool):
+class UpstageGroundednessCheck(BaseTool):
     """Tool that checks the groundedness of a context and an assistant message.
 
     To use, you should have the environment variable `UPSTAGE_API_KEY`
@@ -34,15 +34,15 @@ class GroundednessCheck(BaseTool):
     Example:
         .. code-block:: python
 
-                from langchain_upstage import GroundednessCheck
+                from langchain_upstage import UpstageGroundednessCheck
 
-                tool = GroundednessCheck()
+                tool = UpstageGroundednessCheck()
     """
 
     name: str = "groundedness_check"
     description: str = (
         "A tool that checks the groundedness of an assistant response "
-        "to user-provided context. GroundednessCheck ensures that "
+        "to user-provided context. UpstageGroundednessCheck ensures that "
         "the assistant’s response is not only relevant but also "
         "precisely aligned with the user's initial context, "
         "promoting a more reliable and context-aware interaction. "
@@ -53,7 +53,7 @@ class GroundednessCheck(BaseTool):
     upstage_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     api_wrapper: ChatUpstage
 
-    args_schema: Type[BaseModel] = GroundednessCheckInput
+    args_schema: Type[BaseModel] = UpstageGroundednessCheckInput
 
     def __init__(self, **kwargs: Any) -> None:
         upstage_api_key = kwargs.get("upstage_api_key", None)

@@ -1,12 +1,12 @@
 import os
 
-from langchain_upstage import GroundednessCheck
+from langchain_upstage import UpstageGroundednessCheck
 
 os.environ["UPSTAGE_API_KEY"] = "foo"
 
 
 def test_initialization() -> None:
     """Test embedding model initialization."""
-    GroundednessCheck()
-    GroundednessCheck(upstage_api_key="key")
-    GroundednessCheck(api_key="key")
+    UpstageGroundednessCheck()
+    UpstageGroundednessCheck(upstage_api_key="key")
+    UpstageGroundednessCheck(api_key="key")
