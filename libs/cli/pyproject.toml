@@ -50,7 +50,7 @@ select = [
 ]
 
 [tool.poe.tasks]
-test = "poetry run pytest"
+test = "poetry run pytest tests"
 watch = "poetry run ptw"
 version = "poetry version --short"
 bump = ["_bump_1", "_bump_2"]
