@@ -1,4 +1,4 @@
-from langchain_cli.namespaces.migrate.generate.langchain import (
+from langchain_cli.namespaces.migrate.generate.generic import (
     generate_simplified_migrations,
 )
 
