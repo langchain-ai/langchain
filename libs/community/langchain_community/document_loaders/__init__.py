@@ -781,6 +781,7 @@ _module_lookup = {
     "IuguLoader": "langchain_community.document_loaders.iugu",
     "JSONLoader": "langchain_community.document_loaders.json_loader",
     "JoplinLoader": "langchain_community.document_loaders.joplin",
+    "KineticaLoader": "langchain_community.document_loaders.kinetica_loader",
     "LakeFSLoader": "langchain_community.document_loaders.lakefs",
     "LarkSuiteDocLoader": "langchain_community.document_loaders.larksuite",
     "LLMSherpaFileLoader": "langchain_community.document_loaders.llmsherpa",
