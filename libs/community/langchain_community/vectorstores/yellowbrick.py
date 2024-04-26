@@ -1,18 +1,20 @@
 from __future__ import annotations
 
+import atexit
 import csv
 import enum
 import json
 import logging
 import random
-import time
 import uuid
 import warnings
 from contextlib import contextmanager
 from io import StringIO
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
+    Generator,
     Iterable,
     List,
     Optional,
@@ -25,6 +27,10 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.docstore.document import Document
+
+if TYPE_CHECKING:
+    from psycopg2.extensions import connection as PgConnection
+    from psycopg2.extensions import cursor as PgCursor
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +69,9 @@ class Yellowbrick(VectorStore):
     def __init__(
         self,
         embedding: Embeddings,
-        connection_info: Union[str, Any],
+        connection_info: Union[PgConnection, str],
         table: str,
         *,
-        idle_threshold_seconds: Optional[int] = 300,
         seed: Optional[float] = 0.42,
         drop: Optional[bool] = False,
     ) -> None:
@@ -74,11 +79,9 @@ class Yellowbrick(VectorStore):
         Args:
             embedding: Embedding operator
             connection_info: Format 'postgres://username:password@host:port/database'
-            or connection object
+            or pg connection
             table: Table used to store / retrieve embeddings from
         """
-
-        import psycopg2
         from psycopg2 import extras
 
         extras.register_uuid()
@@ -91,133 +94,162 @@ class Yellowbrick(VectorStore):
         self.CONTENT_TABLE: str = "_content"
 
         if isinstance(connection_info, str):
-            self.connection_string = connection_info
-            self._connection = psycopg2.connect(self.connection_string)
-        elif isinstance(connection_info, psycopg2.extensions.connection):
-            self.connection = connection_info
+            self.connection_info = connection_info
+            self.connection = self.DatabaseConnection(self.connection_info)
+        elif isinstance(connection_info, PgConnection):
+            self.connection = self.DatabaseConnection(connection_info)
         else:
             raise ValueError(
                 """connection_info must be either a connection string 
                 or a psycopg2 connection object"""
             )
+        atexit.register(self.connection.close_connection)
 
         self._table = table
         self._embedding = embedding
         self._max_embedding_len = None
-        self.idle_threshold_seconds = idle_threshold_seconds
-        self.last_used_time = time.time()
         self._check_database_utf8()
 
-        if drop:
-            self.drop(self._table)
-            self.drop(self._table + self.CONTENT_TABLE)
-            self._drop_lsh_index_tables()
+        with self.connection.get_cursor() as cursor:
+            if drop:
+                self.drop(self._table, cursor)
+                self.drop(self._table + self.CONTENT_TABLE, cursor)
+                self._drop_lsh_index_tables(cursor)
 
-        self._create_table()
+            self._create_table(cursor)
 
         if seed is not None:
             random.seed(seed)
         self._seed = seed
 
-    def __del__(self) -> None:
-        if self._connection:
-            self._connection.close()
+    class DatabaseConnection:
+        _instance = None
+        connection: Optional[PgConnection] = None
+        connection_string: Optional[str] = None
 
-    @contextmanager
-    def _get_cursor(self) -> Any:
-        cursor = self._get_connection().cursor()
-        try:
-            yield cursor
-        finally:
-            cursor.close()
+        def __new__(
+            cls, connection_info: Union[str, PgConnection]
+        ) -> "Yellowbrick.DatabaseConnection":
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+                if isinstance(connection_info, str):
+                    cls._instance.connection_string = connection_info
+                elif isinstance(connection_info, PgConnection):
+                    cls._instance.connection = connection_info
+            return cls._instance
 
-    def _get_connection(self) -> Any:
-        import psycopg2
-        from psycopg2 import Error, OperationalError
+        def close_connection(self) -> None:
+            if self.connection and not self.connection.closed:
+                self.connection.close()
+                self.connection = None
 
-        current_time = time.time()
-        if self.idle_threshold_seconds is None:
-            self.idle_threshold_seconds = 300
-        if self._connection.closed:
-            if self.connection_string:
-                self._connection = psycopg2.connect(self.connection_string)
-                self.last_used_time = current_time
-            else:
-                self._connection = None
-        elif (current_time - self.last_used_time) > self.idle_threshold_seconds:
+        def get_connection(self) -> PgConnection:
+            import psycopg2
+
+            if self.connection_string is None:
+                raise ValueError(
+                    "No connection string provided for database connection."
+                )
+
+            if not self.connection or self.connection.closed:
+                self.connection = psycopg2.connect(self.connection_string)
+                self.connection.autocommit = False
+
+            return self.connection
+
+        @contextmanager
+        def get_managed_connection(self) -> Generator[PgConnection, None, None]:
+            from psycopg2 import DatabaseError
+
+            conn = self.get_connection()
             try:
-                with self._get_cursor() as cursor:
-                    cursor.execute("SELECT 1")
-            except (OperationalError, Error):
-                if self.connection_string:
-                    self._connection = psycopg2.connect(self.connection_string)
-                else:
-                    self._connection = None
-            self.last_used_time = current_time
+                yield conn
+            except DatabaseError as e:
+                conn.rollback()
+                logger.error(
+                    "Database error occurred, rolling back transaction.", exc_info=True
+                )
+                raise RuntimeError("Database transaction failed.") from e
+            else:
+                conn.commit()
 
-        return self._connection
+        @contextmanager
+        def get_cursor(self) -> Generator[PgCursor, None, None]:
+            with self.get_managed_connection() as conn:
+                cursor = conn.cursor()
+                try:
+                    yield cursor
+                finally:
+                    cursor.close()
 
-    def _create_table(self) -> None:
+    def _create_table(self, cursor: PgCursor) -> None:
         """
         Helper function: create table if not exists
         """
         from psycopg2 import sql
 
-        with self._get_cursor() as cursor:
-            cursor.execute(
-                sql.SQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS {t} (
-                    doc_id UUID NOT NULL,
-                    text VARCHAR(60000) NOT NULL,
-                    metadata VARCHAR(1024) NOT NULL,
-                    CONSTRAINT {c} PRIMARY KEY (doc_id))
-                    DISTRIBUTE ON (doc_id) SORT ON (doc_id)
+        cursor.execute(
+            sql.SQL(
                 """
-                ).format(
-                    t=sql.Identifier(self._table + self.CONTENT_TABLE),
-                    c=sql.Identifier(self._table + self.CONTENT_TABLE + "_pk_doc_id"),
-                )
+                CREATE TABLE IF NOT EXISTS {t} (
+                doc_id UUID NOT NULL,
+                text VARCHAR(60000) NOT NULL,
+                metadata VARCHAR(1024) NOT NULL,
+                CONSTRAINT {c} PRIMARY KEY (doc_id))
+                DISTRIBUTE ON (doc_id) SORT ON (doc_id)
+            """
+            ).format(
+                t=sql.Identifier(self._table + self.CONTENT_TABLE),
+                c=sql.Identifier(self._table + self.CONTENT_TABLE + "_pk_doc_id"),
             )
-            cursor.execute(
-                sql.SQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS {t1} (
-                    doc_id UUID NOT NULL,
-                    embedding_id SMALLINT NOT NULL,
-                    embedding FLOAT NOT NULL,
-                    CONSTRAINT {c1} PRIMARY KEY (doc_id, embedding_id),
-                    CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
-                    DISTRIBUTE ON (doc_id) SORT ON (doc_id)
+        )
+        cursor.execute(
+            sql.SQL(
                 """
-                ).format(
-                    t1=sql.Identifier(self._table),
-                    t2=sql.Identifier(self._table + self.CONTENT_TABLE),
-                    c1=sql.Identifier(
-                        self._table + self.CONTENT_TABLE + "_pk_doc_id_embedding_id"
-                    ),
-                    c2=sql.Identifier(self._table + self.CONTENT_TABLE + "_fk_doc_id"),
-                )
+                CREATE TABLE IF NOT EXISTS {t1} (
+                doc_id UUID NOT NULL,
+                embedding_id SMALLINT NOT NULL,
+                embedding FLOAT NOT NULL,
+                CONSTRAINT {c1} PRIMARY KEY (doc_id, embedding_id),
+                CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
+                DISTRIBUTE ON (doc_id) SORT ON (doc_id)
+            """
+            ).format(
+                t1=sql.Identifier(self._table),
+                t2=sql.Identifier(self._table + self.CONTENT_TABLE),
+                c1=sql.Identifier(
+                    self._table + self.CONTENT_TABLE + "_pk_doc_id_embedding_id"
+                ),
+                c2=sql.Identifier(self._table + self.CONTENT_TABLE + "_fk_doc_id"),
             )
-            self._get_connection().commit()
+        )
 
-    def drop(self, table: str) -> None:
+    def drop(self, table: str, cursor: Optional[PgCursor] = None) -> None:
         """
-        Helper function: Drop data
+        Helper function: Drop data. If a cursor is provided, use it;
+        otherwise, obtain a new cursor for the operation.
+        """
+        if cursor is None:
+            with self.connection.get_cursor() as cursor:
+                self._drop_table(table, cursor)
+        else:
+            self._drop_table(table, cursor)
+
+    def _drop_table(self, table: str, cursor: PgCursor) -> None:
+        """
+        Executes the drop table command using the given cursor.
         """
         from psycopg2 import sql
 
-        with self._get_cursor() as cursor:
-            cursor.execute(
-                sql.SQL("DROP TABLE IF EXISTS {} CASCADE").format(sql.Identifier(table))
-            )
-            self._get_connection().commit()
+        cursor.execute(
+            sql.SQL("DROP TABLE IF EXISTS {} CASCADE").format(sql.Identifier(table))
+        )
 
     def _check_database_utf8(self) -> bool:
         """
         Helper function: Test the database is UTF-8 encoded
         """
-        with self._get_cursor() as cursor:
+        with self.connection.get_cursor() as cursor:
             query = """
                 SELECT pg_encoding_to_char(encoding)
                 FROM pg_database
@@ -249,7 +281,7 @@ class Yellowbrick(VectorStore):
 
         index_params = kwargs.get("index_params") or Yellowbrick.IndexParams()
 
-        with self._get_cursor() as cursor:
+        with self.connection.get_cursor() as cursor:
             content_io = StringIO()
             embeddings_io = StringIO()
             content_writer = csv.writer(
@@ -283,8 +315,6 @@ class Yellowbrick(VectorStore):
             if current_batch_size > 0:
                 self._copy_to_db(cursor, content_io, embeddings_io, self._table)
 
-            self._get_connection().commit()
-
         if index_params.index_type == Yellowbrick.IndexType.LSH:
             self.update_index(index_params, uuid.UUID(doc_uuid))
 
@@ -292,7 +322,7 @@ class Yellowbrick(VectorStore):
 
     def _copy_to_db(
         self,
-        cursor: Any,
+        cursor: PgCursor,
         content_io: StringIO,
         embeddings_io: StringIO,
         table_name: str,
@@ -314,47 +344,38 @@ class Yellowbrick(VectorStore):
         from psycopg2 import sql
 
         try:
-            with self._get_connection() as conn:
-                with self._get_cursor() as cursor:
-                    # Rename old table
-                    alter_table_query = sql.SQL(
-                        "ALTER TABLE {t1} RENAME TO {t2}"
-                    ).format(
-                        t1=sql.Identifier(self._table),
-                        t2=sql.Identifier(self._table + "_v1"),
-                    )
-                    cursor.execute(alter_table_query)
+            with self.connection.get_cursor() as cursor:
+                alter_table_query = sql.SQL("ALTER TABLE {t1} RENAME TO {t2}").format(
+                    t1=sql.Identifier(self._table),
+                    t2=sql.Identifier(self._table + "_v1"),
+                )
+                cursor.execute(alter_table_query)
 
-                    self._create_table()
+                self._create_table(cursor)
 
-                    # Migrate data to new table
-                    insert_query = sql.SQL(
-                        """
-                        INSERT INTO {t1} (doc_id, embedding_id, embedding) 
-                        SELECT id, embedding_id, embedding FROM {t2}
+                insert_query = sql.SQL(
                     """
-                    ).format(
-                        t1=sql.Identifier(self._table),
-                        t2=sql.Identifier(self._table + "_v1"),
-                    )
-                    cursor.execute(insert_query)
+                    INSERT INTO {t1} (doc_id, embedding_id, embedding) 
+                    SELECT id, embedding_id, embedding FROM {t2}
+                """
+                ).format(
+                    t1=sql.Identifier(self._table),
+                    t2=sql.Identifier(self._table + "_v1"),
+                )
+                cursor.execute(insert_query)
 
-                    # Migrate content to a content-specific table if necessary
-                    insert_content_query = sql.SQL(
-                        """
-                        INSERT INTO {t1} (doc_id, text, metadata) 
-                        SELECT DISTINCT id, text, metadata FROM {t2}
+                insert_content_query = sql.SQL(
                     """
-                    ).format(
-                        t1=sql.Identifier(self._table + self.CONTENT_TABLE),
-                        t2=sql.Identifier(self._table + "_v1"),
-                    )
-                    cursor.execute(insert_content_query)
-
-                    conn.commit()
+                    INSERT INTO {t1} (doc_id, text, metadata) 
+                    SELECT DISTINCT id, text, metadata FROM {t2}
+                """
+                ).format(
+                    t1=sql.Identifier(self._table + self.CONTENT_TABLE),
+                    t2=sql.Identifier(self._table + "_v1"),
+                )
+                cursor.execute(insert_content_query)
         except Exception as e:
-            conn.rollback()
-            raise Exception("Failed to migrate schema: {}".format(str(e)))
+            raise RuntimeError(f"Failed to migrate schema: {e}") from e
 
     @classmethod
     def from_texts(
@@ -362,7 +383,7 @@ class Yellowbrick(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        connection_info: Union[str, Any] = None,
+        connection_info: Union[PgConnection, str] = None,
         table: str = "langchain",
         drop: Optional[bool] = False,
         **kwargs: Any,
@@ -371,7 +392,7 @@ class Yellowbrick(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            connection_info: URI to Yellowbrick instance or a connection object
+            connection_opt: URI to Yellowbrick instance or a pg connection
             embedding: Embedding function
             table: table to store embeddings
             kwargs: vectorstore specific parameters
@@ -414,7 +435,7 @@ class Yellowbrick(VectorStore):
 
         index_params = kwargs.get("index_params") or Yellowbrick.IndexParams()
 
-        with self._get_cursor() as cursor:
+        with self.connection.get_cursor() as cursor:
             tmp_embeddings_table = "tmp_" + self._table
             tmp_doc_id = self._generate_vector_uuid(embedding)
             create_table_query = sql.SQL(
@@ -427,24 +448,25 @@ class Yellowbrick(VectorStore):
             """
             ).format(sql.Identifier(tmp_embeddings_table))
             cursor.execute(create_table_query)
-
             data_input = [
                 (str(tmp_doc_id), embedding_id, embedding_value)
                 for embedding_id, embedding_value in enumerate(embedding)
             ]
-
             insert_query = sql.SQL(
                 "INSERT INTO {table} (doc_id, embedding_id, embedding) VALUES %s"
             ).format(table=sql.Identifier(tmp_embeddings_table))
             execute_values(cursor, insert_query, data_input)
-            self._get_connection().commit()
+            cursor.connection.commit()
 
             if index_params.index_type == Yellowbrick.IndexType.LSH:
                 input_hash_table = self._table + "_tmp_hash"
                 self._generate_lsh_hashes(
+                    cursor=cursor,
                     embedding_table=tmp_embeddings_table,
                     target_hash_table=input_hash_table,
                 )
+                cursor.connection.commit()
+
                 sql_query = sql.SQL(
                     """
                     WITH index_docs AS (
@@ -494,7 +516,9 @@ class Yellowbrick(VectorStore):
                     sql_query,
                     (k,),
                 )
-                self.drop(input_hash_table)
+                results = cursor.fetchall()
+                self.drop(input_hash_table, cursor)
+                self.drop(tmp_embeddings_table, cursor)
             else:
                 sql_query = sql.SQL(
                     """
@@ -527,16 +551,14 @@ class Yellowbrick(VectorStore):
                     v3=sql.Identifier(self._table + self.CONTENT_TABLE),
                 )
                 cursor.execute(sql_query, (k,))
+                results = cursor.fetchall()
+                self.drop(tmp_embeddings_table, cursor)
 
-            self.drop(tmp_embeddings_table)
-
-            results = cursor.fetchall()
-
-            documents: List[Tuple[Document, float]] = []
-            for result in results:
-                metadata = json.loads(result[1]) or {}
-                doc = Document(page_content=result[0], metadata=metadata)
-                documents.append((doc, result[2]))
+        documents: List[Tuple[Document, float]] = []
+        for result in results:
+            metadata = json.loads(result[1]) or {}
+            doc = Document(page_content=result[0], metadata=metadata)
+            documents.append((doc, result[2]))
 
         return documents
 
@@ -604,6 +626,7 @@ class Yellowbrick(VectorStore):
 
     def _generate_lsh_hashes(
         self,
+        cursor: PgCursor,
         embedding_table: str,
         target_hash_table: Optional[str] = None,
         doc_id: Optional[uuid.UUID] = None,
@@ -659,131 +682,125 @@ class Yellowbrick(VectorStore):
             condition=condition,
             group_by=group_by,
         )
+        cursor.execute(input_query)
 
-        with self._get_cursor() as cursor:
-            cursor.execute(input_query)
-            self._get_connection().commit()
-
-    def _populate_hyperplanes(self, num_hyperplanes: int) -> None:
+    def _populate_hyperplanes(self, cursor: PgCursor, num_hyperplanes: int) -> None:
         """Generate random hyperplanes and store in Yellowbrick"""
         from psycopg2 import sql
 
-        with self._get_cursor() as cursor:
-            cursor.execute(
-                sql.SQL("SELECT COUNT(*) FROM {};").format(
-                    sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE)
-                )
+        cursor.execute(
+            sql.SQL("SELECT COUNT(*) FROM {};").format(
+                sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE)
             )
-            if cursor.fetchone()[0] > 0:
-                return
+        )
+        if cursor.fetchone()[0] > 0:
+            return
 
-            cursor.execute(
-                sql.SQL("SELECT MAX(embedding_id) FROM {};").format(
-                    sql.Identifier(self._table)
-                )
+        cursor.execute(
+            sql.SQL("SELECT MAX(embedding_id) FROM {};").format(
+                sql.Identifier(self._table)
             )
-            num_dimensions = cursor.fetchone()[0]
-            num_dimensions += 1
+        )
+        num_dimensions = cursor.fetchone()[0]
+        num_dimensions += 1
 
-            insert_query = sql.SQL(
-                """
-                WITH parameters AS (
-                    SELECT {num_hyperplanes} AS num_hyperplanes,
-                        {dims_per_hyperplane} AS dims_per_hyperplane
-                ),
-                seed AS (
-                    SELECT setseed({seed_value})
-                )
-                INSERT INTO {hyperplanes_table} (id, hyperplane_id, hyperplane)
-                    SELECT id, hyperplane_id, (random() * 2 - 1) AS hyperplane
-                    FROM
-                    (SELECT range-1 id FROM sys.rowgenerator
-                        WHERE range BETWEEN 1 AND
-                        (SELECT num_hyperplanes FROM parameters) AND
-                        worker_lid = 0 AND thread_id = 0) a,
-                    (SELECT range-1 hyperplane_id FROM sys.rowgenerator
-                        WHERE range BETWEEN 1 AND
-                        (SELECT dims_per_hyperplane FROM parameters) AND
-                        worker_lid = 0 AND thread_id = 0) b
+        insert_query = sql.SQL(
             """
-            ).format(
-                num_hyperplanes=sql.Literal(num_hyperplanes),
-                dims_per_hyperplane=sql.Literal(num_dimensions),
-                hyperplanes_table=sql.Identifier(
-                    self._table + self.LSH_HYPERPLANE_TABLE
-                ),
-                seed_value=sql.Literal(self._seed),
+            WITH parameters AS (
+                SELECT {num_hyperplanes} AS num_hyperplanes,
+                    {dims_per_hyperplane} AS dims_per_hyperplane
+            ),
+            seed AS (
+                SELECT setseed({seed_value})
             )
-            cursor.execute(insert_query)
-            self._get_connection().commit()
+            INSERT INTO {hyperplanes_table} (id, hyperplane_id, hyperplane)
+                SELECT id, hyperplane_id, (random() * 2 - 1) AS hyperplane
+                FROM
+                (SELECT range-1 id FROM sys.rowgenerator
+                    WHERE range BETWEEN 1 AND
+                    (SELECT num_hyperplanes FROM parameters) AND
+                    worker_lid = 0 AND thread_id = 0) a,
+                (SELECT range-1 hyperplane_id FROM sys.rowgenerator
+                    WHERE range BETWEEN 1 AND
+                    (SELECT dims_per_hyperplane FROM parameters) AND
+                    worker_lid = 0 AND thread_id = 0) b
+        """
+        ).format(
+            num_hyperplanes=sql.Literal(num_hyperplanes),
+            dims_per_hyperplane=sql.Literal(num_dimensions),
+            hyperplanes_table=sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE),
+            seed_value=sql.Literal(self._seed),
+        )
+        cursor.execute(insert_query)
 
-    def _create_lsh_index_tables(self) -> None:
+    def _create_lsh_index_tables(self, cursor: PgCursor) -> None:
         """Create LSH index and hyperplane tables"""
         from psycopg2 import sql
 
-        with self._get_cursor() as cursor:
-            cursor.execute(
-                sql.SQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS {t1} (
-                    doc_id UUID NOT NULL,
-                    hash_index SMALLINT NOT NULL,
-                    hash SMALLINT NOT NULL,
-                    CONSTRAINT {c1} PRIMARY KEY (doc_id, hash_index),
-                    CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
-                    DISTRIBUTE ON (doc_id) SORT ON (doc_id)
+        cursor.execute(
+            sql.SQL(
                 """
-                ).format(
-                    t1=sql.Identifier(self._table + self.LSH_INDEX_TABLE),
-                    t2=sql.Identifier(self._table + self.CONTENT_TABLE),
-                    c1=sql.Identifier(
-                        self._table + self.LSH_INDEX_TABLE + "_pk_doc_id"
-                    ),
-                    c2=sql.Identifier(
-                        self._table + self.LSH_INDEX_TABLE + "_fk_doc_id"
-                    ),
-                )
+                CREATE TABLE IF NOT EXISTS {t1} (
+                doc_id UUID NOT NULL,
+                hash_index SMALLINT NOT NULL,
+                hash SMALLINT NOT NULL,
+                CONSTRAINT {c1} PRIMARY KEY (doc_id, hash_index),
+                CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
+                DISTRIBUTE ON (doc_id) SORT ON (doc_id)
+            """
+            ).format(
+                t1=sql.Identifier(self._table + self.LSH_INDEX_TABLE),
+                t2=sql.Identifier(self._table + self.CONTENT_TABLE),
+                c1=sql.Identifier(self._table + self.LSH_INDEX_TABLE + "_pk_doc_id"),
+                c2=sql.Identifier(self._table + self.LSH_INDEX_TABLE + "_fk_doc_id"),
             )
-            cursor.execute(
-                sql.SQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS {t} (
-                    id SMALLINT NOT NULL,
-                    hyperplane_id SMALLINT NOT NULL,
-                    hyperplane FLOAT NOT NULL,
-                    CONSTRAINT {c} PRIMARY KEY (id, hyperplane_id))
-                    DISTRIBUTE REPLICATE SORT ON (id)
+        )
+        cursor.execute(
+            sql.SQL(
                 """
-                ).format(
-                    t=sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE),
-                    c=sql.Identifier(
-                        self._table + self.LSH_HYPERPLANE_TABLE + "_pk_id_hp_id"
-                    ),
-                )
+                CREATE TABLE IF NOT EXISTS {t} (
+                id SMALLINT NOT NULL,
+                hyperplane_id SMALLINT NOT NULL,
+                hyperplane FLOAT NOT NULL,
+                CONSTRAINT {c} PRIMARY KEY (id, hyperplane_id))
+                DISTRIBUTE REPLICATE SORT ON (id)
+            """
+            ).format(
+                t=sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE),
+                c=sql.Identifier(
+                    self._table + self.LSH_HYPERPLANE_TABLE + "_pk_id_hp_id"
+                ),
             )
-            self._get_connection().commit()
+        )
 
-    def _drop_lsh_index_tables(self) -> None:
+    def _drop_lsh_index_tables(self, cursor: PgCursor) -> None:
         """Drop LSH index tables"""
-        self.drop(self._table + self.LSH_INDEX_TABLE)
-        self.drop(self._table + self.LSH_HYPERPLANE_TABLE)
+        self.drop(self._table + self.LSH_INDEX_TABLE, cursor)
+        self.drop(self._table + self.LSH_HYPERPLANE_TABLE, cursor)
 
     def create_index(self, index_params: Yellowbrick.IndexParams) -> None:
         """Create index from existing vectors"""
         if index_params.index_type == Yellowbrick.IndexType.LSH:
-            self._drop_lsh_index_tables()
-            self._create_lsh_index_tables()
-            self._populate_hyperplanes(index_params.get_param("num_hyperplanes", 128))
-            self._generate_lsh_hashes(embedding_table=self._table)
+            with self.connection.get_cursor() as cursor:
+                self._drop_lsh_index_tables(cursor)
+                self._create_lsh_index_tables(cursor)
+                self._populate_hyperplanes(
+                    cursor, index_params.get_param("num_hyperplanes", 128)
+                )
+                self._generate_lsh_hashes(cursor=cursor, embedding_table=self._table)
 
     def drop_index(self, index_params: Yellowbrick.IndexParams) -> None:
         """Drop an index"""
         if index_params.index_type == Yellowbrick.IndexType.LSH:
-            self._drop_lsh_index_tables()
+            with self.connection.get_cursor() as cursor:
+                self._drop_lsh_index_tables(cursor)
 
     def update_index(
         self, index_params: Yellowbrick.IndexParams, doc_id: uuid.UUID
     ) -> None:
         """Update an index with a new or modified embedding in the embeddings table"""
         if index_params.index_type == Yellowbrick.IndexType.LSH:
-            self._generate_lsh_hashes(embedding_table=self._table, doc_id=doc_id)
+            with self.connection.get_cursor() as cursor:
+                self._generate_lsh_hashes(
+                    cursor=cursor, embedding_table=self._table, doc_id=doc_id
+                )
