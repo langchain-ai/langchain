@@ -1,0 +1,45 @@
+# Nomic
+
+>[Nomic AI](https://www.nomic.ai/) builds tools to structure, understand, 
+> and collaborate with unstructured data (text, images, embeddings, video and audio).
+ 
+## Installation and Setup
+
+Install `langchain-nomic` python package:
+
+```bash
+pip install %pip install -qU langchain-nomic
+```
+
+Set the environment variable `NOMIC_API_KEY`.
+
+## LLMs
+
+### GPT4All
+
+See a [usage example](/docs/integrations/llms/gpt4all).
+
+```python
+from langchain_community.llms import GPT4All
+```
+
+## Embedding models
+
+### Nomic Embeddings
+
+See a [usage example](/docs/integrations/text_embedding/nomic).
+
+```python
+from langchain_nomic.embeddings import NomicEmbeddings
+```
+
+## Vector stores
+
+### Atlas
+
+See a [usage example](/docs/integrations/vectorstores/atlas).
+
+```python
+from langchain_community.vectorstores import AtlasDB
+```
+

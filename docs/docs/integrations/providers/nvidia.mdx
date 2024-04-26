@@ -1,8 +1,15 @@
 # NVIDIA
 
->NVIDIA provides an integration package for LangChain: `langchain-nvidia-ai-endpoints`.
+>[Nvidia Corporation (Wikipedia)](https://en.wikipedia.org/wiki/Nvidia) is an American multinational 
+> corporation and technology company. It is a software and fabless company which 
+> designs and supplies graphics processing units (GPUs), application programming interfaces (APIs) 
+> for data science and high-performance computing as well as system on 
+> a chip units (SoCs) for the mobile computing and automotive market. 
+> `Nvidia` is also a dominant supplier of artificial intelligence (AI) hardware and software.
 
 ## NVIDIA AI Foundation Endpoints
+
+>`NVIDIA` provides an integration package for `LangChain`: `langchain-nvidia-ai-endpoints`.
 
 > [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to NVIDIA hosted API endpoints for 
 > NVIDIA AI Foundation Models like `Mixtral 8x7B`, `Llama 2`, `Stable Diffusion`, etc. These models, 
@@ -38,16 +45,19 @@ export NVIDIA_API_KEY=nvapi-XXXXXXXXXXXXXXXXXXXXXXXXXX
 pip install -U langchain-nvidia-ai-endpoints
 ```
 
+### LLMs
+
+
+```python
+from langchain_nvidia_ai_endpoints.llm import NVIDIA
+```
+
 ### Chat models
 
 See a [usage example](/docs/integrations/chat/nvidia_ai_endpoints).
 
 ```python
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
-
-llm = ChatNVIDIA(model="mixtral_8x7b")
-result = llm.invoke("Write a ballad about LangChain.")
-print(result.content)
 ```
 
 ### Embedding models
@@ -56,4 +66,65 @@ See a [usage example](/docs/integrations/text_embedding/nvidia_ai_endpoints).
 
 ```python
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
+```
+
+### Tools
+
+```python
+from langchain_nvidia_ai_endpoints.tools import ServerToolsMixin
+```
+
+### Callbacks
+
+```python
+from langchain_nvidia_ai_endpoints.callbacks import UsageCallbackHandler
+```
+
+### Image Generation models
+
+```python
+from langchain_nvidia_ai_endpoints.image_gen import ImageGenNVIDIA
+```
+
+### Reranker
+
+```python
+from langchain_nvidia_ai_endpoints.reranking import NVIDIARerank
+from langchain_nvidia_ai_endpoints.reranking import Ranking
+```
+
+## NVIDIA Triton™ Inference Server
+
+>`NVIDIA` provides another integration package for `LangChain`: `langchain-nvidia-trt`.
+
+>[NVIDIA Triton™ Inference Server](https://developer.nvidia.com/triton-inference-server), 
+> part of the `NVIDIA AI` platform and available with `NVIDIA AI Enterprise`, is open-source 
+> software that standardizes AI model deployment and execution across every workload.
+
+### Setting up
+
+- See [installation instructions](https://developer.nvidia.com/triton-inference-server).
+- Install packages:
+
+```bash
+pip install -U tritonclient langchain-nvidia-trt
+```
+
+### LLMs
+
+
+```python
+from langchain_nvidia_trt.llms import TritonTensorRTLLM
+```
+
+## Third-party integrations
+
+### Embedding models
+
+#### NVIDIA NeMo embeddings
+
+See a [usage example](/docs/integrations/text_embedding/nemo).
+
+```python
+from langchain_community.embeddings import NeMoEmbeddings
 ```

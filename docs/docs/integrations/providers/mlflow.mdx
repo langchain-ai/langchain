@@ -1,119 +1,59 @@
-# MLflow Deployments for LLMs
+# MLflow
 
->[The MLflow Deployments for LLMs](https://www.mlflow.org/docs/latest/llms/deployments/index.html) is a powerful tool designed to streamline the usage and management of various large
-> language model (LLM) providers, such as OpenAI and Anthropic, within an organization. It offers a high-level interface
-> that simplifies the interaction with these services by providing a unified endpoint to handle specific LLM related requests.
+>[MLflow](https://www.mlflow.org/docs/latest/what-is-mlflow) is a versatile, expandable, 
+> open-source platform for managing workflows and artifacts across the machine learning lifecycle. 
+> It has built-in integrations with many popular ML libraries, but can be used with any 
+> library, algorithm, or deployment tool. It is designed to be extensible, so you can write 
+> plugins to support new workflows, libraries, and tools.
 
 ## Installation and Setup
 
-Install `mlflow` with MLflow Deployments dependencies:
 
-```sh
-pip install 'mlflow[genai]'
+```bash
+pip install mlflow
 ```
 
-Set the OpenAI API key as an environment variable:
+## Provider materials
 
-```sh
-export OPENAI_API_KEY=...
-```
+`MLflow` provides [several examples](https://github.com/mlflow/mlflow/tree/master/examples/langchain) for the `LangChain` integration:
 
-Create a configuration file:
+- [simple_chain](https://github.com/mlflow/mlflow/blob/master/examples/langchain/simple_chain.py)
+- [simple_agent](https://github.com/mlflow/mlflow/blob/master/examples/langchain/simple_agent.py)
+- [retriever_chain](https://github.com/mlflow/mlflow/blob/master/examples/langchain/retriever_chain.py)
+- [retrieval_qa_chain](https://github.com/mlflow/mlflow/blob/master/examples/langchain/retrieval_qa_chain.py)
 
-```yaml
-endpoints:
-  - name: completions
-    endpoint_type: llm/v1/completions
-    model:
-      provider: openai
-      name: text-davinci-003
-      config:
-        openai_api_key: $OPENAI_API_KEY
 
-  - name: embeddings
-    endpoint_type: llm/v1/embeddings
-    model:
-      provider: openai
-      name: text-embedding-ada-002
-      config:
-        openai_api_key: $OPENAI_API_KEY
-```
+## LLMs
 
-Start the deployments server:
+### MLflow Deployments for LLMs
 
-```sh
-mlflow deployments start-server --config-path /path/to/config.yaml
-```
-
-## Example provided by `MLflow`
-
->The `mlflow.langchain` module provides an API for logging and loading `LangChain` models.
-> This module exports multivariate LangChain models in the langchain flavor and univariate LangChain
-> models in the pyfunc flavor.
-
-See the [API documentation and examples](https://www.mlflow.org/docs/latest/llms/langchain/index.html) for more information.
-
-## Completions Example
+See a [usage example](/docs/integrations/llms/mlflow).
 
 ```python
-import mlflow
-from langchain.chains import LLMChain, PromptTemplate
 from langchain_community.llms import Mlflow
-
-llm = Mlflow(
-    target_uri="http://127.0.0.1:5000",
-    endpoint="completions",
-)
-
-llm_chain = LLMChain(
-    llm=Mlflow,
-    prompt=PromptTemplate(
-        input_variables=["adjective"],
-        template="Tell me a {adjective} joke",
-    ),
-)
-result = llm_chain.run(adjective="funny")
-print(result)
-
-with mlflow.start_run():
-    model_info = mlflow.langchain.log_model(chain, "model")
-
-model = mlflow.pyfunc.load_model(model_info.model_uri)
-print(model.predict([{"adjective": "funny"}]))
 ```
 
-## Embeddings Example
+### MLflow AI Gateway
+
+:::warning
+
+`MLflow AI Gateway` has been deprecated. 
+Please use [MLflow Deployments for LLMs](/docs/integrations/llms/mlflow) instead.
+
+:::
+
+See a [usage example](/docs/integrations/llms/mlflow_ai_gateway).
 
 ```python
-from langchain_community.embeddings import MlflowEmbeddings
-
-embeddings = MlflowEmbeddings(
-    target_uri="http://127.0.0.1:5000",
-    endpoint="embeddings",
-)
-
-print(embeddings.embed_query("hello"))
-print(embeddings.embed_documents(["hello"]))
+from langchain_community.llms import MlflowAIGateway
 ```
 
-## Chat Example
+## Callbacks
+
+### Mlflow Callback Handler
+
+See a [usage example](/docs/integrations/callbacks/mlflow_tracking).
 
 ```python
-from langchain_community.chat_models import ChatMlflow
-from langchain_core.messages import HumanMessage, SystemMessage
-
-chat = ChatMlflow(
-    target_uri="http://127.0.0.1:5000",
-    endpoint="chat",
-)
-
-messages = [
-    SystemMessage(
-        content="You are a helpful assistant that translates English to French."
-    ),
-    HumanMessage(
-        content="Translate this sentence from English to French: I love programming."
-    ),
-]
-print(chat(messages))
+from langchain.callbacks import MlflowCallbackHandler
 ```
