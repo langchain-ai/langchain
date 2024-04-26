@@ -1,5 +1,5 @@
 import os
-from typing import Any, Literal, Optional, Type, Union
+from typing import Any, List, Literal, Optional, Type, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
@@ -18,7 +18,7 @@ from langchain_upstage import ChatUpstage
 class UpstageGroundednessCheckInput(BaseModel):
     """Input for the Groundedness Check tool."""
 
-    context: Union[str, list[Document]] = Field(
+    context: Union[str, List[Document]] = Field(
         description="context in which the answer should be verified"
     )
     answer: str = Field(
@@ -77,17 +77,17 @@ class UpstageGroundednessCheck(BaseTool):
         )
         super().__init__(upstage_api_key=upstage_api_key, api_wrapper=api_wrapper)
 
-    def formatDocumentsAsString(self, docs: list[Document]) -> str:
+    def formatDocumentsAsString(self, docs: List[Document]) -> str:
         return "\n".join([doc.page_content for doc in docs])
 
     def _run(
         self,
-        context: Union[str, list[Document]],
+        context: Union[str, List[Document]],
         answer: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
         """Use the tool."""
-        if isinstance(context, list):
+        if isinstance(context, List):
             context = self.formatDocumentsAsString(context)
         response = self.api_wrapper.invoke(
             [HumanMessage(context), AIMessage(answer)], stream=False
@@ -96,11 +96,11 @@ class UpstageGroundednessCheck(BaseTool):
 
     async def _arun(
         self,
-        context: Union[str, list[Document]],
+        context: Union[str, List[Document]],
         answer: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
-        if isinstance(context, list):
+        if isinstance(context, List):
             context = self.formatDocumentsAsString(context)
         response = await self.api_wrapper.ainvoke(
             [HumanMessage(context), AIMessage(answer)], stream=False
