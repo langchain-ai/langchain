@@ -157,6 +157,9 @@ if TYPE_CHECKING:
     from langchain_community.tools.metaphor_search import (
         MetaphorSearchResults,  # noqa: F401
     )
+    from langchain_community.tools.mojeek_search.tool import (
+        MojeekSearch,  # noqa: F401
+    )
     from langchain_community.tools.nasa.tool import (
         NasaAction,  # noqa: F401
     )
@@ -385,6 +388,7 @@ __all__ = [
     "ListSparkSQLTool",
     "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
+    "MojeekSearch",
     "MoveFileTool",
     "NasaAction",
     "NavigateBackTool",
@@ -528,6 +532,7 @@ _module_lookup = {
     "ListSparkSQLTool": "langchain_community.tools.spark_sql.tool",
     "MerriamWebsterQueryRun": "langchain_community.tools.merriam_webster.tool",
     "MetaphorSearchResults": "langchain_community.tools.metaphor_search",
+    "MojeekSearch": "langchain_community.tools.mojeek_search.tool",
     "MoveFileTool": "langchain_community.tools.file_management",
     "NasaAction": "langchain_community.tools.nasa.tool",
     "NavigateBackTool": "langchain_community.tools.playwright",
