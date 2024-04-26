@@ -36,7 +36,9 @@ def generate_raw_migrations(
                     continue
                 if obj and (inspect.isclass(obj) or inspect.isfunction(obj)):
                     if obj.__module__.startswith(to_package):
-                        items.append((f"{modname}.{name}", f"{obj.__module__}.{name}"))
+                        items.append(
+                            (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
+                        )
 
         # Iterate over all members of the module
         for name, obj in inspect.getmembers(module):
@@ -44,7 +46,9 @@ def generate_raw_migrations(
             if inspect.isclass(obj) or inspect.isfunction(obj):
                 # Check if the module name of the obj starts with 'langchain_community'
                 if obj.__module__.startswith(to_package):
-                    items.append((f"{modname}.{name}", f"{obj.__module__}.{name}"))
+                    items.append(
+                        (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
+                    )
 
     return items
 
