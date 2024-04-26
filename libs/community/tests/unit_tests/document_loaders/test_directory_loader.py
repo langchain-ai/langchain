@@ -83,6 +83,20 @@ class TestDirectoryLoader:
                 metadata={"source": file_path, "row": 0},
             )
         ]
+        file_name = "test_none_col.csv"
+        file_path = self._get_csv_file_path(file_name)
+        expected_docs += [
+            Document(
+                page_content="column1: value1\ncolumn2: value2\n"
+                "column3: value3\nNone: value4,value5",
+                metadata={"source": file_path, "row": 0},
+            ),
+            Document(
+                page_content="column1: value6\ncolumn2: value7\n"
+                "column3: value8\nNone: value9",
+                metadata={"source": file_path, "row": 1},
+            ),
+        ]
 
         # Assert
         loader = DirectoryLoader(dir_path, loader_cls=CSVLoader)
