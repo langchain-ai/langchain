@@ -142,6 +142,7 @@ EXPECTED_ALL = [
     "SitemapLoader",
     "SlackDirectoryLoader",
     "SnowflakeLoader",
+    "SpiderWebLoader",
     "SpreedlyLoader",
     "StripeLoader",
     "SurrealDBLoader",
