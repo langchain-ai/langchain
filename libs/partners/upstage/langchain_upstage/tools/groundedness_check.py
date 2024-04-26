@@ -1,5 +1,5 @@
 import os
-from typing import Literal, Optional, Type, Union
+from typing import Any, Literal, Optional, Type, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -8,6 +8,7 @@ from langchain_core.callbacks import (
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
+from langchain_core.utils import convert_to_secret_str
 
 from langchain_upstage import ChatUpstage
 
@@ -51,11 +52,14 @@ class GroundednessCheck(BaseTool):
 
     args_schema: Type[BaseModel] = GroundednessCheckInput
 
-    def __init__(self, upstage_api_key: Optional[SecretStr] = None):
+    def __init__(self, **kwargs: Any) -> None:
+        upstage_api_key = kwargs.get("upstage_api_key", None)
+        if not upstage_api_key:
+            upstage_api_key = kwargs.get("api_key", None)
         if not upstage_api_key:
             upstage_api_key = SecretStr(os.getenv("UPSTAGE_API_KEY", ""))
-        else:
-            upstage_api_key = upstage_api_key
+        upstage_api_key = convert_to_secret_str(upstage_api_key)
+
         if (
             not upstage_api_key
             or not upstage_api_key.get_secret_value()
@@ -76,7 +80,9 @@ class GroundednessCheck(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
         """Use the tool."""
-        response = self.api_wrapper.invoke([HumanMessage(context), AIMessage(query)])
+        response = self.api_wrapper.invoke(
+            [HumanMessage(context), AIMessage(query)], stream=False
+        )
         return str(response.content)
 
     async def _arun(
@@ -86,6 +92,6 @@ class GroundednessCheck(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
         response = await self.api_wrapper.ainvoke(
-            [HumanMessage(context), AIMessage(query)]
+            [HumanMessage(context), AIMessage(query)], stream=False
         )
         return str(response.content)
