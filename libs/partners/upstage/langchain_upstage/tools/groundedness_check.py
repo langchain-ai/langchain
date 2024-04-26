@@ -17,8 +17,10 @@ from langchain_upstage import ChatUpstage
 class GroundednessCheckInput(BaseModel):
     """Input for the Groundedness Check tool."""
 
-    context: str = Field(description="context in which the answer should be verified")
-    answer: Union[str, list[Document]] = Field(
+    context: Union[str, list[Document]] = Field(
+        description="context in which the answer should be verified"
+    )
+    answer: str = Field(
         description="assistant's reply or a text that is subject to groundedness check"
     )
 
@@ -79,13 +81,13 @@ class GroundednessCheck(BaseTool):
 
     def _run(
         self,
-        context: str,
-        answer: Union[str, list[Document]],
+        context: Union[str, list[Document]],
+        answer: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
         """Use the tool."""
-        if isinstance(answer, list):
-            answer = self.formatDocumentsAsString(answer)
+        if isinstance(context, list):
+            context = self.formatDocumentsAsString(context)
         response = self.api_wrapper.invoke(
             [HumanMessage(context), AIMessage(answer)], stream=False
         )
@@ -93,12 +95,12 @@ class GroundednessCheck(BaseTool):
 
     async def _arun(
         self,
-        context: str,
-        answer: Union[str, list[Document]],
+        context: Union[str, list[Document]],
+        answer: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
-        if isinstance(answer, list):
-            answer = self.formatDocumentsAsString(answer)
+        if isinstance(context, list):
+            context = self.formatDocumentsAsString(context)
         response = await self.api_wrapper.ainvoke(
             [HumanMessage(context), AIMessage(answer)], stream=False
         )

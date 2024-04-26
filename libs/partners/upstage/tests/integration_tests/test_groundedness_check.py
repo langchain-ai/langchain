@@ -2,6 +2,7 @@ import os
 
 import openai
 import pytest
+from langchain_core.documents import Document
 
 from langchain_upstage import GroundednessCheck
 
@@ -17,6 +18,18 @@ def test_langchain_upstage_groundedness_check() -> None:
 
     tool = GroundednessCheck(upstage_api_key=api_key)
     output = tool.invoke({"context": "foo bar", "answer": "bar foo"})
+
+    assert output in ["grounded", "notGrounded", "notSure"]
+
+
+def test_langchain_upstage_groundedness_check_with_documents_input() -> None:
+    """Test Upstage Groundedness Check."""
+    tool = GroundednessCheck()
+    docs = [
+        Document(page_content="foo bar"),
+        Document(page_content="bar foo"),
+    ]
+    output = tool.invoke({"context": docs, "answer": "bar foo"})
 
     assert output in ["grounded", "notGrounded", "notSure"]
 
