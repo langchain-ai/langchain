@@ -13,6 +13,7 @@ from langchain_community.llms.utils import enforce_stop_tokens
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 VALID_PROVIDERS = ("cohere", "meta")
 
+# stop, callback manager, command-r params
 
 class OCIAuthType(Enum):
     """OCI authentication types as enumerator."""
@@ -204,7 +205,7 @@ class OCIGenAI(LLM, OCIGenAIBase):
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
-        return "oci"
+        return "oci_generative_ai_completion"
 
     def _prepare_invocation_object(
         self, prompt: str, stop: Optional[List[str]], kwargs: Dict[str, Any]
