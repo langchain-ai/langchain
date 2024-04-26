@@ -29,6 +29,7 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForToolRun,
@@ -559,6 +560,7 @@ class ChildTool(BaseTool):
             )
             return observation
 
+    @deprecated("0.1.47", alternative="invoke", removal="0.3.0")
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
         """Make tool callable."""
         return self.run(tool_input, callbacks=callbacks)

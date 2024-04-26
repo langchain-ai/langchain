@@ -61,6 +61,7 @@ _EXPECTED = [
     "Pinecone",
     "Qdrant",
     "Redis",
+    "Relyt",
     "Rockset",
     "SKLearnVectorStore",
     "ScaNN",
