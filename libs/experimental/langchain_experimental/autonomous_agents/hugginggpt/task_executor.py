@@ -69,6 +69,8 @@ class Task:
         except Exception as e:
             self.status = "failed"
             self.message = str(e)
+            return self.message
+
         self.status = "completed"
         self.save_product()
 
