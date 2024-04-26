@@ -409,8 +409,8 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.snowflake_loader import (
         SnowflakeLoader,  # noqa: F401
     )
-    from langchain_community.document_loaders.spiderweb import (
-        SpiderWebLoader, # noqa: F401
+    from langchain_community.document_loaders.spider import (
+        SpiderLoader, # noqa: F401
     )
     from langchain_community.document_loaders.spreedly import (
         SpreedlyLoader,  # noqa: F401
@@ -650,7 +650,7 @@ __all__ = [
     "SitemapLoader",
     "SlackDirectoryLoader",
     "SnowflakeLoader",
-    "SpiderWebLoader",
+    "SpiderLoader",
     "SpreedlyLoader",
     "StripeLoader",
     "SurrealDBLoader",
@@ -840,7 +840,7 @@ _module_lookup = {
     "SitemapLoader": "langchain_community.document_loaders.sitemap",
     "SlackDirectoryLoader": "langchain_community.document_loaders.slack_directory",
     "SnowflakeLoader": "langchain_community.document_loaders.snowflake_loader",
-    "SpiderWebLoader": "langchain_community.document_loaders.spiderweb",
+    "SpiderLoader": "langchain_community.document_loaders.spider",
     "SpreedlyLoader": "langchain_community.document_loaders.spreedly",
     "StripeLoader": "langchain_community.document_loaders.stripe",
     "SurrealDBLoader": "langchain_community.document_loaders.surrealdb",
