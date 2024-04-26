@@ -5,7 +5,7 @@ import pkgutil
 import click
 
 from langchain_cli.namespaces.migrate.generate.langchain import (
-    generate_migrations_from_langchain_to_community,
+    generate_simplified_migrations,
 )
 from langchain_cli.namespaces.migrate.generate.partner import (
     get_migrations_for_partner_package,
@@ -27,9 +27,9 @@ def cli():
 def langchain(output: str) -> None:
     """Generate a migration script."""
     click.echo("Migration script generated.")
-    migrations = generate_migrations_from_langchain_to_community()
+    migrations = generate_simplified_migrations()
     with open(output, "w") as f:
-        f.write(json.dumps(migrations))
+        f.write(json.dumps(migrations, indent=2, sort_keys=True))
 
 
 @cli.command()
