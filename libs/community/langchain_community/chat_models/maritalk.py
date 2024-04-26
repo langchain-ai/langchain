@@ -1,5 +1,4 @@
 import json
-import sys
 from http import HTTPStatus
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
@@ -9,7 +8,6 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -365,7 +363,8 @@ class ChatMaritalk(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
+        output_str = self._call(messages, stop=stop,
+                                run_manager=run_manager, **kwargs)
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
@@ -377,7 +376,8 @@ class ChatMaritalk(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        output_str = await self._acall(messages, stop=stop, run_manager=run_manager, **kwargs)
+        output_str = await self._acall(messages, stop=stop,
+                                       run_manager=run_manager, **kwargs)
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
