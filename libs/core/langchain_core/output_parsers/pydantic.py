@@ -60,10 +60,6 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         json_object = super().parse_result(result)
         return self._parse_obj(json_object)
 
-    def parse_result(
-        self, result: List[Generation], *, partial: bool = False
-    ) -> TBaseModel:
-        pass
     def parse(self, text: str) -> TBaseModel:
         return super().parse(text)
 
