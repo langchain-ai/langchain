@@ -4,7 +4,22 @@ import openai
 import pytest
 from langchain_core.documents import Document
 
-from langchain_upstage import UpstageGroundednessCheck
+from langchain_upstage import GroundednessCheck, UpstageGroundednessCheck
+
+
+def test_langchain_upstage_groundedness_check_deprecated() -> None:
+    """Test Upstage Groundedness Check."""
+    tool = GroundednessCheck()
+    output = tool.invoke({"context": "foo bar", "answer": "bar foo"})
+
+    assert output in ["grounded", "notGrounded", "notSure"]
+
+    api_key = os.environ.get("UPSTAGE_API_KEY", None)
+
+    tool = GroundednessCheck(upstage_api_key=api_key)
+    output = tool.invoke({"context": "foo bar", "answer": "bar foo"})
+
+    assert output in ["grounded", "notGrounded", "notSure"]
 
 
 def test_langchain_upstage_groundedness_check() -> None:

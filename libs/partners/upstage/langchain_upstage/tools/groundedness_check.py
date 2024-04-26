@@ -1,6 +1,7 @@
 import os
 from typing import Any, Literal, Optional, Type, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -105,3 +106,12 @@ class UpstageGroundednessCheck(BaseTool):
             [HumanMessage(context), AIMessage(answer)], stream=False
         )
         return str(response.content)
+
+
+@deprecated(
+    since="0.1.3",
+    removal="0.2.0",
+    alternative_import="langchain_upstage.UpstageGroundednessCheck",
+)
+class GroundednessCheck(UpstageGroundednessCheck):
+    pass
