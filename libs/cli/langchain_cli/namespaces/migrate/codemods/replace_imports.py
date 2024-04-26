@@ -26,7 +26,7 @@ HERE = os.path.dirname(__file__)
 
 
 def _load_migrations_by_file(path: str):
-    migrations_path = os.path.join(HERE, path)
+    migrations_path = os.path.join(HERE, "migrations", path)
     with open(migrations_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return data
@@ -43,21 +43,30 @@ def _deduplicate_in_order(
     return [x for x in seq if not (key(x) in seen or seen_add(key(x)))]
 
 
-def _load_migrations():
-    """Load the migrations from the JSON file."""
-    # Later earlier ones have higher precedence.
-    paths = [
-        "migrations_v0.2_partner.json",
-        "migrations_v0.2.json",
-    ]
+PARTNERS = [
+    "anthropic.json",
+    "ibm.json",
+    "openai.json",
+    "pinecone.json",
+    "fireworks.json",
+]
 
+
+def _load_migrations_from_fixtures() -> List[Tuple[str, str]]:
+    """Load migrations from fixtures."""
+    paths: List[str] = PARTNERS + ["langchain.json"]
     data = []
     for path in paths:
         data.extend(_load_migrations_by_file(path))
-
     data = _deduplicate_in_order(data, key=lambda x: x[0])
+    return data
 
+
+def _load_migrations():
+    """Load the migrations from the JSON file."""
+    # Later earlier ones have higher precedence.
     imports: Dict[str, Tuple[str, str]] = {}
+    data = _load_migrations_from_fixtures()
 
     for old_path, new_path in data:
         # Parse the old parse which is of the format 'langchain.chat_models.ChatOpenAI'
