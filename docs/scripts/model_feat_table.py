@@ -51,12 +51,12 @@ CHAT_MODEL_FEAT_TABLE_CORRECTION = {
         "package": "langchain-google-vertexai",
     },
     "ChatGroq": {
-        "tool_calling": "partial",
+        "tool_calling": True,
         "structured_output": True,
         "package": "langchain-groq",
     },
     "ChatCohere": {
-        "tool_calling": "partial",
+        "tool_calling": True,
         "structured_output": True,
         "package": "langchain-cohere",
     },
@@ -98,8 +98,7 @@ All ChatModels implement the Runnable interface, which comes with default implem
 - *Batch* support defaults to calling the underlying ChatModel in parallel for each input by making use of a thread pool executor (in the sync batch case) or `asyncio.gather` (in the async batch case). The concurrency can be controlled with the `max_concurrency` key in `RunnableConfig`.
 
 Each ChatModel integration can optionally provide native implementations to truly enable async or streaming.
-The table shows, for each integration, which features have been implemented with native support. 
-Yellow circles (🟡) indicates partial support - for example, if the model supports tool calling but not tool messages for agents.
+The table shows, for each integration, which features have been implemented with native support.
 
 {table}
 
