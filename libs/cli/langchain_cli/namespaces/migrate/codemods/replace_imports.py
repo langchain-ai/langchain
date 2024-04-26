@@ -15,7 +15,8 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Sequence, Tuple, TypeVar
+from typing import Callable, Dict, Iterable, List, Sequence, Tuple, TypeVar, Type
+
 
 import libcst as cst
 import libcst.matchers as m
@@ -43,18 +44,8 @@ def _deduplicate_in_order(
     return [x for x in seq if not (key(x) in seen or seen_add(key(x)))]
 
 
-PARTNERS = [
-    "anthropic.json",
-    "ibm.json",
-    "openai.json",
-    "pinecone.json",
-    "fireworks.json",
-]
-
-
-def _load_migrations_from_fixtures() -> List[Tuple[str, str]]:
+def _load_migrations_from_fixtures(paths: List[str]) -> List[Tuple[str, str]]:
     """Load migrations from fixtures."""
-    paths: List[str] = PARTNERS + ["langchain_to_langchain_community.json"]
     data = []
     for path in paths:
         data.extend(_load_migrations_by_file(path))
@@ -62,11 +53,11 @@ def _load_migrations_from_fixtures() -> List[Tuple[str, str]]:
     return data
 
 
-def _load_migrations():
+def _load_migrations(paths: List[str]):
     """Load the migrations from the JSON file."""
     # Later earlier ones have higher precedence.
     imports: Dict[str, Tuple[str, str]] = {}
-    data = _load_migrations_from_fixtures()
+    data = _load_migrations_from_fixtures(paths)
 
     for old_path, new_path in data:
         # Parse the old parse which is of the format 'langchain.chat_models.ChatOpenAI'
@@ -86,9 +77,6 @@ def _load_migrations():
         imports[old_path_str] = new_path_str
 
     return imports
-
-
-IMPORTS = _load_migrations()
 
 
 def resolve_module_parts(module_parts: list[str]) -> m.Attribute | m.Name:
@@ -139,41 +127,69 @@ class ImportInfo:
     to_import_str: tuple[str, str]
 
 
-IMPORT_INFOS = [
-    ImportInfo(
-        import_from=get_import_from_from_str(import_str),
-        import_str=import_str,
-        to_import_str=to_import_str,
-    )
-    for import_str, to_import_str in IMPORTS.items()
-]
-IMPORT_MATCH = m.OneOf(*[info.import_from for info in IMPORT_INFOS])
+RULE_TO_PATHS = {
+    "langchain_to_community": ["langchain_to_community.json"],
+    "langchain_to_core": ["langchain_to_core.json"],
+    "community_to_core": [],
+    "community_to_partner": [
+        "anthropic.json",
+        "fireworks.json",
+        "ibm.json",
+        "openai.json",
+        "pinecone.json",
+    ],
+}
 
 
-class ReplaceImportsCodemod(VisitorBasedCodemodCommand):
-    @m.leave(IMPORT_MATCH)
-    def leave_replace_import(
-        self, _: cst.ImportFrom, updated_node: cst.ImportFrom
-    ) -> cst.ImportFrom:
-        for import_info in IMPORT_INFOS:
-            if m.matches(updated_node, import_info.import_from):
-                aliases: Sequence[cst.ImportAlias] = updated_node.names  # type: ignore
-                # If multiple objects are imported in a single import statement,
-                # we need to remove only the one we're replacing.
-                AddImportsVisitor.add_needed_import(
-                    self.context, *import_info.to_import_str
-                )
-                if len(updated_node.names) > 1:  # type: ignore
-                    names = [
-                        alias
-                        for alias in aliases
-                        if alias.name.value != import_info.to_import_str[-1]
-                    ]
-                    names[-1] = names[-1].with_changes(comma=cst.MaybeSentinel.DEFAULT)
-                    updated_node = updated_node.with_changes(names=names)
-                else:
-                    return cst.RemoveFromParent()  # type: ignore[return-value]
-        return updated_node
+def generate_import_replacer(rules: List[str]) -> Type[VisitorBasedCodemodCommand]:
+    """Generate a codemod to replace imports."""
+    paths = []
+    for rule in rules:
+        if rule not in RULE_TO_PATHS:
+            raise ValueError(f"Unknown rule: {rule}. Use one of {RULE_TO_PATHS.keys()}")
+
+        paths.extend(RULE_TO_PATHS[rule])
+
+    imports = _load_migrations(paths)
+
+    import_infos = [
+        ImportInfo(
+            import_from=get_import_from_from_str(import_str),
+            import_str=import_str,
+            to_import_str=to_import_str,
+        )
+        for import_str, to_import_str in imports.items()
+    ]
+    import_match = m.OneOf(*[info.import_from for info in import_infos])
+
+    class ReplaceImportsCodemod(VisitorBasedCodemodCommand):
+        @m.leave(import_match)
+        def leave_replace_import(
+            self, _: cst.ImportFrom, updated_node: cst.ImportFrom
+        ) -> cst.ImportFrom:
+            for import_info in import_infos:
+                if m.matches(updated_node, import_info.import_from):
+                    aliases: Sequence[cst.ImportAlias] = updated_node.names  # type: ignore
+                    # If multiple objects are imported in a single import statement,
+                    # we need to remove only the one we're replacing.
+                    AddImportsVisitor.add_needed_import(
+                        self.context, *import_info.to_import_str
+                    )
+                    if len(updated_node.names) > 1:  # type: ignore
+                        names = [
+                            alias
+                            for alias in aliases
+                            if alias.name.value != import_info.to_import_str[-1]
+                        ]
+                        names[-1] = names[-1].with_changes(
+                            comma=cst.MaybeSentinel.DEFAULT
+                        )
+                        updated_node = updated_node.with_changes(names=names)
+                    else:
+                        return cst.RemoveFromParent()  # type: ignore[return-value]
+            return updated_node
+
+    return ReplaceImportsCodemod
 
 
 if __name__ == "__main__":
