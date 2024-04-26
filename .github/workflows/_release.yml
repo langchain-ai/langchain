@@ -305,4 +305,4 @@ jobs:
           draft: false
           generateReleaseNotes: true
           tag: v${{ needs.build.outputs.version }}
-          commit: master
+          commit: ${{ github.sha }}
