@@ -458,6 +458,11 @@ class ChatOpenAI(BaseChatModel):
         generations = []
         if not isinstance(response, dict):
             response = response.dict()
+        if 'error' in response:
+            error_message = response['error']['message']
+            raise ValueError(error_message)
+        if 'choices' not in response or response['choices'] is None:
+            raise ValueError("No choices available in the response, please check the input and model configuration.")
         for res in response["choices"]:
             message = convert_dict_to_message(res["message"])
             generation_info = dict(finish_reason=res.get("finish_reason"))
