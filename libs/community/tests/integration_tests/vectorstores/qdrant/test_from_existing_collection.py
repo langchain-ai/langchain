@@ -1,4 +1,5 @@
 import tempfile
+import uuid
 
 import pytest
 
@@ -8,14 +9,12 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
 )
 
 
-@pytest.mark.parametrize("collection_name", ["custom-collection"])
-def test_qdrant_from_existing_index_uses_same_collection(
-    collection_name: str,
-) -> None:
-    """Test if the Qdrant.from_existing_client reuses the some client."""
+@pytest.mark.parametrize("vector_name", ["custom-vector"])
+def test_qdrant_from_existing_collection_uses_same_collection(vector_name: str) -> None:
+    """Test if the Qdrant.from_existing_collection reuses the same client."""
     from qdrant_client import QdrantClient
 
-    # embeddings = ConsistentFakeEmbeddings()
+    collection_name = uuid.uuid4().hex
     with tempfile.TemporaryDirectory() as tmpdir:
         docs = ["foo"]
         qdrant = Qdrant.from_texts(
@@ -23,13 +22,15 @@ def test_qdrant_from_existing_index_uses_same_collection(
             embedding=ConsistentFakeEmbeddings(),
             path=str(tmpdir),
             collection_name=collection_name,
+            vector_name=vector_name,
         )
         del qdrant
 
-        qdrant = Qdrant.from_existing_index(
+        qdrant = Qdrant.from_existing_collection(
             embedding=ConsistentFakeEmbeddings(),
             path=str(tmpdir),
             collection_name=collection_name,
+            vector_name=vector_name,
         )
         qdrant.add_texts(["baz", "bar"])
         del qdrant
