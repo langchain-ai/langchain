@@ -19,7 +19,7 @@ env:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     runs-on: ubuntu-latest
 
     outputs:
