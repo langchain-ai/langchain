@@ -207,13 +207,3 @@ def test_yellowbrick_add_extra() -> None:
         docsearch.add_texts(texts, metadatas)
         output = docsearch.similarity_search("foo", k=10)
         assert len(output) == 6
-
-
-test_yellowbrick()
-test_yellowbrick_add_text()
-test_yellowbrick_delete()
-test_yellowbrick_with_score()
-test_yellowbrick_add_extra()
-test_yellowbrick_lsh_search()
-test_yellowbrick_lsh_search_update()
-test_yellowbrick_lsh_delete()
