@@ -184,7 +184,7 @@ def test_litellm_router_call(
     chat = ChatLiteLLMRouter(router=litellm_router)
     message = HumanMessage(content="Hello")
 
-    response = chat([message])
+    response = chat.invoke([message])
 
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
@@ -232,7 +232,7 @@ def test_litellm_router_streaming(
     chat = ChatLiteLLMRouter(router=litellm_router, streaming=True)
     message = HumanMessage(content="Hello")
 
-    response = chat([message])
+    response = chat.invoke([message])
 
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
@@ -255,7 +255,7 @@ def test_litellm_router_streaming_callback(
     )
     message = HumanMessage(content="Write me a sentence with 10 words.")
 
-    response = chat([message])
+    response = chat.invoke([message])
 
     assert callback_handler.llm_streams > 1
     assert isinstance(response, AIMessage)

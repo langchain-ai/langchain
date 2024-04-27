@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class Konko(LLM):
-    """Wrapper around Konko AI models.
+    """Konko AI models.
 
     To use, you'll need an API key. This can be passed in as init param
     ``konko_api_key`` or set as environment variable ``KONKO_API_KEY``.

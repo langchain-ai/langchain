@@ -5,11 +5,11 @@ from langchain_community.document_transformers.embeddings_redundant_filter impor
     _get_embeddings_from_stateful_docs,
     get_stateful_documents,
 )
+from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import root_validator
 
-from langchain.callbacks.manager import Callbacks
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )

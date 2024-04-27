@@ -21,7 +21,7 @@ def test_ensemble_retriever_get_relevant_docs() -> None:
     ensemble_retriever = EnsembleRetriever(  # type: ignore[call-arg]
         retrievers=[dummy_retriever, dummy_retriever]
     )
-    docs = ensemble_retriever.get_relevant_documents("I like apples")
+    docs = ensemble_retriever.invoke("I like apples")
     assert len(docs) == 1
 
 
@@ -75,5 +75,5 @@ def test_ensemble_retriever_get_relevant_docs_with_multiple_retrievers() -> None
         retrievers=[dummy_retriever, tfidf_retriever, knn_retriever],
         weights=[0.6, 0.3, 0.1],
     )
-    docs = ensemble_retriever.get_relevant_documents("I like apples")
+    docs = ensemble_retriever.invoke("I like apples")
     assert len(docs) == 3

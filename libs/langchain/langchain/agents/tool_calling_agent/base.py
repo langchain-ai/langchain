@@ -33,14 +33,14 @@ def create_tool_calling_agent(
 
             from langchain.agents import AgentExecutor, create_tool_calling_agent, tool
             from langchain_anthropic import ChatAnthropic
-            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+            from langchain_core.prompts import ChatPromptTemplate
 
             prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", "You are a helpful assistant"),
-                    MessagesPlaceholder("chat_history", optional=True),
+                    ("placeholder", "{chat_history}",
                     ("human", "{input}"),
-                    MessagesPlaceholder("agent_scratchpad"),
+                    ("placeholder", "{agent_scratchpad}"),
                 ]
             )
             model = ChatAnthropic(model="claude-3-opus-20240229")
@@ -75,7 +75,9 @@ def create_tool_calling_agent(
             ``MessagesPlaceholder``. Intermediate agent actions and tool output
             messages will be passed in here.
     """
-    missing_vars = {"agent_scratchpad"}.difference(prompt.input_variables)
+    missing_vars = {"agent_scratchpad"}.difference(
+        prompt.input_variables + list(prompt.partial_variables)
+    )
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
