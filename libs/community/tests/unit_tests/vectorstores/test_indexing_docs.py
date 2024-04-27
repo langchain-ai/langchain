@@ -76,6 +76,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Pinecone",
         "Qdrant",
         "Redis",
+        "Relyt",
         "Rockset",
         "ScaNN",
         "SemaDB",
