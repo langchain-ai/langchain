@@ -14,6 +14,7 @@
 
     Document, <name>TextSplitter
 """
+
 import importlib
 from typing import TYPE_CHECKING, Any
 
@@ -410,7 +411,7 @@ if TYPE_CHECKING:
         SnowflakeLoader,  # noqa: F401
     )
     from langchain_community.document_loaders.spider import (
-        SpiderLoader, # noqa: F401
+        SpiderLoader,  # noqa: F401
     )
     from langchain_community.document_loaders.spreedly import (
         SpreedlyLoader,  # noqa: F401

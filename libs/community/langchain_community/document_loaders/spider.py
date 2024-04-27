@@ -8,7 +8,8 @@ from langchain_core.utils import get_from_env
 class SpiderLoader(BaseLoader):
     """Load web pages as Documents using Spider AI.
 
-    Must have the Python package `spider-client` installed and a Spider API key. See https://spider.cloud for more.
+    Must have the Python package `spider-client` installed and a Spider API key. 
+    See https://spider.cloud for more.
     """
 
     def __init__(
@@ -23,13 +24,15 @@ class SpiderLoader(BaseLoader):
 
         Args:
             url: The URL to be processed.
-            api_key: The Spider API key. If not specified, will be read from env var `SPIDER_API_KEY`.
+            api_key: The Spider API key. If not specified, will be read from env 
+            var `SPIDER_API_KEY`.
             mode: The mode to run the loader in. Default is "scrape".
-                 Options include "scrape" (single page) and "crawl" (with deeper crawling following subpages).
+                 Options include "scrape" (single page) and "crawl" (with deeper 
+                 crawling following subpages).
             params: Additional parameters for the Spider API.
         """
         try: 
-            from spider import Spider # noqa: F401
+            from spider import Spider  # noqa: F401
         except ImportError:
             raise ImportError(
                 "`spider` package not found, please run `pip install spider-client`"
