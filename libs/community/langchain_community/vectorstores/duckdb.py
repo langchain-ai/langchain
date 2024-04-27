@@ -9,6 +9,11 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
 
+DEFAULT_VECTOR_KEY = "embedding"
+DEFAULT_ID_KEY = "id"
+DEFAULT_TEXT_KEY = "text"
+DEFAULT_TABLE_NAME = "embeddings"
+
 
 class DuckDB(VectorStore):
     """`DuckDB` vector store.
@@ -76,10 +81,10 @@ class DuckDB(VectorStore):
         *,
         connection: Optional[Any] = None,
         embedding: Embeddings,
-        vector_key: str = "embedding",
-        id_key: str = "id",
-        text_key: str = "text",
-        table_name: str = "vectorstore",
+        vector_key: str = DEFAULT_VECTOR_KEY,
+        id_key: str = DEFAULT_ID_KEY,
+        text_key: str = DEFAULT_TEXT_KEY,
+        table_name: str = DEFAULT_TABLE_NAME,
     ):
         """Initialize with DuckDB connection and setup for vector storage."""
         try:
@@ -231,10 +236,10 @@ class DuckDB(VectorStore):
 
         # Extract kwargs for DuckDB instance creation
         connection = kwargs.get("connection", None)
-        vector_key = kwargs.get("vector_key", "vector")
-        id_key = kwargs.get("id_key", "id")
-        text_key = kwargs.get("text_key", "text")
-        table_name = kwargs.get("table_name", "embeddings")
+        vector_key = kwargs.get("vector_key", DEFAULT_VECTOR_KEY)
+        id_key = kwargs.get("id_key", DEFAULT_VECTOR_KEY)
+        text_key = kwargs.get("text_key", DEFAULT_TEXT_KEY)
+        table_name = kwargs.get("table_name", DEFAULT_TABLE_NAME)
 
         # Create an instance of DuckDB
         instance = DuckDB(
