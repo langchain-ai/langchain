@@ -27,7 +27,8 @@ class PythonREPL(BaseModel):
     def sanitize_input(query: str) -> str:
         """Sanitize input to the python REPL.
 
-        Remove whitespace, backtick & python (if llm mistakes python console as terminal)
+        Remove whitespace, backtick & python
+        (if llm mistakes python console as terminal)
 
         Args:
             query: The query to sanitize
