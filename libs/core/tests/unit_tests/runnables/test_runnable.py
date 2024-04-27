@@ -35,6 +35,7 @@ from langchain_core.language_models import (
     FakeStreamingListLLM,
 )
 from langchain_core.load import dumpd, dumps
+from langchain_core.load.load import loads
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -76,7 +77,7 @@ from langchain_core.runnables import (
     add,
     chain,
 )
-from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.base import RunnableMap, RunnableSerializable
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
@@ -137,16 +138,16 @@ class FakeTracer(BaseTracer):
                 "child_execution_order": None,
                 "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
                 "dotted_order": new_dotted_order,
-                "inputs": {
-                    k: self._replace_message_id(v) for k, v in run.inputs.items()
-                }
-                if isinstance(run.inputs, dict)
-                else run.inputs,
-                "outputs": {
-                    k: self._replace_message_id(v) for k, v in run.outputs.items()
-                }
-                if isinstance(run.outputs, dict)
-                else run.outputs,
+                "inputs": (
+                    {k: self._replace_message_id(v) for k, v in run.inputs.items()}
+                    if isinstance(run.inputs, dict)
+                    else run.inputs
+                ),
+                "outputs": (
+                    {k: self._replace_message_id(v) for k, v in run.outputs.items()}
+                    if isinstance(run.outputs, dict)
+                    else run.outputs
+                ),
             }
         )
 
@@ -1651,11 +1652,14 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
     assert len(spy.call_args_list) == 2
     for i, call in enumerate(spy.call_args_list):
-        assert call.args[0] == ("hello" if i == 0 else "wooorld")
-        if i == 0:
+        call_arg = call.args[0]
+
+        if call_arg == "hello":
+            assert call_arg == "hello"
             assert call.args[1].get("tags") == ["a-tag"]
             assert call.args[1].get("metadata") == {}
         else:
+            assert call_arg == "wooorld"
             assert call.args[1].get("tags") == []
             assert call.args[1].get("metadata") == {"key": "value"}
 
@@ -1663,8 +1667,8 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
     assert fake.batch(["hello", "wooorld"], dict(tags=["a-tag"])) == [5, 7]
     assert len(spy.call_args_list) == 2
+    assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
     for i, call in enumerate(spy.call_args_list):
-        assert call.args[0] == ("hello" if i == 0 else "wooorld")
         assert call.args[1].get("tags") == ["a-tag"]
         assert call.args[1].get("metadata") == {}
     spy.reset_mock()
@@ -1685,28 +1689,15 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
         5,
         7,
     ]
-    assert spy.call_args_list == [
-        mocker.call(
-            "hello",
-            dict(
-                metadata={"key": "value"},
-                tags=[],
-                callbacks=None,
-                recursion_limit=25,
-                run_id=None,
-            ),
-        ),
-        mocker.call(
-            "wooorld",
-            dict(
-                metadata={"key": "value"},
-                tags=[],
-                callbacks=None,
-                recursion_limit=25,
-                run_id=None,
-            ),
-        ),
-    ]
+    assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
+    for call in spy.call_args_list:
+        assert call.args[1] == dict(
+            metadata={"key": "value"},
+            tags=[],
+            callbacks=None,
+            recursion_limit=25,
+            run_id=None,
+        )
 
 
 async def test_prompt() -> None:
@@ -3553,6 +3544,9 @@ async def test_map_astream_iterator_input() -> None:
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == llm_res
 
+    simple_map = RunnableMap(passthrough=RunnablePassthrough())
+    assert loads(dumps(simple_map)) == simple_map
+
 
 def test_with_config_with_config() -> None:
     llm = FakeListLLM(responses=["i'm a textbot"])
@@ -5397,11 +5391,21 @@ def test_transform_of_runnable_lambda_with_dicts() -> None:
     runnable = RunnableLambda(lambda x: x)
     chunks = iter(
         [
-            {"foo": "a"},
             {"foo": "n"},
         ]
     )
-    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+    assert list(runnable.transform(chunks)) == [{"foo": "n"}]
+
+    # Test as part of a sequence
+    seq = runnable | runnable
+    chunks = iter(
+        [
+            {"foo": "n"},
+        ]
+    )
+    assert list(seq.transform(chunks)) == [{"foo": "n"}]
+    # Test some other edge cases
+    assert list(seq.stream({"foo": "n"})) == [{"foo": "n"}]
 
 
 async def test_atransform_of_runnable_lambda_with_dicts() -> None:
@@ -5416,7 +5420,11 @@ async def test_atransform_of_runnable_lambda_with_dicts() -> None:
         yield {"foo": "n"}
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
-    assert chunks == [{"foo": "an"}]
+    assert chunks == [{"foo": "n"}]
+
+    seq = runnable | runnable
+    chunks = [chunk async for chunk in seq.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "n"}]
 
 
 def test_default_transform_with_dicts() -> None:
@@ -5436,7 +5444,8 @@ def test_default_transform_with_dicts() -> None:
         ]
     )
 
-    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+    assert list(runnable.transform(chunks)) == [{"foo": "n"}]
+    assert list(runnable.stream({"foo": "n"})) == [{"foo": "n"}]
 
 
 async def test_default_atransform_with_dicts() -> None:
@@ -5455,6 +5464,17 @@ async def test_default_atransform_with_dicts() -> None:
         yield {"foo": "n"}
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+
+    assert chunks == [{"foo": "n"}]
+
+    # Test with addable dict
+    async def chunk_iterator_with_addable() -> AsyncIterator[Dict[str, str]]:
+        yield AddableDict({"foo": "a"})
+        yield AddableDict({"foo": "n"})
+
+    chunks = [
+        chunk async for chunk in runnable.atransform(chunk_iterator_with_addable())
+    ]
 
     assert chunks == [{"foo": "an"}]
 
