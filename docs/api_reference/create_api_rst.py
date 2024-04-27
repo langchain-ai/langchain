@@ -359,7 +359,7 @@ def main(dirs: Optional[list] = None) -> None:
         dirs = [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners")
+            if dir_ not in ("cli", "partners", "standard-tests")
         ]
         dirs += os.listdir(ROOT_DIR / "libs" / "partners")
     for dir_ in dirs:
