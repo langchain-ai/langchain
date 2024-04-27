@@ -16,6 +16,7 @@ from langchain_community.vectorstores.utils import (
 
 if TYPE_CHECKING:
     from upstash_vector import AsyncIndex, Index
+    from upstash_vector.types import InfoResult
 
 logger = logging.getLogger(__name__)
 
@@ -146,13 +147,13 @@ class UpstashVectorStore(VectorStore):
         self._text_key = text_key
 
     @property
-    def embeddings(self) -> Optional[Union[Embeddings, bool]]:
+    def embeddings(self) -> Optional[Union[Embeddings, bool]]:  # type: ignore
         """Access the query embedding object if available."""
         return self._embeddings
 
     def _embed_documents(
         self, texts: Iterable[str]
-    ) -> Union[List[List[float], List[str]]]:
+    ) -> Union[List[List[float]], List[str]]:
         """Embed strings using the embeddings object"""
         if not self._embeddings:
             raise ValueError(
@@ -182,10 +183,11 @@ class UpstashVectorStore(VectorStore):
 
     def add_documents(
         self,
-        documents: Iterable[Document],
+        documents: List[Document],
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        **kwargs: Any,
     ) -> List[str]:
         """
         Get the embeddings for the documents and add them to the vectorstore.
@@ -214,6 +216,7 @@ class UpstashVectorStore(VectorStore):
             batch_size=batch_size,
             ids=ids,
             embedding_chunk_size=embedding_chunk_size,
+            **kwargs,
         )
 
     async def aadd_documents(
@@ -222,6 +225,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        **kwargs: Any,
     ) -> List[str]:
         """
         Get the embeddings for the documents and add them to the vectorstore.
@@ -250,6 +254,7 @@ class UpstashVectorStore(VectorStore):
             ids=ids,
             batch_size=batch_size,
             embedding_chunk_size=embedding_chunk_size,
+            **kwargs,
         )
 
     def add_texts(
@@ -259,6 +264,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        **kwargs: Any,
     ) -> List[str]:
         """
         Get the embeddings for the texts and add them to the vectorstore.
@@ -302,7 +308,7 @@ class UpstashVectorStore(VectorStore):
             for batch in batch_iterate(
                 batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
             ):
-                self._index.upsert(vectors=batch)
+                self._index.upsert(vectors=batch, **kwargs)
 
         return ids
 
@@ -313,6 +319,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        **kwargs: Any,
     ) -> List[str]:
         """
         Get the embeddings for the texts and add them to the vectorstore.
@@ -356,7 +363,7 @@ class UpstashVectorStore(VectorStore):
             for batch in batch_iterate(
                 batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
             ):
-                await self._async_index.upsert(vectors=batch)
+                await self._async_index.upsert(vectors=batch, **kwargs)
 
         return ids
 
@@ -427,12 +434,20 @@ class UpstashVectorStore(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
-        payload = (
-            {"data": embedding} if isinstance(embedding, str) else {"vector": embedding}
-        )
-        results = self._index.query(
-            **payload, top_k=k, include_metadata=True, filter=filter, **kwargs
-        )
+        filter = filter or ""
+
+        if isinstance(embedding, str):
+            results = self._index.query(
+                data=embedding, top_k=k, include_metadata=True, filter=filter, **kwargs
+            )
+        else:
+            results = self._index.query(
+                vector=embedding,
+                top_k=k,
+                include_metadata=True,
+                filter=filter,
+                **kwargs,
+            )
 
         return self._process_results(results)
 
@@ -445,12 +460,20 @@ class UpstashVectorStore(VectorStore):
     ) -> List[Tuple[Document, float]]:
         """Return texts whose embedding is closest to the given embedding"""
 
-        payload = (
-            {"data": embedding} if isinstance(embedding, str) else {"vector": embedding}
-        )
-        results = await self._async_index.query(
-            **payload, top_k=k, include_metadata=True, filter=filter, **kwargs
-        )
+        filter = filter or ""
+
+        if isinstance(embedding, str):
+            results = await self._async_index.query(
+                data=embedding, top_k=k, include_metadata=True, filter=filter, **kwargs
+            )
+        else:
+            results = await self._async_index.query(
+                vector=embedding,
+                top_k=k,
+                include_metadata=True,
+                filter=filter,
+                **kwargs,
+            )
 
         return self._process_results(results)
 
@@ -570,7 +593,7 @@ class UpstashVectorStore(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Union[List[float], str],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -596,14 +619,25 @@ class UpstashVectorStore(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         assert isinstance(self.embeddings, Embeddings)
-        results = self._index.query(
-            vector=embedding,
-            top_k=fetch_k,
-            include_vectors=True,
-            include_metadata=True,
-            filter=filter,
-            **kwargs,
-        )
+        if isinstance(embedding, str):
+            results = self._index.query(
+                data=embedding,
+                top_k=fetch_k,
+                include_vectors=True,
+                include_metadata=True,
+                filter=filter or "",
+                **kwargs,
+            )
+        else:
+            results = self._index.query(
+                vector=embedding,
+                top_k=fetch_k,
+                include_vectors=True,
+                include_metadata=True,
+                filter=filter or "",
+                **kwargs,
+            )
+
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
             [item.vector for item in results],
@@ -612,13 +646,13 @@ class UpstashVectorStore(VectorStore):
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
+            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore
             for metadata in selected
         ]
 
     async def amax_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: Union[List[float], str],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -644,14 +678,25 @@ class UpstashVectorStore(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         assert isinstance(self.embeddings, Embeddings)
-        results = await self._async_index.query(
-            vector=embedding,
-            top_k=fetch_k,
-            include_vectors=True,
-            include_metadata=True,
-            filter=filter,
-            **kwargs,
-        )
+        if isinstance(embedding, str):
+            results = await self._async_index.query(
+                data=embedding,
+                top_k=fetch_k,
+                include_vectors=True,
+                include_metadata=True,
+                filter=filter or "",
+                **kwargs,
+            )
+        else:
+            results = await self._async_index.query(
+                vector=embedding,
+                top_k=fetch_k,
+                include_vectors=True,
+                include_metadata=True,
+                filter=filter or "",
+                **kwargs,
+            )
+
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
             [item.vector for item in results],
@@ -660,7 +705,7 @@ class UpstashVectorStore(VectorStore):
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
-            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore since include_metadata=True
+            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)  # type: ignore
             for metadata in selected
         ]
 
@@ -752,6 +797,7 @@ class UpstashVectorStore(VectorStore):
         async_index: Optional[AsyncIndex] = None,
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
+        **kwargs: Any,
     ) -> UpstashVectorStore:
         """Create a new UpstashVectorStore from a list of texts.
 
@@ -773,6 +819,7 @@ class UpstashVectorStore(VectorStore):
             async_index=async_index,
             index_url=index_url,
             index_token=index_token,
+            **kwargs,
         )
 
         vector_store.add_texts(
@@ -798,6 +845,7 @@ class UpstashVectorStore(VectorStore):
         async_index: Optional[AsyncIndex] = None,
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
+        **kwargs: Any,
     ) -> UpstashVectorStore:
         """Create a new UpstashVectorStore from a list of texts.
 
@@ -819,6 +867,7 @@ class UpstashVectorStore(VectorStore):
             async_index=async_index,
             index_url=index_url,
             index_token=index_token,
+            **kwargs,
         )
 
         await vector_store.aadd_texts(
@@ -834,7 +883,8 @@ class UpstashVectorStore(VectorStore):
         self,
         ids: Optional[List[str]] = None,
         delete_all: Optional[bool] = None,
-        batch_size=1000,
+        batch_size: Optional[int] = 1000,
+        **kwargs: Any,
     ) -> None:
         """Delete by vector IDs
 
@@ -859,7 +909,8 @@ class UpstashVectorStore(VectorStore):
         self,
         ids: Optional[List[str]] = None,
         delete_all: Optional[bool] = None,
-        batch_size=1000,
+        batch_size: Optional[int] = 1000,
+        **kwargs: Any,
     ) -> None:
         """Delete by vector IDs
 
@@ -880,7 +931,7 @@ class UpstashVectorStore(VectorStore):
 
         return None
 
-    def info(self):
+    def info(self) -> InfoResult:
         """Get statistics about the index.
 
         Returns:
@@ -892,7 +943,7 @@ class UpstashVectorStore(VectorStore):
         """
         return self._index.info()
 
-    async def ainfo(self):
+    async def ainfo(self) -> InfoResult:
         """Get statistics about the index.
 
         Returns:
