@@ -1,7 +1,6 @@
 import logging
 from typing import List
 
-import ollama
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
 
@@ -52,6 +51,12 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     def _embed(self, inputs: List[str]) -> List[List[float]]:
         """Embed a list of input texts using the Ollama embeddings API."""
+        try:
+            import ollama
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import ollama, please install with `pip install -U ollama`."
+            ) from e
         if self.show_progress:
             from tqdm import tqdm
 
