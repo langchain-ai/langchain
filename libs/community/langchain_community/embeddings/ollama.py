@@ -1,5 +1,6 @@
 import logging
 from typing import List
+
 import ollama
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
@@ -25,8 +26,8 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             r2 = ollama_emb.embed_query(
                 "What is the second letter of Greek alphabet"
 
-    """
-            
+    """  # noqa: E501
+
     model: str = "mxbai-embed-large"  # Model name to use.
 
     show_progress: bool = False
@@ -53,12 +54,13 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Embed a list of input texts using the Ollama embeddings API."""
         if self.show_progress:
             from tqdm import tqdm
+
             inputs = tqdm(inputs, desc="Embedding Documents")
 
         embeddings = []
         for input_text in inputs:
             response = ollama.embeddings(model=self.model, prompt=input_text)
-            embeddings.append(response['embedding'])
+            embeddings.append(response["embedding"])
         return embeddings
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
