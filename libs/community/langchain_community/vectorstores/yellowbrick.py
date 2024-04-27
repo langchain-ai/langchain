@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 class Yellowbrick(VectorStore):
-    """Wrapper around Yellowbrick as a vector database.
+    """Yellowbrick as a vector database.
+
     Example:
         .. code-block:: python
             from langchain_community.vectorstores import Yellowbrick

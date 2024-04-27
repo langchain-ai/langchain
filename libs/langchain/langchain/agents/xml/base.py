@@ -203,7 +203,9 @@ def create_xml_agent(
             {agent_scratchpad}'''
             prompt = PromptTemplate.from_template(template)
     """  # noqa: E501
-    missing_vars = {"tools", "agent_scratchpad"}.difference(prompt.input_variables)
+    missing_vars = {"tools", "agent_scratchpad"}.difference(
+        prompt.input_variables + list(prompt.partial_variables)
+    )
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 

@@ -21,7 +21,7 @@
           "RunnableParallel"
         ],
         "kwargs": {
-          "steps": {
+          "steps__": {
             "buz": {
               "lc": 1,
               "type": "not_implemented",
@@ -569,7 +569,7 @@
           "RunnableParallel"
         ],
         "kwargs": {
-          "steps": {
+          "steps__": {
             "text": {
               "lc": 1,
               "type": "constructor",
