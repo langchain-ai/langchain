@@ -14,6 +14,8 @@ class Rule(str, Enum):
     """Replace deprecated langchain imports with current ones in community."""
     langchain_to_core = "langchain_to_core"
     """Replace deprecated langchain imports with current ones in core."""
+    langchain_to_text_splitters = "langchain_to_text_splitters"
+    """Replace deprecated langchain imports with current ones in text splitters."""
     community_to_core = "community_to_core"
     """Replace deprecated community imports with current ones in core."""
     community_to_partner = "community_to_partner"
@@ -30,6 +32,7 @@ def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]
         Rule.langchain_to_core,
         Rule.community_to_core,
         Rule.community_to_partner,
+        Rule.langchain_to_text_splitters,
     }
 
     # Find active import rules

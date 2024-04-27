@@ -129,7 +129,8 @@ class ImportInfo:
 RULE_TO_PATHS = {
     "langchain_to_community": ["langchain_to_community.json"],
     "langchain_to_core": ["langchain_to_core.json"],
-    "community_to_core": [],
+    "community_to_core": ["community_to_core.json"],
+    "langchain_to_text_splitters": ["langchain_to_text_splitters.json"],
     "community_to_partner": [
         "anthropic.json",
         "fireworks.json",
