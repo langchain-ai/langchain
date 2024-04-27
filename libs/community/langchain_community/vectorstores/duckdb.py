@@ -13,6 +13,7 @@ DEFAULT_VECTOR_KEY = "embedding"
 DEFAULT_ID_KEY = "id"
 DEFAULT_TEXT_KEY = "text"
 DEFAULT_TABLE_NAME = "embeddings"
+SIMILARITY_ALIAS = "similarity"
 
 
 class DuckDB(VectorStore):
@@ -186,20 +187,21 @@ class DuckDB(VectorStore):
             self._table.select(
                 *[
                     self.duckdb.StarExpression(exclude=[]),
-                    list_cosine_similarity.alias("similarity"),
+                    list_cosine_similarity.alias(SIMILARITY_ALIAS),
                 ]
             )
-            .order("similarity desc")
+            .order(f"{SIMILARITY_ALIAS} desc")
             .limit(k)
-            .select(
-                self.duckdb.StarExpression(exclude=["similarity", self._vector_key])
-            )
             .fetchdf()
         )
         return [
             Document(
                 page_content=docs[self._text_key][idx],
-                metadata=json.loads(docs["metadata"][idx])
+                metadata={
+                    **json.loads(docs["metadata"][idx]),
+                    # using underscore prefix to avoid conflicts with user metadata keys
+                    f"_{SIMILARITY_ALIAS}": docs[SIMILARITY_ALIAS][idx],
+                }
                 if docs["metadata"][idx]
                 else {},
             )
@@ -237,7 +239,7 @@ class DuckDB(VectorStore):
         # Extract kwargs for DuckDB instance creation
         connection = kwargs.get("connection", None)
         vector_key = kwargs.get("vector_key", DEFAULT_VECTOR_KEY)
-        id_key = kwargs.get("id_key", DEFAULT_VECTOR_KEY)
+        id_key = kwargs.get("id_key", DEFAULT_ID_KEY)
         text_key = kwargs.get("text_key", DEFAULT_TEXT_KEY)
         table_name = kwargs.get("table_name", DEFAULT_TABLE_NAME)
 
