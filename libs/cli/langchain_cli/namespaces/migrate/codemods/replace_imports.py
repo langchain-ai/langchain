@@ -54,7 +54,7 @@ PARTNERS = [
 
 def _load_migrations_from_fixtures() -> List[Tuple[str, str]]:
     """Load migrations from fixtures."""
-    paths: List[str] = PARTNERS + ["langchain.json"]
+    paths: List[str] = PARTNERS + ["langchain_to_langchain_community.json"]
     data = []
     for path in paths:
         data.extend(_load_migrations_by_file(path))
