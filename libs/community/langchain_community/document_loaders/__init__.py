@@ -95,6 +95,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.brave_search import (
         BraveSearchLoader,  # noqa: F401
     )
+    from langchain_community.document_loaders.browserbase import (
+        BrowserbaseLoader,  # noqa: F401
+    )
     from langchain_community.document_loaders.browserless import (
         BrowserlessLoader,  # noqa: F401
     )
@@ -187,6 +190,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.figma import (
         FigmaFileLoader,  # noqa: F401
     )
+    from langchain_community.document_loaders.firecrawl import (
+        FireCrawlLoader,  # noqa: F401
+    )
     from langchain_community.document_loaders.gcs_directory import (
         GCSDirectoryLoader,  # noqa: F401
     )
@@ -205,6 +211,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.github import (
         GithubFileLoader,  # noqa: F401
         GitHubIssuesLoader,  # noqa: F401
+    )
+    from langchain_community.document_loaders.glue_catalog import (
+        GlueCatalogLoader,  # noqa: F401
     )
     from langchain_community.document_loaders.google_speech_to_text import (
         GoogleSpeechToTextLoader,  # noqa: F401
@@ -535,6 +544,7 @@ __all__ = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
+    "BrowserbaseLoader",
     "BrowserlessLoader",
     "CSVLoader",
     "CassandraLoader",
@@ -560,6 +570,7 @@ __all__ = [
     "FacebookChatLoader",
     "FaunaLoader",
     "FigmaFileLoader",
+    "FireCrawlLoader",
     "FileSystemBlobLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
@@ -720,6 +731,7 @@ _module_lookup = {
     "BlobLoader": "langchain_community.document_loaders.blob_loaders",
     "BlockchainDocumentLoader": "langchain_community.document_loaders.blockchain",
     "BraveSearchLoader": "langchain_community.document_loaders.brave_search",
+    "BrowserbaseLoader": "langchain_community.document_loaders.browserbase",
     "BrowserlessLoader": "langchain_community.document_loaders.browserless",
     "CSVLoader": "langchain_community.document_loaders.csv_loader",
     "CassandraLoader": "langchain_community.document_loaders.cassandra",
@@ -745,6 +757,7 @@ _module_lookup = {
     "FacebookChatLoader": "langchain_community.document_loaders.facebook_chat",
     "FaunaLoader": "langchain_community.document_loaders.fauna",
     "FigmaFileLoader": "langchain_community.document_loaders.figma",
+    "FireCrawlLoader": "langchain_community.document_loaders.firecrawl",
     "FileSystemBlobLoader": "langchain_community.document_loaders.blob_loaders",
     "GCSDirectoryLoader": "langchain_community.document_loaders.gcs_directory",
     "GCSFileLoader": "langchain_community.document_loaders.gcs_file",
@@ -753,6 +766,7 @@ _module_lookup = {
     "GitLoader": "langchain_community.document_loaders.git",
     "GitbookLoader": "langchain_community.document_loaders.gitbook",
     "GithubFileLoader": "langchain_community.document_loaders.github",
+    "GlueCatalogLoader": "langchain_community.document_loaders.glue_catalog",
     "GoogleApiClient": "langchain_community.document_loaders.youtube",
     "GoogleApiYoutubeLoader": "langchain_community.document_loaders.youtube",
     "GoogleDriveLoader": "langchain_community.document_loaders.googledrive",
@@ -767,6 +781,7 @@ _module_lookup = {
     "IuguLoader": "langchain_community.document_loaders.iugu",
     "JSONLoader": "langchain_community.document_loaders.json_loader",
     "JoplinLoader": "langchain_community.document_loaders.joplin",
+    "KineticaLoader": "langchain_community.document_loaders.kinetica_loader",
     "LakeFSLoader": "langchain_community.document_loaders.lakefs",
     "LarkSuiteDocLoader": "langchain_community.document_loaders.larksuite",
     "LLMSherpaFileLoader": "langchain_community.document_loaders.llmsherpa",

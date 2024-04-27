@@ -40,7 +40,7 @@ class SolarCommon(BaseModel):
     """Solar API key. Get it here: https://console.upstage.ai/services/solar"""
     model_name: str = Field(default="solar-1-mini-chat", alias="model")
     """Model name. Available models listed here: https://console.upstage.ai/services/solar"""
-    max_tokens: int = Field(default=1024, alias="max context")
+    max_tokens: int = Field(default=1024)
     temperature = 0.3
 
     class Config:

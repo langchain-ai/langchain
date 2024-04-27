@@ -485,6 +485,7 @@ _module_lookup = {
     "ConneryAction": "langchain_community.tools.connery",
     "CopyFileTool": "langchain_community.tools.file_management",
     "CurrentWebPageTool": "langchain_community.tools.playwright",
+    "DataheraldTextToSQL": "langchain_community.tools.dataherald.tool",
     "DeleteFileTool": "langchain_community.tools.file_management",
     "DuckDuckGoSearchResults": "langchain_community.tools.ddg_search.tool",
     "DuckDuckGoSearchRun": "langchain_community.tools.ddg_search.tool",

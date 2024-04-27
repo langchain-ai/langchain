@@ -52,7 +52,12 @@ class PngDrawer:
         )
 
     def add_edge(
-        self, viz: Any, source: str, target: str, label: Optional[str] = None
+        self,
+        viz: Any,
+        source: str,
+        target: str,
+        label: Optional[str] = None,
+        conditional: bool = False,
     ) -> None:
         viz.add_edge(
             source,
@@ -60,6 +65,7 @@ class PngDrawer:
             label=self.get_edge_label(label) if label else "",
             fontsize=12,
             fontname=self.fontname,
+            style="dotted" if conditional else "solid",
         )
 
     def draw(self, graph: Graph, output_path: Optional[str] = None) -> Optional[bytes]:
@@ -98,8 +104,8 @@ class PngDrawer:
             self.add_node(viz, node)
 
     def add_edges(self, viz: Any, graph: Graph) -> None:
-        for start, end, label in graph.edges:
-            self.add_edge(viz, start, end, label)
+        for start, end, label, cond in graph.edges:
+            self.add_edge(viz, start, end, label, cond)
 
     def update_styles(self, viz: Any, graph: Graph) -> None:
         if first := graph.first_node():

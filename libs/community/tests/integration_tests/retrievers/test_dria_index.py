@@ -26,8 +26,8 @@ def test_dria_retriever(dria_retriever: DriaRetriever) -> None:
     ]
     dria_retriever.add_texts(texts)
 
-    # Assuming get_relevant_documents returns a list of Document instances
-    docs = dria_retriever.get_relevant_documents("Langchain")
+    # Assuming invoke returns a list of Document instances
+    docs = dria_retriever.invoke("Langchain")
 
     # Perform assertions
     assert len(docs) > 0, "Expected at least one document"

@@ -146,7 +146,7 @@ class Bagel(VectorStore):
         """
         # creating unique ids if None
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         texts = list(texts)
         if self._embedding_function and embeddings is None and texts:

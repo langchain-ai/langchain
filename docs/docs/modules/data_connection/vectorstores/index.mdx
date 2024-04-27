@@ -30,7 +30,7 @@ There are many great vector store options, here are a few that are free, open-so
 This walkthrough uses the `chroma` vector database, which runs on your local machine as a library.
 
 ```bash
-pip install chromadb
+pip install langchain-chroma
 ```
 
 We want to use OpenAIEmbeddings so we have to get the OpenAI API Key.
@@ -47,7 +47,7 @@ os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
 from langchain_community.document_loaders import TextLoader
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 # Load the document, split it into chunks, embed each chunk and load it into the vector store.
 raw_documents = TextLoader('../../../state_of_the_union.txt').load()

@@ -19,6 +19,7 @@ if __name__ == "__main__":
         "test": set(),
         "extended-test": set(),
     }
+    docs_edited = False
 
     if len(files) == 300:
         # max diff length is 300 files - there are likely files missing
@@ -53,6 +54,10 @@ if __name__ == "__main__":
             dirs_to_run["lint"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
+            dirs_to_run["test"].add("libs/partners/anthropic")
+            dirs_to_run["test"].add("libs/partners/ai21")
+            dirs_to_run["test"].add("libs/partners/fireworks")
+            dirs_to_run["test"].add("libs/partners/groq")
 
         elif file.startswith("libs/cli"):
             # todo: add cli makefile
@@ -72,6 +77,8 @@ if __name__ == "__main__":
                 "an update for this new library!"
             )
         elif any(file.startswith(p) for p in ["docs/", "templates/", "cookbook/"]):
+            if file.startswith("docs/"):
+                docs_edited = True
             dirs_to_run["lint"].add(".")
 
     outputs = {
@@ -80,6 +87,7 @@ if __name__ == "__main__":
         ),
         "dirs-to-test": list(dirs_to_run["test"] | dirs_to_run["extended-test"]),
         "dirs-to-extended-test": list(dirs_to_run["extended-test"]),
+        "docs-edited": "true" if docs_edited else "",
     }
     for key, value in outputs.items():
         json_output = json.dumps(value)

@@ -11,6 +11,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Tuple,
     Type,
     TypedDict,
     Union,
@@ -19,7 +20,6 @@ from typing import (
 from uuid import UUID, uuid4
 
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables.graph_ascii import draw_ascii
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
@@ -44,6 +44,7 @@ class Edge(NamedTuple):
     source: str
     target: str
     data: Optional[str] = None
+    conditional: bool = False
 
 
 class Node(NamedTuple):
@@ -163,7 +164,6 @@ class Graph:
 
     nodes: Dict[str, Node] = field(default_factory=dict)
     edges: List[Edge] = field(default_factory=list)
-    branches: Optional[Dict[str, List[Branch]]] = field(default_factory=dict)
 
     def to_json(self, *, with_schemas: bool = False) -> Dict[str, List[Dict[str, Any]]]:
         """Convert the graph to a JSON-serializable format."""
@@ -171,6 +171,17 @@ class Graph:
             node.id: i if is_uuid(node.id) else node.id
             for i, node in enumerate(self.nodes.values())
         }
+        edges: List[Dict[str, Any]] = []
+        for edge in self.edges:
+            edge_dict = {
+                "source": stable_node_ids[edge.source],
+                "target": stable_node_ids[edge.target],
+            }
+            if edge.data is not None:
+                edge_dict["data"] = edge.data
+            if edge.conditional:
+                edge_dict["conditional"] = True
+            edges.append(edge_dict)
 
         return {
             "nodes": [
@@ -180,19 +191,7 @@ class Graph:
                 }
                 for node in self.nodes.values()
             ],
-            "edges": [
-                {
-                    "source": stable_node_ids[edge.source],
-                    "target": stable_node_ids[edge.target],
-                    "data": edge.data,
-                }
-                if edge.data is not None
-                else {
-                    "source": stable_node_ids[edge.source],
-                    "target": stable_node_ids[edge.target],
-                }
-                for edge in self.edges
-            ],
+            "edges": edges,
         }
 
     def __bool__(self) -> bool:
@@ -220,21 +219,57 @@ class Graph:
             if edge.source != node.id and edge.target != node.id
         ]
 
-    def add_edge(self, source: Node, target: Node, data: Optional[str] = None) -> Edge:
+    def add_edge(
+        self,
+        source: Node,
+        target: Node,
+        data: Optional[str] = None,
+        conditional: bool = False,
+    ) -> Edge:
         """Add an edge to the graph and return it."""
         if source.id not in self.nodes:
             raise ValueError(f"Source node {source.id} not in graph")
         if target.id not in self.nodes:
             raise ValueError(f"Target node {target.id} not in graph")
-        edge = Edge(source=source.id, target=target.id, data=data)
+        edge = Edge(
+            source=source.id, target=target.id, data=data, conditional=conditional
+        )
         self.edges.append(edge)
         return edge
 
-    def extend(self, graph: Graph) -> None:
+    def extend(
+        self, graph: Graph, *, prefix: str = ""
+    ) -> Tuple[Optional[Node], Optional[Node]]:
         """Add all nodes and edges from another graph.
         Note this doesn't check for duplicates, nor does it connect the graphs."""
-        self.nodes.update(graph.nodes)
-        self.edges.extend(graph.edges)
+        if all(is_uuid(node.id) for node in graph.nodes.values()):
+            prefix = ""
+
+        def prefixed(id: str) -> str:
+            return f"{prefix}:{id}" if prefix else id
+
+        # prefix each node
+        self.nodes.update(
+            {prefixed(k): Node(prefixed(k), v.data) for k, v in graph.nodes.items()}
+        )
+        # prefix each edge's source and target
+        self.edges.extend(
+            [
+                Edge(
+                    prefixed(edge.source),
+                    prefixed(edge.target),
+                    edge.data,
+                    edge.conditional,
+                )
+                for edge in graph.edges
+            ]
+        )
+        # return (prefixed) first and last nodes of the subgraph
+        first, last = graph.first_node(), graph.last_node()
+        return (
+            Node(prefixed(first.id), first.data) if first else None,
+            Node(prefixed(last.id), last.data) if last else None,
+        )
 
     def first_node(self) -> Optional[Node]:
         """Find the single node that is not a target of any edge.
@@ -284,9 +319,11 @@ class Graph:
                 self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
+        from langchain_core.runnables.graph_ascii import draw_ascii
+
         return draw_ascii(
             {node.id: node_data_str(node) for node in self.nodes.values()},
-            [(edge.source, edge.target) for edge in self.edges],
+            self.edges,
         )
 
     def print_ascii(self) -> None:
@@ -335,6 +372,8 @@ class Graph:
 
     def draw_mermaid(
         self,
+        *,
+        with_styles: bool = True,
         curve_style: CurveStyle = CurveStyle.LINEAR,
         node_colors: NodeColors = NodeColors(
             start="#ffdfba", end="#baffc9", other="#fad7de"
@@ -354,9 +393,9 @@ class Graph:
         return draw_mermaid(
             nodes=nodes,
             edges=self.edges,
-            branches=self.branches,
             first_node_label=first_label,
             last_node_label=last_label,
+            with_styles=with_styles,
             curve_style=curve_style,
             node_colors=node_colors,
             wrap_label_n_words=wrap_label_n_words,
@@ -364,6 +403,7 @@ class Graph:
 
     def draw_mermaid_png(
         self,
+        *,
         curve_style: CurveStyle = CurveStyle.LINEAR,
         node_colors: NodeColors = NodeColors(
             start="#ffdfba", end="#baffc9", other="#fad7de"

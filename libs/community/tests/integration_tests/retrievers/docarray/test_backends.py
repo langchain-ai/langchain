@@ -27,7 +27,7 @@ def test_backends(request: Any, backend: Any) -> None:
         content_field="title",
     )
 
-    docs = retriever.get_relevant_documents("my docs")
+    docs = retriever.invoke("my docs")
 
     assert len(docs) == 1
     assert "My document" in docs[0].page_content
@@ -43,7 +43,7 @@ def test_backends(request: Any, backend: Any) -> None:
         filters=filter_query,
     )
 
-    docs = retriever.get_relevant_documents("my docs")
+    docs = retriever.invoke("my docs")
 
     assert len(docs) == 1
     assert "My document" in docs[0].page_content
@@ -61,7 +61,7 @@ def test_backends(request: Any, backend: Any) -> None:
         filters=filter_query,
     )
 
-    docs = retriever.get_relevant_documents("my docs")
+    docs = retriever.invoke("my docs")
 
     assert len(docs) == 1
     assert "My document" in docs[0].page_content
