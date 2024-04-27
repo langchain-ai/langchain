@@ -444,57 +444,56 @@ class Yellowbrick(VectorStore):
         return vss
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
-        """Delete vectors by uuids
+        """Delete vectors by uuids.
 
         Args:
-        ids: List of ids to delete, where each id is a UUID.
+            ids: List of ids to delete, where each id is a uuid string.
         """
-        if ids is None or not ids:
-            return False
+        from psycopg2 import errors, sql
 
-        from psycopg2 import errors, extensions, sql
+        if not ids:
+            return None
 
-        with self.connection.get_cursor() as cursor:
-            uuids = tuple(sql.Literal(id) for id in ids)  # Properly escape UUIDs
-            ids_formatted = sql.SQL(", ").join(uuids)
+        table_suffixes = [
+            self._table + self.LSH_INDEX_TABLE,
+            self._table + self.CONTENT_TABLE,
+            self._table,
+        ]
+        status = False
 
-            try:
-                lsh_query = sql.SQL(
-                    "DELETE FROM {table} WHERE doc_id IN ({ids})"
-                ).format(
-                    table=sql.Identifier(
-                        self._schema, self._table + self.LSH_INDEX_TABLE
-                    ),
-                    ids=ids_formatted,
-                )
-                cursor.execute(lsh_query)
-            except errors.UndefinedTable:
-                self.logger.warn(
-                    f"Attempted to delete from a non-existent table: "
-                    f"{self._table + self.LSH_INDEX_TABLE}"
-                )
-                cursor.connection.rollback()
-            except errors.InFailedSqlTransaction:
-                self.logger.error("Transaction in failed state, rolling back.")
-                cursor.connection.rollback()
-            finally:
-                if cursor.connection.status == extensions.STATUS_IN_TRANSACTION:
-                    cursor.connection.rollback()
+        uuids = tuple(sql.Literal(id) for id in ids)
+        ids_formatted = sql.SQL(", ").join(uuids)
+        schema_prefix = (self._schema,) if self._schema else ()
 
-            content_query = sql.SQL(
-                "DELETE FROM {table} WHERE doc_id IN ({ids})"
-            ).format(
-                table=sql.Identifier(self._schema, self._table + self.CONTENT_TABLE),
-                ids=ids_formatted,
-            )
-            cursor.execute(content_query)
+        for suffix in table_suffixes:
+            with self.connection.get_cursor() as cursor:
+                try:
+                    cursor.execute("BEGIN;")
+                    table_identifier = sql.Identifier(*schema_prefix, suffix)
+                    query = sql.SQL(
+                        "DELETE FROM {table} WHERE doc_id IN ({ids})"
+                    ).format(table=table_identifier, ids=ids_formatted)
+                    cursor.execute(query)
+                    cursor.execute("COMMIT;")
+                    status = True
+                except errors.UndefinedTable as e:
+                    message_primary_exists = hasattr(e.diag, "message_primary")
+                    message_primary = (
+                        e.diag.message_primary
+                        if message_primary_exists
+                        else "Unknown table"
+                    )
+                    self.logger.warning(
+                        f"Attempted to delete from a non-existent table: "
+                        f"{message_primary}"
+                    )
+                    cursor.execute("ROLLBACK;")
+                except errors.InFailedSqlTransaction:
+                    self.logger.error("Transaction in failed state, rolling back.")
+                    cursor.execute("ROLLBACK;")
+                    break
 
-            embeddings_query = sql.SQL(
-                "DELETE FROM {table} WHERE doc_id IN ({ids})"
-            ).format(table=sql.Identifier(self._schema, self._table), ids=ids_formatted)
-            cursor.execute(embeddings_query)
-
-        return True
+        return status
 
     def _generate_vector_uuid(self, vector: List[float]) -> uuid.UUID:
         import hashlib
