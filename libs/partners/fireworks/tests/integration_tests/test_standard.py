@@ -13,3 +13,11 @@ class TestFireworksStandard(ChatModelIntegrationTests):
     @pytest.fixture
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatFireworks
+
+    @pytest.fixture
+    def chat_model_params(self) -> dict:
+        return {
+            "model": "accounts/fireworks/models/firefunction-v1",
+            "temperature": 0,
+        }
+
