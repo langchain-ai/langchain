@@ -7,6 +7,7 @@ from io import StringIO
 from typing import Dict, Optional
 
 from langchain.pydantic_v1 import BaseModel, Field
+import re
 
 logger = logging.getLogger(__name__)
 
