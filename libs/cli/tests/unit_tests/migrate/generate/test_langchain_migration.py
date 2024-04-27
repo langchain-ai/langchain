@@ -1,9 +1,9 @@
+from langchain._api import suppress_langchain_deprecation_warning as sup2
 from langchain_core._api import suppress_langchain_deprecation_warning as sup1
 
 from langchain_cli.namespaces.migrate.generate.generic import (
     generate_simplified_migrations,
 )
-from langchain._api import suppress_langchain_deprecation_warning as sup2
 
 
 def test_create_json_agent_migration() -> None:

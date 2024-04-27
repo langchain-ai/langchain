@@ -8,7 +8,7 @@ import os
 import time
 import traceback
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple, Type, TypeVar, Union, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import libcst as cst
 import rich
@@ -65,8 +65,9 @@ def main(
         all_files = [path]
     else:
         package = path
-        glob = "**/*.py" if not include_ipynb else "**/*.{py,ipynb}"
-        all_files = sorted(package.glob(glob))
+        all_files = sorted(package.glob("**/*.py"))
+        if include_ipynb:
+            all_files.extend(sorted(package.glob("**/*.ipynb")))
 
     filtered_files = [
         file
@@ -200,10 +201,26 @@ def _rewrite_notebook(
     for cell in notebook.cells:
         if cell.cell_type == "code":
             code = "".join(cell.source)
+
+            # Skip code if any of the lines begin with a magic command or
+            # a ! command.
+            # We can try to handle later.
+            if any(
+                line.startswith("!") or line.startswith("%")
+                for line in code.splitlines()
+            ):
+                continue
+
             input_tree = cst.parse_module(code)
 
+            # TODO(Team): Quick hack, need to figure out
+            # how to handle this correctly.
+            # This prevents the code from trying to re-insert the imports
+            # for every cell in the notebook.
+            local_context = CodemodContext()
+
             for codemod in codemods:
-                transformer = codemod(context=context)
+                transformer = codemod(context=local_context)
                 output_tree = transformer.transform_module(input_tree)
                 input_tree = output_tree
 
@@ -246,7 +263,10 @@ def run_codemods(
         )
         context.scratch.update(scratch)
 
-        return _rewrite_file(filename, codemods, diff, context)
+        if filename.endswith(".ipynb"):
+            return _rewrite_notebook(filename, codemods, diff, context)
+        else:
+            return _rewrite_file(filename, codemods, diff, context)
     except cst.ParserSyntaxError as exc:
         return (
             f"A syntax error happened on {filename}. This file cannot be "
