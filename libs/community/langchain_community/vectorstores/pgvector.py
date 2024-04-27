@@ -471,7 +471,7 @@ class PGVector(VectorStore):
         **kwargs: Any,
     ) -> PGVector:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -511,7 +511,7 @@ class PGVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -795,13 +795,13 @@ class PGVector(VectorStore):
             )
         elif OR in map(str.lower, value):
             or_clauses = [
-                self._create_filter_clause(key, sub_value)
+                self._create_filter_clause_deprecated(key, sub_value)
                 for sub_value in value_case_insensitive[OR]
             ]
             filter_by_metadata = sqlalchemy.or_(*or_clauses)
         elif AND in map(str.lower, value):
             and_clauses = [
-                self._create_filter_clause(key, sub_value)
+                self._create_filter_clause_deprecated(key, sub_value)
                 for sub_value in value_case_insensitive[AND]
             ]
             filter_by_metadata = sqlalchemy.and_(*and_clauses)

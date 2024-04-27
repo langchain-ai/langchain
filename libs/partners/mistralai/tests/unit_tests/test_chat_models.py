@@ -1,7 +1,7 @@
 """Test MistralAI Chat API wrapper."""
 
 import os
-from typing import Any, AsyncGenerator, Dict, Generator, cast
+from typing import Any, AsyncGenerator, Dict, Generator, List, cast
 from unittest.mock import patch
 
 import pytest
@@ -130,7 +130,7 @@ def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_call = {
         "id": "abc123",
         "function": {
-            "arguments": '{"name":"Sally","hair_color":"green"}',
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
             "name": "GenerateUsername",
         },
     }
@@ -153,16 +153,16 @@ def test__convert_dict_to_message_tool_call() -> None:
     # Test malformed tool call
     raw_tool_calls = [
         {
-            "id": "abc123",
+            "id": "def456",
             "function": {
-                "arguments": "oops",
+                "arguments": '{"name": "Sally", "hair_color": "green"}',
                 "name": "GenerateUsername",
             },
         },
         {
-            "id": "def456",
+            "id": "abc123",
             "function": {
-                "arguments": '{"name":"Sally","hair_color":"green"}',
+                "arguments": "oops",
                 "name": "GenerateUsername",
             },
         },
@@ -190,3 +190,11 @@ def test__convert_dict_to_message_tool_call() -> None:
     )
     assert result == expected_output
     assert _convert_message_to_mistral_chat_message(expected_output) == message
+
+
+def test_custom_token_counting() -> None:
+    def token_encoder(text: str) -> List[int]:
+        return [1, 2, 3]
+
+    llm = ChatMistralAI(custom_get_token_ids=token_encoder)
+    assert llm.get_token_ids("foo") == [1, 2, 3]

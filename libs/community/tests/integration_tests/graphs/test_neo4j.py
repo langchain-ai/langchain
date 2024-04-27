@@ -273,3 +273,21 @@ def test_neo4j_filtering_labels() -> None:
     # Assert both are empty
     assert graph.structured_schema["node_props"] == {}
     assert graph.structured_schema["relationships"] == []
+
+
+def test_driver_config() -> None:
+    """Test that neo4j works with driver config."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url,
+        username=username,
+        password=password,
+        driver_config={"max_connection_pool_size": 1},
+    )
+    graph.query("RETURN 'foo'")

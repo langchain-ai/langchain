@@ -17,7 +17,7 @@ def test_chat_edenai() -> None:
         provider="openai", model="gpt-3.5-turbo", temperature=0, max_tokens=1000
     )
     message = HumanMessage(content="Who are you ?")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 

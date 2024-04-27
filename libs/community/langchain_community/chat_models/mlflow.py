@@ -1,24 +1,29 @@
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional, cast
 from urllib.parse import urlparse
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models.base import LanguageModelInput
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ChatMessage,
+    ChatMessageChunk,
     FunctionMessage,
     HumanMessage,
+    HumanMessageChunk,
     SystemMessage,
+    SystemMessageChunk,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import (
     Field,
     PrivateAttr,
 )
+from langchain_core.runnables import RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -98,13 +103,12 @@ class ChatMlflow(BaseChatModel):
         }
         return params
 
-    def _generate(
+    def _prepare_inputs(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> ChatResult:
+    ) -> Dict[str, Any]:
         message_dicts = [
             ChatMlflow._convert_message_to_dict(message) for message in messages
         ]
@@ -119,8 +123,75 @@ class ChatMlflow(BaseChatModel):
             data["stop"] = stop
         if self.max_tokens is not None:
             data["max_tokens"] = self.max_tokens
+
+        return data
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        data = self._prepare_inputs(
+            messages,
+            stop,
+            **kwargs,
+        )
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return ChatMlflow._create_chat_result(resp)
+
+    def stream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Iterator[BaseMessageChunk]:
+        # We need to override `stream` to handle the case
+        # that `self._client` does not implement `predict_stream`
+        if not hasattr(self._client, "predict_stream"):
+            # MLflow deployment client does not implement streaming,
+            # so use default implementation
+            yield cast(
+                BaseMessageChunk, self.invoke(input, config=config, stop=stop, **kwargs)
+            )
+        else:
+            yield from super().stream(input, config, stop=stop, **kwargs)
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        data = self._prepare_inputs(
+            messages,
+            stop,
+            **kwargs,
+        )
+        # TODO: check if `_client.predict_stream` is available.
+        chunk_iter = self._client.predict_stream(endpoint=self.endpoint, inputs=data)
+        for chunk in chunk_iter:
+            choice = chunk["choices"][0]
+            chunk = ChatMlflow._convert_delta_to_message_chunk(choice["delta"])
+
+            generation_info = {}
+            if finish_reason := choice.get("finish_reason"):
+                generation_info["finish_reason"] = finish_reason
+            if logprobs := choice.get("logprobs"):
+                generation_info["logprobs"] = logprobs
+
+            chunk = ChatGenerationChunk(
+                message=chunk, generation_info=generation_info or None
+            )
+
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
+
+            yield chunk
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -152,6 +223,19 @@ class ChatMlflow(BaseChatModel):
             return SystemMessage(content=content)
         else:
             return ChatMessage(content=content, role=role)
+
+    @staticmethod
+    def _convert_delta_to_message_chunk(_dict: Mapping[str, Any]) -> BaseMessageChunk:
+        role = _dict["role"]
+        content = _dict["content"]
+        if role == "user":
+            return HumanMessageChunk(content=content)
+        elif role == "assistant":
+            return AIMessageChunk(content=content)
+        elif role == "system":
+            return SystemMessageChunk(content=content)
+        else:
+            return ChatMessageChunk(content=content, role=role)
 
     @staticmethod
     def _raise_functions_not_supported() -> None:
