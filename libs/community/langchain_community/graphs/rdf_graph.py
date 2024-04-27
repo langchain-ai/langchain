@@ -178,6 +178,7 @@ class RdfGraph:
             self.graph.parse(source_file, format=self.serialization)
 
         if query_endpoint:
+            store_kwargs = store_kwargs or {}
             self.mode = "store"
             if not update_endpoint:
                 self._store = sparqlstore.SPARQLStore(**store_kwargs)
