@@ -19,6 +19,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _format_message_content,
 )
 
 
@@ -287,3 +288,36 @@ def test_custom_token_counting() -> None:
 
     llm = ChatOpenAI(custom_get_token_ids=token_encoder)
     assert llm.get_token_ids("foo") == [1, 2, 3]
+
+
+def test_format_message_content() -> None:
+    content: Any = "hello"
+    assert content == _format_message_content(content)
+
+    content = None
+    assert content == _format_message_content(content)
+
+    content = []
+    assert content == _format_message_content(content)
+
+    content = [
+        {"type": "text", "text": "What is in this image?"},
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": "url.com",
+            },
+        },
+    ]
+    assert content == _format_message_content(content)
+
+    content = [
+        {"type": "text", "text": "hello"},
+        {
+            "type": "tool_use",
+            "id": "toolu_01A09q90qw90lq917835lq9",
+            "name": "get_weather",
+            "input": {"location": "San Francisco, CA", "unit": "celsius"},
+        },
+    ]
+    assert [{"type": "text", "text": "hello"}] == _format_message_content(content)

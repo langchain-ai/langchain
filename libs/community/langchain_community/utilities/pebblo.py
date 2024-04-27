@@ -169,7 +169,9 @@ def get_full_path(path: str) -> str:
         or (path in ["unknown", "-", "in-memory"])
     ):
         return path
-    full_path = pathlib.Path(path).resolve()
+    full_path = pathlib.Path(path)
+    if full_path.exists():
+        full_path = full_path.resolve()
     return str(full_path)
 
 
