@@ -1081,3 +1081,57 @@ class Milvus(VectorStore):
                 "Failed to upsert entities: %s error: %s", self.collection_name, exc
             )
             raise exc
+
+    def upsert_text(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        timeout: Optional[float] = None,
+        batch_size: int = 1000,
+        *,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str] | None:
+        """Update/Insert texts to the Milvus vectorstore.
+        This is based on upsert data based on add_text functionality
+        In case metadata need to upsert in milvus,
+        Metadata keys will need to be present for all inserted values. At
+        the moment there is no None equivalent in Milvus.
+
+        Args:
+            texts (Iterable[str]): The texts to embed, it is assumed
+                that they all fit in memory.
+            metadatas (Optional[List[dict]]): Metadata dicts attached to each of
+                the texts. Defaults to None.
+            timeout (Optional[float]): Timeout for each batch insert. Defaults
+                to None.
+            batch_size (int, optional): Batch size to use for insertion.
+                Defaults to 1000.
+            ids (Optional[List[str]]): List of text ids. The length of each item
+
+        Raises:
+            MilvusException: Failure to add texts
+
+        Returns:
+            List[str]: The resulting keys for each inserted element.
+        """
+
+        from pymilvus import MilvusException
+
+        if texts is None or len(texts) == 0:
+            logger.debug("No documents to upsert.")
+            return None
+
+        if ids is not None and len(ids):
+            try:
+                self.delete(ids=ids)
+            except MilvusException:
+                pass
+        try:
+            return self.add_texts(texts=texts, metadatas=metadatas,
+                                  timeout=timeout, batch_size=batch_size, ids=ids, **kwargs)
+        except MilvusException as exc:
+            logger.error(
+                "Failed to upsert texts entities: %s error: %s", self.collection_name, exc
+            )
+            raise exc
