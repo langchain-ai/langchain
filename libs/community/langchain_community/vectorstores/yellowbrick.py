@@ -66,7 +66,7 @@ class Yellowbrick(VectorStore):
     def __init__(
         self,
         embedding: Embeddings,
-        connection_info: Union[PgConnection, str],
+        connection_info: Union['PgConnection', str],
         table: str,
         *,
         schema: Optional[str] = None,
@@ -82,6 +82,7 @@ class Yellowbrick(VectorStore):
             table: Table used to store / retrieve embeddings from
         """
         from psycopg2 import extras
+        from psycopg2.extensions import connection as PgConnection
 
         extras.register_uuid()
 
@@ -141,12 +142,12 @@ class Yellowbrick(VectorStore):
 
     class DatabaseConnection:
         _instance = None
-        connection: Optional[PgConnection] = None
+        connection: Optional['PgConnection'] = None
         connection_string: Optional[str] = None
         logger: logging.Logger
 
         def __new__(
-            cls, connection_info: Union[str, PgConnection], logger: logging.Logger
+            cls, connection_info: Union[str, 'PgConnection'], logger: logging.Logger
         ) -> "Yellowbrick.DatabaseConnection":
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
@@ -162,7 +163,7 @@ class Yellowbrick(VectorStore):
                 self.connection.close()
                 self.connection = None
 
-        def get_connection(self) -> PgConnection:
+        def get_connection(self) -> 'PgConnection':
             import psycopg2
 
             if self.connection_string is None:
@@ -177,7 +178,7 @@ class Yellowbrick(VectorStore):
             return self.connection
 
         @contextmanager
-        def get_managed_connection(self) -> Generator[PgConnection, None, None]:
+        def get_managed_connection(self) -> Generator['PgConnection', None, None]:
             from psycopg2 import DatabaseError
 
             conn = self.get_connection()
@@ -193,7 +194,7 @@ class Yellowbrick(VectorStore):
                 conn.commit()
 
         @contextmanager
-        def get_cursor(self) -> Generator[PgCursor, None, None]:
+        def get_cursor(self) -> Generator['PgCursor', None, None]:
             with self.get_managed_connection() as conn:
                 cursor = conn.cursor()
                 try:
@@ -201,7 +202,7 @@ class Yellowbrick(VectorStore):
                 finally:
                     cursor.close()
 
-    def _create_schema(self, cursor: PgCursor) -> None:
+    def _create_schema(self, cursor: 'PgCursor') -> None:
         """
         Helper function: create schema if not exists
         """
@@ -218,7 +219,7 @@ class Yellowbrick(VectorStore):
                 )
             )
 
-    def _create_table(self, cursor: PgCursor) -> None:
+    def _create_table(self, cursor: 'PgCursor') -> None:
         """
         Helper function: create table if not exists
         """
@@ -273,7 +274,7 @@ class Yellowbrick(VectorStore):
         self,
         table: str,
         schema: Optional[str] = None,
-        cursor: Optional[PgCursor] = None,
+        cursor: Optional['PgCursor'] = None,
     ) -> None:
         """
         Helper function: Drop data. If a cursor is provided, use it;
@@ -287,7 +288,7 @@ class Yellowbrick(VectorStore):
 
     def _drop_table(
         self,
-        cursor: PgCursor,
+        cursor: 'PgCursor',
         table: str,
         schema: Optional[str] = None,
     ) -> None:
@@ -384,7 +385,7 @@ class Yellowbrick(VectorStore):
         return results
 
     def _copy_to_db(
-        self, cursor: PgCursor, content_io: StringIO, embeddings_io: StringIO
+        self, cursor: 'PgCursor', content_io: StringIO, embeddings_io: StringIO
     ) -> None:
         content_io.seek(0)
         embeddings_io.seek(0)
@@ -417,7 +418,7 @@ class Yellowbrick(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        connection_info: Union[PgConnection, str] = None,
+        connection_info: Union['PgConnection', str] = None,
         table: str = "langchain",
         schema: Optional[str] = None,
         drop: Optional[bool] = False,
@@ -724,7 +725,7 @@ class Yellowbrick(VectorStore):
 
     def _update_lsh_hashes(
         self,
-        cursor: PgCursor,
+        cursor: 'PgCursor',
         doc_id: Optional[uuid.UUID] = None,
     ) -> None:
         """Add hashes to LSH index"""
@@ -768,7 +769,7 @@ class Yellowbrick(VectorStore):
         cursor.execute(input_query)
 
     def _generate_tmp_lsh_hashes(
-        self, cursor: PgCursor, tmp_embedding_table: str, tmp_hash_table: str
+        self, cursor: 'PgCursor', tmp_embedding_table: str, tmp_hash_table: str
     ) -> None:
         """Generate temp LSH"""
         from psycopg2 import sql
@@ -800,7 +801,7 @@ class Yellowbrick(VectorStore):
         )
         cursor.execute(input_query)
 
-    def _populate_hyperplanes(self, cursor: PgCursor, num_hyperplanes: int) -> None:
+    def _populate_hyperplanes(self, cursor: 'PgCursor', num_hyperplanes: int) -> None:
         """Generate random hyperplanes and store in Yellowbrick"""
         from psycopg2 import sql
 
@@ -846,7 +847,7 @@ class Yellowbrick(VectorStore):
         )
         cursor.execute(insert_query)
 
-    def _create_lsh_index_tables(self, cursor: PgCursor) -> None:
+    def _create_lsh_index_tables(self, cursor: 'PgCursor') -> None:
         """Create LSH index and hyperplane tables"""
         from psycopg2 import sql
 
@@ -893,7 +894,7 @@ class Yellowbrick(VectorStore):
             )
         )
 
-    def _drop_lsh_index_tables(self, cursor: PgCursor) -> None:
+    def _drop_lsh_index_tables(self, cursor: 'PgCursor') -> None:
         """Drop LSH index tables"""
         self.drop(
             schema=self._schema, table=self._table + self.LSH_INDEX_TABLE, cursor=cursor
