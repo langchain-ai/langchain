@@ -1092,7 +1092,7 @@ class Milvus(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str] | None:
-        """Update/Insert texts to the Milvus vectorstore.
+        """upsert texts to the Milvus vectorstore.
         This is based on upsert data based on add_text functionality
         In case metadata need to upsert in milvus,
         Metadata keys will need to be present for all inserted values. At
