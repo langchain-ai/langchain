@@ -86,8 +86,6 @@ def main(
     scratch: dict[str, Any] = {}
     start_time = time.time()
 
-    # codemods = gather_codemods(disabled=disable)
-
     log_fp = log_file.open("a+", encoding="utf8")
     partial_run_codemods = functools.partial(
         get_and_run_codemods, disable, metadata_manager, scratch, package, diff
@@ -143,6 +141,40 @@ def get_and_run_codemods(
     return run_codemods(codemods, metadata_manager, scratch, package, diff, filename)
 
 
+def _rewrite_file(
+    filename: str,
+    codemods: List[Type[ContextAwareTransformer]],
+    diff: bool,
+    context: CodemodContext,
+) -> Tuple[Union[str, None], Union[List[str], None]]:
+    file_path = Path(filename)
+    with file_path.open("r+", encoding="utf-8") as fp:
+        code = fp.read()
+        fp.seek(0)
+
+        input_tree = cst.parse_module(code)
+
+        for codemod in codemods:
+            transformer = codemod(context=context)
+            output_tree = transformer.transform_module(input_tree)
+            input_tree = output_tree
+
+        output_code = input_tree.code
+        if code != output_code:
+            if diff:
+                lines = difflib.unified_diff(
+                    code.splitlines(keepends=True),
+                    output_code.splitlines(keepends=True),
+                    fromfile=filename,
+                    tofile=filename,
+                )
+                return None, list(lines)
+            else:
+                fp.write(output_code)
+                fp.truncate()
+    return None, None
+
+
 def run_codemods(
     codemods: List[Type[ContextAwareTransformer]],
     metadata_manager: FullRepoManager,
@@ -161,32 +193,7 @@ def run_codemods(
         )
         context.scratch.update(scratch)
 
-        file_path = Path(filename)
-        with file_path.open("r+", encoding="utf-8") as fp:
-            code = fp.read()
-            fp.seek(0)
-
-            input_tree = cst.parse_module(code)
-
-            for codemod in codemods:
-                transformer = codemod(context=context)
-                output_tree = transformer.transform_module(input_tree)
-                input_tree = output_tree
-
-            output_code = input_tree.code
-            if code != output_code:
-                if diff:
-                    lines = difflib.unified_diff(
-                        code.splitlines(keepends=True),
-                        output_code.splitlines(keepends=True),
-                        fromfile=filename,
-                        tofile=filename,
-                    )
-                    return None, list(lines)
-                else:
-                    fp.write(output_code)
-                    fp.truncate()
-        return None, None
+        return _rewrite_file(filename, codemods, diff, context)
     except cst.ParserSyntaxError as exc:
         return (
             f"A syntax error happened on {filename}. This file cannot be "
