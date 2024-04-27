@@ -86,11 +86,11 @@ def main(
     scratch: dict[str, Any] = {}
     start_time = time.time()
 
-    codemods = gather_codemods(disabled=disable)
+    # codemods = gather_codemods(disabled=disable)
 
     log_fp = log_file.open("a+", encoding="utf8")
     partial_run_codemods = functools.partial(
-        run_codemods, codemods, metadata_manager, scratch, package, diff
+        get_and_run_codemods, disable, metadata_manager, scratch, package, diff
     )
     with Progress(*Progress.get_default_columns(), transient=True) as progress:
         task = progress.add_task(description="Executing codemods...", total=len(files))
@@ -125,6 +125,22 @@ def main(
 
     if difflines:
         raise Exit(1)
+
+
+def get_and_run_codemods(
+    disabled_rules: List[Rule],
+    metadata_manager: FullRepoManager,
+    scratch: Dict[str, Any],
+    package: Path,
+    diff: bool,
+    filename: str,
+) -> Tuple[Union[str, None], Union[List[str], None]]:
+    """Run codemods from rules.
+
+    Wrapper around run_codemods to be used with multiprocessing.Pool.
+    """
+    codemods = gather_codemods(disabled=disabled_rules)
+    return run_codemods(codemods, metadata_manager, scratch, package, diff, filename)
 
 
 def run_codemods(
