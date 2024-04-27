@@ -98,6 +98,23 @@
                                     +--------------------------------+                                       
   '''
 # ---
+# name: test_graph_sequence_map[mermaid-simple]
+  '''
+  graph TD;
+  	PromptInput --> PromptTemplate;
+  	PromptTemplate --> FakeListLLM;
+  	Parallel_as_list_as_str_Input --> CommaSeparatedListOutputParser;
+  	CommaSeparatedListOutputParser --> Parallel_as_list_as_str_Output;
+  	conditional_str_parser_input --> StrOutputParser;
+  	StrOutputParser --> conditional_str_parser_output;
+  	conditional_str_parser_input --> XMLOutputParser;
+  	XMLOutputParser --> conditional_str_parser_output;
+  	Parallel_as_list_as_str_Input --> conditional_str_parser_input;
+  	conditional_str_parser_output --> Parallel_as_list_as_str_Output;
+  	FakeListLLM --> Parallel_as_list_as_str_Input;
+  
+  '''
+# ---
 # name: test_graph_sequence_map[mermaid]
   '''
   %%{init: {'flowchart': {'curve': 'linear'}}}%%

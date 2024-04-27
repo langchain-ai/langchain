@@ -5,13 +5,13 @@ import re
 from typing import Any, Dict, List, Optional
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import (
+from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain.chains.base import Chain
-from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
+from langchain_core.prompts.base import BasePromptTemplate
 
 from langchain_experimental.llm_symbolic_math.prompt import PROMPT
 from langchain_experimental.pydantic_v1 import Extra

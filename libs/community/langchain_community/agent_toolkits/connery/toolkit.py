@@ -1,15 +1,14 @@
 from typing import List
 
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseTool, BaseToolkit
 
-from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools.connery import ConneryService
 
 
 class ConneryToolkit(BaseToolkit):
     """
-    A LangChain Toolkit with a list of Connery Actions as tools.
+    Toolkit with a list of Connery Actions as tools.
     """
 
     tools: List[BaseTool]

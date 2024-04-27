@@ -660,3 +660,4 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     }
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
+    assert graph.draw_mermaid(with_styles=False) == snapshot(name="mermaid-simple")

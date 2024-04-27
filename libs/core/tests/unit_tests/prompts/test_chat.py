@@ -191,6 +191,34 @@ async def test_chat_prompt_template_from_messages_using_role_strings() -> None:
     assert messages == expected
 
 
+def test_chat_prompt_template_from_messages_mustache() -> None:
+    """Test creating a chat prompt template from role string messages."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful AI bot. Your name is {{name}}."),
+            ("human", "Hello, how are you doing?"),
+            ("ai", "I'm doing well, thanks!"),
+            ("human", "{{user_input}}"),
+        ],
+        "mustache",
+    )
+
+    messages = template.format_messages(name="Bob", user_input="What is your name?")
+
+    assert messages == [
+        SystemMessage(
+            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+        ),
+        HumanMessage(
+            content="Hello, how are you doing?", additional_kwargs={}, example=False
+        ),
+        AIMessage(
+            content="I'm doing well, thanks!", additional_kwargs={}, example=False
+        ),
+        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+    ]
+
+
 def test_chat_prompt_template_with_messages(
     messages: List[BaseMessagePromptTemplate],
 ) -> None:
