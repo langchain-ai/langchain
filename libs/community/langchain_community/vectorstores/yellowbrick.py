@@ -7,7 +7,6 @@ import json
 import logging
 import random
 import uuid
-import warnings
 from contextlib import contextmanager
 from io import StringIO
 from typing import (
@@ -31,8 +30,6 @@ from langchain_community.docstore.document import Document
 if TYPE_CHECKING:
     from psycopg2.extensions import connection as PgConnection
     from psycopg2.extensions import cursor as PgCursor
-
-logger = logging.getLogger(__name__)
 
 
 class Yellowbrick(VectorStore):
@@ -72,6 +69,8 @@ class Yellowbrick(VectorStore):
         connection_info: Union[PgConnection, str],
         table: str,
         *,
+        schema: Optional[str] = None,
+        logger: Optional[logging.Logger] = None,
         seed: Optional[float] = 0.42,
         drop: Optional[bool] = False,
     ) -> None:
@@ -86,8 +85,20 @@ class Yellowbrick(VectorStore):
 
         extras.register_uuid()
 
+        if logger:
+            self.logger = logger
+        else:
+            self.logger = logging.getLogger(__name__)
+            self.logger.setLevel(logging.ERROR)
+            handler = logging.StreamHandler()
+            handler.setLevel(logging.DEBUG)
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+
         if not isinstance(embedding, Embeddings):
-            warnings.warn("embeddings input must be Embeddings object.")
+            self.logger.error("embeddings input must be Embeddings object.")
+            return
 
         self.LSH_INDEX_TABLE: str = "_lsh_index"
         self.LSH_HYPERPLANE_TABLE: str = "_lsh_hyperplane"
@@ -95,9 +106,9 @@ class Yellowbrick(VectorStore):
 
         if isinstance(connection_info, str):
             self.connection_info = connection_info
-            self.connection = self.DatabaseConnection(self.connection_info)
+            self.connection = self.DatabaseConnection(self.connection_info, self.logger)
         elif isinstance(connection_info, PgConnection):
-            self.connection = self.DatabaseConnection(connection_info)
+            self.connection = self.DatabaseConnection(connection_info, self.logger)
         else:
             raise ValueError(
                 """connection_info must be either a connection string 
@@ -105,6 +116,7 @@ class Yellowbrick(VectorStore):
             )
         atexit.register(self.connection.close_connection)
 
+        self._schema = schema
         self._table = table
         self._embedding = embedding
         self._max_embedding_len = None
@@ -112,10 +124,15 @@ class Yellowbrick(VectorStore):
 
         with self.connection.get_cursor() as cursor:
             if drop:
-                self.drop(self._table, cursor)
-                self.drop(self._table + self.CONTENT_TABLE, cursor)
+                self.drop(table=self._table, schema=self._schema, cursor=cursor)
+                self.drop(
+                    table=self._table + self.CONTENT_TABLE,
+                    schema=self._schema,
+                    cursor=cursor,
+                )
                 self._drop_lsh_index_tables(cursor)
 
+            self._create_schema(cursor)
             self._create_table(cursor)
 
         if seed is not None:
@@ -126,9 +143,10 @@ class Yellowbrick(VectorStore):
         _instance = None
         connection: Optional[PgConnection] = None
         connection_string: Optional[str] = None
+        logger: logging.Logger
 
         def __new__(
-            cls, connection_info: Union[str, PgConnection]
+            cls, connection_info: Union[str, PgConnection], logger: logging.Logger
         ) -> "Yellowbrick.DatabaseConnection":
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
@@ -136,6 +154,7 @@ class Yellowbrick(VectorStore):
                     cls._instance.connection_string = connection_info
                 elif isinstance(connection_info, PgConnection):
                     cls._instance.connection = connection_info
+                cls.logger = logger
             return cls._instance
 
         def close_connection(self) -> None:
@@ -166,7 +185,7 @@ class Yellowbrick(VectorStore):
                 yield conn
             except DatabaseError as e:
                 conn.rollback()
-                logger.error(
+                self.logger.error(
                     "Database error occurred, rolling back transaction.", exc_info=True
                 )
                 raise RuntimeError("Database transaction failed.") from e
@@ -182,12 +201,32 @@ class Yellowbrick(VectorStore):
                 finally:
                     cursor.close()
 
+    def _create_schema(self, cursor: PgCursor) -> None:
+        """
+        Helper function: create schema if not exists
+        """
+        from psycopg2 import sql
+
+        if self._schema:
+            cursor.execute(
+                sql.SQL(
+                    """
+                    CREATE SCHEMA IF NOT EXISTS {s}
+                """
+                ).format(
+                    s=sql.Identifier(self._schema),
+                )
+            )
+
     def _create_table(self, cursor: PgCursor) -> None:
         """
         Helper function: create table if not exists
         """
         from psycopg2 import sql
 
+        schema_prefix = (self._schema,) if self._schema else ()
+        t = sql.Identifier(*schema_prefix, self._table + self.CONTENT_TABLE)
+        c = sql.Identifier(self._table + self.CONTENT_TABLE + "_pk_doc_id")
         cursor.execute(
             sql.SQL(
                 """
@@ -199,10 +238,18 @@ class Yellowbrick(VectorStore):
                 DISTRIBUTE ON (doc_id) SORT ON (doc_id)
             """
             ).format(
-                t=sql.Identifier(self._table + self.CONTENT_TABLE),
-                c=sql.Identifier(self._table + self.CONTENT_TABLE + "_pk_doc_id"),
+                t=t,
+                c=c,
             )
         )
+
+        schema_prefix = (self._schema,) if self._schema else ()
+        t1 = sql.Identifier(*schema_prefix, self._table)
+        t2 = sql.Identifier(*schema_prefix, self._table + self.CONTENT_TABLE)
+        c1 = sql.Identifier(
+            self._table + self.CONTENT_TABLE + "_pk_doc_id_embedding_id"
+        )
+        c2 = sql.Identifier(self._table + self.CONTENT_TABLE + "_fk_doc_id")
         cursor.execute(
             sql.SQL(
                 """
@@ -215,35 +262,51 @@ class Yellowbrick(VectorStore):
                 DISTRIBUTE ON (doc_id) SORT ON (doc_id)
             """
             ).format(
-                t1=sql.Identifier(self._table),
-                t2=sql.Identifier(self._table + self.CONTENT_TABLE),
-                c1=sql.Identifier(
-                    self._table + self.CONTENT_TABLE + "_pk_doc_id_embedding_id"
-                ),
-                c2=sql.Identifier(self._table + self.CONTENT_TABLE + "_fk_doc_id"),
+                t1=t1,
+                t2=t2,
+                c1=c1,
+                c2=c2,
             )
         )
 
-    def drop(self, table: str, cursor: Optional[PgCursor] = None) -> None:
+    def drop(
+        self,
+        table: str,
+        schema: Optional[str] = None,
+        cursor: Optional[PgCursor] = None,
+    ) -> None:
         """
         Helper function: Drop data. If a cursor is provided, use it;
         otherwise, obtain a new cursor for the operation.
         """
         if cursor is None:
             with self.connection.get_cursor() as cursor:
-                self._drop_table(table, cursor)
+                self._drop_table(cursor, table, schema=schema)
         else:
-            self._drop_table(table, cursor)
+            self._drop_table(cursor, table, schema=schema)
 
-    def _drop_table(self, table: str, cursor: PgCursor) -> None:
+    def _drop_table(
+        self,
+        cursor: PgCursor,
+        table: str,
+        schema: Optional[str] = None,
+    ) -> None:
         """
         Executes the drop table command using the given cursor.
         """
         from psycopg2 import sql
 
-        cursor.execute(
-            sql.SQL("DROP TABLE IF EXISTS {} CASCADE").format(sql.Identifier(table))
-        )
+        if schema:
+            table_name = sql.Identifier(schema, table)
+        else:
+            table_name = sql.Identifier(table)
+
+        drop_table_query = sql.SQL(
+            """
+        DROP TABLE IF EXISTS {} CASCADE
+        """
+        ).format(table_name)
+        cursor.execute(drop_table_query)
 
     def _check_database_utf8(self) -> bool:
         """
@@ -304,7 +367,7 @@ class Yellowbrick(VectorStore):
                 current_batch_size += 1
 
                 if current_batch_size >= batch_size:
-                    self._copy_to_db(cursor, content_io, embeddings_io, self._table)
+                    self._copy_to_db(cursor, content_io, embeddings_io)
 
                     content_io.seek(0)
                     content_io.truncate(0)
@@ -313,69 +376,40 @@ class Yellowbrick(VectorStore):
                     current_batch_size = 0
 
             if current_batch_size > 0:
-                self._copy_to_db(cursor, content_io, embeddings_io, self._table)
+                self._copy_to_db(cursor, content_io, embeddings_io)
 
         if index_params.index_type == Yellowbrick.IndexType.LSH:
-            self.update_index(index_params, uuid.UUID(doc_uuid))
+            self._update_index(index_params, uuid.UUID(doc_uuid))
 
         return results
 
     def _copy_to_db(
-        self,
-        cursor: PgCursor,
-        content_io: StringIO,
-        embeddings_io: StringIO,
-        table_name: str,
+        self, cursor: PgCursor, content_io: StringIO, embeddings_io: StringIO
     ) -> None:
         content_io.seek(0)
         embeddings_io.seek(0)
-        cursor.copy_expert(
-            f"COPY {table_name + self.CONTENT_TABLE} (doc_id, text, metadata) \
-                FROM STDIN WITH (FORMAT CSV, DELIMITER E'\\t', QUOTE '\"')",
-            content_io,
-        )
-        cursor.copy_expert(
-            f"COPY {table_name} (doc_id, embedding_id, embedding) \
-                FROM STDIN WITH (FORMAT CSV, DELIMITER E'\\t', QUOTE '\"')",
-            embeddings_io,
-        )
 
-    def migrate_schema_v1_to_v2(self) -> None:
         from psycopg2 import sql
 
-        try:
-            with self.connection.get_cursor() as cursor:
-                alter_table_query = sql.SQL("ALTER TABLE {t1} RENAME TO {t2}").format(
-                    t1=sql.Identifier(self._table),
-                    t2=sql.Identifier(self._table + "_v1"),
-                )
-                cursor.execute(alter_table_query)
+        schema_prefix = (self._schema,) if self._schema else ()
+        table = sql.Identifier(*schema_prefix, self._table + self.CONTENT_TABLE)
+        content_copy_query = sql.SQL(
+            """
+            COPY {table} (doc_id, text, metadata) FROM 
+            STDIN WITH (FORMAT CSV, DELIMITER E'\\t', QUOTE '\"')
+        """
+        ).format(table=table)
+        cursor.copy_expert(content_copy_query, content_io)
 
-                self._create_table(cursor)
-
-                insert_query = sql.SQL(
-                    """
-                    INSERT INTO {t1} (doc_id, embedding_id, embedding) 
-                    SELECT id, embedding_id, embedding FROM {t2}
-                """
-                ).format(
-                    t1=sql.Identifier(self._table),
-                    t2=sql.Identifier(self._table + "_v1"),
-                )
-                cursor.execute(insert_query)
-
-                insert_content_query = sql.SQL(
-                    """
-                    INSERT INTO {t1} (doc_id, text, metadata) 
-                    SELECT DISTINCT id, text, metadata FROM {t2}
-                """
-                ).format(
-                    t1=sql.Identifier(self._table + self.CONTENT_TABLE),
-                    t2=sql.Identifier(self._table + "_v1"),
-                )
-                cursor.execute(insert_content_query)
-        except Exception as e:
-            raise RuntimeError(f"Failed to migrate schema: {e}") from e
+        schema_prefix = (self._schema,) if self._schema else ()
+        table = sql.Identifier(*schema_prefix, self._table)
+        embeddings_copy_query = sql.SQL(
+            """
+            COPY {table} (doc_id, embedding_id, embedding) FROM 
+            STDIN WITH (FORMAT CSV, DELIMITER E'\\t', QUOTE '\"')
+        """
+        ).format(table=table)
+        cursor.copy_expert(embeddings_copy_query, embeddings_io)
 
     @classmethod
     def from_texts(
@@ -385,6 +419,7 @@ class Yellowbrick(VectorStore):
         metadatas: Optional[List[dict]] = None,
         connection_info: Union[PgConnection, str] = None,
         table: str = "langchain",
+        schema: Optional[str] = None,
         drop: Optional[bool] = False,
         **kwargs: Any,
     ) -> Yellowbrick:
@@ -401,10 +436,64 @@ class Yellowbrick(VectorStore):
             embedding=embedding,
             connection_info=connection_info,
             table=table,
+            schema=schema,
             drop=drop,
         )
         vss.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return vss
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete vectors by uuids
+
+        Args:
+        ids: List of ids to delete, where each id is a UUID.
+        """
+        if ids is None or not ids:
+            return False
+
+        from psycopg2 import errors, extensions, sql
+
+        with self.connection.get_cursor() as cursor:
+            uuids = tuple(sql.Literal(id) for id in ids)  # Properly escape UUIDs
+            ids_formatted = sql.SQL(", ").join(uuids)
+
+            try:
+                lsh_query = sql.SQL(
+                    "DELETE FROM {table} WHERE doc_id IN ({ids})"
+                ).format(
+                    table=sql.Identifier(
+                        self._schema, self._table + self.LSH_INDEX_TABLE
+                    ),
+                    ids=ids_formatted,
+                )
+                cursor.execute(lsh_query)
+            except errors.UndefinedTable:
+                self.logger.warn(
+                    f"Attempted to delete from a non-existent table: "
+                    f"{self._table + self.LSH_INDEX_TABLE}"
+                )
+                cursor.connection.rollback()
+            except errors.InFailedSqlTransaction:
+                self.logger.error("Transaction in failed state, rolling back.")
+                cursor.connection.rollback()
+            finally:
+                if cursor.connection.status == extensions.STATUS_IN_TRANSACTION:
+                    cursor.connection.rollback()
+
+            content_query = sql.SQL(
+                "DELETE FROM {table} WHERE doc_id IN ({ids})"
+            ).format(
+                table=sql.Identifier(self._schema, self._table + self.CONTENT_TABLE),
+                ids=ids_formatted,
+            )
+            cursor.execute(content_query)
+
+            embeddings_query = sql.SQL(
+                "DELETE FROM {table} WHERE doc_id IN ({ids})"
+            ).format(table=sql.Identifier(self._schema, self._table), ids=ids_formatted)
+            cursor.execute(embeddings_query)
+
+        return True
 
     def _generate_vector_uuid(self, vector: List[float]) -> uuid.UUID:
         import hashlib
@@ -453,20 +542,29 @@ class Yellowbrick(VectorStore):
                 for embedding_id, embedding_value in enumerate(embedding)
             ]
             insert_query = sql.SQL(
-                "INSERT INTO {table} (doc_id, embedding_id, embedding) VALUES %s"
-            ).format(table=sql.Identifier(tmp_embeddings_table))
+                "INSERT INTO {} (doc_id, embedding_id, embedding) VALUES %s"
+            ).format(sql.Identifier(tmp_embeddings_table))
             execute_values(cursor, insert_query, data_input)
             cursor.connection.commit()
 
+            v1 = sql.Identifier(tmp_embeddings_table)
+            schema_prefix = (self._schema,) if self._schema else ()
+            v2 = sql.Identifier(*schema_prefix, self._table)
+            v3 = sql.Identifier(*schema_prefix, self._table + self.CONTENT_TABLE)
             if index_params.index_type == Yellowbrick.IndexType.LSH:
-                input_hash_table = self._table + "_tmp_hash"
-                self._generate_lsh_hashes(
-                    cursor=cursor,
-                    embedding_table=tmp_embeddings_table,
-                    target_hash_table=input_hash_table,
+                tmp_hash_table = self._table + "_tmp_hash"
+                self._generate_tmp_lsh_hashes(
+                    cursor,
+                    tmp_embeddings_table,
+                    tmp_hash_table,
                 )
                 cursor.connection.commit()
 
+                schema_prefix = (self._schema,) if self._schema else ()
+                lsh_index = sql.Identifier(
+                    *schema_prefix, self._table + self.LSH_INDEX_TABLE
+                )
+                input_hash_table = sql.Identifier(tmp_hash_table)
                 sql_query = sql.SQL(
                     """
                     WITH index_docs AS (
@@ -503,11 +601,11 @@ class Yellowbrick(VectorStore):
                     LIMIT %s
                 """
                 ).format(
-                    v1=sql.Identifier(tmp_embeddings_table),
-                    v2=sql.Identifier(self._table),
-                    v3=sql.Identifier(self._table + self.CONTENT_TABLE),
-                    lsh_index=sql.Identifier(self._table + self.LSH_INDEX_TABLE),
-                    input_hash_table=sql.Identifier(input_hash_table),
+                    v1=v1,
+                    v2=v2,
+                    v3=v3,
+                    lsh_index=lsh_index,
+                    input_hash_table=input_hash_table,
                     hamming_distance=sql.Literal(
                         index_params.get_param("hamming_distance", 0)
                     ),
@@ -517,8 +615,8 @@ class Yellowbrick(VectorStore):
                     (k,),
                 )
                 results = cursor.fetchall()
-                self.drop(input_hash_table, cursor)
-                self.drop(tmp_embeddings_table, cursor)
+                self.drop(table=tmp_hash_table, cursor=cursor)
+                self.drop(table=tmp_embeddings_table, cursor=cursor)
             else:
                 sql_query = sql.SQL(
                     """
@@ -546,13 +644,13 @@ class Yellowbrick(VectorStore):
                     ORDER BY score DESC
                 """
                 ).format(
-                    v1=sql.Identifier(tmp_embeddings_table),
-                    v2=sql.Identifier(self._table),
-                    v3=sql.Identifier(self._table + self.CONTENT_TABLE),
+                    v1=v1,
+                    v2=v2,
+                    v3=v3,
                 )
                 cursor.execute(sql_query, (k,))
                 results = cursor.fetchall()
-                self.drop(tmp_embeddings_table, cursor)
+                self.drop(table=tmp_embeddings_table, cursor=cursor)
 
         documents: List[Tuple[Document, float]] = []
         for result in results:
@@ -624,62 +722,80 @@ class Yellowbrick(VectorStore):
         )
         return [doc for doc, _ in documents]
 
-    def _generate_lsh_hashes(
+    def _update_lsh_hashes(
         self,
         cursor: PgCursor,
-        embedding_table: str,
-        target_hash_table: Optional[str] = None,
         doc_id: Optional[uuid.UUID] = None,
     ) -> None:
-        """Generate hashes for vectors"""
+        """Add hashes to LSH index"""
         from psycopg2 import sql
 
-        if doc_id:
-            condition = sql.SQL("WHERE e.doc_id = {doc_id}").format(
-                doc_id=sql.Literal(str(doc_id))
-            )
-            group_by = sql.SQL("GROUP BY 1, 2")
-        else:
-            condition = sql.SQL("")
-            group_by = (
-                sql.SQL("GROUP BY 1") if target_hash_table else sql.SQL("GROUP BY 1, 2")
-            )
+        schema_prefix = (self._schema,) if self._schema else ()
+        lsh_hyperplane_table = sql.Identifier(
+            *schema_prefix, self._table + self.LSH_HYPERPLANE_TABLE
+        )
+        lsh_index_table_id = sql.Identifier(
+            *schema_prefix, self._table + self.LSH_INDEX_TABLE
+        )
+        embedding_table_id = sql.Identifier(*schema_prefix, self._table)
+        query_prefix_id = sql.SQL("INSERT INTO {}").format(lsh_index_table_id)
+        condition = (
+            sql.SQL("WHERE e.doc_id = {doc_id}").format(doc_id=sql.Literal(str(doc_id)))
+            if doc_id
+            else sql.SQL("")
+        )
+        group_by = sql.SQL("GROUP BY 1, 2")
 
-        if target_hash_table:
-            table_name = sql.Identifier(target_hash_table)
-            query_prefix = sql.SQL("CREATE TEMPORARY TABLE {table_name} AS").format(
-                table_name=table_name
-            )
-        else:
-            table_name = sql.Identifier(self._table + self.LSH_INDEX_TABLE)
-            query_prefix = sql.SQL("INSERT INTO {table_name}").format(
-                table_name=table_name
-            )
-
-        input_query = query_prefix + sql.SQL(
+        input_query = sql.SQL(
             """
+            {query_prefix}
             SELECT
-                {select_columns}
+                e.doc_id as doc_id,
                 h.id as hash_index,
-                CASE WHEN
-                    SUM(e.embedding * h.hyperplane) > 0
-                THEN
-                    1
-                ELSE
-                    0
-                END as hash
+                CASE WHEN SUM(e.embedding * h.hyperplane) > 0 THEN 1 ELSE 0 END as hash
             FROM {embedding_table} e
             INNER JOIN {hyperplanes} h ON e.embedding_id = h.hyperplane_id
             {condition}
             {group_by}
-            """
+        """
         ).format(
-            select_columns=sql.SQL("e.doc_id,")
-            if not target_hash_table or doc_id
-            else sql.SQL(""),
-            embedding_table=sql.Identifier(embedding_table),
-            hyperplanes=sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE),
+            query_prefix=query_prefix_id,
+            embedding_table=embedding_table_id,
+            hyperplanes=lsh_hyperplane_table,
             condition=condition,
+            group_by=group_by,
+        )
+        cursor.execute(input_query)
+
+    def _generate_tmp_lsh_hashes(
+        self, cursor: PgCursor, tmp_embedding_table: str, tmp_hash_table: str
+    ) -> None:
+        """Generate temp LSH"""
+        from psycopg2 import sql
+
+        schema_prefix = (self._schema,) if self._schema else ()
+        lsh_hyperplane_table = sql.Identifier(
+            *schema_prefix, self._table + self.LSH_HYPERPLANE_TABLE
+        )
+        tmp_embedding_table_id = sql.Identifier(tmp_embedding_table)
+        tmp_hash_table_id = sql.Identifier(tmp_hash_table)
+        query_prefix = sql.SQL("CREATE TEMPORARY TABLE {} AS").format(tmp_hash_table_id)
+        group_by = sql.SQL("GROUP BY 1")
+
+        input_query = sql.SQL(
+            """
+            {query_prefix}
+            SELECT
+                h.id as hash_index,
+                CASE WHEN SUM(e.embedding * h.hyperplane) > 0 THEN 1 ELSE 0 END as hash
+            FROM {embedding_table} e
+            INNER JOIN {hyperplanes} h ON e.embedding_id = h.hyperplane_id
+            {group_by}
+        """
+        ).format(
+            query_prefix=query_prefix,
+            embedding_table=tmp_embedding_table_id,
+            hyperplanes=lsh_hyperplane_table,
             group_by=group_by,
         )
         cursor.execute(input_query)
@@ -688,19 +804,16 @@ class Yellowbrick(VectorStore):
         """Generate random hyperplanes and store in Yellowbrick"""
         from psycopg2 import sql
 
-        cursor.execute(
-            sql.SQL("SELECT COUNT(*) FROM {};").format(
-                sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE)
-            )
+        schema_prefix = (self._schema,) if self._schema else ()
+        hyperplanes_table = sql.Identifier(
+            *schema_prefix, self._table + self.LSH_HYPERPLANE_TABLE
         )
+        cursor.execute(sql.SQL("SELECT COUNT(*) FROM {t}").format(t=hyperplanes_table))
         if cursor.fetchone()[0] > 0:
             return
 
-        cursor.execute(
-            sql.SQL("SELECT MAX(embedding_id) FROM {};").format(
-                sql.Identifier(self._table)
-            )
-        )
+        t = sql.Identifier(*schema_prefix, self._table)
+        cursor.execute(sql.SQL("SELECT MAX(embedding_id) FROM {t}").format(t=t))
         num_dimensions = cursor.fetchone()[0]
         num_dimensions += 1
 
@@ -728,7 +841,7 @@ class Yellowbrick(VectorStore):
         ).format(
             num_hyperplanes=sql.Literal(num_hyperplanes),
             dims_per_hyperplane=sql.Literal(num_dimensions),
-            hyperplanes_table=sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE),
+            hyperplanes_table=hyperplanes_table,
             seed_value=sql.Literal(self._seed),
         )
         cursor.execute(insert_query)
@@ -737,6 +850,11 @@ class Yellowbrick(VectorStore):
         """Create LSH index and hyperplane tables"""
         from psycopg2 import sql
 
+        schema_prefix = (self._schema,) if self._schema else ()
+        t1 = sql.Identifier(*schema_prefix, self._table + self.LSH_INDEX_TABLE)
+        t2 = sql.Identifier(*schema_prefix, self._table + self.CONTENT_TABLE)
+        c1 = sql.Identifier(self._table + self.LSH_INDEX_TABLE + "_pk_doc_id")
+        c2 = sql.Identifier(self._table + self.LSH_INDEX_TABLE + "_fk_doc_id")
         cursor.execute(
             sql.SQL(
                 """
@@ -749,12 +867,16 @@ class Yellowbrick(VectorStore):
                 DISTRIBUTE ON (doc_id) SORT ON (doc_id)
             """
             ).format(
-                t1=sql.Identifier(self._table + self.LSH_INDEX_TABLE),
-                t2=sql.Identifier(self._table + self.CONTENT_TABLE),
-                c1=sql.Identifier(self._table + self.LSH_INDEX_TABLE + "_pk_doc_id"),
-                c2=sql.Identifier(self._table + self.LSH_INDEX_TABLE + "_fk_doc_id"),
+                t1=t1,
+                t2=t2,
+                c1=c1,
+                c2=c2,
             )
         )
+
+        schema_prefix = (self._schema,) if self._schema else ()
+        t = sql.Identifier(*schema_prefix, self._table + self.LSH_HYPERPLANE_TABLE)
+        c = sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE + "_pk_id_hp_id")
         cursor.execute(
             sql.SQL(
                 """
@@ -766,17 +888,21 @@ class Yellowbrick(VectorStore):
                 DISTRIBUTE REPLICATE SORT ON (id)
             """
             ).format(
-                t=sql.Identifier(self._table + self.LSH_HYPERPLANE_TABLE),
-                c=sql.Identifier(
-                    self._table + self.LSH_HYPERPLANE_TABLE + "_pk_id_hp_id"
-                ),
+                t=t,
+                c=c,
             )
         )
 
     def _drop_lsh_index_tables(self, cursor: PgCursor) -> None:
         """Drop LSH index tables"""
-        self.drop(self._table + self.LSH_INDEX_TABLE, cursor)
-        self.drop(self._table + self.LSH_HYPERPLANE_TABLE, cursor)
+        self.drop(
+            schema=self._schema, table=self._table + self.LSH_INDEX_TABLE, cursor=cursor
+        )
+        self.drop(
+            schema=self._schema,
+            table=self._table + self.LSH_HYPERPLANE_TABLE,
+            cursor=cursor,
+        )
 
     def create_index(self, index_params: Yellowbrick.IndexParams) -> None:
         """Create index from existing vectors"""
@@ -787,7 +913,7 @@ class Yellowbrick(VectorStore):
                 self._populate_hyperplanes(
                     cursor, index_params.get_param("num_hyperplanes", 128)
                 )
-                self._generate_lsh_hashes(cursor=cursor, embedding_table=self._table)
+                self._update_lsh_hashes(cursor)
 
     def drop_index(self, index_params: Yellowbrick.IndexParams) -> None:
         """Drop an index"""
@@ -795,12 +921,50 @@ class Yellowbrick(VectorStore):
             with self.connection.get_cursor() as cursor:
                 self._drop_lsh_index_tables(cursor)
 
-    def update_index(
+    def _update_index(
         self, index_params: Yellowbrick.IndexParams, doc_id: uuid.UUID
     ) -> None:
         """Update an index with a new or modified embedding in the embeddings table"""
         if index_params.index_type == Yellowbrick.IndexType.LSH:
             with self.connection.get_cursor() as cursor:
-                self._generate_lsh_hashes(
-                    cursor=cursor, embedding_table=self._table, doc_id=doc_id
+                self._update_lsh_hashes(cursor, doc_id)
+
+    def migrate_schema_v1_to_v2(self) -> None:
+        from psycopg2 import sql
+
+        try:
+            with self.connection.get_cursor() as cursor:
+                schema_prefix = (self._schema,) if self._schema else ()
+                embeddings = sql.Identifier(*schema_prefix, self._table)
+                old_embeddings = sql.Identifier(*schema_prefix, self._table + "_v1")
+                content = sql.Identifier(
+                    *schema_prefix, self._table + self.CONTENT_TABLE
                 )
+                alter_table_query = sql.SQL("ALTER TABLE {t1} RENAME TO {t2}").format(
+                    t1=embeddings,
+                    t2=old_embeddings,
+                )
+                cursor.execute(alter_table_query)
+
+                self._create_table(cursor)
+
+                insert_query = sql.SQL(
+                    """
+                    INSERT INTO {t1} (doc_id, embedding_id, embedding) 
+                    SELECT id, embedding_id, embedding FROM {t2}
+                """
+                ).format(
+                    t1=embeddings,
+                    t2=old_embeddings,
+                )
+                cursor.execute(insert_query)
+
+                insert_content_query = sql.SQL(
+                    """
+                    INSERT INTO {t1} (doc_id, text, metadata) 
+                    SELECT DISTINCT id, text, metadata FROM {t2}
+                """
+                ).format(t1=content, t2=old_embeddings)
+                cursor.execute(insert_content_query)
+        except Exception as e:
+            raise RuntimeError(f"Failed to migrate schema: {e}") from e
