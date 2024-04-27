@@ -144,6 +144,7 @@ class LLMInputOutputAdapter:
     @classmethod
     def prepare_output(cls, provider: str, response: Any) -> dict:
         text = ""
+        metadata = {}
         if provider == "anthropic":
             response_body = json.loads(response.get("body").read().decode())
             if "completion" in response_body:
@@ -151,6 +152,10 @@ class LLMInputOutputAdapter:
             elif "content" in response_body:
                 content = response_body.get("content")
                 text = content[0].get("text")
+            if "stop_reason" in response_body:
+                metadata["stop_reason"] = response_body.get("stop_reason")
+            if "stop_sequence" in response_body:
+                metadata["stop_sequence"] = response_body.get("stop_sequence")
         else:
             response_body = json.loads(response.get("body").read())
 
@@ -176,6 +181,7 @@ class LLMInputOutputAdapter:
                 "completion_tokens": completion_tokens,
                 "total_tokens": prompt_tokens + completion_tokens,
             },
+            "metadata": metadata,
         }
 
     @classmethod
