@@ -1,4 +1,4 @@
-from langchain_community.vectorstores.bagel import (
+from langchain_community.vectorstores.bageldb import (
     Bagel,
 )
 
