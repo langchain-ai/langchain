@@ -2,7 +2,7 @@
 
 import os
 import random
-from typing import List
+from typing import Any, Dict, List
 
 import numpy as np
 import pytest
@@ -12,6 +12,23 @@ from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
+from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
+    DOCUMENTS,
+    TYPE_1_FILTERING_TEST_CASES,
+    TYPE_2_FILTERING_TEST_CASES,
+    TYPE_3_FILTERING_TEST_CASES,
+    TYPE_4_FILTERING_TEST_CASES,
+    TYPE_5_FILTERING_TEST_CASES,
+)
+
+TYPE_4B_FILTERING_TEST_CASES = [
+    # Test $nin, which is missing in TYPE_4_FILTERING_TEST_CASES
+    (
+        {"name": {"$nin": ["adam", "bob"]}},
+        [3],
+    ),
+]
+
 
 try:
     from hdbcli import dbapi
@@ -924,3 +941,156 @@ def test_hanavector_table_mixed_case_names(texts: List[str]) -> None:
 
     # check results of similarity search
     assert texts[0] == vectordb.similarity_search(texts[0], 1)[0].page_content
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_hanavector_enhanced_filter_1() -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_1"
+    # Delete table if it exists
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_1(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_1"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_2_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_2(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_2"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_3_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_3(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_3"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_4_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_4(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_4"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_4B_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_4b(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_4B"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter
+
+
+@pytest.mark.parametrize("test_filter, expected_ids", TYPE_5_FILTERING_TEST_CASES)
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_pgvector_with_with_metadata_filters_5(
+    test_filter: Dict[str, Any],
+    expected_ids: List[int],
+) -> None:
+    table_name = "TEST_TABLE_ENHANCED_FILTER_5"
+    drop_table(test_setup.conn, table_name)
+
+    vectorDB = HanaDB(
+        connection=test_setup.conn,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    vectorDB.add_documents(DOCUMENTS)
+
+    docs = vectorDB.similarity_search("meow", k=5, filter=test_filter)
+    ids = [doc.metadata["id"] for doc in docs]
+    assert len(ids) == len(expected_ids), test_filter
+    assert set(ids).issubset(expected_ids), test_filter

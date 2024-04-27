@@ -22,7 +22,6 @@ from typing import (
 
 import httpx
 from httpx_sse import EventSource, aconnect_sse, connect_sse
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -588,7 +587,6 @@ class ChatMistralAI(BaseChatModel):
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
 
-    @beta()
     def with_structured_output(
         self,
         schema: Union[Dict, Type[BaseModel]],

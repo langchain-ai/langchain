@@ -18,7 +18,6 @@ from langchain_community.cache import (
 )
 
 __all__ = [
-    "InMemoryCache",
     "FullLLMCache",
     "SQLAlchemyCache",
     "SQLiteCache",
@@ -27,6 +26,7 @@ __all__ = [
     "RedisSemanticCache",
     "GPTCache",
     "MomentoCache",
+    "InMemoryCache",
     "CassandraCache",
     "CassandraSemanticCache",
     "FullMd5LLMCache",

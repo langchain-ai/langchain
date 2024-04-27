@@ -11,6 +11,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Tuple,
     Type,
     TypedDict,
     Union,
@@ -236,11 +237,39 @@ class Graph:
         self.edges.append(edge)
         return edge
 
-    def extend(self, graph: Graph) -> None:
+    def extend(
+        self, graph: Graph, *, prefix: str = ""
+    ) -> Tuple[Optional[Node], Optional[Node]]:
         """Add all nodes and edges from another graph.
         Note this doesn't check for duplicates, nor does it connect the graphs."""
-        self.nodes.update(graph.nodes)
-        self.edges.extend(graph.edges)
+        if all(is_uuid(node.id) for node in graph.nodes.values()):
+            prefix = ""
+
+        def prefixed(id: str) -> str:
+            return f"{prefix}:{id}" if prefix else id
+
+        # prefix each node
+        self.nodes.update(
+            {prefixed(k): Node(prefixed(k), v.data) for k, v in graph.nodes.items()}
+        )
+        # prefix each edge's source and target
+        self.edges.extend(
+            [
+                Edge(
+                    prefixed(edge.source),
+                    prefixed(edge.target),
+                    edge.data,
+                    edge.conditional,
+                )
+                for edge in graph.edges
+            ]
+        )
+        # return (prefixed) first and last nodes of the subgraph
+        first, last = graph.first_node(), graph.last_node()
+        return (
+            Node(prefixed(first.id), first.data) if first else None,
+            Node(prefixed(last.id), last.data) if last else None,
+        )
 
     def first_node(self) -> Optional[Node]:
         """Find the single node that is not a target of any edge.

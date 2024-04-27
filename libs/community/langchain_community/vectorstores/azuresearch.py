@@ -479,7 +479,7 @@ class AzureSearch(VectorStore):
     def hybrid_search_with_score(
         self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to query with an hybrid query.
+        """Return docs most similar to query with a hybrid query.
 
         Args:
             query: Text to look up documents similar to.
@@ -558,7 +558,7 @@ class AzureSearch(VectorStore):
     def semantic_hybrid_search_with_score_and_rerank(
         self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float, float]]:
-        """Return docs most similar to query with an hybrid query.
+        """Return docs most similar to query with a hybrid query.
 
         Args:
             query: Text to look up documents similar to.
@@ -702,7 +702,12 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         if "search_type" in values:
             search_type = values["search_type"]
             if search_type not in (
-                allowed_search_types := ("similarity", "hybrid", "semantic_hybrid")
+                allowed_search_types := (
+                    "similarity",
+                    "similarity_score_threshold",
+                    "hybrid",
+                    "semantic_hybrid",
+                )
             ):
                 raise ValueError(
                     f"search_type of {search_type} not allowed. Valid values are: "
@@ -718,6 +723,13 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
+        elif self.search_type == "similarity_score_threshold":
+            docs = [
+                doc
+                for doc, _ in self.vectorstore.similarity_search_with_relevance_scores(
+                    query, k=self.k, **kwargs
+                )
+            ]
         elif self.search_type == "hybrid":
             docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
         elif self.search_type == "semantic_hybrid":

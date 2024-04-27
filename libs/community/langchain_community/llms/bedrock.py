@@ -829,7 +829,7 @@ class Bedrock(LLM, BedrockBase):
         Example:
             .. code-block:: python
 
-                response = llm("Tell me a joke.")
+                response = llm.invoke("Tell me a joke.")
         """
 
         if self.streaming:

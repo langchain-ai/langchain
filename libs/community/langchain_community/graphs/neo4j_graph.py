@@ -151,6 +151,7 @@ class Neo4jGraph(GraphStore):
             embedding-like properties from database responses. Default is False.
     refresh_schema (bool): A flag whether to refresh schema information
             at initialization. Default is True.
+    driver_config (Dict): Configuration passed to Neo4j Driver.
 
     *Security note*: Make sure that the database connection uses credentials
         that are narrowly-scoped to only include necessary permissions.
@@ -173,6 +174,8 @@ class Neo4jGraph(GraphStore):
         timeout: Optional[float] = None,
         sanitize: bool = False,
         refresh_schema: bool = True,
+        *,
+        driver_config: Optional[Dict] = None,
     ) -> None:
         """Create a new Neo4j graph wrapper instance."""
         try:
@@ -194,7 +197,9 @@ class Neo4jGraph(GraphStore):
             {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
         )
 
-        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self._driver = neo4j.GraphDatabase.driver(
+            url, auth=(username, password), **(driver_config or {})
+        )
         self._database = database
         self.timeout = timeout
         self.sanitize = sanitize
