@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import re
 import traceback
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from cassandra.cluster import ResultSet, Session
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+
+if TYPE_CHECKING:
+    from cassandra.cluster import ResultSet, Session
 
 IGNORED_KEYSPACES = [
     "system",
