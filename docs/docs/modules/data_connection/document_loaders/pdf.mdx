@@ -129,6 +129,11 @@ data = loader.load()
 
 ## Using Unstructured
 
+The `unstructured[all-docs]` package currently supports loading of text files, powerpoints, html, pdfs, images, and more.
+
+```bash
+pip install unstructured[pdf]
+```
 
 ```python
 from langchain_community.document_loaders import UnstructuredPDFLoader
@@ -225,6 +230,11 @@ data = loader.load()
 
 ## Using PDFMiner
 
+PDFMiner is a tool that can help with extracting information and analyzing data from PDF documents. 
+
+```bash
+pip install pdfminer.six
+```
 
 ```python
 from langchain_community.document_loaders import PDFMinerLoader
@@ -298,7 +308,7 @@ snippets.append((cur_text,cur_fs))
 
 
 ```python
-from langchain.docstore.document import Document
+from langchain_community.docstore.document import Document
 cur_idx = -1
 semantic_snippets = []
 # Assumption: headings have higher font size than their respective content

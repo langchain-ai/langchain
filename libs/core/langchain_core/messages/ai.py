@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, Dict, List, Literal
 
 from langchain_core.messages.base import (
@@ -57,12 +56,6 @@ class AIMessage(BaseMessage):
             or values.get("tool_call_chunks")
         )
         if raw_tool_calls and not tool_calls:
-            warnings.warn(
-                "New langchain packages are available that more efficiently handle "
-                "tool calling. Please upgrade your packages to versions that set "
-                "message tool calls. e.g., `pip install --upgrade langchain-anthropic"
-                "`, pip install--upgrade langchain-openai`, etc."
-            )
             try:
                 if issubclass(cls, AIMessageChunk):  # type: ignore
                     values["tool_call_chunks"] = default_tool_chunk_parser(
@@ -131,7 +124,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         name=chunk["name"],
                         args=chunk["args"],
                         id=chunk["id"],
-                        error="Malformed args.",
+                        error=None,
                     )
                 )
         values["tool_calls"] = tool_calls

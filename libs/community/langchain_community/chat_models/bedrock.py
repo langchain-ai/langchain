@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
@@ -192,11 +193,20 @@ class ChatPromptAdapter:
         )
 
 
-_message_type_lookups = {"human": "user", "ai": "assistant"}
+_message_type_lookups = {
+    "human": "user",
+    "ai": "assistant",
+    "AIMessageChunk": "assistant",
+    "HumanMessageChunk": "user",
+    "function": "user",
+}
 
 
+@deprecated(
+    since="0.0.34", removal="0.3", alternative_import="langchain_aws.ChatBedrock"
+)
 class BedrockChat(BaseChatModel, BedrockBase):
-    """A chat model that uses the Bedrock API."""
+    """Chat model that uses the Bedrock API."""
 
     @property
     def _llm_type(self) -> str:

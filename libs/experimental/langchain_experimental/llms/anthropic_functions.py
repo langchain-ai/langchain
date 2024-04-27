@@ -3,15 +3,15 @@ from collections import defaultdict
 from html.parser import HTMLParser
 from typing import Any, DefaultDict, Dict, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
 from langchain_community.chat_models.anthropic import ChatAnthropic
 from langchain_core._api.deprecation import deprecated
+from langchain_core.callbacks.manager import (
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -183,7 +183,7 @@ class AnthropicFunctions(BaseChatModel):
                 raise ValueError(
                     "if `function_call` provided, `functions` must also be"
                 )
-        response = self.model.predict_messages(
+        response = self.model.invoke(
             messages, stop=stop, callbacks=run_manager, **kwargs
         )
         completion = cast(str, response.content)

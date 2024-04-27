@@ -10,6 +10,7 @@ from langchain_core.agents import (
     AgentFinish,
     AgentStep,
 )
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.messages import (
     AIMessage,
@@ -18,7 +19,7 @@ from langchain_core.messages import (
     HumanMessage,
     ToolCall,
 )
-from langchain_core.prompts import MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool
 from langchain_core.tracers import RunLog, RunLogPatch
@@ -32,8 +33,6 @@ from langchain.agents import (
     initialize_agent,
 )
 from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.prompts import ChatPromptTemplate
 from langchain.tools import tool
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
