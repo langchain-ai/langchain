@@ -1,7 +1,68 @@
 """**Graphs** provide a natural language interface to graph databases."""
 
 import importlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_community.graphs.arangodb_graph import (
+        ArangoGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.falkordb_graph import (
+        FalkorDBGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.gremlin_graph import (
+        GremlinGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.hugegraph import (
+        HugeGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.kuzu_graph import (
+        KuzuGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.memgraph_graph import (
+        MemgraphGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.nebula_graph import (
+        NebulaGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.neo4j_graph import (
+        Neo4jGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.neptune_graph import (
+        NeptuneGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.neptune_rdf_graph import (
+        NeptuneRdfGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.networkx_graph import (
+        NetworkxEntityGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.ontotext_graphdb_graph import (
+        OntotextGraphDBGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.rdf_graph import (
+        RdfGraph,  # noqa: F401
+    )
+    from langchain_community.graphs.tigergraph_graph import (
+        TigerGraph,  # noqa: F401
+    )
+
+__all__ = [
+    "ArangoGraph",
+    "FalkorDBGraph",
+    "GremlinGraph",
+    "HugeGraph",
+    "KuzuGraph",
+    "MemgraphGraph",
+    "NebulaGraph",
+    "Neo4jGraph",
+    "NeptuneGraph",
+    "NeptuneRdfGraph",
+    "NetworkxEntityGraph",
+    "OntotextGraphDBGraph",
+    "RdfGraph",
+    "TigerGraph",
+]
 
 _module_lookup = {
     "ArangoGraph": "langchain_community.graphs.arangodb_graph",

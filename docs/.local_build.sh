@@ -19,6 +19,9 @@ poetry run python scripts/copy_templates.py
 wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O docs/langserve.md
 wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O docs/langgraph.md
 
-yarn
 
-poetry run quarto preview docs
+poetry run quarto render docs
+poetry run python scripts/generate_api_reference_links.py  --docs_dir docs
+
+yarn
+yarn start

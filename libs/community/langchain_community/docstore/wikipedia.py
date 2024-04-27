@@ -9,7 +9,7 @@ from langchain_community.docstore.base import Docstore
 
 
 class Wikipedia(Docstore):
-    """Wrapper around wikipedia API."""
+    """Wikipedia API."""
 
     def __init__(self) -> None:
         """Check that wikipedia package is installed."""

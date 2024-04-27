@@ -23,7 +23,6 @@ from typing import (
     cast,
 )
 
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -58,6 +57,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -125,6 +126,9 @@ class ChatGroq(BaseChatModel):
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
+    http_async_client: Union[Any, None] = None
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
+        http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -181,17 +185,20 @@ class ChatGroq(BaseChatModel):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
 
         try:
             import groq
 
+            sync_specific = {"http_client": values["http_client"]}
             if not values.get("client"):
-                values["client"] = groq.Groq(**client_params).chat.completions
+                values["client"] = groq.Groq(
+                    **client_params, **sync_specific
+                ).chat.completions
             if not values.get("async_client"):
+                async_specific = {"http_client": values["http_async_client"]}
                 values["async_client"] = groq.AsyncGroq(
-                    **client_params
+                    **client_params, **async_specific
                 ).chat.completions
         except ImportError:
             raise ImportError(
@@ -278,9 +285,20 @@ class ChatGroq(BaseChatModel):
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
             message = generation.message
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc.get("index"),
+                }
+                for rtc in message.additional_kwargs.get("tool_calls", [])
+            ]
             chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
-                    content=message.content, additional_kwargs=message.additional_kwargs
+                    content=message.content,
+                    additional_kwargs=message.additional_kwargs,
+                    tool_call_chunks=tool_call_chunks,
                 ),
                 generation_info=generation.generation_info,
             )
@@ -338,9 +356,20 @@ class ChatGroq(BaseChatModel):
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
             message = generation.message
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc.get("index"),
+                }
+                for rtc in message.additional_kwargs.get("tool_calls", [])
+            ]
             chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
-                    content=message.content, additional_kwargs=message.additional_kwargs
+                    content=message.content,
+                    additional_kwargs=message.additional_kwargs,
+                    tool_call_chunks=tool_call_chunks,
                 ),
                 generation_info=generation.generation_info,
             )
@@ -445,7 +474,7 @@ class ChatGroq(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
-                    if k in overall_token_usage:
+                    if k in overall_token_usage and v is not None:
                         overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
@@ -571,7 +600,6 @@ class ChatGroq(BaseChatModel):
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
-    @beta()
     def with_structured_output(
         self,
         schema: Optional[Union[Dict, Type[BaseModel]]] = None,
@@ -883,9 +911,24 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
-        if tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
-        return AIMessage(content=content, id=id_, additional_kwargs=additional_kwargs)
+        tool_calls = []
+        invalid_tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
+        return AIMessage(
+            content=content,
+            id=id_,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+        )
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":

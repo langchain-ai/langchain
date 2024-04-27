@@ -128,7 +128,7 @@ class Clarifai(LLM):
         Example:
             .. code-block:: python
 
-                response = clarifai_llm("Tell me a joke.")
+                response = clarifai_llm.invoke("Tell me a joke.")
         """
 
         try:

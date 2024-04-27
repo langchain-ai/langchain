@@ -14,7 +14,7 @@ from tests.integration_tests.llms.utils import assert_llm_equality
 def test_nlpcloud_call() -> None:
     """Test valid call to nlpcloud."""
     llm = NLPCloud(max_length=10)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
