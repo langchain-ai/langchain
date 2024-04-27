@@ -2,24 +2,19 @@
 
 import os
 from time import sleep
-from typing import TYPE_CHECKING, List, Tuple, Union
+from typing import List, Tuple, Union
 
 # to fix the following error in test with vcr and asyncio
 #
 # RuntimeError: asyncio.run() cannot be called from a running event loop
-import nest_asyncio
 import pytest
 from langchain_core.documents import Document
+from upstash_vector import AsyncIndex, Index
 
 from langchain_community.vectorstores.upstash import UpstashVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
 )
-
-nest_asyncio.apply()
-
-if TYPE_CHECKING:
-    from upstash_vector import Index
 
 
 @pytest.fixture(scope="module")
@@ -30,8 +25,6 @@ def vcr_cassette_dir() -> str:
 
 @pytest.fixture(scope="function", autouse=True)
 def fixture() -> None:
-    from upstash_vector import Index
-
     index = Index.from_env()
     embedding_index = Index(
         url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
@@ -235,8 +228,6 @@ async def test_upstash_mmr_by_vector_async() -> None:
 
 @pytest.mark.vcr()
 def test_init_from_index() -> None:
-    from upstash_vector import Index
-
     index = Index.from_env()
 
     store = UpstashVectorStore(index=index)
@@ -247,8 +238,6 @@ def test_init_from_index() -> None:
 @pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_init_from_async_index() -> None:
-    from upstash_vector import AsyncIndex
-
     index = AsyncIndex.from_env()
 
     store = UpstashVectorStore(async_index=index)
