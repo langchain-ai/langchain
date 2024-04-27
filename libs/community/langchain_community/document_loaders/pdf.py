@@ -171,8 +171,9 @@ class PyPDFLoader(BasePDFLoader):
         password: Optional[Union[str, bytes]] = None,
         headers: Optional[Dict] = None,
         extract_images: bool = False,
+        *,
         extraction_mode: str = "plain",
-        kwargs: Optional[Dict] = None,
+        extraction_kwargs: Optional[Dict] = None,
     ) -> None:
         """Initialize with a file path."""
         try:
@@ -186,7 +187,7 @@ class PyPDFLoader(BasePDFLoader):
             password=password,
             extract_images=extract_images,
             extraction_mode=extraction_mode,
-            kwargs=kwargs,
+            extraction_kwargs=extraction_kwargs,
         )
 
     def lazy_load(

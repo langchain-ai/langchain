@@ -5,6 +5,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Iterable,
     Iterator,
     Mapping,
@@ -85,13 +86,14 @@ class PyPDFParser(BaseBlobParser):
         self,
         password: Optional[Union[str, bytes]] = None,
         extract_images: bool = False,
+        *,
         extraction_mode: str = "plain",
-        **kwargs: Any,
+        extraction_kwargs: Optional[Dict[str, Any]] = None,
     ):
         self.password = password
         self.extract_images = extract_images
         self.extraction_mode = extraction_mode
-        self.extraction_kwargs = kwargs
+        self.extraction_kwargs = extraction_kwargs or {}
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
