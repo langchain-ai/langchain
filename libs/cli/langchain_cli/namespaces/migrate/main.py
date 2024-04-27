@@ -8,7 +8,7 @@ import os
 import time
 import traceback
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Tuple, Type, TypeVar, Union, Optional
 
 import libcst as cst
 import rich
@@ -41,6 +41,9 @@ def main(
         default=DEFAULT_IGNORES, help="Ignore a path glob pattern."
     ),
     log_file: Path = Option("log.txt", help="Log errors to this file."),
+    include_ipynb: bool = Option(
+        False, help="Include Jupyter Notebook files in the migration."
+    ),
 ):
     """Migrate langchain to the most recent version."""
     if not diff:
@@ -62,7 +65,8 @@ def main(
         all_files = [path]
     else:
         package = path
-        all_files = sorted(package.glob("**/*.py"))
+        glob = "**/*.py" if not include_ipynb else "**/*.{py,ipynb}"
+        all_files = sorted(package.glob(glob))
 
     filtered_files = [
         file
@@ -172,6 +176,55 @@ def _rewrite_file(
             else:
                 fp.write(output_code)
                 fp.truncate()
+    return None, None
+
+
+def _rewrite_notebook(
+    filename: str,
+    codemods: List[Type[ContextAwareTransformer]],
+    diff: bool,
+    context: CodemodContext,
+) -> Tuple[Optional[str], Optional[List[str]]]:
+    """Try to rewrite a Jupyter Notebook file."""
+    import nbformat
+
+    file_path = Path(filename)
+    if file_path.suffix != ".ipynb":
+        raise ValueError("Only Jupyter Notebook files (.ipynb) are supported.")
+
+    with file_path.open("r", encoding="utf-8") as fp:
+        notebook = nbformat.read(fp, as_version=4)
+
+    diffs = []
+
+    for cell in notebook.cells:
+        if cell.cell_type == "code":
+            code = "".join(cell.source)
+            input_tree = cst.parse_module(code)
+
+            for codemod in codemods:
+                transformer = codemod(context=context)
+                output_tree = transformer.transform_module(input_tree)
+                input_tree = output_tree
+
+            output_code = input_tree.code
+            if code != output_code:
+                cell.source = output_code.splitlines(keepends=True)
+                if diff:
+                    cell_diff = difflib.unified_diff(
+                        code.splitlines(keepends=True),
+                        output_code.splitlines(keepends=True),
+                        fromfile=filename,
+                        tofile=filename,
+                    )
+                    diffs.extend(list(cell_diff))
+
+    if diff:
+        return None, diffs
+
+    with file_path.open("w", encoding="utf-8") as fp:
+        nbformat.write(notebook, fp)
+
     return None, None
 
 
