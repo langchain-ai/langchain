@@ -15,12 +15,11 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Sequence, Tuple, TypeVar, Type
-
+from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, TypeVar
 
 import libcst as cst
 import libcst.matchers as m
-from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
+from libcst.codemod import VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
 
 HERE = os.path.dirname(__file__)
@@ -190,41 +189,3 @@ def generate_import_replacer(rules: List[str]) -> Type[VisitorBasedCodemodComman
             return updated_node
 
     return ReplaceImportsCodemod
-
-
-if __name__ == "__main__":
-    import textwrap
-
-    from rich.console import Console
-
-    console = Console()
-
-    source = textwrap.dedent(
-        """
-        from pydantic.settings import BaseSettings
-        from pydantic.color import Color
-        from pydantic.payment import PaymentCardNumber, PaymentCardBrand
-        from pydantic import Color
-        from pydantic import Color as Potato
-
-
-        class Potato(BaseSettings):
-            color: Color
-            payment: PaymentCardNumber
-            brand: PaymentCardBrand
-            potato: Potato
-        """
-    )
-    console.print(source)
-    console.print("=" * 80)
-
-    mod = cst.parse_module(source)
-    context = CodemodContext(filename="main.py")
-    wrapper = cst.MetadataWrapper(mod)
-    command = ReplaceImportsCodemod(context=context)
-
-    mod = wrapper.visit(command)
-    wrapper = cst.MetadataWrapper(mod)
-    command = AddImportsVisitor(context=context)  # type: ignore[assignment]
-    mod = wrapper.visit(command)
-    console.print(mod.code)

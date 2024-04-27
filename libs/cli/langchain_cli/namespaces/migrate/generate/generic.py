@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 
 def generate_raw_migrations(
-    from_package: str, to_package: str
+    from_package: str, to_package: str, filter_by_all: bool = False
 ) -> List[Tuple[str, str]]:
     """Scan the `langchain` package and generate migrations for all modules."""
     package = importlib.import_module(from_package)
@@ -40,15 +40,17 @@ def generate_raw_migrations(
                             (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
                         )
 
-        # Iterate over all members of the module
-        for name, obj in inspect.getmembers(module):
-            # Check if it's a class or function
-            if inspect.isclass(obj) or inspect.isfunction(obj):
-                # Check if the module name of the obj starts with 'langchain_community'
-                if obj.__module__.startswith(to_package):
-                    items.append(
-                        (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
-                    )
+        if not filter_by_all:
+            # Iterate over all members of the module
+            for name, obj in inspect.getmembers(module):
+                # Check if it's a class or function
+                if inspect.isclass(obj) or inspect.isfunction(obj):
+                    # Check if the module name of the obj starts with
+                    # 'langchain_community'
+                    if obj.__module__.startswith(to_package):
+                        items.append(
+                            (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
+                        )
 
     return items
 
@@ -112,10 +114,12 @@ def generate_top_level_imports(pkg: str) -> List[Tuple[str, str]]:
 
 
 def generate_simplified_migrations(
-    from_package: str, to_package: str
+    from_package: str, to_package: str, filter_by_all: bool = True
 ) -> List[Tuple[str, str]]:
     """Get all the raw migrations, then simplify them if possible."""
-    raw_migrations = generate_raw_migrations(from_package, to_package)
+    raw_migrations = generate_raw_migrations(
+        from_package, to_package, filter_by_all=filter_by_all
+    )
     top_level_simplifications = generate_top_level_imports(to_package)
     top_level_dict = {full: top_level for full, top_level in top_level_simplifications}
     simple_migrations = []

@@ -36,8 +36,7 @@ def gather_codemods(disabled: List[Rule]) -> List[Type[ContextAwareTransformer]]
     active_import_rules = import_rules - set(disabled)
 
     if active_import_rules:
-        active_imports = [str(rule) for rule in active_import_rules]
-        codemods.append(generate_import_replacer(active_imports))
+        codemods.append(generate_import_replacer(active_import_rules))
     # Those codemods need to be the last ones.
     codemods.extend([RemoveImportsVisitor, AddImportsVisitor])
     return codemods
