@@ -1,10 +1,12 @@
 import os
-from typing import Any, Literal, Optional, Type, Union
+from typing import Any, List, Literal, Optional, Type, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
+from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
@@ -13,16 +15,18 @@ from langchain_core.utils import convert_to_secret_str
 from langchain_upstage import ChatUpstage
 
 
-class GroundednessCheckInput(BaseModel):
+class UpstageGroundednessCheckInput(BaseModel):
     """Input for the Groundedness Check tool."""
 
-    context: str = Field(description="context in which the answer should be verified")
-    query: str = Field(
+    context: Union[str, List[Document]] = Field(
+        description="context in which the answer should be verified"
+    )
+    answer: str = Field(
         description="assistant's reply or a text that is subject to groundedness check"
     )
 
 
-class GroundednessCheck(BaseTool):
+class UpstageGroundednessCheck(BaseTool):
     """Tool that checks the groundedness of a context and an assistant message.
 
     To use, you should have the environment variable `UPSTAGE_API_KEY`
@@ -31,15 +35,15 @@ class GroundednessCheck(BaseTool):
     Example:
         .. code-block:: python
 
-                from langchain_upstage import GroundednessCheck
+                from langchain_upstage import UpstageGroundednessCheck
 
-                tool = GroundednessCheck()
+                tool = UpstageGroundednessCheck()
     """
 
     name: str = "groundedness_check"
     description: str = (
         "A tool that checks the groundedness of an assistant response "
-        "to user-provided context. GroundednessCheck ensures that "
+        "to user-provided context. UpstageGroundednessCheck ensures that "
         "the assistant’s response is not only relevant but also "
         "precisely aligned with the user's initial context, "
         "promoting a more reliable and context-aware interaction. "
@@ -50,7 +54,7 @@ class GroundednessCheck(BaseTool):
     upstage_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     api_wrapper: ChatUpstage
 
-    args_schema: Type[BaseModel] = GroundednessCheckInput
+    args_schema: Type[BaseModel] = UpstageGroundednessCheckInput
 
     def __init__(self, **kwargs: Any) -> None:
         upstage_api_key = kwargs.get("upstage_api_key", None)
@@ -73,25 +77,41 @@ class GroundednessCheck(BaseTool):
         )
         super().__init__(upstage_api_key=upstage_api_key, api_wrapper=api_wrapper)
 
+    def formatDocumentsAsString(self, docs: List[Document]) -> str:
+        return "\n".join([doc.page_content for doc in docs])
+
     def _run(
         self,
-        context: str,
-        query: str,
+        context: Union[str, List[Document]],
+        answer: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
         """Use the tool."""
+        if isinstance(context, List):
+            context = self.formatDocumentsAsString(context)
         response = self.api_wrapper.invoke(
-            [HumanMessage(context), AIMessage(query)], stream=False
+            [HumanMessage(context), AIMessage(answer)], stream=False
         )
         return str(response.content)
 
     async def _arun(
         self,
-        context: str,
-        query: str,
+        context: Union[str, List[Document]],
+        answer: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> Union[str, Literal["grounded", "notGrounded", "notSure"]]:
+        if isinstance(context, List):
+            context = self.formatDocumentsAsString(context)
         response = await self.api_wrapper.ainvoke(
-            [HumanMessage(context), AIMessage(query)], stream=False
+            [HumanMessage(context), AIMessage(answer)], stream=False
         )
         return str(response.content)
+
+
+@deprecated(
+    since="0.1.3",
+    removal="0.2.0",
+    alternative_import="langchain_upstage.UpstageGroundednessCheck",
+)
+class GroundednessCheck(UpstageGroundednessCheck):
+    pass
