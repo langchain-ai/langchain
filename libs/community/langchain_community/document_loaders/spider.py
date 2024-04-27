@@ -8,7 +8,7 @@ from langchain_core.utils import get_from_env
 class SpiderLoader(BaseLoader):
     """Load web pages as Documents using Spider AI.
 
-    Must have the Python package `spider-client` installed and a Spider API key. 
+    Must have the Python package `spider-client` installed and a Spider API key.
     See https://spider.cloud for more.
     """
 
@@ -18,20 +18,20 @@ class SpiderLoader(BaseLoader):
         *,
         api_key: Optional[str] = None,
         mode: Literal["scrape", "crawl"] = "scrape",
-        params: Optional[dict] = {'return_format': 'markdown'},
+        params: Optional[dict] = {"return_format": "markdown"},
     ):
         """Initialize with API key and URL.
 
         Args:
             url: The URL to be processed.
-            api_key: The Spider API key. If not specified, will be read from env 
+            api_key: The Spider API key. If not specified, will be read from env
             var `SPIDER_API_KEY`.
             mode: The mode to run the loader in. Default is "scrape".
-                 Options include "scrape" (single page) and "crawl" (with deeper 
+                 Options include "scrape" (single page) and "crawl" (with deeper
                  crawling following subpages).
             params: Additional parameters for the Spider API.
         """
-        try: 
+        try:
             from spider import Spider  # noqa: F401
         except ImportError:
             raise ImportError(
@@ -44,11 +44,11 @@ class SpiderLoader(BaseLoader):
         # If `params` is `None`, initialize it as an empty dictionary
         if params is None:
             params = {}
-        
+
         # Add a default value for 'metadata' if it's not already present
         if "metadata" not in params:
             params["metadata"] = True
-    
+
         # Use the environment variable if the API key isn't provided
         api_key = api_key or get_from_env("api_key", "SPIDER_API_KEY")
         self.spider = Spider(api_key=api_key)
@@ -73,20 +73,17 @@ class SpiderLoader(BaseLoader):
 
         for doc in spider_docs:
             if self.mode == "scrape":
-                # Ensure page_content is also not None 
+                # Ensure page_content is also not None
                 page_content = doc[0].get("content", "")
-                
+
                 # Ensure metadata is also not None
                 metadata = doc[0].get("metadata", {})
-                
-                yield Document(
-                    page_content=page_content,
-                    metadata=metadata
-                )
+
+                yield Document(page_content=page_content, metadata=metadata)
             if self.mode == "crawl":
                 # Ensure page_content is also not None
                 page_content = doc.get("content", "")
-                
+
                 # Ensure metadata is also not None
                 metadata = doc.get("metadata", {})
 
