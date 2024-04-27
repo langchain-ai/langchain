@@ -1082,7 +1082,7 @@ class Milvus(VectorStore):
             )
             raise exc
 
-    def upsert_text(
+    def upsert_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
