@@ -6,16 +6,30 @@ from typing import List, Tuple
 
 import pytest
 from langchain_core.documents import Document
-from upstash_vector import AsyncIndex, Index
 
 from langchain_community.vectorstores.upstash import UpstashVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
 )
 
+# to fix the following error in test with vcr and asyncio
+#
+# RuntimeError: asyncio.run() cannot be called from a running event loop
+import nest_asyncio
+nest_asyncio.apply()
+
+
+@pytest.fixture(scope="module")
+def vcr_cassette_dir(request):
+    # save under cassettes/test_upstash/{item}.yaml
+    return os.path.join("cassettes", "test_upstash")
+
 
 @pytest.fixture(scope="function", autouse=True)
 def fixture() -> None:
+
+    from upstash_vector import Index
+
     index = Index.from_env()
     embedding_index = Index(
         url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
@@ -49,6 +63,7 @@ def check_response_with_score(
     assert result == expected
 
 
+@pytest.mark.vcr()
 def test_upstash_simple_insert() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -58,6 +73,7 @@ def test_upstash_simple_insert() -> None:
     assert output == [Document(page_content="foo")]
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_upstash_simple_insert_async() -> None:
     """Test end to end construction and search."""
@@ -68,6 +84,7 @@ async def test_upstash_simple_insert_async() -> None:
     assert output == [Document(page_content="foo")]
 
 
+@pytest.mark.vcr()
 def test_upstash_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -82,6 +99,7 @@ def test_upstash_with_metadatas() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_upstash_with_metadatas_async() -> None:
     """Test end to end construction and search."""
@@ -97,6 +115,7 @@ async def test_upstash_with_metadatas_async() -> None:
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
+@pytest.mark.vcr()
 def test_upstash_with_metadatas_with_scores() -> None:
     """Test end to end construction and scored search."""
     texts = ["foo", "bar", "baz"]
@@ -111,6 +130,7 @@ def test_upstash_with_metadatas_with_scores() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_upstash_with_metadatas_with_scores_async() -> None:
     """Test end to end construction and scored search."""
@@ -126,6 +146,7 @@ async def test_upstash_with_metadatas_with_scores_async() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
 
+@pytest.mark.vcr()
 def test_upstash_with_metadatas_with_scores_using_vector() -> None:
     """Test end to end construction and scored search, using embedding vector."""
     texts = ["foo", "bar", "baz"]
@@ -143,6 +164,7 @@ def test_upstash_with_metadatas_with_scores_using_vector() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_upstash_with_metadatas_with_scores_using_vector_async() -> None:
     """Test end to end construction and scored search, using embedding vector."""
@@ -163,6 +185,7 @@ async def test_upstash_with_metadatas_with_scores_using_vector_async() -> None:
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
 
+@pytest.mark.vcr()
 def test_upstash_mmr() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -172,6 +195,7 @@ def test_upstash_mmr() -> None:
     assert output == [Document(page_content="foo")]
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_upstash_mmr_async() -> None:
     """Test end to end construction and search."""
@@ -182,6 +206,7 @@ async def test_upstash_mmr_async() -> None:
     assert output == [Document(page_content="foo")]
 
 
+@pytest.mark.vcr()
 def test_upstash_mmr_by_vector() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -192,7 +217,7 @@ def test_upstash_mmr_by_vector() -> None:
     output = store.max_marginal_relevance_search_by_vector(embedded_query, k=1)
     assert output == [Document(page_content="foo")]
 
-
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_upstash_mmr_by_vector_async() -> None:
     """Test end to end construction and search."""
@@ -205,7 +230,11 @@ async def test_upstash_mmr_by_vector_async() -> None:
     assert output == [Document(page_content="foo")]
 
 
+@pytest.mark.vcr()
 def test_init_from_index() -> None:
+
+    from upstash_vector import Index
+
     index = Index.from_env()
 
     store = UpstashVectorStore(index=index)
@@ -213,8 +242,12 @@ def test_init_from_index() -> None:
     assert store.info() is not None
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_init_from_async_index() -> None:
+
+    from upstash_vector import AsyncIndex
+
     index = AsyncIndex.from_env()
 
     store = UpstashVectorStore(async_index=index)
@@ -222,6 +255,7 @@ async def test_init_from_async_index() -> None:
     assert await store.ainfo() is not None
 
 
+@pytest.mark.vcr()
 def test_init_from_credentials() -> None:
     store = UpstashVectorStore(
         index_url=os.environ["UPSTASH_VECTOR_REST_URL"],
@@ -231,6 +265,7 @@ def test_init_from_credentials() -> None:
     assert store.info() is not None
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_init_from_credentials_async() -> None:
     store = UpstashVectorStore(
@@ -241,6 +276,7 @@ async def test_init_from_credentials_async() -> None:
     assert await store.ainfo() is not None
 
 
+@pytest.mark.vcr()
 def test_upstash_add_documents_no_metadata() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
     store.add_documents([Document(page_content="foo")])
@@ -250,6 +286,7 @@ def test_upstash_add_documents_no_metadata() -> None:
     assert search == [Document(page_content="foo")]
 
 
+@pytest.mark.vcr()
 def test_upstash_add_documents_mixed_metadata() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
     docs = [
@@ -266,6 +303,7 @@ def test_upstash_add_documents_mixed_metadata() -> None:
     )
 
 
+@pytest.mark.vcr()
 def test_upstash_similarity_search_with_metadata() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
     docs = [
@@ -292,6 +330,7 @@ def test_upstash_similarity_search_with_metadata() -> None:
     )
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_upstash_similarity_search_with_metadata_async() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
@@ -321,6 +360,7 @@ async def test_upstash_similarity_search_with_metadata_async() -> None:
     )
 
 
+@pytest.mark.vcr()
 def test_upstash_similarity_search_by_vector_with_metadata() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
     docs = [
@@ -348,6 +388,7 @@ def test_upstash_similarity_search_by_vector_with_metadata() -> None:
     )
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_upstash_similarity_search_by_vector_with_metadata_async() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
@@ -376,6 +417,7 @@ async def test_upstash_similarity_search_by_vector_with_metadata_async() -> None
     )
 
 
+@pytest.mark.vcr()
 def test_upstash_max_marginal_relevance_search_with_metadata() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
     docs = [
@@ -396,6 +438,7 @@ def test_upstash_max_marginal_relevance_search_with_metadata() -> None:
     ]
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_upstash_max_marginal_relevance_search_with_metadata_async() -> None:
     store = UpstashVectorStore(embedding=FakeEmbeddings())
@@ -419,6 +462,7 @@ async def test_upstash_max_marginal_relevance_search_with_metadata_async() -> No
     ]
 
 
+@pytest.mark.vcr()
 def test_embeddings_configurations() -> None:
     """
     test the behavior of the vector store for different `embeddings` parameter
@@ -443,10 +487,8 @@ def test_embeddings_configurations() -> None:
     # case 3: pass True as embedding
     # Upstash embeddings will be used
     store = UpstashVectorStore(
-        index=Index(
-            url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
-            token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"],
-        ),
+        index_url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
+        index_token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"],
         embedding=True,
     )
     embedding = store._embed_query("query")
@@ -455,12 +497,11 @@ def test_embeddings_configurations() -> None:
     assert embedding == ["doc1", "doc2"]
 
 
+@pytest.mark.vcr()
 def test_embedding_index() -> None:
     store = UpstashVectorStore(
-        index=Index(
-            url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
-            token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"],
-        ),
+        index_url=os.environ["UPSTASH_VECTOR_URL_EMBEDDING"],
+        index_token=os.environ["UPSTASH_VECTOR_TOKEN_EMBEDDING"],
         embedding=True,
     )
 
@@ -499,6 +540,7 @@ def test_embedding_index() -> None:
     )
 
 
+@pytest.mark.vcr()
 @pytest.mark.asyncio
 async def test_embedding_index_async() -> None:
     store = UpstashVectorStore(
