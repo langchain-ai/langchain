@@ -14,6 +14,7 @@
 
     Document, <name>TextSplitter
 """
+
 import importlib
 from typing import TYPE_CHECKING, Any
 
@@ -409,6 +410,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.snowflake_loader import (
         SnowflakeLoader,  # noqa: F401
     )
+    from langchain_community.document_loaders.spider import (
+        SpiderLoader,  # noqa: F401
+    )
     from langchain_community.document_loaders.spreedly import (
         SpreedlyLoader,  # noqa: F401
     )
@@ -647,6 +651,7 @@ __all__ = [
     "SitemapLoader",
     "SlackDirectoryLoader",
     "SnowflakeLoader",
+    "SpiderLoader",
     "SpreedlyLoader",
     "StripeLoader",
     "SurrealDBLoader",
@@ -781,6 +786,7 @@ _module_lookup = {
     "IuguLoader": "langchain_community.document_loaders.iugu",
     "JSONLoader": "langchain_community.document_loaders.json_loader",
     "JoplinLoader": "langchain_community.document_loaders.joplin",
+    "KineticaLoader": "langchain_community.document_loaders.kinetica_loader",
     "LakeFSLoader": "langchain_community.document_loaders.lakefs",
     "LarkSuiteDocLoader": "langchain_community.document_loaders.larksuite",
     "LLMSherpaFileLoader": "langchain_community.document_loaders.llmsherpa",
@@ -835,6 +841,7 @@ _module_lookup = {
     "SitemapLoader": "langchain_community.document_loaders.sitemap",
     "SlackDirectoryLoader": "langchain_community.document_loaders.slack_directory",
     "SnowflakeLoader": "langchain_community.document_loaders.snowflake_loader",
+    "SpiderLoader": "langchain_community.document_loaders.spider",
     "SpreedlyLoader": "langchain_community.document_loaders.spreedly",
     "StripeLoader": "langchain_community.document_loaders.stripe",
     "SurrealDBLoader": "langchain_community.document_loaders.surrealdb",
