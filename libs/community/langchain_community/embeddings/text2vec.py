@@ -10,6 +10,7 @@ class Text2vecEmbeddings(Embeddings, BaseModel):
     """text2vec embedding models.
 
     Install text2vec first, run 'pip install -U text2vec'.
+    The gitbub repository for text2vec is : https://github.com/shibing624/text2vec
 
     Example:
         .. code-block:: python
@@ -17,11 +18,11 @@ class Text2vecEmbeddings(Embeddings, BaseModel):
             from langchain_community.embeddings.text2vec import Text2vecEmbeddings
 
             embedding = Text2vecEmbeddings()
-            bookend.embed_documents([
+            embedding.embed_documents([
                 "This is a CoSENT(Cosine Sentence) model.",
                 "It maps sentences to a 768 dimensional dense vector space.",
             ])
-            bookend.embed_query(
+            embedding.embed_query(
                 "It can be used for text matching or semantic search."
             )
     """

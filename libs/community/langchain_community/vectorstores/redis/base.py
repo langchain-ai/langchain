@@ -45,6 +45,7 @@ from langchain_community.vectorstores.redis.constants import (
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 logger = logging.getLogger(__name__)
+ListOfDict = List[Dict[str, str]]
 
 if TYPE_CHECKING:
     from redis.client import Redis as RedisType
@@ -249,7 +250,7 @@ class Redis(VectorStore):
         redis_url: str,
         index_name: str,
         embedding: Embeddings,
-        index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
+        index_schema: Optional[Union[Dict[str, ListOfDict], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         key_prefix: Optional[str] = None,
@@ -293,7 +294,7 @@ class Redis(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
-        index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
+        index_schema: Optional[Union[Dict[str, ListOfDict], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         **kwargs: Any,
     ) -> Tuple[Redis, List[str]]:
@@ -335,7 +336,8 @@ class Redis(VectorStore):
                 dicts to add to the vectorstore. Defaults to None.
             index_name (Optional[str], optional): Optional name of the index to
                 create or add to. Defaults to None.
-            index_schema (Optional[Union[Dict[str, str], str, os.PathLike]], optional):
+            index_schema (Optional[Union[Dict[str, ListOfDict], str, os.PathLike]],
+                optional):
                 Optional fields to index within the metadata. Overrides generated
                 schema. Defaults to None.
             vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional
@@ -428,7 +430,7 @@ class Redis(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         index_name: Optional[str] = None,
-        index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
+        index_schema: Optional[Union[Dict[str, ListOfDict], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
         **kwargs: Any,
     ) -> Redis:
@@ -471,7 +473,8 @@ class Redis(VectorStore):
                 to add to the vectorstore. Defaults to None.
             index_name (Optional[str], optional): Optional name of the index to create
                 or add to. Defaults to None.
-            index_schema (Optional[Union[Dict[str, str], str, os.PathLike]], optional):
+            index_schema (Optional[Union[Dict[str, ListOfDict], str, os.PathLike]],
+                optional):
                 Optional fields to index within the metadata. Overrides generated
                 schema. Defaults to None.
             vector_schema (Optional[Dict[str, Union[str, int]]], optional): Optional
@@ -501,7 +504,7 @@ class Redis(VectorStore):
         cls,
         embedding: Embeddings,
         index_name: str,
-        schema: Union[Dict[str, str], str, os.PathLike],
+        schema: Union[Dict[str, ListOfDict], str, os.PathLike, Dict[str, ListOfDict]],
         key_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> Redis:
@@ -528,8 +531,9 @@ class Redis(VectorStore):
             embedding (Embeddings): Embedding model class (i.e. OpenAIEmbeddings)
                 for embedding queries.
             index_name (str): Name of the index to connect to.
-            schema (Union[Dict[str, str], str, os.PathLike]): Schema of the index
-                and the vector schema. Can be a dict, or path to yaml file.
+            schema (Union[Dict[str, str], str, os.PathLike, Dict[str, ListOfDict]]):
+                Schema of the index and the vector schema. Can be a dict, or path to
+                yaml file.
             key_prefix (Optional[str]): Prefix to use for all keys in Redis associated
                 with this index.
             **kwargs (Any): Additional keyword arguments to pass to the Redis client.
@@ -1170,7 +1174,7 @@ class Redis(VectorStore):
 
     def _get_schema_with_defaults(
         self,
-        index_schema: Optional[Union[Dict[str, str], str, os.PathLike]] = None,
+        index_schema: Optional[Union[Dict[str, ListOfDict], str, os.PathLike]] = None,
         vector_schema: Optional[Dict[str, Union[str, int]]] = None,
     ) -> "RedisModel":
         # should only be called after init of Redis (so Import handled)

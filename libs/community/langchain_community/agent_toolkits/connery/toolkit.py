@@ -9,7 +9,7 @@ from langchain_community.tools.connery import ConneryService
 
 class ConneryToolkit(BaseToolkit):
     """
-    A LangChain Toolkit with a list of Connery Actions as tools.
+    Toolkit with a list of Connery Actions as tools.
     """
 
     tools: List[BaseTool]

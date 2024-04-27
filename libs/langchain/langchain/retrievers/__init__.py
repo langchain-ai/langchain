@@ -60,6 +60,7 @@ __all__ = [
     "AmazonKnowledgeBasesRetriever",
     "ArceeRetriever",
     "ArxivRetriever",
+    "AzureAISearchRetriever",
     "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",

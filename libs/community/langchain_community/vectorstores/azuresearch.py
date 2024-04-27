@@ -479,7 +479,7 @@ class AzureSearch(VectorStore):
     def hybrid_search_with_score(
         self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
-        """Return docs most similar to query with an hybrid query.
+        """Return docs most similar to query with a hybrid query.
 
         Args:
             query: Text to look up documents similar to.
@@ -558,7 +558,7 @@ class AzureSearch(VectorStore):
     def semantic_hybrid_search_with_score_and_rerank(
         self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float, float]]:
-        """Return docs most similar to query with an hybrid query.
+        """Return docs most similar to query with a hybrid query.
 
         Args:
             query: Text to look up documents similar to.
@@ -654,6 +654,31 @@ class AzureSearch(VectorStore):
         azure_search.add_texts(texts, metadatas, **kwargs)
         return azure_search
 
+    def as_retriever(self, **kwargs: Any) -> AzureSearchVectorStoreRetriever:  # type: ignore
+        """Return AzureSearchVectorStoreRetriever initialized from this VectorStore.
+
+        Args:
+            search_type (Optional[str]): Defines the type of search that
+                the Retriever should perform.
+                Can be "similarity" (default), "hybrid", or
+                    "semantic_hybrid".
+            search_kwargs (Optional[Dict]): Keyword arguments to pass to the
+                search function. Can include things like:
+                    k: Amount of documents to return (Default: 4)
+                    score_threshold: Minimum relevance threshold
+                        for similarity_score_threshold
+                    fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
+                    lambda_mult: Diversity of results returned by MMR;
+                        1 for minimum diversity and 0 for maximum. (Default: 0.5)
+                    filter: Filter by document metadata
+
+        Returns:
+            AzureSearchVectorStoreRetriever: Retriever class for VectorStore.
+        """
+        tags = kwargs.pop("tags", None) or []
+        tags.extend(self._get_retriever_tags())
+        return AzureSearchVectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
+
 
 class AzureSearchVectorStoreRetriever(BaseRetriever):
     """Retriever that uses `Azure Cognitive Search`."""
@@ -676,8 +701,18 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]
-            if search_type not in ("similarity", "hybrid", "semantic_hybrid"):
-                raise ValueError(f"search_type of {search_type} not allowed.")
+            if search_type not in (
+                allowed_search_types := (
+                    "similarity",
+                    "similarity_score_threshold",
+                    "hybrid",
+                    "semantic_hybrid",
+                )
+            ):
+                raise ValueError(
+                    f"search_type of {search_type} not allowed. Valid values are: "
+                    f"{allowed_search_types}"
+                )
         return values
 
     def _get_relevant_documents(
@@ -688,6 +723,13 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     ) -> List[Document]:
         if self.search_type == "similarity":
             docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
+        elif self.search_type == "similarity_score_threshold":
+            docs = [
+                doc
+                for doc, _ in self.vectorstore.similarity_search_with_relevance_scores(
+                    query, k=self.k, **kwargs
+                )
+            ]
         elif self.search_type == "hybrid":
             docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
         elif self.search_type == "semantic_hybrid":

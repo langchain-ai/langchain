@@ -1,6 +1,7 @@
 import logging
 from typing import Callable, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -10,6 +11,11 @@ from langchain_community.utilities.vertexai import get_client_info
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.32",
+    removal="0.2.0",
+    alternative_import="langchain_google_community.GCSDirectoryLoader",
+)
 class GCSDirectoryLoader(BaseLoader):
     """Load from GCS directory."""
 
@@ -59,10 +65,6 @@ class GCSDirectoryLoader(BaseLoader):
             # intermediate directories on the fly
             if blob.name.endswith("/"):
                 continue
-            loader = GCSFileLoader(
-                self.project_name, self.bucket, blob.name, loader_func=self._loader_func
-            )
-            docs.extend(loader.load())
             # Use the try-except block here
             try:
                 loader = GCSFileLoader(

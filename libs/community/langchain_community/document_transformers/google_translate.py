@@ -1,10 +1,16 @@
 from typing import Any, Optional, Sequence
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import BaseDocumentTransformer, Document
 
 from langchain_community.utilities.vertexai import get_client_info
 
 
+@deprecated(
+    since="0.0.32",
+    removal="0.2.0",
+    alternative_import="langchain_google_community.DocAIParser",
+)
 class GoogleTranslateTransformer(BaseDocumentTransformer):
     """Translate text documents using Google Cloud Translation."""
 

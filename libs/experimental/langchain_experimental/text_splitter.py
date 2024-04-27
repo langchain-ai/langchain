@@ -112,12 +112,14 @@ class SemanticChunker(BaseDocumentTransformer):
         breakpoint_threshold_type: BreakpointThresholdType = "percentile",
         breakpoint_threshold_amount: Optional[float] = None,
         number_of_chunks: Optional[int] = None,
+        sentence_split_regex: str = r"(?<=[.?!])\s+",
     ):
         self._add_start_index = add_start_index
         self.embeddings = embeddings
         self.buffer_size = buffer_size
         self.breakpoint_threshold_type = breakpoint_threshold_type
         self.number_of_chunks = number_of_chunks
+        self.sentence_split_regex = sentence_split_regex
         if breakpoint_threshold_amount is None:
             self.breakpoint_threshold_amount = BREAKPOINT_DEFAULTS[
                 breakpoint_threshold_type
@@ -189,8 +191,8 @@ class SemanticChunker(BaseDocumentTransformer):
         self,
         text: str,
     ) -> List[str]:
-        # Splitting the essay on '.', '?', and '!'
-        single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
+        # Splitting the essay (by default on '.', '?', and '!')
+        single_sentences_list = re.split(self.sentence_split_regex, text)
 
         # having len(single_sentences_list) == 1 would cause the following
         # np.percentile to fail.

@@ -45,17 +45,17 @@ class ExLlamaV2(LLM):
     stop_sequences: List[str] = Field("")
     """Sequences that immediately will stop the generator."""
 
-    max_new_tokens: Optional[int] = Field(150)
+    max_new_tokens: int = Field(150)
     """Maximum number of tokens to generate."""
 
-    streaming: Optional[bool] = Field(True)
+    streaming: bool = Field(True)
     """Whether to stream the results, token by token."""
 
-    verbose: Optional[bool] = Field(True)
+    verbose: bool = Field(True)
     """Whether to print debug information."""
 
     # Generator parameters
-    disallowed_tokens: Optional[List[int]] = Field(None)
+    disallowed_tokens: List[int] = Field(None)
     """List of tokens to disallow during generation."""
 
     @root_validator()
@@ -157,7 +157,7 @@ class ExLlamaV2(LLM):
             for chunk in self._stream(
                 prompt=prompt, stop=stop, run_manager=run_manager, kwargs=kwargs
             ):
-                combined_text_output += chunk
+                combined_text_output += str(chunk)
             return combined_text_output
         else:
             output = generator.generate_simple(

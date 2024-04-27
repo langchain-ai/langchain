@@ -76,7 +76,7 @@ def test_loads_llmchain_with_non_serializable_arg() -> None:
         model="davinci",
         temperature=0.5,
         openai_api_key="hello",
-        http_client=NotSerializable,
+        model_kwargs={"a": NotSerializable},
     )
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
