@@ -68,7 +68,7 @@ class NeuralDBRetriever(BaseRetriever):
                     "/path/to/doc.csv",
                 ])
 
-                documents = retriever.get_relevant_documents("AI-driven music therapy")
+                documents = retriever.invoke("AI-driven music therapy")
         """
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
@@ -103,7 +103,7 @@ class NeuralDBRetriever(BaseRetriever):
                     "/path/to/doc.csv",
                 ])
 
-                documents = retriever.get_relevant_documents("AI-driven music therapy")
+                documents = retriever.invoke("AI-driven music therapy")
         """
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
