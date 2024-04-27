@@ -258,7 +258,7 @@ def test_lantern_retriever_search_threshold() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.999},
     )
-    output = retriever.get_relevant_documents("summer")
+    output = retriever.invoke("summer")
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
         Document(page_content="bar", metadata={"page": "1"}),
@@ -283,7 +283,7 @@ def test_lantern_retriever_search_threshold_custom_normalization_fn() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.9999},
     )
-    output = retriever.get_relevant_documents("foo")
+    output = retriever.invoke("foo")
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
     ]

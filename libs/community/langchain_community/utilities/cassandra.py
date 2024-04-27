@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
@@ -22,3 +23,9 @@ async def wrapped_response_future(
 
     response_future.add_callbacks(success_handler, error_handler)
     return await asyncio_future
+
+
+class SetupMode(Enum):
+    SYNC = 1
+    ASYNC = 2
+    OFF = 3

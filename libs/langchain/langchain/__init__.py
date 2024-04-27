@@ -112,13 +112,13 @@ def __getattr__(name: str) -> Any:
 
         return VectorDBQAWithSourcesChain
     elif name == "InMemoryDocstore":
-        from langchain.docstore import InMemoryDocstore
+        from langchain_community.docstore import InMemoryDocstore
 
         _warn_on_import(name, replacement="langchain.docstore.InMemoryDocstore")
 
         return InMemoryDocstore
     elif name == "Wikipedia":
-        from langchain.docstore import Wikipedia
+        from langchain_community.docstore import Wikipedia
 
         _warn_on_import(name, replacement="langchain.docstore.Wikipedia")
 

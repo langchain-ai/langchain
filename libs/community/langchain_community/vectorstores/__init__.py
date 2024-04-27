@@ -196,6 +196,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.redis import (
         Redis,  # noqa: F401
     )
+    from langchain_community.vectorstores.relyt import (
+        Relyt,  # noqa: F401
+    )
     from langchain_community.vectorstores.rocksetdb import (
         Rockset,  # noqa: F401
     )
@@ -344,6 +347,7 @@ __all__ = [
     "Pinecone",
     "Qdrant",
     "Redis",
+    "Relyt",
     "Rockset",
     "SKLearnVectorStore",
     "SQLiteVSS",
@@ -437,6 +441,7 @@ _module_lookup = {
     "Pinecone": "langchain_community.vectorstores.pinecone",
     "Qdrant": "langchain_community.vectorstores.qdrant",
     "Redis": "langchain_community.vectorstores.redis",
+    "Relyt": "langchain_community.vectorstores.relyt",
     "Rockset": "langchain_community.vectorstores.rocksetdb",
     "SKLearnVectorStore": "langchain_community.vectorstores.sklearn",
     "SQLiteVSS": "langchain_community.vectorstores.sqlitevss",

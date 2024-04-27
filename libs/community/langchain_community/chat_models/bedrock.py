@@ -193,7 +193,13 @@ class ChatPromptAdapter:
         )
 
 
-_message_type_lookups = {"human": "user", "ai": "assistant"}
+_message_type_lookups = {
+    "human": "user",
+    "ai": "assistant",
+    "AIMessageChunk": "assistant",
+    "HumanMessageChunk": "user",
+    "function": "user",
+}
 
 
 @deprecated(
