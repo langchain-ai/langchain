@@ -1,10 +1,9 @@
 import logging
 import os
 import time
-from typing import Dict, Iterator, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, Literal, Optional, Tuple, Union
 
 from langchain_core.documents import Document
-from openai import NOT_GIVEN, NotGiven
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
@@ -32,12 +31,12 @@ class OpenAIWhisperParser(BaseBlobParser):
         *,
         chunk_duration_threshold: float = 0.1,
         base_url: Optional[str] = None,
-        language: Union[str, NotGiven] = NOT_GIVEN,
-        prompt: Union[str, NotGiven] = NOT_GIVEN,
+        language: Union[str, None] = None,
+        prompt: Union[str, None] = None,
         response_format: Union[
-            Literal["json", "text", "srt", "verbose_json", "vtt"], NotGiven
-        ] = NOT_GIVEN,
-        temperature: Union[float, NotGiven] = NOT_GIVEN,
+            Literal["json", "text", "srt", "verbose_json", "vtt"], None
+        ] = None,
+        temperature: Union[float, None] = None,
     ):
         self.api_key = api_key
         self.chunk_duration_threshold = chunk_duration_threshold
@@ -48,6 +47,16 @@ class OpenAIWhisperParser(BaseBlobParser):
         self.prompt = prompt
         self.response_format = response_format
         self.temperature = temperature
+
+    @property
+    def _create_params(self) -> Dict[str, Any]:
+        params = {
+            "language": self.language,
+            "prompt": self.prompt,
+            "response_format": self.response_format,
+            "temperature": self.temperature,
+        }
+        return {k: v for k, v in params.items() if v is not None}
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -106,12 +115,7 @@ class OpenAIWhisperParser(BaseBlobParser):
                 try:
                     if is_openai_v1():
                         transcript = client.audio.transcriptions.create(
-                            model="whisper-1",
-                            file=file_obj,
-                            language=self.language,
-                            prompt=self.prompt,
-                            response_format=self.response_format,
-                            temperature=self.temperature,
+                            model="whisper-1", file=file_obj, **self._create_params
                         )
                     else:
                         transcript = openai.Audio.transcribe("whisper-1", file_obj)
