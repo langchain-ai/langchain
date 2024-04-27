@@ -1,16 +1,16 @@
 """Tools for interacting with an Apache Cassandra database."""
-from typing import Any, Dict, Optional, Sequence, Type, Union
+from __future__ import annotations
 
-from cassandra.cluster import ResultSet
-from langchain_core.callbacks import (
-    CallbackManagerForToolRun,
-)
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type, Union
+
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
-from langchain_community.utilities.cassandra_database import (
-    CassandraDatabase,
-)
+from langchain_community.utilities.cassandra_database import CassandraDatabase
+
+if TYPE_CHECKING:
+    from cassandra.cluster import ResultSet
 
 
 class BaseCassandraDatabaseTool(BaseModel):

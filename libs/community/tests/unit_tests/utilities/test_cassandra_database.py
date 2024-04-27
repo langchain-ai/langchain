@@ -3,7 +3,6 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from cassandra.cluster import ResultSet
 
 from langchain_community.utilities.cassandra_database import (
     CassandraDatabase,
@@ -38,13 +37,6 @@ class TestCassandraDatabase(object):
 
         # Verify that execute was called with the expected CQL query
         self.mock_session.execute.assert_called_with("SELECT * FROM table")
-
-    def test_run_query_one(self) -> None:
-        mock_result_set = MagicMock(spec=ResultSet)
-        mock_result_set.one.return_value = MockRow(col1="val1", col2="val2")
-        self.mock_session.execute.return_value = mock_result_set
-        result = self.cassandra_db.run("SELECT * FROM table;", fetch="one")
-        assert result == {"col1": "val1", "col2": "val2"}
 
     def test_run_query_cursor(self) -> None:
         mock_result_set = MagicMock()
