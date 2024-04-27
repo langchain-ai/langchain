@@ -36,7 +36,7 @@
   --ifm-code-font-size: 95%;
   --ifm-font-family-base: 'Public Sans';
   --ifm-menu-link-padding-horizontal: 0.5rem;
-  --ifm-menu-link-padding-vertical: 0.375rem;
+  --ifm-menu-link-padding-vertical: 0.5rem;
   --doc-sidebar-width: 275px !important;
 }
 
@@ -199,6 +199,10 @@ nav, h1, h2, h3, h4 {
 /* Hack for "More" style caret buttons */
 .theme-doc-sidebar-item-category > div > a::after {
   opacity: 0.5;
+}
+
+.markdown {
+  line-height: 2em;
 }
 
 .markdown > h2 {
