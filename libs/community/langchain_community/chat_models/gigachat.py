@@ -113,10 +113,16 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     elif isinstance(message, HumanMessage):
         return Messages(role=MessagesRole.USER, content=message.content)
     elif isinstance(message, AIMessage):
+        function_call = message.additional_kwargs.get("function_call", None)
+        if isinstance(function_call, list):
+            if len(function_call) > 0:
+                function_call = function_call[0]
+            else:
+                function_call = None
         return Messages(
             role=MessagesRole.ASSISTANT,
             content=message.content,
-            function_call=message.additional_kwargs.get("function_call", None),
+            function_call=function_call,
         )
     elif isinstance(message, ChatMessage):
         return Messages(role=MessagesRole(message.role), content=message.content)
