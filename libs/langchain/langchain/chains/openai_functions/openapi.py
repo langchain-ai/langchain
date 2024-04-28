@@ -6,7 +6,6 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.utilities.openapi import OpenAPISpec
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
@@ -272,9 +271,12 @@ def get_openapi_chain(
         if isinstance(spec, str):
             raise ValueError(f"Unable to parse spec from source {spec}")
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
-    llm = llm or ChatOpenAI(
-        model="gpt-3.5-turbo-0613",
-    )
+    if not llm:
+        raise ValueError(
+            "Must provide an LLM for this chain.For example,\n"
+            "from langchain_openai import ChatOpenAI\n"
+            "llm = ChatOpenAI()\n"
+        )
     prompt = prompt or ChatPromptTemplate.from_template(
         "Use the provided API's to respond to this user query:\n\n{query}"
     )

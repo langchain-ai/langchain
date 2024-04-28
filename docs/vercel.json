@@ -1185,6 +1185,14 @@
     {
       "source": "/docs/guides/evaluation/:path*(/?)",
       "destination": "/docs/guides/productionization/evaluation/:path*/"
+    },
+    {
+      "source": "/docs/integrations/text_embedding/solar(/?)",
+      "destination": "/docs/integrations/text_embedding/upstage"
+    },
+    {
+      "source": "/docs/integrations/chat/solar(/?)",
+      "destination": "/docs/integrations/chat/upstage"
     }
   ]
 }

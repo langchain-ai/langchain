@@ -29,7 +29,6 @@ from typing import (
 
 import openai
 import tiktoken
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -148,6 +147,26 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)
 
 
+def _format_message_content(content: Any) -> Any:
+    """Format message content."""
+    if content and isinstance(content, list):
+        # Remove unexpected block types
+        formatted_content = []
+        for block in content:
+            if (
+                isinstance(block, dict)
+                and "type" in block
+                and block["type"] == "tool_use"
+            ):
+                continue
+            else:
+                formatted_content.append(block)
+    else:
+        formatted_content = content
+
+    return formatted_content
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -158,7 +177,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         The dictionary.
     """
     message_dict: Dict[str, Any] = {
-        "content": message.content,
+        "content": _format_message_content(message.content),
     }
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
@@ -684,6 +703,8 @@ class ChatOpenAI(BaseChatModel):
 
     def get_token_ids(self, text: str) -> List[int]:
         """Get the tokens present in the text with tiktoken package."""
+        if self.custom_get_token_ids is not None:
+            return self.custom_get_token_ids(text)
         # tiktoken NOT supported for Python 3.7 or below
         if sys.version_info[1] <= 7:
             return super().get_token_ids(text)
@@ -865,7 +886,6 @@ class ChatOpenAI(BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
-    @beta()
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,

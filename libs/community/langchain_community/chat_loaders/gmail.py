@@ -3,10 +3,9 @@ import re
 from typing import Any, Iterator
 
 from langchain_core._api.deprecation import deprecated
+from langchain_core.chat_loaders import BaseChatLoader
 from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import HumanMessage
-
-from langchain_community.chat_loaders.base import BaseChatLoader
 
 
 def _extract_email_content(msg: Any) -> HumanMessage:

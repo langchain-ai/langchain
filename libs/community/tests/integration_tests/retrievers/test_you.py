@@ -9,8 +9,8 @@ class TestYouRetriever:
         if not os.getenv("YDC_API_KEY"):
             raise ValueError("YDC_API_KEY environment variable is not set")
 
-    def test_get_relevant_documents(self) -> None:
+    def test_invoke(self) -> None:
         retriever = YouRetriever()
-        actual = retriever.get_relevant_documents("test")
+        actual = retriever.invoke("test")
 
         assert len(actual) > 0
