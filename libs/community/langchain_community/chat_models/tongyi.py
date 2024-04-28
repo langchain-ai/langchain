@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import json
 import logging
 from typing import (
     Any,
@@ -324,8 +325,22 @@ class ChatTongyi(BaseChatModel):
         @retry_decorator
         def _stream_completion_with_retry(**_kwargs: Any) -> Any:
             responses = self.client.call(**_kwargs)
+            prev_resp = None
+
             for resp in responses:
-                yield check_response(resp)
+                # If we are streaming without `incremental_output = True`,
+                # we need to calculate the delta response manually
+                if _kwargs.get("stream") and not _kwargs.get(
+                    "incremental_output", False
+                ):
+                    if prev_resp is None:
+                        delta_resp = resp
+                    else:
+                        delta_resp = self.subtract_client_response(resp, prev_resp)
+                    prev_resp = resp
+                    yield check_response(delta_resp)
+                else:
+                    yield check_response(resp)
 
         return _stream_completion_with_retry(**kwargs)
 
@@ -473,7 +488,6 @@ class ChatTongyi(BaseChatModel):
         params: Dict[str, Any] = self._invocation_params(
             messages=messages, stop=stop, stream=True, **kwargs
         )
-        prev_msg_content = ""
 
         for stream_resp, is_last_chunk in generate_with_last_element_mark(
             self.stream_completion_with_retry(**params)
@@ -486,12 +500,6 @@ class ChatTongyi(BaseChatModel):
                 and "tool_calls" not in message
             ):
                 continue
-
-            # If we are streaming without `incremental_output = True`,
-            # we need to chop off the previous message content
-            if not params.get("incremental_output", False):
-                message["content"] = message["content"].replace(prev_msg_content, "")
-                prev_msg_content += message["content"]
 
             chunk = ChatGenerationChunk(
                 **self._chat_generation_from_qwen_resp(
