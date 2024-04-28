@@ -1,0 +1,37 @@
+---
+Example Usage
+---
+
+# Unique Chunks Retriever
+
+This document provides an example of how to use the `FAISS` class from the `langchain.vectorstores.faiss` module, and the `UniqueChunkRetriever` class.
+
+## 1. Load Vector Store from a PDF File
+
+First, we load a vector store from a PDF file using the `PyPDFLoader` class. Each chunk needs a `unique ID` in its metadata.
+
+```python
+from langchain.vectorstores.faiss import FAISS
+
+docs = []
+loader = PyPDFLoader("World_Bank.pdf")
+sub_docs = loader.load()
+docs.extend(sub_docs)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+chunks = text_splitter.split_documents(docs)
+
+for id, chunk in enumerate(chunks):
+    chunk.metadata["UID"] = id
+embeddings = OpenAIEmbeddings()
+vectorstore = FAISS.from_documents(chunks, embeddings)
+```
+## 2. Use the UniqueChunkRetriever to Get Unique Chunks for Each Query
+
+Next, we use the `UniqueChunkRetriever` class to get unique chunks for each query.
+The returned chunks are the most relevant for each query, and they do not overlap with other retrieved chunks for other queries.
+
+```python
+ucr = UniqueChunkRetriever(vectorstore)
+queries = ["Who published this document?", "What is the economic growth?"]
+three_unique_chunks_for_each_query = ucr.optimize(queries_list=queries, k=3)
+```
