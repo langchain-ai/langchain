@@ -1083,14 +1083,14 @@ class Milvus(VectorStore):
             raise exc
 
     def upsert_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            timeout: Optional[float] = None,
-            batch_size: int = 1000,
-            *,
-            ids: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        timeout: Optional[float] = None,
+        batch_size: int = 1000,
+        *,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> List[str] | None:
         """upsert texts to the Milvus vectorstore.
         This is based on upsert data based on add_text functionality
@@ -1128,12 +1128,17 @@ class Milvus(VectorStore):
             except MilvusException:
                 pass
         try:
-            return self.add_texts(texts=texts, metadatas=metadatas,
-                                  timeout=timeout, batch_size=batch_size,
-                                  ids=ids, **kwargs)
+            return self.add_texts(
+                texts=texts,
+                metadatas=metadatas,
+                timeout=timeout,
+                batch_size=batch_size,
+                ids=ids,
+                **kwargs)
         except MilvusException as exc:
             logger.error(
                 "Failed to upsert texts entities: %s error: %s",
-                self.collection_name, exc
+                self.collection_name,
+                exc
             )
             raise exc
