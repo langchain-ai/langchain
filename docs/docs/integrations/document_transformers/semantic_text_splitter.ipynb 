@@ -1,0 +1,234 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "63b2f74d-9446-4fcf-bb4b-242e6b6f321a",
+   "metadata": {},
+   "source": [
+    "# Split using semantic-text-splitter\n",
+    "This crate provides methods for splitting longer pieces of text into smaller chunks, aiming to maximize a desired chunk size, but still splitting at semantically sensible boundaries whenever possible.\n",
+    "\n",
+    "### Method\n",
+    "To preserve as much semantic meaning within a chunk as possible, each chunk is composed of the largest semantic units that can fit in the next given chunk. For each splitter type, there is a defined set of semantic levels. Here is an example of the steps used:\n",
+    "\n",
+    "Split the text by a increasing semantic levels.\n",
+    "Check the first item for each level and select the highest level whose first item still fits within the chunk size.\n",
+    "Merge as many of these neighboring sections of this level or above into a chunk to maximize chunk length. Boundaries of higher semantic levels are always included when merging, so that the chunk doesn't inadvertantly cross semantic boundaries.\n",
+    "The boundaries used to split the text if using the chunks method, in ascending order:\n",
+    "\n",
+    "#### TextSplitter Semantic Levels\n",
+    " * Characters\n",
+    " * Unicode Grapheme Cluster Boundaries\n",
+    " * Unicode Word Boundaries\n",
+    " * Unicode Sentence Boundaries\n",
+    " * Ascending sequence length of newlines. (Newline is \\r\\n, \\n, or \\r) Each unique length of consecutive newline sequences is treated as its own semantic level. So a sequence of 2 newlines is a higher level than a sequence of 1 newline, and so on."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "46fa1a54-22be-4529-b653-be0d50d1e025",
+   "metadata": {},
+   "source": [
+    "## 1. Split by Number of Characters\n",
+    "1. max_characters: Maximum number of characters in a chunk.\n",
+    "2. trim_chunks: It can set, the splitter not trim whitespace for you"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "bf8698ce-44b2-4944-b9a9-254344b537af",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%pip install -qU langchain-community"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "313fb032",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# This is a long document we can split up.\n",
+    "with open(\"../../state_of_the_union.txt\") as f:\n",
+    "    state_of_the_union = f.read()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "a88ff70c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from langchain_community.text_splitter import SemanticCharacterTextSplitter\n",
+    "\n",
+    "text_splitter = SemanticCharacterTextSplitter(max_characters=200, trim_chunks=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "295ec095",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "page_content='Madam Speaker, Madam Vice President, our First Lady and Second Gentleman. Members of Congress and the Cabinet. Justices of the Supreme Court. My fellow Americans.'\n",
+      "page_content='Last year COVID-19 kept us apart. This year we are finally together again. \\n\\nTonight, we meet as Democrats Republicans and Independents. But most importantly as Americans.'\n"
+     ]
+    }
+   ],
+   "source": [
+    "texts = text_splitter.create_documents([state_of_the_union])\n",
+    "print(texts[0])\n",
+    "print(texts[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "1affda60",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['Madam Speaker, Madam Vice President, our First Lady and Second Gentleman. Members of Congress and the Cabinet. Justices of the Supreme Court. My fellow Americans.',\n",
+       " 'Last year COVID-19 kept us apart. This year we are finally together again. \\n\\nTonight, we meet as Democrats Republicans and Independents. But most importantly as Americans.']"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "text_splitter.split_text(state_of_the_union)[:2]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9107aa05-3d06-4885-844b-45f623907ea7",
+   "metadata": {},
+   "source": [
+    " ## 2. Split Using a Tiktoken Tokenize\n",
+    "\n",
+    "Requires the tiktoken-rs feature to be activated and adding tiktoken-rs to dependencies.\n",
+    "1. max_characters: Maximum number of characters in a chunk.\n",
+    "2. trim_chunks: It can set, the splitter not trim whitespace for you\n",
+    "3. model_name: additionaly you can set tokenizer model name"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9571cfc2-f592-4e22-8445-5993c9cb47d3",
+   "metadata": {},
+   "source": [
+    "%pip install -qU langchain-community"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "cb0c6c3a-e6e6-41cc-b2a7-341db1de158c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# This is a long document we can split up.\n",
+    "with open(\"../../state_of_the_union.txt\") as f:\n",
+    "    state_of_the_union = f.read()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "4283c813-fb79-495b-9825-5c8868ee6464",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from langchain_community.text_splitter import SemanticTiktokenTextSplitter\n",
+    "\n",
+    "text_splitter = SemanticTiktokenTextSplitter(\n",
+    "    max_characters=200, model_name=\"gpt-3.5-turbo\", trim_chunks=True\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "ab5d5cd3-1bdb-4aeb-b25e-da39e695f4d2",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "page_content='Madam Speaker, Madam Vice President, our First Lady and Second Gentleman. Members of Congress and the Cabinet. Justices of the Supreme Court. My fellow Americans.  \\n\\nLast year COVID-19 kept us apart. This year we are finally together again. \\n\\nTonight, we meet as Democrats Republicans and Independents. But most importantly as Americans. \\n\\nWith a duty to one another to the American people to the Constitution. \\n\\nAnd with an unwavering resolve that freedom will always triumph over tyranny. \\n\\nSix days ago, Russia’s Vladimir Putin sought to shake the foundations of the free world thinking he could make it bend to his menacing ways. But he badly miscalculated. \\n\\nHe thought he could roll into Ukraine and the world would roll over. Instead he met a wall of strength he never imagined. \\n\\nHe met the Ukrainian people. \\n\\nFrom President Zelenskyy to every Ukrainian, their fearlessness, their courage, their determination, inspires the world.'\n",
+      "page_content='Groups of citizens blocking tanks with their bodies. Everyone from students to retirees teachers turned soldiers defending their homeland. \\n\\nIn this struggle as President Zelenskyy said in his speech to the European Parliament “Light will win over darkness.” The Ukrainian Ambassador to the United States is here tonight. \\n\\nLet each of us here tonight in this Chamber send an unmistakable signal to Ukraine and to the world. \\n\\nPlease rise if you are able and show that, Yes, we the United States of America stand with the Ukrainian people. \\n\\nThroughout our history we’ve learned this lesson when dictators do not pay a price for their aggression they cause more chaos.   \\n\\nThey keep moving.   \\n\\nAnd the costs and the threats to America and the world keep rising.   \\n\\nThat’s why the NATO Alliance was created to secure peace and stability in Europe after World War 2. \\n\\nThe United States is a member along with 29 other nations. \\n\\nIt matters. American diplomacy matters. American resolve matters.'\n"
+     ]
+    }
+   ],
+   "source": [
+    "texts = text_splitter.create_documents([state_of_the_union])\n",
+    "print(texts[0])\n",
+    "print(texts[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "75427f8a-6ca2-4e14-9d9e-d49858636f5e",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['Madam Speaker, Madam Vice President, our First Lady and Second Gentleman. Members of Congress and the Cabinet. Justices of the Supreme Court. My fellow Americans.  \\n\\nLast year COVID-19 kept us apart. This year we are finally together again. \\n\\nTonight, we meet as Democrats Republicans and Independents. But most importantly as Americans. \\n\\nWith a duty to one another to the American people to the Constitution. \\n\\nAnd with an unwavering resolve that freedom will always triumph over tyranny. \\n\\nSix days ago, Russia’s Vladimir Putin sought to shake the foundations of the free world thinking he could make it bend to his menacing ways. But he badly miscalculated. \\n\\nHe thought he could roll into Ukraine and the world would roll over. Instead he met a wall of strength he never imagined. \\n\\nHe met the Ukrainian people. \\n\\nFrom President Zelenskyy to every Ukrainian, their fearlessness, their courage, their determination, inspires the world.',\n",
+       " 'Groups of citizens blocking tanks with their bodies. Everyone from students to retirees teachers turned soldiers defending their homeland. \\n\\nIn this struggle as President Zelenskyy said in his speech to the European Parliament “Light will win over darkness.” The Ukrainian Ambassador to the United States is here tonight. \\n\\nLet each of us here tonight in this Chamber send an unmistakable signal to Ukraine and to the world. \\n\\nPlease rise if you are able and show that, Yes, we the United States of America stand with the Ukrainian people. \\n\\nThroughout our history we’ve learned this lesson when dictators do not pay a price for their aggression they cause more chaos.   \\n\\nThey keep moving.   \\n\\nAnd the costs and the threats to America and the world keep rising.   \\n\\nThat’s why the NATO Alliance was created to secure peace and stability in Europe after World War 2. \\n\\nThe United States is a member along with 29 other nations. \\n\\nIt matters. American diplomacy matters. American resolve matters.']"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "text_splitter.split_text(state_of_the_union)[:2]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "40465223-111d-4420-a448-5a976827a3af",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.6"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
