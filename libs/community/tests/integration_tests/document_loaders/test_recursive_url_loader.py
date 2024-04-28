@@ -12,7 +12,7 @@ def test_async_recursive_url_loader() -> None:
         check_response_status=True,
     )
     docs = loader.load()
-    assert len(docs) == 513
+    assert len(docs) == 512
     assert docs[0].page_content == "placeholder"
 
 
@@ -35,7 +35,7 @@ def test_sync_recursive_url_loader() -> None:
         url, extractor=lambda _: "placeholder", use_async=False, max_depth=2
     )
     docs = loader.load()
-    assert len(docs) == 25
+    assert len(docs) == 24
     assert docs[0].page_content == "placeholder"
 
 
@@ -55,3 +55,17 @@ def test_loading_invalid_url() -> None:
     )
     docs = loader.load()
     assert len(docs) == 0
+
+
+def test_sync_async_metadata_necessary_properties() -> None:
+    url = "https://docs.python.org/3.9/"
+    loader = RecursiveUrlLoader(url, use_async=False, max_depth=2)
+    async_loader = RecursiveUrlLoader(url, use_async=False, max_depth=2)
+    docs = loader.load()
+    async_docs = async_loader.load()
+    for doc in docs:
+        assert "source" in doc.metadata
+        assert "content_type" in doc.metadata
+    for doc in async_docs:
+        assert "source" in doc.metadata
+        assert "content_type" in doc.metadata

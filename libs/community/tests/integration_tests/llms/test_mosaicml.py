@@ -9,7 +9,7 @@ from langchain_community.llms.mosaicml import PROMPT_FOR_GENERATION_FORMAT, Mosa
 def test_mosaicml_llm_call() -> None:
     """Test valid call to MosaicML."""
     llm = MosaicML(model_kwargs={})
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -18,7 +18,7 @@ def test_mosaicml_endpoint_change() -> None:
     new_url = "https://models.hosted-on.mosaicml.hosting/mpt-30b-instruct/v1/predict"
     llm = MosaicML(endpoint_url=new_url)
     assert llm.endpoint_url == new_url
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -26,7 +26,7 @@ def test_mosaicml_extra_kwargs() -> None:
     llm = MosaicML(model_kwargs={"max_new_tokens": 1})
     assert llm.model_kwargs == {"max_new_tokens": 1}
 
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
 
     assert isinstance(output, str)
 
@@ -41,7 +41,7 @@ def test_instruct_prompt() -> None:
     prompt = llm._transform_prompt(instruction)
     expected_prompt = PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction)
     assert prompt == expected_prompt
-    output = llm(prompt)
+    output = llm.invoke(prompt)
     assert isinstance(output, str)
 
 
@@ -52,9 +52,9 @@ def test_retry_logic() -> None:
     prompt = llm._transform_prompt(instruction)
     expected_prompt = PROMPT_FOR_GENERATION_FORMAT.format(instruction=instruction)
     assert prompt == expected_prompt
-    output = llm(prompt)
+    output = llm.invoke(prompt)
     assert isinstance(output, str)
-    output = llm(prompt)
+    output = llm.invoke(prompt)
     assert isinstance(output, str)
 
 
@@ -78,5 +78,5 @@ def test_short_retry_does_not_loop() -> None:
         ),
     ):
         for _ in range(10):
-            output = llm(prompt)
+            output = llm.invoke(prompt)
             assert isinstance(output, str)
