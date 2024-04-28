@@ -157,16 +157,19 @@ class PebbloSafeLoader(BaseLoader):
         doc_content = [doc.dict() for doc in loaded_docs]
         docs = []
         for doc in doc_content:
-            doc_authorized_identities = doc.get("metadata", {}).get(
-                "authorized_identities", []
-            )
+            doc_metadata = doc.get("metadata", {})
+            doc_authorized_identities = doc_metadata.get("authorized_identities", [])
             doc_source_path = get_full_path(
-                doc.get("metadata", {}).get("source", self.source_path)
+                doc_metadata.get(
+                    "full_path", doc_metadata.get("source", self.source_path)
+                )
             )
-            doc_source_owner = PebbloSafeLoader.get_file_owner_from_path(
-                doc_source_path
+            doc_source_owner = doc_metadata.get(
+                "owner", PebbloSafeLoader.get_file_owner_from_path(doc_source_path)
             )
-            doc_source_size = self.get_source_size(doc_source_path)
+            doc_source_size = doc_metadata.get(
+                "size", self.get_source_size(doc_source_path)
+            )
             page_content = str(doc.get("page_content"))
             page_content_size = self.calculate_content_size(page_content)
             self.source_aggregate_size += page_content_size
