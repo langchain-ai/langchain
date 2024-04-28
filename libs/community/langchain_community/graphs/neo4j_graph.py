@@ -173,7 +173,8 @@ def _enhanced_schema_cypher(
                 )
                 return_clauses.append(
                     (
-                        f"min: toString(`{prop_name}_min`), max: toString(`{prop_name}_max`), "
+                        f"min: toString(`{prop_name}_min`), "
+                        f"max: toString(`{prop_name}_max`), "
                         f"distinct_count: `{prop_name}_distinct`"
                     )
                 )
@@ -185,7 +186,8 @@ def _enhanced_schema_cypher(
                     )
                 )
                 return_clauses.append(
-                    f"min_size: `{prop_name}_size_min`, max_size: `{prop_name}_size_max`"
+                    f"min_size: `{prop_name}_size_min`, "
+                    f"max_size: `{prop_name}_size_max`"
                 )
 
             output_dict[prop_name] = "{" + return_clauses.pop() + "}"
@@ -197,12 +199,16 @@ def _enhanced_schema_cypher(
             prop_type = prop["type"]
             if prop_type == "STRING":
                 with_clauses.append(
-                    f"collect(distinct substring(n.`{prop_name}`,0,50)) AS `{prop_name}_values`"
+                    (
+                        f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
+                        f"AS `{prop_name}_values`"
+                    )
                 )
                 return_clauses.append(f"values: `{prop_name}_values`")
             elif prop_type in ["INTEGER", "FLOAT", "DATE"]:
                 with_clauses.append(
-                    f"collect(distinct toString(n.`{prop_name}`)) AS `{prop_name}_values`"
+                    f"collect(distinct toString(n.`{prop_name}`)) "
+                    f"AS `{prop_name}_values`"
                 )
                 return_clauses.append(f"values: `{prop_name}_values`")
             elif prop_type == "LIST":
@@ -497,7 +503,8 @@ class Neo4jGraph(GraphStore):
             schema_counts = self.query(
                 "CALL apoc.meta.graphSample() YIELD nodes, relationships "
                 "RETURN nodes, [rel in relationships | {name:apoc.any.property"
-                "(rel, 'type'), count: apoc.any.property(rel, 'count')}] AS relationships"
+                "(rel, 'type'), count: apoc.any.property(rel, 'count')}]"
+                " AS relationships"
             )
             # Update node info
             for node in schema_counts[0]["nodes"]:
