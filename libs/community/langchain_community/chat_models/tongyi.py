@@ -159,31 +159,23 @@ def convert_dict_to_message(
 
 
 def convert_message_chunk_to_message(message_chunk: BaseMessageChunk) -> BaseMessage:
-    """Convert a message chunk to a message."""
-    if isinstance(message_chunk, HumanMessageChunk):
-        return HumanMessage(content=message_chunk.content)
-    elif isinstance(message_chunk, AIMessageChunk):
-        # assert message_chunk is None
-        return (
-            AIMessage(
-                content=message_chunk.content,
-                tool_calls=message_chunk.additional_kwargs["tool_calls"],
-            )
-            if "tool_calls" in message_chunk.additional_kwargs
-            else AIMessage(content=message_chunk.content)
-        )
-    elif isinstance(message_chunk, SystemMessageChunk):
-        return SystemMessage(content=message_chunk.content)
-    elif isinstance(message_chunk, ChatMessageChunk):
-        return ChatMessage(role=message_chunk.role, content=message_chunk.content)
-    elif isinstance(message_chunk, ToolMessageChunk):
-        return ToolMessage(
-            content=message_chunk.content,
-            tool_call_id=message_chunk.tool_call_id,
-            name=message_chunk.name,
-        )
-    else:
-        raise TypeError(f"Got unknown type {message_chunk}")
+    """Convert a message chunk to a message.
+
+    Args:
+        chunk: Message chunk to convert.
+
+    Returns:
+        Message.
+    """
+    if not isinstance(message_chunk, BaseMessageChunk):
+        return message_chunk
+    # chunk classes always have the equivalent non-chunk class as their first parent
+    ignore_keys = ["type"]
+    if isinstance(message_chunk, AIMessageChunk):
+        ignore_keys.append("tool_call_chunks")
+    return message_chunk.__class__.__mro__[1](
+        **{k: v for k, v in message_chunk.__dict__.items() if k not in ignore_keys}
+    )
 
 
 def convert_message_to_dict(message: BaseMessage) -> dict:
@@ -416,16 +408,16 @@ class ChatTongyi(BaseChatModel):
     ) -> ChatResult:
         generations = []
         if self.streaming:
-            generation: Optional[ChatGenerationChunk] = None
+            generation_chunk: Optional[ChatGenerationChunk] = None
             for chunk in self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             ):
-                if generation is None:
-                    generation = chunk
+                if generation_chunk is None:
+                    generation_chunk = chunk
                 else:
-                    generation += chunk
-            assert generation is not None
-            generations.append(self._chunk_to_generation(generation))
+                    generation_chunk += chunk
+            assert generation_chunk is not None
+            generations.append(self._chunk_to_generation(generation_chunk))
         else:
             params: Dict[str, Any] = self._invocation_params(
                 messages=messages, stop=stop, **kwargs
