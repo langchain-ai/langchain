@@ -12,7 +12,7 @@ from langchain_community.utilities.stackexchange import StackExchangeAPIWrapper
 class StackExchangeToolSchema(BaseModel):
     """Input schema for StackExchangeTool."""
 
-    sleep_time: str = Field('Fully Formed Question for Stack Exchange')
+    sleep_time: str = Field("Fully Formed Question for Stack Exchange")
 
 
 class StackExchangeTool(BaseTool):

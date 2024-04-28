@@ -12,8 +12,10 @@ from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrappe
 class OpenWeatherMapQueryRunToolInput(BaseModel):
     """Input for the OpenWeatherMapQueryRunTool tool."""
 
-    location: str = Field(description="""Location String to be used for 
-                          OpenWeatherMap API""")
+    location: str = Field(
+        description="""Location String to be used for 
+                          OpenWeatherMap API"""
+    )
 
 
 class OpenWeatherMapQueryRun(BaseTool):
@@ -30,7 +32,7 @@ class OpenWeatherMapQueryRun(BaseTool):
         "Input should be a location string (e.g. London,GB)."
     )
     args_schema: Type[BaseModel] = OpenWeatherMapQueryRunToolInput
-    
+
     def _run(
         self, location: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:

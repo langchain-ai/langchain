@@ -1,6 +1,6 @@
 # flake8: noqa
 """Tools for interacting with Spark SQL."""
-from typing import Any, Dict, Optional,Type
+from typing import Any, Dict, Optional, Type
 
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 
@@ -22,6 +22,7 @@ class BaseSparkSQLTool(BaseModel):
 
     class Config(BaseTool.Config):
         pass
+
 
 class _QuerySparkSQLDataBaseToolInput(BaseModel):
     query: str = Field(..., description="A detailed and correct SQL query.")
@@ -46,6 +47,7 @@ class QuerySparkSQLTool(BaseSparkSQLTool, BaseTool):
         """Execute the query, return the results or an error message."""
         return self.db.run_no_throw(query)
 
+
 class _InfoSparkSQLDatabaseToolInput(BaseModel):
     table_names: str = Field(
         ...,
@@ -54,6 +56,7 @@ class _InfoSparkSQLDatabaseToolInput(BaseModel):
             "Example input: 'table1, table2, table3'"
         ),
     )
+
 
 class InfoSparkSQLTool(BaseSparkSQLTool, BaseTool):
     """Tool for getting metadata about a Spark SQL."""
@@ -100,6 +103,7 @@ class ListSparkSQLTool(BaseSparkSQLTool, BaseTool):
     ) -> str:
         """Get the schema for a specific table."""
         return ", ".join(self.db.get_usable_table_names())
+
 
 class _QuerySparkSQLCheckerToolInput(BaseModel):
     query: str = Field(..., description="A detailed and SQL query to be checked.")

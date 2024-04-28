@@ -18,7 +18,6 @@ class NasaActionToolInput(BaseModel):
     instructions: str = Field(description="Query for the Nasa Action API")
 
 
-
 class NasaAction(BaseTool):
     """Tool that queries the Nasa Action API."""
 

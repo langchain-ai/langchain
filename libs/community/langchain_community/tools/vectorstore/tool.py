@@ -18,8 +18,7 @@ from langchain_community.llms.openai import OpenAI
 class BaseVectorStoreToolSchema(BaseModel):
     """Input schema for BaseVectorStoreTool."""
 
-    query: str = Field('Input should be a fully formed question')
-
+    query: str = Field("Input should be a fully formed question")
 
 
 class BaseVectorStoreTool(BaseModel):
@@ -28,7 +27,6 @@ class BaseVectorStoreTool(BaseModel):
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
     args_schema: Type[BaseVectorStoreToolSchema] = BaseVectorStoreToolSchema
-
 
     class Config(BaseTool.Config):
         pass

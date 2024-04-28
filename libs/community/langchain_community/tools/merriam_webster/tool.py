@@ -15,7 +15,6 @@ class MerriamWebsterToolInput(BaseModel):
     query: str = Field(description="Word you want the definition of")
 
 
-
 class MerriamWebsterQueryRun(BaseTool):
     """Tool that searches the Merriam-Webster API."""
 

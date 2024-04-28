@@ -12,7 +12,7 @@ from langchain_community.utilities.steam import SteamWebAPIWrapper
 class SteamWebAPIQueryToolSchema(BaseModel):
     """Input schema for SteamWebAPIQueryRun."""
 
-    sleep_time: str = Field('User or Game you want to Query')
+    sleep_time: str = Field("User or Game you want to Query")
 
 
 class SteamWebAPIQueryRun(BaseTool):
@@ -28,7 +28,6 @@ class SteamWebAPIQueryRun(BaseTool):
 
     api_wrapper: SteamWebAPIWrapper
     args_schema: Type[SteamWebAPIQueryToolSchema] = SteamWebAPIQueryToolSchema
-
 
     def _run(
         self,

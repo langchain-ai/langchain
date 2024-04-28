@@ -24,11 +24,11 @@ def _clean_url(url: str) -> str:
     """Strips quotes from the url."""
     return url.strip("\"'")
 
+
 class BaseRequestsToolSchema(BaseModel):
     """Input for the BaseRequestsTool tool."""
 
     url: str = Field(description="""Endpoint to be used for the request""")
-
 
 
 class BaseRequestsTool(BaseModel):
@@ -129,6 +129,7 @@ class RequestsPatchTool(BaseRequestsTool, BaseTool):
     The output will be the text response of the PATCH request.
     """
     args_schema: Type[BaseModel] = BaseRequestsToolSchema
+
     def _run(
         self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Union[str, Dict[str, Any]]:
@@ -166,6 +167,7 @@ class RequestsPutTool(BaseRequestsTool, BaseTool):
     The output will be the text response of the PUT request.
     """
     args_schema: Type[BaseModel] = BaseRequestsToolSchema
+
     def _run(
         self, text: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Union[str, Dict[str, Any]]:

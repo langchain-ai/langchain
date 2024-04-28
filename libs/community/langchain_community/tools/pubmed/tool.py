@@ -26,6 +26,7 @@ class PubmedQueryRun(BaseTool):
     )
     api_wrapper: PubMedAPIWrapper = Field(default_factory=PubMedAPIWrapper)
     args_schema: Type[BaseModel] = PubmedQueryRunToolInput
+
     def _run(
         self,
         query: str,

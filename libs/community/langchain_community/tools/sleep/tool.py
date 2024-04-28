@@ -20,7 +20,8 @@ class SleepInput(BaseModel):
 class SleepToolSchema(BaseModel):
     """Input schema for SleepTool."""
 
-    sleep_time: str = Field('Time you want to execute the sleep')
+    sleep_time: str = Field("Time you want to execute the sleep")
+
 
 class SleepTool(BaseTool):
     """Tool that adds the capability to sleep."""

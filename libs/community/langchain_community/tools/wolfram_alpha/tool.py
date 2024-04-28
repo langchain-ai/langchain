@@ -12,7 +12,7 @@ from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
 class WolframAlphaQueryRunRunToolSchema(BaseModel):
     """Input schema for WolframAlphaQueryRun."""
 
-    query: str = Field('Search Query')
+    query: str = Field("Search Query")
 
 
 class WolframAlphaQueryRun(BaseTool):
@@ -26,8 +26,9 @@ class WolframAlphaQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: WolframAlphaAPIWrapper
-    args_schema: Type[WolframAlphaQueryRunRunToolSchema]\
-        = WolframAlphaQueryRunRunToolSchema
+    args_schema: Type[
+        WolframAlphaQueryRunRunToolSchema
+    ] = WolframAlphaQueryRunRunToolSchema
 
     def _run(
         self,

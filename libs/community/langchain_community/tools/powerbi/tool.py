@@ -20,10 +20,12 @@ from langchain_community.utilities.powerbi import PowerBIDataset, json_to_md
 
 logger = logging.getLogger(__name__)
 
+
 class QueryPowerBIToolInput(BaseModel):
     """Input for the QueryPowerBITool tool."""
 
     tool_input: str = Field(description="""Detailed question about the dataset""")
+
 
 class QueryPowerBITool(BaseTool):
     """Tool for querying a Power BI Dataset."""
@@ -42,6 +44,7 @@ class QueryPowerBITool(BaseTool):
     output_token_limit: int = 4000
     tiktoken_model_name: Optional[str] = None  # "cl100k_base"
     args_schema: Type[BaseModel] = QueryPowerBIToolInput
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -222,7 +225,6 @@ class InfoPowerBIToolInput(BaseModel):
     """Input for the InfoPowerBITool tool."""
 
     tool_input: str = Field(description="""Comma-separated list of tables""")
-
 
 
 class InfoPowerBITool(BaseTool):

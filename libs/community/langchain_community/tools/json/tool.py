@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Type
 
-from langchain_core.pydantic_v1 import BaseModel,Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -24,13 +24,15 @@ def _parse_input(text: str) -> List[Union[str, int]]:
     res = [int(i) if i.isdigit() else i for i in res]
     return res
 
+
 class JsonToolInput(BaseModel):
     """Input for the JsonToolInput tools."""
 
-    tool_input: str = Field(description="""
+    tool_input: str = Field(
+        description="""
                               Text representation of the path to the dict 
-                              in Python syntax (e.g. data["key1"][0]["key2"])""")
-
+                              in Python syntax (e.g. data["key1"][0]["key2"])"""
+    )
 
 
 class JsonSpec(BaseModel):

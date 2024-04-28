@@ -84,9 +84,12 @@ from langchain_community.utilities.zapier import ZapierNLAWrapper
 class ZapierNLARunActionSchema(BaseModel):
     """Input schema for ZapierNLARunAction."""
 
-    instructions: str = Field("""
+    instructions: str = Field(
+        """
                     Natural language instruction string for using the action
-                       """)
+                       """
+    )
+
 
 class ZapierNLARunAction(BaseTool):
     """Tool to run a specific action from the user's exposed actions.

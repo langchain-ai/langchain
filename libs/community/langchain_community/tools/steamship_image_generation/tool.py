@@ -39,10 +39,11 @@ SUPPORTED_IMAGE_SIZES = {
     ModelName.STABLE_DIFFUSION: ("512x512", "768x768"),
 }
 
+
 class SteamshipImageGenerationToolSchema(BaseModel):
     """Input schema for SteamshipImageGenerationTool."""
 
-    query: str = Field('A detailed text-2-image prompt describing an image')
+    query: str = Field("A detailed text-2-image prompt describing an image")
 
 
 class SteamshipImageGenerationTool(BaseTool):
@@ -60,8 +61,9 @@ class SteamshipImageGenerationTool(BaseTool):
         "Input: A detailed text-2-image prompt describing an image"
         "Output: the UUID of a generated image"
     )
-    args_schema: Type[SteamshipImageGenerationToolSchema]\
-        = SteamshipImageGenerationToolSchema
+    args_schema: Type[
+        SteamshipImageGenerationToolSchema
+    ] = SteamshipImageGenerationToolSchema
 
     @root_validator(pre=True)
     def validate_size(cls, values: Dict) -> Dict:

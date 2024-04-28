@@ -20,11 +20,13 @@ from langchain_community.tools import BaseTool
 class YouTubeSearchToolSchema(BaseModel):
     """Input schema for YouTubeSearchTool."""
 
-    query: str = Field("""Input to this tool should be a comma separated list,
+    query: str = Field(
+        """Input to this tool should be a comma separated list,
                        the first part contains a person name and the second a 
                        number that is the maximum number of video results 
                        to return aka num_results.
-                       """)
+                       """
+    )
 
 
 class YouTubeSearchTool(BaseTool):

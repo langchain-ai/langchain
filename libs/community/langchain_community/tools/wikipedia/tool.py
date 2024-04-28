@@ -12,8 +12,7 @@ from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 class WikipediaQueryRunToolSchema(BaseModel):
     """Input schema for WikipediaQueryRun."""
 
-    query: str = Field('Search Query')
-
+    query: str = Field("Search Query")
 
 
 class WikipediaQueryRun(BaseTool):
