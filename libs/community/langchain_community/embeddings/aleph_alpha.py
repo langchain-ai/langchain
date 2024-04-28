@@ -98,7 +98,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
                 nice=values["nice"],
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
@@ -121,7 +121,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
                 SemanticRepresentation,
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
@@ -161,7 +161,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
                 SemanticRepresentation,
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )
@@ -209,7 +209,7 @@ class AlephAlphaSymmetricSemanticEmbedding(AlephAlphaAsymmetricSemanticEmbedding
                 SemanticRepresentation,
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import aleph_alpha_client python package. "
                 "Please install it with `pip install aleph_alpha_client`."
             )

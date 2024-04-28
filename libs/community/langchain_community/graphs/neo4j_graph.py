@@ -181,7 +181,7 @@ class Neo4jGraph(GraphStore):
         try:
             import neo4j
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import neo4j python package. "
                 "Please install it with `pip install neo4j`."
             )
