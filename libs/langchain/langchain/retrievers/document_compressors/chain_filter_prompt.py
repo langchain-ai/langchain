@@ -6,4 +6,5 @@ prompt_template = """Given the following question and context, return YES if the
 >>>
 {context}
 >>>
+Now respond and ONLY answer YES or NO since you are only able to say 1 word responses.
 > Relevant (YES / NO):"""
