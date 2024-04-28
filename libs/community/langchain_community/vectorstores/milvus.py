@@ -1134,11 +1134,12 @@ class Milvus(VectorStore):
                 timeout=timeout,
                 batch_size=batch_size,
                 ids=ids,
-                **kwargs)
+                **kwargs,
+            )
         except MilvusException as exc:
             logger.error(
                 "Failed to upsert texts entities: %s error: %s",
                 self.collection_name,
-                exc
+                exc,
             )
             raise exc
