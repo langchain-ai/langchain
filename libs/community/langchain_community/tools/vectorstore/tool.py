@@ -26,8 +26,7 @@ class BaseVectorStoreTool(BaseModel):
 
     vectorstore: VectorStore = Field(exclude=True)
     llm: BaseLanguageModel = Field(default_factory=lambda: OpenAI(temperature=0))
-    args_schema: Type[BaseVectorStoreToolSchema] = BaseVectorStoreToolSchema
-
+    
     class Config(BaseTool.Config):
         pass
 
@@ -39,6 +38,8 @@ def _create_description_from_template(values: Dict[str, Any]) -> Dict[str, Any]:
 
 class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
     """Tool for the VectorDBQA chain. To be initialized with name and chain."""
+    
+    args_schema: Type[BaseVectorStoreToolSchema] = BaseVectorStoreToolSchema
 
     @staticmethod
     def get_description(name: str, description: str) -> str:
