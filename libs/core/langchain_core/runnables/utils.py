@@ -218,7 +218,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
         return list(visitor.keys) if visitor.keys else None
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return None
 
 
@@ -241,7 +241,7 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         visitor = GetLambdaSource()
         visitor.visit(tree)
         return visitor.source if visitor.count == 1 else name
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return name
 
 
@@ -270,7 +270,7 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
                     else:
                         values.append(vv)
         return values
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return []
 
 
