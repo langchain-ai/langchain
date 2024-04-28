@@ -8,8 +8,11 @@ if TYPE_CHECKING:
     from langchain_core.documents import Document
 
 
-class VectorStore2(VectorStore):
-    def unique_chunks_for_queries(
+class UniqueChunkRetriever:
+    def __init__(self, vector_store: VectorStore) -> None:
+        self.vector_store = vector_store
+
+    def optimize(
         self,
         queries_list: List[str],
         k: int = 4,
@@ -36,8 +39,10 @@ class VectorStore2(VectorStore):
         ss_result = {}
         retrieved_k = k * 5
         for query in queries_list:
-            ss_result[query] = self.similarity_search_with_relevance_scores(
-                query, k=retrieved_k, **kwargs
+            ss_result[query] = (
+                self.vector_store.similarity_search_with_relevance_scores(
+                    query, k=retrieved_k, **kwargs
+                )
             )
 
         col = len(queries_list)
