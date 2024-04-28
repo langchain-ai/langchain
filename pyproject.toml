@@ -14,7 +14,7 @@ black = "^24.2.0"
 
 [tool.poetry.group.docs.dependencies]
 langchain = { path = "libs/langchain/", develop = true }
-autodoc_pydantic = "^1.8.0"
+autodoc_pydantic = "^1.9.0"
 myst_parser = "^0.18.1"
 nbsphinx = "^0.8.9"
 sphinx = "^4.5.0"
