@@ -15,7 +15,6 @@ from typing import (
     overload,
 )
 
-
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
