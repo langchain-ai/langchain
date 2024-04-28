@@ -1,4 +1,7 @@
+import warnings
 from typing import Any, Dict, List, Optional
+
+from langchain_core._api import deprecated
 
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
@@ -58,18 +61,22 @@ class FalkorDBGraph(GraphStore):
     ) -> None:
         """Create a new FalkorDB graph wrapper instance."""
         try:
-            import redis
-            from redis.commands.graph import Graph
-        except ImportError:
-            raise ImportError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
+            self.__init_falkordb_connection(
+                database, host, port, username, password, ssl
             )
 
-        self._driver = redis.Redis(
-            host=host, port=port, username=username, password=password, ssl=ssl
-        )
-        self._graph = Graph(self._driver, database)
+        except ImportError:
+            try:
+                # Falls back to using the redis package just for backwards compatibility
+                self.__init_redis_connection(
+                    database, host, port, username, password, ssl
+                )
+            except ImportError:
+                raise ImportError(
+                    "Could not import falkordb python package. "
+                    "Please install it with `pip install falkordb`."
+                )
+
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
 
@@ -77,6 +84,53 @@ class FalkorDBGraph(GraphStore):
             self.refresh_schema()
         except Exception as e:
             raise ValueError(f"Could not refresh schema. Error: {e}")
+
+    def __init_falkordb_connection(
+        self,
+        database: str,
+        host: str = "localhost",
+        port: int = 6379,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        ssl: bool = False,
+    ) -> None:
+        from falkordb import FalkorDB
+
+        try:
+            self._driver = FalkorDB(
+                host=host, port=port, username=username, password=password, ssl=ssl
+            )
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to FalkorDB: {e}")
+
+        self._graph = self._driver.select_graph(database)
+
+    @deprecated("0.0.31", alternative="__init_falkordb_connection")
+    def __init_redis_connection(
+        self,
+        database: str,
+        host: str = "localhost",
+        port: int = 6379,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        ssl: bool = False,
+    ) -> None:
+        import redis
+        from redis.commands.graph import Graph
+
+        # show deprecation warning
+        warnings.warn(
+            "Using the redis package is deprecated. "
+            "Please use the falkordb package instead, "
+            "install it with `pip install falkordb`.",
+            DeprecationWarning,
+        )
+
+        self._driver = redis.Redis(
+            host=host, port=port, username=username, password=password, ssl=ssl
+        )
+
+        self._graph = Graph(self._driver, database)
 
     @property
     def get_schema(self) -> str:
