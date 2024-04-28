@@ -89,6 +89,8 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
 class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
     """Tool for the VectorDBQAWithSources chain."""
 
+    args_schema: Type[BaseVectorStoreToolSchema] = BaseVectorStoreToolSchema
+
     @staticmethod
     def get_description(name: str, description: str) -> str:
         template: str = (
