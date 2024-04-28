@@ -184,7 +184,7 @@ class ChatMaritalk(BaseChatModel):
         """
         Asynchronously sends the parsed messages to the MariTalk API and returns
         the generated response or an error message.
-        
+
         This method makes an HTTP POST request to the MariTalk API with the
         provided messages and other parameters using async I/O.
         If the request is successful and the API returns a response,
@@ -261,13 +261,13 @@ class ChatMaritalk(BaseChatModel):
                 "https://chat.maritaca.ai/api/chat/inference",
                 data=json.dumps(data),
                 headers=headers,
-                stream=True
+                stream=True,
             )
 
             if response.ok:
                 for line in response.iter_lines():
                     if line.startswith(b"data: "):
-                        response_data = line.replace(b"data: ", b"").decode('utf-8')
+                        response_data = line.replace(b"data: ", b"").decode("utf-8")
                         if response_data:
                             parsed_data = json.loads(response_data)
                             if "text" in parsed_data:
@@ -276,14 +276,12 @@ class ChatMaritalk(BaseChatModel):
                                     message=AIMessageChunk(content=delta)
                                 )
                                 if run_manager:
-                                    run_manager.on_llm_new_token(
-                                        delta, chunk=chunk
-                                    )
+                                    run_manager.on_llm_new_token(delta, chunk=chunk)
                                 yield chunk
 
             else:
                 raise MaritalkHTTPError(response)
-            
+
         except requests.exceptions.RequestException as e:
             return f"An error occurred: {str(e)}"
 
@@ -363,8 +361,7 @@ class ChatMaritalk(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        output_str = self._call(messages, stop=stop,
-                                run_manager=run_manager, **kwargs)
+        output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
@@ -376,8 +373,9 @@ class ChatMaritalk(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        output_str = await self._acall(messages, stop=stop,
-                                       run_manager=run_manager, **kwargs)
+        output_str = await self._acall(
+            messages, stop=stop, run_manager=run_manager, **kwargs
+        )
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
