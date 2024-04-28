@@ -138,7 +138,10 @@ def _get_rel_import_query(baseEntityLabel: bool) -> str:
 
 
 def _enhanced_schema_cypher(
-    label_or_type: str, properties: str, exhaustive: bool, is_relationship=False
+    label_or_type: str,
+    properties: List[Dict[str, Any]],
+    exhaustive: bool,
+    is_relationship: bool = False,
 ) -> str:
     if is_relationship:
         match_clause = f"MATCH ()-[n:{label_or_type}]->()"
