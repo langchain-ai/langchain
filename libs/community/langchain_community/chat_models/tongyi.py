@@ -98,7 +98,8 @@ def convert_dict_to_message(
                                 "name": value["function"].get("name"),
                                 "args": value["function"].get("arguments"),
                                 "id": value.get("id"),
-                                # Tongyi does not respond with index, use index in the list instead
+                                # Tongyi does not respond with index,
+                                # use index in the list instead
                                 "index": index,
                             }
                         )
@@ -106,7 +107,9 @@ def convert_dict_to_message(
                         pass
                 else:
                     try:
-                        tool_calls.append(parse_tool_call(value, return_id=True))
+                        parsed_tool = parse_tool_call(value, return_id=True)
+                        if parsed_tool:
+                            tool_calls.append(parsed_tool)
                     except Exception as e:
                         invalid_tool_calls.append(make_invalid_tool_call(value, str(e)))
         else:
@@ -336,7 +339,7 @@ class ChatTongyi(BaseChatModel):
 
         return _stream_completion_with_retry(**kwargs)
 
-    def subtract_client_response(self, resp, prev_resp) -> Any:
+    def subtract_client_response(self, resp: Any, prev_resp: Any) -> Any:
         """Subtract prev response from curr response.
 
         Useful when streaming without `incremental_output = True`
