@@ -11,6 +11,8 @@ EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]
 EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
 EXHAUSTIVE_SEARCH_LIMIT = 10000
 LIST_LIMIT = 128
+# Threshold for returning all available prop values in graph schema
+DISTINCT_VALUE_LIMIT = 10
 NL = "\n"
 
 node_properties_query = """
@@ -164,8 +166,8 @@ def _enhanced_schema_cypher(
                 )
                 return_clauses.append(
                     (
-                        f"values: `{prop_name}_values`[..10], "
-                        f"distinct_count: size(`{prop_name}_values`)"
+                        f"values:`{prop_name}_values`[..{DISTINCT_VALUE_LIMIT}],"
+                        f" distinct_count: size(`{prop_name}_values`)"
                     )
                 )
             elif prop_type in ["INTEGER", "FLOAT", "DATE"]:
@@ -249,11 +251,19 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
             for prop in properties:
                 example = ""
                 if prop["type"] == "STRING":
-                    example = (
-                        f'Example: "{prop["values"][0].replace(NL, " ")}"'
-                        if prop["values"]
-                        else ""
-                    )
+                    if prop.get("distinct_count", 11) > DISTINCT_VALUE_LIMIT:
+                        example = (
+                            f'Example: "{prop["values"][0].replace(NL, " ")}"'
+                            if prop["values"]
+                            else ""
+                        )
+                    else:  # If less than 10 possible values return all
+                        example = (
+                            f'Available options: {[el.replace(NL, " ") for el in prop["values"]]}'
+                            if prop["values"]
+                            else ""
+                        )
+
                 elif prop["type"] in ["INTEGER", "FLOAT", "DATE"]:
                     if prop.get("min") is not None:
                         example = f'Min: {prop["min"]}, Max: {prop["max"]}'
@@ -278,11 +288,18 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
             for prop in properties:
                 example = ""
                 if prop["type"] == "STRING":
-                    example = (
-                        f'Example: "{prop["values"][0].replace(NL, " ")}"'
-                        if prop["values"]
-                        else ""
-                    )
+                    if prop.get("distinct_count", 11) > DISTINCT_VALUE_LIMIT:
+                        example = (
+                            f'Example: "{prop["values"][0].replace(NL, " ")}"'
+                            if prop["values"]
+                            else ""
+                        )
+                    else:  # If less than 10 possible values return all
+                        example = (
+                            f'Available options: {[el.replace(NL, " ") for el in prop["values"]]}'
+                            if prop["values"]
+                            else ""
+                        )
                 elif prop["type"] in ["INTEGER", "FLOAT", "DATE"]:
                     if prop.get("min"):  # If we have min/max
                         example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
