@@ -259,7 +259,10 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         )
                     else:  # If less than 10 possible values return all
                         example = (
-                            f'Available options: {[el.replace(NL, " ") for el in prop["values"]]}'
+                            (
+                                "Available options: "
+                                f'{[el.replace(NL, " ") for el in prop["values"]]}'
+                            )
                             if prop["values"]
                             else ""
                         )
@@ -296,7 +299,10 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         )
                     else:  # If less than 10 possible values return all
                         example = (
-                            f'Available options: {[el.replace(NL, " ") for el in prop["values"]]}'
+                            (
+                                "Available options: "
+                                f'{[el.replace(NL, " ") for el in prop["values"]]}'
+                            )
                             if prop["values"]
                             else ""
                         )
