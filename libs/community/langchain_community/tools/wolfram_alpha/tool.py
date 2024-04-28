@@ -26,7 +26,8 @@ class WolframAlphaQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: WolframAlphaAPIWrapper
-    args_schema: Type[WolframAlphaQueryRunRunToolSchema] = WolframAlphaQueryRunRunToolSchema
+    args_schema: Type[WolframAlphaQueryRunRunToolSchema]\
+        = WolframAlphaQueryRunRunToolSchema
 
     def _run(
         self,
