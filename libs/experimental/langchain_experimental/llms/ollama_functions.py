@@ -15,6 +15,7 @@ from typing import (
     overload,
 )
 
+
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
@@ -29,7 +30,7 @@ from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
-from pydantic.v1.main import ModelMetaclass
+from pydantic.main import ModelMetaclass
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
