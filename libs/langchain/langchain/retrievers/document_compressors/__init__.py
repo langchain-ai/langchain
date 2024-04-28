@@ -13,6 +13,7 @@ from langchain.retrievers.document_compressors.embeddings_filter import (
     EmbeddingsFilter,
 )
 from langchain.retrievers.document_compressors.flashrank_rerank import FlashrankRerank
+from langchain.retrievers.document_compressors.rankllm_rerank import RankLLMRerank
 
 __all__ = [
     "DocumentCompressorPipeline",
@@ -22,4 +23,5 @@ __all__ = [
     "CohereRerank",
     "CrossEncoderReranker",
     "FlashrankRerank",
+    "RankLLMRerank",
 ]
