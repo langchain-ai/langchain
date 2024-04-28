@@ -505,7 +505,7 @@ class Milvus(VectorStore):
 
     def add_texts(
         self,
-        texts: List[str],
+        texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         timeout: Optional[float] = None,
         batch_size: int = 1000,
@@ -1084,7 +1084,7 @@ class Milvus(VectorStore):
 
     def upsert_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         timeout: Optional[float] = None,
         batch_size: int = 1000,
