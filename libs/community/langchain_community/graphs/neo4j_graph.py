@@ -154,10 +154,16 @@ def _enhanced_schema_cypher(
             prop_type = prop["type"]
             if prop_type == "STRING":
                 with_clauses.append(
-                    f"collect(distinct substring(n.`{prop_name}`, 0, 50)) AS `{prop_name}_values`"
+                    (
+                        f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
+                        f"AS `{prop_name}_values`"
+                    )
                 )
                 return_clauses.append(
-                    f"values: `{prop_name}_values`[..10], distinct_count: size(`{prop_name}_values`)"
+                    (
+                        f"values: `{prop_name}_values`[..10], "
+                        f"distinct_count: size(`{prop_name}_values`)"
+                    )
                 )
             elif prop_type in ["INTEGER", "FLOAT", "DATE"]:
                 with_clauses.append(f"min(n.`{prop_name}`) AS `{prop_name}_min`")
@@ -166,11 +172,17 @@ def _enhanced_schema_cypher(
                     f"count(distinct n.`{prop_name}`) AS `{prop_name}_distinct`"
                 )
                 return_clauses.append(
-                    f"min: toString(`{prop_name}_min`), max: toString(`{prop_name}_max`), distinct_count: `{prop_name}_distinct`"
+                    (
+                        f"min: toString(`{prop_name}_min`), max: toString(`{prop_name}_max`), "
+                        f"distinct_count: `{prop_name}_distinct`"
+                    )
                 )
             elif prop_type == "LIST":
                 with_clauses.append(
-                    f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                    (
+                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
+                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                    )
                 )
                 return_clauses.append(
                     f"min_size: `{prop_name}_size_min`, max_size: `{prop_name}_size_max`"
@@ -185,7 +197,7 @@ def _enhanced_schema_cypher(
             prop_type = prop["type"]
             if prop_type == "STRING":
                 with_clauses.append(
-                    f"collect(distinct substring(n.`{prop_name}`, 0, 50)) AS `{prop_name}_values`"
+                    f"collect(distinct substring(n.`{prop_name}`,0,50)) AS `{prop_name}_values`"
                 )
                 return_clauses.append(f"values: `{prop_name}_values`")
             elif prop_type in ["INTEGER", "FLOAT", "DATE"]:
@@ -195,10 +207,13 @@ def _enhanced_schema_cypher(
                 return_clauses.append(f"values: `{prop_name}_values`")
             elif prop_type == "LIST":
                 with_clauses.append(
-                    f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                    (
+                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
+                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                    )
                 )
                 return_clauses.append(
-                    f"min_size: `{prop_name}_size_min`, max_size: `{prop_name}_size_max`"
+                    f"min_size: `{prop_name}_size_min`,max_size: `{prop_name}_size_max`"
                 )
 
             output_dict[prop_name] = "{" + return_clauses.pop() + "}"
@@ -325,6 +340,8 @@ class Neo4jGraph(GraphStore):
             embedding-like properties from database responses. Default is False.
     refresh_schema (bool): A flag whether to refresh schema information
             at initialization. Default is True.
+    enhanced_schema (bool): A flag whether to scan the database for
+            example values and use them in the graph schema. Default is False.
     driver_config (Dict): Configuration passed to Neo4j Driver.
 
     *Security note*: Make sure that the database connection uses credentials
