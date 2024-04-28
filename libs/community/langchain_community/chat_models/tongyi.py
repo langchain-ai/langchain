@@ -329,27 +329,28 @@ class ChatTongyi(BaseChatModel):
 
         return _stream_completion_with_retry(**kwargs)
 
-    def subtract_client_response(self, resp, prev_resp: Any) -> Any:
+    def subtract_client_response(self, resp, prev_resp) -> Any:
         """Subtract prev response from curr response.
 
         Useful when streaming without `incremental_output = True`
         """
 
-        resp_copy = copy.deepcopy(resp)
+        resp_copy = json.loads(json.dumps(resp))
         choice = resp_copy["output"]["choices"][0]
-        message = choice.message
-        prev_choice = prev_resp["output"]["choices"][0]
-        prev_message = prev_choice.message
+        message = choice["message"]
+
+        prev_resp_copy = json.loads(json.dumps(prev_resp))
+        prev_choice = prev_resp_copy["output"]["choices"][0]
+        prev_message = prev_choice["message"]
 
         message["content"] = message["content"].replace(prev_message["content"], "")
 
         if message.get("tool_calls"):
-            for index, tool_call in enumerate(message.tool_calls):
+            for index, tool_call in enumerate(message["tool_calls"]):
                 function = tool_call["function"]
-                function["id"] = str(index)
 
                 if prev_message.get("tool_calls"):
-                    prev_function = prev_message.tool_calls[index]["function"]
+                    prev_function = prev_message["tool_calls"][index]["function"]
 
                     function["name"] = function["name"].replace(
                         prev_function["name"], ""
