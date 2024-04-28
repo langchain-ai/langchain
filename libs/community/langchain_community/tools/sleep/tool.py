@@ -17,19 +17,12 @@ class SleepInput(BaseModel):
     sleep_time: int = Field(..., description="Time to sleep in seconds")
 
 
-class SleepToolSchema(BaseModel):
-    """Input schema for SleepTool."""
-
-    sleep_time: str = Field("Time you want to execute the sleep")
-
-
 class SleepTool(BaseTool):
     """Tool that adds the capability to sleep."""
 
     name: str = "sleep"
     args_schema: Type[BaseModel] = SleepInput
     description: str = "Make agent sleep for a specified number of seconds."
-    args_schema: Type[SleepToolSchema] = SleepToolSchema
 
     def _run(
         self,
