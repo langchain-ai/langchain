@@ -12,7 +12,8 @@ from langchain_community.utilities.wikidata import WikidataAPIWrapper
 class WikidataQueryRunToolSchema(BaseModel):
     """Input schema for WikidataQueryRun."""
 
-    query: str = Field('Exact name of the item you want information about or a Wikidata QID.')
+    query: str = Field("""Exact name of the item you want information 
+                       about or a Wikidata QID.""")
 
 
 class WikidataQueryRun(BaseTool):
