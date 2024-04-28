@@ -1,11 +1,17 @@
 """Tool for Steam Web API"""
 
-from typing import Optional
+from typing import Optional,Type
 
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.steam import SteamWebAPIWrapper
+
+class SteamWebAPIQueryToolSchema(BaseModel):
+    """Input schema for SteamWebAPIQueryRun."""
+
+    sleep_time: str = Field('User or Game you want to Query')
 
 
 class SteamWebAPIQueryRun(BaseTool):
@@ -20,6 +26,8 @@ class SteamWebAPIQueryRun(BaseTool):
     )
 
     api_wrapper: SteamWebAPIWrapper
+    args_schema: Type[SteamWebAPIQueryToolSchema] = SteamWebAPIQueryToolSchema
+
 
     def _run(
         self,

@@ -14,10 +14,10 @@ To use this tool, you must first set as environment variables:
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional,Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.tools import BaseTool
@@ -39,6 +39,11 @@ SUPPORTED_IMAGE_SIZES = {
     ModelName.STABLE_DIFFUSION: ("512x512", "768x768"),
 }
 
+class SteamshipImageGenerationToolSchema(BaseModel):
+    """Input schema for SteamshipImageGenerationTool."""
+
+    query: str = Field('A detailed text-2-image prompt describing an image')
+
 
 class SteamshipImageGenerationTool(BaseTool):
 
@@ -55,6 +60,7 @@ class SteamshipImageGenerationTool(BaseTool):
         "Input: A detailed text-2-image prompt describing an image"
         "Output: the UUID of a generated image"
     )
+    args_schema: Type[SteamshipImageGenerationToolSchema] = SteamshipImageGenerationToolSchema
 
     @root_validator(pre=True)
     def validate_size(cls, values: Dict) -> Dict:
