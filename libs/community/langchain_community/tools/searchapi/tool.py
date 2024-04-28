@@ -1,6 +1,6 @@
 """Tool for the SearchApi.io search API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -10,7 +10,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.searchapi import SearchApiAPIWrapper
-from typing import Type
+
 
 class SearchAPIRunInput(BaseModel):
     """Input for SearchAPIRun."""

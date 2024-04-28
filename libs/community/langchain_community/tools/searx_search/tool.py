@@ -10,6 +10,7 @@ from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.searx_search import SearxSearchWrapper
 
+
 class SearxSearchRunInput(BaseModel):
     """Input for SearxSearchRun."""
 

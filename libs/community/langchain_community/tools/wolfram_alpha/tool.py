@@ -1,11 +1,18 @@
 """Tool for the Wolfram Alpha API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.wolfram_alpha import WolframAlphaAPIWrapper
+
+
+class WolframAlphaQueryRunRunToolSchema(BaseModel):
+    """Input schema for WolframAlphaQueryRun."""
+
+    query: str = Field('Search Query')
 
 
 class WolframAlphaQueryRun(BaseTool):
@@ -19,6 +26,7 @@ class WolframAlphaQueryRun(BaseTool):
         "Input should be a search query."
     )
     api_wrapper: WolframAlphaAPIWrapper
+    args_schema: Type[WolframAlphaQueryRunRunToolSchema] = WolframAlphaQueryRunRunToolSchema
 
     def _run(
         self,

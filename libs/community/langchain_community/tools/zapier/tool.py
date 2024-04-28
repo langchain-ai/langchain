@@ -74,12 +74,19 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.tools import BaseTool
 
 from langchain_community.tools.zapier.prompt import BASE_ZAPIER_TOOL_PROMPT
 from langchain_community.utilities.zapier import ZapierNLAWrapper
 
+
+class ZapierNLARunActionSchema(BaseModel):
+    """Input schema for ZapierNLARunAction."""
+
+    instructions: str = Field("""
+                    Natural language instruction string for using the action
+                       """)
 
 class ZapierNLARunAction(BaseTool):
     """Tool to run a specific action from the user's exposed actions.

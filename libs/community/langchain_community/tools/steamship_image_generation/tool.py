@@ -14,7 +14,7 @@ To use this tool, you must first set as environment variables:
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Optional,Type
+from typing import TYPE_CHECKING, Dict, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field

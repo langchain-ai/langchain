@@ -1,11 +1,18 @@
 """Tool for the Wikidata API."""
 
-from typing import Optional
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
 from langchain_community.utilities.wikidata import WikidataAPIWrapper
+
+
+class WikidataQueryRunToolSchema(BaseModel):
+    """Input schema for WikidataQueryRun."""
+
+    query: str = Field('Exact name of the item you want information about or a Wikidata QID.')
 
 
 class WikidataQueryRun(BaseTool):
@@ -20,6 +27,8 @@ class WikidataQueryRun(BaseTool):
         "or a Wikidata QID."
     )
     api_wrapper: WikidataAPIWrapper
+    args_schema: Type[WikidataQueryRunToolSchema] = WikidataQueryRunToolSchema
+
 
     def _run(
         self,
