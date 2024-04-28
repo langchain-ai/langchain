@@ -384,6 +384,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt and additional model provider-specific output.
         """
         params = self._get_invocation_params(stop=stop, **kwargs)
+        if 'stream' in params:
+            kwargs['stream'] = params['stream']
         options = {"stop": stop}
 
         callback_manager = CallbackManager.configure(
@@ -471,6 +473,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt and additional model provider-specific output.
         """
         params = self._get_invocation_params(stop=stop, **kwargs)
+        if 'stream' in params:
+            kwargs['stream'] = params['stream']
         options = {"stop": stop}
 
         callback_manager = AsyncCallbackManager.configure(
