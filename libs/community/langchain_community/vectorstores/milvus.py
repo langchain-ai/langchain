@@ -933,7 +933,8 @@ class Milvus(VectorStore):
         return ret
 
     def delete(  # type: ignore[no-untyped-def]
-            self, ids: Optional[List[str]] = None, expr: Optional[str] = None, **kwargs: str
+            self, ids: Optional[List[str]] = None,
+            expr: Optional[str] = None, **kwargs: str
     ):
         """Delete by vector ID or boolean expression.
         Refer to [Milvus documentation](https://milvus.io/docs/delete_data.md)
