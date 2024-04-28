@@ -21,7 +21,7 @@ class BaseVectorStoreToolSchema(BaseModel):
     query: str = Field("Input should be a fully formed question")
 
 
-class BaseVectorStoreTool(BaseModel):
+class BaseVectorStoreTool(BaseTool):
     """Base class for tools that use a VectorStore."""
 
     vectorstore: VectorStore = Field(exclude=True)
