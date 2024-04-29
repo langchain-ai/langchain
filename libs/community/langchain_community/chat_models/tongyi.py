@@ -31,7 +31,7 @@ from langchain_core.messages import (
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
-    SystemMessageChunk,
+    SystemMessageChunk, ToolMessage, FunctionMessage,
 )
 from langchain_core.output_parsers.openai_tools import (
     make_invalid_tool_call,
@@ -138,6 +138,8 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "assistant", "content": message.content}
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, ToolMessage) or isinstance(message, FunctionMessage):
+        message_dict = {"role": "assistant", "content": message.content}
     else:
         raise TypeError(f"Got unknown type {message}")
     return message_dict
