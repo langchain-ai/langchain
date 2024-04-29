@@ -95,6 +95,46 @@
                 "how_to/prompts_composition"
               ],
               "link": { "type": "generated-index" }
+            },
+            {
+              "type": "category",
+              "label": "Example Selectors",
+              "collapsed": true,
+              "items": [
+                "how_to/example_selectors",
+                "how_to/example_selectors_length_based",
+                "how_to/example_selectors_similarity",
+                "how_to/example_selectors_ngram",
+                "how_to/example_selectors_mmr"
+              ],
+              "link": { "type": "generated-index" }
+            },
+            {
+              "type": "category",
+              "label": "Chat Models",
+              "collapsed": true,
+              "items": [
+                "how_to/tool_calling",
+                "how_to/structured_output",
+                "how_to/chat_model_caching",
+                "how_to/logprobs",
+                "how_to/custom_chat_model",
+                "how_to/chat_streaming",
+                "how_to/chat_token_usage_tracking"
+              ],
+              "link": { "type": "generated-index" }
+            },
+            {
+              "type": "category",
+              "label": "LLMs",
+              "collapsed": true,
+              "items": [
+                "how_to/llm_caching",
+                "how_to/custom_llm",
+                "how_to/streaming_llm",
+                "how_to/llm_token_usage_tracking"
+              ],
+              "link": { "type": "generated-index" }
             }
           ],
           "link": { "type": "generated-index" }
