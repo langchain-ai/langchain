@@ -78,6 +78,26 @@
             "how_to/inspect"
           ],
           "link": { "type": "generated-index" }
+        },
+        {
+          "type": "category",
+          "label": "Components",
+          "collapsed": true,
+          "items": [
+            {
+              "type": "category",
+              "label": "Prompt Templates",
+              "collapsed": true,
+              "items": [
+                "how_to/few_shot_examples",
+                "how_to/few_shot_examples_chat",
+                "how_to/prompts_partial",
+                "how_to/prompts_composition"
+              ],
+              "link": { "type": "generated-index" }
+            }
+          ],
+          "link": { "type": "generated-index" }
         }
       ],
       "link": { "type": "doc", "id": "how_to/index" }
