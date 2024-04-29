@@ -219,7 +219,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
     headers: Any = None
-    tiktoken_enabled: bool = True
+    tiktoken_enabled: Optional[bool] = Field(default=True)
     """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
     the `--extensions openai` extension for `text-generation-webui`"""
     tiktoken_model_name: Optional[str] = None
