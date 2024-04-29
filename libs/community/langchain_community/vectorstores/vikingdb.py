@@ -59,7 +59,7 @@ class VikingDB(VectorStore):
         try:
             from volcengine.viking_db import Collection, VikingDBService
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import volcengine python package. "
                 "Please install it with `pip install --upgrade volcengine`."
             )
@@ -104,7 +104,7 @@ class VikingDB(VectorStore):
         try:
             from volcengine.viking_db import Field, FieldType
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import volcengine python package. "
                 "Please install it with `pip install --upgrade volcengine`."
             )
@@ -139,7 +139,7 @@ class VikingDB(VectorStore):
         try:
             from volcengine.viking_db import VectorIndexParams
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import volcengine python package. "
                 "Please install it with `pip install --upgrade volcengine`."
             )
@@ -177,7 +177,7 @@ class VikingDB(VectorStore):
         try:
             from volcengine.viking_db import Data
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import volcengine python package. "
                 "Please install it with `pip install --upgrade volcengine`."
             )
