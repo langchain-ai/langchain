@@ -36,16 +36,6 @@ def _import_aerospike() -> Any:  # TODO: Replace this with Any
     return vectordb_client
 
 
-# def _import_aerospike_admin() -> vectordb_admin:  # TODO: Replace this with Any
-#     try:
-#         from aerospike_vector import vectordb_admin
-#     except ImportError as e:
-#         raise ImportError(
-#             "Could not import aerospike_vector python package. "
-#             "Please install it with `pip install aerospike_vector`."
-#         ) from e
-#     return vectordb_admin
-
 
 class Aerospike(VectorStore):
     """`Aerospike` vector store.
@@ -96,18 +86,6 @@ class Aerospike(VectorStore):
                 f"got {type(client)}"
             )
 
-        # TODO: if isinstance(client, aerospike.AsyncClient):
-        # try:
-        #     # self._loop = asyncio.get_event_loop()
-        #     # self._event_loop_thread = threading.Thread(target=self._loop.run_forever(), daemon=True)
-        #     # self._event_loop_thread.start()  # TODO: Hopefully this is temporary
-        # except RuntimeError:
-        #     self._loop = None
-        #     self._event_loop_thread = None
-        #     raise RuntimeError(
-        #         "Aerospike is either uninitialized or initialized in a different thread. Please initialize Aerospike in the same thread."
-        #     )
-
         self._client = client
         self._embedding = embedding
         self._text_key = text_key
@@ -117,15 +95,6 @@ class Aerospike(VectorStore):
         self._set_name = set_name
         self.distance_strategy = distance_strategy
 
-    # def __del__(self):
-    #     if self._loop:
-    #         self._loop.stop()
-
-    def run_async(self, coroutine):
-        return asyncio.run_coroutine_threadsafe(coroutine, self._loop)
-
-    def run_async_gather(self, coroutines):
-        return [self.run_async(co).result() for co in coroutines]
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -146,7 +115,7 @@ class Aerospike(VectorStore):
             return self._embedding.embed_query(text)
         return self._embedding(text)
 
-    async def aadd_texts(
+    def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
@@ -155,6 +124,7 @@ class Aerospike(VectorStore):
             str
         ] = None,  # TODO: Should we allow namespaces to be passed in? They are much less flexible than pinecones.
         embedding_chunk_size: int = 1000,
+        **kwargs,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -200,28 +170,18 @@ class Aerospike(VectorStore):
             for idx, id, metadata in zip(
                 range(len(chunk_ids)), chunk_ids, chunk_metadatas
             ):
+                # TODO: use threads to speed up the process
                 coroutines[idx] = self._client.put(
                     namespace=self._namespace,
                     key=id,
                     set_name=set_name,
                     record_data=metadata,
+                    **kwargs,
                 )
-
-            await asyncio.gather(*coroutines)
 
         return ids
 
-    def add_texts(
-        self,
-        *args,
-        **kwargs: Any,
-    ) -> List[str]:
-        """TODO"""
-        return self.run_async(self.aadd_texts(*args, **kwargs)).result()
-
-    async def adelete(
-        self, ids: Optional[List[str]] = None, **kwargs: Any
-    ) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
         Args:
@@ -235,14 +195,12 @@ class Aerospike(VectorStore):
         # TODO: Client does not have a delete method yet.
         raise NotImplementedError("delete method must be implemented by subclass.")
 
-    def delete(self, *args, **kwargs: Any) -> Optional[bool]:
-        """TODO"""
-        return self.run_async(self.adelete(*args, **kwargs)).result()
-
     def similarity_search_with_score(
         self,
         query: str,
         k: int = 4,
+        metadata_keys: Optional[List[str]] = None,
+        **kwargs,
     ) -> List[Tuple[Document, float]]:
         """Return aerospike documents most similar to query, along with scores.
 
@@ -255,15 +213,16 @@ class Aerospike(VectorStore):
         """
 
         return self.similarity_search_by_vector_with_score(
-            self._embed_query(query), k=k
+            self._embed_query(query), k=k, metadata_keys=metadata_keys, **kwargs
         )
 
-    async def asimilarity_search_by_vector_with_score(
+    def similarity_search_by_vector_with_score(
         self,
         embedding: List[float],
         *,
         k: int = 4,
         metadata_keys: Optional[List[str]] = None,
+        **kwargs,
     ) -> List[Tuple[Document, float]]:
         """Return aerospike documents most similar to embedding, along with scores.
 
@@ -283,12 +242,13 @@ class Aerospike(VectorStore):
         if metadata_keys:
             metadata_keys = [self._text_key] + metadata_keys
 
-        results = await self._client.vector_search(
+        results = self._client.vector_search(
             index_name=self._index_name,
             namespace=self._namespace,
             query=embedding,
             limit=k,
             bin_names=metadata_keys,
+            **kwargs,
         )
 
         for result in results:
@@ -326,37 +286,12 @@ class Aerospike(VectorStore):
 
         return docs
 
-    def similarity_search_by_vector_with_score(
-        self,
-        embedding: List[float],
-        *,
-        k: int = 4,
-        metadata_keys: Optional[List[str]] = None,
-    ) -> List[Tuple[Document, float]]:
-        """Return aerospike documents most similar to embedding, along with scores.
-
-        Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            metadata_keys: List of metadata keys to return with the documents.
-                If None, all metadata keys will be returned. Defaults to None.
-
-        Returns:
-            List of Documents most similar to the query and associated scores.
-
-        """
-
-        return self.run_async(
-            self.asimilarity_search_by_vector_with_score(
-                embedding, k=k, metadata_keys=metadata_keys
-            )
-        ).result()
-
     def similarity_search_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
         metadata_keys: Optional[List[str]] = None,
+        **kwargs,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
 
@@ -372,7 +307,7 @@ class Aerospike(VectorStore):
         return [
             doc
             for doc, _ in self.similarity_search_by_vector_with_score(
-                embedding, k=k, metadata_keys=metadata_keys
+                embedding, k=k, metadata_keys=metadata_keys, **kwargs
             )
         ]
 
@@ -381,6 +316,7 @@ class Aerospike(VectorStore):
         query: str,
         k: int = 4,
         metadata_keys: Optional[List[str]] = None,
+        **kwargs,
     ) -> List[Document]:
         """Return aerospike documents most similar to query.
 
@@ -393,7 +329,9 @@ class Aerospike(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        docs_and_scores = self.similarity_search_with_score(query, k=k, **kwargs)
+        docs_and_scores = self.similarity_search_with_score(
+            query, k=k, metadata_keys=metadata_keys, **kwargs
+        )
         return [doc for doc, _ in docs_and_scores]
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
@@ -432,7 +370,7 @@ class Aerospike(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         metadata_keys: Optional[List[str]] = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -457,7 +395,7 @@ class Aerospike(VectorStore):
             metadata_keys = [self._vector_key] + metadata_keys
 
         docs = self.similarity_search_by_vector(
-            embedding, k=fetch_k, metadata_keys=metadata_keys
+            embedding, k=fetch_k, metadata_keys=metadata_keys, **kwargs
         )
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
@@ -480,6 +418,7 @@ class Aerospike(VectorStore):
         lambda_mult: float = 0.5,
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
+        metadata_keys: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -500,7 +439,14 @@ class Aerospike(VectorStore):
         """
         embedding = self._embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
-            embedding, k, fetch_k, lambda_mult, filter, namespace, **kwargs
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult,
+            filter,
+            namespace,
+            metadata_keys=metadata_keys,
+            **kwargs,
         )
 
     @classmethod
@@ -515,7 +461,7 @@ class Aerospike(VectorStore):
         metadatas: Optional[List[dict]] = None,
         embeddings_chunk_size: int = 1000,
         client_kwargs: Optional[dict] = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> Aerospike:
         """
         This is a user friendly interface that:
@@ -567,5 +513,6 @@ class Aerospike(VectorStore):
             ids=ids,
             namespace=namespace,
             embedding_chunk_size=embeddings_chunk_size,
+            **kwargs
         )
         return aerospike
