@@ -61,7 +61,7 @@ examples = [
         "head": "Microsoft Word",
         "head_type": "Product",
         "relation": "HAS_CHARACTERISTIC",
-        "tail": "accesible offline",
+        "tail": "accessible offline",
         "tail_type": "Characteristic",
     },
 ]
