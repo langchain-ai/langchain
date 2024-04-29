@@ -166,33 +166,6 @@
                 "how_to/document_loader_custom"
               ],
               "link": { "type": "generated-index" }
-            },
-            {
-              "type": "category",
-              "label": "Text Splitters",
-              "collapsed": true,
-              "items": [
-                "how_to/recursive_text_splitter",
-                "how_to/HTML_header_metadata_splitter",
-                "how_to/HTML_section_aware_splitter",
-                "how_to/character_text_splitter",
-                "how_to/code_splitter",
-                "how_to/markdown_header_metadata_splitter",
-                "how_to/recursive_json_splitter",
-                "how_to/semantic-chunker",
-                "how_to/split_by_token"
-              ],
-              "link": { "type": "generated-index" }
-            },
-            {
-              "type": "category",
-              "label": "Embedding Models",
-              "collapsed": true,
-              "items": [
-                "how_to/text_embedding",
-                "how_to/text_embedding_caching"
-              ],
-              "link": { "type": "generated-index" }
             }
           ],
           "link": { "type": "generated-index" }
