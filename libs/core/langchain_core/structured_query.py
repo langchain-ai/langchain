@@ -93,11 +93,11 @@ class Comparator(str, Enum):
 
 
 class FilterDirective(Expr, ABC):
-    """A filtering expression."""
+    """Filtering expression."""
 
 
 class Comparison(FilterDirective):
-    """A comparison to a value."""
+    """Comparison to a value."""
 
     comparator: Comparator
     attribute: str
@@ -112,7 +112,7 @@ class Comparison(FilterDirective):
 
 
 class Operation(FilterDirective):
-    """A logical operation over other directives."""
+    """Llogical operation over other directives."""
 
     operator: Operator
     arguments: List[FilterDirective]
@@ -124,7 +124,7 @@ class Operation(FilterDirective):
 
 
 class StructuredQuery(Expr):
-    """A structured query."""
+    """Structured query."""
 
     query: str
     """Query string."""

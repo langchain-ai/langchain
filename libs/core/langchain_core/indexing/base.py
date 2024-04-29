@@ -5,7 +5,7 @@ from typing import List, Optional, Sequence
 
 
 class RecordManager(ABC):
-    """An abstract base class representing the interface for a record manager."""
+    """Abstract base class representing the interface for a record manager."""
 
     def __init__(
         self,
@@ -24,7 +24,7 @@ class RecordManager(ABC):
 
     @abstractmethod
     async def acreate_schema(self) -> None:
-        """Create the database schema for the record manager."""
+        """Asynchronously create the database schema for the record manager."""
 
     @abstractmethod
     def get_time(self) -> float:
@@ -39,7 +39,7 @@ class RecordManager(ABC):
 
     @abstractmethod
     async def aget_time(self) -> float:
-        """Get the current server time as a high resolution timestamp!
+        """Asynchronously get the current server time as a high resolution timestamp.
 
         It's important to get this from the server to ensure a monotonic clock,
         otherwise there may be data loss when cleaning up old documents!
@@ -84,7 +84,7 @@ class RecordManager(ABC):
         group_ids: Optional[Sequence[Optional[str]]] = None,
         time_at_least: Optional[float] = None,
     ) -> None:
-        """Upsert records into the database.
+        """Asynchronously upsert records into the database.
 
         Args:
             keys: A list of record keys to upsert.
@@ -117,7 +117,7 @@ class RecordManager(ABC):
 
     @abstractmethod
     async def aexists(self, keys: Sequence[str]) -> List[bool]:
-        """Check if the provided keys exist in the database.
+        """Asynchronously check if the provided keys exist in the database.
 
         Args:
             keys: A list of keys to check.
@@ -156,7 +156,7 @@ class RecordManager(ABC):
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
     ) -> List[str]:
-        """List records in the database based on the provided filters.
+        """Asynchronously list records in the database based on the provided filters.
 
         Args:
             before: Filter to list records updated before this time.
@@ -178,7 +178,7 @@ class RecordManager(ABC):
 
     @abstractmethod
     async def adelete_keys(self, keys: Sequence[str]) -> None:
-        """Delete specified records from the database.
+        """Asynchronously delete specified records from the database.
 
         Args:
             keys: A list of keys to delete.
