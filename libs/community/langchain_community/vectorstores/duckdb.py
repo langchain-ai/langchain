@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 import uuid
 from typing import Any, Iterable, List, Optional, Type
-import pandas as pd
 
+import pandas as pd
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
@@ -79,14 +79,14 @@ class DuckDB(VectorStore):
     """
 
     def __init__(
-            self,
-            *,
-            connection: Optional[Any] = None,
-            embedding: Embeddings,
-            vector_key: str = DEFAULT_VECTOR_KEY,
-            id_key: str = DEFAULT_ID_KEY,
-            text_key: str = DEFAULT_TEXT_KEY,
-            table_name: str = DEFAULT_TABLE_NAME,
+        self,
+        *,
+        connection: Optional[Any] = None,
+        embedding: Embeddings,
+        vector_key: str = DEFAULT_VECTOR_KEY,
+        id_key: str = DEFAULT_ID_KEY,
+        text_key: str = DEFAULT_TEXT_KEY,
+        table_name: str = DEFAULT_TABLE_NAME,
     ):
         """Initialize with DuckDB connection and setup for vector storage."""
         try:
@@ -129,10 +129,10 @@ class DuckDB(VectorStore):
         return self._embedding
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Turn texts into embedding and add it to the database using Pandas DataFrame
 
@@ -161,21 +161,23 @@ class DuckDB(VectorStore):
                 if metadatas and idx < len(metadatas)
                 else None
             )
-            data.append({
-                self._id_key: ids[idx],
-                self._text_key: text,
-                self._vector_key: embedding,
-                "metadata": metadata,
-            })
+            data.append(
+                {
+                    self._id_key: ids[idx],
+                    self._text_key: text,
+                    self._vector_key: embedding,
+                    "metadata": metadata,
+                }
+            )
         # noinspection PyUnusedLocal
-        df = pd.DataFrame.from_dict(data)
+        df = pd.DataFrame.from_dict(data)  # noqa: F841
         self._connection.execute(
             f"INSERT INTO {self._table_name} SELECT * FROM df",
         )
         return ids
 
     def similarity_search(
-            self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Performs a similarity search for a given query string.
 
@@ -219,11 +221,11 @@ class DuckDB(VectorStore):
 
     @classmethod
     def from_texts(
-            cls: Type[VST],
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
+        cls: Type[VST],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
     ) -> DuckDB:
         """Creates an instance of DuckDB and populates it with texts and
           their embeddings.
