@@ -245,25 +245,6 @@
               "link": {
                 "type": "generated-index"
               }
-            },
-            {
-              "type": "category",
-              "label": "Agents",
-              "collapsed": true,
-              "items": [
-                "how_to/custom_agent",
-                "how_to/agents_streaming",
-                "how_to/agent_iter",
-                "how_to/agent_structured",
-                "how_to/agents_parsing_errors",
-                "how_to/intermediate_steps",
-                "how_to/max_iterations",
-                "how_to/max_time_limit",
-                "how_to/prompt_size"
-              ],
-              "link": {
-                "type": "generated-index"
-              }
             }
           ],
           "link": { "type": "generated-index" }
