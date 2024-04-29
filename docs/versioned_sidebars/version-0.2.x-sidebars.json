@@ -267,6 +267,100 @@
             }
           ],
           "link": { "type": "generated-index" }
+        },
+        {
+          "type": "category",
+          "label": "Use Cases",
+          "collapsed": true,
+          "items": [
+            {
+              "type": "category",
+              "label": "Q&A with RAG",
+              "collapsed": true,
+              "items": [
+                "how_to/qa_streaming",
+                "how_to/qa_sources",
+                "how_to/qa_citations",
+                "how_to/qa_per_user"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
+              "label": "Extraction",
+              "collapsed": true,
+              "items": [
+                "how_to/extraction_examples",
+                "how_to/extraction_long_text",
+                "how_to/extraction_parse"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
+              "label": "Chatbots",
+              "collapsed": true,
+              "items": [
+                "how_to/chatbots_memory",
+                "how_to/chatbots_retrieval",
+                "how_to/chatbots_tools"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
+              "label": "Query Analysis",
+              "collapsed": true,
+              "items": [
+                "how_to/query_few_shot",
+                "how_to/query_no_queries",
+                "how_to/query_multiple_queries",
+                "how_to/query_multiple_retrievers",
+                "how_to/query_constructing_filters",
+                "how_to/query_high_cardinality"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
+              "label": "Q&A over SQL + CSV",
+              "collapsed": true,
+              "items": [
+                "how_to/sql_prompting",
+                "how_to/sql_query_checking",
+                "how_to/sql_large_db",
+                "how_to/sql_csv"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
+              "label": "Q&A over Graph Databases",
+              "collapsed": true,
+              "items": [
+                "how_to/graph_mapping",
+                "how_to/graph_semantic",
+                "how_to/graph_prompting",
+                "how_to/graph_constructing"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            }
+          ],
+          "link": {
+            "type": "generated-index"
+          }
         }
       ],
       "link": { "type": "doc", "id": "how_to/index" }
