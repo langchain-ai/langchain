@@ -2,8 +2,8 @@
 import logging
 import os
 import re
-from urllib.error import HTTPError
 from typing import Any, Dict, Iterator, List, Optional
+from urllib.error import HTTPError
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -227,7 +227,7 @@ class ArxivAPIWrapper(BaseModel):
             except (FileNotFoundError, fitz.fitz.FileDataError) as f_ex:
                 logger.debug(f_ex)
                 continue
-            except urllib.error.HTTPError as f_ex:
+            except HTTPError as f_ex:
                 if f_ex.code in self.ARXIV_API_WRAPPER_ALLOWED_HTTP_ERROR_CODES:
                     logger.debug(f_ex)
                     continue
