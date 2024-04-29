@@ -17,7 +17,7 @@ from langchain_core.pydantic_v1 import Extra
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 
 
-# command-r params, provider, remove is stream from base, command -r no support for stop
+# command-r params e.g. docs, provider, remove is stream from base, command -r no support for stop
 
 class Provider(ABC):
     @property
@@ -33,6 +33,14 @@ class Provider(ABC):
     def chat_stream_to_text(self, event_data: Dict) -> str:
         ...
 
+    @abstractmethod
+    def chat_generation_info(self, response: Any) -> Dict[str, Any]:
+        ...
+
+    @abstractmethod
+    def get_role(self, message: BaseMessage) -> str:
+        ...
+        
     @abstractmethod
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         ...
