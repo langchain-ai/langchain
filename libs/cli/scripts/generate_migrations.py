@@ -32,10 +32,15 @@ def cli():
     default=None,
     help="Output file for the migration script.",
 )
-def generic(pkg1: str, pkg2: str, output: str) -> None:
+@click.option(
+    "--filter-by-all/--no-filter-by-all",
+    default=True,
+    help="Output file for the migration script.",
+)
+def generic(pkg1: str, pkg2: str, output: str, filter_by_all: bool) -> None:
     """Generate a migration script."""
     click.echo("Migration script generated.")
-    migrations = generate_simplified_migrations(pkg1, pkg2)
+    migrations = generate_simplified_migrations(pkg1, pkg2, filter_by_all=filter_by_all)
 
     if output is None:
         output = f"{pkg1}_to_{pkg2}.json"
