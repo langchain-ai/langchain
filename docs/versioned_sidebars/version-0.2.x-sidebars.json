@@ -54,10 +54,10 @@
           "label": "Core Functionality",
           "collapsed": true,
           "items": [
-            "how_to/structured_output/",
-            "how_to/tool_calling/",
+            "how_to/structured_output",
+            "how_to/tool_calling",
             "how_to/streaming",
-            "how_to/debugging/"
+            "how_to/debugging"
           ],
           "link": {
             "type": "generated-index"
@@ -69,8 +69,8 @@
           "collapsed": true,
           "items": [
             "how_to/sequence",
-            "how_to/parallel/",
-            "how_to/binding/",
+            "how_to/parallel",
+            "how_to/binding",
             "how_to/functions",
             "how_to/passthrough",
             "how_to/assign",
@@ -94,7 +94,7 @@
               "collapsed": true,
               "items": [
                 "how_to/few_shot_examples",
-                "how_to/few_shot_examples_chat/",
+                "how_to/few_shot_examples_chat",
                 "how_to/prompts_partial",
                 "how_to/prompts_composition"
               ],
@@ -262,7 +262,7 @@
               "collapsed": true,
               "items": [
                 "how_to/tools",
-                "how_to/tool_calling/",
+                "how_to/tool_calling",
                 "how_to/toolkits",
                 "how_to/custom_tools",
                 "how_to/tools_as_openai_functions",
@@ -311,11 +311,11 @@
               "label": "Q&A with RAG",
               "collapsed": true,
               "items": [
-                "how_to/qa_chat_history/",
-                "how_to/qa_streaming/",
-                "how_to/qa_sources/",
-                "how_to/qa_citations/",
-                "how_to/qa_per_user/"
+                "how_to/qa_chat_history",
+                "how_to/qa_streaming",
+                "how_to/qa_sources",
+                "how_to/qa_citations",
+                "how_to/qa_per_user"
               ],
               "link": {
                 "type": "generated-index"
@@ -326,8 +326,8 @@
               "label": "Extraction",
               "collapsed": true,
               "items": [
-                "how_to/extraction_examples/",
-                "how_to/extraction_long_text/",
+                "how_to/extraction_examples",
+                "how_to/extraction_long_text",
                 "how_to/extraction_parse"
               ],
               "link": {
