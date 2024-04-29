@@ -144,7 +144,8 @@ def node_data_json(
 
     Args:
         node: The node to convert.
-        with_schemas: Whether to include the schema of the data if it is a Pydantic model.
+        with_schemas: Whether to include the schema of the data if
+            it is a Pydantic model.
 
     Returns:
         A dictionary with the type of the data and the data itself.
