@@ -76,10 +76,20 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
+        prev_text_source = None
+
         for i, text in enumerate(texts):
             index = 0
-            chunk_id = 0
             previous_chunk_len = 0
+
+            # To check if current text has the same source
+            # as previous text
+            if prev_text_source is None:
+                chunk_id = 0
+                prev_text_source = _metadatas[i].get("source")
+            else:
+                if _metadatas[i].get("source") != prev_text_source:
+                    chunk_id = 0
 
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(_metadatas[i])
