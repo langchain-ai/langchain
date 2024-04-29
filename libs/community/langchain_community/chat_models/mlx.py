@@ -150,7 +150,7 @@ class ChatMLX(BaseChatModel):
             from mlx_lm.utils import generate_step
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import mlx_lm python package. "
                 "Please install it with `pip install mlx_lm`."
             )
