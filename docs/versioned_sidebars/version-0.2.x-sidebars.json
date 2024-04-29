@@ -183,6 +183,88 @@
                 "how_to/split_by_token"
               ],
               "link": { "type": "generated-index" }
+            },
+            {
+              "type": "category",
+              "label": "Vector Stores",
+              "collapsed": true,
+              "items": [
+                "how_to/vectorstores"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
+              "label": "Retrievers",
+              "collapsed": true,
+              "items": [
+                "how_to/vectorstore_retriever",
+                "how_to/MultiQueryRetriever",
+                "how_to/contextual_compression",
+                "how_to/custom_retriever",
+                "how_to/ensemble_retriever",
+                "how_to/long_context_reorder",
+                "how_to/multi_vector",
+                "how_to/parent_document_retriever",
+                "how_to/self_query",
+                "how_to/time_weighted_vectorstore"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
+              "label": "Indexing",
+              "collapsed": true,
+              "items": [
+                "how_to/indexing"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
+              "label": "Tools",
+              "collapsed": true,
+              "items": [
+                "how_to/tools",
+                "how_to/tool_calling",
+                "how_to/toolkits",
+                "how_to/custom_tools",
+                "how_to/tools_as_openai_functions",
+                "how_to/tool_chain",
+                "how_to/tools_prompting",
+                "how_to/tools_multiple",
+                "how_to/tools_human",
+                "how_to/tools_parallel",
+                "how_to/tools_error"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
+              "label": "Agents",
+              "collapsed": true,
+              "items": [
+                "how_to/custom_agent",
+                "how_to/agents_streaming",
+                "how_to/agent_iter",
+                "how_to/agent_structured",
+                "how_to/agents_parsing_errors",
+                "how_to/intermediate_steps",
+                "how_to/max_iterations",
+                "how_to/max_time_limit",
+                "how_to/prompt_size"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
             }
           ],
           "link": { "type": "generated-index" }
