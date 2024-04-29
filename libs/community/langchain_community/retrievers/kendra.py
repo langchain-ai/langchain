@@ -400,7 +400,7 @@ class AmazonKendraRetriever(BaseRetriever):
 
             return values
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
