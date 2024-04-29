@@ -215,11 +215,11 @@ class ApertureDB(VectorStore):
                 "blobs": True,
             }
         }]
-        # print(f"quey: {query}")
+        print(f"quey: {query}")
         blobs_in = [np.array(embedding, dtype=np.float32).tobytes()]
         start_time = time.time()
         responses, blobs_out = self.connection.query(query, blobs_in)
-        #print(f"ApertureDB query completed in {time.time() - start_time:.1f}s")
+        print(f"ApertureDB query completed in {time.time() - start_time:.1f}s")
         # print(f"responses: {responses}")
         assert self.connection.last_query_ok(), self.connection.get_last_response_str()
         results = []
