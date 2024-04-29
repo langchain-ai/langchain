@@ -5,8 +5,57 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    PromptTemplate,
+)
 from langchain_core.pydantic_v1 import BaseModel, Field
+
+examples = [
+    {
+        "text": "Adam is a software engineer in Microsoft since 2009, and last year he got an award as the Best Talent",
+        "head": "Adam",
+        "head_type": "Person",
+        "relation": "WORKS_FOR",
+        "tail": "Microsoft",
+        "tail_type": "Company",
+    },
+    {
+        "text": "Adam is a software engineer in Microsoft since 2009, and last year he got an award as the Best Talent",
+        "head": "Adam",
+        "head_type": "Person",
+        "relation": "HAS_AWARD",
+        "tail": "Best Talent",
+        "tail_type": "Award",
+    },
+    {
+        "text": "Microsoft is a tech company that provide several products such as Microsoft Word",
+        "head": "Microsoft Word",
+        "head_type": "Product",
+        "relation": "PRODUCED_BY",
+        "tail": "Microsoft",
+        "tail_type": "Company",
+    },
+    {
+        "text": "Microsoft Word is a lightweight app that accessible offline",
+        "head": "Microsoft Word",
+        "head_type": "Product",
+        "relation": "HAS_CHARACTERISTIC",
+        "tail": "lightweight app",
+        "tail_type": "Characteristic",
+    },
+    {
+        "text": "Microsoft Word is a lightweight app that accessible offline",
+        "head": "Microsoft Word",
+        "head_type": "Product",
+        "relation": "HAS_CHARACTERISTIC",
+        "tail": "accesible offline",
+        "tail_type": "Characteristic",
+    },
+]
 
 system_prompt = (
     "# Knowledge Graph Instructions for GPT-4\n"
@@ -97,6 +146,79 @@ def optional_enum_field(
 class _Graph(BaseModel):
     nodes: Optional[List]
     relationships: Optional[List]
+
+
+class UnstructuredRelation(BaseModel):
+    head: str = Field(
+        description="extracted head entity like Microsoft, Apple, John. Must use human-readable unique identifier."
+    )
+    head_type: str = Field(
+        description="type of the extracted head entity like Person, Company, etc"
+    )
+    relation: str = Field(description="relation between the head and the tail entities")
+    tail: str = Field(
+        description="extracted tail entity like Microsoft, Apple, John. Must use human-readable unique identifier."
+    )
+    tail_type: str = Field(
+        description="type of the extracted tail entity like Person, Company, etc"
+    )
+
+
+def create_unstructured_prompt(
+    node_labels: Optional[List[str]] = None, rel_types: Optional[List[str]] = None
+) -> ChatPromptTemplate:
+    system_prompt = f"""You are a top-tier algorithm designed for extracting information 
+in structured formats to build a knowledge graph. Your task is to identify the entities and 
+relations requested with the user prompt, from a given text. You must generate the output in 
+a JSON containing a list with JSON objects having the following keys: "head", "head_type", 
+"relation", "tail", and "tail_type". The "head" key must contain the text of the extracted 
+entity with one of the types from the provided list in the user prompt. The "head_type" key 
+must contain the type of the extracted head entity which must be one of the types from {node_labels}.
+The "relation" key must contain the type of relation between the "head" and the "tail" 
+which must be one of the relations from {rel_types}. The "tail" key must represent the text 
+of an extracted entity which is the tail of the relation, and the "tail_type" key must contain 
+the type of the tail entity from {node_labels}. Attempt to extract as many entities and relations
+as you can. Maintain Entity Consistency: When extracting entities, it's vital to ensure consistency.
+If an entity, such as "John Doe", is mentioned multiple times in the text but is referred to by 
+different names or pronouns (e.g., "Joe", "he"), always use the most complete identifier for that entity.
+The knowledge graph should be coherent and easily understandable, so maintaining consistency in 
+entity references is crucial.
+
+IMPORTANT NOTES:
+- Don't add any explanation and text."""
+
+    system_message = SystemMessage(content=system_prompt)
+    parser = JsonOutputParser(pydantic_object=UnstructuredRelation)
+
+    human_prompt = PromptTemplate(
+        template=""" Based on the following example, extract entities and relations from the provided text.\n\n
+Use the following entity types, don't use other entity that is not defined below:
+# ENTITY TYPES:
+{node_labels}
+
+Use the following relation types, don't use other relation that is not defined below:
+# RELATION TYPES:
+{rel_types}
+
+Below are a number of examples of text and their extracted entities and relationshhips.
+{examples}
+
+For the following text, generate extract entitites and relations as in the provided example.\n{format_instructions}\nText: {input}""",
+        input_variables=["input"],
+        partial_variables={
+            "format_instructions": parser.get_format_instructions(),
+            "node_labels": node_labels,
+            "rel_types": rel_types,
+            "examples": examples,
+        },
+    )
+
+    human_message_prompt = HumanMessagePromptTemplate(prompt=human_prompt)
+
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [system_message, human_message_prompt]
+    )
+    return chat_prompt
 
 
 def create_simple_model(
@@ -320,19 +442,36 @@ class LLMGraphTransformer:
         prompt: ChatPromptTemplate = default_prompt,
         strict_mode: bool = True,
     ) -> None:
-        if not hasattr(llm, "with_structured_output"):
-            raise ValueError(
-                "The specified LLM does not support the 'with_structured_output'. "
-                "Please ensure you are using an LLM that supports this feature."
-            )
         self.allowed_nodes = allowed_nodes
         self.allowed_relationships = allowed_relationships
         self.strict_mode = strict_mode
+        self._function_call = True
+        # Check if the LLM really supports structured output
+        try:
+            llm.with_structured_output(_Graph)
+        except NotImplementedError:
+            self._function_call = False
+        if not self._function_call:
+            try:
+                import json_repair
 
-        # Define chain
-        schema = create_simple_model(allowed_nodes, allowed_relationships)
-        structured_llm = llm.with_structured_output(schema, include_raw=True)
-        self.chain = prompt | structured_llm
+                self.json_repair = json_repair
+            except ImportError:
+                raise ImportError(
+                    "Could not import json_repair python package. "
+                    "Please install it with `pip install json-repair`."
+                )
+            self._function_call = False
+            # We do not allow overwriting unstructured prompt
+            unstructured_prompt = create_unstructured_prompt(
+                allowed_nodes, allowed_relationships
+            )
+            self.chain = unstructured_prompt | llm
+        else:
+            # Define chain
+            schema = create_simple_model(allowed_nodes, allowed_relationships)
+            structured_llm = llm.with_structured_output(schema, include_raw=True)
+            self.chain = prompt | structured_llm
 
     def process_response(self, document: Document) -> GraphDocument:
         """
@@ -341,8 +480,21 @@ class LLMGraphTransformer:
         """
         text = document.page_content
         raw_schema = self.chain.invoke({"input": text})
-        raw_schema = cast(Dict[Any, Any], raw_schema)
-        nodes, relationships = _convert_to_graph_document(raw_schema)
+        if self._function_call:
+            raw_schema = cast(Dict[Any, Any], raw_schema)
+            nodes, relationships = _convert_to_graph_document(raw_schema)
+        else:
+            nodes = []
+            relationships = []
+            parsed_json = self.json_repair.loads(raw_schema.content)
+            for rel in parsed_json:
+                source_node = Node(id=rel["head"], type=rel["head_type"])
+                target_node = Node(id=rel["tail"], type=rel["tail_type"])
+                relationships.append(
+                    Relationship(
+                        source=source_node, target=target_node, type=rel["relation"]
+                    )
+                )
 
         # Strict mode filtering
         if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
