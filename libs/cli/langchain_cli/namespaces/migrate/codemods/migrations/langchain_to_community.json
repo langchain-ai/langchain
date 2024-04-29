@@ -384,312 +384,8 @@
     "langchain_community.agent_toolkits.SteamToolkit"
   ],
   [
-    "langchain.agents.agent_toolkits.vectorstore.toolkit.BaseToolkit",
-    "langchain_community.agent_toolkits.base.BaseToolkit"
-  ],
-  [
-    "langchain.agents.agent_toolkits.vectorstore.toolkit.OpenAI",
-    "langchain_community.llms.OpenAI"
-  ],
-  [
-    "langchain.agents.agent_toolkits.vectorstore.toolkit.VectorStoreQATool",
-    "langchain_community.tools.VectorStoreQATool"
-  ],
-  [
-    "langchain.agents.agent_toolkits.vectorstore.toolkit.VectorStoreQAWithSourcesTool",
-    "langchain_community.tools.VectorStoreQAWithSourcesTool"
-  ],
-  [
     "langchain.agents.agent_toolkits.zapier.toolkit.ZapierToolkit",
     "langchain_community.agent_toolkits.ZapierToolkit"
-  ],
-  [
-    "langchain.agents.load_tools.ArxivAPIWrapper",
-    "langchain_community.utilities.ArxivAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.ArxivQueryRun",
-    "langchain_community.tools.ArxivQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.BaseGraphQLTool",
-    "langchain_community.tools.BaseGraphQLTool"
-  ],
-  [
-    "langchain.agents.load_tools.BingSearchAPIWrapper",
-    "langchain_community.utilities.BingSearchAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.BingSearchRun",
-    "langchain_community.tools.BingSearchRun"
-  ],
-  [
-    "langchain.agents.load_tools.DallEAPIWrapper",
-    "langchain_community.utilities.dalle_image_generator.DallEAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.DataForSeoAPISearchResults",
-    "langchain_community.tools.dataforseo_api_search.tool.DataForSeoAPISearchResults"
-  ],
-  [
-    "langchain.agents.load_tools.DataForSeoAPISearchRun",
-    "langchain_community.tools.dataforseo_api_search.tool.DataForSeoAPISearchRun"
-  ],
-  [
-    "langchain.agents.load_tools.DataForSeoAPIWrapper",
-    "langchain_community.utilities.dataforseo_api_search.DataForSeoAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.DuckDuckGoSearchAPIWrapper",
-    "langchain_community.utilities.DuckDuckGoSearchAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.DuckDuckGoSearchRun",
-    "langchain_community.tools.DuckDuckGoSearchRun"
-  ],
-  [
-    "langchain.agents.load_tools.ElevenLabsText2SpeechTool",
-    "langchain_community.tools.ElevenLabsText2SpeechTool"
-  ],
-  [
-    "langchain.agents.load_tools.GoldenQueryAPIWrapper",
-    "langchain_community.utilities.GoldenQueryAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.GoldenQueryRun",
-    "langchain_community.tools.golden_query.tool.GoldenQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleCloudTextToSpeechTool",
-    "langchain_community.tools.GoogleCloudTextToSpeechTool"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleFinanceAPIWrapper",
-    "langchain_community.utilities.GoogleFinanceAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleFinanceQueryRun",
-    "langchain_community.tools.google_finance.tool.GoogleFinanceQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleJobsAPIWrapper",
-    "langchain_community.utilities.GoogleJobsAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleJobsQueryRun",
-    "langchain_community.tools.google_jobs.tool.GoogleJobsQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleLensAPIWrapper",
-    "langchain_community.utilities.GoogleLensAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleLensQueryRun",
-    "langchain_community.tools.google_lens.tool.GoogleLensQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleScholarAPIWrapper",
-    "langchain_community.utilities.GoogleScholarAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleScholarQueryRun",
-    "langchain_community.tools.google_scholar.tool.GoogleScholarQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleSearchAPIWrapper",
-    "langchain_community.utilities.GoogleSearchAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleSearchResults",
-    "langchain_community.tools.GoogleSearchResults"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleSearchRun",
-    "langchain_community.tools.GoogleSearchRun"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleSerperAPIWrapper",
-    "langchain_community.utilities.GoogleSerperAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleSerperResults",
-    "langchain_community.tools.GoogleSerperResults"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleSerperRun",
-    "langchain_community.tools.GoogleSerperRun"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleTrendsAPIWrapper",
-    "langchain_community.utilities.GoogleTrendsAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.GoogleTrendsQueryRun",
-    "langchain_community.tools.google_trends.tool.GoogleTrendsQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.GraphQLAPIWrapper",
-    "langchain_community.utilities.GraphQLAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.HumanInputRun",
-    "langchain_community.tools.HumanInputRun"
-  ],
-  [
-    "langchain.agents.load_tools.LambdaWrapper",
-    "langchain_community.utilities.LambdaWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.Memorize",
-    "langchain_community.tools.memorize.tool.Memorize"
-  ],
-  [
-    "langchain.agents.load_tools.MerriamWebsterAPIWrapper",
-    "langchain_community.utilities.MerriamWebsterAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.MerriamWebsterQueryRun",
-    "langchain_community.tools.MerriamWebsterQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.MetaphorSearchAPIWrapper",
-    "langchain_community.utilities.MetaphorSearchAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.MetaphorSearchResults",
-    "langchain_community.tools.MetaphorSearchResults"
-  ],
-  [
-    "langchain.agents.load_tools.OpenWeatherMapAPIWrapper",
-    "langchain_community.utilities.OpenWeatherMapAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.OpenWeatherMapQueryRun",
-    "langchain_community.tools.OpenWeatherMapQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.PubMedAPIWrapper",
-    "langchain_community.utilities.PubMedAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.PubmedQueryRun",
-    "langchain_community.tools.PubmedQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.RedditSearchAPIWrapper",
-    "langchain_community.utilities.reddit_search.RedditSearchAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.RedditSearchRun",
-    "langchain_community.tools.RedditSearchRun"
-  ],
-  [
-    "langchain.agents.load_tools.RequestsDeleteTool",
-    "langchain_community.tools.RequestsDeleteTool"
-  ],
-  [
-    "langchain.agents.load_tools.RequestsGetTool",
-    "langchain_community.tools.RequestsGetTool"
-  ],
-  [
-    "langchain.agents.load_tools.RequestsPatchTool",
-    "langchain_community.tools.RequestsPatchTool"
-  ],
-  [
-    "langchain.agents.load_tools.RequestsPostTool",
-    "langchain_community.tools.RequestsPostTool"
-  ],
-  [
-    "langchain.agents.load_tools.RequestsPutTool",
-    "langchain_community.tools.RequestsPutTool"
-  ],
-  [
-    "langchain.agents.load_tools.SceneXplainTool",
-    "langchain_community.tools.SceneXplainTool"
-  ],
-  [
-    "langchain.agents.load_tools.SearchAPIResults",
-    "langchain_community.tools.SearchAPIResults"
-  ],
-  [
-    "langchain.agents.load_tools.SearchAPIRun",
-    "langchain_community.tools.SearchAPIRun"
-  ],
-  [
-    "langchain.agents.load_tools.SearchApiAPIWrapper",
-    "langchain_community.utilities.SearchApiAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.SearxSearchResults",
-    "langchain_community.tools.SearxSearchResults"
-  ],
-  [
-    "langchain.agents.load_tools.SearxSearchRun",
-    "langchain_community.tools.SearxSearchRun"
-  ],
-  [
-    "langchain.agents.load_tools.SearxSearchWrapper",
-    "langchain_community.utilities.SearxSearchWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.SerpAPIWrapper",
-    "langchain_community.utilities.SerpAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.ShellTool",
-    "langchain_community.tools.ShellTool"
-  ],
-  [
-    "langchain.agents.load_tools.SleepTool",
-    "langchain_community.tools.SleepTool"
-  ],
-  [
-    "langchain.agents.load_tools.StackExchangeAPIWrapper",
-    "langchain_community.utilities.StackExchangeAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.StackExchangeTool",
-    "langchain_community.tools.StackExchangeTool"
-  ],
-  [
-    "langchain.agents.load_tools.TextRequestsWrapper",
-    "langchain_community.utilities.TextRequestsWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.TwilioAPIWrapper",
-    "langchain_community.utilities.TwilioAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.WikipediaAPIWrapper",
-    "langchain_community.utilities.WikipediaAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.WikipediaQueryRun",
-    "langchain_community.tools.WikipediaQueryRun"
-  ],
-  [
-    "langchain.agents.load_tools.WolframAlphaAPIWrapper",
-    "langchain_community.utilities.WolframAlphaAPIWrapper"
-  ],
-  [
-    "langchain.agents.load_tools.WolframAlphaQueryRun",
-    "langchain_community.tools.WolframAlphaQueryRun"
-  ],
-  [
-    "langchain.agents.react.base.Docstore",
-    "langchain_community.docstore.base.Docstore"
-  ],
-  [
-    "langchain.agents.self_ask_with_search.base.GoogleSerperAPIWrapper",
-    "langchain_community.utilities.GoogleSerperAPIWrapper"
-  ],
-  [
-    "langchain.agents.self_ask_with_search.base.SearchApiAPIWrapper",
-    "langchain_community.utilities.SearchApiAPIWrapper"
-  ],
-  [
-    "langchain.agents.self_ask_with_search.base.SerpAPIWrapper",
-    "langchain_community.utilities.SerpAPIWrapper"
   ],
   [
     "langchain.cache.InMemoryCache",
@@ -956,14 +652,6 @@
     "langchain_community.callbacks.SageMakerCallbackHandler"
   ],
   [
-    "langchain.callbacks.streamlit.LLMThoughtLabeler",
-    "langchain_community.callbacks.LLMThoughtLabeler"
-  ],
-  [
-    "langchain.callbacks.streamlit._InternalStreamlitCallbackHandler",
-    "langchain_community.callbacks.streamlit.streamlit_callback_handler.StreamlitCallbackHandler"
-  ],
-  [
     "langchain.callbacks.streamlit.mutable_expander.ChildType",
     "langchain_community.callbacks.streamlit.mutable_expander.ChildType"
   ],
@@ -1062,126 +750,6 @@
   [
     "langchain.callbacks.whylabs_callback.WhyLabsCallbackHandler",
     "langchain_community.callbacks.WhyLabsCallbackHandler"
-  ],
-  [
-    "langchain.chains.api.base.TextRequestsWrapper",
-    "langchain_community.utilities.TextRequestsWrapper"
-  ],
-  [
-    "langchain.chains.api.openapi.chain.APIOperation",
-    "langchain_community.tools.APIOperation"
-  ],
-  [
-    "langchain.chains.api.openapi.chain.Requests",
-    "langchain_community.utilities.Requests"
-  ],
-  [
-    "langchain.chains.ernie_functions.base.JsonOutputFunctionsParser",
-    "langchain_community.output_parsers.ernie_functions.JsonOutputFunctionsParser"
-  ],
-  [
-    "langchain.chains.ernie_functions.base.PydanticAttrOutputFunctionsParser",
-    "langchain_community.output_parsers.ernie_functions.PydanticAttrOutputFunctionsParser"
-  ],
-  [
-    "langchain.chains.ernie_functions.base.PydanticOutputFunctionsParser",
-    "langchain_community.output_parsers.ernie_functions.PydanticOutputFunctionsParser"
-  ],
-  [
-    "langchain.chains.ernie_functions.base.convert_pydantic_to_ernie_function",
-    "langchain_community.utils.ernie_functions.convert_pydantic_to_ernie_function"
-  ],
-  [
-    "langchain.chains.flare.base.OpenAI",
-    "langchain_community.llms.OpenAI"
-  ],
-  [
-    "langchain.chains.graph_qa.arangodb.ArangoGraph",
-    "langchain_community.graphs.ArangoGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.base.NetworkxEntityGraph",
-    "langchain_community.graphs.NetworkxEntityGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.base.get_entities",
-    "langchain_community.graphs.networkx_graph.get_entities"
-  ],
-  [
-    "langchain.chains.graph_qa.cypher.GraphStore",
-    "langchain_community.graphs.graph_store.GraphStore"
-  ],
-  [
-    "langchain.chains.graph_qa.falkordb.FalkorDBGraph",
-    "langchain_community.graphs.FalkorDBGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.gremlin.GremlinGraph",
-    "langchain_community.graphs.GremlinGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.hugegraph.HugeGraph",
-    "langchain_community.graphs.HugeGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.kuzu.KuzuGraph",
-    "langchain_community.graphs.KuzuGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.nebulagraph.NebulaGraph",
-    "langchain_community.graphs.NebulaGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.neptune_cypher.NeptuneGraph",
-    "langchain_community.graphs.NeptuneGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.neptune_sparql.NeptuneRdfGraph",
-    "langchain_community.graphs.NeptuneRdfGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.ontotext_graphdb.OntotextGraphDBGraph",
-    "langchain_community.graphs.OntotextGraphDBGraph"
-  ],
-  [
-    "langchain.chains.graph_qa.sparql.RdfGraph",
-    "langchain_community.graphs.RdfGraph"
-  ],
-  [
-    "langchain.chains.llm_requests.TextRequestsWrapper",
-    "langchain_community.utilities.TextRequestsWrapper"
-  ],
-  [
-    "langchain.chains.loading.load_llm",
-    "langchain_community.llms.loading.load_llm"
-  ],
-  [
-    "langchain.chains.loading.load_llm_from_config",
-    "langchain_community.llms.loading.load_llm_from_config"
-  ],
-  [
-    "langchain.chains.natbot.base.OpenAI",
-    "langchain_community.llms.OpenAI"
-  ],
-  [
-    "langchain.chains.openai_functions.openapi.APIOperation",
-    "langchain_community.tools.APIOperation"
-  ],
-  [
-    "langchain.chains.openai_functions.openapi.ChatOpenAI",
-    "langchain_community.chat_models.ChatOpenAI"
-  ],
-  [
-    "langchain.chains.openai_functions.openapi.OpenAPISpec",
-    "langchain_community.tools.OpenAPISpec"
-  ],
-  [
-    "langchain.chains.router.multi_retrieval_qa.ChatOpenAI",
-    "langchain_community.chat_models.ChatOpenAI"
-  ],
-  [
-    "langchain.chains.sql_database.query.SQLDatabase",
-    "langchain_community.utilities.SQLDatabase"
   ],
   [
     "langchain.chat_loaders.base.BaseChatLoader",
@@ -3696,34 +3264,6 @@
     "langchain_community.embeddings.XinferenceEmbeddings"
   ],
   [
-    "langchain.evaluation.comparison.eval_chain.AzureChatOpenAI",
-    "langchain_community.chat_models.AzureChatOpenAI"
-  ],
-  [
-    "langchain.evaluation.comparison.eval_chain.ChatOpenAI",
-    "langchain_community.chat_models.ChatOpenAI"
-  ],
-  [
-    "langchain.evaluation.embedding_distance.base.OpenAIEmbeddings",
-    "langchain_community.embeddings.OpenAIEmbeddings"
-  ],
-  [
-    "langchain.evaluation.embedding_distance.base.cosine_similarity",
-    "langchain_community.utils.math.cosine_similarity"
-  ],
-  [
-    "langchain.evaluation.loading.ChatOpenAI",
-    "langchain_community.chat_models.ChatOpenAI"
-  ],
-  [
-    "langchain.evaluation.scoring.eval_chain.AzureChatOpenAI",
-    "langchain_community.chat_models.AzureChatOpenAI"
-  ],
-  [
-    "langchain.evaluation.scoring.eval_chain.ChatOpenAI",
-    "langchain_community.chat_models.ChatOpenAI"
-  ],
-  [
     "langchain.graphs.MemgraphGraph",
     "langchain_community.graphs.MemgraphGraph"
   ],
@@ -3834,26 +3374,6 @@
   [
     "langchain.graphs.rdf_graph.RdfGraph",
     "langchain_community.graphs.RdfGraph"
-  ],
-  [
-    "langchain.indexes.graph.NetworkxEntityGraph",
-    "langchain_community.graphs.NetworkxEntityGraph"
-  ],
-  [
-    "langchain.indexes.graph.parse_triples",
-    "langchain_community.graphs.networkx_graph.parse_triples"
-  ],
-  [
-    "langchain.indexes.vectorstore.Chroma",
-    "langchain_community.vectorstores.Chroma"
-  ],
-  [
-    "langchain.indexes.vectorstore.OpenAI",
-    "langchain_community.llms.OpenAI"
-  ],
-  [
-    "langchain.indexes.vectorstore.OpenAIEmbeddings",
-    "langchain_community.embeddings.OpenAIEmbeddings"
   ],
   [
     "langchain.llms.AI21",
@@ -4656,10 +4176,6 @@
     "langchain_community.chat_message_histories.UpstashRedisChatMessageHistory"
   ],
   [
-    "langchain.memory.chat_memory.ChatMessageHistory",
-    "langchain_community.chat_message_histories.ChatMessageHistory"
-  ],
-  [
     "langchain.memory.chat_message_histories.AstraDBChatMessageHistory",
     "langchain_community.chat_message_histories.AstraDBChatMessageHistory"
   ],
@@ -4825,30 +4341,6 @@
   ],
   [
     "langchain.memory.chat_message_histories.zep.ZepChatMessageHistory",
-    "langchain_community.chat_message_histories.ZepChatMessageHistory"
-  ],
-  [
-    "langchain.memory.entity.get_client",
-    "langchain_community.utilities.redis.get_client"
-  ],
-  [
-    "langchain.memory.kg.KnowledgeTriple",
-    "langchain_community.graphs.networkx_graph.KnowledgeTriple"
-  ],
-  [
-    "langchain.memory.kg.NetworkxEntityGraph",
-    "langchain_community.graphs.NetworkxEntityGraph"
-  ],
-  [
-    "langchain.memory.kg.get_entities",
-    "langchain_community.graphs.networkx_graph.get_entities"
-  ],
-  [
-    "langchain.memory.kg.parse_triples",
-    "langchain_community.graphs.networkx_graph.parse_triples"
-  ],
-  [
-    "langchain.memory.zep_memory.ZepChatMessageHistory",
     "langchain_community.chat_message_histories.ZepChatMessageHistory"
   ],
   [
@@ -5104,18 +4596,6 @@
     "langchain_community.retrievers.DocArrayRetriever"
   ],
   [
-    "langchain.retrievers.document_compressors.embeddings_filter._get_embeddings_from_stateful_docs",
-    "langchain_community.document_transformers.embeddings_redundant_filter._get_embeddings_from_stateful_docs"
-  ],
-  [
-    "langchain.retrievers.document_compressors.embeddings_filter.cosine_similarity",
-    "langchain_community.utils.math.cosine_similarity"
-  ],
-  [
-    "langchain.retrievers.document_compressors.embeddings_filter.get_stateful_documents",
-    "langchain_community.document_transformers.get_stateful_documents"
-  ],
-  [
     "langchain.retrievers.elastic_search_bm25.ElasticSearchBM25Retriever",
     "langchain_community.retrievers.ElasticSearchBM25Retriever"
   ],
@@ -5244,110 +4724,6 @@
     "langchain_community.retrievers.RemoteLangChainRetriever"
   ],
   [
-    "langchain.retrievers.self_query.base.AstraDB",
-    "langchain_community.vectorstores.AstraDB"
-  ],
-  [
-    "langchain.retrievers.self_query.base.Chroma",
-    "langchain_community.vectorstores.Chroma"
-  ],
-  [
-    "langchain.retrievers.self_query.base.DashVector",
-    "langchain_community.vectorstores.DashVector"
-  ],
-  [
-    "langchain.retrievers.self_query.base.DeepLake",
-    "langchain_community.vectorstores.DeepLake"
-  ],
-  [
-    "langchain.retrievers.self_query.base.Dingo",
-    "langchain_community.vectorstores.Dingo"
-  ],
-  [
-    "langchain.retrievers.self_query.base.ElasticsearchStore",
-    "langchain_community.vectorstores.ElasticsearchStore"
-  ],
-  [
-    "langchain.retrievers.self_query.base.Milvus",
-    "langchain_community.vectorstores.Milvus"
-  ],
-  [
-    "langchain.retrievers.self_query.base.MongoDBAtlasVectorSearch",
-    "langchain_community.vectorstores.MongoDBAtlasVectorSearch"
-  ],
-  [
-    "langchain.retrievers.self_query.base.MyScale",
-    "langchain_community.vectorstores.MyScale"
-  ],
-  [
-    "langchain.retrievers.self_query.base.OpenSearchVectorSearch",
-    "langchain_community.vectorstores.OpenSearchVectorSearch"
-  ],
-  [
-    "langchain.retrievers.self_query.base.PGVector",
-    "langchain_community.vectorstores.PGVector"
-  ],
-  [
-    "langchain.retrievers.self_query.base.Pinecone",
-    "langchain_community.vectorstores.Pinecone"
-  ],
-  [
-    "langchain.retrievers.self_query.base.Qdrant",
-    "langchain_community.vectorstores.Qdrant"
-  ],
-  [
-    "langchain.retrievers.self_query.base.Redis",
-    "langchain_community.vectorstores.Redis"
-  ],
-  [
-    "langchain.retrievers.self_query.base.SupabaseVectorStore",
-    "langchain_community.vectorstores.SupabaseVectorStore"
-  ],
-  [
-    "langchain.retrievers.self_query.base.TimescaleVector",
-    "langchain_community.vectorstores.TimescaleVector"
-  ],
-  [
-    "langchain.retrievers.self_query.base.Vectara",
-    "langchain_community.vectorstores.Vectara"
-  ],
-  [
-    "langchain.retrievers.self_query.base.Weaviate",
-    "langchain_community.vectorstores.Weaviate"
-  ],
-  [
-    "langchain.retrievers.self_query.redis.Redis",
-    "langchain_community.vectorstores.Redis"
-  ],
-  [
-    "langchain.retrievers.self_query.redis.RedisFilterExpression",
-    "langchain_community.vectorstores.redis.filters.RedisFilterExpression"
-  ],
-  [
-    "langchain.retrievers.self_query.redis.RedisFilterField",
-    "langchain_community.vectorstores.redis.filters.RedisFilterField"
-  ],
-  [
-    "langchain.retrievers.self_query.redis.RedisFilterOperator",
-    "langchain_community.vectorstores.redis.filters.RedisFilterOperator"
-  ],
-  [
-    "langchain.retrievers.self_query.redis.RedisModel",
-    "langchain_community.vectorstores.redis.schema.RedisModel"
-  ],
-  [
-    "langchain.retrievers.self_query.redis.RedisNum",
-    "langchain_community.vectorstores.redis.filters.RedisNum"
-  ],
-  [
-    "langchain.retrievers.self_query.redis.RedisTag",
-    "langchain_community.vectorstores.redis.filters.RedisTag"
-  ],
-  [
-    "langchain.retrievers.self_query.redis.RedisText",
-    "langchain_community.vectorstores.redis.filters.RedisText"
-  ],
-  [
     "langchain.retrievers.svm.SVMRetriever",
     "langchain_community.retrievers.SVMRetriever"
   ],
@@ -5370,22 +4746,6 @@
   [
     "langchain.retrievers.weaviate_hybrid_search.WeaviateHybridSearchRetriever",
     "langchain_community.retrievers.WeaviateHybridSearchRetriever"
-  ],
-  [
-    "langchain.retrievers.web_research.AsyncHtmlLoader",
-    "langchain_community.document_loaders.AsyncHtmlLoader"
-  ],
-  [
-    "langchain.retrievers.web_research.GoogleSearchAPIWrapper",
-    "langchain_community.utilities.GoogleSearchAPIWrapper"
-  ],
-  [
-    "langchain.retrievers.web_research.Html2TextTransformer",
-    "langchain_community.document_transformers.Html2TextTransformer"
-  ],
-  [
-    "langchain.retrievers.web_research.LlamaCpp",
-    "langchain_community.llms.LlamaCpp"
   ],
   [
     "langchain.retrievers.wikipedia.WikipediaRetriever",
@@ -5437,10 +4797,6 @@
   ],
   [
     "langchain.storage.exceptions.InvalidKeyException",
-    "langchain_community.storage.exceptions.InvalidKeyException"
-  ],
-  [
-    "langchain.storage.file_system.InvalidKeyException",
     "langchain_community.storage.exceptions.InvalidKeyException"
   ],
   [
