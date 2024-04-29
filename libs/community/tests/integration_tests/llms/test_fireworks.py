@@ -15,7 +15,7 @@ def llm() -> Fireworks:
 @pytest.mark.scheduled
 def test_fireworks_call(llm: Fireworks) -> None:
     """Test valid call to fireworks."""
-    output = llm("How is the weather in New York today?")
+    output = llm.invoke("How is the weather in New York today?")
     assert isinstance(output, str)
 
 
