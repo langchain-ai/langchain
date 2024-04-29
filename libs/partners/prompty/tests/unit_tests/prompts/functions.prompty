@@ -1,0 +1,61 @@
+---
+name: Researcher Agent
+description: A basic prompt that uses the GPT-3 chat API to answer questions
+authors:
+  - Seth Juarez
+model:
+  api: chat
+  configuration:
+    azure_deployment: gpt-35-turbo
+  parameters:
+    tools:
+    - type: function
+      function:
+        name: get_current_weather
+        description: Get the current weather in a given location
+        parameters:
+          properties:
+            location:
+              description: The city and state or city and country, e.g. San Francisco, CA or Tokyo, Japan
+              type: string
+          required:
+          - location
+          type: object
+    - type: function
+      function:
+        description: >- 
+          Creates a picture based on a description given by the user. 
+          The function will return the base64 encoded picture and 
+          that picture will be shown next to the response provided to the user.
+          So, don't put a link to the picture in the response, as the picture will
+          be shown automatically.
+        name: create_a_picture
+        parameters:
+          properties:
+            prompt:
+              description: 'The description of what the picture should be, for instance
+                ''a drawing of a cat'' or ''a phtograph of a room with a table and a chair'' '
+              type: string
+          required:
+          - prompt
+          type: object
+sample:
+  firstName: Seth
+  lastName: Juarez
+  question: What's the weather like in San Francisco, Tokyo, and Paris?
+
+---
+system:
+You are a helpful assistant that helps the user with the help of some functions.
+If you are using multiple tools to solve a user's task, make sure to communicate 
+information learned from one tool to the next tool.
+For instance, if the user ask to draw a picture of the current weather in NYC,
+you can use the weather API to get the current weather in NYC and then pass that information
+to the image generation tool.
+
+# Customer
+You are helping {{firstName}} {{lastName}} to find answers to their questions.
+Use their name to address them in your responses.
+
+user:
+{{question}}

@@ -1,0 +1,54 @@
+---
+name: Base Evaluation Template
+description: Base Evaluator for GPT-4
+model:
+  api: chat
+  configuration:
+    azure_deployment: gpt-4
+  parameters:
+    temperature: 0.0
+    max_tokens: 200
+    top_p: 1.0
+template: jinja2
+---
+
+Task:
+You must return the following fields in your response in two lines, one below the other:
+
+score: Your numerical score for the model's {{name}} based on the rubric
+justification: Your reasoning about the model's {{name}} score
+
+You are an impartial judge. You will be given an input that was sent to a machine
+learning model, and you will be given an output that the model produced. You
+may also be given additional information that was used by the model to generate the output.
+
+Your task is to determine a numerical score called {{name}} based on the input and output.
+A definition of {{name}} and a grading rubric are provided below.
+You must use the grading rubric to determine your score. You must also justify your score.
+
+Examples could be included below for reference. Make sure to use them as references and to
+understand them before completing the task.
+
+Input:
+{{input}}
+
+Output:
+{{output}}
+
+{% block context %}{% endblock %}
+
+Metric definition:
+{% block definition %}{% endblock %}
+
+
+Grading rubric:
+{% block grading_prompt %}{% endblock %}
+
+{% block examples %}{% endblock %}
+
+
+You must return the following fields in your response in two lines, one below the other:
+score: Your numerical score for the model's {{name}} based on the rubric
+justification: Your reasoning about the model's {{name}} score
+
+Do not add additional new lines. Do not add any other fields.

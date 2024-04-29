@@ -1,0 +1,9 @@
+{
+  "default": {
+    "type": "TEST_LOCAL",
+    "api_version": "2023-07-01-preview",
+    "azure_endpoint": "${AZURE_OPENAI_ENDPOINT}",
+    "azure_deployment": "${AZURE_OPENAI_DEPLOYMENT:gpt-35-turbo}",
+    "api_key": "${AZURE_OPENAI_KEY}"
+  }
+}
