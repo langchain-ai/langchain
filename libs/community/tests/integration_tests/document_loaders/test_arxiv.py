@@ -1,6 +1,7 @@
 from typing import List
 
 import pytest
+import requests_mock
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.arxiv import ArxivLoader
@@ -55,6 +56,20 @@ def test_load_returns_full_set_of_metadata() -> None:
         )
         print(doc.metadata)  # noqa: T201
         assert len(set(doc.metadata)) > 4
+
+def test_skip_http_error() -> None:
+    """Test skipping unexpected Http 404 error of a single doc"""
+    loader = ArxivLoader(query="ChatGPT", load_max_docs=2, load_all_available_meta=True)
+    
+    arxiv_download_patter = 'https://arxiv.org/*'
+    with requests_mock.Mocker() as m:
+        # Register a response for the universal URL pattern
+        m.get(arxiv_download_patter, [
+            {'status_code': 404},  # First response - returns 404
+            {'status_code': 200}   # Second response - returns 200
+        ])
+        docs = loader.load()
+        assert len(docs) == 1
 
 
 @pytest.mark.skip(reason="test could be flaky")

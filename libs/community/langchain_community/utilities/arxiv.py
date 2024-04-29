@@ -3,6 +3,7 @@ import logging
 import os
 import re
 from typing import Any, Dict, Iterator, List, Optional
+import urllib
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -54,6 +55,7 @@ class ArxivAPIWrapper(BaseModel):
     arxiv_exceptions: Any  # :meta private:
     top_k_results: int = 3
     ARXIV_MAX_QUERY_LENGTH: int = 300
+    ARXIV_API_WRAPPER_ALLOWED_HTTP_ERROR_CODES = [404]
     load_max_docs: int = 100
     load_all_available_meta: bool = False
     doc_content_chars_max: Optional[int] = 4000
@@ -225,6 +227,12 @@ class ArxivAPIWrapper(BaseModel):
             except (FileNotFoundError, fitz.fitz.FileDataError) as f_ex:
                 logger.debug(f_ex)
                 continue
+            except urllib.error.HTTPError as f_ex:
+                if f_ex.code in self.ARXIV_API_WRAPPER_ALLOWED_HTTP_ERROR_CODES:
+                    logger.debug(f_ex)
+                    continue
+                else:
+                    raise f_ex
             if self.load_all_available_meta:
                 extra_metadata = {
                     "entry_id": result.entry_id,
