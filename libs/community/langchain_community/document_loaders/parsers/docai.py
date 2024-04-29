@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class DocAIParsingResults:
-    """A dataclass to store Document AI parsing results."""
+    """Dataclass to store Document AI parsing results."""
 
     source_path: str
     parsed_path: str
