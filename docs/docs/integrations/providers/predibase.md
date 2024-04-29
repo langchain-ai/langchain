@@ -23,7 +23,7 @@ model = Predibase(
     predibase_sdk_version=None,  # optional parameter (defaults to the latest Predibase SDK version if omitted)
 )
 
-response = model("Can you recommend me a nice dry wine?")
+response = model.invoke("Can you recommend me a nice dry wine?")
 print(response)
 ```
 
@@ -44,7 +44,7 @@ model = Predibase(
     adapter_version=1,
 )
 
-response = model("Can you recommend me a nice dry wine?")
+response = model.invoke("Can you recommend me a nice dry wine?")
 print(response)
 ```
 
@@ -64,6 +64,6 @@ model = Predibase(
     adapter_id="predibase/e2e_nlg",
 )
 
-response = model("Can you recommend me a nice dry wine?")
+response = model.invoke("Can you recommend me a nice dry wine?")
 print(response)
 ```
