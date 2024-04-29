@@ -495,6 +495,7 @@ class LLMGraphTransformer:
                     "Please install it with `pip install json-repair`."
                 )
             self._function_call = False
+            # Allow passing prompts from users
             if not prompt == default_prompt:
                 unstructured_prompt = prompt
             else:
