@@ -12,13 +12,10 @@ from langchain_cli.namespaces.migrate.codemods.replace_imports import (
 def test_migration_files() -> None:
     """Generate a codemod to replace imports."""
     errors = []
-    for rule in list(RULE_TO_PATHS):
-        paths = RULE_TO_PATHS[rule]
 
+    for paths in list(RULE_TO_PATHS.values()):
         for path in paths:
             migrations = _load_migrations_from_fixtures([path])
-
-            errors = []
 
             for migration in migrations:
                 old = migration[0].split(".")[-1]
@@ -27,4 +24,8 @@ def test_migration_files() -> None:
                     errors.append((path, migration))
 
     if errors:
-        raise ValueError(f"Migration involves an alias change: {errors}")
+        raise ValueError(
+            f"Migration involves an alias change: {errors}. The "
+            f"migration script does not currently support "
+            f"corresponding code changes."
+        )

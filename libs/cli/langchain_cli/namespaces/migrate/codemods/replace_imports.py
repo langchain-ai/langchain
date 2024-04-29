@@ -29,7 +29,17 @@ def _load_migrations_by_file(path: str):
     migrations_path = os.path.join(HERE, "migrations", path)
     with open(migrations_path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    return data
+
+    # new migrations
+    new_migrations = []
+    for migration in data:
+        old = migration[0].split(".")[-1]
+        new = migration[1].split(".")[-1]
+
+        if old == new:
+            new_migrations.append(migration)
+
+    return new_migrations
 
 
 T = TypeVar("T")
