@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import libcst as cst
-import rich
 import typer
 from libcst.codemod import CodemodContext, ContextAwareTransformer
 from libcst.helpers import calculate_module_and_package
@@ -47,12 +46,28 @@ def main(
 ):
     """Migrate langchain to the most recent version."""
     if not diff:
-        rich.print("[bold red]Alert![/ bold red] langchain-cli migrate", end=": ")
         if not typer.confirm(
-            "The migration process will modify your files. "
-            "The migration is a `best-effort` process and is not expected to "
-            "be perfect. "
-            "Do you want to continue?"
+            "✈️ This script will help you migrate to a recent version LangChain. "
+            "This migration script will attempt to replace old imports in the code "
+            "with new ones.\n\n"
+            "🔄 You will need to run the migration script TWICE to migrate (e.g., "
+            "to update llms import from langchain, the script will first move them to "
+            "corresponding imports from the community package, and on the second "
+            "run will migrate from the community package to the partner package "
+            "when possible). \n\n"
+            "🔍 You can pre-view the changes by running with the --diff flag. \n\n"
+            "🚫 You can disable specific import changes by using the --disable "
+            "flag. \n\n"
+            "📄 Update your pyproject.toml or requirements.txt file to "
+            "reflect any imports from new packages. For example, if you see new "
+            "imports from langchain_openai, langchain_anthropic or "
+            "langchain_text_splitters you "
+            "should them to your dependencies! \n\n"
+            '⚠️ This script is a "best-effort", and is likely to make some '
+            "mistakes.\n\n"
+            "🛡️ Backup your code prior to running the migration script -- it will "
+            "modify your files!\n\n"
+            "❓ Do you want to continue?"
         ):
             raise Exit()
     console = Console(log_time=True)
