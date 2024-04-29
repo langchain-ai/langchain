@@ -220,10 +220,10 @@ Use the following relation types, don't use other relation that is not defined b
 # RELATION TYPES:
 {rel_types}
 
-Below are a number of examples of text and their extracted entities and relationshhips.
+Below are a number of examples of text and their extracted entities and relationships.
 {examples}
 
-For the following text, generate extract entitites and relations as in the provided example.
+For the following text, extract entities and relations as in the provided example.
 {format_instructions}\nText: {input}""",
         input_variables=["input"],
         partial_variables={
