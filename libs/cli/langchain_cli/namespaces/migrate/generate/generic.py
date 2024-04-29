@@ -106,7 +106,7 @@ def generate_top_level_imports(pkg: str) -> List[Tuple[str, str]]:
 
     # Only iterate through top-level modules/packages
     for finder, modname, ispkg in pkgutil.iter_modules(
-            package.__path__, package.__name__ + "."
+        package.__path__, package.__name__ + "."
     ):
         if ispkg:
             try:
