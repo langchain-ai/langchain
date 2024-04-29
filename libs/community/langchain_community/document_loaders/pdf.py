@@ -731,7 +731,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
 
 
 class DocumentIntelligenceLoader(BasePDFLoader):
-    """Loads a PDF with Azure Document Intelligence"""
+    """Load a PDF with Azure Document Intelligence"""
 
     def __init__(
         self,
