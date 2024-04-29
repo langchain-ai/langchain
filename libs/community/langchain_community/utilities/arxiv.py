@@ -2,8 +2,8 @@
 import logging
 import os
 import re
+from urllib.error import HTTPError
 from typing import Any, Dict, Iterator, List, Optional
-import urllib
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator

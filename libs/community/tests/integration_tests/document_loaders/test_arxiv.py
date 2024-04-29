@@ -1,10 +1,15 @@
+import shutil
+from pathlib import Path
 from typing import List
+from unittest.mock import patch
+from urllib.error import HTTPError
 
 import pytest
-import requests_mock
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.arxiv import ArxivLoader
+
+EXAMPLE_HELLO_PDF_PATH = Path(__file__).parents[1] / "examples" / "hello.pdf"
 
 
 def assert_docs(docs: List[Document]) -> None:
@@ -57,18 +62,31 @@ def test_load_returns_full_set_of_metadata() -> None:
         print(doc.metadata)  # noqa: T201
         assert len(set(doc.metadata)) > 4
 
+
 def test_skip_http_error() -> None:
     """Test skipping unexpected Http 404 error of a single doc"""
-    loader = ArxivLoader(query="ChatGPT", load_max_docs=2, load_all_available_meta=True)
-    
-    arxiv_download_patter = 'https://arxiv.org/*'
-    with requests_mock.Mocker() as m:
-        # Register a response for the universal URL pattern
-        m.get(arxiv_download_patter, [
-            {'status_code': 404},  # First response - returns 404
-            {'status_code': 200}   # Second response - returns 200
-        ])
+    tmp_hello_pdf_path = Path(__file__).parent / "hello.pdf"
+
+    def first_download_fails():
+        if first_download_fails.firstCall:
+            first_download_fails.firstCall = False
+            raise HTTPError(url=None, code=404, msg="Not Found", hdrs=None, fp=None)
+        else:
+            # Return temporary example pdf path
+            shutil.copy(EXAMPLE_HELLO_PDF_PATH, tmp_hello_pdf_path)
+            return str(tmp_hello_pdf_path.absolute())
+
+    first_download_fails.firstCall = True
+
+    with patch("arxiv.Result.download_pdf") as mock_download_pdf:
+        # Set up the mock to raise HTTP 404 error
+        mock_download_pdf.side_effect = first_download_fails
+        # Load documents
+        loader = ArxivLoader(
+            query="ChatGPT", load_max_docs=2, load_all_available_meta=True
+        )
         docs = loader.load()
+        # Only 1 of 2 documents should be loaded
         assert len(docs) == 1
 
 
