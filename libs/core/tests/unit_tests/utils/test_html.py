@@ -183,3 +183,27 @@ def test_prevent_outside() -> None:
         )
     )
     assert actual == expected
+
+
+def test_extract_sub_links_with_query() -> None:
+    html = (
+        '<a href="https://foobar.com?query=123">one</a>'
+        '<a href="/hello?query=456">two</a>'
+        '<a href="//foobar.com/how/are/you?query=789">three</a>'
+        '<a href="doing?query=101112"></a>'
+    )
+
+    expected = sorted(
+        [
+            "https://foobar.com?query=123",
+            "https://foobar.com/hello?query=456",
+            "https://foobar.com/how/are/you?query=789",
+            "https://foobar.com/hello/doing?query=101112",
+        ]
+    )
+    actual = sorted(
+        extract_sub_links(
+            html, "https://foobar.com/hello/bill.html", base_url="https://foobar.com"
+        )
+    )
+    assert actual == expected, f"Expected {expected}, but got {actual}"
