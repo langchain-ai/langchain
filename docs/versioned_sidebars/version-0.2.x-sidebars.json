@@ -60,6 +60,24 @@
             "how_to/debugging"
           ],
           "link": { "type": "generated-index" }
+        },
+        {
+          "type": "category",
+          "label": "LangChain Expression Language (LCEL)",
+          "collapsed": true,
+          "items": [
+            "how_to/sequence",
+            "how_to/parallel",
+            "how_to/binding",
+            "how_to/functions",
+            "how_to/passthrough",
+            "how_to/assign",
+            "how_to/configure",
+            "how_to/message_history",
+            "how_to/routing",
+            "how_to/inspect"
+          ],
+          "link": { "type": "generated-index" }
         }
       ],
       "link": { "type": "doc", "id": "how_to/index" }
