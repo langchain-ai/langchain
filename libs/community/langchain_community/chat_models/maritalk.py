@@ -143,42 +143,35 @@ class ChatMaritalk(BaseChatModel):
                  If an error occurs (e.g., rate limiting), returns a string
                  describing the error.
         """
-        try:
-            url = "https://chat.maritaca.ai/api/chat/inference"
-            headers = {"authorization": f"Key {self.api_key}"}
-            stopping_tokens = stop if stop is not None else []
+        url = "https://chat.maritaca.ai/api/chat/inference"
+        headers = {"authorization": f"Key {self.api_key}"}
+        stopping_tokens = stop if stop is not None else []
 
-            parsed_messages = self.parse_messages_for_model(messages)
+        parsed_messages = self.parse_messages_for_model(messages)
 
-            data = {
-                "messages": parsed_messages,
-                "model": self.model,
-                "do_sample": self.do_sample,
-                "max_tokens": self.max_tokens,
-                "temperature": self.temperature,
-                "top_p": self.top_p,
-                "stopping_tokens": stopping_tokens,
-                **kwargs,
-            }
+        data = {
+            "messages": parsed_messages,
+            "model": self.model,
+            "do_sample": self.do_sample,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "stopping_tokens": stopping_tokens,
+            **kwargs,
+        }
 
-            response = requests.post(url, json=data, headers=headers)
+        response = requests.post(url, json=data, headers=headers)
 
-            if response.ok:
-                return response.json().get("answer", "No answer found")
-            else:
-                raise MaritalkHTTPError(response)
-
-        except requests.exceptions.RequestException as e:
-            return f"An error occurred: {str(e)}"
-
-        except Exception as e:
-            return f"An unexpected error occurred: {str(e)}"
+        if response.ok:
+            return response.json().get("answer", "No answer found")
+        else:
+            raise MaritalkHTTPError(response)
 
     async def _acall(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         """
@@ -213,7 +206,9 @@ class ChatMaritalk(BaseChatModel):
             }
 
             async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=data, headers=headers)
+                response = await client.post(
+                    url, json=data, headers=headers, timeout=None
+                )
 
             if response.status_code == 200:
                 return response.json().get("answer", "No answer found")
@@ -226,12 +221,6 @@ class ChatMaritalk(BaseChatModel):
                 "Please install it with `pip install httpx`."
             )
 
-        except httpx.RequestError as e:
-            return f"An error occurred: {str(e)}"
-
-        except Exception as e:
-            return f"An unexpected error occurred: {str(e)}"
-
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -239,54 +228,47 @@ class ChatMaritalk(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        try:
-            headers = {"Authorization": f"Key {self.api_key}"}
-            stopping_tokens = stop if stop is not None else []
+        headers = {"Authorization": f"Key {self.api_key}"}
+        stopping_tokens = stop if stop is not None else []
 
-            parsed_messages = self.parse_messages_for_model(messages)
+        parsed_messages = self.parse_messages_for_model(messages)
 
-            data = {
-                "messages": parsed_messages,
-                "model": self.model,
-                "do_sample": self.do_sample,
-                "max_tokens": self.max_tokens,
-                "temperature": self.temperature,
-                "top_p": self.top_p,
-                "stopping_tokens": stopping_tokens,
-                "stream": True,
-                **kwargs,
-            }
+        data = {
+            "messages": parsed_messages,
+            "model": self.model,
+            "do_sample": self.do_sample,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "stopping_tokens": stopping_tokens,
+            "stream": True,
+            **kwargs,
+        }
 
-            response = requests.post(
-                "https://chat.maritaca.ai/api/chat/inference",
-                data=json.dumps(data),
-                headers=headers,
-                stream=True,
-            )
+        response = requests.post(
+            "https://chat.maritaca.ai/api/chat/inference",
+            data=json.dumps(data),
+            headers=headers,
+            stream=True,
+        )
 
-            if response.ok:
-                for line in response.iter_lines():
-                    if line.startswith(b"data: "):
-                        response_data = line.replace(b"data: ", b"").decode("utf-8")
-                        if response_data:
-                            parsed_data = json.loads(response_data)
-                            if "text" in parsed_data:
-                                delta = parsed_data["text"]
-                                chunk = ChatGenerationChunk(
-                                    message=AIMessageChunk(content=delta)
-                                )
-                                if run_manager:
-                                    run_manager.on_llm_new_token(delta, chunk=chunk)
-                                yield chunk
+        if response.ok:
+            for line in response.iter_lines():
+                if line.startswith(b"data: "):
+                    response_data = line.replace(b"data: ", b"").decode("utf-8")
+                    if response_data:
+                        parsed_data = json.loads(response_data)
+                        if "text" in parsed_data:
+                            delta = parsed_data["text"]
+                            chunk = ChatGenerationChunk(
+                                message=AIMessageChunk(content=delta)
+                            )
+                            if run_manager:
+                                run_manager.on_llm_new_token(delta, chunk=chunk)
+                            yield chunk
 
-            else:
-                raise MaritalkHTTPError(response)
-
-        except requests.exceptions.RequestException as e:
-            return f"An error occurred: {str(e)}"
-
-        except Exception as e:
-            return f"An unexpected error occurred: {str(e)}"
+        else:
+            raise MaritalkHTTPError(response)
 
     async def _astream(
         self,
@@ -321,6 +303,7 @@ class ChatMaritalk(BaseChatModel):
                     "https://chat.maritaca.ai/api/chat/inference",
                     data=json.dumps(data),
                     headers=headers,
+                    timeout=None,
                 ) as response:
                     if response.status_code == 200:
                         async for line in response.aiter_lines():
@@ -347,12 +330,6 @@ class ChatMaritalk(BaseChatModel):
                 "Could not import httpx python package. "
                 "Please install it with `pip install httpx`."
             )
-
-        except httpx.RequestError as e:
-            yield f"An error occurred: {str(e)}"
-
-        except Exception as e:
-            yield f"An unexpected error occurred: {str(e)}"
 
     def _generate(
         self,
