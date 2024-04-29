@@ -1218,7 +1218,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
 
 class LLM(BaseLLM):
-    """This class exposes a simple interface for implementing a custom LLM.
+    """Simple interface for implementing a custom LLM.
 
     You should subclass this class and implement the following:
 

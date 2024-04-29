@@ -63,7 +63,7 @@ __all__ = [
 ]
 
 _module_lookup = {
-    "BaseChatLoader": "langchain_community.chat_loaders.base",
+    "BaseChatLoader": "langchain_core.chat_loaders",
     "FolderFacebookMessengerChatLoader": "langchain_community.chat_loaders.facebook_messenger",  # noqa: E501
     "GMailLoader": "langchain_community.chat_loaders.gmail",
     "IMessageChatLoader": "langchain_community.chat_loaders.imessage",

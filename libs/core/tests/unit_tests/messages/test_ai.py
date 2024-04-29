@@ -53,7 +53,7 @@ def test_serdes_message_chunk() -> None:
                     "name": "foobad",
                     "args": "blah",
                     "id": "booz",
-                    "error": "Malformed args.",
+                    "error": None,
                 }
             ],
             "tool_call_chunks": [

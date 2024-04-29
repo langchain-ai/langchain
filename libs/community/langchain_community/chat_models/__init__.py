@@ -42,6 +42,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.cohere import (
         ChatCohere,  # noqa: F401
     )
+    from langchain_community.chat_models.coze import (
+        ChatCoze,  # noqa: F401
+    )
     from langchain_community.chat_models.databricks import (
         ChatDatabricks,  # noqa: F401
     )
@@ -167,6 +170,7 @@ __all__ = [
     "ChatAnyscale",
     "ChatBaichuan",
     "ChatCohere",
+    "ChatCoze",
     "ChatDatabricks",
     "ChatDeepInfra",
     "ChatEverlyAI",
@@ -217,6 +221,7 @@ _module_lookup = {
     "ChatAnyscale": "langchain_community.chat_models.anyscale",
     "ChatBaichuan": "langchain_community.chat_models.baichuan",
     "ChatCohere": "langchain_community.chat_models.cohere",
+    "ChatCoze": "langchain_community.chat_models.coze",
     "ChatDatabricks": "langchain_community.chat_models.databricks",
     "ChatDeepInfra": "langchain_community.chat_models.deepinfra",
     "ChatEverlyAI": "langchain_community.chat_models.everlyai",
