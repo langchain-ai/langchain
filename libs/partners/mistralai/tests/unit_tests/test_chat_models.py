@@ -4,6 +4,7 @@ import os
 from typing import Any, AsyncGenerator, Dict, Generator, List, cast
 from unittest.mock import patch
 
+import httpx
 import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.messages import (
@@ -40,6 +41,12 @@ def test_mistralai_initialization() -> None:
         ChatMistralAI(model="test", api_key="test"),
     ]:
         assert cast(SecretStr, model.mistral_api_key).get_secret_value() == "test"
+
+
+def test_mistralai_init_client() -> None:
+    client = httpx.Client(base_url="foobar")
+    llm = ChatMistralAI(client=client)
+    assert llm.client == client
 
 
 @pytest.mark.parametrize(

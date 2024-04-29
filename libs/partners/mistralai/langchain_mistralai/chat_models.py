@@ -307,8 +307,8 @@ def _convert_message_to_mistral_chat_message(
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: httpx.Client = Field(default=None)  #: :meta private:
-    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    client: httpx.Client = Field(default=None)
+    async_client: httpx.AsyncClient = Field(default=None)
     mistral_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     endpoint: str = "https://api.mistral.ai/v1"
     max_retries: int = 5
@@ -407,26 +407,28 @@ class ChatMistralAI(BaseChatModel):
             )
         )
         api_key_str = values["mistral_api_key"].get_secret_value()
-        # todo: handle retries
-        values["client"] = httpx.Client(
-            base_url=values["endpoint"],
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": f"Bearer {api_key_str}",
-            },
-            timeout=values["timeout"],
-        )
-        # todo: handle retries and max_concurrency
-        values["async_client"] = httpx.AsyncClient(
-            base_url=values["endpoint"],
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": f"Bearer {api_key_str}",
-            },
-            timeout=values["timeout"],
-        )
+        if not values["client"]:
+            # todo: handle retries
+            values["client"] = httpx.Client(
+                base_url=values["endpoint"],
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {api_key_str}",
+                },
+                timeout=values["timeout"],
+            )
+        if not values["async_client"]:
+            # todo: handle retries and max_concurrency
+            values["async_client"] = httpx.AsyncClient(
+                base_url=values["endpoint"],
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {api_key_str}",
+                },
+                timeout=values["timeout"],
+            )
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
