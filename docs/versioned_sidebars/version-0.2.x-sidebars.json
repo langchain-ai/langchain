@@ -14,7 +14,7 @@
             "tutorials/chatbot",
             "tutorials/agents"
           ],
-          "link": { "type": "doc", "id": "tutorials/index" }
+          "link": { "type": "generated-index" }
         },
         {
           "type": "category",
@@ -28,21 +28,19 @@
             "tutorials/local_rag",
             "tutorials/graph"
           ],
-          "link": { "type": "doc", "id": "tutorials/index" }
+          "link": { "type": "generated-index" }
         },
         {
           "type": "category",
           "label": "Specialized tasks",
           "collapsed": true,
           "items": [
-            "tutorials/rag",
-            "tutorials/qa_chat_history",
-            "tutorials/sql_qa",
-            "tutorials/query_analysis",
-            "tutorials/local_rag",
-            "tutorials/graph"
+            "tutorials/extraction",
+            "tutorials/data_generation",
+            "tutorials/classification",
+            "tutorials/summarization"
           ],
-          "link": { "type": "doc", "id": "tutorials/index" }
+          "link": { "type": "generated-index" }
         }
       ],
       "link": { "type": "doc", "id": "tutorials/index" }
