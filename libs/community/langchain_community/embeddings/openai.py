@@ -424,7 +424,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 from transformers import AutoTokenizer
             except ImportError:
-                raise ValueError(
+                raise ImportError(
                     "Could not import transformers python package. "
                     "This is needed in order to for OpenAIEmbeddings without "
                     "`tiktoken`. Please install it with `pip install transformers`. "
@@ -557,7 +557,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 from transformers import AutoTokenizer
             except ImportError:
-                raise ValueError(
+                raise ImportError(
                     "Could not import transformers python package. "
                     "This is needed in order to for OpenAIEmbeddings without "
                     " `tiktoken`. Please install it with `pip install transformers`."

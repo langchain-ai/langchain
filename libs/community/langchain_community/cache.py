@@ -323,7 +323,7 @@ class UpstashRedisCache(BaseCache):
         try:
             from upstash_redis import Redis
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import upstash_redis python package. "
                 "Please install it with `pip install upstash_redis`."
             )
@@ -461,7 +461,7 @@ class RedisCache(_RedisCacheBase):
         try:
             from redis import Redis
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import `redis` python package. "
                 "Please install it with `pip install redis`."
             )
@@ -528,7 +528,7 @@ class AsyncRedisCache(_RedisCacheBase):
         try:
             from redis.asyncio import Redis
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import `redis.asyncio` python package. "
                 "Please install it with `pip install redis`."
             )
@@ -1069,7 +1069,7 @@ class CassandraCache(BaseCache):
         try:
             from cassio.table import ElasticCassandraTable
         except (ImportError, ModuleNotFoundError):
-            raise ValueError(
+            raise ImportError(
                 "Could not import cassio python package. "
                 "Please install it with `pip install cassio`."
             )
@@ -1192,7 +1192,7 @@ class CassandraSemanticCache(BaseCache):
         try:
             from cassio.table import MetadataVectorCassandraTable
         except (ImportError, ModuleNotFoundError):
-            raise ValueError(
+            raise ImportError(
                 "Could not import cassio python package. "
                 "Please install it with `pip install cassio`."
             )
