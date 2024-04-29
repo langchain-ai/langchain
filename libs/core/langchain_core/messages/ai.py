@@ -69,6 +69,30 @@ class AIMessage(BaseMessage):
                 pass
         return values
 
+    def pretty_repr(self, html: bool = False) -> str:
+        """Return a pretty representation of the message."""
+        base = super().pretty_repr(html=html)
+        lines = []
+        if self.tool_calls:
+            lines.append("Tool Calls:")
+            for tc in self.tool_calls:
+                name = tc.get("name", "Tool")
+                lines.append(f"  Tool:  {name}")
+                tcid = tc.get("id")
+                lines.append(f"  Call ID: {tcid}")
+                lines.append("  Args:")
+                for arg, value in tc["args"].items():
+                    lines.append(f"    {arg}: {value}")
+        if self.invalid_tool_calls:
+            lines.append("Invalid Tool Calls:")
+            for itc in self.invalid_tool_calls:
+                lines.append(f"  {itc.name} ({itc.id})")
+                for arg, value in itc.args.items():
+                    lines.append(f"    {arg}: {value}")
+                if itc.error:
+                    lines.append(f"    Error: {itc.error}")
+        return (base.strip() + "\n" + "\n".join(lines)).strip()
+
 
 AIMessage.update_forward_refs()
 
