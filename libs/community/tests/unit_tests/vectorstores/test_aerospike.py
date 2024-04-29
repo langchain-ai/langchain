@@ -10,9 +10,9 @@ def test_aerospike() -> None:
     """Ensure an error is raised when search with score in hybrid mode
     because in this case Elasticsearch does not return any score.
     """
+    import grpc
     from aerospike_vector.types import HostPort
     from aerospike_vector.vectordb_client import VectorDbClient
-    import grpc
 
     query_string = "foo"
     embedding = FakeEmbeddings()
@@ -33,5 +33,7 @@ def test_aerospike() -> None:
     )
 
     embedded_query = embedding.embed_query(query_string)
-    with pytest.raises(grpc.aio.AioRpcError): # TODO: Replace this when we have sync client
+    with pytest.raises(
+        grpc.aio.AioRpcError
+    ):  # TODO: Replace this when we have sync client
         store.similarity_search_by_vector(embedded_query)

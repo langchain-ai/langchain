@@ -121,7 +121,6 @@ class Aerospike(VectorStore):
     #     if self._loop:
     #         self._loop.stop()
 
-
     def run_async(self, coroutine):
         return asyncio.run_coroutine_threadsafe(coroutine, self._loop)
 
@@ -155,7 +154,6 @@ class Aerospike(VectorStore):
         set_name: Optional[
             str
         ] = None,  # TODO: Should we allow namespaces to be passed in? They are much less flexible than pinecones.
-        # batch_size: int = 32, TODO: When client has batch insert.
         embedding_chunk_size: int = 1000,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -241,17 +239,6 @@ class Aerospike(VectorStore):
         """TODO"""
         return self.run_async(self.adelete(*args, **kwargs)).result()
 
-    def similarity_search_with_threshold(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
-        score_threshold = kwargs.pop("score_threshold", None)
-        result = self.vector_search_with_score(query, k=k, **kwargs)
-        return (
-            result
-            if score_threshold is None
-            else [r for r in result if r[1] >= score_threshold]
-        )
-
     def similarity_search_with_score(
         self,
         query: str,
@@ -276,12 +263,15 @@ class Aerospike(VectorStore):
         embedding: List[float],
         *,
         k: int = 4,
+        metadata_keys: Optional[List[str]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return aerospike documents most similar to embedding, along with scores.
 
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            metadata_keys: List of metadata keys to return with the documents.
+            If None, all metadata keys will be returned. Defaults to None.
 
         Returns:
             List of Documents most similar to the query and associated scores.
@@ -289,24 +279,50 @@ class Aerospike(VectorStore):
         """
 
         docs = []
+
+        if metadata_keys:
+            metadata_keys = [self._text_key] + metadata_keys
+
         results = await self._client.vector_search(
             index_name=self._index_name,
             namespace=self._namespace,
             query=embedding,
             limit=k,
+            bin_names=metadata_keys,
         )
 
         for result in results:
             metadata = result.bins
-            if self._text_key in metadata and self._vector_key in metadata:
+
+            if metadata_keys is None:
+                if self._vector_key in metadata:
+                    # internal key
+                    metadata.pop(self._vector_key)
+                else:
+                    logger.warning(
+                        f"Found document with no `{self._vector_key}` key. Skipping."
+                    )
+                    continue
+
+            if "id" in metadata_keys:
+                id = result.key.key
+
+                if "id" in metadata:
+                    logger.warning(
+                        "Found document with `id` key in metadata. The original key will be used."
+                    )
+                else:
+                    metadata["id"] = id
+
+            if self._text_key in metadata:
                 text = metadata.pop(self._text_key)
-                metadata.pop(self._vector_key)
                 score = result.distance
                 docs.append((Document(page_content=text, metadata=metadata), score))
             else:
                 logger.warning(
                     f"Found document with no `{self._text_key}` key. Skipping."
                 )
+                continue
 
         return docs
 
@@ -315,12 +331,15 @@ class Aerospike(VectorStore):
         embedding: List[float],
         *,
         k: int = 4,
+        metadata_keys: Optional[List[str]] = None,
     ) -> List[Tuple[Document, float]]:
         """Return aerospike documents most similar to embedding, along with scores.
 
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            metadata_keys: List of metadata keys to return with the documents.
+                If None, all metadata keys will be returned. Defaults to None.
 
         Returns:
             List of Documents most similar to the query and associated scores.
@@ -328,37 +347,48 @@ class Aerospike(VectorStore):
         """
 
         return self.run_async(
-            self.asimilarity_search_by_vector_with_score(embedding, k=k)
+            self.asimilarity_search_by_vector_with_score(
+                embedding, k=k, metadata_keys=metadata_keys
+            )
         ).result()
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = 4,
+        metadata_keys: Optional[List[str]] = None,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
 
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            metadata_keys: List of metadata keys to return with the documents.
+                If None, all metadata keys will be returned. Defaults to None.
 
         Returns:
             List of Documents most similar to the query vector.
         """
         return [
             doc
-            for doc, _ in self.similarity_search_by_vector_with_score(embedding, k=k)
+            for doc, _ in self.similarity_search_by_vector_with_score(
+                embedding, k=k, metadata_keys=metadata_keys
+            )
         ]
 
     def similarity_search(
         self,
         query: str,
         k: int = 4,
-        **kwargs: Any,
+        metadata_keys: Optional[List[str]] = None,
     ) -> List[Document]:
         """Return aerospike documents most similar to query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            metadata_keys: List of metadata keys to return with the documents.
+                If None, all metadata keys will be returned. Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -401,6 +431,7 @@ class Aerospike(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        metadata_keys: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -416,44 +447,30 @@ class Aerospike(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            metadata_keys: List of metadata keys to return with the documents.
+                        If None, all metadata keys will be returned. Defaults to None.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        results = self._client.vector_search(
-            index_name=self._index_name,
-            namespace=self._namespace,
-            query=embedding,
-            limit=fetch_k,
-            **kwargs,
+
+        if metadata_keys:
+            metadata_keys = [self._vector_key] + metadata_keys
+
+        docs = self.similarity_search_by_vector(
+            embedding, k=fetch_k, metadata_keys=metadata_keys
         )
-
-        filtered_results = []
-        for result in results:
-            if self._vector_key not in result.bins or self._text_key not in result.bins:
-                logger.warning(
-                    f"Found document with no `{self._vector_key}` key. Skipping."
-                )
-
-            filtered_results.append(result)
-
-        results = filtered_results
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
-            [result.bins[self._vector_key] for result in results],
+            [doc.metadata[self._vector_key] for doc in docs],
             k=k,
             lambda_mult=lambda_mult,
         )
 
-        for i in mmr_selected:
-            metadata = results[i].bins
-            metadata.pop(self._vector_key)
-            metadata.pop(self._text_key)
+        if self._vector_key not in metadata_keys:
+            for i in mmr_selected:
+                docs[i].metadata.pop(self._vector_key)
 
-        selected = [results[i].bins["metadata"] for i in mmr_selected]
-        return [
-            Document(page_content=metadata.pop((self._text_key)), metadata=metadata)
-            for metadata in selected
-        ]
+        return [docs[i] for i in mmr_selected]
 
     def max_marginal_relevance_search(
         self,
