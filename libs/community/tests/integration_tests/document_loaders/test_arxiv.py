@@ -1,4 +1,5 @@
 import shutil
+from http.client import HTTPMessage
 from pathlib import Path
 from typing import List, Union
 from unittest.mock import patch
@@ -66,11 +67,13 @@ def test_load_returns_full_set_of_metadata() -> None:
 def test_skip_http_error() -> None:
     """Test skipping unexpected Http 404 error of a single doc"""
     tmp_hello_pdf_path = Path(__file__).parent / "hello.pdf"
-    
+
     def first_download_fails() -> Union[HTTPError, str]:
-        if not hasattr(first_download_fails, 'firstCall'):
-            first_download_fails.firstCall = False
-            raise HTTPError(url=None, code=404, msg="Not Found", hdrs=None, fp=None)
+        if not hasattr(first_download_fails, "firstCall"):
+            first_download_fails.__setattr__("firstCall", False)
+            raise HTTPError(
+                url="", code=404, msg="Not Found", hdrs=HTTPMessage(), fp=None
+            )
         else:
             # Return temporary example pdf path
             shutil.copy(EXAMPLE_HELLO_PDF_PATH, tmp_hello_pdf_path)
