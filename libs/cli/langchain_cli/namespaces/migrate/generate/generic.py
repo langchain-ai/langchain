@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 
 def generate_raw_migrations(
-    from_package: str, to_package: str
+    from_package: str, to_package: str, filter_by_all: bool = False
 ) -> List[Tuple[str, str]]:
     """Scan the `langchain` package and generate migrations for all modules."""
     package = importlib.import_module(from_package)
@@ -40,15 +40,17 @@ def generate_raw_migrations(
                             (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
                         )
 
-        # Iterate over all members of the module
-        for name, obj in inspect.getmembers(module):
-            # Check if it's a class or function
-            if inspect.isclass(obj) or inspect.isfunction(obj):
-                # Check if the module name of the obj starts with 'langchain_community'
-                if obj.__module__.startswith(to_package):
-                    items.append(
-                        (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
-                    )
+        if not filter_by_all:
+            # Iterate over all members of the module
+            for name, obj in inspect.getmembers(module):
+                # Check if it's a class or function
+                if inspect.isclass(obj) or inspect.isfunction(obj):
+                    # Check if the module name of the obj starts with
+                    # 'langchain_community'
+                    if obj.__module__.startswith(to_package):
+                        items.append(
+                            (f"{modname}.{name}", f"{obj.__module__}.{obj.__name__}")
+                        )
 
     return items
 
@@ -77,45 +79,52 @@ def generate_top_level_imports(pkg: str) -> List[Tuple[str, str]]:
     to importing it from the top level namespaces
     (e.g., langchain_community.chat_models.XYZ)
     """
-    import importlib
-
     package = importlib.import_module(pkg)
 
     items = []
+
+    # Function to handle importing from modules
+    def handle_module(module, module_name):
+        if hasattr(module, "__all__"):
+            all_objects = getattr(module, "__all__")
+            for name in all_objects:
+                # Attempt to fetch each object declared in __all__
+                obj = getattr(module, name, None)
+                if obj and (inspect.isclass(obj) or inspect.isfunction(obj)):
+                    # Capture the fully qualified name of the object
+                    original_module = obj.__module__
+                    original_name = obj.__name__
+                    # Form the new import path from the top-level namespace
+                    top_level_import = f"{module_name}.{name}"
+                    # Append the tuple with original and top-level paths
+                    items.append(
+                        (f"{original_module}.{original_name}", top_level_import)
+                    )
+
+    # Handle the package itself (root level)
+    handle_module(package, pkg)
+
     # Only iterate through top-level modules/packages
     for finder, modname, ispkg in pkgutil.iter_modules(
-        package.__path__, package.__name__ + "."
+            package.__path__, package.__name__ + "."
     ):
         if ispkg:
             try:
                 module = importlib.import_module(modname)
+                handle_module(module, modname)
             except ModuleNotFoundError:
                 continue
-
-            if hasattr(module, "__all__"):
-                all_objects = getattr(module, "__all__")
-                for name in all_objects:
-                    # Attempt to fetch each object declared in __all__
-                    obj = getattr(module, name, None)
-                    if obj and (inspect.isclass(obj) or inspect.isfunction(obj)):
-                        # Capture the fully qualified name of the object
-                        original_module = obj.__module__
-                        original_name = obj.__name__
-                        # Form the new import path from the top-level namespace
-                        top_level_import = f"{modname}.{name}"
-                        # Append the tuple with original and top-level paths
-                        items.append(
-                            (f"{original_module}.{original_name}", top_level_import)
-                        )
 
     return items
 
 
 def generate_simplified_migrations(
-    from_package: str, to_package: str
+    from_package: str, to_package: str, filter_by_all: bool = True
 ) -> List[Tuple[str, str]]:
     """Get all the raw migrations, then simplify them if possible."""
-    raw_migrations = generate_raw_migrations(from_package, to_package)
+    raw_migrations = generate_raw_migrations(
+        from_package, to_package, filter_by_all=filter_by_all
+    )
     top_level_simplifications = generate_top_level_imports(to_package)
     top_level_dict = {full: top_level for full, top_level in top_level_simplifications}
     simple_migrations = []
