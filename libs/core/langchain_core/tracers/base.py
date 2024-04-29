@@ -506,7 +506,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for a tool run."""
-        output = str(output)
         tool_run = self._get_run(run_id, run_type="tool")
         tool_run.outputs = {"output": output}
         tool_run.end_time = datetime.now(timezone.utc)

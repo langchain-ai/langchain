@@ -5,6 +5,7 @@ import pytest
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import ParrotFakeChatModel
+from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser, TBaseModel
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
@@ -70,3 +71,28 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
     chain = bad_prompt | model | parser
     with pytest.raises(OutputParserException):
         chain.invoke({})
+
+
+# JSON output parser tests
+@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+def test_json_parser_chaining(
+    pydantic_object: TBaseModel,
+) -> None:
+    prompt = PromptTemplate(
+        template="""{{
+        "temperature": 20,
+        "f_or_c": "C",
+        "forecast": "Sunny"
+    }}""",
+        input_variables=[],
+    )
+
+    model = ParrotFakeChatModel()
+
+    parser = JsonOutputParser(pydantic_object=pydantic_object)  # type: ignore
+    chain = prompt | model | parser
+
+    res = chain.invoke({})
+    assert res["f_or_c"] == "C"
+    assert res["temperature"] == 20
+    assert res["forecast"] == "Sunny"

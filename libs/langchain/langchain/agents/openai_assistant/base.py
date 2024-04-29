@@ -515,6 +515,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         if run.status == "completed":
             import openai
 
+            major_version = int(openai.version.VERSION.split(".")[0])
+            minor_version = int(openai.version.VERSION.split(".")[1])
+            version_gte_1_14 = (major_version > 1) or (
+                major_version == 1 and minor_version >= 14
+            )
+
             messages = self.client.beta.threads.messages.list(
                 run.thread_id, order="asc"
             )
@@ -527,7 +533,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             if all(
                 (
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
-                    if openai.version.VERSION.startswith("1.14")
+                    if version_gte_1_14
                     else isinstance(
                         content, openai.types.beta.threads.MessageContentText
                     )
@@ -637,6 +643,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         if run.status == "completed":
             import openai
 
+            major_version = int(openai.version.VERSION.split(".")[0])
+            minor_version = int(openai.version.VERSION.split(".")[1])
+            version_gte_1_14 = (major_version > 1) or (
+                major_version == 1 and minor_version >= 14
+            )
+
             messages = await self.async_client.beta.threads.messages.list(
                 run.thread_id, order="asc"
             )
@@ -649,7 +661,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             if all(
                 (
                     isinstance(content, openai.types.beta.threads.TextContentBlock)
-                    if openai.version.VERSION.startswith("1.14")
+                    if version_gte_1_14
                     else isinstance(
                         content, openai.types.beta.threads.MessageContentText
                     )

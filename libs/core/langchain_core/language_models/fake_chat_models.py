@@ -223,7 +223,9 @@ class GenericFakeChatModel(BaseChatModel):
             content_chunks = cast(List[str], re.split(r"(\s)", content))
 
             for token in content_chunks:
-                chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(content=token, id=message.id)
+                )
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)
                 yield chunk
@@ -240,6 +242,7 @@ class GenericFakeChatModel(BaseChatModel):
                             for fvalue_chunk in fvalue_chunks:
                                 chunk = ChatGenerationChunk(
                                     message=AIMessageChunk(
+                                        id=message.id,
                                         content="",
                                         additional_kwargs={
                                             "function_call": {fkey: fvalue_chunk}
@@ -255,6 +258,7 @@ class GenericFakeChatModel(BaseChatModel):
                         else:
                             chunk = ChatGenerationChunk(
                                 message=AIMessageChunk(
+                                    id=message.id,
                                     content="",
                                     additional_kwargs={"function_call": {fkey: fvalue}},
                                 )
@@ -268,7 +272,7 @@ class GenericFakeChatModel(BaseChatModel):
                 else:
                     chunk = ChatGenerationChunk(
                         message=AIMessageChunk(
-                            content="", additional_kwargs={key: value}
+                            id=message.id, content="", additional_kwargs={key: value}
                         )
                     )
                     if run_manager:

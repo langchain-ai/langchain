@@ -77,7 +77,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
                 client_name=client_name,
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import cohere python package. "
                 "Please install it with `pip install cohere`."
             )

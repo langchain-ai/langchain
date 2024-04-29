@@ -6,6 +6,7 @@ EXPECTED_ALL = [
     "AmazonKnowledgeBasesRetriever",
     "ArceeRetriever",
     "ArxivRetriever",
+    "AzureAISearchRetriever",
     "AzureCognitiveSearchRetriever",
     "ChatGPTPluginRetriever",
     "ContextualCompressionRetriever",
