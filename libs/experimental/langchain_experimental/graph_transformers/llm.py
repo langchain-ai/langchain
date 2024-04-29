@@ -16,7 +16,10 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 
 examples = [
     {
-        "text": "Adam is a software engineer in Microsoft since 2009, and last year he got an award as the Best Talent",
+        "text": (
+            "Adam is a software engineer in Microsoft since 2009, "
+            "and last year he got an award as the Best Talent"
+        ),
         "head": "Adam",
         "head_type": "Person",
         "relation": "WORKS_FOR",
@@ -24,7 +27,10 @@ examples = [
         "tail_type": "Company",
     },
     {
-        "text": "Adam is a software engineer in Microsoft since 2009, and last year he got an award as the Best Talent",
+        "text": (
+            "Adam is a software engineer in Microsoft since 2009, "
+            "and last year he got an award as the Best Talent"
+        ),
         "head": "Adam",
         "head_type": "Person",
         "relation": "HAS_AWARD",
@@ -32,7 +38,10 @@ examples = [
         "tail_type": "Award",
     },
     {
-        "text": "Microsoft is a tech company that provide several products such as Microsoft Word",
+        "text": (
+            "Microsoft is a tech company that provide "
+            "several products such as Microsoft Word"
+        ),
         "head": "Microsoft Word",
         "head_type": "Product",
         "relation": "PRODUCED_BY",
@@ -150,14 +159,20 @@ class _Graph(BaseModel):
 
 class UnstructuredRelation(BaseModel):
     head: str = Field(
-        description="extracted head entity like Microsoft, Apple, John. Must use human-readable unique identifier."
+        description=(
+            "extracted head entity like Microsoft, Apple, John. "
+            "Must use human-readable unique identifier."
+        )
     )
     head_type: str = Field(
         description="type of the extracted head entity like Person, Company, etc"
     )
     relation: str = Field(description="relation between the head and the tail entities")
     tail: str = Field(
-        description="extracted tail entity like Microsoft, Apple, John. Must use human-readable unique identifier."
+        description=(
+            "extracted tail entity like Microsoft, Apple, John. "
+            "Must use human-readable unique identifier."
+        )
     )
     tail_type: str = Field(
         description="type of the extracted tail entity like Person, Company, etc"
@@ -167,21 +182,25 @@ class UnstructuredRelation(BaseModel):
 def create_unstructured_prompt(
     node_labels: Optional[List[str]] = None, rel_types: Optional[List[str]] = None
 ) -> ChatPromptTemplate:
-    system_prompt = f"""You are a top-tier algorithm designed for extracting information 
-in structured formats to build a knowledge graph. Your task is to identify the entities and 
-relations requested with the user prompt, from a given text. You must generate the output in 
-a JSON containing a list with JSON objects having the following keys: "head", "head_type", 
-"relation", "tail", and "tail_type". The "head" key must contain the text of the extracted 
-entity with one of the types from the provided list in the user prompt. The "head_type" key 
-must contain the type of the extracted head entity which must be one of the types from {node_labels}.
-The "relation" key must contain the type of relation between the "head" and the "tail" 
-which must be one of the relations from {rel_types}. The "tail" key must represent the text 
-of an extracted entity which is the tail of the relation, and the "tail_type" key must contain 
-the type of the tail entity from {node_labels}. Attempt to extract as many entities and relations
-as you can. Maintain Entity Consistency: When extracting entities, it's vital to ensure consistency.
-If an entity, such as "John Doe", is mentioned multiple times in the text but is referred to by 
-different names or pronouns (e.g., "Joe", "he"), always use the most complete identifier for that entity.
-The knowledge graph should be coherent and easily understandable, so maintaining consistency in 
+    system_prompt = f"""You are a top-tier algorithm designed for extracting 
+information in structured formats to build a knowledge graph. Your task is 
+to identify the entities and relations requested with the user prompt, from 
+a given text. You must generate the output in a JSON containing a list with 
+JSON objects having the following keys: "head", "head_type", "relation", 
+"tail", and "tail_type". The "head" key must contain the text of the extracted 
+entity with one of the types from the provided list in the user prompt. 
+The "head_type" key must contain the type of the extracted head entity which 
+must be one of the types from {node_labels}. The "relation" key must contain 
+the type of relation between the "head" and the "tail" which must be one of 
+the relations from {rel_types}. The "tail" key must represent the text of an 
+extracted entity which is the tail of the relation, and the "tail_type" key 
+must contain the type of the tail entity from {node_labels}. Attempt to 
+extract as many entities and relations as you can. Maintain Entity 
+Consistency: When extracting entities, it's vital to ensure consistency.
+If an entity, such as "John Doe", is mentioned multiple times in the text 
+but is referred to by different names or pronouns (e.g., "Joe", "he"), 
+always use the most complete identifier for that entity. The knowledge graph 
+should be coherent and easily understandable, so maintaining consistency in 
 entity references is crucial.
 
 IMPORTANT NOTES:
