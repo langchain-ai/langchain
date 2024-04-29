@@ -7,8 +7,17 @@ pytest.importorskip("libcst")
 from libcst.codemod import CodemodTest
 
 from langchain_cli.namespaces.migrate.codemods.replace_imports import (
-    ReplaceImportsCodemod,
+    generate_import_replacer,
 )
+
+ReplaceImportsCodemod = generate_import_replacer(
+    [
+        "langchain_to_community",
+        "community_to_partner",
+        "langchain_to_core",
+        "community_to_core",
+    ]
+)  # type: ignore[attr-defined] # noqa: E501
 
 
 class TestReplaceImportsCommand(CodemodTest):
