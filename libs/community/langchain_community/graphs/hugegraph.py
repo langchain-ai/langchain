@@ -28,7 +28,7 @@ class HugeGraph:
         try:
             from hugegraph.connection import PyHugeGraph
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Please install HugeGraph Python client first: "
                 "`pip3 install hugegraph-python`"
             )
