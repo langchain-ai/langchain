@@ -1995,14 +1995,17 @@ def _configure(
                 callback_manager.add_handler(tracer_v2, True)
             else:
                 try:
-                    handler = LangChainTracer(project_name=tracer_project)
+                    handler = LangChainTracer(
+                        project_name=tracer_project,
+                        client=run_tree.client if run_tree is not None else None,
+                    )
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
                     logger.warning(
                         "Unable to load requested LangChainTracer."
                         " To disable this warning,"
                         " unset the LANGCHAIN_TRACING_V2 environment variables.",
-                        e,
+                        f"{repr(e)}",
                     )
         if run_tree is not None:
             for handler in callback_manager.handlers:
