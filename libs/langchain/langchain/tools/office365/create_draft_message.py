@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "CreateDraftMessageSchema": "langchain_community.tools.office365.create_draft_message",
+    "CreateDraftMessageSchema": (
+        "langchain_community.tools.office365.create_draft_message"
+    ),
     "O365CreateDraftMessage": "langchain_community.tools",
 }
 

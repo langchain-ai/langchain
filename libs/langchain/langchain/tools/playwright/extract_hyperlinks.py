@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "ExtractHyperlinksToolInput": "langchain_community.tools.playwright.extract_hyperlinks",
+    "ExtractHyperlinksToolInput": (
+        "langchain_community.tools.playwright.extract_hyperlinks"
+    ),
     "ExtractHyperlinksTool": "langchain_community.tools",
 }
 
