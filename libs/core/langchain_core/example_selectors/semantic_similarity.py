@@ -73,10 +73,10 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
 
 
 class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
-    """Example selector that selects examples based on SemanticSimilarity."""
+    """Select examples based on semantic similarity."""
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
-        """Select which examples to use based on semantic similarity."""
+        """Select examples based on semantic similarity."""
         # Get the docs with the highest similarity.
         vectorstore_kwargs = self.vectorstore_kwargs or {}
         example_docs = self.vectorstore.similarity_search(
@@ -87,7 +87,7 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
         return self._documents_to_examples(example_docs)
 
     async def aselect_examples(self, input_variables: Dict[str, str]) -> List[dict]:
-        """Select which examples to use based on semantic similarity."""
+        """Asynchronously select examples based on semantic similarity."""
         # Get the docs with the highest similarity.
         vectorstore_kwargs = self.vectorstore_kwargs or {}
         example_docs = await self.vectorstore.asimilarity_search(
@@ -187,7 +187,7 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
 
 
 class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
-    """ExampleSelector that selects examples based on Max Marginal Relevance.
+    """Select examples based on Max Marginal Relevance.
 
     This was shown to improve performance in this paper:
     https://arxiv.org/pdf/2211.13892.pdf
@@ -197,6 +197,14 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
     """Number of examples to fetch to rerank."""
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        """Select examples based on Max Marginal Relevance.
+
+        Args:
+            input_variables: The input variables to use for search.
+
+        Returns:
+            The selected examples.
+        """
         example_docs = self.vectorstore.max_marginal_relevance_search(
             self._example_to_text(input_variables, self.input_keys),
             k=self.k,
@@ -205,6 +213,14 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         return self._documents_to_examples(example_docs)
 
     async def aselect_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        """Asynchronously select examples based on Max Marginal Relevance.
+
+        Args:
+            input_variables: The input variables to use for search.
+
+        Returns:
+            The selected examples.
+        """
         example_docs = await self.vectorstore.amax_marginal_relevance_search(
             self._example_to_text(input_variables, self.input_keys),
             k=self.k,
@@ -272,7 +288,8 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         vectorstore_kwargs: Optional[dict] = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
-        """Create k-shot example selector using example list and embeddings.
+        """Asynchronously create k-shot example selector using example list and
+        embeddings.
 
         Reshuffles examples dynamically based on Max Marginal Relevance.
 
