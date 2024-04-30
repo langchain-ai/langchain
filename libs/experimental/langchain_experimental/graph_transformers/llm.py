@@ -494,7 +494,6 @@ class LLMGraphTransformer:
                     "Could not import json_repair python package. "
                     "Please install it with `pip install json-repair`."
                 )
-            self._function_call = False
             prompt = prompt or create_unstructured_prompt(
                 allowed_nodes, allowed_relationships
             )
