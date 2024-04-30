@@ -25,13 +25,13 @@ def import_comet_llm_api() -> SimpleNamespace:
     """Import comet_llm api and raise an error if it is not installed."""
     try:
         from comet_llm import (
-            experiment_info,  # noqa: F401
-            flush,  # noqa: F401
+            experiment_info,
+            flush,
         )
-        from comet_llm.chains import api as chain_api  # noqa: F401
+        from comet_llm.chains import api as chain_api
         from comet_llm.chains import (
-            chain,  # noqa: F401
-            span,  # noqa: F401
+            chain,
+            span,
         )
 
     except ImportError:

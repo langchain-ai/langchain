@@ -74,7 +74,7 @@ class JsonSchemaEvaluator(StringEvaluator):
         return node
 
     def _validate(self, prediction: Any, schema: Any) -> dict:
-        from jsonschema import ValidationError, validate  # noqa: F401
+        from jsonschema import ValidationError, validate
 
         try:
             validate(instance=prediction, schema=schema)
