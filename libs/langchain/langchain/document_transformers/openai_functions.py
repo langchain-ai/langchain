@@ -13,7 +13,9 @@ if TYPE_CHECKING:
 # handling optional imports.
 DEPRECATED_LOOKUP = {
     "OpenAIMetadataTagger": "langchain_community.document_transformers",
-    "create_metadata_tagger": "langchain_community.document_transformers.openai_functions",
+    "create_metadata_tagger": (
+        "langchain_community.document_transformers.openai_functions"
+    ),
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

@@ -20,10 +20,16 @@ if TYPE_CHECKING:
 DEPRECATED_LOOKUP = {
     "EmbeddingsRedundantFilter": "langchain_community.document_transformers",
     "EmbeddingsClusteringFilter": "langchain_community.document_transformers",
-    "_DocumentWithState": "langchain_community.document_transformers.embeddings_redundant_filter",
+    "_DocumentWithState": (
+        "langchain_community.document_transformers.embeddings_redundant_filter"
+    ),
     "get_stateful_documents": "langchain_community.document_transformers",
-    "_get_embeddings_from_stateful_docs": "langchain_community.document_transformers.embeddings_redundant_filter",
-    "_filter_similar_embeddings": "langchain_community.document_transformers.embeddings_redundant_filter",
+    "_get_embeddings_from_stateful_docs": (
+        "langchain_community.document_transformers.embeddings_redundant_filter"
+    ),
+    "_filter_similar_embeddings": (
+        "langchain_community.document_transformers.embeddings_redundant_filter"
+    ),
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
