@@ -1,4 +1,5 @@
 """Hugging Face Chat Wrapper."""
+
 from dataclasses import dataclass
 from typing import (
     Any,
