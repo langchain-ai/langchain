@@ -7,7 +7,7 @@ import tempfile
 from abc import abstractmethod
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
 
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -108,7 +108,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
         """
         file_mime_types = self._fetch_mime_types
         items = folder.get_items()
-        metadata_dict = {}
+        metadata_dict: Dict[str, Dict[str, Any]] = {}
         with tempfile.TemporaryDirectory() as temp_dir:
             os.makedirs(os.path.dirname(temp_dir), exist_ok=True)
             for file in items:
