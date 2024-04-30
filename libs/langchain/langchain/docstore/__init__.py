@@ -14,13 +14,9 @@ The **Docstore** is a simplified version of the Document Loader.
 
     Document, AddableMixin
 """
-import warnings
 from typing import TYPE_CHECKING, Any
 
-from langchain_core._api import LangChainDeprecationWarning
-
 from langchain._api import create_importer
-from langchain.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from langchain_community.docstore.arbitrary_fn import DocstoreFn
