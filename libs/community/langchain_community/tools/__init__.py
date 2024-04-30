@@ -70,6 +70,11 @@ if TYPE_CHECKING:
     from langchain_community.tools.brave_search.tool import (
         BraveSearch,  # noqa: F401
     )
+    from langchain_community.tools.cassandra_database.tool import (
+        GetSchemaCassandraDatabaseTool,  # noqa: F401
+        GetTableDataCassandraDatabaseTool,  # noqa: F401
+        QueryCassandraDatabaseTool,  # noqa: F401
+    )
     from langchain_community.tools.cogniswitch.tool import (
         CogniswitchKnowledgeRequest,  # noqa: F401
         CogniswitchKnowledgeSourceFile,  # noqa: F401
@@ -156,6 +161,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.tools.metaphor_search import (
         MetaphorSearchResults,  # noqa: F401
+    )
+    from langchain_community.tools.mojeek_search.tool import (
+        MojeekSearch,  # noqa: F401
     )
     from langchain_community.tools.nasa.tool import (
         NasaAction,  # noqa: F401
@@ -385,6 +393,7 @@ __all__ = [
     "ListSparkSQLTool",
     "MerriamWebsterQueryRun",
     "MetaphorSearchResults",
+    "MojeekSearch",
     "MoveFileTool",
     "NasaAction",
     "NavigateBackTool",
@@ -528,6 +537,7 @@ _module_lookup = {
     "ListSparkSQLTool": "langchain_community.tools.spark_sql.tool",
     "MerriamWebsterQueryRun": "langchain_community.tools.merriam_webster.tool",
     "MetaphorSearchResults": "langchain_community.tools.metaphor_search",
+    "MojeekSearch": "langchain_community.tools.mojeek_search.tool",
     "MoveFileTool": "langchain_community.tools.file_management",
     "NasaAction": "langchain_community.tools.nasa.tool",
     "NavigateBackTool": "langchain_community.tools.playwright",

@@ -189,7 +189,7 @@ class SQLDatabase:
         try:
             from databricks import sql  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "databricks-sql-connector package not found, please install with"
                 " `pip install databricks-sql-connector`"
             )
@@ -267,7 +267,7 @@ class SQLDatabase:
             uri = make_cnosdb_langchain_uri(url, user, password, tenant, database)
             return cls.from_uri(database_uri=uri)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "cnos-connector package not found, please install with"
                 " `pip install cnos-connector`"
             )

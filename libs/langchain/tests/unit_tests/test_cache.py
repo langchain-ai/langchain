@@ -98,7 +98,7 @@ def test_old_sqlite_llm_caching() -> None:
         with Session(llm_cache.engine) as session, session.begin():
             for item in items:
                 session.merge(item)
-        assert llm(prompt) == cached_response
+        assert llm.invoke(prompt) == cached_response
 
 
 async def test_chat_model_caching() -> None:
@@ -114,7 +114,7 @@ async def test_chat_model_caching() -> None:
             llm_string=llm._get_llm_string(),
             return_val=[ChatGeneration(message=cached_message)],
         )
-        result = llm(prompt)
+        result = llm.invoke(prompt)
         assert isinstance(result, AIMessage)
         assert result.content == cached_response
 
@@ -147,8 +147,8 @@ async def test_chat_model_caching_params() -> None:
             llm_string=llm._get_llm_string(functions=[]),
             return_val=[ChatGeneration(message=cached_message)],
         )
-        result = llm(prompt, functions=[])
-        result_no_params = llm(prompt)
+        result = llm.invoke(prompt, functions=[])
+        result_no_params = llm.invoke(prompt)
         assert isinstance(result, AIMessage)
         assert result.content == cached_response
         assert isinstance(result_no_params, AIMessage)
@@ -186,7 +186,7 @@ async def test_llm_cache_clear() -> None:
             return_val=[Generation(text=cached_response)],
         )
         llm_cache.clear()
-        response = llm(prompt)
+        response = llm.invoke(prompt)
         assert response == expected_response
 
         # async test

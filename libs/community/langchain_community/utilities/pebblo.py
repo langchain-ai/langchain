@@ -6,6 +6,7 @@ import pathlib
 import platform
 from typing import Optional, Tuple
 
+from langchain_core.documents import Document
 from langchain_core.env import get_runtime_environment
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -59,6 +60,10 @@ LOADER_TYPE_MAPPING = {
 SUPPORTED_LOADERS = (*file_loader, *dir_loader, *in_memory)
 
 logger = logging.getLogger(__name__)
+
+
+class IndexedDocument(Document):
+    id: str
 
 
 class Runtime(BaseModel):
@@ -164,7 +169,9 @@ def get_full_path(path: str) -> str:
         or (path in ["unknown", "-", "in-memory"])
     ):
         return path
-    full_path = pathlib.Path(path).resolve()
+    full_path = pathlib.Path(path)
+    if full_path.exists():
+        full_path = full_path.resolve()
     return str(full_path)
 
 
@@ -185,7 +192,7 @@ def get_loader_type(loader: str) -> str:
 
 def get_loader_full_path(loader: BaseLoader) -> str:
     """Return an absolute source path of source of loader based on the
-    keys present in Document object from loader.
+    keys present in Document.
 
     Args:
         loader (BaseLoader): Langchain document loader, derived from Baseloader.

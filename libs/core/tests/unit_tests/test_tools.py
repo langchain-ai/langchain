@@ -1,6 +1,9 @@
 """Test the base tool implementation."""
 
+import asyncio
 import json
+import sys
+import textwrap
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -13,6 +16,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.runnables import ensure_config
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
@@ -36,7 +40,7 @@ def test_unnamed_decorator() -> None:
     assert isinstance(search_api, BaseTool)
     assert search_api.name == "search_api"
     assert not search_api.return_direct
-    assert search_api("test") == "API result"
+    assert search_api.invoke("test") == "API result"
 
 
 class _MockSchema(BaseModel):
@@ -330,7 +334,7 @@ def test_structured_tool_from_function_docstring() -> None:
 
     prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__.strip())
 
 
 def test_structured_tool_from_function_docstring_complex_args() -> None:
@@ -363,7 +367,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
 
     prefix = "foo(bar: int, baz: List[str]) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__).strip()
 
 
 def test_structured_tool_lambda_multi_args_schema() -> None:
@@ -559,7 +563,7 @@ def test_missing_docstring() -> None:
 def test_create_tool_positional_args() -> None:
     """Test that positional arguments are allowed."""
     test_tool = Tool("test_name", lambda x: x, "test_description")
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
     assert test_tool.is_single_input
@@ -569,7 +573,7 @@ def test_create_tool_keyword_args() -> None:
     """Test that keyword arguments are allowed."""
     test_tool = Tool(name="test_name", func=lambda x: x, description="test_description")
     assert test_tool.is_single_input
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
 
@@ -587,7 +591,7 @@ async def test_create_async_tool() -> None:
         coroutine=_test_func,
     )
     assert test_tool.is_single_input
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
     assert test_tool.coroutine is not None
@@ -698,7 +702,7 @@ def test_structured_tool_from_function() -> None:
 
     prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__.strip())
 
 
 def test_validation_error_handling_bool() -> None:
@@ -871,3 +875,34 @@ def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> No
     else:
         with pytest.raises(ValidationError):
             foo.invoke(inputs)  # type: ignore
+
+
+def test_tool_pass_context() -> None:
+    @tool
+    def foo(bar: str) -> str:
+        """The foo."""
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        assert bar == "baz"
+        return bar
+
+    assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="requires python3.11 or higher",
+)
+async def test_async_tool_pass_context() -> None:
+    @tool
+    async def foo(bar: str) -> str:
+        """The foo."""
+        await asyncio.sleep(0.0001)
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        assert bar == "baz"
+        return bar
+
+    assert (
+        await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+    )

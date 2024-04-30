@@ -17,11 +17,9 @@ the backbone of a retriever, but there are other types of retrievers as well.
     Document, Serializable, Callbacks,
     CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
 """
-import warnings
 from typing import Any
 
-from langchain_core._api import LangChainDeprecationWarning
-
+from langchain._api.module_import import create_importer
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.merger_retriever import MergerRetriever
@@ -35,24 +33,15 @@ from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
 from langchain.retrievers.web_research import WebResearchRetriever
-from langchain.utils.interactive_env import is_interactive_env
+
+import_lookup = create_importer(
+    __package__, fallback_module="langchain_community.retrievers"
+)
 
 
 def __getattr__(name: str) -> Any:
-    from langchain_community import retrievers
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing this retriever from langchain is deprecated. Importing it from "
-            "langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.retrievers import {name}`.\n\n"
-            "To install langchain-community run `pip install -U langchain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(retrievers, name)
+    """Import retrievers from langchain_community."""
+    return import_lookup(name)
 
 
 __all__ = [

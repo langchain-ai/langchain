@@ -58,6 +58,7 @@ EXPECTED_ALL = [
     "YouSearchAPIWrapper",
     "ZapierNLAWrapper",
     "MerriamWebsterAPIWrapper",
+    "MojeekSearchAPIWrapper",
 ]
 
 
