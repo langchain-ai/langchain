@@ -1,7 +1,7 @@
 """Loader that loads data from Sharepoint Document Library"""
 from __future__ import annotations
-
-from typing import Iterator, List, Optional, Sequence
+from pathlib import Path
+from typing import Iterator, Any, Optional, Sequence, List
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field
@@ -11,9 +11,12 @@ from langchain_community.document_loaders.base_o365 import (
     _FileType,
 )
 from langchain_community.document_loaders.parsers.registry import get_parser
+from langchain_core.document_loaders import BaseLoader
+import requests
+import json
 
 
-class SharePointLoader(O365BaseLoader):
+class SharePointLoader(O365BaseLoader, BaseLoader):
     """Load  from `SharePoint`."""
 
     document_library_id: str = Field(...)
@@ -24,7 +27,14 @@ class SharePointLoader(O365BaseLoader):
     """ The IDs of the objects to load data from."""
     folder_id: Optional[str] = None
     """ The ID of the folder to load data from."""
+    load_auth: bool = False
+    """Whether to load authorization identities."""
+    token_path: Path = Path.home() / ".credentials" / "o365_token.txt"
 
+    file_id: Optional[str] = None
+
+    site_id: Optional[str] = None
+    
     @property
     def _file_types(self) -> Sequence[_FileType]:
         """Return supported file types."""
@@ -52,7 +62,12 @@ class SharePointLoader(O365BaseLoader):
             if not isinstance(target_folder, Folder):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
-                yield from blob_parser.lazy_parse(blob)
+                for parsed_blob in blob_parser.lazy_parse(blob):
+                    # Our changes here!!
+                    auth_identities = self.authorized_identities(self.document_library_id, self.file_id)
+                    parsed_blob.metadata['authorized_identities'] = auth_identities
+                    yield parsed_blob
+                # yield from blob_parser.lazy_parse(blob)
         if self.folder_id:
             target_folder = drive.get_item(self.folder_id)
             if not isinstance(target_folder, Folder):
@@ -68,3 +83,39 @@ class SharePointLoader(O365BaseLoader):
                 raise ValueError("Unable to fetch root folder")
             for blob in self._load_from_folder(target_folder):
                 yield from blob_parser.lazy_parse(blob)
+
+    def authorized_identities(self, document_library_id, file_id):
+    
+        with open(self.token_path) as f:
+            s = f.read()
+            data = json.loads(s)
+        
+        access_token = data.get('access_token')
+
+        url = f"https://graph.microsoft.com/v1.0/sites/{self.site_id}/drives/{document_library_id}/items/{file_id}/permissions"
+
+        payload={}
+
+        headers = {
+            "Authorization": f"Bearer {access_token}"
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+        groups_list = response.json()
+
+        group_names = []
+        
+        for group_data in groups_list.get('value'):
+            if group_data.get('grantedToV2'):
+                if group_data.get('grantedToV2').get('siteGroup'):
+                    site_data = group_data.get('grantedToV2').get('siteGroup')
+                    # print(group_data)
+                    group_names.append(site_data.get('displayName'))
+                elif group_data.get('grantedToV2').get('group') or group_data.get('grantedToV2').get('user'):
+                    site_data = group_data.get('grantedToV2').get('group') or group_data.get('grantedToV2').get('user')
+                    # print(group_data)
+                    group_names.append(site_data.get('displayName'))
+                
+        return group_names
+    
+    
