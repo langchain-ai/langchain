@@ -227,7 +227,7 @@ class JinaChat(BaseChatModel):
             import openai
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
