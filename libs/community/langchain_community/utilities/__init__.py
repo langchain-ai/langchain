@@ -82,6 +82,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.metaphor_search import (
         MetaphorSearchAPIWrapper,  # noqa: F401
     )
+    from langchain_community.utilities.mojeek_search import (
+        MojeekSearchAPIWrapper,  # noqa: F401
+    )
     from langchain_community.utilities.nasa import (
         NasaAPIWrapper,  # noqa: F401
     )
@@ -189,6 +192,7 @@ __all__ = [
     "MaxComputeAPIWrapper",
     "MerriamWebsterAPIWrapper",
     "MetaphorSearchAPIWrapper",
+    "MojeekSearchAPIWrapper",
     "NVIDIARivaASR",
     "NVIDIARivaStream",
     "NVIDIARivaTTS",
@@ -249,6 +253,7 @@ _module_lookup = {
     "MaxComputeAPIWrapper": "langchain_community.utilities.max_compute",
     "MerriamWebsterAPIWrapper": "langchain_community.utilities.merriam_webster",
     "MetaphorSearchAPIWrapper": "langchain_community.utilities.metaphor_search",
+    "MojeekSearchAPIWrapper": "langchain_community.utilities.mojeek_search",
     "NVIDIARivaASR": "langchain_community.utilities.nvidia_riva",
     "NVIDIARivaStream": "langchain_community.utilities.nvidia_riva",
     "NVIDIARivaTTS": "langchain_community.utilities.nvidia_riva",

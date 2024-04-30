@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 yum -y update
 yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip -y
 

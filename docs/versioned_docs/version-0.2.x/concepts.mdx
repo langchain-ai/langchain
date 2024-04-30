@@ -46,10 +46,7 @@ All chains, agents, and retrieval strategies here are NOT specific to any one in
 Not currently in this repo, `langgraph` is an extension of `langchain` aimed at
 building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
-While `langchain` contains basic agent implementations, the agents you can construct with `langgraph` are more
-customizable and controllable, and it is therefor recommended that you go there for agents.
-
-At some point in the future, we will change `langchain` agents to be built on top of `langgraph`.
+LangGraph exposes high level interfaces for creating common types of agents, as well as a low-level API for constructing more contr
 
 ### [langserve](/docs/langserve)
 
@@ -527,116 +524,10 @@ tools = toolkit.get_tools()
 
 ### Agents
 
-:::note
+By themselves, language models can't take actions - they just output text.
+A big use case for LangChain is creating **agents**.
+Agents are systems that use an LLM as a reasoning enginer to determine which actions to take and what the inputs to those actions should be.
+The results of those actions can then be fed back into the agent and it determine whether more actions are needed, or whether it is okay to finish.
 
-The information here refers to a specific agent architecture.
-This is a high level agent architecture, and while it makes it easy to get started it can also be restrictive as you try to build more advanced agents.
-If you are interested in building more customizable, highly controllable agents, then please check out [LangGraph](https://github.com/langchain-ai/langgraph)
-
-:::
-
-Interfaces that allow a language model to choose an action to take at a given step.
-When run in a loop using an executor, they can autonomously solve abstract, multi-step problems.
-
-#### AgentAction
-
-This is a dataclass that represents the action an agent should take.
-It has a `tool` property (which is the name of the tool that should be invoked) and a `tool_input` property (the input to that tool)
-
-#### AgentFinish
-
-This represents the final result from an agent, when it is ready to return to the user.
-It contains a `return_values` key-value mapping, which contains the final agent output.
-Usually, this contains an `output` key containing a string that is the agent's response.
-
-#### Intermediate Steps
-
-These represent previous agent actions and corresponding outputs from this CURRENT agent run.
-These are important to pass to future iteration so the agent knows what work it has already done.
-This is typed as a `List[Tuple[AgentAction, Any]]`.
-Note that observation is currently left as type `Any` to be maximally flexible.
-In practice, this is often a string.
-
-#### Agent
-
-This is the chain responsible for deciding what step to take next.
-This is usually powered by a language model, a prompt, and an output parser.
-
-Different agents have different prompting styles for reasoning, different ways of encoding inputs, and different ways of parsing the output.
-You can also **easily build custom agents**, should you need further control.\
-
-#### Agent Types
-
-This categorizes all the available agents along a few dimensions.
-
-**Intended Model Type**
-
-Whether this agent is intended for Chat Models (takes in messages, outputs message) or LLMs (takes in string, outputs string). The main thing this affects is the prompting strategy used. You can use an agent with a different type of model than it is intended for, but it likely won't produce results of the same quality.
-
-**Supports Chat History**
-
-Whether or not these agent types support chat history. If it does, that means it can be used as a chatbot. If it does not, then that means it's more suited for single tasks. Supporting chat history generally requires better models, so earlier agent types aimed at worse models may not support it.
-
-**Supports Multi-Input Tools**
-
-Whether or not these agent types support tools with multiple inputs. If a tool only requires a single input, it is generally easier for an LLM to know how to invoke it. Therefore, several earlier agent types aimed at worse models may not support them.
-
-**Supports Parallel Function Calling**
-
-Having an LLM call multiple tools at the same time can greatly speed up agents whether there are tasks that are assisted by doing so. However, it is much more challenging for LLMs to do this, so some agent types do not support this.
-
-**Required Model Params**
-
-Whether this agent requires the model to support any additional parameters. Some agent types take advantage of things like OpenAI function calling, which require other model parameters. If none are required, then that means that everything is done via prompting
-
-**When to Use**
-
-Our commentary on when you should consider using this agent type.
-
-| Agent Type | Intended Model Type | Supports Chat History | Supports Multi-Input Tools | Supports Parallel Function Calling | Required Model Params | When to Use | API |
-|--------------------------------------------|---------------------|-----------------------|----------------------------|-------------------------------------|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------|
-| [Tool Calling](/docs/modules/agents/agent_types/tool_calling)             | Chat                | ✅                    | ✅                         | ✅                                   | `tools`              | If you are using a tool-calling model | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.tool_calling_agent.base.create_tool_calling_agent.html) |
-| [OpenAI Tools](./openai_tools)             | Chat                | ✅                    | ✅                         | ✅                                   | `tools`              | [Legacy] If you are using a recent OpenAI model (`1106` onwards). Generic Tool Calling agent recommended instead. | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.openai_tools.base.create_openai_tools_agent.html) |
-| [OpenAI Functions](./openai_functions_agent)| Chat                | ✅                    | ✅                         |                                     | `functions`          | [Legacy] If you are using an OpenAI model, or an open-source model that has been finetuned for function calling and exposes the same `functions` parameters as OpenAI. Generic Tool Calling agent recommended instead | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.openai_functions_agent.base.create_openai_functions_agent.html) |
-| [XML](./xml_agent)                         | LLM                 | ✅                    |                            |                                     |                      | If you are using Anthropic models, or other models good at XML | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.xml.base.create_xml_agent.html)                                                                                               |
-| [Structured Chat](./structured_chat)       | Chat                | ✅                    | ✅                         |                                     |                      | If you need to support tools with multiple inputs | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.structured_chat.base.create_structured_chat_agent.html) |
-| [JSON Chat](./json_agent)                  | Chat                | ✅                    |                            |                                     |                      | If you are using a model good at JSON | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.json_chat.base.create_json_chat_agent.html) |
-| [ReAct](./react)                           | LLM                 | ✅                    |                            |                                     |                      | If you are using a simple model | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.react.agent.create_react_agent.html) |
-| [Self Ask With Search](./self_ask_with_search)| LLM              |                       |                            |                                     |                      | If you are using a simple model and only have one search tool | [Ref](https://api.python.langchain.com/en/latest/agents/langchain.agents.self_ask_with_search.base.create_self_ask_with_search_agent.html) |
-
-#### Agent Inputs
-
-The inputs to an agent are a key-value mapping.
-There is only one required key: `intermediate_steps`, which corresponds to `Intermediate Steps` as described above.
-
-Generally, the PromptTemplate takes care of transforming these pairs into a format that can best be passed into the LLM.
-
-#### Agent Outputs
-
-The output is the next action(s) to take or the final response to send to the user (`AgentAction`s or `AgentFinish`).
-Concretely, this can be typed as `Union[AgentAction, List[AgentAction], AgentFinish]`.
-
-The output parser is responsible for taking the raw LLM output and transforming it into one of these three types.
-
-#### AgentExecutor
-
-The agent executor is the runtime for an agent.
-This is what actually calls the agent, executes the actions it chooses, passes the action outputs back to the agent, and repeats.
-In pseudocode, this looks roughly like:
-
-```python
-next_action = agent.get_action(...)
-while next_action != AgentFinish:
-    observation = run(next_action)
-    next_action = agent.get_action(..., next_action, observation)
-return next_action
-```
-
-While this may seem simple, there are several complexities this runtime handles for you, including:
-
-1. Handling cases where the agent selects a non-existent tool
-2. Handling cases where the tool errors
-3. Handling cases where the agent produces output that cannot be parsed into a tool invocation
-4. Logging and observability at all levels (agent decisions, tool calls) to stdout and/or to [LangSmith](/docs/langsmith).
-
-
+[LangGraph](https://github.com/langchain-ai/langgraph) is an extension of LangChain specifically aimed at creating highly controllable and customizable agents.
+Please check out that documentation for a more in depth overview of agent concepts.

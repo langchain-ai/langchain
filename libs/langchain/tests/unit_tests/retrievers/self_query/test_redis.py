@@ -13,14 +13,14 @@ from langchain_community.vectorstores.redis.schema import (
     TagFieldSchema,
     TextFieldSchema,
 )
-
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,
     Operator,
     StructuredQuery,
 )
+
 from langchain.retrievers.self_query.redis import RedisTranslator
 
 

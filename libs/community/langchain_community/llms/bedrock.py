@@ -424,7 +424,7 @@ class BedrockBase(BaseModel, ABC):
             values["client"] = session.client("bedrock-runtime", **client_params)
 
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
@@ -829,7 +829,7 @@ class Bedrock(LLM, BedrockBase):
         Example:
             .. code-block:: python
 
-                response = llm("Tell me a joke.")
+                response = llm.invoke("Tell me a joke.")
         """
 
         if self.streaming:

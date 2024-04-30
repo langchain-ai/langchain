@@ -11,6 +11,16 @@ if TYPE_CHECKING:
 async def wrapped_response_future(
     func: Callable[..., ResponseFuture], *args: Any, **kwargs: Any
 ) -> Any:
+    """Wrap a Cassandra response future in an asyncio future.
+
+    Args:
+        func: The Cassandra function to call.
+        *args: The arguments to pass to the Cassandra function.
+        **kwargs: The keyword arguments to pass to the Cassandra function.
+
+    Returns:
+        The result of the Cassandra function.
+    """
     loop = asyncio.get_event_loop()
     asyncio_future = loop.create_future()
     response_future = func(*args, **kwargs)
