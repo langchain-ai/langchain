@@ -58,7 +58,7 @@ class FileSystemBlobLoader(BlobLoader):
         glob: str = "**/[!.]*",
         exclude: Sequence[str] = (),
         suffixes: Optional[Sequence[str]] = None,
-        metadata_dict: Optional[dict[str, any]] = {},
+        metadata_dict: Optional[dict[str, dict[str, any]]] = {},
         show_progress: bool = False,
     ) -> None:
         """Initialize with a path to directory and how to glob over it.
