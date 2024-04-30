@@ -13,6 +13,7 @@ class PatchedMongoDBChatMessageHistory(MongoDBChatMessageHistory):
         self.database_name = "test-database"
         self.collection_name = "test-collection"
         self.collection = MockCollection()
+        self.history_size = None
 
 
 def test_memory_with_message_store() -> None:
