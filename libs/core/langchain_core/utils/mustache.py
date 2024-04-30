@@ -31,6 +31,8 @@ _LAST_TAG_LINE = None
 
 
 class ChevronError(SyntaxError):
+    """Custom exception for Chevron errors."""
+
     pass
 
 
@@ -40,7 +42,7 @@ class ChevronError(SyntaxError):
 
 
 def grab_literal(template: str, l_del: str) -> Tuple[str, str]:
-    """Parse a literal from the template"""
+    """Parse a literal from the template."""
 
     global _CURRENT_LINE
 
@@ -57,7 +59,7 @@ def grab_literal(template: str, l_del: str) -> Tuple[str, str]:
 
 
 def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
-    """Do a preliminary check to see if a tag could be a standalone"""
+    """Do a preliminary check to see if a tag could be a standalone."""
 
     # If there is a newline, or the previous tag was a standalone
     if literal.find("\n") != -1 or is_standalone:
@@ -75,7 +77,7 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
 
 
 def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
-    """Do a final checkto see if a tag could be a standalone"""
+    """Do a final check to see if a tag could be a standalone."""
 
     # Check right side if we might be a standalone
     if is_standalone and tag_type not in ["variable", "no escape"]:
@@ -93,7 +95,7 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
 
 
 def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], str]:
-    """Parse a tag from a template"""
+    """Parse a tag from a template."""
     global _CURRENT_LINE
     global _LAST_TAG_LINE
 
@@ -157,7 +159,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> Tuple[Tuple[str, str], s
 def tokenize(
     template: str, def_ldel: str = "{{", def_rdel: str = "}}"
 ) -> Iterator[Tuple[str, str]]:
-    """Tokenize a mustache template
+    """Tokenize a mustache template.
 
     Tokenizes a mustache template in a generator fashion,
     using file-like objects. It also accepts a string containing

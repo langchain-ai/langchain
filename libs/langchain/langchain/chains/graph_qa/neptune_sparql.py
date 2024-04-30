@@ -54,6 +54,14 @@ SPARQL_GENERATION_PROMPT = PromptTemplate(
 
 
 def extract_sparql(query: str) -> str:
+    """Extract SPARQL code from a text.
+
+    Args:
+        query: Text to extract SPARQL code from.
+
+    Returns:
+        SPARQL code extracted from the text.
+    """
     query = query.strip()
     querytoks = query.split("```")
     if len(querytoks) == 3:

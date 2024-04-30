@@ -913,7 +913,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
 
 class SimpleChatModel(BaseChatModel):
-    """A simplified implementation for a chat model to inherit from."""
+    """Simplified implementation for a chat model to inherit from."""
 
     def _generate(
         self,

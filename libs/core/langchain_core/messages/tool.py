@@ -149,7 +149,7 @@ def default_tool_parser(
                         name=function_name,
                         args=tool_call["function"]["arguments"],
                         id=tool_call.get("id"),
-                        error="Malformed args.",
+                        error=None,
                     )
                 )
     return tool_calls, invalid_tool_calls

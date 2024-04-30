@@ -45,6 +45,7 @@ class PebbloSafeLoader(BaseLoader):
         description: str = "",
         api_key: Optional[str] = None,
         load_semantic: bool = False,
+        classifier_url: Optional[str] = None,
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
@@ -63,6 +64,7 @@ class PebbloSafeLoader(BaseLoader):
         self.source_type = get_loader_type(loader_name)
         self.source_path_size = self.get_source_size(self.source_path)
         self.source_aggregate_size = 0
+        self.classifier_url = classifier_url or CLASSIFIER_URL
         self.loader_details = {
             "loader": loader_name,
             "source_path": self.source_path,
@@ -157,16 +159,19 @@ class PebbloSafeLoader(BaseLoader):
         doc_content = [doc.dict() for doc in loaded_docs]
         docs = []
         for doc in doc_content:
-            doc_authorized_identities = doc.get("metadata", {}).get(
-                "authorized_identities", []
-            )
+            doc_metadata = doc.get("metadata", {})
+            doc_authorized_identities = doc_metadata.get("authorized_identities", [])
             doc_source_path = get_full_path(
-                doc.get("metadata", {}).get("source", self.source_path)
+                doc_metadata.get(
+                    "full_path", doc_metadata.get("source", self.source_path)
+                )
             )
-            doc_source_owner = PebbloSafeLoader.get_file_owner_from_path(
-                doc_source_path
+            doc_source_owner = doc_metadata.get(
+                "owner", PebbloSafeLoader.get_file_owner_from_path(doc_source_path)
             )
-            doc_source_size = self.get_source_size(doc_source_path)
+            doc_source_size = doc_metadata.get(
+                "size", self.get_source_size(doc_source_path)
+            )
             page_content = str(doc.get("page_content"))
             page_content_size = self.calculate_content_size(page_content)
             self.source_aggregate_size += page_content_size
@@ -207,7 +212,7 @@ class PebbloSafeLoader(BaseLoader):
                     self.source_aggregate_size
                 )
         payload = Doc(**payload).dict(exclude_unset=True)
-        load_doc_url = f"{CLASSIFIER_URL}{LOADER_DOC_URL}"
+        load_doc_url = f"{self.classifier_url}{LOADER_DOC_URL}"
         classified_docs = []
         try:
             pebblo_resp = requests.post(
@@ -293,7 +298,7 @@ class PebbloSafeLoader(BaseLoader):
             "Content-Type": "application/json",
         }
         payload = self.app.dict(exclude_unset=True)
-        app_discover_url = f"{CLASSIFIER_URL}{APP_DISCOVER_URL}"
+        app_discover_url = f"{self.classifier_url}{APP_DISCOVER_URL}"
         try:
             pebblo_resp = requests.post(
                 app_discover_url, headers=headers, json=payload, timeout=20
