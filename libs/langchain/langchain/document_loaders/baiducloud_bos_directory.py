@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "BaiduBOSDirectoryLoader": "langchain_community.document_loaders.baiducloud_bos_directory"
+    "BaiduBOSDirectoryLoader": (
+        "langchain_community.document_loaders.baiducloud_bos_directory"
+    ),
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
