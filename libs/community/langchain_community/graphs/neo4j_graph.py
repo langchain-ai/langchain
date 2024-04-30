@@ -198,7 +198,7 @@ def _enhanced_schema_cypher(
                     f"min_size: `{prop_name}_size_min`, "
                     f"max_size: `{prop_name}_size_max`"
                 )
-            elif prop_type in ["BOOLEAN", "POINT"]:
+            elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                 continue
             output_dict[prop_name] = "{" + return_clauses.pop() + "}"
     else:
@@ -231,7 +231,7 @@ def _enhanced_schema_cypher(
                 return_clauses.append(
                     f"min_size: `{prop_name}_size_min`,max_size: `{prop_name}_size_max`"
                 )
-            elif prop_type in ["BOOLEAN", "POINT"]:
+            elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                 continue
 
             output_dict[prop_name] = "{" + return_clauses.pop() + "}"
