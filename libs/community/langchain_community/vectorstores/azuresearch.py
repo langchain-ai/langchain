@@ -377,7 +377,7 @@ class AzureSearch(VectorStore):
         else:
             raise Exception(response)
 
-    def delete(self, ids: List[str] = None, **kwargs: Any) -> bool:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> bool:
         """Delete by vector ID.
 
         Args:
