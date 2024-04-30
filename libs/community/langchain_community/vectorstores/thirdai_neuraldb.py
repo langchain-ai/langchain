@@ -47,7 +47,7 @@ class NeuralDBVectorStore(VectorStore):
 
             licensing.activate(thirdai_key or os.getenv("THIRDAI_KEY"))
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import thirdai python package and neuraldb dependencies. "
                 "Please install it with `pip install thirdai[neural_db]`."
             )
