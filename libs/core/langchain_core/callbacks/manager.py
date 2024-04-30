@@ -41,7 +41,6 @@ from langchain_core.callbacks.base import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
-from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
 
@@ -2007,7 +2006,7 @@ def _configure(
                     )
         if run_tree is not None:
             for handler in callback_manager.handlers:
-                if isinstance(handler, BaseTracer):
+                if isinstance(handler, LangChainTracer):
                     handler.run_map[str(run_tree.id)] = cast(Run, run_tree)
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
