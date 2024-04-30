@@ -38,6 +38,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         keep_separator: bool = False,
         add_start_index: bool = False,
         strip_whitespace: bool = True,
+        separator_kept_at_end: bool = False
     ) -> None:
         """Create a new TextSplitter.
 
@@ -61,6 +62,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
         self._strip_whitespace = strip_whitespace
+        self._separator_kept_at_end = separator_kept_at_end
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:

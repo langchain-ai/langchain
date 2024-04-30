@@ -23,23 +23,23 @@ class CharacterTextSplitter(TextSplitter):
         separator = (
             self._separator if self._is_separator_regex else re.escape(self._separator)
         )
-        splits = _split_text_with_regex(text, separator, self._keep_separator)
+        splits = _split_text_with_regex(text, separator, self._keep_separator, self._separator_kept_at_end)
         _separator = "" if self._keep_separator else self._separator
         return self._merge_splits(splits, _separator)
 
 
 def _split_text_with_regex(
-    text: str, separator: str, keep_separator: bool
+    text: str, separator: str, keep_separator: bool, separator_kept_at_end: bool
 ) -> List[str]:
     # Now that we have the separator, split the text
     if separator:
         if keep_separator:
             # The parentheses in the pattern keep the delimiters in the result.
             _splits = re.split(f"({separator})", text)
-            splits = [_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)]
+            splits = ( [_splits[i] + _splits[i + 1] for i in range(0, len(_splits)-1, 2)] ) if separator_kept_at_end else ( [_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)] )
             if len(_splits) % 2 == 0:
                 splits += _splits[-1:]
-            splits = [_splits[0]] + splits
+            splits = ( splits + [_splits[-1]] ) if separator_kept_at_end else  ( [_splits[0]] + splits )
         else:
             splits = re.split(separator, text)
     else:
