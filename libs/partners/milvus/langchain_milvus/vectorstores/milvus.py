@@ -1150,4 +1150,3 @@ class Milvus(VectorStore):
                 "Failed to upsert entities: %s error: %s", self.collection_name, exc
             )
             raise exc
-

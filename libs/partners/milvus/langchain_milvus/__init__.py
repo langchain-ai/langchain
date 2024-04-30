@@ -1,4 +1,12 @@
-from langchain_milvus.retrievers import ZillizCloudPipelineRetriever
+from langchain_milvus.retrievers import (
+    MilvusCollectionHybridSearchRetriever,
+    ZillizCloudPipelineRetriever,
+)
 from langchain_milvus.vectorstores import Milvus, Zilliz
 
-__all__ = ["Milvus", "Zilliz", "ZillizCloudPipelineRetriever"]
+__all__ = [
+    "Milvus",
+    "Zilliz",
+    "ZillizCloudPipelineRetriever",
+    "MilvusCollectionHybridSearchRetriever",
+]
