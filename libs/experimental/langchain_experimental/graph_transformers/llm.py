@@ -472,7 +472,7 @@ class LLMGraphTransformer:
         llm: BaseLanguageModel,
         allowed_nodes: List[str] = [],
         allowed_relationships: List[str] = [],
-        prompt: ChatPromptTemplate = default_prompt,
+        prompt: Optional[ChatPromptTemplate] = None,
         strict_mode: bool = True,
     ) -> None:
         self.allowed_nodes = allowed_nodes
@@ -495,18 +495,15 @@ class LLMGraphTransformer:
                     "Please install it with `pip install json-repair`."
                 )
             self._function_call = False
-            # Allow passing prompts from users
-            if not prompt == default_prompt:
-                unstructured_prompt = prompt
-            else:
-                unstructured_prompt = create_unstructured_prompt(
-                    allowed_nodes, allowed_relationships
-                )
-            self.chain = unstructured_prompt | llm
+            prompt = prompt or create_unstructured_prompt(
+                allowed_nodes, allowed_relationships
+            )
+            self.chain = prompt | llm
         else:
             # Define chain
             schema = create_simple_model(allowed_nodes, allowed_relationships)
             structured_llm = llm.with_structured_output(schema, include_raw=True)
+            prompt = prompt or default_prompt
             self.chain = prompt | structured_llm
 
     def process_response(self, document: Document) -> GraphDocument:
