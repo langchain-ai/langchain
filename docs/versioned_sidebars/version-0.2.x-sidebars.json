@@ -186,6 +186,17 @@
             },
             {
               "type": "category",
+              "label": "Text embeddings",
+              "collapsed": true,
+              "items": [
+                "how_to/embed_text"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
+            },
+            {
+              "type": "category",
               "label": "Vector Stores",
               "collapsed": true,
               "items": [
