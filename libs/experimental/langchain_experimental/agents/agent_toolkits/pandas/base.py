@@ -1,8 +1,13 @@
 """Agent for working with pandas objects."""
 import warnings
-from typing import Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union, cast
 
-from langchain.agents import AgentType, create_openai_tools_agent, create_react_agent
+from langchain.agents import (
+    AgentType,
+    create_openai_tools_agent,
+    create_react_agent,
+    create_tool_calling_agent,
+)
 from langchain.agents.agent import (
     AgentExecutor,
     BaseMultiActionAgent,
@@ -16,7 +21,7 @@ from langchain.agents.openai_functions_agent.base import (
     create_openai_functions_agent,
 )
 from langchain_core.callbacks import BaseCallbackManager
-from langchain_core.language_models import LanguageModelLike
+from langchain_core.language_models import BaseLanguageModel, LanguageModelLike
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import (
     BasePromptTemplate,
@@ -147,7 +152,7 @@ def create_pandas_dataframe_agent(
     llm: LanguageModelLike,
     df: Any,
     agent_type: Union[
-        AgentType, Literal["openai-tools"]
+        AgentType, Literal["openai-tools", "tool-calling"]
     ] = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: Optional[str] = None,
@@ -168,11 +173,13 @@ def create_pandas_dataframe_agent(
     """Construct a Pandas agent from an LLM and dataframe(s).
 
     Args:
-        llm: Language model to use for the agent.
+        llm: Language model to use for the agent. If agent_type is "tool-calling" then
+            llm is expected to support tool calling.
         df: Pandas dataframe or list of Pandas dataframes.
-        agent_type: One of "openai-tools", "openai-functions", or
+        agent_type: One of "tool-calling", "openai-tools", "openai-functions", or
             "zero-shot-react-description". Defaults to "zero-shot-react-description".
-            "openai-tools" is recommended over "openai-functions".
+            "tool-calling" is recommended over the legacy "openai-tools" and
+            "openai-functions" types.
         callback_manager: DEPRECATED. Pass "callbacks" key into 'agent_executor_kwargs'
             instead to pass constructor callbacks to AgentExecutor.
         prefix: Prompt prefix string.
@@ -209,7 +216,7 @@ def create_pandas_dataframe_agent(
             agent_executor = create_pandas_dataframe_agent(
                 llm,
                 df,
-                agent_type="openai-tools",
+                agent_type="tool-calling",
                 verbose=True
             )
 
@@ -268,7 +275,7 @@ def create_pandas_dataframe_agent(
             input_keys_arg=["input"],
             return_keys_arg=["output"],
         )
-    elif agent_type in (AgentType.OPENAI_FUNCTIONS, "openai-tools"):
+    elif agent_type in (AgentType.OPENAI_FUNCTIONS, "openai-tools", "tool-calling"):
         prompt = _get_functions_prompt(
             df,
             prefix=prefix,
@@ -277,21 +284,33 @@ def create_pandas_dataframe_agent(
             number_of_head_rows=number_of_head_rows,
         )
         if agent_type == AgentType.OPENAI_FUNCTIONS:
+            runnable = create_openai_functions_agent(
+                cast(BaseLanguageModel, llm), tools, prompt
+            )
             agent = RunnableAgent(
-                runnable=create_openai_functions_agent(llm, tools, prompt),  # type: ignore
+                runnable=runnable,
                 input_keys_arg=["input"],
                 return_keys_arg=["output"],
             )
         else:
+            if agent_type == "openai-tools":
+                runnable = create_openai_tools_agent(
+                    cast(BaseLanguageModel, llm), tools, prompt
+                )
+            else:
+                runnable = create_tool_calling_agent(
+                    cast(BaseLanguageModel, llm), tools, prompt
+                )
             agent = RunnableMultiActionAgent(
-                runnable=create_openai_tools_agent(llm, tools, prompt),  # type: ignore
+                runnable=runnable,
                 input_keys_arg=["input"],
                 return_keys_arg=["output"],
             )
     else:
         raise ValueError(
             f"Agent type {agent_type} not supported at the moment. Must be one of "
-            "'openai-tools', 'openai-functions', or 'zero-shot-react-description'."
+            "'tool-calling', 'openai-tools', 'openai-functions', or "
+            "'zero-shot-react-description'."
         )
     return AgentExecutor(
         agent=agent,

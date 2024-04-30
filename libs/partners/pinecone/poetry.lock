@@ -318,7 +318,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.36"
+version = "0.1.40"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -331,7 +331,6 @@ langsmith = "^0.1.0"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
-requests = "^2"
 tenacity = "^8.1.0"
 
 [package.extras]
@@ -359,13 +358,13 @@ tiktoken = ">=0.5.2,<1"
 
 [[package]]
 name = "langsmith"
-version = "0.1.37"
+version = "0.1.40"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.37-py3-none-any.whl", hash = "sha256:2ea0375eb76d95b1cd32f57fc27a5c9c529443fbe816c0c0671d7e25e432ea37"},
-    {file = "langsmith-0.1.37.tar.gz", hash = "sha256:d410491b6ff6e1f07aeb1d33fb19784f544eed5fb549b514c793ab19d8fb4b60"},
+    {file = "langsmith-0.1.40-py3-none-any.whl", hash = "sha256:aa47d0f5a1eabd5c05ac6ce2cd3e28ccfc554d366e856a27b7c3c17c443881cb"},
+    {file = "langsmith-0.1.40.tar.gz", hash = "sha256:50fdf313741cf94e978de06025fd180b56acf1d1a4549b0fd5453ef23d5461ef"},
 ]
 
 [package.dependencies]
@@ -473,13 +472,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.14.3"
+version = "1.16.2"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.14.3-py3-none-any.whl", hash = "sha256:7a465994a7ccf677a110c6cc2ef9d86229bad42c060b585b67049aa749f3b774"},
-    {file = "openai-1.14.3.tar.gz", hash = "sha256:37b514e9c0ff45383ec9b242abd0f7859b1080d4b54b61393ed341ecad1b8eb9"},
+    {file = "openai-1.16.2-py3-none-any.whl", hash = "sha256:46a435380921e42dae218d04d6dd0e89a30d7f3b9d8a778d5887f78003cf9354"},
+    {file = "openai-1.16.2.tar.gz", hash = "sha256:c93d5efe5b73b6cb72c4cd31823852d2e7c84a138c0af3cbe4a8eb32b1164ab2"},
 ]
 
 [package.dependencies]
@@ -1143,13 +1142,13 @@ telegram = ["requests"]
 
 [[package]]
 name = "typing-extensions"
-version = "4.10.0"
+version = "4.11.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "typing_extensions-4.10.0-py3-none-any.whl", hash = "sha256:69b1a937c3a517342112fb4c6df7e72fc39a38e7891a5730ed4985b5214b5475"},
-    {file = "typing_extensions-4.10.0.tar.gz", hash = "sha256:b0abd7c89e8fb96f98db18d86106ff1d90ab692004eb746cf6eda2682f91b3cb"},
+    {file = "typing_extensions-4.11.0-py3-none-any.whl", hash = "sha256:c1f94d72897edaf4ce775bb7558d5b79d8126906a14ea5ed1635921406c0387a"},
+    {file = "typing_extensions-4.11.0.tar.gz", hash = "sha256:83f085bd5ca59c80295fc2a82ab5dac679cbe02b9f33f7d83af68e241bea51b0"},
 ]
 
 [[package]]
@@ -1213,4 +1212,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.13"
-content-hash = "246a6e9d027f1da73e99796ea6ef17c61f045bc2ec4047ffa69befa35961909b"
+content-hash = "5883baa98e7752a5fccf216bf1a6359b70d3677e63648fbeb2e159f64925515f"

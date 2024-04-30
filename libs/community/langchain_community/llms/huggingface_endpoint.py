@@ -43,7 +43,7 @@ class HuggingFaceEndpoint(LLM):
                 repetition_penalty=1.03,
                 huggingfacehub_api_token="my-api-key"
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))
 
             # Streaming response example
             from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -61,7 +61,7 @@ class HuggingFaceEndpoint(LLM):
                 streaming=True,
                 huggingfacehub_api_token="my-api-key"
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))
 
     """  # noqa: E501
 
@@ -258,7 +258,10 @@ class HuggingFaceEndpoint(LLM):
                 stream=False,
                 task=self.task,
             )
-            response_text = json.loads(response.decode())[0]["generated_text"]
+            try:
+                response_text = json.loads(response.decode())[0]["generated_text"]
+            except KeyError:
+                response_text = json.loads(response.decode())["generated_text"]
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then we remove this stop sequence from the end of the generated text
@@ -289,7 +292,10 @@ class HuggingFaceEndpoint(LLM):
                 stream=False,
                 task=self.task,
             )
-            response_text = json.loads(response.decode())[0]["generated_text"]
+            try:
+                response_text = json.loads(response.decode())[0]["generated_text"]
+            except KeyError:
+                response_text = json.loads(response.decode())["generated_text"]
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then remove this stop sequence from the end of the generated text
@@ -326,9 +332,10 @@ class HuggingFaceEndpoint(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
+
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
             # break if stop sequence found
             if stop_seq_found:
@@ -361,9 +368,10 @@ class HuggingFaceEndpoint(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
+
                 if run_manager:
                     await run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
             # break if stop sequence found
             if stop_seq_found:

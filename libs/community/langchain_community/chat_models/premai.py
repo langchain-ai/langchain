@@ -159,7 +159,7 @@ def _messages_to_prompt_dict(
 
 
 class ChatPremAI(BaseChatModel, BaseModel):
-    """Use any LLM provider with Prem and Langchain.
+    """PremAI Chat models.
 
     To use, you will need to have an API key. You can find your existing API Key
     or generate a new one here: https://app.premai.io/api_keys/
@@ -357,6 +357,7 @@ def create_prem_retry_decorator(
     max_retries: int = 1,
     run_manager: Optional[Union[CallbackManagerForLLMRun]] = None,
 ) -> Callable[[Any], Any]:
+    """Create a retry decorator for PremAI API errors."""
     import premai.models
 
     errors = [

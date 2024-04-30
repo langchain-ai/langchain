@@ -72,7 +72,7 @@ in this walkthrough, but everything shown here works with any
 We’ll use the following packages:
 
 ```python
-%pip install --upgrade --quiet  langchain langchain-community langchainhub langchain-openai chromadb bs4
+%pip install --upgrade --quiet  langchain langchain-community langchainhub langchain-openai langchain-chroma bs4
 ```
 
 We need to set environment variable `OPENAI_API_KEY` for the embeddings model, which can be done
@@ -120,7 +120,7 @@ lines of code:
 import bs4
 from langchain import hub
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import OpenAIEmbeddings
@@ -350,7 +350,7 @@ vector store and
 model.
 
 ```python
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 
 vectorstore = Chroma.from_documents(documents=all_splits, embedding=OpenAIEmbeddings())

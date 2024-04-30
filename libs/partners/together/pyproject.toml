@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-together"
-version = "0.0.2.post2"
+version = "0.1.0"
 description = "An integration package connecting Together and LangChain"
 authors = []
 readme = "README.md"
