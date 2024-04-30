@@ -58,7 +58,7 @@ class FileSystemBlobLoader(BlobLoader):
         glob: str = "**/[!.]*",
         exclude: Sequence[str] = (),
         suffixes: Optional[Sequence[str]] = None,
-        metadata_dict: Optional[dict[str, dict[str, Any]]] = {},
+        metadata_dict: Optional[dict[str, dict[str, Any]]] = None,
         show_progress: bool = False,
     ) -> None:
         """Initialize with a path to directory and how to glob over it.
@@ -119,7 +119,7 @@ class FileSystemBlobLoader(BlobLoader):
         self.suffixes = set(suffixes or [])
         self.show_progress = show_progress
         self.exclude = exclude
-        self.metadata_dict = metadata_dict
+        self.metadata_dict = metadata_dict or {}
 
     def yield_blobs(
         self,
