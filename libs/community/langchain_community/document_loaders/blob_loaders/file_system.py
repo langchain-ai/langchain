@@ -1,7 +1,7 @@
 """Use to load blobs from the local file system."""
 
 from pathlib import Path
-from typing import Any, Callable, Iterable, Iterator, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Sequence, TypeVar, Union
 
 from langchain_community.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
@@ -58,7 +58,7 @@ class FileSystemBlobLoader(BlobLoader):
         glob: str = "**/[!.]*",
         exclude: Sequence[str] = (),
         suffixes: Optional[Sequence[str]] = None,
-        metadata_dict: Optional[dict[str, dict[str, Any]]] = None,
+        metadata_dict: Optional[Dict[str, Dict[str, Any]]] = None,
         show_progress: bool = False,
     ) -> None:
         """Initialize with a path to directory and how to glob over it.
