@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Type
 
-from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.vectorstores.inmemory import InMemoryVectorStore
+from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
