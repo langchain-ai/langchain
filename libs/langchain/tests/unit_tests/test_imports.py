@@ -20,15 +20,7 @@ def test_import_all() -> None:
 
         mod = importlib.import_module(module_name)
 
-        try:
-            all = getattr(mod, "__all__", [])
-        except BaseException:
-            if module_name in {
-                "langchain.chains.llm_symbolic_math",
-                "langchain.chains.llm_bash",
-            }:
-                continue
-            raise
+        all = getattr(mod, "__all__", [])
 
         for name in all:
             # Attempt to import the name from the module
