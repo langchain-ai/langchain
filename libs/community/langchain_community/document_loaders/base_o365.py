@@ -116,7 +116,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
                     if file.mime_type in list(file_mime_types.values()):
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
                         metadata_dict[file.name] = {}
-                        metadata_dict[file.name]["web_url"] = file.web_url
+                        metadata_dict[file.name]["source"] = file.web_url
                         metadata_dict[file.name]["mime_type"] = file.mime_type
             loader = FileSystemBlobLoader(path=temp_dir, metadata_dict=metadata_dict)
             yield from loader.yield_blobs()
