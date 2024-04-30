@@ -17,8 +17,8 @@ import traceback
 from typing import Any, Dict, List, Optional
 
 import oracledb
-from langchain_core.pydantic_v1 import BaseModel, Extra
 from langchain_core.embeddings import Embeddings
+from langchain_core.pydantic_v1 import BaseModel, Extra
 from oracledb import Connection
 
 logger = logging.getLogger(__name__)
