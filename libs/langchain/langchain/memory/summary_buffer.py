@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.pydantic_v1 import root_validator
@@ -15,7 +15,22 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     memory_key: str = "history"
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> Union[str, List[BaseMessage]]:
+        """String buffer of memory."""
+        return self.buffer_as_messages if self.return_messages else self.buffer_as_str
+
+    @property
+    def buffer_as_str(self) -> str:
+        """Exposes the buffer as a string."""
+        return get_buffer_string(
+            self.chat_memory.messages,
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+    @property
+    def buffer_as_messages(self) -> List[BaseMessage]:
+        """Exposes the buffer as a list of messages."""
         return self.chat_memory.messages
 
     @property
