@@ -85,7 +85,7 @@ _module_lookup = {
     "TransformChain": "langchain.chains.transform",
 }
 
-importer = create_importer(__file__, module_lookup=_module_lookup)
+importer = create_importer(__package__, module_lookup=_module_lookup)
 
 
 def __getattr__(name: str) -> Any:

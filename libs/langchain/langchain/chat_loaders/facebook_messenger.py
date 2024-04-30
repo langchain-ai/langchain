@@ -20,7 +20,7 @@ module_lookup = {
 # Temporary code for backwards compatibility for deprecated imports.
 # This will eventually be removed.
 import_lookup = create_importer(
-    __file__,
+    __package__,
     deprecated_lookups=module_lookup,
 )
 

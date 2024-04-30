@@ -53,8 +53,6 @@ def create_importer(
     Returns:
         A function that imports objects from the specified modules.
     """
-    current_module = package
-
     all_module_lookup = {**(deprecated_lookups or {}), **(module_lookup or {})}
 
     def import_by_name(name: str) -> Any:
@@ -87,7 +85,7 @@ def create_importer(
                     and name in deprecated_lookups
                 ):
                     warnings.warn(
-                        f"Importing {name} from {current_module} is deprecated. "
+                        f"Importing {name} from {package} is deprecated. "
                         "Please replace the import with the following:\n"
                         f"from {new_module} import {name}",
                         category=LangChainDeprecationWarning,
@@ -104,7 +102,7 @@ def create_importer(
                 result = getattr(module, name)
                 if not is_interactive_env():
                     warnings.warn(
-                        f"Importing {name} from {current_module} is deprecated. "
+                        f"Importing {name} from {package} is deprecated. "
                         "Please replace the import with the following:\n"
                         f"from {fallback_module} import {name}",
                         category=LangChainDeprecationWarning,
@@ -116,6 +114,6 @@ def create_importer(
                     f"module {fallback_module} has no attribute {name}"
                 ) from e
 
-        raise AttributeError(f"module {current_module} has no attribute {name}")
+        raise AttributeError(f"module {package} has no attribute {name}")
 
     return import_by_name
