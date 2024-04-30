@@ -1,10 +1,11 @@
 """Test Cassandra caches. Requires a running vector-capable Cassandra cluster."""
-
+import asyncio
 import os
 import time
 from typing import Any, Iterator, Tuple
 
 import pytest
+from langchain_community.utilities.cassandra import SetupMode
 from langchain_core.outputs import Generation, LLMResult
 
 from langchain.cache import CassandraCache, CassandraSemanticCache
@@ -47,14 +48,32 @@ def test_cassandra_cache(cassandra_connection: Tuple[Any, str]) -> None:
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo"])
-    print(output)  # noqa: T201
     expected_output = LLMResult(
         generations=[[Generation(text="fizz")]],
         llm_output={},
     )
-    print(expected_output)  # noqa: T201
     assert output == expected_output
     cache.clear()
+
+
+async def test_cassandra_cache_async(cassandra_connection: Tuple[Any, str]) -> None:
+    session, keyspace = cassandra_connection
+    cache = CassandraCache(
+        session=session, keyspace=keyspace, setup_mode=SetupMode.ASYNC
+    )
+    set_llm_cache(cache)
+    llm = FakeLLM()
+    params = llm.dict()
+    params["stop"] = None
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    await get_llm_cache().aupdate("foo", llm_string, [Generation(text="fizz")])
+    output = await llm.agenerate(["foo"])
+    expected_output = LLMResult(
+        generations=[[Generation(text="fizz")]],
+        llm_output={},
+    )
+    assert output == expected_output
+    await cache.aclear()
 
 
 def test_cassandra_cache_ttl(cassandra_connection: Tuple[Any, str]) -> None:
@@ -77,6 +96,30 @@ def test_cassandra_cache_ttl(cassandra_connection: Tuple[Any, str]) -> None:
     output = llm.generate(["foo"])
     assert output != expected_output
     cache.clear()
+
+
+async def test_cassandra_cache_ttl_async(cassandra_connection: Tuple[Any, str]) -> None:
+    session, keyspace = cassandra_connection
+    cache = CassandraCache(
+        session=session, keyspace=keyspace, ttl_seconds=2, setup_mode=SetupMode.ASYNC
+    )
+    set_llm_cache(cache)
+    llm = FakeLLM()
+    params = llm.dict()
+    params["stop"] = None
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    await get_llm_cache().aupdate("foo", llm_string, [Generation(text="fizz")])
+    expected_output = LLMResult(
+        generations=[[Generation(text="fizz")]],
+        llm_output={},
+    )
+    output = await llm.agenerate(["foo"])
+    assert output == expected_output
+    await asyncio.sleep(2.5)
+    # entry has expired away.
+    output = await llm.agenerate(["foo"])
+    assert output != expected_output
+    await cache.aclear()
 
 
 def test_cassandra_semantic_cache(cassandra_connection: Tuple[Any, str]) -> None:
@@ -103,3 +146,32 @@ def test_cassandra_semantic_cache(cassandra_connection: Tuple[Any, str]) -> None
     output = llm.generate(["bar"])  # 'fizz' is erased away now
     assert output != expected_output
     sem_cache.clear()
+
+
+async def test_cassandra_semantic_cache_async(
+    cassandra_connection: Tuple[Any, str],
+) -> None:
+    session, keyspace = cassandra_connection
+    sem_cache = CassandraSemanticCache(
+        session=session,
+        keyspace=keyspace,
+        embedding=FakeEmbeddings(),
+        setup_mode=SetupMode.ASYNC,
+    )
+    set_llm_cache(sem_cache)
+    llm = FakeLLM()
+    params = llm.dict()
+    params["stop"] = None
+    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    await get_llm_cache().aupdate("foo", llm_string, [Generation(text="fizz")])
+    output = await llm.agenerate(["bar"])  # same embedding as 'foo'
+    expected_output = LLMResult(
+        generations=[[Generation(text="fizz")]],
+        llm_output={},
+    )
+    assert output == expected_output
+    # clear the cache
+    await sem_cache.aclear()
+    output = await llm.agenerate(["bar"])  # 'fizz' is erased away now
+    assert output != expected_output
+    await sem_cache.aclear()
