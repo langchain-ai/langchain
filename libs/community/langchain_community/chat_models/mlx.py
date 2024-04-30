@@ -27,8 +27,7 @@ DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."
 
 
 class ChatMLX(BaseChatModel):
-    """
-    Wrapper for using MLX LLM's as ChatModels.
+    """MLX chat models.
 
     Works with `MLXPipeline` LLM.
 
