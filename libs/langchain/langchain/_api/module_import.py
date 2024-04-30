@@ -1,6 +1,4 @@
 import importlib
-import os
-import pathlib
 import warnings
 from typing import Any, Callable, Dict, Optional
 
@@ -15,27 +13,11 @@ ALLOWED_TOP_LEVEL_PKGS = {
 }
 
 
-HERE = pathlib.Path(__file__).parent
-ROOT = HERE.parent.parent
-
-
-def _get_current_module(path: str) -> str:
-    """Convert a path to a module name."""
-    path_as_pathlib = pathlib.Path(os.path.abspath(path))
-    relative_path = path_as_pathlib.relative_to(ROOT).with_suffix("")
-    posix_path = relative_path.as_posix()
-    norm_path = os.path.normpath(str(posix_path))
-    fully_qualified_module = norm_path.replace("/", ".")
-    # Strip off __init__ if present
-    if fully_qualified_module.endswith(".__init__"):
-        return fully_qualified_module[:-9]
-    return fully_qualified_module
-
-
 def create_importer(
-    here: str,
+    package: str,
     *,
     module_lookup: Optional[Dict[str, str]] = None,
+    deprecated_lookups: Optional[Dict[str, str]] = None,
     fallback_module: Optional[str] = None,
 ) -> Callable[[str], Any]:
     """Create a function that helps retrieve objects from their new locations.
@@ -43,8 +25,11 @@ def create_importer(
     The goal of this function is to help users transition from deprecated
     imports to new imports.
 
-    This function will raise warnings when the old imports are used and
-    suggest the new imports.
+    The function will raise deprecation warning on loops using
+    deprecated_lookups or fallback_module.
+
+    Module lookups will import without deprecation warnings (used to speed
+    up imports from large namespaces like llms or chat models).
 
     This function should ideally only be used with deprecated imports not with
     existing imports that are valid, as in addition to raising deprecation warnings
@@ -52,7 +37,7 @@ def create_importer(
     loss of type information, IDE support for going to definition etc).
 
     Args:
-        here: path of the current file. Use __file__
+        package: current package. Use __package__
         module_lookup: maps name of object to the module where it is defined.
             e.g.,
             {
@@ -60,19 +45,21 @@ def create_importer(
                     "langchain_community.document_loaders.my_document_loader"
                 )
             }
+        deprecated_lookups: same as module look up, but will raise
+            deprecation warnings.
         fallback_module: module to import from if the object is not found in
             module_lookup or if module_lookup is not provided.
 
     Returns:
         A function that imports objects from the specified modules.
     """
-    current_module = _get_current_module(here)
+    all_module_lookup = {**(deprecated_lookups or {}), **(module_lookup or {})}
 
     def import_by_name(name: str) -> Any:
         """Import stores from langchain_community."""
         # If not in interactive env, raise warning.
-        if module_lookup and name in module_lookup:
-            new_module = module_lookup[name]
+        if all_module_lookup and name in all_module_lookup:
+            new_module = all_module_lookup[name]
             if new_module.split(".")[0] not in ALLOWED_TOP_LEVEL_PKGS:
                 raise AssertionError(
                     f"Importing from {new_module} is not allowed. "
@@ -92,9 +79,13 @@ def create_importer(
 
             try:
                 result = getattr(module, name)
-                if not is_interactive_env():
+                if (
+                    not is_interactive_env()
+                    and deprecated_lookups
+                    and name in deprecated_lookups
+                ):
                     warnings.warn(
-                        f"Importing {name} from {current_module} is deprecated. "
+                        f"Importing {name} from {package} is deprecated. "
                         "Please replace the import with the following:\n"
                         f"from {new_module} import {name}",
                         category=LangChainDeprecationWarning,
@@ -111,7 +102,7 @@ def create_importer(
                 result = getattr(module, name)
                 if not is_interactive_env():
                     warnings.warn(
-                        f"Importing {name} from {current_module} is deprecated. "
+                        f"Importing {name} from {package} is deprecated. "
                         "Please replace the import with the following:\n"
                         f"from {fallback_module} import {name}",
                         category=LangChainDeprecationWarning,
@@ -123,6 +114,6 @@ def create_importer(
                     f"module {fallback_module} has no attribute {name}"
                 ) from e
 
-        raise AttributeError(f"module {current_module} has no attribute {name}")
+        raise AttributeError(f"module {package} has no attribute {name}")
 
     return import_by_name
