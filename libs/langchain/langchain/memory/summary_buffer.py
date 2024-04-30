@@ -17,21 +17,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     @property
     def buffer(self) -> Union[str, List[BaseMessage]]:
         """String buffer of memory."""
-        return self.buffer_as_messages if self.return_messages else self.buffer_as_str
-
-    @property
-    def buffer_as_str(self) -> str:
-        """Exposes the buffer as a string."""
-        return get_buffer_string(
-            self.chat_memory.messages,
-            human_prefix=self.human_prefix,
-            ai_prefix=self.ai_prefix,
-        )
-
-    @property
-    def buffer_as_messages(self) -> List[BaseMessage]:
-        """Exposes the buffer as a list of messages."""
-        return self.chat_memory.messages
+        return self.load_memory_variables({})[self.memory_key]
 
     @property
     def memory_variables(self) -> List[str]:
@@ -43,7 +29,7 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Return history buffer."""
-        buffer = self.buffer
+        buffer = self.chat_memory.messages
         if self.moving_summary_buffer != "":
             first_messages: List[BaseMessage] = [
                 self.summary_message_cls(content=self.moving_summary_buffer)
