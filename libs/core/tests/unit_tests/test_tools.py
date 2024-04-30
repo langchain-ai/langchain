@@ -3,6 +3,7 @@
 import asyncio
 import json
 import sys
+import textwrap
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -333,7 +334,7 @@ def test_structured_tool_from_function_docstring() -> None:
 
     prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__.strip())
 
 
 def test_structured_tool_from_function_docstring_complex_args() -> None:
@@ -366,7 +367,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
 
     prefix = "foo(bar: int, baz: List[str]) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__).strip()
 
 
 def test_structured_tool_lambda_multi_args_schema() -> None:
@@ -701,7 +702,7 @@ def test_structured_tool_from_function() -> None:
 
     prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__.strip())
 
 
 def test_validation_error_handling_bool() -> None:
