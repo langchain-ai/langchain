@@ -72,10 +72,11 @@ def test_tracer_with_run_tree_parent() -> None:
         {"name": "child"}, {"input": "bar"}, run_id=run_id, parent_run_id=parent.id
     )
     tracer.on_chain_end({}, run_id=run_id)
-    assert tracer.latest_run
-    assert tracer.latest_run.id == run_id
-    assert tracer.latest_run.trace_id == parent.id
-    assert tracer.latest_run.parent_run_id == parent.id
+    assert parent.child_runs
+    assert len(parent.child_runs) == 1
+    assert parent.child_runs[0].id == run_id
+    assert parent.child_runs[0].trace_id == parent.id
+    assert parent.child_runs[0].parent_run_id == parent.id
 
 
 def test_log_lock() -> None:

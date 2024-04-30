@@ -7,6 +7,7 @@ from typing import Any, List
 from unittest.mock import MagicMock
 from uuid import uuid4
 
+import langsmith
 import pytest
 from freezegun import freeze_time
 from langsmith import Client, traceable
@@ -655,9 +656,9 @@ def test_traceable_to_tracing() -> None:
         return foo.invoke(a) + foo.invoke(b)
 
     mock_client_ = _get_mock_client()
-
-    result = some_parent(
-        1, 2, langsmith_extra={"client": mock_client_, "on_end": _collect_run}
-    )
+    with langsmith.run_helpers.tracing_context(enabled=True):
+        result = some_parent(
+            1, 2, langsmith_extra={"client": mock_client_, "on_end": _collect_run}
+        )
     assert result == 5
     assert has_children, "Child run not collected"
