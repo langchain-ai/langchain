@@ -63,7 +63,7 @@ class SVEndpointHandler:
         try:
             import sseclient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "could not import sseclient library"
                 "Please install it with `pip install sseclient-py`."
             )
@@ -505,7 +505,7 @@ class SSEndpointHandler:
         try:
             import sseclient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "could not import sseclient library"
                 "Please install it with `pip install sseclient-py`."
             )

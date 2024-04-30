@@ -6,22 +6,24 @@ from langchain_core.pydantic_v1 import BaseModel
 
 
 class TakeoffEmbeddingException(Exception):
-    """Exceptions experienced with interfacing with Takeoff Embedding Wrapper"""
+    """Custom exception for interfacing with Takeoff Embedding class."""
 
 
 class MissingConsumerGroup(TakeoffEmbeddingException):
     """Exception raised when no consumer group is provided on initialization of
-    TitanTakeoffEmbed or in embed request"""
+    TitanTakeoffEmbed or in embed request."""
 
 
 class Device(str, Enum):
-    """The device to use for inference, cuda or cpu"""
+    """Device to use for inference, cuda or cpu."""
 
     cuda = "cuda"
     cpu = "cpu"
 
 
 class ReaderConfig(BaseModel):
+    """Configuration for the reader to be deployed in Takeoff."""
+
     class Config:
         protected_namespaces = ()
 
@@ -36,10 +38,9 @@ class ReaderConfig(BaseModel):
 
 
 class TitanTakeoffEmbed(Embeddings):
-    """Titan Takeoff Embed is a wrapper to interface with Takeoff Inference API
-    for embedding models
+    """Interface with Takeoff Inference API for embedding models.
 
-    You can use this wrapper to send embedding requests and to deploy embedding
+    Use it to send embedding requests and to deploy embedding
     readers with Takeoff.
 
     Examples:
