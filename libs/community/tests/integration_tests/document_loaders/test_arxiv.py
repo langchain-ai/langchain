@@ -84,7 +84,10 @@ def test_skip_http_error() -> None:
         mock_download_pdf.side_effect = first_download_fails
         # Load documents
         loader = ArxivLoader(
-            query="ChatGPT", load_max_docs=2, load_all_available_meta=True
+            query="ChatGPT",
+            load_max_docs=2,
+            load_all_available_meta=True,
+            continue_on_failure=True,
         )
         docs = loader.load()
         # Only 1 of 2 documents should be loaded

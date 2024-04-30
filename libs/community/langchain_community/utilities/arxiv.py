@@ -3,7 +3,6 @@ import logging
 import os
 import re
 from typing import Any, Dict, Iterator, List, Optional
-from urllib.error import HTTPError
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -28,6 +27,7 @@ class ArxivAPIWrapper(BaseModel):
     Attributes:
         top_k_results: number of the top-scored document used for the arxiv tool
         ARXIV_MAX_QUERY_LENGTH: the cut limit on the query used for the arxiv tool.
+        continue_on_failure (bool): If True, continue loading other URLs on failure.
         load_max_docs: a limit to the number of loaded documents
         load_all_available_meta:
             if True: the `metadata` of the loaded Documents contains all available
@@ -55,7 +55,7 @@ class ArxivAPIWrapper(BaseModel):
     arxiv_exceptions: Any  # :meta private:
     top_k_results: int = 3
     ARXIV_MAX_QUERY_LENGTH: int = 300
-    ARXIV_API_WRAPPER_ALLOWED_HTTP_ERROR_CODES = [404]
+    continue_on_failure: bool = False
     load_max_docs: int = 100
     load_all_available_meta: bool = False
     doc_content_chars_max: Optional[int] = 4000
@@ -227,12 +227,12 @@ class ArxivAPIWrapper(BaseModel):
             except (FileNotFoundError, fitz.fitz.FileDataError) as f_ex:
                 logger.debug(f_ex)
                 continue
-            except HTTPError as f_ex:
-                if f_ex.code in self.ARXIV_API_WRAPPER_ALLOWED_HTTP_ERROR_CODES:
-                    logger.debug(f_ex)
+            except Exception as e:
+                if self.continue_on_failure:
+                    logger.error(e)
                     continue
                 else:
-                    raise f_ex
+                    raise e
             if self.load_all_available_meta:
                 extra_metadata = {
                     "entry_id": result.entry_id,
