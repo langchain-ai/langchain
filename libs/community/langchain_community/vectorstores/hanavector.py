@@ -8,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Optional,
@@ -33,6 +34,27 @@ HANA_DISTANCE_FUNCTION: dict = {
     DistanceStrategy.COSINE: ("COSINE_SIMILARITY", "DESC"),
     DistanceStrategy.EUCLIDEAN_DISTANCE: ("L2DISTANCE", "ASC"),
 }
+
+COMPARISONS_TO_SQL = {
+    "$eq": "=",
+    "$ne": "<>",
+    "$lt": "<",
+    "$lte": "<=",
+    "$gt": ">",
+    "$gte": ">=",
+}
+
+IN_OPERATORS_TO_SQL = {
+    "$in": "IN",
+    "$nin": "NOT IN",
+}
+
+BETWEEN_OPERATOR = "$between"
+
+LIKE_OPERATOR = "$like"
+
+LOGICAL_OPERATORS_TO_SQL = {"$and": "AND", "$or": "OR"}
+
 
 default_distance_strategy = DistanceStrategy.COSINE
 default_table_name: str = "EMBEDDINGS"
@@ -407,25 +429,95 @@ class HanaDB(VectorStore):
         query_tuple = []
         where_str = ""
         if filter:
+            where_str, query_tuple = self._process_filter_object(filter)
+            where_str = " WHERE " + where_str
+        return where_str, query_tuple
+
+    def _process_filter_object(self, filter):  # type: ignore[no-untyped-def]
+        query_tuple = []
+        where_str = ""
+        if filter:
             for i, key in enumerate(filter.keys()):
-                if i == 0:
-                    where_str += " WHERE "
-                else:
+                filter_value = filter[key]
+                if i != 0:
                     where_str += " AND "
 
-                where_str += f" JSON_VALUE({self.metadata_column}, '$.{key}') = ?"
+                # Handling of 'special' boolean operators "$and", "$or"
+                if key in LOGICAL_OPERATORS_TO_SQL:
+                    logical_operator = LOGICAL_OPERATORS_TO_SQL[key]
+                    logical_operands = filter_value
+                    for j, logical_operand in enumerate(logical_operands):
+                        if j != 0:
+                            where_str += f" {logical_operator} "
+                        (
+                            where_str_logical,
+                            query_tuple_logical,
+                        ) = self._process_filter_object(logical_operand)
+                        where_str += where_str_logical
+                        query_tuple += query_tuple_logical
+                    continue
 
-                if isinstance(filter[key], bool):
-                    if filter[key]:
-                        query_tuple.append("true")
+                operator = "="
+                sql_param = "?"
+
+                if isinstance(filter_value, bool):
+                    query_tuple.append("true" if filter_value else "false")
+                elif isinstance(filter_value, int) or isinstance(filter_value, str):
+                    query_tuple.append(filter_value)
+                elif isinstance(filter_value, Dict):
+                    # Handling of 'special' operators starting with "$"
+                    special_op = next(iter(filter_value))
+                    special_val = filter_value[special_op]
+                    # "$eq", "$ne", "$lt", "$lte", "$gt", "$gte"
+                    if special_op in COMPARISONS_TO_SQL:
+                        operator = COMPARISONS_TO_SQL[special_op]
+                        if isinstance(special_val, bool):
+                            query_tuple.append("true" if filter_value else "false")
+                        elif isinstance(special_val, float):
+                            sql_param = "CAST(? as float)"
+                            query_tuple.append(special_val)
+                        else:
+                            query_tuple.append(special_val)
+                    # "$between"
+                    elif special_op == BETWEEN_OPERATOR:
+                        between_from = special_val[0]
+                        between_to = special_val[1]
+                        operator = "BETWEEN"
+                        sql_param = "? AND ?"
+                        query_tuple.append(between_from)
+                        query_tuple.append(between_to)
+                    # "$like"
+                    elif special_op == LIKE_OPERATOR:
+                        operator = "LIKE"
+                        query_tuple.append(special_val)
+                    # "$in", "$nin"
+                    elif special_op in IN_OPERATORS_TO_SQL:
+                        operator = IN_OPERATORS_TO_SQL[special_op]
+                        if isinstance(special_val, list):
+                            for i, list_entry in enumerate(special_val):
+                                if i == 0:
+                                    sql_param = "("
+                                sql_param = sql_param + "?"
+                                if i == (len(special_val) - 1):
+                                    sql_param = sql_param + ")"
+                                else:
+                                    sql_param = sql_param + ","
+                                query_tuple.append(list_entry)
+                        else:
+                            raise ValueError(
+                                f"Unsupported value for {operator}: {special_val}"
+                            )
                     else:
-                        query_tuple.append("false")
-                elif isinstance(filter[key], int) or isinstance(filter[key], str):
-                    query_tuple.append(filter[key])
+                        raise ValueError(f"Unsupported operator: {special_op}")
                 else:
                     raise ValueError(
-                        f"Unsupported filter data-type: {type(filter[key])}"
+                        f"Unsupported filter data-type: {type(filter_value)}"
                     )
+
+                where_str += (
+                    f" JSON_VALUE({self.metadata_column}, '$.{key}')"
+                    f" {operator} {sql_param}"
+                )
 
         return where_str, query_tuple
 

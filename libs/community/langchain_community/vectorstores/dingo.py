@@ -107,7 +107,7 @@ class Dingo(VectorStore):
         """
 
         # Embed and create the documents
-        ids = ids or [str(uuid.uuid1().int)[:13] for _ in texts]
+        ids = ids or [str(uuid.uuid4().int)[:13] for _ in texts]
         metadatas_list = []
         texts = list(texts)
         embeds = self._embedding.embed_documents(texts)
@@ -347,7 +347,7 @@ class Dingo(VectorStore):
 
         # Embed and create the documents
 
-        ids = ids or [str(uuid.uuid1().int)[:13] for _ in texts]
+        ids = ids or [str(uuid.uuid4().int)[:13] for _ in texts]
         metadatas_list = []
         texts = list(texts)
         embeds = embedding.embed_documents(texts)

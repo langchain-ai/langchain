@@ -11,7 +11,8 @@ from langchain_community.utilities import YouSearchAPIWrapper
 
 
 class YouRetriever(BaseRetriever, YouSearchAPIWrapper):
-    """`You` retriever that uses You.com's search API.
+    """You.com Search API retriever.
+
     It wraps results() to get_relevant_documents
     It uses all YouSearchAPIWrapper arguments without any change.
     """

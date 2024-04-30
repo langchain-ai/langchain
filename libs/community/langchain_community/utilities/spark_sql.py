@@ -82,7 +82,7 @@ class SparkSQL:
         try:
             from pyspark.sql import SparkSession
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "pyspark is not installed. Please install it with `pip install pyspark`"
             )
 

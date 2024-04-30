@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Tuple
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,
@@ -13,6 +13,8 @@ from langchain.chains.query_constructor.ir import (
 
 
 class TencentVectorDBTranslator(Visitor):
+    """Translate StructuredQuery to Tencent VectorDB query."""
+
     COMPARATOR_MAP = {
         Comparator.EQ: "=",
         Comparator.NE: "!=",
@@ -32,9 +34,22 @@ class TencentVectorDBTranslator(Visitor):
     ]
 
     def __init__(self, meta_keys: Optional[Sequence[str]] = None):
+        """Initialize the translator.
+
+        Args:
+            meta_keys: List of meta keys to be used in the query. Default: [].
+        """
         self.meta_keys = meta_keys or []
 
     def visit_operation(self, operation: Operation) -> str:
+        """Visit an operation node and return the translated query.
+
+        Args:
+            operation: Operation node to be visited.
+
+        Returns:
+            Translated query.
+        """
         if operation.operator in (Operator.AND, Operator.OR):
             ret = f" {operation.operator.value} ".join(
                 [arg.accept(self) for arg in operation.arguments]
@@ -46,6 +61,14 @@ class TencentVectorDBTranslator(Visitor):
             return f"not ({operation.arguments[0].accept(self)})"
 
     def visit_comparison(self, comparison: Comparison) -> str:
+        """Visit a comparison node and return the translated query.
+
+        Args:
+            comparison: Comparison node to be visited.
+
+        Returns:
+            Translated query.
+        """
         if self.meta_keys and comparison.attribute not in self.meta_keys:
             raise ValueError(
                 f"Expr Filtering found Unsupported attribute: {comparison.attribute}"
@@ -78,6 +101,14 @@ class TencentVectorDBTranslator(Visitor):
     def visit_structured_query(
         self, structured_query: StructuredQuery
     ) -> Tuple[str, dict]:
+        """Visit a structured query node and return the translated query.
+
+        Args:
+            structured_query: StructuredQuery node to be visited.
+
+        Returns:
+            Translated query and query kwargs.
+        """
         if structured_query.filter is None:
             kwargs = {}
         else:

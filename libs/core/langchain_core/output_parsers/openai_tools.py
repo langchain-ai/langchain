@@ -44,7 +44,7 @@ def parse_tool_call(
         "args": function_args or {},
     }
     if return_id:
-        parsed["id"] = raw_tool_call["id"]
+        parsed["id"] = raw_tool_call.get("id")
     return parsed
 
 
@@ -67,9 +67,9 @@ def parse_tool_calls(
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> List[dict]:
+) -> List[Dict[str, Any]]:
     """Parse a list of tool calls."""
-    final_tools = []
+    final_tools: List[Dict[str, Any]] = []
     exceptions = []
     for tool_call in raw_tool_calls:
         try:

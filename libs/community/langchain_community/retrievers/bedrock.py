@@ -88,12 +88,12 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
 
             return values
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
         except UnknownServiceError as e:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Ensure that you have installed the latest boto3 package "
                 "that contains the API for `bedrock-runtime-agent`."
             ) from e
