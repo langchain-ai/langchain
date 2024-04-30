@@ -255,7 +255,7 @@ class VDMS(VectorStore):
         metadatas = metadatas if metadatas is not None else [None for _ in texts]
         _len_check_if_sized(texts, metadatas, "texts", "metadatas")
 
-        ids = ids if ids is not None else [str(uuid.uuid1()) for _ in texts]
+        ids = ids if ids is not None else [str(uuid.uuid4()) for _ in texts]
         _len_check_if_sized(texts, ids, "texts", "ids")
 
         all_queries: List[Any] = []
@@ -535,7 +535,7 @@ class VDMS(VectorStore):
                 metadatas.append({"image_path": uri})
 
         # Populate IDs
-        ids = ids if ids is not None else [str(uuid.uuid1()) for _ in uris]
+        ids = ids if ids is not None else [str(uuid.uuid4()) for _ in uris]
 
         # Set embeddings
         embeddings = self._embed_image(uris=uris)
@@ -577,7 +577,7 @@ class VDMS(VectorStore):
 
         texts = list(texts)
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         embeddings = self._embed_documents(texts)
 
@@ -873,7 +873,7 @@ class VDMS(VectorStore):
             # **kwargs,
         )
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
         vdms_collection.add_texts(
             texts=texts,
             metadatas=metadatas,

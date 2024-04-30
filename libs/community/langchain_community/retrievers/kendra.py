@@ -400,7 +400,7 @@ class AmazonKendraRetriever(BaseRetriever):
 
             return values
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
@@ -471,7 +471,7 @@ class AmazonKendraRetriever(BaseRetriever):
         Example:
         .. code-block:: python
 
-            docs = retriever.get_relevant_documents('This is my query')
+            docs = retriever.invoke('This is my query')
 
         """
         result_items = self._kendra_query(query)

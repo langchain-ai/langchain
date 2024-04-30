@@ -2,7 +2,9 @@ from typing import List, Optional, Union
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage, messages_from_dict
-from langchain_core.utils import get_from_env
+from langchain_core.utils import get_from_dict_or_env
+
+from langchain_community.graphs import Neo4jGraph
 
 
 class Neo4jChatMessageHistory(BaseChatMessageHistory):
@@ -17,11 +19,13 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
         database: str = "neo4j",
         node_label: str = "Session",
         window: int = 3,
+        *,
+        graph: Optional[Neo4jGraph] = None,
     ):
         try:
             import neo4j
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import neo4j python package. "
                 "Please install it with `pip install neo4j`."
             )
@@ -30,30 +34,41 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
         if not session_id:
             raise ValueError("Please ensure that the session_id parameter is provided")
 
-        url = get_from_env("url", "NEO4J_URI", url)
-        username = get_from_env("username", "NEO4J_USERNAME", username)
-        password = get_from_env("password", "NEO4J_PASSWORD", password)
-        database = get_from_env("database", "NEO4J_DATABASE", database)
+        # Graph object takes precedent over env or input params
+        if graph:
+            self._driver = graph._driver
+            self._database = graph._database
+        else:
+            # Handle if the credentials are environment variables
+            url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+            username = get_from_dict_or_env(
+                {"username": username}, "username", "NEO4J_USERNAME"
+            )
+            password = get_from_dict_or_env(
+                {"password": password}, "password", "NEO4J_PASSWORD"
+            )
+            database = get_from_dict_or_env(
+                {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+            )
 
-        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
-        self._database = database
+            self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+            self._database = database
+            # Verify connection
+            try:
+                self._driver.verify_connectivity()
+            except neo4j.exceptions.ServiceUnavailable:
+                raise ValueError(
+                    "Could not connect to Neo4j database. "
+                    "Please ensure that the url is correct"
+                )
+            except neo4j.exceptions.AuthError:
+                raise ValueError(
+                    "Could not connect to Neo4j database. "
+                    "Please ensure that the username and password are correct"
+                )
         self._session_id = session_id
         self._node_label = node_label
         self._window = window
-
-        # Verify connection
-        try:
-            self._driver.verify_connectivity()
-        except neo4j.exceptions.ServiceUnavailable:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the url is correct"
-            )
-        except neo4j.exceptions.AuthError:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the username and password are correct"
-            )
         # Create session node
         self._driver.execute_query(
             f"MERGE (s:`{self._node_label}` {{id:$session_id}})",

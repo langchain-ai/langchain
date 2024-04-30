@@ -196,6 +196,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.redis import (
         Redis,  # noqa: F401
     )
+    from langchain_community.vectorstores.relyt import (
+        Relyt,  # noqa: F401
+    )
     from langchain_community.vectorstores.rocksetdb import (
         Rockset,  # noqa: F401
     )
@@ -247,6 +250,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.typesense import (
         Typesense,  # noqa: F401
     )
+    from langchain_community.vectorstores.upstash import (
+        UpstashVectorStore,  # noqa: F401
+    )
     from langchain_community.vectorstores.usearch import (
         USearch,  # noqa: F401
     )
@@ -264,6 +270,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.vectorstores.vespa import (
         VespaStore,  # noqa: F401
+    )
+    from langchain_community.vectorstores.vlite import (
+        VLite,  # noqa: F401
     )
     from langchain_community.vectorstores.weaviate import (
         Weaviate,  # noqa: F401
@@ -341,6 +350,7 @@ __all__ = [
     "Pinecone",
     "Qdrant",
     "Redis",
+    "Relyt",
     "Rockset",
     "SKLearnVectorStore",
     "SQLiteVSS",
@@ -357,6 +367,7 @@ __all__ = [
     "TileDB",
     "TimescaleVector",
     "Typesense",
+    "UpstashVectorStore",
     "USearch",
     "VDMS",
     "Vald",
@@ -364,6 +375,7 @@ __all__ = [
     "Vectara",
     "VectorStore",
     "VespaStore",
+    "VLite",
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
@@ -433,6 +445,7 @@ _module_lookup = {
     "Pinecone": "langchain_community.vectorstores.pinecone",
     "Qdrant": "langchain_community.vectorstores.qdrant",
     "Redis": "langchain_community.vectorstores.redis",
+    "Relyt": "langchain_community.vectorstores.relyt",
     "Rockset": "langchain_community.vectorstores.rocksetdb",
     "SKLearnVectorStore": "langchain_community.vectorstores.sklearn",
     "SQLiteVSS": "langchain_community.vectorstores.sqlitevss",
@@ -449,6 +462,7 @@ _module_lookup = {
     "TileDB": "langchain_community.vectorstores.tiledb",
     "TimescaleVector": "langchain_community.vectorstores.timescalevector",
     "Typesense": "langchain_community.vectorstores.typesense",
+    "UpstashVectorStore": "langchain_community.vectorstores.upstash",
     "USearch": "langchain_community.vectorstores.usearch",
     "Vald": "langchain_community.vectorstores.vald",
     "VDMS": "langchain_community.vectorstores.vdms",
@@ -456,6 +470,7 @@ _module_lookup = {
     "Vectara": "langchain_community.vectorstores.vectara",
     "VectorStore": "langchain_core.vectorstores",
     "VespaStore": "langchain_community.vectorstores.vespa",
+    "VLite": "langchain_community.vectorstores.vlite",
     "Weaviate": "langchain_community.vectorstores.weaviate",
     "Yellowbrick": "langchain_community.vectorstores.yellowbrick",
     "ZepVectorStore": "langchain_community.vectorstores.zep",

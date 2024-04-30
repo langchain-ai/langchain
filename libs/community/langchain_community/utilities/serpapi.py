@@ -69,7 +69,7 @@ class SerpAPIWrapper(BaseModel):
 
             values["search_engine"] = GoogleSearch
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import serpapi python package. "
                 "Please install it with `pip install google-search-results`."
             )

@@ -82,6 +82,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.metaphor_search import (
         MetaphorSearchAPIWrapper,  # noqa: F401
     )
+    from langchain_community.utilities.mojeek_search import (
+        MojeekSearchAPIWrapper,  # noqa: F401
+    )
     from langchain_community.utilities.nasa import (
         NasaAPIWrapper,  # noqa: F401
     )
@@ -189,6 +192,7 @@ __all__ = [
     "MaxComputeAPIWrapper",
     "MerriamWebsterAPIWrapper",
     "MetaphorSearchAPIWrapper",
+    "MojeekSearchAPIWrapper",
     "NVIDIARivaASR",
     "NVIDIARivaStream",
     "NVIDIARivaTTS",
@@ -230,6 +234,7 @@ _module_lookup = {
     "BibtexparserWrapper": "langchain_community.utilities.bibtex",
     "BingSearchAPIWrapper": "langchain_community.utilities.bing_search",
     "BraveSearchWrapper": "langchain_community.utilities.brave_search",
+    "DataheraldAPIWrapper": "langchain_community.utilities.dataherald",
     "DriaAPIWrapper": "langchain_community.utilities.dria_index",
     "DuckDuckGoSearchAPIWrapper": "langchain_community.utilities.duckduckgo_search",
     "GoldenQueryAPIWrapper": "langchain_community.utilities.golden_query",
@@ -248,6 +253,7 @@ _module_lookup = {
     "MaxComputeAPIWrapper": "langchain_community.utilities.max_compute",
     "MerriamWebsterAPIWrapper": "langchain_community.utilities.merriam_webster",
     "MetaphorSearchAPIWrapper": "langchain_community.utilities.metaphor_search",
+    "MojeekSearchAPIWrapper": "langchain_community.utilities.mojeek_search",
     "NVIDIARivaASR": "langchain_community.utilities.nvidia_riva",
     "NVIDIARivaStream": "langchain_community.utilities.nvidia_riva",
     "NVIDIARivaTTS": "langchain_community.utilities.nvidia_riva",
