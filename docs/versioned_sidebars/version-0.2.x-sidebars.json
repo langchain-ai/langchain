@@ -189,7 +189,8 @@
               "label": "Text embeddings",
               "collapsed": true,
               "items": [
-                "how_to/embed_text"
+                "how_to/embed_text",
+                "how_to/caching_embeddings"
               ],
               "link": {
                 "type": "generated-index"
