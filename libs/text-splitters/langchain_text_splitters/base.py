@@ -47,7 +47,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
             keep_separator: Whether to keep the separator in the chunks
-            separator_kept_at_end: If keep_separator=True, then decides whether to append to previous chunk or prepend to next chunk
+            separator_kept_at_end: Append to next chunk or prepend to previous chunk
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
