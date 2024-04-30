@@ -2,8 +2,9 @@ import importlib
 import warnings
 from typing import Any, Callable, Dict, Optional
 
-from langchain.utils.interactive_env import is_interactive_env
 from langchain_core._api import LangChainDeprecationWarning
+
+from langchain.utils.interactive_env import is_interactive_env
 
 ALLOWED_TOP_LEVEL_PKGS = {
     "langchain_community",
