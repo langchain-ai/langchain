@@ -12,14 +12,10 @@ from different APIs and services.
 
 
 import logging
-import warnings
 from typing import TYPE_CHECKING, Any
-
-from langchain_core._api import LangChainDeprecationWarning
 
 from langchain._api import create_importer
 from langchain.embeddings.cache import CacheBackedEmbeddings
-from langchain.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from langchain_community.embeddings import (
