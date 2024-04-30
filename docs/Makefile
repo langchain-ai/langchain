@@ -22,15 +22,19 @@ vercel-install-deps:
 	wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
 	tar -xzf quarto-1.3.450-linux-amd64.tar.gz
 
+PARTNER_DEPS_LIST := $(shell ls -1 ../libs/partners | grep -vE "airbyte|ibm" | xargs -I {} echo "../libs/partners/{}" | tr '\n' ' ')
+
 install-py-deps:
 	python3 -m venv .venv
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install --upgrade uv
 	$(PYTHON) -m uv pip install -r vercel_requirements.txt
-	$(PYTHON) -m uv pip install -e $(ls ../libs/partners | grep -vE "airbyte|ibm|.md" | xargs -I {} echo "../libs/partners/{}")
+	$(PYTHON) -m uv pip install --editable $(PARTNER_DEPS_LIST)
 
 generate-files:
+	mkdir -p $(INTERMEDIATE_DIR)
 	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
+	mkdir -p $(INTERMEDIATE_DIR)/docs/templates
 	cp ../templates/docs/INDEX.md $(INTERMEDIATE_DIR)/docs/templates/index.md
 	cp ../cookbook/README.md $(INTERMEDIATE_DIR)/cookbook.mdx
 
@@ -42,11 +46,8 @@ generate-files:
 	wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O $(INTERMEDIATE_DIR)/docs/langserve.md
 	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/docs/langserve.md https://github.com/langchain-ai/langserve/tree/main/
 
-	wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O docs/langgraph.md
+	wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O $(INTERMEDIATE_DIR)/docs/langgraph.md
 	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/docs/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
-
-	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir docs
-
 
 build-local: install-py-deps generate-files
 	quarto render docs/
