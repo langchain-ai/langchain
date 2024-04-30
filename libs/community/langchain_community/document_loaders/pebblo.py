@@ -45,6 +45,7 @@ class PebbloSafeLoader(BaseLoader):
         description: str = "",
         api_key: Optional[str] = None,
         load_semantic: bool = False,
+        classifier_url: Optional[str] = None,
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
@@ -63,6 +64,7 @@ class PebbloSafeLoader(BaseLoader):
         self.source_type = get_loader_type(loader_name)
         self.source_path_size = self.get_source_size(self.source_path)
         self.source_aggregate_size = 0
+        self.classifier_url = classifier_url or CLASSIFIER_URL
         self.loader_details = {
             "loader": loader_name,
             "source_path": self.source_path,
@@ -210,7 +212,7 @@ class PebbloSafeLoader(BaseLoader):
                     self.source_aggregate_size
                 )
         payload = Doc(**payload).dict(exclude_unset=True)
-        load_doc_url = f"{CLASSIFIER_URL}{LOADER_DOC_URL}"
+        load_doc_url = f"{self.classifier_url}{LOADER_DOC_URL}"
         classified_docs = []
         try:
             pebblo_resp = requests.post(
@@ -296,7 +298,7 @@ class PebbloSafeLoader(BaseLoader):
             "Content-Type": "application/json",
         }
         payload = self.app.dict(exclude_unset=True)
-        app_discover_url = f"{CLASSIFIER_URL}{APP_DISCOVER_URL}"
+        app_discover_url = f"{self.classifier_url}{APP_DISCOVER_URL}"
         try:
             pebblo_resp = requests.post(
                 app_discover_url, headers=headers, json=payload, timeout=20
