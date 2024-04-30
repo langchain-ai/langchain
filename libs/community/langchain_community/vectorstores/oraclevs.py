@@ -568,7 +568,8 @@ class OracleVS(VectorStore):
                 raw_data = result.read()
                 if isinstance(raw_data, bytes):
                     clob_value = raw_data.decode(
-                        'utf-8')  # Specify the correct encoding
+                        "utf-8"
+                    )  # Specify the correct encoding
                 else:
                     clob_value = raw_data
             elif isinstance(result, str):
@@ -676,9 +677,11 @@ class OracleVS(VectorStore):
                     distance = result[3]
                     # Assuming result[4] is already in the correct format;
                     # adjust if necessary
-                    current_embedding = np.array(result[4],
-                                                 dtype=np.float32) if result[
-                      4] else np.empty(0, dtype=np.float32)
+                    current_embedding = (
+                        np.array(result[4], dtype=np.float32)
+                        if result[4]
+                        else np.empty(0, dtype=np.float32)
+                    )
                     documents.append((document, distance, current_embedding))
         return documents  # type: ignore
 
