@@ -81,10 +81,13 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
         if self.history_size:
             try:
-                old_documents = self.collection.find(
-                    {"SessionId": self.session_id},
-                    projection={"_id": True}
-                ).sort("_id", -1).skip(self.history_size)
+                old_documents = (
+                    self.collection.find(
+                        {"SessionId": self.session_id}, projection={"_id": True}
+                    )
+                    .sort("_id", -1)
+                    .skip(self.history_size)
+                )
                 old_documents_ids = [doc['_id'] for doc in old_documents]
                 self.collection.delete_many({"_id": {"$in": old_documents_ids}})
             except errors.OperationFailure as error:
