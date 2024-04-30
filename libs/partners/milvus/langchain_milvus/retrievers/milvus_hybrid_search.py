@@ -35,6 +35,7 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
     field_limits: Optional[List[int]] = None
     field_exprs: Optional[List[str]] = None
     output_fields: [str] = None
+    # TODO decide the name, whether to unify with other name in other files
     text_field_name: str = 'text'
 
     def __init__(self, **kwargs: Any):
@@ -62,15 +63,6 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
         if len(self.field_search_params) != len(self.anns_fields):
             raise ValueError("field_search_params must have the same length as anns_fields.")
 
-    def _extract_fields(self, col: Collection) -> None:
-        """Grab the existing fields from the Collection"""
-        from pymilvus import Collection
-
-        if isinstance(col, Collection):
-            schema = col.schema
-            for x in schema.fields:
-                self.fields.append(x.name)
-
     @classmethod
     def from_client(cls, client: MilvusClient, collection_name: str, **kwargs):
         # TODO return 一个MilvusCollectionHybridSearchRetriever实例
@@ -79,7 +71,7 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
             res = client.list_aliases(collection_name=collection_name)
             if not res['aliases']:
                 # if no alias exists, create a new one
-                alias = 'a' + uuid4().hex # in case begin with number
+                alias = 'alias_' + uuid4().hex
                 client.create_alias(collection_name=collection_name, alias=alias)
             else:
                 # use the first available alias
@@ -98,6 +90,7 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
                 for x in schema.fields:
                     fields.append(x.name)
 
+            # TODO adjust the code to make it more readable
             # initialize and return the retriever instance with the collection and any additional parameters
             return cls(collection=col, output_fields=fields[:], **kwargs)
         except Exception as e:
@@ -111,7 +104,9 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
                                                             self.field_search_params, self.field_limits,
                                                             self.field_exprs):
 
+            # TODO need to choose the proper limit
             limit = limit if limit is not None else self.top_k # choose top_k
+
             request = AnnSearchRequest(
                 data=embedding.embed_query(query),
                 anns_field=ann_field,
@@ -146,6 +141,7 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
     ) -> List[Document]:
         requests = self._build_ann_search_requests(query)
 
+        # TODO deal with vector field that not in self.anns_fields
         # remove vector
         for field in self.anns_fields:
             if field in self.output_fields:
