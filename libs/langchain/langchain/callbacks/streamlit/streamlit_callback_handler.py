@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 # handling optional imports.
 DEPRECATED_LOOKUP = {
     "LLMThoughtState": (
-        "langchain_community.callbacks.streamlit.streamlit_callback_handler",
+        "langchain_community.callbacks.streamlit.streamlit_callback_handler"
     ),
     "ToolRecord": (
         "langchain_community.callbacks.streamlit.streamlit_callback_handler"
