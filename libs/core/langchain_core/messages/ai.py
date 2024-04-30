@@ -86,7 +86,7 @@ class AIMessage(BaseMessage):
             if isinstance(args, str):
                 lines.append(f"    {args}")
             elif isinstance(args, dict):
-                for arg, value in ().items():
+                for arg, value in args.items():
                     lines.append(f"    {arg}: {value}")
             return lines
 
