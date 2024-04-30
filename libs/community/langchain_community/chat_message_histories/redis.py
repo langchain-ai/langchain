@@ -60,7 +60,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         """Append the message to the record in Redis"""
         self.redis_client.lpush(self.key, json.dumps(message_to_dict(message)))
         if self.history_size:
-            self.redis_client.ltrim(self.key, 0, self.history_size-1)
+            self.redis_client.ltrim(self.key, 0, self.history_size - 1)
         if self.ttl:
             self.redis_client.expire(self.key, self.ttl)
 
