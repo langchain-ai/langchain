@@ -2,6 +2,14 @@
   "trailingSlash": true,
   "redirects": [
     {
+      "source": "/docs/integrations/providers/mlflow_tracking",
+      "destination": "/docs/integrations/callbacks/mlflow_tracking"
+    },
+    {
+      "source": "/docs/integrations/providers/mlflow_ai_gateway",
+      "destination": "/docs/integrations/llms/mlflow_ai_gateway"
+    },
+    {
       "source": "/docs/integrations/llms/titan_takeoff_pro",
       "destination": "/docs/integrations/llms/titan_takeoff"
     },
