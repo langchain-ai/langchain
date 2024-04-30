@@ -25,7 +25,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
             of a single chat session.
         database_name: name of the database to use
         collection_name: name of the collection to use
-        history_size: maximum number of messages to store, must be positive or None (unlimited)
+        history_size: Max number of messages to store (None for unlimited)
     """
 
     def __init__(
@@ -81,8 +81,10 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
 
         if self.history_size:
             try:
-                old_documents = (self.collection.find({"SessionId": self.session_id}, projection={"_id": True})
-                                 .sort("_id", -1).skip(self.history_size))
+                old_documents = self.collection.find(
+                    {"SessionId": self.session_id},
+                    projection={"_id": True}
+                ).sort("_id", -1).skip(self.history_size)
                 old_documents_ids = [doc['_id'] for doc in old_documents]
                 self.collection.delete_many({"_id": {"$in": old_documents_ids}})
             except errors.OperationFailure as error:
