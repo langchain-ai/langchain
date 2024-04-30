@@ -275,7 +275,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         # If tiktoken flag set to False
         if not self.tiktoken_enabled:
             try:
-                from transformers import AutoTokenizer  # noqa: F401
+                from transformers import AutoTokenizer
             except ImportError:
                 raise ValueError(
                     "Could not import transformers python package. "
