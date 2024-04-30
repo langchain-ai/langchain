@@ -100,6 +100,6 @@ def test_parse_response_format(mock_post: MagicMock) -> None:
     ]
     mock_post.return_value = mock_response
 
-    result = tool("some query")
+    result = tool.invoke("some query")
 
     assert result == 'nsfw_likelihood: 5\n"offensive": 4\n"hate_speech": 5'

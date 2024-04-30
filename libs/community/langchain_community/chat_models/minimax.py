@@ -37,7 +37,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> List:
 
 
 class MiniMaxChat(MinimaxCommon, BaseChatModel):
-    """Wrapper around Minimax large language models.
+    """MiniMax large language models.
 
     To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
     ``MINIMAX_API_KEY`` set with your API token, or pass it as a named parameter to

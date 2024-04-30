@@ -37,6 +37,7 @@ _EXPECTED = [
     "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
+    "DataheraldTextToSQL",
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
@@ -138,6 +139,7 @@ _EXPECTED = [
     "authenticate",
     "format_tool_to_openai_function",
     "tool",
+    "MojeekSearch",
 ]
 
 

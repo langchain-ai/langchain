@@ -40,6 +40,7 @@ from langchain_community.agent_toolkits import (
     create_sql_agent,
 )
 from langchain_core._api.path import as_import_path
+from langchain_core.tools import Tool, tool
 
 from langchain.agents.agent import (
     Agent,
@@ -82,7 +83,7 @@ from langchain.agents.structured_chat.base import (
     StructuredChatAgent,
     create_structured_chat_agent,
 )
-from langchain.agents.tools import Tool, tool
+from langchain.agents.tool_calling_agent.base import create_tool_calling_agent
 from langchain.agents.xml.base import XMLAgent, create_xml_agent
 
 DEPRECATED_CODE = [
@@ -154,4 +155,5 @@ __all__ = [
     "create_self_ask_with_search_agent",
     "create_json_chat_agent",
     "create_structured_chat_agent",
+    "create_tool_calling_agent",
 ]

@@ -52,6 +52,7 @@ EXPECT_ALL = [
     "Minimax",
     "Mlflow",
     "MlflowAIGateway",
+    "MLXPipeline",
     "Modal",
     "MosaicML",
     "Nebula",

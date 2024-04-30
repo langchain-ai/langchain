@@ -14,7 +14,7 @@ def test_konko_chat_test() -> None:
     """Evaluate basic ChatKonko functionality."""
     chat_instance = ChatKonko(max_tokens=10)
     msg = HumanMessage(content="Hi")
-    chat_response = chat_instance([msg])
+    chat_response = chat_instance.invoke([msg])
     assert isinstance(chat_response, BaseMessage)
     assert isinstance(chat_response.content, str)
 
@@ -23,7 +23,7 @@ def test_konko_chat_test_openai() -> None:
     """Evaluate basic ChatKonko functionality."""
     chat_instance = ChatKonko(max_tokens=10, model="meta-llama/llama-2-70b-chat")
     msg = HumanMessage(content="Hi")
-    chat_response = chat_instance([msg])
+    chat_response = chat_instance.invoke([msg])
     assert isinstance(chat_response, BaseMessage)
     assert isinstance(chat_response.content, str)
 
@@ -48,7 +48,7 @@ def test_konko_system_msg_test() -> None:
     chat_instance = ChatKonko(max_tokens=10)
     sys_msg = SystemMessage(content="Initiate user chat.")
     user_msg = HumanMessage(content="Hi there")
-    chat_response = chat_instance([sys_msg, user_msg])
+    chat_response = chat_instance.invoke([sys_msg, user_msg])
     assert isinstance(chat_response, BaseMessage)
     assert isinstance(chat_response.content, str)
 
@@ -92,7 +92,7 @@ def test_konko_streaming_callback_test() -> None:
         verbose=True,
     )
     msg = HumanMessage(content="Hi")
-    chat_response = chat_instance([msg])
+    chat_response = chat_instance.invoke([msg])
     assert callback_instance.llm_streams > 0
     assert isinstance(chat_response, BaseMessage)
 

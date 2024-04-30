@@ -25,7 +25,7 @@ def test_chat_bedrock(chat: BedrockChat) -> None:
     """Test BedrockChat wrapper."""
     system = SystemMessage(content="You are a helpful assistant.")
     human = HumanMessage(content="Hello")
-    response = chat([system, human])
+    response = chat.invoke([system, human])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -70,7 +70,7 @@ def test_chat_bedrock_streaming() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
 
@@ -108,7 +108,7 @@ def test_bedrock_streaming(chat: BedrockChat) -> None:
 
     full = None
     for token in chat.stream("I'm Pickle Rick"):
-        full = token if full is None else full + token
+        full = token if full is None else full + token  # type: ignore[operator]
         assert isinstance(token.content, str)
     assert isinstance(cast(AIMessageChunk, full).content, str)
 

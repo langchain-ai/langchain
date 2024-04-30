@@ -9,7 +9,7 @@ from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
 def test_call() -> None:
     """Test valid call to qianfan."""
     llm = QianfanLLMEndpoint()
-    output = llm("write a joke")
+    output = llm.invoke("write a joke")
     assert isinstance(output, str)
 
 
