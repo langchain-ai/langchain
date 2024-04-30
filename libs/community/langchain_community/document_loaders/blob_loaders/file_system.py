@@ -1,7 +1,17 @@
 """Use to load blobs from the local file system."""
 
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Sequence, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 from langchain_community.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
