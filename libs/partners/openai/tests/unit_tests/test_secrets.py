@@ -73,14 +73,14 @@ def test_azure_openai_embeddings_secrets() -> None:
 )
 def test_azure_openai_api_key_is_secret_string(model_class: Type) -> None:
     """Test that the API key is stored as a SecretStr."""
-    chat_model = model_class(
+    model = model_class(
         openai_api_key="secret-api-key",
         azure_endpoint="endpoint",
         azure_ad_token="secret-ad-token",
         api_version="version",
     )
-    assert isinstance(chat_model.openai_api_key, SecretStr)
-    assert isinstance(chat_model.azure_ad_token, SecretStr)
+    assert isinstance(model.openai_api_key, SecretStr)
+    assert isinstance(model.azure_ad_token, SecretStr)
 
 
 @pytest.mark.parametrize(
@@ -92,16 +92,16 @@ def test_azure_openai_api_key_masked_when_passed_from_env(
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "secret-api-key")
     monkeypatch.setenv("AZURE_OPENAI_AD_TOKEN", "secret-ad-token")
-    chat_model = model_class(
+    model = model_class(
         azure_endpoint="endpoint",
         api_version="version",
     )
-    print(chat_model.openai_api_key, end="")  # noqa: T201
+    print(model.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
 
-    print(chat_model.azure_ad_token, end="")  # noqa: T201
+    print(model.azure_ad_token, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -115,18 +115,18 @@ def test_azure_openai_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
-    chat_model = model_class(
+    model = model_class(
         openai_api_key="secret-api-key",
         azure_endpoint="endpoint",
         azure_ad_token="secret-ad-token",
         api_version="version",
     )
-    print(chat_model.openai_api_key, end="")  # noqa: T201
+    print(model.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
 
-    print(chat_model.azure_ad_token, end="")  # noqa: T201
+    print(model.azure_ad_token, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -139,27 +139,21 @@ def test_azure_openai_uses_actual_secret_value_from_secretstr(
     model_class: Type,
 ) -> None:
     """Test that the actual secret value is correctly retrieved."""
-    chat_model = model_class(
+    model = model_class(
         openai_api_key="secret-api-key",
         azure_endpoint="endpoint",
         azure_ad_token="secret-ad-token",
         api_version="version",
     )
-    assert (
-        cast(SecretStr, chat_model.openai_api_key).get_secret_value()
-        == "secret-api-key"
-    )
-    assert (
-        cast(SecretStr, chat_model.azure_ad_token).get_secret_value()
-        == "secret-ad-token"
-    )
+    assert cast(SecretStr, model.openai_api_key).get_secret_value() == "secret-api-key"
+    assert cast(SecretStr, model.azure_ad_token).get_secret_value() == "secret-ad-token"
 
 
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
 def test_openai_api_key_is_secret_string(model_class: Type) -> None:
     """Test that the API key is stored as a SecretStr."""
-    chat_model = model_class(openai_api_key="secret-api-key")
-    assert isinstance(chat_model.openai_api_key, SecretStr)
+    model = model_class(openai_api_key="secret-api-key")
+    assert isinstance(model.openai_api_key, SecretStr)
 
 
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
@@ -168,8 +162,8 @@ def test_openai_api_key_masked_when_passed_from_env(
 ) -> None:
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("OPENAI_API_KEY", "secret-api-key")
-    chat_model = model_class()
-    print(chat_model.openai_api_key, end="")  # noqa: T201
+    model = model_class()
+    print(model.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -181,8 +175,8 @@ def test_openai_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
-    chat_model = model_class(openai_api_key="secret-api-key")
-    print(chat_model.openai_api_key, end="")  # noqa: T201
+    model = model_class(openai_api_key="secret-api-key")
+    print(model.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -191,8 +185,5 @@ def test_openai_api_key_masked_when_passed_via_constructor(
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
 def test_openai_uses_actual_secret_value_from_secretstr(model_class: Type) -> None:
     """Test that the actual secret value is correctly retrieved."""
-    chat_model = model_class(openai_api_key="secret-api-key")
-    assert (
-        cast(SecretStr, chat_model.openai_api_key).get_secret_value()
-        == "secret-api-key"
-    )
+    model = model_class(openai_api_key="secret-api-key")
+    assert cast(SecretStr, model.openai_api_key).get_secret_value() == "secret-api-key"
