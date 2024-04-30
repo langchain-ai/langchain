@@ -25,7 +25,7 @@ import numpy as np
 import oracledb
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VST, VectorStore
+from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import (
     DistanceStrategy,
@@ -614,18 +614,22 @@ class OracleVS(VectorStore):
                 if filter:
                     if all(metadata.get(key) in value for key, value in filter.items()):
                         doc = Document(
-                            page_content=self._get_clob_value(result[1])
-                            if result[1] is not None
-                            else "",
+                            page_content=(
+                                self._get_clob_value(result[1])
+                                if result[1] is not None
+                                else ""
+                            ),
                             metadata=metadata,
                         )
                         distance = result[3]
                         docs_and_scores.append((doc, distance))
                 else:
                     doc = Document(
-                        page_content=self._get_clob_value(result[1])
-                        if result[1] is not None
-                        else "",
+                        page_content=(
+                            self._get_clob_value(result[1])
+                            if result[1] is not None
+                            else ""
+                        ),
                         metadata=metadata,
                     )
                     distance = result[3]
@@ -861,21 +865,19 @@ class OracleVS(VectorStore):
     @classmethod
     @_handle_exceptions
     def from_texts(
-        cls: Type[VST],
+        cls: Type[OracleVS],
         texts: Iterable[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> VST:
+    ) -> OracleVS:
         """Return VectorStore initialized from texts and embeddings."""
         client = kwargs.get("client")
         if client is None:
             raise ValueError("client parameter is required...")
-        params = kwargs.get("params")
+        params = kwargs.get("params", {})
 
-        table_name = str(kwargs.get("table_name"))
-        if table_name is None:
-            table_name = "langchain"
+        table_name = str(kwargs.get("table_name", "langchain"))
 
         distance_strategy = cast(
             DistanceStrategy, kwargs.get("distance_strategy", None)
@@ -885,14 +887,17 @@ class OracleVS(VectorStore):
                 f"Expected DistanceStrategy got " f"{type(distance_strategy).__name__} "
             )
 
+        query = kwargs.get("query", "What is a Oracle database")
+
         drop_table_purge(client, table_name)
 
         vss = cls(
             client=client,
             embedding_function=embedding,
             table_name=table_name,
-            params=params,
             distance_strategy=distance_strategy,
+            query=query,
+            params=params,
         )
         vss.add_texts(texts=list(texts), metadatas=metadatas)
         return vss
