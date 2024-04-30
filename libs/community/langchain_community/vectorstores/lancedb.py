@@ -11,6 +11,8 @@ from langchain_core.vectorstores import VectorStore
 
 
 def import_lancedb() -> Any:
+    """Import lancedb package."""
+
     try:
         import lancedb
     except ImportError as e:

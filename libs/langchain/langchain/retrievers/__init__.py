@@ -35,7 +35,7 @@ from langchain.retrievers.time_weighted_retriever import (
 from langchain.retrievers.web_research import WebResearchRetriever
 
 import_lookup = create_importer(
-    __file__, fallback_module="langchain_community.retrievers"
+    __package__, fallback_module="langchain_community.retrievers"
 )
 
 

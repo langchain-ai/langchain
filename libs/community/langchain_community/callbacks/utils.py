@@ -65,7 +65,7 @@ def _flatten_dict(
 def flatten_dict(
     nested_dict: Dict[str, Any], parent_key: str = "", sep: str = "_"
 ) -> Dict[str, Any]:
-    """Flattens a nested dictionary into a flat dictionary.
+    """Flatten a nested dictionary into a flat dictionary.
 
     Parameters:
         nested_dict (dict): The nested dictionary to flatten.
@@ -108,7 +108,7 @@ def load_json(json_path: Union[str, Path]) -> str:
 
 
 class BaseMetadataCallbackHandler:
-    """This class handles the metadata and associated function states for callbacks.
+    """Handle the metadata and associated function states for callbacks.
 
     Attributes:
         step (int): The current step.
