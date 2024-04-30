@@ -1220,6 +1220,38 @@ def test_md_header_text_splitter_fenced_code_block_interleaved(
     assert output == expected_output
 
 
+@pytest.mark.parametrize("characters", ["\ufeff"])
+def test_md_header_text_splitter_with_invisible_characters(characters: str) -> None:
+    """Test markdown splitter by header: Fenced code block."""
+
+    markdown_document = (
+        f"{characters}# Foo\n\n" "foo()\n" f"{characters}## Bar\n\n" "bar()"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="foo()",
+            metadata={"Header 1": "Foo"},
+        ),
+        Document(
+            page_content="bar()",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
 def test_solidity_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.SOL, chunk_size=CHUNK_SIZE, chunk_overlap=0

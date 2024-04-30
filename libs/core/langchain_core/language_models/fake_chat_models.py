@@ -151,7 +151,7 @@ class FakeChatModel(SimpleChatModel):
 
 
 class GenericFakeChatModel(BaseChatModel):
-    """A generic fake chat model that can be used to test the chat model interface.
+    """Generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
     * Invokes on_llm_new_token to allow for testing of callback related code for new
@@ -288,7 +288,7 @@ class GenericFakeChatModel(BaseChatModel):
 
 
 class ParrotFakeChatModel(BaseChatModel):
-    """A generic fake chat model that can be used to test the chat model interface.
+    """Generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
     """
