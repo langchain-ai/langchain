@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import uuid
+from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -200,8 +201,11 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     required = spec.args[: -len(spec.defaults)] if spec.defaults else spec.args
     required += [k for k in spec.kwonlyargs if k not in (spec.kwonlydefaults or {})]
 
-    is_class = type(function) is type
-    if is_class and required[0] == "self":
+    is_function_type = isinstance(function, FunctionType)
+    is_method_type = isinstance(function, MethodType)
+    if is_function_type and required[0] == "self":
+        required = required[1:]
+    elif is_method_type and required[0] == "cls":
         required = required[1:]
     return required
 

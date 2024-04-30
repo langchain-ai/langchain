@@ -187,5 +187,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
 
 
 class AssembleHeaderException(Exception):
+    """Exception raised for errors in the header assembly."""
+
     def __init__(self, msg: str) -> None:
         self.message = msg
