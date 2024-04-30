@@ -158,7 +158,6 @@ def _enhanced_schema_cypher(
     output_dict = {}
     if exhaustive:
         for prop in properties:
-            print(prop)
             prop_name = prop["property"]
             prop_type = prop["type"]
             if prop_type == "STRING":
