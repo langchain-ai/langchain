@@ -51,7 +51,7 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates the environment."""
-        try:  # noqa: F401
+        try:
             from google.cloud.contentwarehouse_v1 import DocumentServiceClient
         except ImportError as exc:
             raise ImportError(
