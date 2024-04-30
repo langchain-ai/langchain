@@ -1,10 +1,10 @@
+import json
 import os
 import re
 import time
-from typing import List, Optional, Literal, Iterator
+from typing import Iterator, List, Literal, Optional
 
 import requests
-import json
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -36,19 +36,18 @@ class MintbaseDocumentLoader(BaseLoader):
 
     Example:
         .. code-block:: python
-        
+
             contractAddress = "nft.yearofchef.near"  # Year of chef contract address
             blockchainLoader = MintbaseDocumentLoader(
                 contract_address=contractAddress, blockchain_type="mainnet",api_key="omni-site"
             )
-    """
-
+    """  # noqa: E501
 
     def __init__(
         self,
         contract_address: str,
         *,
-        blockchain_type: Literal['mainnet', 'testnet'],
+        blockchain_type: Literal["mainnet", "testnet"],
         api_key: str = "",
         table: str = "",
         select: str = "",
@@ -72,48 +71,48 @@ class MintbaseDocumentLoader(BaseLoader):
         self.blockchainType = blockchain_type
         self.api_key = os.environ.get("MB_API_KEY") or api_key
         self.table = "mb_views_nft_tokens" or table
-        self.select = 'where: {nft_contract_id: {_eq: "contract_address"}}' or select 
-        self.fields =  fields or [
-                "base_uri",
-                "burned_receipt_id",
-                "burned_timestamp",
-                "copies",
-                "description",
-                "expires_at",
-                "extra",
-                "issued_at",
-                "last_transfer_receipt_id",
-                "last_transfer_timestamp",
-                "media",
-                "media_hash",
-                "metadata_content_flag",
-                "metadata_id",
-                "mint_memo",
-                "minted_receipt_id",
-                "minted_timestamp",
-                "minter",
-                "nft_contract_content_flag",
-                "nft_contract_created_at",
-                "nft_contract_icon",
-                "nft_contract_id",
-                "nft_contract_is_mintbase",
-                "nft_contract_name",
-                "nft_contract_owner_id",
-                "nft_contract_reference",
-                "nft_contract_spec",
-                "nft_contract_symbol",
-                "owner",
-                "reference",
-                "reference_blob",
-                "reference_hash",
-                "royalties",
-                "royalties_percent",
-                "splits",
-                "starts_at",
-                "title",
-                "token_id",
-                "updated_at"
-            ]
+        self.select = 'where: {nft_contract_id: {_eq: "contract_address"}}' or select
+        self.fields = fields or [
+            "base_uri",
+            "burned_receipt_id",
+            "burned_timestamp",
+            "copies",
+            "description",
+            "expires_at",
+            "extra",
+            "issued_at",
+            "last_transfer_receipt_id",
+            "last_transfer_timestamp",
+            "media",
+            "media_hash",
+            "metadata_content_flag",
+            "metadata_id",
+            "mint_memo",
+            "minted_receipt_id",
+            "minted_timestamp",
+            "minter",
+            "nft_contract_content_flag",
+            "nft_contract_created_at",
+            "nft_contract_icon",
+            "nft_contract_id",
+            "nft_contract_is_mintbase",
+            "nft_contract_name",
+            "nft_contract_owner_id",
+            "nft_contract_reference",
+            "nft_contract_spec",
+            "nft_contract_symbol",
+            "owner",
+            "reference",
+            "reference_blob",
+            "reference_hash",
+            "royalties",
+            "royalties_percent",
+            "splits",
+            "starts_at",
+            "title",
+            "token_id",
+            "updated_at",
+        ]
 
         self.get_all_tokens = get_all_tokens
         self.max_execution_time = max_execution_time
@@ -121,7 +120,10 @@ class MintbaseDocumentLoader(BaseLoader):
         if not self.api_key:
             raise ValueError("Mintbase API key not provided.")
 
-        if not re.match(r"^(([a-z\d]+[\-_])*[a-z\d]+\.)*([a-z\d]+[\-_])*[a-z\d]+$", self.contract_address):
+        if not re.match(
+            r"^(([a-z\d]+[\-_])*[a-z\d]+\.)*([a-z\d]+[\-_])*[a-z\d]+$",
+            self.contract_address,
+        ):
             raise ValueError(f"Invalid contract address {self.contract_address}")
 
     def load(self) -> List[Document]:
@@ -141,26 +143,23 @@ class MintbaseDocumentLoader(BaseLoader):
 
             # Replace the placeholder with the actual contract address
             operations_doc = operations_doc.replace("select", self.select)
-            operations_doc = operations_doc.replace("contract_address", self.contract_address)
+            operations_doc = operations_doc.replace(
+                "contract_address", self.contract_address
+            )
             operations_doc = operations_doc.replace("table", self.table)
             operations_doc = operations_doc.replace("fields", "\n".join(self.fields))
 
             # Define the headers
-            headers = {
-                "mb-api-key": self.api_key,
-                "Content-Type": "application/json"
-            }
+            headers = {"mb-api-key": self.api_key, "Content-Type": "application/json"}
             # Define the POST data
             data = {
                 "query": operations_doc,
                 "variables": {},
-                "operationName": "MyQuery"
+                "operationName": "MyQuery",
             }
 
-            url = (
-                f"https://graph.mintbase.xyz/{self.blockchainType}"
-            )
-            
+            url = f"https://graph.mintbase.xyz/{self.blockchainType}"
+
             response = requests.post(url, headers=headers, data=json.dumps(data))
 
             if response.status_code != 200:
@@ -170,13 +169,10 @@ class MintbaseDocumentLoader(BaseLoader):
 
             items = response.json()["data"]["mb_views_nft_tokens"]
 
-            
-
             if not items:
                 break
 
             for item in items:
-                
                 content = str(item)
                 token_id = item["token_id"]
                 metadata = {
@@ -190,7 +186,6 @@ class MintbaseDocumentLoader(BaseLoader):
             if not self.get_all_tokens:
                 break
 
-
             if (
                 self.max_execution_time is not None
                 and (time.time() - start_time) > self.max_execution_time
@@ -203,9 +198,8 @@ class MintbaseDocumentLoader(BaseLoader):
             )
 
         return result
-    
-    def lazy_load(self) -> Iterator[Document]:
 
+    def lazy_load(self) -> Iterator[Document]:
         start_time = time.time()
 
         while True:
@@ -220,26 +214,23 @@ class MintbaseDocumentLoader(BaseLoader):
 
             # Replace the placeholder with the actual contract address
             operations_doc = operations_doc.replace("select", self.select)
-            operations_doc = operations_doc.replace("contract_address", self.contract_address)
+            operations_doc = operations_doc.replace(
+                "contract_address", self.contract_address
+            )
             operations_doc = operations_doc.replace("table", self.table)
             operations_doc = operations_doc.replace("fields", "\n".join(self.fields))
 
             # Define the headers
-            headers = {
-                "mb-api-key": self.api_key,
-                "Content-Type": "application/json"
-            }
+            headers = {"mb-api-key": self.api_key, "Content-Type": "application/json"}
             # Define the POST data
             data = {
                 "query": operations_doc,
                 "variables": {},
-                "operationName": "MyQuery"
+                "operationName": "MyQuery",
             }
 
-            url = (
-                f"https://graph.mintbase.xyz/{self.blockchainType}"
-            )
-            
+            url = f"https://graph.mintbase.xyz/{self.blockchainType}"
+
             response = requests.post(url, headers=headers, data=json.dumps(data))
 
             if response.status_code != 200:
@@ -249,13 +240,10 @@ class MintbaseDocumentLoader(BaseLoader):
 
             items = response.json()["data"]["mb_views_nft_tokens"]
 
-            
-
             if not items:
                 break
 
             for item in items:
-                
                 content = str(item)
                 tokenId = item["token_id"]
                 metadata = {
@@ -274,5 +262,3 @@ class MintbaseDocumentLoader(BaseLoader):
                 and (time.time() - start_time) > self.max_execution_time
             ):
                 raise RuntimeError("Execution time exceeded the allowed time limit.")
-
-        
