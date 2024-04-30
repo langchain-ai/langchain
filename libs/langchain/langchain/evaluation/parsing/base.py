@@ -9,7 +9,7 @@ from langchain.evaluation.schema import StringEvaluator
 
 
 class JsonValidityEvaluator(StringEvaluator):
-    """Evaluates whether the prediction is valid JSON.
+    """Evaluate whether the prediction is valid JSON.
 
     This evaluator checks if the prediction is a valid JSON string. It does not
         require any input or reference.
@@ -77,7 +77,7 @@ class JsonValidityEvaluator(StringEvaluator):
 
 
 class JsonEqualityEvaluator(StringEvaluator):
-    """Evaluates whether the prediction is equal to the reference after
+    """Evaluate whether the prediction is equal to the reference after
         parsing both as JSON.
 
     This evaluator checks if the prediction, after parsing as JSON, is equal

@@ -22,9 +22,11 @@ class NeptuneQueryException(Exception):
 
 
 class BaseNeptuneGraph(ABC):
+    """Abstract base class for Neptune"""
+
     @property
     def get_schema(self) -> str:
-        """Returns the schema of the Neptune database"""
+        """Return the schema of the Neptune database"""
         return self.schema
 
     @abstractmethod
