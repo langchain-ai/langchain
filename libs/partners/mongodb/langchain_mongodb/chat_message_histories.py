@@ -88,7 +88,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
                     .sort("_id", -1)
                     .skip(self.history_size)
                 )
-                old_documents_ids = [doc['_id'] for doc in old_documents]
+                old_documents_ids = [doc["_id"] for doc in old_documents]
                 self.collection.delete_many({"_id": {"$in": old_documents_ids}})
             except errors.OperationFailure as error:
                 logger.error(error)
