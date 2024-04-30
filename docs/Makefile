@@ -9,6 +9,8 @@ SOURCE_DIR = docs/
 INTERMEDIATE_DIR = build/intermediate
 OUTPUT_DIR = build/output
 
+PYTHON = .venv/bin/python
+
 clean:
 	rm -rf build
 
@@ -22,29 +24,28 @@ vercel-install-deps:
 
 install-py-deps:
 	python3 -m venv .venv
-	source .venv/bin/activate
-	python3 -m pip install --upgrade pip
-	python3 -m pip install --upgrade uv
-	python3 -m uv pip install -r vercel_requirements.txt
-	python3 -m uv pip install -e $(ls ../libs/partners | grep -vE "airbyte|ibm|.md" | xargs -I {} echo "../libs/partners/{}")
+	$(PYTHON) -m pip install --upgrade pip
+	$(PYTHON) -m pip install --upgrade uv
+	$(PYTHON) -m uv pip install -r vercel_requirements.txt
+	$(PYTHON) -m uv pip install -e $(ls ../libs/partners | grep -vE "airbyte|ibm|.md" | xargs -I {} echo "../libs/partners/{}")
 
 generate-files:
 	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
 	cp ../templates/docs/INDEX.md $(INTERMEDIATE_DIR)/docs/templates/index.md
 	cp ../cookbook/README.md $(INTERMEDIATE_DIR)/cookbook.mdx
 
-	python3 scripts/model_feat_table.py $(INTERMEDIATE_DIR)
+	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
 
 	mkdir -p $(INTERMEDIATE_DIR)/docs/templates
-	python3 scripts/copy_templates.py $(INTERMEDIATE_DIR)
+	$(PYTHON) scripts/copy_templates.py $(INTERMEDIATE_DIR)
 
 	wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O $(INTERMEDIATE_DIR)/docs/langserve.md
-	python3 scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/docs/langserve.md https://github.com/langchain-ai/langserve/tree/main/
+	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/docs/langserve.md https://github.com/langchain-ai/langserve/tree/main/
 
 	wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O docs/langgraph.md
-	python3 scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/docs/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
+	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/docs/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
-	python3 scripts/generate_api_reference_links.py --docs_dir docs
+	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir docs
 
 
 build-local: install-py-deps generate-files
