@@ -387,8 +387,11 @@ class AzureSearch(VectorStore):
             bool: True if deletion is successful,
             False otherwise.
         """
-        res = self.client.delete_documents([{"id": i} for i in ids])
-        return len(res) > 0
+        if ids:
+            res = self.client.delete_documents([{"id": i} for i in ids])
+            return len(res) > 0
+        else:
+            return False
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
