@@ -639,7 +639,7 @@ def _get_mock_client() -> Client:
     return client
 
 
-def test_traceable_to_tracing():
+def test_traceable_to_tracing() -> None:
     has_children = False
 
     def _collect_run(run: Any) -> None:
