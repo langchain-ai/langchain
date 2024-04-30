@@ -3,7 +3,7 @@ from typing import Any
 
 from langchain._api import create_importer
 
-importer = create_importer(__file__, fallback_module="langchain_community.graphs")
+importer = create_importer(__package__, fallback_module="langchain_community.graphs")
 
 
 def __getattr__(name: str) -> Any:
