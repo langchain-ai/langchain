@@ -192,7 +192,7 @@ def get_loader_type(loader: str) -> str:
 
 def get_loader_full_path(loader: BaseLoader) -> str:
     """Return an absolute source path of source of loader based on the
-    keys present in Document object from loader.
+    keys present in Document.
 
     Args:
         loader (BaseLoader): Langchain document loader, derived from Baseloader.

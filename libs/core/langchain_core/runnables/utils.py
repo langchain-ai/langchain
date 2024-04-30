@@ -507,6 +507,15 @@ def create_model(
     __model_name: str,
     **field_definitions: Any,
 ) -> Type[BaseModel]:
+    """Create a pydantic model with the given field definitions.
+
+    Args:
+        __model_name: The name of the model.
+        **field_definitions: The field definitions for the model.
+
+    Returns:
+        Type[BaseModel]: The created model.
+    """
     try:
         return _create_model_cached(__model_name, **field_definitions)
     except TypeError:
