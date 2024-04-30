@@ -308,3 +308,13 @@ jobs:
           generateReleaseNotes: true
           tag: v${{ needs.build.outputs.version }}
           commit: ${{ github.sha }}
+      - name: Create Tag
+        uses: ncipollo/release-action@v1
+        if: ${{ inputs.working-directory != 'libs/langchain' }}
+        with:
+          artifacts: "dist/*"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generateReleaseNotes: false
+          tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}
+          body: "# Release ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}\n\nPackage-specific release note generation coming soon."
+          commit: ${{ github.sha }}
