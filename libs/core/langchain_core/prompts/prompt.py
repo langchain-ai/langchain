@@ -17,7 +17,7 @@ from langchain_core.runnables.config import RunnableConfig
 
 
 class PromptTemplate(StringPromptTemplate):
-    """A prompt template for a language model.
+    """Prompt template for a language model.
 
     A prompt template consists of a string template. It accepts a set of parameters
     from the user that can be used to generate a prompt for a language model.

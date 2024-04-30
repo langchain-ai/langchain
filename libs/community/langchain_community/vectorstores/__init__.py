@@ -250,6 +250,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.typesense import (
         Typesense,  # noqa: F401
     )
+    from langchain_community.vectorstores.upstash import (
+        UpstashVectorStore,  # noqa: F401
+    )
     from langchain_community.vectorstores.usearch import (
         USearch,  # noqa: F401
     )
@@ -364,6 +367,7 @@ __all__ = [
     "TileDB",
     "TimescaleVector",
     "Typesense",
+    "UpstashVectorStore",
     "USearch",
     "VDMS",
     "Vald",
@@ -458,6 +462,7 @@ _module_lookup = {
     "TileDB": "langchain_community.vectorstores.tiledb",
     "TimescaleVector": "langchain_community.vectorstores.timescalevector",
     "Typesense": "langchain_community.vectorstores.typesense",
+    "UpstashVectorStore": "langchain_community.vectorstores.upstash",
     "USearch": "langchain_community.vectorstores.usearch",
     "Vald": "langchain_community.vectorstores.vald",
     "VDMS": "langchain_community.vectorstores.vdms",

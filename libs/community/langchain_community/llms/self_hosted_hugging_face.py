@@ -73,7 +73,7 @@ def _load_transformer(
                 f"currently only {VALID_TASKS} are supported"
             )
     except ImportError as e:
-        raise ValueError(
+        raise ImportError(
             f"Could not load the {task} model due to missing dependencies."
         ) from e
 

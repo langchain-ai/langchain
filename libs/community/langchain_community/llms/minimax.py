@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class _MinimaxEndpointClient(BaseModel):
-    """An API client that talks to a Minimax llm endpoint."""
+    """API client for the Minimax LLM endpoint."""
 
     host: str
     group_id: str
@@ -117,7 +117,8 @@ class MinimaxCommon(BaseModel):
 
 
 class Minimax(MinimaxCommon, LLM):
-    """Wrapper around Minimax large language models.
+    """Minimax large language models.
+
     To use, you should have the environment variable
     ``MINIMAX_API_KEY`` and ``MINIMAX_GROUP_ID`` set with your API key,
     or pass them as a named parameter to the constructor.
