@@ -13,7 +13,9 @@ if TYPE_CHECKING:
 # handling optional imports.
 DEPRECATED_LOOKUP = {
     "TranscriptFormat": "langchain_community.document_loaders.assemblyai",
-    "AssemblyAIAudioTranscriptLoader": "langchain_community.document_loaders.assemblyai",
+    "AssemblyAIAudioTranscriptLoader": (
+        "langchain_community.document_loaders.assemblyai"
+    ),
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

@@ -18,8 +18,12 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "satisfies_min_unstructured_version": "langchain_community.document_loaders.unstructured",
-    "validate_unstructured_version": "langchain_community.document_loaders.unstructured",
+    "satisfies_min_unstructured_version": (
+        "langchain_community.document_loaders.unstructured"
+    ),
+    "validate_unstructured_version": (
+        "langchain_community.document_loaders.unstructured"
+    ),
     "UnstructuredBaseLoader": "langchain_community.document_loaders.unstructured",
     "UnstructuredFileLoader": "langchain_community.document_loaders.unstructured",
     "get_elements_from_api": "langchain_community.document_loaders.unstructured",

@@ -18,7 +18,9 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "extract_from_images_with_rapidocr": "langchain_community.document_loaders.parsers.pdf",
+    "extract_from_images_with_rapidocr": (
+        "langchain_community.document_loaders.parsers.pdf"
+    ),
     "PyPDFParser": "langchain_community.document_loaders.parsers.pdf",
     "PDFMinerParser": "langchain_community.document_loaders.parsers.pdf",
     "PyMuPDFParser": "langchain_community.document_loaders.parsers.pdf",

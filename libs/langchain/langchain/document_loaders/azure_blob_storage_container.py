@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "AzureBlobStorageContainerLoader": "langchain_community.document_loaders.azure_blob_storage_container"
+    "AzureBlobStorageContainerLoader": (
+        "langchain_community.document_loaders.azure_blob_storage_container"
+    ),
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

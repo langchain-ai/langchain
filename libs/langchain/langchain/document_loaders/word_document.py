@@ -13,7 +13,9 @@ if TYPE_CHECKING:
 # handling optional imports.
 DEPRECATED_LOOKUP = {
     "Docx2txtLoader": "langchain_community.document_loaders.word_document",
-    "UnstructuredWordDocumentLoader": "langchain_community.document_loaders.word_document",
+    "UnstructuredWordDocumentLoader": (
+        "langchain_community.document_loaders.word_document"
+    ),
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

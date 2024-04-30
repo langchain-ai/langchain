@@ -25,7 +25,9 @@ DEPRECATED_LOOKUP = {
     "BS4HTMLParser": "langchain_community.document_loaders.parsers.html.bs4",
     "DocAIParser": "langchain_community.document_loaders.parsers.docai",
     "GrobidParser": "langchain_community.document_loaders.parsers.grobid",
-    "LanguageParser": "langchain_community.document_loaders.parsers.language.language_parser",
+    "LanguageParser": (
+        "langchain_community.document_loaders.parsers.language.language_parser"
+    ),
     "OpenAIWhisperParser": "langchain_community.document_loaders.parsers.audio",
     "PDFMinerParser": "langchain_community.document_loaders.parsers.pdf",
     "PDFPlumberParser": "langchain_community.document_loaders.parsers.pdf",

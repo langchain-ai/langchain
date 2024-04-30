@@ -14,13 +14,9 @@
 
     Document, <name>TextSplitter
 """
-import warnings
 from typing import TYPE_CHECKING, Any
 
-from langchain_core._api import LangChainDeprecationWarning
-
 from langchain._api import create_importer
-from langchain.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders.acreom import AcreomLoader
@@ -251,7 +247,6 @@ DEPRECATED_LOOKUP = {
     "AsyncHtmlLoader": "langchain_community.document_loaders.async_html",
     "AsyncChromiumLoader": "langchain_community.document_loaders.chromium",
     "AZLyricsLoader": "langchain_community.document_loaders.azlyrics",
-    "AcreomLoader": "langchain_community.document_loaders.acreom",
     "AirbyteCDKLoader": "langchain_community.document_loaders.airbyte",
     "AirbyteGongLoader": "langchain_community.document_loaders.airbyte",
     "AirbyteJSONLoader": "langchain_community.document_loaders.airbyte_json",
@@ -266,11 +261,16 @@ DEPRECATED_LOOKUP = {
     "ApifyDatasetLoader": "langchain_community.document_loaders.apify_dataset",
     "ArcGISLoader": "langchain_community.document_loaders.arcgis_loader",
     "ArxivLoader": "langchain_community.document_loaders.arxiv",
-    "AssemblyAIAudioTranscriptLoader": "langchain_community.document_loaders.assemblyai",
-    "AsyncHtmlLoader": "langchain_community.document_loaders.async_html",
+    "AssemblyAIAudioTranscriptLoader": (
+        "langchain_community.document_loaders.assemblyai"
+    ),
     "AzureAIDataLoader": "langchain_community.document_loaders.azure_ai_data",
-    "AzureBlobStorageContainerLoader": "langchain_community.document_loaders.azure_blob_storage_container",
-    "AzureBlobStorageFileLoader": "langchain_community.document_loaders.azure_blob_storage_file",
+    "AzureBlobStorageContainerLoader": (
+        "langchain_community.document_loaders.azure_blob_storage_container"
+    ),
+    "AzureBlobStorageFileLoader": (
+        "langchain_community.document_loaders.azure_blob_storage_file"
+    ),
     "BSHTMLLoader": "langchain_community.document_loaders.html_bs",
     "BibtexLoader": "langchain_community.document_loaders.bibtex",
     "BigQueryLoader": "langchain_community.document_loaders.bigquery",
@@ -282,7 +282,9 @@ DEPRECATED_LOOKUP = {
     "CSVLoader": "langchain_community.document_loaders.csv_loader",
     "ChatGPTLoader": "langchain_community.document_loaders.chatgpt",
     "CoNLLULoader": "langchain_community.document_loaders.conllu",
-    "CollegeConfidentialLoader": "langchain_community.document_loaders.college_confidential",
+    "CollegeConfidentialLoader": (
+        "langchain_community.document_loaders.college_confidential"
+    ),
     "ConcurrentLoader": "langchain_community.document_loaders.concurrent",
     "ConfluenceLoader": "langchain_community.document_loaders.confluence",
     "CouchbaseLoader": "langchain_community.document_loaders.couchbase",
@@ -302,7 +304,9 @@ DEPRECATED_LOOKUP = {
     "FacebookChatLoader": "langchain_community.document_loaders.facebook_chat",
     "FaunaLoader": "langchain_community.document_loaders.fauna",
     "FigmaFileLoader": "langchain_community.document_loaders.figma",
-    "FileSystemBlobLoader": "langchain_community.document_loaders.blob_loaders.file_system",
+    "FileSystemBlobLoader": (
+        "langchain_community.document_loaders.blob_loaders.file_system"
+    ),
     "GCSDirectoryLoader": "langchain_community.document_loaders.gcs_directory",
     "GCSFileLoader": "langchain_community.document_loaders.gcs_file",
     "GeoDataFrameLoader": "langchain_community.document_loaders.geodataframe",
@@ -311,11 +315,15 @@ DEPRECATED_LOOKUP = {
     "GitbookLoader": "langchain_community.document_loaders.gitbook",
     "GoogleApiClient": "langchain_community.document_loaders.youtube",
     "GoogleApiYoutubeLoader": "langchain_community.document_loaders.youtube",
-    "GoogleSpeechToTextLoader": "langchain_community.document_loaders.google_speech_to_text",
+    "GoogleSpeechToTextLoader": (
+        "langchain_community.document_loaders.google_speech_to_text"
+    ),
     "GoogleDriveLoader": "langchain_community.document_loaders.googledrive",
     "GutenbergLoader": "langchain_community.document_loaders.gutenberg",
     "HNLoader": "langchain_community.document_loaders.hn",
-    "HuggingFaceDatasetLoader": "langchain_community.document_loaders.hugging_face_dataset",
+    "HuggingFaceDatasetLoader": (
+        "langchain_community.document_loaders.hugging_face_dataset"
+    ),
     "IFixitLoader": "langchain_community.document_loaders.ifixit",
     "IMSDbLoader": "langchain_community.document_loaders.imsdb",
     "ImageCaptionLoader": "langchain_community.document_loaders.image_captions",
@@ -354,7 +362,6 @@ DEPRECATED_LOOKUP = {
     "PubMedLoader": "langchain_community.document_loaders.pubmed",
     "PyMuPDFLoader": "langchain_community.document_loaders.pdf",
     "PyPDFDirectoryLoader": "langchain_community.document_loaders.pdf",
-    "PyPDFLoader": "langchain_community.document_loaders.pdf",
     "PyPDFium2Loader": "langchain_community.document_loaders.pdf",
     "PySparkDataFrameLoader": "langchain_community.document_loaders.pyspark_dataframe",
     "PythonLoader": "langchain_community.document_loaders.python",
@@ -376,9 +383,12 @@ DEPRECATED_LOOKUP = {
     "StripeLoader": "langchain_community.document_loaders.stripe",
     "TelegramChatApiLoader": "langchain_community.document_loaders.telegram",
     "TelegramChatFileLoader": "langchain_community.document_loaders.telegram",
-    "TelegramChatFileLoader": "langchain_community.document_loaders.telegram",
-    "TensorflowDatasetLoader": "langchain_community.document_loaders.tensorflow_datasets",
-    "TencentCOSDirectoryLoader": "langchain_community.document_loaders.tencent_cos_directory",
+    "TensorflowDatasetLoader": (
+        "langchain_community.document_loaders.tensorflow_datasets"
+    ),
+    "TencentCOSDirectoryLoader": (
+        "langchain_community.document_loaders.tencent_cos_directory"
+    ),
     "TencentCOSFileLoader": "langchain_community.document_loaders.tencent_cos_file",
     "TextLoader": "langchain_community.document_loaders.text",
     "ToMarkdownLoader": "langchain_community.document_loaders.tomarkdown",
@@ -404,14 +414,18 @@ DEPRECATED_LOOKUP = {
     "UnstructuredRTFLoader": "langchain_community.document_loaders.rtf",
     "UnstructuredTSVLoader": "langchain_community.document_loaders.tsv",
     "UnstructuredURLLoader": "langchain_community.document_loaders.url",
-    "UnstructuredWordDocumentLoader": "langchain_community.document_loaders.word_document",
+    "UnstructuredWordDocumentLoader": (
+        "langchain_community.document_loaders.word_document"
+    ),
     "UnstructuredXMLLoader": "langchain_community.document_loaders.xml",
     "WeatherDataLoader": "langchain_community.document_loaders.weather",
     "WebBaseLoader": "langchain_community.document_loaders.web_base",
     "WhatsAppChatLoader": "langchain_community.document_loaders.whatsapp_chat",
     "WikipediaLoader": "langchain_community.document_loaders.wikipedia",
     "XorbitsLoader": "langchain_community.document_loaders.xorbits",
-    "YoutubeAudioLoader": "langchain_community.document_loaders.blob_loaders.youtube_audio",
+    "YoutubeAudioLoader": (
+        "langchain_community.document_loaders.blob_loaders.youtube_audio"
+    ),
     "YoutubeLoader": "langchain_community.document_loaders.youtube",
     "YuqueLoader": "langchain_community.document_loaders.yuque",
 }

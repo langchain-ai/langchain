@@ -16,8 +16,12 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "FileSystemBlobLoader": "langchain_community.document_loaders.blob_loaders.file_system",
-    "YoutubeAudioLoader": "langchain_community.document_loaders.blob_loaders.youtube_audio",
+    "FileSystemBlobLoader": (
+        "langchain_community.document_loaders.blob_loaders.file_system"
+    ),
+    "YoutubeAudioLoader": (
+        "langchain_community.document_loaders.blob_loaders.youtube_audio"
+    ),
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
