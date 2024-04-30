@@ -18,7 +18,7 @@ MODULE_LOOKUP = {
     "ngram_overlap_score": "langchain_community.example_selectors.ngram_overlap",
 }
 
-_import_attribute = create_importer(__file__, module_lookup=MODULE_LOOKUP)
+_import_attribute = create_importer(__file__, deprecated_lookups=MODULE_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:

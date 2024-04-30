@@ -19,11 +19,11 @@ if TYPE_CHECKING:
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
-MODULE_LOOKUP = {
+DEPRECATED_LOOKUPS = {
     "NGramOverlapExampleSelector": "langchain_community.example_selectors.ngram_overlap"
 }
 
-_import_attribute = create_importer(__file__, module_lookup=MODULE_LOOKUP)
+_import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUPS)
 
 
 def __getattr__(name: str) -> Any:
