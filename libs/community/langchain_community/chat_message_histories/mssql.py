@@ -111,11 +111,10 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
     ) -> None:
         """Create the table schema in the database and create relevant indexes."""
         queries = _create_table_and_index(table_name)
-        cursor = await connection.cursor()
-        for query in queries:
-            await cursor.execute(query)
-            await cursor.commit()
-        await cursor.close()
+        async with connection.cursor() as cursor:
+            for query in queries:
+                await cursor.execute(query)
+                await cursor.commit()
 
     @staticmethod
     def drop_table(connection: pyodbc.Connection, table_name: str, /) -> None:
@@ -146,10 +145,9 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
           table_name: the name of the table to drop
         """
         query = _delete_table_query(table_name)
-        cursor = await connection.cursor()
-        await cursor.execute(query)
-        await cursor.commit()
-        await cursor.close()
+        async with connection.cursor() as cursor:
+            await cursor.execute(query)
+            await cursor.commit()
 
     def add_messages(self, messages: Sequence[BaseMessage]) -> None:
         """Add messages to the chat message history."""
@@ -174,10 +172,9 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
             for message in messages
         ]
         query = _insert_message_query(self._table_name)
-        cursor = await self._aconnection.cursor()
-        await cursor.executemany(query, values)
-        await cursor.commit()
-        await cursor.close()
+        async with self._aconnection.cursor() as cursor:
+            await cursor.executemany(query, values)
+            await cursor.commit()
 
     def get_messages(self) -> List[BaseMessage]:
         """Retrieve messages from the chat message history."""
@@ -200,11 +197,11 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
 
         query = _get_messages_query(self._table_name)
 
-        cursor = await self._aconnection.cursor()
-        await cursor.execute(query, self._session_id)
-        result = await cursor.fetchall()
-        items = [json.loads(record[0]) for record in result]
-        messages = messages_from_dict(items)
+        async with self._aconnection.cursor() as cursor:
+            await cursor.execute(query, self._session_id)
+            result = await cursor.fetchall()
+            items = [json.loads(record[0]) for record in result]
+            messages = messages_from_dict(items)
         return messages
 
     @property

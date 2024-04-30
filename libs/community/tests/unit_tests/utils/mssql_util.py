@@ -1,5 +1,5 @@
 import os
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
 
 import aioodbc
 import pyodbc
@@ -14,6 +14,7 @@ MSSQL_DATABASE = os.environ["TEST_MSSQL_DATABASE"]
 DSN = f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={MSSQL_SERVER};DATABASE={MSSQL_DATABASE};UID={MSSQL_USERNAME};PWD={MSSQL_PASSWORD};Encrypt=no;TrustServerCertificate=yes;"
 
 
+@asynccontextmanager
 async def asyncms_client() -> AsyncGenerator[aioodbc.Connection, None]:
     conn = await aioodbc.connect(dsn=DSN)
     try:

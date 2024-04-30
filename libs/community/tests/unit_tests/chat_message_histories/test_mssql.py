@@ -67,7 +67,7 @@ def test_sync_chat_history() -> None:
 async def test_async_chat_history() -> None:
     """Test the async chat history."""
 
-    async for async_connection in asyncms_client():
+    async with asyncms_client() as async_connection:
         table_name = "test_async_chat_history"
         session_id = str(uuid.UUID(int=125))
 
