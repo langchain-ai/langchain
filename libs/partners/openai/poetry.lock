@@ -385,7 +385,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.42"
+version = "0.1.46"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1286,4 +1286,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "625e7565d37b9633874f61ee5660220e8e330658715d8b56ef2340f06dc1c625"
+content-hash = "f8a406a4ebd93e5c2ef3fcf4a3cebdd588ce09e288dc31b7b9b6b1560285575a"

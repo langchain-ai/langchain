@@ -35,7 +35,7 @@ _NOT_SET = object()
 
 
 class Cassandra(VectorStore):
-    """Wrapper around Apache Cassandra(R) for vector-store workloads.
+    """Apache Cassandra(R) for vector-store workloads.
 
     To use it, you need a recent installation of the `cassio` library
     and a Cassandra cluster / Astra DB instance supporting vector capabilities.

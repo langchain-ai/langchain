@@ -72,6 +72,15 @@ def create_prem_retry_decorator(
     *,
     max_retries: int = 1,
 ) -> Callable[[Any], Any]:
+    """Create a retry decorator for PremAIEmbeddings.
+
+    Args:
+        embedder (PremAIEmbeddings): The PremAIEmbeddings instance
+        max_retries (int): The maximum number of retries
+
+    Returns:
+        Callable[[Any], Any]: The retry decorator
+    """
     import premai.models
 
     errors = [

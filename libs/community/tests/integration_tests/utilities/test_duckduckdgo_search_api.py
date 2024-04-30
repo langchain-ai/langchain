@@ -20,7 +20,7 @@ def ddg_installed() -> bool:
 def test_ddg_search_tool() -> None:
     keywords = "Bella Ciao"
     tool = DuckDuckGoSearchRun()
-    result = tool(keywords)
+    result = tool.invoke(keywords)
     print(result)  # noqa: T201
     assert len(result.split()) > 20
 
@@ -29,6 +29,6 @@ def test_ddg_search_tool() -> None:
 def test_ddg_search_news_tool() -> None:
     keywords = "Tesla"
     tool = DuckDuckGoSearchResults(source="news")
-    result = tool(keywords)
+    result = tool.invoke(keywords)
     print(result)  # noqa: T201
     assert len(result.split()) > 20

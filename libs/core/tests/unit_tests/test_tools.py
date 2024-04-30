@@ -39,7 +39,7 @@ def test_unnamed_decorator() -> None:
     assert isinstance(search_api, BaseTool)
     assert search_api.name == "search_api"
     assert not search_api.return_direct
-    assert search_api("test") == "API result"
+    assert search_api.invoke("test") == "API result"
 
 
 class _MockSchema(BaseModel):
@@ -562,7 +562,7 @@ def test_missing_docstring() -> None:
 def test_create_tool_positional_args() -> None:
     """Test that positional arguments are allowed."""
     test_tool = Tool("test_name", lambda x: x, "test_description")
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
     assert test_tool.is_single_input
@@ -572,7 +572,7 @@ def test_create_tool_keyword_args() -> None:
     """Test that keyword arguments are allowed."""
     test_tool = Tool(name="test_name", func=lambda x: x, description="test_description")
     assert test_tool.is_single_input
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
 
@@ -590,7 +590,7 @@ async def test_create_async_tool() -> None:
         coroutine=_test_func,
     )
     assert test_tool.is_single_input
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
     assert test_tool.coroutine is not None
