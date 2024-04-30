@@ -13,9 +13,8 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.42"
-tokenizers = "^0.15.1"
-httpx = ">=0.25.2,<1"
-httpx-sse = ">=0.3.1,<1"
+tokenizers = ">=0.19.1"
+transformers = ">=4.39.0"
 
 [tool.poetry.group.test]
 optional = true
