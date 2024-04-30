@@ -1154,29 +1154,7 @@ class CassandraCache(BaseCache):
         )[1]
         return self.delete(prompt, llm_string=llm_string)
 
-    async def adelete_through_llm(
-        self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
-    ) -> None:
-        """
-        A wrapper around `adelete` with the LLM being passed.
-        In case the llm(prompt) calls have a `stop` param, you should pass it here
-        """
-        llm_string = (
-            await aget_prompts(
-                {**llm.dict(), **{"stop": stop}},
-                [],
-            )
-        )[1]
-        return self.delete(prompt, llm_string=llm_string)
-
     def delete(self, prompt: str, llm_string: str) -> None:
-        """Evict from cache if there's an entry."""
-        return self.kv_cache.delete(
-            llm_string=_hash(llm_string),
-            prompt=_hash(prompt),
-        )
-
-    async def adelete(self, prompt: str, llm_string: str) -> None:
         """Evict from cache if there's an entry."""
         return self.kv_cache.delete(
             llm_string=_hash(llm_string),
