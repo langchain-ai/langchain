@@ -24,6 +24,7 @@ pytest = "^7.3.0"
 pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
 langchain-standard-tests = { path = "../../standard-tests", develop = true }
+langchain-community = { path = "../../community", develop = true }
 
 [tool.poetry.group.test_integration]
 optional = true
@@ -45,12 +46,14 @@ ruff = "^0.1.5"
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
 langchain-core = { path = "../../core", develop = true }
+langchain-community = { path = "../../community", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = { path = "../../core", develop = true }
+langchain-community = { path = "../../community", develop = true }
 
 [tool.ruff.lint]
 select = [

@@ -13,6 +13,7 @@ from typing import (
     cast,
 )
 
+from langchain_community.llms.huggingface_hub import HuggingFaceHub
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -34,7 +35,6 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
-from langchain_community.llms.huggingface_hub import HuggingFaceHub
 from langchain_huggingface.llms.huggingface_text_gen_inference import (
     HuggingFaceTextGenInference,
 )
