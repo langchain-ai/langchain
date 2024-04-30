@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 # handling optional imports.
 DEPRECATED_LOOKUP = {
     "RequestsGetToolWithParsing": (
-        "langchain_community.agent_toolkits.openapi.planner",
+        "langchain_community.agent_toolkits.openapi.planner"
     ),
     "RequestsPostToolWithParsing": (
         "langchain_community.agent_toolkits.openapi.planner"
@@ -31,7 +31,7 @@ DEPRECATED_LOOKUP = {
     "RequestsDeleteToolWithParsing": (
         "langchain_community.agent_toolkits.openapi.planner"
     ),
-    "create_openapi_agent": ("langchain_community.agent_toolkits.openapi.planner"),
+    "create_openapi_agent": "langchain_community.agent_toolkits.openapi.planner",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
