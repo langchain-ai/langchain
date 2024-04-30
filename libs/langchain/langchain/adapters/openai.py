@@ -42,7 +42,7 @@ MODULE_LOOKUP = {
     "chat": "langchain_community.adapters.openai",
 }
 
-_import_attribute = create_importer(__file__, module_lookup=MODULE_LOOKUP)
+_import_attribute = create_importer(__file__, deprecated_lookups=MODULE_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
