@@ -55,6 +55,58 @@ data
 
 </CodeOutputBlock>
 
+## Loading HTML with SpiderLoader
+
+[Spider](https://spider.cloud/?ref=langchain) is the [fastest](https://github.com/spider-rs/spider/blob/main/benches/BENCHMARKS.md#benchmark-results) crawler. It converts any website into pure HTML, markdown, metadata or text while enabling you to crawl with custom actions using AI.
+
+Spider allows you to use high performance proxies to prevent detection, caches AI actions, webhooks for crawling status, scheduled crawls etc... 
+
+## Prerequisite
+
+You need to have a Spider api key to use this loader. You can get one on [spider.cloud](https://spider.cloud).
+
+```python
+%pip install --upgrade --quiet  langchain langchain-community spider-client
+```
+```python
+from langchain_community.document_loaders import SpiderLoader
+
+loader = SpiderLoader(
+    api_key="YOUR_API_KEY", url="https://spider.cloud", mode="crawl"
+)
+
+data = loader.load()
+```
+
+For guides and documentation, visit [Spider](https://spider.cloud/docs/api)
+
+
+## Loading HTML with FireCrawlLoader
+
+[FireCrawl](https://firecrawl.dev/?ref=langchain) crawls and convert any website into markdown. It crawls all accessible subpages and give you clean markdown and metadata for each.
+
+FireCrawl handles complex tasks such as reverse proxies, caching, rate limits, and content blocked by JavaScript.
+
+### Prerequisite
+
+You need to have a FireCrawl API key to use this loader. You can get one by signing up at [FireCrawl](https://firecrawl.dev/?ref=langchainpy).
+
+```python
+%pip install --upgrade --quiet  langchain langchain-community firecrawl-py
+
+from langchain_community.document_loaders import FireCrawlLoader
+
+
+loader = FireCrawlLoader(
+    api_key="YOUR_API_KEY", url="https://firecrawl.dev", mode="crawl"
+)
+
+data = loader.load()
+```
+
+For more information on how to use FireCrawl, visit [FireCrawl](https://firecrawl.dev/?ref=langchainpy).
+
+
 ## Loading HTML with AzureAIDocumentIntelligenceLoader
 
 [Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known as `Azure Form Recognizer`) is machine-learning 

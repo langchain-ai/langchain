@@ -129,6 +129,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
+    check_embedding_ctx_length: bool = True
+    """Whether to check the token length of inputs and automatically split inputs 
+        longer than embedding_ctx_length."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -272,7 +275,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         # If tiktoken flag set to False
         if not self.tiktoken_enabled:
             try:
-                from transformers import AutoTokenizer  # noqa: F401
+                from transformers import AutoTokenizer
             except ImportError:
                 raise ValueError(
                     "Could not import transformers python package. "
@@ -511,6 +514,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        if not self.check_embedding_ctx_length:
+            embeddings: List[List[float]] = []
+            for text in texts:
+                response = self.client.create(
+                    input=text,
+                    **self._invocation_params,
+                )
+                if not isinstance(response, dict):
+                    response = response.dict()
+                embeddings.extend(r["embedding"] for r in response["data"])
+            return embeddings
+
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
@@ -529,6 +544,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        if not self.check_embedding_ctx_length:
+            embeddings: List[List[float]] = []
+            for text in texts:
+                response = await self.async_client.create(
+                    input=text,
+                    **self._invocation_params,
+                )
+                if not isinstance(response, dict):
+                    response = response.dict()
+                embeddings.extend(r["embedding"] for r in response["data"])
+            return embeddings
+
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)

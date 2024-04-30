@@ -632,9 +632,9 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
 
         try:
-            import textractcaller as tc  # noqa: F401
+            import textractcaller as tc
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import amazon-textract-caller python package. "
                 "Please install it with `pip install amazon-textract-caller`."
             )
@@ -662,7 +662,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
                 client = session.client("textract", **client_params)
 
             except ImportError:
-                raise ModuleNotFoundError(
+                raise ImportError(
                     "Could not import boto3 python package. "
                     "Please install it with `pip install boto3`."
                 )
@@ -710,7 +710,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
             from PIL import Image, ImageSequence
 
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import pypdf or Pilloe python package. "
                 "Please install it with `pip install pypdf Pillow`."
             )
@@ -731,7 +731,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
 
 
 class DocumentIntelligenceLoader(BasePDFLoader):
-    """Loads a PDF with Azure Document Intelligence"""
+    """Load a PDF with Azure Document Intelligence"""
 
     def __init__(
         self,

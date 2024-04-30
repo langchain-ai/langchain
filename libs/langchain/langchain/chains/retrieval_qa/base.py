@@ -6,6 +6,7 @@ import warnings
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
@@ -194,8 +195,40 @@ class BaseRetrievalQA(Chain):
             return {self.output_key: answer}
 
 
+@deprecated(since="0.1.17", alternative="create_retrieval_chain", removal="0.3.0")
 class RetrievalQA(BaseRetrievalQA):
     """Chain for question-answering against an index.
+
+    This class is deprecated. See below for an example implementation using
+    `create_retrieval_chain`:
+
+        .. code-block:: python
+
+            from langchain.chains import create_retrieval_chain
+            from langchain.chains.combine_documents import create_stuff_documents_chain
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_openai import ChatOpenAI
+
+
+            retriever = ...  # Your retriever
+            llm = ChatOpenAI()
+
+            system_prompt = (
+                "Use the given context to answer the question. "
+                "If you don't know the answer, say you don't know. "
+                "Use three sentence maximum and keep the answer concise."
+                "\n\n{context}"
+            )
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", system_prompt),
+                    ("human", "{input}"),
+                ]
+            )
+            question_answer_chain = create_stuff_documents_chain(llm, prompt)
+            chain = create_retrieval_chain(retriever, question_answer_chain)
+
+            chain.invoke({"input": query})
 
     Example:
         .. code-block:: python
@@ -218,8 +251,8 @@ class RetrievalQA(BaseRetrievalQA):
         run_manager: CallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        return self.retriever.get_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        return self.retriever.invoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
 
     async def _aget_docs(
@@ -229,8 +262,8 @@ class RetrievalQA(BaseRetrievalQA):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> List[Document]:
         """Get docs."""
-        return await self.retriever.aget_relevant_documents(
-            question, callbacks=run_manager.get_child()
+        return await self.retriever.ainvoke(
+            question, config={"callbacks": run_manager.get_child()}
         )
 
     @property

@@ -86,6 +86,5 @@ def test_redis_cache_chat() -> None:
     llm = FakeChatModel()
     params = llm.dict()
     params["stop"] = None
-    with pytest.warns():
-        llm.predict("foo")
+    llm.invoke("foo")
     langchain.llm_cache.redis.flushall()

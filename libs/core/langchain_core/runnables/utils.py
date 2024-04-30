@@ -218,7 +218,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
         return list(visitor.keys) if visitor.keys else None
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return None
 
 
@@ -241,7 +241,7 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         visitor = GetLambdaSource()
         visitor.visit(tree)
         return visitor.source if visitor.count == 1 else name
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return name
 
 
@@ -263,11 +263,14 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
                         if vv is None:
                             break
                         else:
-                            vv = getattr(vv, part)
+                            try:
+                                vv = getattr(vv, part)
+                            except AttributeError:
+                                break
                     else:
                         values.append(vv)
         return values
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return []
 
 
@@ -504,6 +507,15 @@ def create_model(
     __model_name: str,
     **field_definitions: Any,
 ) -> Type[BaseModel]:
+    """Create a pydantic model with the given field definitions.
+
+    Args:
+        __model_name: The name of the model.
+        **field_definitions: The field definitions for the model.
+
+    Returns:
+        Type[BaseModel]: The created model.
+    """
     try:
         return _create_model_cached(__model_name, **field_definitions)
     except TypeError:
@@ -521,11 +533,3 @@ def _create_model_cached(
     return _create_model_base(
         __model_name, __config__=_SchemaConfig, **field_definitions
     )
-
-
-def adapt_first_streaming_chunk(chunk: Any) -> Any:
-    """This might transform the first chunk of a stream into an AddableDict."""
-    if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
-        return AddableDict(chunk)
-    else:
-        return chunk

@@ -9,11 +9,11 @@ from typing import (
     Tuple,
 )
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,

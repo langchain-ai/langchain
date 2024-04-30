@@ -8,6 +8,7 @@ EXPECTED_ALL = [
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
+    "DataheraldAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
     "DriaAPIWrapper",
     "GoldenQueryAPIWrapper",
@@ -58,6 +59,7 @@ EXPECTED_ALL = [
     "YouSearchAPIWrapper",
     "ZapierNLAWrapper",
     "MerriamWebsterAPIWrapper",
+    "MojeekSearchAPIWrapper",
 ]
 
 

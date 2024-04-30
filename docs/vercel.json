@@ -2,6 +2,10 @@
   "trailingSlash": true,
   "redirects": [
     {
+      "source": "/docs/integrations/llms/titan_takeoff_pro",
+      "destination": "/docs/integrations/llms/titan_takeoff"
+    },
+    {
       "source": "/docs/integrations/providers/optimum_intel(/?)",
       "destination": "/docs/integrations/providers/intel/"
     },
@@ -1181,6 +1185,14 @@
     {
       "source": "/docs/guides/evaluation/:path*(/?)",
       "destination": "/docs/guides/productionization/evaluation/:path*/"
+    },
+    {
+      "source": "/docs/integrations/text_embedding/solar(/?)",
+      "destination": "/docs/integrations/text_embedding/upstage"
+    },
+    {
+      "source": "/docs/integrations/chat/solar(/?)",
+      "destination": "/docs/integrations/chat/upstage"
     }
   ]
 }

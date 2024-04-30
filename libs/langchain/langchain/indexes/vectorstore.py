@@ -1,9 +1,7 @@
 from typing import Any, Dict, List, Optional, Type
 
-from langchain_community.document_loaders.base import BaseLoader
-from langchain_community.embeddings.openai import OpenAIEmbeddings
-from langchain_community.llms.openai import OpenAI
 from langchain_community.vectorstores.inmemory import InMemoryVectorStore
+from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
@@ -38,7 +36,14 @@ class VectorStoreIndexWrapper(BaseModel):
         **kwargs: Any,
     ) -> str:
         """Query the vectorstore."""
-        llm = llm or OpenAI(temperature=0)
+        if llm is None:
+            raise NotImplementedError(
+                "This API has been changed to require an LLM. "
+                "Please provide an llm to use for querying the vectorstore.\n"
+                "For example,\n"
+                "from langchain_openai import OpenAI\n"
+                "llm = OpenAI(temperature=0)"
+            )
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQA.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
@@ -53,7 +58,14 @@ class VectorStoreIndexWrapper(BaseModel):
         **kwargs: Any,
     ) -> str:
         """Query the vectorstore."""
-        llm = llm or OpenAI(temperature=0)
+        if llm is None:
+            raise NotImplementedError(
+                "This API has been changed to require an LLM. "
+                "Please provide an llm to use for querying the vectorstore.\n"
+                "For example,\n"
+                "from langchain_openai import OpenAI\n"
+                "llm = OpenAI(temperature=0)"
+            )
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQA.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
@@ -68,7 +80,14 @@ class VectorStoreIndexWrapper(BaseModel):
         **kwargs: Any,
     ) -> dict:
         """Query the vectorstore and get back sources."""
-        llm = llm or OpenAI(temperature=0)
+        if llm is None:
+            raise NotImplementedError(
+                "This API has been changed to require an LLM. "
+                "Please provide an llm to use for querying the vectorstore.\n"
+                "For example,\n"
+                "from langchain_openai import OpenAI\n"
+                "llm = OpenAI(temperature=0)"
+            )
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
@@ -83,7 +102,14 @@ class VectorStoreIndexWrapper(BaseModel):
         **kwargs: Any,
     ) -> dict:
         """Query the vectorstore and get back sources."""
-        llm = llm or OpenAI(temperature=0)
+        if llm is None:
+            raise NotImplementedError(
+                "This API has been changed to require an LLM. "
+                "Please provide an llm to use for querying the vectorstore.\n"
+                "For example,\n"
+                "from langchain_openai import OpenAI\n"
+                "llm = OpenAI(temperature=0)"
+            )
         retriever_kwargs = retriever_kwargs or {}
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
@@ -95,7 +121,7 @@ class VectorstoreIndexCreator(BaseModel):
     """Logic for creating indexes."""
 
     vectorstore_cls: Type[VectorStore] = InMemoryVectorStore
-    embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
+    embedding: Embeddings
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
     vectorstore_kwargs: dict = Field(default_factory=dict)
 

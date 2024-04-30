@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-chroma"
-version = "0.1.0rc1"
+version = "0.1.0"
 description = "An integration package connecting Chroma and LangChain"
 authors = []
 readme = "README.md"
@@ -61,7 +61,7 @@ optional = true
 langchain-core = { path = "../../core", develop = true }
 langchain-community = { path = "../../community", develop = true }
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",    # pycodestyle
   "F",    # pyflakes

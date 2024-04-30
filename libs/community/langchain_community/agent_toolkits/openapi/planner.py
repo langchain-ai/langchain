@@ -348,7 +348,7 @@ def create_openapi_agent(
     allow_dangerous_requests: bool = False,
     **kwargs: Any,
 ) -> Any:
-    """Instantiate OpenAI API planner and controller for a given spec.
+    """Construct an OpenAI API planner and controller for a given spec.
 
     Inject credentials via requests_wrapper.
 

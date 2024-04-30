@@ -23,112 +23,112 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_community.retrievers.arcee import (
-        ArceeRetriever,  # noqa: F401
+        ArceeRetriever,
     )
     from langchain_community.retrievers.arxiv import (
-        ArxivRetriever,  # noqa: F401
+        ArxivRetriever,
     )
     from langchain_community.retrievers.azure_cognitive_search import (
-        AzureCognitiveSearchRetriever,  # noqa: F401
+        AzureCognitiveSearchRetriever,
     )
     from langchain_community.retrievers.bedrock import (
-        AmazonKnowledgeBasesRetriever,  # noqa: F401
+        AmazonKnowledgeBasesRetriever,
     )
     from langchain_community.retrievers.bm25 import (
-        BM25Retriever,  # noqa: F401
+        BM25Retriever,
     )
     from langchain_community.retrievers.breebs import (
-        BreebsRetriever,  # noqa: F401
+        BreebsRetriever,
     )
     from langchain_community.retrievers.chaindesk import (
-        ChaindeskRetriever,  # noqa: F401
+        ChaindeskRetriever,
     )
     from langchain_community.retrievers.chatgpt_plugin_retriever import (
-        ChatGPTPluginRetriever,  # noqa: F401
+        ChatGPTPluginRetriever,
     )
     from langchain_community.retrievers.cohere_rag_retriever import (
-        CohereRagRetriever,  # noqa: F401
+        CohereRagRetriever,
     )
     from langchain_community.retrievers.docarray import (
-        DocArrayRetriever,  # noqa: F401
+        DocArrayRetriever,
     )
     from langchain_community.retrievers.dria_index import (
-        DriaRetriever,  # noqa: F401
+        DriaRetriever,
     )
     from langchain_community.retrievers.elastic_search_bm25 import (
-        ElasticSearchBM25Retriever,  # noqa: F401
+        ElasticSearchBM25Retriever,
     )
     from langchain_community.retrievers.embedchain import (
-        EmbedchainRetriever,  # noqa: F401
+        EmbedchainRetriever,
     )
     from langchain_community.retrievers.google_cloud_documentai_warehouse import (
-        GoogleDocumentAIWarehouseRetriever,  # noqa: F401
+        GoogleDocumentAIWarehouseRetriever,
     )
     from langchain_community.retrievers.google_vertex_ai_search import (
-        GoogleCloudEnterpriseSearchRetriever,  # noqa: F401
-        GoogleVertexAIMultiTurnSearchRetriever,  # noqa: F401
-        GoogleVertexAISearchRetriever,  # noqa: F401
+        GoogleCloudEnterpriseSearchRetriever,
+        GoogleVertexAIMultiTurnSearchRetriever,
+        GoogleVertexAISearchRetriever,
     )
     from langchain_community.retrievers.kay import (
-        KayAiRetriever,  # noqa: F401
+        KayAiRetriever,
     )
     from langchain_community.retrievers.kendra import (
-        AmazonKendraRetriever,  # noqa: F401
+        AmazonKendraRetriever,
     )
     from langchain_community.retrievers.knn import (
-        KNNRetriever,  # noqa: F401
+        KNNRetriever,
     )
     from langchain_community.retrievers.llama_index import (
-        LlamaIndexGraphRetriever,  # noqa: F401
-        LlamaIndexRetriever,  # noqa: F401
+        LlamaIndexGraphRetriever,
+        LlamaIndexRetriever,
     )
     from langchain_community.retrievers.metal import (
-        MetalRetriever,  # noqa: F401
+        MetalRetriever,
     )
     from langchain_community.retrievers.milvus import (
-        MilvusRetriever,  # noqa: F401
+        MilvusRetriever,
     )
     from langchain_community.retrievers.outline import (
-        OutlineRetriever,  # noqa: F401
+        OutlineRetriever,
     )
     from langchain_community.retrievers.pinecone_hybrid_search import (
-        PineconeHybridSearchRetriever,  # noqa: F401
+        PineconeHybridSearchRetriever,
     )
     from langchain_community.retrievers.pubmed import (
-        PubMedRetriever,  # noqa: F401
+        PubMedRetriever,
     )
     from langchain_community.retrievers.qdrant_sparse_vector_retriever import (
-        QdrantSparseVectorRetriever,  # noqa: F401
+        QdrantSparseVectorRetriever,
     )
     from langchain_community.retrievers.remote_retriever import (
-        RemoteLangChainRetriever,  # noqa: F401
+        RemoteLangChainRetriever,
     )
     from langchain_community.retrievers.svm import (
-        SVMRetriever,  # noqa: F401
+        SVMRetriever,
     )
     from langchain_community.retrievers.tavily_search_api import (
-        TavilySearchAPIRetriever,  # noqa: F401
+        TavilySearchAPIRetriever,
     )
     from langchain_community.retrievers.tfidf import (
-        TFIDFRetriever,  # noqa: F401
+        TFIDFRetriever,
     )
     from langchain_community.retrievers.vespa_retriever import (
-        VespaRetriever,  # noqa: F401
+        VespaRetriever,
     )
     from langchain_community.retrievers.weaviate_hybrid_search import (
-        WeaviateHybridSearchRetriever,  # noqa: F401
+        WeaviateHybridSearchRetriever,
     )
     from langchain_community.retrievers.wikipedia import (
-        WikipediaRetriever,  # noqa: F401
+        WikipediaRetriever,
     )
     from langchain_community.retrievers.you import (
-        YouRetriever,  # noqa: F401
+        YouRetriever,
     )
     from langchain_community.retrievers.zep import (
-        ZepRetriever,  # noqa: F401
+        ZepRetriever,
     )
     from langchain_community.retrievers.zilliz import (
-        ZillizRetriever,  # noqa: F401
+        ZillizRetriever,
     )
 
 __all__ = [
@@ -177,8 +177,8 @@ _module_lookup = {
     "AmazonKnowledgeBasesRetriever": "langchain_community.retrievers.bedrock",
     "ArceeRetriever": "langchain_community.retrievers.arcee",
     "ArxivRetriever": "langchain_community.retrievers.arxiv",
-    "AzureAISearchRetriever": "langchain_community.retrievers.azure_ai_search",  # noqa: E501
-    "AzureCognitiveSearchRetriever": "langchain_community.retrievers.azure_ai_search",  # noqa: E501
+    "AzureAISearchRetriever": "langchain_community.retrievers.azure_ai_search",
+    "AzureCognitiveSearchRetriever": "langchain_community.retrievers.azure_ai_search",
     "BM25Retriever": "langchain_community.retrievers.bm25",
     "BreebsRetriever": "langchain_community.retrievers.breebs",
     "ChaindeskRetriever": "langchain_community.retrievers.chaindesk",
@@ -212,6 +212,7 @@ _module_lookup = {
     "YouRetriever": "langchain_community.retrievers.you",
     "ZepRetriever": "langchain_community.retrievers.zep",
     "ZillizRetriever": "langchain_community.retrievers.zilliz",
+    "NeuralDBRetriever": "langchain_community.retrievers.thirdai_neuraldb",
 }
 
 

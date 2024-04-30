@@ -36,6 +36,7 @@ EXPECTED_ALL = [
     "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
+    "DataheraldTextToSQL",
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
@@ -137,6 +138,7 @@ EXPECTED_ALL = [
     "format_tool_to_openai_function",
     "tool",
     "MerriamWebsterQueryRun",
+    "MojeekSearch",
 ]
 
 
