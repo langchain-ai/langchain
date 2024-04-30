@@ -164,7 +164,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
             values["client"] = qianfan.ChatCompletion(**params)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "qianfan package not found, please install it with "
                 "`pip install qianfan`"
             )
@@ -250,7 +250,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
         Example:
             .. code-block:: python
-                response = qianfan_model("Tell me a joke.")
+                response = qianfan_model.invoke("Tell me a joke.")
         """
         if self.streaming:
             completion = ""

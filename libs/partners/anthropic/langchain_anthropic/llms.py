@@ -232,7 +232,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
                 prompt = "What are the biggest risks facing humanity?"
                 prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                response = model(prompt)
+                response = model.invoke(prompt)
 
         """
         if self.streaming:
