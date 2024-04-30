@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
-from langchain_core.document_loaders import Blob, BlobLoader, PathLike
+from langchain_core.document_loaders import Blob, BlobLoader
 
 from langchain._api import create_importer
 

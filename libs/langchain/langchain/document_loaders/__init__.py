@@ -14,13 +14,9 @@
 
     Document, <name>TextSplitter
 """
-import warnings
 from typing import TYPE_CHECKING, Any
 
-from langchain_core._api import LangChainDeprecationWarning
-
 from langchain._api import create_importer
-from langchain.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders import (
@@ -205,7 +201,6 @@ DEPRECATED_LOOKUP = {
     "AsyncHtmlLoader": "langchain_community.document_loaders",
     "AsyncChromiumLoader": "langchain_community.document_loaders",
     "AZLyricsLoader": "langchain_community.document_loaders",
-    "AcreomLoader": "langchain_community.document_loaders",
     "AirbyteCDKLoader": "langchain_community.document_loaders",
     "AirbyteGongLoader": "langchain_community.document_loaders",
     "AirbyteJSONLoader": "langchain_community.document_loaders",
@@ -221,7 +216,6 @@ DEPRECATED_LOOKUP = {
     "ArcGISLoader": "langchain_community.document_loaders",
     "ArxivLoader": "langchain_community.document_loaders",
     "AssemblyAIAudioTranscriptLoader": "langchain_community.document_loaders",
-    "AsyncHtmlLoader": "langchain_community.document_loaders",
     "AzureAIDataLoader": "langchain_community.document_loaders",
     "AzureBlobStorageContainerLoader": "langchain_community.document_loaders",
     "AzureBlobStorageFileLoader": "langchain_community.document_loaders",
