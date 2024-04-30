@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Iterator, List
+from typing import Iterator, List, AsyncIterator
 
 from langchain_core.documents import Document
 
@@ -14,10 +14,10 @@ class AsyncChromiumLoader(BaseLoader):
     headless instance of the Chromium."""
 
     def __init__(
-        self,
-        urls: List[str],
-        *,
-        headless: bool = True,
+            self,
+            urls: List[str],
+            *,
+            headless: bool = True,
     ):
         """
         Initialize the loader with a list of URL paths.
@@ -67,18 +67,20 @@ class AsyncChromiumLoader(BaseLoader):
             await browser.close()
         return results
 
-    def lazy_load(self) -> Iterator[Document]:
+    async def lazy_load(self) -> AsyncIterator[Document]:
         """
-        Lazily load text content from the provided URLs.
+        Asynchronously load text content from the provided URLs.
 
-        This method yields Documents one at a time as they're scraped,
-        instead of waiting to scrape all URLs before returning.
+        This method leverages asyncio to initiate the scraping of all provided URLs simultaneously.
+        It improves performance by utilizing concurrent asynchronous requests. Each Document is yielded
+        as soon as its content is available, encapsulating the scraped content.
 
         Yields:
-            Document: The scraped content encapsulated within a Document object.
-
+            Document: A Document object containing the scraped content, along with its source URL as metadata.
         """
-        for url in self.urls:
-            html_content = asyncio.run(self.ascrape_playwright(url))
+        import asyncio
+        tasks = [self.ascrape_playwright(url) for url in self.urls]
+        results = await asyncio.gather(*tasks)
+        for url, content in zip(self.urls, results):
             metadata = {"source": url}
-            yield Document(page_content=html_content, metadata=metadata)
+            yield Document(page_content=content, metadata=metadata)
