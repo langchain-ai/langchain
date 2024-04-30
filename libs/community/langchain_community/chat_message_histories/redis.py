@@ -23,7 +23,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         url: str = "redis://localhost:6379/0",
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
-        history_size: Optional[int] = None,  # Maximum number of messages to store, must be positive or None (unlimited)
+        history_size: Optional[int] = None,
     ):
         try:
             import redis
