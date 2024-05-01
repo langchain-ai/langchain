@@ -1,5 +1,5 @@
 from typing import Dict
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from langchain_core.messages import (
@@ -10,12 +10,16 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatResult
+from transformers import AutoTokenizer
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     TGI_MESSAGE,
     ChatHuggingFace,
     _convert_message_to_chat_message,
     _convert_TGI_message_to_LC_message,
+)
+from langchain_huggingface.llms.huggingface_text_gen_inference import (
+    HuggingFaceTextGenInference,
 )
 
 
@@ -82,33 +86,45 @@ def test_convert_TGI_message_to_LC_message(
 
 @pytest.fixture
 def mock_llm():
-    return MagicMock()
+    llm = Mock(spec=HuggingFaceTextGenInference)
+    llm.inference_server_url = "test tgi url"
+    return llm
 
 
 @pytest.fixture
 def mock_tokenizer():
-    return MagicMock()
+    with patch.object(
+        AutoTokenizer, "from_pretrained", return_value=MagicMock()
+    ) as mock:
+        yield mock
 
 
 @pytest.fixture
-def chat_hugging_face(mock_llm, mock_tokenizer):
-    with patch(
-        "transformers.AutoTokenizer.from_pretrained", return_value=mock_tokenizer
-    ), patch(
-        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace.validate_llm",
-        return_value={"llm": MagicMock()},
-    ):
-        chat_hf = ChatHuggingFace(llm=mock_llm)
-        return chat_hf
+@patch(
+    "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+)
+def chat_hugging_face(mock_resolve_id, mock_llm, mock_tokenizer):
+    chat_hf = ChatHuggingFace(llm=mock_llm, tokenizer=mock_tokenizer)
+    return chat_hf
 
 
 def test_create_chat_result(chat_hugging_face):
     mock_response = MagicMock()
     mock_response.choices = [
-        MagicMock(message="test message", finish_reason="test finish reqson")
+        MagicMock(
+            message=TGI_MESSAGE(
+                role="assistant", content="test message", tool_calls=None
+            ),
+            finish_reason="test finish reason",
+        )
     ]
     mock_response.usage = {"tokens": 420}
 
     result = chat_hugging_face._create_chat_result(mock_response)
     assert isinstance(result, ChatResult)
     assert result.generations[0].message.content == "test message"
+    assert (
+        result.generations[0].generation_info["finish_reason"] == "test finish reason"
+    )
+    assert result.llm_output["token_usage"]["tokens"] == 420
+    assert result.llm_output["model"] == chat_hugging_face.llm.inference_server_url
