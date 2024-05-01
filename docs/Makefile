@@ -49,10 +49,13 @@ generate-files:
 	wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O $(INTERMEDIATE_DIR)/docs/langgraph.md
 	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/docs/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
+	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(INTERMEDIATE_DIR)/docs --no-json
+
+
 build-local: install-py-deps generate-files
-	quarto render docs/
+	quarto render docs/ --output-dir $(OUTPUT_DIR)
 
 build-vercel: vercel-install-deps install-py-deps generate-files
-	$(pwd)/quarto-1.3.450/bin/quarto render docs/
+	$(pwd)/quarto-1.3.450/bin/quarto render docs/ --output-dir $(OUTPUT_DIR)
 
 build: build-local
