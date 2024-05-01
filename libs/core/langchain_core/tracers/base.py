@@ -1,4 +1,5 @@
 """Base interfaces for tracing runs."""
+
 from __future__ import annotations
 
 import logging
@@ -102,9 +103,10 @@ class BaseTracer(BaseCallbackHandler, ABC):
             parent_run = self.run_map.get(str(run.parent_run_id))
             if parent_run:
                 self._add_child_run(parent_run, run)
-                parent_run.child_execution_order = max(
-                    parent_run.child_execution_order, run.child_execution_order
-                )
+                if hasattr(parent_run, "child_execution_order"):
+                    parent_run.child_execution_order = max(
+                        parent_run.child_execution_order, run.child_execution_order
+                    )
                 run.trace_id = parent_run.trace_id
                 if parent_run.dotted_order:
                     run.dotted_order = (
@@ -135,7 +137,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
             elif (
                 run.child_execution_order is not None
-                and parent_run.child_execution_order is not None
+                and getattr(parent_run, "child_execution_order", None) is not None
                 and run.child_execution_order > parent_run.child_execution_order
             ):
                 parent_run.child_execution_order = run.child_execution_order
@@ -151,10 +153,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if parent_run is None:
             logger.debug(f"Parent run with UUID {parent_run_id} not found.")
             return 1
-        if parent_run.child_execution_order is None:
-            raise TracerException(
-                f"Parent run with UUID {parent_run_id} has no child execution order."
+        if getattr(parent_run, "child_execution_order", None) is None:
+            logger.debug(
+                f"Parent run with UUID {parent_run_id} has no child_execution_order."
             )
+            return 1
 
         return parent_run.child_execution_order + 1
 

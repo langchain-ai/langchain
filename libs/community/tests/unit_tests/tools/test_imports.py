@@ -138,6 +138,7 @@ EXPECTED_ALL = [
     "format_tool_to_openai_function",
     "tool",
     "MerriamWebsterQueryRun",
+    "MojeekSearch",
 ]
 
 
