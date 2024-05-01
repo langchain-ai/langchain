@@ -377,6 +377,22 @@ class AzureSearch(VectorStore):
         else:
             raise Exception(response)
 
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> bool:
+        """Delete by vector ID.
+
+        Args:
+            ids: List of ids to delete.
+
+        Returns:
+            bool: True if deletion is successful,
+            False otherwise.
+        """
+        if ids:
+            res = self.client.delete_documents([{"id": i} for i in ids])
+            return len(res) > 0
+        else:
+            return False
+
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:

@@ -476,3 +476,30 @@ loader = AzureAIDocumentIntelligenceLoader(
 
 documents = loader.load()
 ```
+
+## Using UpstageLayoutAnalysisLoader
+
+The UpstageLayoutAnalysisLoader invokes the [Upstage Layout Analysis API](https://developers.upstage.ai/docs/apis/layout-analyzer) to detect document elements, including tables and figures, from various document formats. This loader employs pure OCR to extract textual information and detect elements within documents such as `JPEG`, `PNG`, `BMP`, `PDF`, `TIFF`, and `HEIC` files. In the case of digital born PDF documents, users have the option to forego OCR and utilize text information within the file by setting use_ocr=False, which is the default value. Both single and multi-page documents are supported, with a limit of 100 pages and a file size of 50 MB when use_ocr=True, while there are no restrictions when use_ocr=False (applicable to PDF files only).
+
+### Prerequisite
+
+To access the Upstage Layout Analysis API, you require an API access token. Kindly refer to the [quick start guide](https://developers.upstage.ai/docs/getting-started/quick-start) provided to obtain the access token and begin utilizing the Upstage Layout Analysis API.
+
+```bash
+pip install langchain_upstage
+```
+
+### Example
+
+```python
+import os
+
+os.environ["UPSTAGE_DOCUMENT_AI_API_KEY"] = "YOUR_API_KEY"
+
+from langchain_upstage import UpstageLayoutAnalysisLoader
+
+file_path = "/PATH/TO/FILE.pdf"
+
+loader = UpstageLayoutAnalysisLoader(file_path)
+data = loader.load()
+```

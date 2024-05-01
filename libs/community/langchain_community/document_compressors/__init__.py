@@ -6,10 +6,10 @@ if TYPE_CHECKING:
         JinaRerank,  # noqa: F401
     )
     from langchain_community.document_compressors.llmlingua_filter import (
-        LLMLinguaCompressor,  # noqa: F401
+        LLMLinguaCompressor,
     )
     from langchain_community.document_compressors.openvino_rerank import (
-        OpenVINOReranker,  # noqa: F401
+        OpenVINOReranker,
     )
 
 __all__ = ["LLMLinguaCompressor", "OpenVINOReranker"]
