@@ -142,6 +142,7 @@ DEPRECATED_LOOKUP = {
     "MyScale": "langchain_community.vectorstores",
     "MyScaleSettings": "langchain_community.vectorstores",
     "Neo4jVector": "langchain_community.vectorstores",
+    "NeuralDBVectorStore": "langchain_community.vectorstores",
     "NEuralDBVectorStore": "langchain_community.vectorstores",
     "OpenSearchVectorSearch": "langchain_community.vectorstores",
     "PGEmbedding": "langchain_community.vectorstores",
