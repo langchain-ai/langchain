@@ -10,6 +10,9 @@ INTERMEDIATE_DIR = build/intermediate/docs
 OUTPUT_DIR = build/output
 OUTPUT_DOCS_DIR = $(OUTPUT_DIR)/docs
 
+OUTPUT_NEW_DIR = build/output-new
+OUTPUT_NEW_DOCS_DIR = $(OUTPUT_NEW_DIR)/docs
+
 PYTHON = .venv/bin/python
 
 QUARTO_CMD ?= quarto
@@ -75,6 +78,9 @@ md-sync:
 	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_DOCS_DIR)
 
 build: install-py-deps generate-files copy-infra quarto-render md-sync
+
+compare:
+	diff -rq $(OUTPUT_DOCS_DIR) $(OUTPUT_NEW_DOCS_DIR)
 
 start:
 	cd $(OUTPUT_DIR) && yarn && yarn start --port=$(PORT)
