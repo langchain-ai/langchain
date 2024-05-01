@@ -12,7 +12,7 @@ OUTPUT_DOCS_DIR = $(OUTPUT_DIR)/docs
 
 PYTHON = .venv/bin/python
 
-QUARTO_CMD = quarto
+QUARTO_CMD ?= quarto
 
 PARTNER_DEPS_LIST := $(shell ls -1 ../libs/partners | grep -vE "airbyte|ibm" | xargs -I {} echo "../libs/partners/{}" | tr '\n' ' ')
 
