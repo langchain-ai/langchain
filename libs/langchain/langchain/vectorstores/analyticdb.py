@@ -1,7 +1,18 @@
-from langchain_community.vectorstores.analyticdb import (
-    AnalyticDB,
-)
+from langchain._api import create_importer
 
-__all__ = [
-    "AnalyticDB",
+from typing import TYPE_CHECKING, Any
+if TYPE_CHECKING:
+    from langchain_community.vectorstores import AnalyticDB
+            
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"AnalyticDB": "langchain_community.vectorstores"}
+        
+_import_attribute=create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+__all__ = ["AnalyticDB",
 ]
