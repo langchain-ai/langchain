@@ -1658,12 +1658,15 @@ class Qdrant(VectorStore):
                     f"`None`. If you want to recreate the collection, set "
                     f"`force_recreate` parameter to `True`."
                 )
-
+            assert isinstance(current_vector_config, models.VectorParams), (
+                "Expected current_vector_config to be an instance of "
+                f"models.VectorParams, but got {type(current_vector_config)}"
+            )
             # Check if the vector configuration has the same dimensionality.
-            if current_vector_config.size != vector_size:  # type: ignore[union-attr]
+            if current_vector_config.size != vector_size:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for vectors with "
-                    f"{current_vector_config.size} "  # type: ignore[union-attr]
+                    f"{current_vector_config.size} "
                     f"dimensions. Selected embeddings are {vector_size}-dimensional. "
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
@@ -1815,11 +1818,16 @@ class Qdrant(VectorStore):
                     f"`force_recreate` parameter to `True`."
                 )
 
+            assert isinstance(current_vector_config, models.VectorParams), (
+                "Expected current_vector_config to be an instance of "
+                f"models.VectorParams, but got {type(current_vector_config)}"
+            )
+
             # Check if the vector configuration has the same dimensionality.
-            if current_vector_config.size != vector_size:  # type: ignore[union-attr]
+            if current_vector_config.size != vector_size:
                 raise QdrantException(
                     f"Existing Qdrant collection is configured for vectors with "
-                    f"{current_vector_config.size} "  # type: ignore[union-attr]
+                    f"{current_vector_config.size} "
                     f"dimensions. Selected embeddings are {vector_size}-dimensional. "
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
