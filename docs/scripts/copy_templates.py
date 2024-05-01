@@ -26,10 +26,10 @@ if __name__ == "__main__":
             f.write(content)
 
     sidebar_hidden = """---
-    sidebar_class_name: hidden
-    ---
+sidebar_class_name: hidden
+---
 
-    """
+"""
 
     # handle index file
     templates_index_source = templates_source_dir / "docs" / "INDEX.md"

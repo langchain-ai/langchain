@@ -35,7 +35,6 @@ generate-files:
 
 	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
 
-	mkdir -p $(INTERMEDIATE_DIR)/docs/templates
 	$(PYTHON) scripts/copy_templates.py $(INTERMEDIATE_DIR)
 
 	wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O $(INTERMEDIATE_DIR)/langserve.md
@@ -58,11 +57,15 @@ copy-infra:
 	cp -r static $(OUTPUT_DIR)
 	cp yarn.lock $(OUTPUT_DIR)
 
-build: install-py-deps generate-files copy-infra
+quarto-render:
 	$(QUARTO_CMD) render $(INTERMEDIATE_DIR) --output-dir $(OUTPUT_DOCS_DIR) --no-execute
 	mv $(OUTPUT_DOCS_DIR)/$(INTERMEDIATE_DIR)/* $(OUTPUT_DOCS_DIR)
 	rm -rf $(OUTPUT_DOCS_DIR)/build
-	rsync -avm --include="*/" --include="*.mdx" --exclude="*" $(INTERMEDIATE_DIR) $(OUTPUT_DOCS_DIR)
+
+md-sync:
+	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_DOCS_DIR)
+
+build: install-py-deps generate-files copy-infra quarto-render md-sync
 
 start:
 	cd $(OUTPUT_DIR) && yarn && yarn start
