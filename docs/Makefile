@@ -85,7 +85,7 @@ md-sync-new:
 
 build: install-py-deps generate-files copy-infra quarto-render md-sync
 
-build-new: install-py-deps generate-files copy-infra render md-sync
+build-new: install-py-deps generate-files copy-infra render md-sync-new
 
 compare:
 	diff -rq $(OUTPUT_DOCS_DIR) $(OUTPUT_NEW_DOCS_DIR)
