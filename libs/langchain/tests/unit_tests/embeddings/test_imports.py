@@ -44,6 +44,7 @@ EXPECTED_ALL = [
     "SpacyEmbeddings",
     "NLPCloudEmbeddings",
     "GPT4AllEmbeddings",
+    "OPenAIEmbeddings",
     "XinferenceEmbeddings",
     "LocalAIEmbeddings",
     "AwaEmbeddings",
