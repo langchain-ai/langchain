@@ -422,7 +422,7 @@ class NeuralDBClientVectorStore(VectorStore):
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
         
-    def insert(self, documents: list[dict[str, Any]]) # type: ignore[no-untyped-def]:
+    def insert(self, documents: list[dict[str, Any]]): # type: ignore[no-untyped-def]:
         """
         Inserts documents into the VectorStore and return the corresponding Sources.
 
