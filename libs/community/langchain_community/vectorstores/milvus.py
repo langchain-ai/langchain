@@ -59,6 +59,8 @@ class Milvus(VectorStore):
         auto_id (bool): Whether to enable auto id for primary key. Defaults to False.
             If False, you needs to provide text ids (string less than 65535 bytes).
             If True, Milvus will generate unique integers as primary keys.
+        enable_dynamic_field (bool): Whether to enable dynamic fields for a new collection.
+            Defaults to False.
         primary_field (str): Name of the primary key field. Defaults to "pk".
         text_field (str): Name of the text field. Defaults to "text".
         vector_field (str): Name of the vector field. Defaults to "vector".
@@ -124,6 +126,7 @@ class Milvus(VectorStore):
         search_params: Optional[dict] = None,
         drop_old: Optional[bool] = False,
         auto_id: bool = False,
+        enable_dynamic_field: bool = False,
         *,
         primary_field: str = "pk",
         text_field: str = "text",
@@ -179,6 +182,7 @@ class Milvus(VectorStore):
         self.search_params = search_params
         self.consistency_level = consistency_level
         self.auto_id = auto_id
+        self.enable_dynamic_field = enable_dynamic_field
 
         # In order for a collection to be compatible, pk needs to be varchar
         self._primary_field = primary_field
@@ -374,6 +378,7 @@ class Milvus(VectorStore):
             fields,
             description=self.collection_description,
             partition_key_field=self._partition_key_field,
+            enable_dynamic_field=self.enable_dynamic_field
         )
 
         # Create the collection
