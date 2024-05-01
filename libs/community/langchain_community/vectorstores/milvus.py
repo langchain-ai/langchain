@@ -973,6 +973,7 @@ class Milvus(VectorStore):
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         drop_old: bool = False,
+        enable_dynamic_field: bool = False,
         *,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
@@ -996,6 +997,8 @@ class Milvus(VectorStore):
                 Defaults to None.
             drop_old (Optional[bool], optional): Whether to drop the collection with
                 that name if it exists. Defaults to False.
+            enable_dynamic_field (Optional[bool], optional): Whether to enable dynamic
+                field for a new collection. Defaults to False.
             ids (Optional[List[str]]): List of text ids. Defaults to None.
 
         Returns:
@@ -1015,6 +1018,7 @@ class Milvus(VectorStore):
             search_params=search_params,
             drop_old=drop_old,
             auto_id=auto_id,
+            enable_dynamic_field=enable_dynamic_field
             **kwargs,
         )
         vector_db.add_texts(texts=texts, metadatas=metadatas, ids=ids)
