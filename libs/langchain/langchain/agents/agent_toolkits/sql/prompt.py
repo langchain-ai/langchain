@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 DEPRECATED_LOOKUP = {
     "SQL_PREFIX": "langchain_community.agent_toolkits.sql.prompt",
     "SQL_SUFFIX": "langchain_community.agent_toolkits.sql.prompt",
+    "SQL_FUNCTIONS_SUFFIX": "langchain_community.agent_toolkits.sql.prompt",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

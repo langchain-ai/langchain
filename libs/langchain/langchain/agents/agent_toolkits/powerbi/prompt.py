@@ -17,7 +17,7 @@ DEPRECATED_LOOKUP = {
     "POWERBI_CHAT_PREFIX": "langchain_community.agent_toolkits.powerbi.prompt",
     "POWERBI_CHAT_SUFFIX": "langchain_community.agent_toolkits.powerbi.prompt",
     "POWERBI_PREFIX": "langchain_community.agent_toolkits.powerbi.prompt",
-    "POWERBI_PREFIX": "langchain_community.agent_toolkits.powerbi.prompt",
+    "POWERBI_SUFFIX": "langchain_community.agent_toolkits.powerbi.prompt",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
