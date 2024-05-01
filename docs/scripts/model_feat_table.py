@@ -219,7 +219,7 @@ def get_chat_model_table() -> str:
 
 if __name__ == "__main__":
     output_dir = Path(sys.argv[1])
-    output_integrations_dir = output_dir / "docs" / "integrations"
+    output_integrations_dir = output_dir / "integrations"
     output_integrations_dir_llms = output_integrations_dir / "llms"
     output_integrations_dir_chat = output_integrations_dir / "chat"
     output_integrations_dir_llms.mkdir(parents=True, exist_ok=True)

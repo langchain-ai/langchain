@@ -6,23 +6,18 @@
 # 4. build the docs from "intermediate dir" to "output dir"
 
 SOURCE_DIR = docs/
-INTERMEDIATE_DIR = build/intermediate
+INTERMEDIATE_DIR = build/intermediate/docs
 OUTPUT_DIR = build/output
+OUTPUT_DOCS_DIR = $(OUTPUT_DIR)/docs
 
 PYTHON = .venv/bin/python
 
-clean:
-	rm -rf build
-
-vercel-install-deps:
-	yum -y update
-	yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip -y
-
-	# install quarto
-	wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
-	tar -xzf quarto-1.3.450-linux-amd64.tar.gz
+QUARTO_CMD = quarto
 
 PARTNER_DEPS_LIST := $(shell ls -1 ../libs/partners | grep -vE "airbyte|ibm" | xargs -I {} echo "../libs/partners/{}" | tr '\n' ' ')
+
+clean:
+	rm -rf build
 
 install-py-deps:
 	python3 -m venv .venv
@@ -34,8 +29,8 @@ install-py-deps:
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
 	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
-	mkdir -p $(INTERMEDIATE_DIR)/docs/templates
-	cp ../templates/docs/INDEX.md $(INTERMEDIATE_DIR)/docs/templates/index.md
+	mkdir -p $(INTERMEDIATE_DIR)/templates
+	cp ../templates/docs/INDEX.md $(INTERMEDIATE_DIR)/templates/index.md
 	cp ../cookbook/README.md $(INTERMEDIATE_DIR)/cookbook.mdx
 
 	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
@@ -43,19 +38,31 @@ generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)/docs/templates
 	$(PYTHON) scripts/copy_templates.py $(INTERMEDIATE_DIR)
 
-	wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O $(INTERMEDIATE_DIR)/docs/langserve.md
-	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/docs/langserve.md https://github.com/langchain-ai/langserve/tree/main/
+	wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O $(INTERMEDIATE_DIR)/langserve.md
+	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langserve.md https://github.com/langchain-ai/langserve/tree/main/
 
-	wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O $(INTERMEDIATE_DIR)/docs/langgraph.md
-	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/docs/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
+	wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O $(INTERMEDIATE_DIR)/langgraph.md
+	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
-	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(INTERMEDIATE_DIR)/docs --no-json
+	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(INTERMEDIATE_DIR)
 
+copy-infra:
+	mkdir -p $(OUTPUT_DIR)
+	cp -r src $(OUTPUT_DIR)
+	cp vercel.json $(OUTPUT_DIR)
+	cp babel.config.js $(OUTPUT_DIR)
+	cp -r data $(OUTPUT_DIR)
+	cp docusaurus.config.js $(OUTPUT_DIR)
+	cp package.json $(OUTPUT_DIR)
+	cp sidebars.js $(OUTPUT_DIR)
+	cp -r static $(OUTPUT_DIR)
+	cp yarn.lock $(OUTPUT_DIR)
 
-build-local: install-py-deps generate-files
-	quarto render docs/ --output-dir $(OUTPUT_DIR)
+build: install-py-deps generate-files copy-infra
+	$(QUARTO_CMD) render $(INTERMEDIATE_DIR) --output-dir $(OUTPUT_DOCS_DIR) --no-execute
+	mv $(OUTPUT_DOCS_DIR)/$(INTERMEDIATE_DIR)/* $(OUTPUT_DOCS_DIR)
+	rm -rf $(OUTPUT_DOCS_DIR)/build
+	rsync -avm --include="*/" --include="*.mdx" --exclude="*" $(INTERMEDIATE_DIR) $(OUTPUT_DOCS_DIR)
 
-build-vercel: vercel-install-deps install-py-deps generate-files
-	$(pwd)/quarto-1.3.450/bin/quarto render docs/ --output-dir $(OUTPUT_DIR)
-
-build: build-local
+start:
+	cd $(OUTPUT_DIR) && yarn && yarn start
