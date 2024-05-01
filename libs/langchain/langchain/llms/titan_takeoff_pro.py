@@ -1,24 +1,23 @@
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any
 
-from langchain._api import warn_deprecated
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from langchain_community.llms.titan_takeoff import TitanTakeoff as TitanTakeoffPro
+    from langchain_community.llms import TitanTakeoffPro
 
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"TitanTakeoffPro": "langchain_community.llms"}
 
-def _get_titan_pro() -> Type[TitanTakeoffPro]:
-    from langchain_community.llms.titan_takeoff import TitanTakeoff as TitanTakeoffPro
-
-    warn_deprecated(
-        "0.1.0", "Deprecated in favor of langchain_community.llms.TitanTakeoff."
-    )
-
-    return TitanTakeoffPro
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
-    if name == "TitanTakeoff":
-        return _get_titan_pro()
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-__all__ = ["TitanTakeoffPro"]
+__all__ = [
+    "TitanTakeoffPro",
+]
