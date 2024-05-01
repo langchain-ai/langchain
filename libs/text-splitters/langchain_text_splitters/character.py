@@ -34,25 +34,19 @@ def _split_text_with_regex(
     # Now that we have the separator, split the text
     if separator:
         if keep_separator:
-            separator_at_start = True
-            if keep_separator == "end":
-                separator_at_start = False
-
             # The parentheses in the pattern keep the delimiters in the result.
             _splits = re.split(f"({separator})", text)
             splits = (
-                ([_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)])
-                if separator_at_start
-                else (
-                    [_splits[i] + _splits[i + 1] for i in range(0, len(_splits) - 1, 2)]
-                )
+                ([_splits[i] + _splits[i + 1] for i in range(0, len(_splits) - 1, 2)])
+                if keep_separator == "end"
+                else ([_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)])
             )
             if len(_splits) % 2 == 0:
                 splits += _splits[-1:]
             splits = (
-                ([_splits[0]] + splits)
-                if separator_at_start
-                else (splits + [_splits[-1]])
+                (splits + [_splits[-1]])
+                if keep_separator == "end"
+                else ([_splits[0]] + splits)
             )
         else:
             splits = re.split(separator, text)
