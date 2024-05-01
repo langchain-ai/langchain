@@ -10,7 +10,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatResult
-from transformers import AutoTokenizer
+from langchain_core.tools import BaseTool
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     TGI_MESSAGE,
@@ -92,19 +92,11 @@ def mock_llm():
 
 
 @pytest.fixture
-def mock_tokenizer():
-    with patch.object(
-        AutoTokenizer, "from_pretrained", return_value=MagicMock()
-    ) as mock:
-        yield mock
-
-
-@pytest.fixture
 @patch(
     "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
 )
-def chat_hugging_face(mock_resolve_id, mock_llm, mock_tokenizer):
-    chat_hf = ChatHuggingFace(llm=mock_llm, tokenizer=mock_tokenizer)
+def chat_hugging_face(mock_resolve_id, mock_llm):
+    chat_hf = ChatHuggingFace(llm=mock_llm, tokenizer=MagicMock())
     return chat_hf
 
 
@@ -128,3 +120,117 @@ def test_create_chat_result(chat_hugging_face):
     )
     assert result.llm_output["token_usage"]["tokens"] == 420
     assert result.llm_output["model"] == chat_hugging_face.llm.inference_server_url
+
+
+@pytest.mark.parametrize(
+    "messages, expected_error",
+    [
+        ([], "At least one HumanMessage must be provided!"),
+        (
+            [HumanMessage(content="Hi"), AIMessage(content="Hello")],
+            "Last message must be a HumanMessage!",
+        ),
+    ],
+)
+def test_to_chat_prompt_errors(chat_hugging_face, messages, expected_error):
+    with pytest.raises(ValueError) as e:
+        chat_hugging_face._to_chat_prompt(messages)
+    assert expected_error in str(e.value)
+
+
+def test_to_chat_prompt_valid_messages(chat_hugging_face):
+    messages = [AIMessage(content="Hello"), HumanMessage(content="How are you?")]
+    expected_prompt = "Generated chat prompt"
+
+    chat_hugging_face.tokenizer.apply_chat_template.return_value = expected_prompt
+
+    result = chat_hugging_face._to_chat_prompt(messages)
+
+    assert result == expected_prompt
+    chat_hugging_face.tokenizer.apply_chat_template.assert_called_once_with(
+        [
+            {"role": "assistant", "content": "Hello"},
+            {"role": "user", "content": "How are you?"},
+        ],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        (
+            SystemMessage(content="You are a helpful assistant."),
+            {"role": "system", "content": "You are a helpful assistant."},
+        ),
+        (
+            AIMessage(content="How can I help you?"),
+            {"role": "assistant", "content": "How can I help you?"},
+        ),
+        (
+            HumanMessage(content="Hello"),
+            {"role": "user", "content": "Hello"},
+        ),
+    ],
+)
+def test_to_chatml_format(
+    chat_hugging_face, message: BaseMessage, expected: Dict[str, str]
+) -> None:
+    result = chat_hugging_face._to_chatml_format(message)
+    assert result == expected
+
+
+def test_to_chatml_format_with_invalid_type(chat_hugging_face):
+    message = "Invalid message type"
+    with pytest.raises(ValueError) as e:
+        chat_hugging_face._to_chatml_format(message)
+    assert "Unknown message type:" in str(e.value)
+
+
+def tool_mock():
+    return {"function": {"name": "test_tool"}}
+
+
+@pytest.mark.parametrize(
+    "tools, tool_choice, expected_exception, expected_message",
+    [
+        ([tool_mock()], ["invalid type"], ValueError, "Unrecognized tool_choice type."),
+        (
+            [tool_mock(), tool_mock()],
+            "test_tool",
+            ValueError,
+            "must provide exactly one tool.",
+        ),
+        (
+            [tool_mock()],
+            {"type": "function", "function": {"name": "other_tool"}},
+            ValueError,
+            "Tool choice {'type': 'function', 'function': {'name': 'other_tool'}} "
+            "was specified, but the only provided tool was test_tool.",
+        ),
+    ],
+)
+def test_bind_tools_errors(
+    chat_hugging_face, tools, tool_choice, expected_exception, expected_message
+):
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
+        side_effect=lambda x: x,
+    ):
+        with pytest.raises(expected_exception) as excinfo:
+            chat_hugging_face.bind_tools(tools, tool_choice=tool_choice)
+        assert expected_message in str(excinfo.value)
+
+
+def test_bind_tools_successful(chat_hugging_face):
+    tools = [MagicMock(spec=BaseTool)]
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
+        side_effect=lambda x: x,
+    ), patch("langchain_core.runnables.base.Runnable.bind") as mock_super:
+        chat_hugging_face.bind_tools(tools, tool_choice="auto")
+        mock_super.assert_called_once()
+        _, kwargs = mock_super.call_args
+        assert kwargs["tools"] == tools
+        assert kwargs["tool_choice"] == "auto"
