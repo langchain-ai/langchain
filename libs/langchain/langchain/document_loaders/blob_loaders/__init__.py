@@ -6,8 +6,6 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders import (
-        Blob,
-        BlobLoader,
         FileSystemBlobLoader,
         YoutubeAudioLoader,
     )

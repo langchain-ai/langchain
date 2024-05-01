@@ -46,8 +46,6 @@ if TYPE_CHECKING:
         BigQueryLoader,
         BiliBiliLoader,
         BlackboardLoader,
-        Blob,
-        BlobLoader,
         BlockchainDocumentLoader,
         BraveSearchLoader,
         BrowserlessLoader,
@@ -81,6 +79,7 @@ if TYPE_CHECKING:
         GeoDataFrameLoader,
         GitbookLoader,
         GitHubIssuesLoader,
+        GithubFileLoader,
         GitLoader,
         GoogleApiClient,
         GoogleApiYoutubeLoader,
@@ -189,6 +188,8 @@ if TYPE_CHECKING:
         YuqueLoader,
     )
 
+from langchain_core.document_loaders import BlobLoader, Blob
+
 # For backwards compatibility
 _old_to_new_name = {
     "PagedPDFSplitter": "PyPDFLoader",
@@ -260,6 +261,7 @@ DEPRECATED_LOOKUP = {
     "GeoDataFrameLoader": "langchain_community.document_loaders",
     "GitHubIssuesLoader": "langchain_community.document_loaders",
     "GitLoader": "langchain_community.document_loaders",
+    "GithubFileLoader": "langchain_community.document_loaders",
     "GitbookLoader": "langchain_community.document_loaders",
     "GoogleApiClient": "langchain_community.document_loaders",
     "GoogleApiYoutubeLoader": "langchain_community.document_loaders",
@@ -438,6 +440,7 @@ __all__ = [
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
+    "GithubFileLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
