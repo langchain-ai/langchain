@@ -1,6 +1,3 @@
-# -----------------------------------------------------------------------------
-# Copyright (c) 2023 - , Oracle and/or its affiliates.
-# -----------------------------------------------------------------------------
 # Authors:
 #   Sudhir Kumar (sudhirkk)
 #
@@ -236,7 +233,7 @@ def test_splitter_test() -> None:
         pass
 
     try:
-        # Expection: ORA-30584: invalid text chunking MAXIMUM - '10'
+        # Expectation: ORA-30584: invalid text chunking MAXIMUM - '10'
         splitter_params = {
             "by": "chars",
             "max": "10",
@@ -259,7 +256,7 @@ def test_splitter_test() -> None:
         pass
 
     try:
-        # Expection: ORA-30584: invalid text chunking MAXIMUM - '5'
+        # Expectation: ORA-30584: invalid text chunking MAXIMUM - '5'
         splitter_params = {
             "by": "words",
             "max": "5",
@@ -282,7 +279,7 @@ def test_splitter_test() -> None:
         pass
 
     try:
-        # Expection: ORA-30586: invalid text chunking SPLIT BY - SENTENCE
+        # Expectation: ORA-30586: invalid text chunking SPLIT BY - SENTENCE
         splitter_params = {
             "by": "words",
             "max": "50",
@@ -395,7 +392,7 @@ def test_summary_test() -> None:
         sys.exit(1)
 
     try:
-        # Expection : DRG-11002: missing value for PROVIDER
+        # Expectation : DRG-11002: missing value for PROVIDER
         summary_params = {"provider": "database1", "glevel": "S"}
 
         # summary
