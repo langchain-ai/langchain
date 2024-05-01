@@ -26,6 +26,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.vectorstores import (
+        FAISS,
         AlibabaCloudOpenSearch,
         AlibabaCloudOpenSearchSettings,
         AnalyticDB,
@@ -47,13 +48,12 @@ if TYPE_CHECKING:
         Dingo,
         DocArrayHnswSearch,
         DocArrayInMemorySearch,
-    DuckDB,
-    EcloudESVectorStore,
+        DuckDB,
+        EcloudESVectorStore,
         ElasticKnnSearch,
         ElasticsearchStore,
         ElasticVectorSearch,
         Epsilla,
-        FAISS,
         Hologres,
         LanceDB,
         LLMRails,
@@ -66,7 +66,7 @@ if TYPE_CHECKING:
         MyScale,
         MyScaleSettings,
         Neo4jVector,
-    NeuralDBVectorStore,
+        NeuralDBVectorStore,
         OpenSearchVectorSearch,
         PGEmbedding,
         PGVector,
