@@ -33,14 +33,14 @@ try:
     from langchain_community.llms.loading import load_llm, load_llm_from_config
 except ImportError:
 
-    def load_llm(*args: Any, **kwargs: Any) -> None:  # type: ignore[no-redef]
+    def load_llm(*args: Any, **kwargs: Any) -> None:  # type: ignore
         raise ImportError(
             "To use this load_llm functionality you must install the "
             "langchain_community package. "
             "You can install it with `pip install langchain_community`"
         )
 
-    def load_llm_from_config(  # type: ignore[no-redef]
+    def load_llm_from_config(  # type: ignore
         *args: Any, **kwargs: Any
     ) -> None:
         raise ImportError(
