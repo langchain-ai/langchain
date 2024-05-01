@@ -29,19 +29,12 @@ Agents select and use **Tools** and **Toolkits** for actions.
     
 """  # noqa: E501
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from langchain_community.agent_toolkits import (
-    create_json_agent,
-    create_openapi_agent,
-    create_pbi_agent,
-    create_pbi_chat_agent,
-    create_spark_sql_agent,
-    create_sql_agent,
-)
 from langchain_core._api.path import as_import_path
 from langchain_core.tools import Tool, tool
 
+from langchain._api import create_importer
 from langchain.agents.agent import (
     Agent,
     AgentExecutor,
@@ -86,12 +79,36 @@ from langchain.agents.structured_chat.base import (
 from langchain.agents.tool_calling_agent.base import create_tool_calling_agent
 from langchain.agents.xml.base import XMLAgent, create_xml_agent
 
+if TYPE_CHECKING:
+    from langchain_community.agent_toolkits.json.base import create_json_agent
+    from langchain_community.agent_toolkits.openapi.base import create_openapi_agent
+    from langchain_community.agent_toolkits.powerbi.base import create_pbi_agent
+    from langchain_community.agent_toolkits.powerbi.chat_base import (
+        create_pbi_chat_agent,
+    )
+    from langchain_community.agent_toolkits.spark_sql.base import create_spark_sql_agent
+    from langchain_community.agent_toolkits.sql.base import create_sql_agent
+
 DEPRECATED_CODE = [
     "create_csv_agent",
     "create_pandas_dataframe_agent",
     "create_spark_dataframe_agent",
     "create_xorbits_agent",
 ]
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "create_json_agent": "langchain_community.agent_toolkits.json.base",
+    "create_openapi_agent": "langchain_community.agent_toolkits.openapi.base",
+    "create_pbi_agent": "langchain_community.agent_toolkits.powerbi.base",
+    "create_pbi_chat_agent": "langchain_community.agent_toolkits.powerbi.chat_base",
+    "create_spark_sql_agent": "langchain_community.agent_toolkits.spark_sql.base",
+    "create_sql_agent": "langchain_community.agent_toolkits.sql.base",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
@@ -110,7 +127,7 @@ def __getattr__(name: str) -> Any:
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."
         )
-    raise AttributeError(f"{name} does not exist")
+    return _import_attribute(name)
 
 
 __all__ = [

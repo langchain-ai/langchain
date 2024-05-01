@@ -29,6 +29,7 @@ EXPECTED_ALL = [
     "PubMedRetriever",
     "QdrantSparseVectorRetriever",
     "RemoteLangChainRetriever",
+    "RememberizerRetriever",
     "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
