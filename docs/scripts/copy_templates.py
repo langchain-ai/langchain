@@ -9,7 +9,7 @@ if __name__ == "__main__":
     intermediate_dir = Path(sys.argv[1])
 
     templates_source_dir = Path(os.path.abspath(__file__)).parents[2] / "templates"
-    templates_intermediate_dir = intermediate_dir / "docs" / "templates"
+    templates_intermediate_dir = intermediate_dir / "templates"
 
     readmes = list(glob.glob(str(templates_source_dir) + "/*/README.md"))
     destinations = [
