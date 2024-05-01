@@ -21,20 +21,26 @@ DESCRIPTOR_SET = "langchain"
 
 class ApertureDB(VectorStore):
     def __init__(self,
-                 embeddings: Embeddings,
+                 embeddings: Embeddings = None,
                  descriptor_set: str = DESCRIPTOR_SET,
                  dimensions: Optional[int] = None,
-                 engine: str = ENGINE,
-                 metric: str = METRIC,
+                 engine: str = None,
+                 metric: str = None,
+                 log_level: int = logging.INFO,
                  **kwargs):
         super().__init__(**kwargs)
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(log_level)
+        self.descriptor_set = descriptor_set
 
         self.embedding_function = embeddings
-        self.descriptor_set = descriptor_set
         self.dimensions = dimensions
         self.engine = engine
         self.metric = metric
+
+        if embeddings is None:
+            self.logger.warning(
+                "No embedding function provided.")
 
         try:
             import aperturedb
@@ -53,7 +59,7 @@ class ApertureDB(VectorStore):
             self.logger.exception(f"Failed to connect to ApertureDB")
             raise
 
-        self._find_or_add_descriptor_set(descriptor_set, dimensions)
+        self._find_or_add_descriptor_set()
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """Selects the relevance score function based on the metric.
@@ -69,28 +75,62 @@ class ApertureDB(VectorStore):
         else:
             raise ValueError(f"Unknown metric: {self.metric}")
 
-    def _find_or_add_descriptor_set(self, descriptor_set: str, dimensions: Optional[int] = None):
+    def _find_or_add_descriptor_set(self):
+        descriptor_set = self.descriptor_set
         """Checks if the descriptor set exists, if not, creates it"""
         find_ds_query = [{
             "FindDescriptorSet": {
                 "with_name": descriptor_set,
-                "results": {
-                    "count": True
-                }
+                "engines": True,
+                "metrics": True,
+                "dimensions" : True,
             }
-
         }]
         r, b = self.connection.query(find_ds_query)
         assert self.connection.last_query_ok(), self.connection.get_last_response_str()
-        # TODO: Could check that dimensions, engine and metric are the same
-        if r[0]["FindDescriptorSet"]["count"] == 0:
+        n_entities = len(r[0]["FindDescriptorSet"]["entities"])
+        assert n_entities <= 1, "Multiple descriptor sets with the same name"
+
+        if n_entities == 1:
+            e = r[0]["FindDescriptorSet"]["entities"][0]
+            self.logger.info(f"Descriptor set {descriptor_set} already exists")
+
+            engines = e["_engines"]
+            assert len(engines) == 1, "Only one engine is supported"
+
+            if self.engine is None:
+                self.engine = engines[0]
+            elif self.engine != engines[0]:
+                self.logger.error(f"Engine mismatch: {self.engine} != {engines[0]}")
+            
+            metrics = e["_metrics"]
+            assert len(metrics) == 1, "Only one metric is supported"
+            if self.metric is None:
+                self.metric = metrics[0]
+            elif self.metric != metrics[0]:
+                self.logger.error(f"Metric mismatch: {self.metric} != {metrics[0]}")
+
+            dimensions = e["_dimensions"]
+            if self.dimensions is None:
+                self.dimensions = dimensions
+            elif self.dimensions != dimensions:
+                self.logger.error(f"Dimensions mismatch: {self.dimensions} != {dimensions}")
+
             if self.dimensions is None:
                 self.dimensions = len(
                     self.embedding_function.embed_query("test"))
+                
+        else:
+            self.logger.info(f"Descriptor set {descriptor_set} does not exist. Creating it")
             success = self.utils.add_descriptorset(
                 descriptor_set, self.dimensions, engine=self.engine, metric=[self.metric])
             assert success, self.connection.get_last_response_str()
+
+            # Create indexes
+            self.utils.create_entity_index("_Descriptor", "_create_txn")
+            self.utils.create_entity_index("_DescriptorSet", "_name")
             self.utils.create_entity_index("_Descriptor", "_uniqueid")
+
 
     def add_texts(self, texts: Iterable[str],
                   metadatas: Optional[List[dict]] = None,
@@ -99,6 +139,7 @@ class ApertureDB(VectorStore):
             assert len(texts) == len(
                 metadatas), "Length of texts and metadatas should be the same"
 
+        assert self.embedding_function is not None, "Embedding function is not set"
         embeddings = self.embedding_function.embed_documents(texts)
         if metadatas is None:
             metadatas = repeat({})
@@ -184,6 +225,7 @@ class ApertureDB(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, *args: Any, **kwargs: Any
     ) -> List[Document]:
+        assert self.embedding_function is not None, "Embedding function is not set"
         embedding = self.embedding_function.embed_query(query)
         # print(f"query: {query}, embedding: {embedding}")
         return self.similarity_search_by_vector(embedding, k, *args, **kwargs)
@@ -191,6 +233,7 @@ class ApertureDB(VectorStore):
     def similarity_search_with_score(
         self, query: str, *args: Any, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
+        assert self.embedding_function is not None, "Embedding function is not set"
         embedding = self.embedding_function.embed_query(query)
         return self._similarity_search_with_score_by_vector(embedding, *args, **kwargs)
 
@@ -215,7 +258,7 @@ class ApertureDB(VectorStore):
                 "blobs": True,
             }
         }]
-        print(f"quey: {query}")
+        self.logger.debug(f"query: {query}")
         blobs_in = [np.array(embedding, dtype=np.float32).tobytes()]
         start_time = time.time()
         responses, blobs_out = self.connection.query(query, blobs_in)
@@ -257,6 +300,7 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
+        assert self.embedding_function is not None, "Embedding function is not set"
         embedding = self.embedding_function.embed_query(query)
         # print(f"query-{query}, embedding: {embedding}")
         return self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k, lambda_mult, **kwargs)
