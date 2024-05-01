@@ -119,7 +119,7 @@ class OracleDocReader:
             Plain text and metadata as Langchain Document.
         """
 
-        metadata = {}
+        metadata: Dict[str, Any] = {}
         try:
             oracledb.defaults.fetch_lobs = False
             cursor = conn.cursor()
