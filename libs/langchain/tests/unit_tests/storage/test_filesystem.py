@@ -3,8 +3,8 @@ import tempfile
 from typing import Generator
 
 import pytest
+from langchain_core.stores import InvalidKeyException
 
-from langchain.storage.exceptions import InvalidKeyException
 from langchain.storage.file_system import LocalFileStore
 
 

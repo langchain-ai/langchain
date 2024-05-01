@@ -177,7 +177,7 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          poetry run pip install $MIN_VERSIONS
+          poetry run pip install --force-reinstall $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 
@@ -297,14 +297,13 @@ jobs:
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
-
-      - name: Create Release
+          
+      - name: Create Tag
         uses: ncipollo/release-action@v1
-        if: ${{ inputs.working-directory == 'libs/langchain' }}
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
-          draft: false
-          generateReleaseNotes: true
-          tag: v${{ needs.build.outputs.version }}
+          generateReleaseNotes: false
+          tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}
+          body: "# Release ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}\n\nPackage-specific release note generation coming soon."
           commit: ${{ github.sha }}
