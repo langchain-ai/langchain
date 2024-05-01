@@ -202,7 +202,7 @@ _module_lookup = {
     "LlamaIndexRetriever": "langchain_community.retrievers.llama_index",
     "MetalRetriever": "langchain_community.retrievers.metal",
     "MilvusRetriever": "langchain_community.retrievers.milvus",
-    "MilvusHybridSearchRetriever": "langchain_community.retrievers.milvus_hybrid_search",
+    "MilvusHybridSearchRetriever": "langchain_community.retrievers.milvus_hybrid_search",  # noqa: E501
     "OutlineRetriever": "langchain_community.retrievers.outline",
     "PineconeHybridSearchRetriever": "langchain_community.retrievers.pinecone_hybrid_search",  # noqa: E501
     "PubMedRetriever": "langchain_community.retrievers.pubmed",

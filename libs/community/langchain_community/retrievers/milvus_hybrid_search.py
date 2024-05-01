@@ -97,6 +97,7 @@ DEFAULT_SPARSE_SEARCH_PARAMS = {
 
 DEFAULT_RERANK_PARAMS = {"type": "RRF", "param": {"k": 60.0}}
 
+
 class SparseEmbeddings(ABC):
     """Interface for sparse embedding models."""
 
@@ -646,7 +647,9 @@ class MilvusHybridSearchRetriever(BaseRetriever):
         for i in range(0, total_count, batch_size):
             end = min(i + batch_size, total_count)
 
-            batch_insert_list = [insert_dict[x][i:end] for x in fields if x in insert_dict]
+            batch_insert_list = [
+                insert_dict[x][i:end] for x in fields if x in insert_dict
+            ]
 
             try:
                 timeout = self.timeout or timeout
@@ -674,14 +677,28 @@ class MilvusHybridSearchRetriever(BaseRetriever):
         """Get documents relevant to a query
 
         Args:
-            query (str): String to find relevant documents for
-            run_manager (CallbackManagerForRetrieverRun): The callbacks handler to use
-            k (int, optional): Number of documents to return. Defaults to 4.
-            ann_search_params (Optional[Dict[str, Dict[str, Any]]], optional): Vector search params. Defaults to None.
-                examples: ann_search_params = {"dense_vector": {"limit": 10, "expr": 'pk in [1, 2]'}}
-            include_other_fields (bool, optional): Whether to use other vector fields which are not included in ann_search_params. Defaults to True.
-            rerank_params (Optional[Dict[str, Any]], optional): Rerank model params. Defaults to None.
-            timeout (Optional[float], optional): Timeout for search. Defaults to None.
+            query: String to find relevant documents for.
+            run_manager: The callbacks handler to use.
+            k: Number of documents to return.
+            ann_search_params: Vector search params.
+                examples:
+                    ann_search_params = {
+                        "dense_vector": {
+                            "limit": 10,
+                            "expr": 'pk in [1, 2]'
+                        }
+                    }
+            include_other_fields: Whether to use other vector fields
+                which are not included in ann_search_params.
+            rerank_params: Rerank model params.
+                examples:
+                    rerank_params = {
+                        "type": "Weighted",
+                        "param": {
+                            "weights": {"dense": 0.7, "sparse": 0.3}
+                        }
+                    }
+            timeout: Timeout for search.
             **kwargs: Additional arguments to pass to the retriever
 
         Returns:
@@ -697,11 +714,14 @@ class MilvusHybridSearchRetriever(BaseRetriever):
 
         if not ann_search_params:
             ann_search_params = {}
-        
+
         valid_fields = set(ann_search_params) & available_vector_fields
         invalid_fields = set(ann_search_params) - valid_fields
         if invalid_fields:
-            logger.info(f"These fields {invalid_fields} are not available fields, which are ignored")
+            logger.info(
+                f"These fields {invalid_fields} are not available fields,"
+                " which are ignored"
+            )
         ann_search_params = {field: ann_search_params[field] for field in valid_fields}
 
         ann_search_dict = {}
@@ -766,23 +786,23 @@ class MilvusHybridSearchRetriever(BaseRetriever):
             anns_field = reqs[0].anns_field
             logger.debug(f"using single vector search on {anns_field}")
             res = self.col.search(
-                data = [all_embeddings[anns_field]],
-                param = reqs[0].param,
-                anns_field = anns_field, 
-                limit = reqs[0].limit,
-                expr = reqs[0].expr, 
+                data=[all_embeddings[anns_field]],
+                param=reqs[0].param,
+                anns_field=anns_field,
+                limit=reqs[0].limit,
+                expr=reqs[0].expr,
                 output_fields=[self.text_field, self.metadata_field],
                 **kwargs,
             )
         else:
             rerank = _get_reranker(rerank_params, ann_search_fields)
 
-            logger.debug(f"vector search reqs:")
+            logger.debug("vector search reqs:")
             for req in reqs:
                 logger.info(
                     f"anns_field: {req.anns_field}, param: {req.param}, "
                     f"limit: {req.limit}, expr: {req.expr}"
-                )         
+                )
             logger.debug(f"rerank: {rerank}")
 
             res = self.col.hybrid_search(
