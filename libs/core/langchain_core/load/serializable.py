@@ -124,8 +124,6 @@ class Serializable(BaseModel, ABC):
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
-        secrets = dict()
-        # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {
             k: getattr(self, k, v)
             for k, v in self._lc_kwargs.items()
@@ -155,7 +153,10 @@ class Serializable(BaseModel, ABC):
             # Get a reference to self bound to each class in the MRO
             this = cast(Serializable, self if cls is None else super(cls, self))
 
-            secrets.update(this.lc_secrets)
+            secrets = this.lc_secrets
+            if isinstance(self, Serializable):
+                secrets.update(self.lc_secrets)
+
             # Now also add the aliases for the secrets
             # This ensures known secret aliases are hidden.
             # Note: this does NOT hide any other extra kwargs

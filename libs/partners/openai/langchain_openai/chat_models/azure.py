@@ -100,6 +100,13 @@ class AzureChatOpenAI(ChatOpenAI):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "azure_openai"]
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {
+            "openai_api_key": "AZURE_OPENAI_API_KEY",
+            "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
+        }
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
