@@ -28,7 +28,8 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.arxiv import (
         ArxivRetriever,
     )
-    from langchain_community.retrievers.azure_cognitive_search import (
+    from langchain_community.retrievers.azure_ai_search import (
+        AzureAISearchRetriever,
         AzureCognitiveSearchRetriever,
     )
     from langchain_community.retrievers.bedrock import (
@@ -131,46 +132,6 @@ if TYPE_CHECKING:
         ZillizRetriever,
     )
 
-__all__ = [
-    "AmazonKendraRetriever",
-    "AmazonKnowledgeBasesRetriever",
-    "ArceeRetriever",
-    "ArxivRetriever",
-    "AzureCognitiveSearchRetriever",
-    "BM25Retriever",
-    "BreebsRetriever",
-    "ChaindeskRetriever",
-    "ChatGPTPluginRetriever",
-    "CohereRagRetriever",
-    "DocArrayRetriever",
-    "DriaRetriever",
-    "ElasticSearchBM25Retriever",
-    "EmbedchainRetriever",
-    "GoogleCloudEnterpriseSearchRetriever",
-    "GoogleDocumentAIWarehouseRetriever",
-    "GoogleVertexAIMultiTurnSearchRetriever",
-    "GoogleVertexAISearchRetriever",
-    "KNNRetriever",
-    "KayAiRetriever",
-    "LlamaIndexGraphRetriever",
-    "LlamaIndexRetriever",
-    "MetalRetriever",
-    "MilvusRetriever",
-    "OutlineRetriever",
-    "PineconeHybridSearchRetriever",
-    "PubMedRetriever",
-    "QdrantSparseVectorRetriever",
-    "RemoteLangChainRetriever",
-    "SVMRetriever",
-    "TFIDFRetriever",
-    "TavilySearchAPIRetriever",
-    "VespaRetriever",
-    "WeaviateHybridSearchRetriever",
-    "WikipediaRetriever",
-    "YouRetriever",
-    "ZepRetriever",
-    "ZillizRetriever",
-]
 
 _module_lookup = {
     "AmazonKendraRetriever": "langchain_community.retrievers.kendra",
@@ -224,4 +185,44 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = list(_module_lookup.keys())
+__all__ = [
+    "AmazonKendraRetriever",
+    "AmazonKnowledgeBasesRetriever",
+    "ArceeRetriever",
+    "ArxivRetriever",
+    "AzureCognitiveSearchRetriever",
+    "AzureAISearchRetriever",
+    "BM25Retriever",
+    "BreebsRetriever",
+    "ChaindeskRetriever",
+    "ChatGPTPluginRetriever",
+    "CohereRagRetriever",
+    "DocArrayRetriever",
+    "DriaRetriever",
+    "ElasticSearchBM25Retriever",
+    "EmbedchainRetriever",
+    "GoogleCloudEnterpriseSearchRetriever",
+    "GoogleDocumentAIWarehouseRetriever",
+    "GoogleVertexAIMultiTurnSearchRetriever",
+    "GoogleVertexAISearchRetriever",
+    "KNNRetriever",
+    "KayAiRetriever",
+    "LlamaIndexGraphRetriever",
+    "LlamaIndexRetriever",
+    "MetalRetriever",
+    "MilvusRetriever",
+    "OutlineRetriever",
+    "PineconeHybridSearchRetriever",
+    "PubMedRetriever",
+    "QdrantSparseVectorRetriever",
+    "RemoteLangChainRetriever",
+    "SVMRetriever",
+    "TFIDFRetriever",
+    "TavilySearchAPIRetriever",
+    "VespaRetriever",
+    "WeaviateHybridSearchRetriever",
+    "WikipediaRetriever",
+    "YouRetriever",
+    "ZepRetriever",
+    "ZillizRetriever",
+]
