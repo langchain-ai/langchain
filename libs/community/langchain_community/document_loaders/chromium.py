@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Iterator, List, AsyncIterator
+from typing import AsyncIterator, Iterator, List
 
 from langchain_core.documents import Document
 
@@ -13,14 +13,8 @@ class AsyncChromiumLoader(BaseLoader):
     """Scrape HTML pages from URLs using a
     headless instance of the Chromium."""
 
-    def __init__(
-            self,
-            urls: List[str],
-            *,
-            headless: bool = True,
-    ):
-        """
-        Initialize the loader with a list of URL paths.
+    def __init__(self, urls: List[str], *, headless: bool = True):
+        """Initialize the loader with a list of URL paths.
 
         Args:
             urls: A list of URLs to scrape content from.
@@ -67,7 +61,23 @@ class AsyncChromiumLoader(BaseLoader):
             await browser.close()
         return results
 
-    async def lazy_load(self) -> AsyncIterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
+        """
+        Lazily load text content from the provided URLs.
+
+        This method yields Documents one at a time as they're scraped,
+        instead of waiting to scrape all URLs before returning.
+
+        Yields:
+            Document: The scraped content encapsulated within a Document object.
+
+        """
+        for url in self.urls:
+            html_content = asyncio.run(self.ascrape_playwright(url))
+            metadata = {"source": url}
+            yield Document(page_content=html_content, metadata=metadata)
+
+    async def alazy_load(self) -> AsyncIterator[Document]:
         """
         Asynchronously load text content from the provided URLs.
 
@@ -79,6 +89,7 @@ class AsyncChromiumLoader(BaseLoader):
             Document: A Document object containing the scraped content, along with its source URL as metadata.
         """
         import asyncio
+
         tasks = [self.ascrape_playwright(url) for url in self.urls]
         results = await asyncio.gather(*tasks)
         for url, content in zip(self.urls, results):
