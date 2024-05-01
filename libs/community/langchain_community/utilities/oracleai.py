@@ -166,15 +166,15 @@ class OracleSummary:
 
 ''' get the Oracle connection '''
 conn = oracledb.connect(
-    user="ut",
-    password="ut",
-    dsn="phoenix104636.dev3sub3phx.databasede3phx.oraclevcn.com/v5.regress.rdbms.dev.us.oracle.com")
+    user="",
+    password="",
+    dsn="")
 print("Oracle connection is established...")
 
 ''' params '''
 summary_params = {"provider": "database","glevel": "S",
                   "numParagraphs": 1,"language": "english"} 
-proxy = "www-proxy-ash7.us.oracle.com:80"
+proxy = ""
 
 ''' instance '''
 summ = OracleSummary(conn=conn, params=summary_params, proxy=proxy)
