@@ -13,10 +13,11 @@ documents that were derived from parent documents by chunking.)
 """
 from typing import TYPE_CHECKING, Any
 
+from langchain_core.indexing.api import IndexingResult, aindex, index
+
 from langchain._api import create_importer
 from langchain.indexes._sql_record_manager import SQLRecordManager
 from langchain.indexes.vectorstore import VectorstoreIndexCreator
-from langchain_core.indexing.api import IndexingResult, aindex, index
 
 if TYPE_CHECKING:
     from langchain_community.graphs.index_creator import GraphIndexCreator

@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any, Dict, List, Optional, TypedDict, Union
+
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
@@ -7,7 +8,6 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 from langchain.chains.sql_database.prompt import PROMPT, SQL_PROMPTS
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from langchain_community.utilities.sql_database import SQLDatabase
