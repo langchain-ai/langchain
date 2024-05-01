@@ -15,11 +15,13 @@ __all__ = ["InfinityEmbeddings"]
 
 
 class InfinityEmbeddings(BaseModel, Embeddings):
-    """Embedding models for self-hosted https://github.com/michaelfeil/infinity
-    This should also work for text-embeddings-inference and other
+    """Self-hosted embedding models for `infinity` package.
+
+    See https://github.com/michaelfeil/infinity
+    This also works for text-embeddings-inference and other
     self-hosted openai-compatible servers.
 
-    Infinity is a class to interact with Embedding Models on https://github.com/michaelfeil/infinity
+    Infinity is a package to interact with Embedding Models on https://github.com/michaelfeil/infinity
 
 
     Example:
@@ -115,7 +117,9 @@ class InfinityEmbeddings(BaseModel, Embeddings):
 
 
 class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
-    """A helper tool to embed Infinity. Not part of Langchain's stable API,
+    """Helper tool to embed Infinity.
+
+    It is not a part of Langchain's stable API,
     direct use discouraged.
 
     Example:

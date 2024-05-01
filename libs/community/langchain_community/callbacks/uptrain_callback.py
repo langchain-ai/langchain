@@ -74,6 +74,7 @@ logger.addHandler(handler)
 
 
 def import_uptrain() -> Any:
+    """Import the `uptrain` package."""
     try:
         import uptrain
     except ImportError as e:

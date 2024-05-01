@@ -90,6 +90,8 @@ class ChatPromptValue(PromptValue):
 
 
 class ImageURL(TypedDict, total=False):
+    """Image URL."""
+
     detail: Literal["auto", "low", "high"]
     """Specifies the detail level of the image."""
 
