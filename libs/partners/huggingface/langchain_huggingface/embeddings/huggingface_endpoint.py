@@ -9,7 +9,7 @@ DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
 
 
-class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
+class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     """HuggingFaceHub embedding models.
 
     To use, you should have the ``huggingface_hub`` python package installed, and the
@@ -19,9 +19,9 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings import HuggingFaceHubEmbeddings
+            from langchain_community.embeddings import HuggingFaceEndpointEmbeddings
             model = "sentence-transformers/all-mpnet-base-v2"
-            hf = HuggingFaceHubEmbeddings(
+            hf = HuggingFaceEndpointEmbeddings(
                 model=model,
                 task="feature-extraction",
                 huggingfacehub_api_token="my-api-key",

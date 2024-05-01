@@ -1,10 +1,7 @@
 from langchain_huggingface.chat_models import ChatHuggingFace
 from langchain_huggingface.embeddings import (
-    HuggingFaceBgeEmbeddings,
     HuggingFaceEmbeddings,
-    HuggingFaceHubEmbeddings,
-    HuggingFaceInferenceAPIEmbeddings,
-    HuggingFaceInstructEmbeddings,
+    HuggingFaceEndpointEmbeddings,
 )
 from langchain_huggingface.llms import (
     HuggingFaceEndpoint,
@@ -14,11 +11,8 @@ from langchain_huggingface.llms import (
 
 __all__ = [
     "ChatHuggingFace",
-    "HuggingFaceHubEmbeddings",
+    "HuggingFaceEndpointEmbeddings",
     "HuggingFaceEmbeddings",
-    "HuggingFaceInstructEmbeddings",
-    "HuggingFaceBgeEmbeddings",
-    "HuggingFaceInferenceAPIEmbeddings",
     "HuggingFaceEndpoint",
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",

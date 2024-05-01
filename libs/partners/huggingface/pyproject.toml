@@ -15,6 +15,7 @@ python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.42"
 tokenizers = ">=0.19.1"
 transformers = ">=4.39.0"
+sentence-transformers = ">=2.6.0"
 
 [tool.poetry.group.test]
 optional = true
