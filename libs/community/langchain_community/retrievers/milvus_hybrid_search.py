@@ -179,7 +179,7 @@ def _create_connection_alias(connection_args: dict) -> str:
 
 def _create_collection(
     embeddings: Dict[str, List[List[float]]],
-    sparse_embeddings: Dict[str : List[Dict[int, float]]],
+    sparse_embeddings: Dict[str, List[Dict[int, float]]],
     collection_name: str,
     collection_description: str,
     alias: str,
@@ -188,7 +188,7 @@ def _create_collection(
     primary_field: str,
     text_field: str,
     metadata_field: str,
-    partition_key_field: str,
+    partition_key_field: Optional[str],
     collection_properties: Optional[Dict[str, Any]] = None,
 ) -> Any:
     from pymilvus import (
@@ -332,7 +332,7 @@ def _get_indexes(col: Collection, field_names: List[str]) -> Dict[str, Any]:
     return indexes
 
 
-def _extract_fields(col) -> None:
+def _extract_fields(col: Collection) -> List[str]:
     """Grab the existing fields from the Collection"""
 
     schema = col.schema
@@ -346,7 +346,7 @@ def _create_search_and_rerank_params(
     sparse_vector_fields: List[str],
     search_params: Optional[Dict[str, Dict[str, Any]]] = None,
     rerank_params: Optional[Dict[str, Any]] = None,
-) -> None:
+) -> Any:
     """Generate search params based on the current index type"""
 
     if search_params is None:
@@ -356,8 +356,8 @@ def _create_search_and_rerank_params(
     for vector_field, index in indexes.items():
         field_search_params = deepcopy(search_params.get(vector_field, {}))
         if not field_search_params:
-            index_type: str = index["index_param"]["index_type"]
-            metric_type: str = index["index_param"]["metric_type"]
+            index_type = index["index_param"]["index_type"]
+            metric_type = index["index_param"]["metric_type"]
             params = DEFAULT_DENSE_SEARCH_PARAMS[index_type]
             params["metric_type"] = metric_type
             field_search_params["param"] = params
@@ -368,8 +368,8 @@ def _create_search_and_rerank_params(
         field_search_params = deepcopy(search_params.get(sparse_vector_field, {}))
 
         if not field_search_params:
-            index_type: str = index["index_param"]["index_type"]
-            metric_type: str = index["index_param"]["metric_type"]
+            index_type = index["index_param"]["index_type"]
+            metric_type = index["index_param"]["metric_type"]
             params = DEFAULT_SPARSE_SEARCH_PARAMS[index_type]
             params["metric_type"] = metric_type
             field_search_params["param"] = params
@@ -428,8 +428,8 @@ class MilvusHybridSearchRetriever(BaseRetriever):
       https://milvus.io/api-reference/pymilvus/v2.4.x/ORM/Collection/hybrid_search.md
     """
 
-    embedding_functions: Optional[Dict[str, Embeddings]] = None
-    sparse_embedding_functions: Optional[Dict[str, SparseEmbeddings]] = None
+    embedding_functions: Dict[str, Embeddings]
+    sparse_embedding_functions: Dict[str, SparseEmbeddings]
     collection_name: str = "LangChainCollection"
     collection_properties: Optional[Dict[str, Any]] = None
     connection_args: Optional[Dict[str, Any]] = None
@@ -445,7 +445,7 @@ class MilvusHybridSearchRetriever(BaseRetriever):
     partition_names: Optional[List[str]] = None
     auto_id: bool = False
     drop_old: bool = False
-    alias: Optional[str] = None
+    alias: str
     replica_number: int = 1
     timeout: Optional[float] = None
     col: Optional[Any] = None  #: :meta private:
@@ -557,8 +557,8 @@ class MilvusHybridSearchRetriever(BaseRetriever):
 
     def _init(
         self,
-        embeddings: List[List[float]],
-        sparse_embeddings: List[Dict[int, float]],
+        embeddings: Dict[str, List[List[float]]],
+        sparse_embeddings: Dict[str, List[Dict[int, float]]],
     ) -> None:
         self.col = _create_collection(
             embeddings=embeddings,
@@ -616,12 +616,12 @@ class MilvusHybridSearchRetriever(BaseRetriever):
         total_count = len(texts)
         if not metadatas:
             metadatas = [{}] * total_count
-        insert_dict: dict[str, list] = {
+        insert_dict: dict[str, Any] = {
             self.text_field: texts,
             self.metadata_field: metadatas,
         }
         if not self.auto_id:
-            insert_dict[self.primary_field] = ids
+            insert_dict[self.primary_field] = ids  # type: ignore[assignment]
 
         embeddings: Dict[str, List[List[float]]] = {}
         sparse_embeddings: Dict[str, List[Dict[int, float]]] = {}
@@ -629,8 +629,8 @@ class MilvusHybridSearchRetriever(BaseRetriever):
         for vector_field, func in self.embedding_functions.items():
             insert_dict[vector_field] = func.embed_documents(texts)
             embeddings[vector_field] = insert_dict[vector_field]
-        for vector_field, func in self.sparse_embedding_functions.items():
-            insert_dict[vector_field] = func.embed_documents(texts)
+        for vector_field, sfunc in self.sparse_embedding_functions.items():
+            insert_dict[vector_field] = sfunc.embed_documents(texts)
             sparse_embeddings[vector_field] = insert_dict[vector_field]
 
         if self.col is None:
@@ -653,7 +653,7 @@ class MilvusHybridSearchRetriever(BaseRetriever):
 
             try:
                 timeout = self.timeout or timeout
-                res = self.col.insert(batch_insert_list, timeout=timeout, **kwargs)
+                res = self.col.insert(batch_insert_list, timeout=timeout, **kwargs)  # type: ignore[union-attr]
                 pks.extend(res.primary_keys)
             except MilvusException as e:
                 logger.error(
@@ -730,14 +730,14 @@ class MilvusHybridSearchRetriever(BaseRetriever):
             if "limit" not in search_kwargs:
                 search_kwargs["limit"] = k
             if "param" not in search_kwargs:
-                search_kwargs["param"] = self.search_params[field]
+                search_kwargs["param"] = deepcopy(self.search_params[field])  # type: ignore[index]
             ann_search_dict[field] = search_kwargs
 
         if include_other_fields:
             other_fields = available_vector_fields - set(ann_search_params)
             for field in other_fields:
                 ann_search_dict[field] = {}
-                ann_search_dict[field]["param"] = deepcopy(self.search_params[field])
+                ann_search_dict[field]["param"] = deepcopy(self.search_params[field])  # type: ignore[index]
                 ann_search_dict[field]["limit"] = k
 
         if rerank_params is None:
@@ -747,9 +747,9 @@ class MilvusHybridSearchRetriever(BaseRetriever):
         for vector_field, func in self.embedding_functions.items():
             if vector_field in ann_search_dict:
                 all_embeddings[vector_field] = func.embed_query(query)
-        for sparse_vector_field, func in self.sparse_embedding_functions.items():
+        for sparse_vector_field, sfunc in self.sparse_embedding_functions.items():
             if sparse_vector_field in ann_search_dict:
-                all_embeddings[sparse_vector_field] = func.embed_query(query)
+                all_embeddings[sparse_vector_field] = sfunc.embed_query(query)
 
         reqs = []
         ann_search_fields = []
@@ -795,7 +795,7 @@ class MilvusHybridSearchRetriever(BaseRetriever):
                 **kwargs,
             )
         else:
-            rerank = _get_reranker(rerank_params, ann_search_fields)
+            rerank = _get_reranker(rerank_params, ann_search_fields)  # type: ignore[arg-type]
 
             logger.debug("vector search reqs:")
             for req in reqs:
