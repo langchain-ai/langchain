@@ -81,15 +81,15 @@ class AsyncChromiumLoader(BaseLoader):
         """
         Asynchronously load text content from the provided URLs.
 
-        This method leverages asyncio to initiate the scraping of all provided URLs simultaneously.
-        It improves performance by utilizing concurrent asynchronous requests. Each Document is yielded
-        as soon as its content is available, encapsulating the scraped content.
+        This method leverages asyncio to initiate the scraping of all provided URLs
+        simultaneously. It improves performance by utilizing concurrent asynchronous
+        requests. Each Document is yielded as soon as its content is available,
+        encapsulating the scraped content.
 
         Yields:
-            Document: A Document object containing the scraped content, along with its source URL as metadata.
+            Document: A Document object containing the scraped content, along with its
+            source URL as metadata.
         """
-        import asyncio
-
         tasks = [self.ascrape_playwright(url) for url in self.urls]
         results = await asyncio.gather(*tasks)
         for url, content in zip(self.urls, results):
