@@ -31,6 +31,9 @@ Agents select and use **Tools** and **Toolkits** for actions.
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from langchain_core._api.path import as_import_path
+from langchain_core.tools import Tool, tool
+
 from langchain._api import create_importer
 from langchain.agents.agent import (
     Agent,
@@ -70,11 +73,14 @@ from langchain.agents.structured_chat.base import (
 )
 from langchain.agents.tool_calling_agent.base import create_tool_calling_agent
 from langchain.agents.xml.base import XMLAgent, create_xml_agent
-from langchain_core._api.path import as_import_path
-from langchain_core.tools import Tool, tool
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.json.base import create_json_agent
+    from langchain_community.agent_toolkits.load_tools import (
+        get_all_tool_names,
+        load_huggingface_tool,
+        load_tools,
+    )
     from langchain_community.agent_toolkits.openapi.base import create_openapi_agent
     from langchain_community.agent_toolkits.powerbi.base import create_pbi_agent
     from langchain_community.agent_toolkits.powerbi.chat_base import (
@@ -82,11 +88,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.agent_toolkits.spark_sql.base import create_spark_sql_agent
     from langchain_community.agent_toolkits.sql.base import create_sql_agent
-    from langchain_community.agent_toolkits.load_tools import (
-        load_huggingface_tool,
-        load_tools,
-        get_all_tool_names,
-    )
 
 DEPRECATED_CODE = [
     "create_csv_agent",
