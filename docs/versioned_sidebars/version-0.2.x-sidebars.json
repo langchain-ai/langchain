@@ -271,6 +271,7 @@
               "label": "Q&A with RAG",
               "collapsed": true,
               "items": [
+                "how_to/qa_chat_history_how_to",
                 "how_to/qa_streaming",
                 "how_to/qa_sources",
                 "how_to/qa_citations",
