@@ -13,9 +13,9 @@ from requests import Response
 
 from langchain.chains.api.openapi.requests_chain import APIRequesterChain
 from langchain.chains.api.openapi.response_chain import APIResponderChain
+
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-
 
 class _ParamMapping(NamedTuple):
     """Mapping from parameter name to parameter value."""
