@@ -362,115 +362,6 @@ class NeuralDBVectorStore(VectorStore):
         self.db.save(path)
 
 
-def check_deployment_decorator(func):
-    """
-    A decorator function to check if deployment is complete before executing the decorated method.
-
-    Args:
-        func (callable): The function to be decorated.
-
-    Returns:
-        callable: The decorated function.
-    """
-
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        try:
-            return func(self, *args, **kwargs)
-        except requests.RequestException as e:
-            print(f"Error during HTTP request: {str(e)}")
-            print(
-                "Deployment might not be complete yet. Call `list_deployments()` to check status of your deployment."
-            )
-            return None
-
-    return wrapper
-
-def auth_header(access_token):
-    return {
-        "Authorization": f"Bearer {access_token}",
-    }
-    
-class NeuralDBClient:
-    """
-    A client for interacting with the deployed NeuralDB model.
-
-    Attributes:
-        deployment_identifier (str): The identifier for the deployment.
-        bazaar (thirdai.neural_db.ModelBazaar): The ModelBazaar object corresponding to a NeuralDB Enterprise installation.
-
-    Methods:
-        __init__(self, deployment_identifier: str, bazaar: thirdai.neural_db.ModelBazaar) -> None:
-            Initializes a new instance of the NeuralDBClient.
-
-        search(self, query: str, top_k: int = 10) -> List[dict]:
-            Searches the ndb model for relevant search results.
-    """
-
-    def __init__(self, deployment_identifier, bazaar):
-        """
-        Initializes a new instance of the NeuralDBClient.
-
-        Args:
-            deployment_identifier (str): The identifier for the deployment.
-            bazaar (thirdai.neural_db.ModelBazaar): The ModelBazaar object corresponding to a NeuralDB Enterprise installation.
-        """
-        self.deployment_identifier = deployment_identifier
-        self.bazaar = bazaar
-        
-        url = urljoin(self.bazaar._base_url, f"jobs/{self.bazaar._user_id}/deploy-status")
-
-        response = requests.get(
-            url,
-            params={"deployment_identifier": deployment_identifier},
-            headers=auth_header(self.bazaar._access_token),
-        )
-
-        response_data = json.loads(response.content)["data"]
-
-        if response_data["status"] == "complete":
-            print("Connection obtained...")
-            self.base_url = response_data["endpoint"] + "/"
-        else:
-            raise Exception("The model isn't deployed...")
-        
-
-    @check_deployment_decorator
-    def search(self, query, top_k=10):
-        """
-        Searches the ndb model for similar queries.
-
-        Args:
-            query (str): The query to search for.
-            top_k (int): The number of top results to retrieve (default is 10).
-
-        Returns:
-            Dict: A dict of search results containing keys: `query_text` and `references`.
-        """
-        print(urljoin(self.base_url, "predict"))
-        response = requests.get(
-            urljoin(self.base_url, "predict"),
-            params={"query_text": query, "top_k": top_k},
-            headers=auth_header(self.bazaar._login_instance._access_token)
-        )
-
-        if not (200 <= response.status_code < 300):
-            print(response.content)
-            raise requests.exceptions.HTTPError(
-                "Failed with status code:", response.status_code
-            )
-    
-        content = json.loads(response.content)
-    
-        status = content["status"]
-    
-        if status != "success":
-            error = content["message"]
-            raise requests.exceptions.HTTPError(f"error: {error}")
-
-        return json.loads(response.content)["data"]
-
-
 class NeuralDBClientVectorStore(VectorStore):
     """Vectorstore that uses ThirdAI's NeuralDB Enterprise Python Client for NeuralDBs.
 
@@ -479,13 +370,13 @@ class NeuralDBClientVectorStore(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import NeuralDBClientVectorStore, NeuralDBClient
-            from thirdai.neural_db import ModelBazaar
+            from langchain_community.vectorstores import NeuralDBClientVectorStore
+            from thirdai.neural_db import ModelBazaar, NeuralDBClient
 
             bazaar = ModelBazaar(base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/")
             bazaar.log_in(email="user@thirdai.com", password="1234")
 
-            ndb_client = NeuralDBClient(deployment_identifier="user/model-0:user/deployment-0", bazaar=bazaar)
+            ndb_client = NeuralDBClient(deployment_identifier="user/model-0:user/deployment-0",base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/", bazaar=bazaar)
             vectorstore = NeuralDBClientVectorStore(db=ndb_client)
             retriever = vectorstore.as_retriever(search_kwargs={'k':5})
 
@@ -530,6 +421,96 @@ class NeuralDBClientVectorStore(VectorStore):
             ]
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
+        
+    def insert(self, documents: list[dict[str, Any]]) # type: ignore[no-untyped-def]:
+        """
+        Inserts documents into the VectorStore and return the corresponding Sources.
+
+        Args:
+            documents (List[dict[str, Any]]): A list of dictionaries that represent documents to be inserted to the VectorStores.
+            The document dictionaries must be in the following format:
+            {"document_type": "DOCUMENT_TYPE", **kwargs} where "DOCUMENT_TYPE" is one of the following:
+            "PDF", "CSV", "DOCX", "URL", "SentenceLevelPDF", "SentenceLevelDOCX", "Unstructured", "InMemoryText".
+            The kwargs for each document type are shown below:
+
+            class PDF(Document):
+                document_type: Literal["PDF"]
+                path: str
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+                version: str = "v1"
+                chunk_size: int = 100
+                stride: int = 40
+                emphasize_first_words: int = 0
+                ignore_header_footer: bool = True
+                ignore_nonstandard_orientation: bool = True
+
+            class CSV(Document):
+                document_type: Literal["CSV"]
+                path: str
+                id_column: Optional[str] = None
+                strong_columns: Optional[List[str]] = None
+                weak_columns: Optional[List[str]] = None
+                reference_columns: Optional[List[str]] = None
+                save_extra_info: bool = True
+                metadata: Optional[dict[str, Any]] = None
+                has_offset: bool = False
+                on_disk: bool = False
+
+            class DOCX(Document):
+                document_type: Literal["DOCX"]
+                path: str
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class URL(Document):
+                document_type: Literal["URL"]
+                url: str
+                save_extra_info: bool = True
+                title_is_strong: bool = False
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class SentenceLevelPDF(Document):
+                document_type: Literal["SentenceLevelPDF"]
+                path: str
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class SentenceLevelDOCX(Document):
+                document_type: Literal["SentenceLevelDOCX"]
+                path: str
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class Unstructured(Document):
+                document_type: Literal["Unstructured"]
+                path: str
+                save_extra_info: bool = True
+                metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            class InMemoryText(Document):
+                document_type: Literal["InMemoryText"]
+                name: str
+                texts: list[str]
+                metadatas: Optional[list[dict[str, Any]]] = None
+                global_metadata: Optional[dict[str, Any]] = None
+                on_disk: bool = False
+
+            For Document types with the arg "path", ensure that the path exists on your local machine.
+        """
+        return self.db.insert(documents)
+        
+    def delete(self, source_ids: List[str]): # type: ignore[no-untyped-def]:
+        """
+        Deletes documents from the VectorStore using source ids.
+
+        Args:
+            files (List[str]): A list of source ids to delete from the VectorStore.
+        """
+        
+        self.db.delete(source_ids)
 
     def add_texts():
         raise NotImplementedError()
