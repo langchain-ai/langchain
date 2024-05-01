@@ -35,7 +35,7 @@ class Together(LLM):
             model = Together(model_name="mistralai/Mixtral-8x7B-Instruct-v0.1")
     """
 
-    base_url: str = "https://api.together.xyz/v1/completions"
+    base_url: str = "https://api.together.xyz/v1/chat/completions"
     """Base completions API URL."""
     together_api_key: SecretStr
     """Together AI API key. Get it here: https://api.together.xyz/settings/api-keys"""
@@ -105,7 +105,8 @@ class Together(LLM):
         return "together"
 
     def _format_output(self, output: dict) -> str:
-        return output["choices"][0]["text"]
+        print(output)
+        return output["choices"][0]["message"]["content"]
 
     @staticmethod
     def get_user_agent() -> str:
@@ -145,7 +146,12 @@ class Together(LLM):
         stop_to_use = stop[0] if stop and len(stop) == 1 else stop
         payload: Dict[str, Any] = {
             **self.default_params,
-            "prompt": prompt,
+            "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
             "stop": stop_to_use,
             **kwargs,
         }
@@ -192,7 +198,12 @@ class Together(LLM):
         stop_to_use = stop[0] if stop and len(stop) == 1 else stop
         payload: Dict[str, Any] = {
             **self.default_params,
-            "prompt": prompt,
+            "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
             "stop": stop_to_use,
             **kwargs,
         }
