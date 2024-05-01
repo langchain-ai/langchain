@@ -78,8 +78,8 @@ if TYPE_CHECKING:
         GCSFileLoader,
         GeoDataFrameLoader,
         GitbookLoader,
-        GitHubIssuesLoader,
         GithubFileLoader,
+        GitHubIssuesLoader,
         GitLoader,
         GoogleApiClient,
         GoogleApiYoutubeLoader,
@@ -188,7 +188,7 @@ if TYPE_CHECKING:
         YuqueLoader,
     )
 
-from langchain_core.document_loaders import BlobLoader, Blob
+from langchain_core.document_loaders import Blob, BlobLoader
 
 # For backwards compatibility
 _old_to_new_name = {
