@@ -19,6 +19,13 @@ PARTNER_DEPS_LIST := $(shell ls -1 ../libs/partners | grep -vE "airbyte|ibm" | x
 clean:
 	rm -rf build
 
+install-vercel-deps:
+	yum -y update
+	yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip rsync -y
+
+	wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
+	tar -xzf quarto-1.3.450-linux-amd64.tar.gz
+
 install-py-deps:
 	python3 -m venv .venv
 	$(PYTHON) -m pip install --upgrade pip
