@@ -1,5 +1,7 @@
 """Chain that does self-ask with search."""
-from typing import Any, Sequence, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Sequence, Union
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -14,8 +16,6 @@ from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.agents.self_ask_with_search.output_parser import SelfAskOutputParser
 from langchain.agents.self_ask_with_search.prompt import PROMPT
 from langchain.agents.utils import validate_tools_single_input
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper

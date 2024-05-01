@@ -19,8 +19,8 @@ from langchain.chains.sequential import SequentialChain
 from langchain.tools import APIOperation
 
 if TYPE_CHECKING:
-    from openapi_pydantic import Parameter
     from langchain_community.utilities.openapi import OpenAPISpec
+    from openapi_pydantic import Parameter
 
 
 def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
