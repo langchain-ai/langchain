@@ -79,6 +79,7 @@ _EXPECTED = [
     "VectorStore",
     "Yellowbrick",
     "NeuralDBVectorStore",
+    "NeuralDBClientVectorStore",
 ]
 
 
