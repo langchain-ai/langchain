@@ -101,6 +101,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.qdrant_sparse_vector_retriever import (
         QdrantSparseVectorRetriever,
     )
+    from langchain_community.retrievers.rememberizer import (
+        RememberizerRetriever,
+    )
     from langchain_community.retrievers.remote_retriever import (
         RemoteLangChainRetriever,
     )
@@ -113,6 +116,7 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.tfidf import (
         TFIDFRetriever,
     )
+    from langchain_community.retrievers.thirdai_neuraldb import NeuralDBRetriever
     from langchain_community.retrievers.vespa_retriever import (
         VespaRetriever,
     )
@@ -211,10 +215,12 @@ __all__ = [
     "LlamaIndexRetriever",
     "MetalRetriever",
     "MilvusRetriever",
+    "NeuralDBRetriever",
     "OutlineRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
     "QdrantSparseVectorRetriever",
+    "RememberizerRetriever",
     "RemoteLangChainRetriever",
     "SVMRetriever",
     "TFIDFRetriever",
