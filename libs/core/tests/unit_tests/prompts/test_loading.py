@@ -182,7 +182,7 @@ def test_loading_few_shot_prompt_example_prompt() -> None:
 def test_loading_chat_prompt() -> None:
     """Test loading chat prompt."""
     with change_directory(EXAMPLE_DIR):
-        prompt = load_prompt("chat_prompt.json") # it will call _load_chat_prompt
+        prompt = load_prompt("chat_prompt.json")
         expected_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", "You are an AI Assistant."),
