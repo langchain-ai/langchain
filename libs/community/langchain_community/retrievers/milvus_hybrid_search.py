@@ -47,6 +47,7 @@ DEFAULT_SPARSE_INDEX_PARAMS = {
 
 # default search params
 DEFAULT_DENSE_SEARCH_PARAMS = {
+    "FLAT": {"metric_type": "L2", "params": {}},
     "IVF_FLAT": {"metric_type": "L2", "params": {"nprobe": 10}},
     "IVF_SQ8": {"metric_type": "L2", "params": {"nprobe": 10}},
     "IVF_PQ": {"metric_type": "L2", "params": {"nprobe": 10}},
@@ -94,6 +95,7 @@ DEFAULT_SPARSE_SEARCH_PARAMS = {
     },
 }
 
+DEFAULT_RERANK_PARAMS = {"type": "RRF", "param": {"k": 60.0}}
 
 class SparseEmbeddings(ABC):
     """Interface for sparse embedding models."""
@@ -374,7 +376,7 @@ def _create_search_and_rerank_params(
 
     # TODO: make a default rerank_params
     if rerank_params is None:
-        rerank_params = {"type": "RRF", "param": {"k": 60.0}}
+        rerank_params = DEFAULT_RERANK_PARAMS
     return search_params, rerank_params
 
 
@@ -644,10 +646,9 @@ class MilvusHybridSearchRetriever(BaseRetriever):
         for i in range(0, total_count, batch_size):
             end = min(i + batch_size, total_count)
 
-            batch_insert_list = [insert_dict[x][i:end] for x in fields]
+            batch_insert_list = [insert_dict[x][i:end] for x in fields if x in insert_dict]
 
             try:
-                res: Collection
                 timeout = self.timeout or timeout
                 res = self.col.insert(batch_insert_list, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
