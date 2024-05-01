@@ -1,3 +1,7 @@
+from typing import TYPE_CHECKING, Any
+
+from langchain._api import create_importer
+
 from .base import Redis, RedisVectorStoreRetriever
 from .filters import (
     RedisFilter,
@@ -5,31 +9,42 @@ from .filters import (
     RedisTag,
     RedisText,
 )
-from langchain._api import create_importer
 
-from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from langchain_community.vectorstores import Redis
-    from langchain_community.vectorstores.redis.filters import RedisFilter
-    from langchain_community.vectorstores.redis.filters import RedisTag
-    from langchain_community.vectorstores.redis.filters import RedisText
-    from langchain_community.vectorstores.redis.filters import RedisNum
     from langchain_community.vectorstores.redis.base import RedisVectorStoreRetriever
-            
+    from langchain_community.vectorstores.redis.filters import (
+        RedisFilter,
+        RedisNum,
+        RedisTag,
+        RedisText,
+    )
+
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
-DEPRECATED_LOOKUP = {"Redis": "langchain_community.vectorstores", "RedisFilter": "langchain_community.vectorstores.redis.filters", "RedisTag": "langchain_community.vectorstores.redis.filters", "RedisText": "langchain_community.vectorstores.redis.filters", "RedisNum": "langchain_community.vectorstores.redis.filters", "RedisVectorStoreRetriever": "langchain_community.vectorstores.redis.base"}
-        
-_import_attribute=create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+DEPRECATED_LOOKUP = {
+    "Redis": "langchain_community.vectorstores",
+    "RedisFilter": "langchain_community.vectorstores.redis.filters",
+    "RedisTag": "langchain_community.vectorstores.redis.filters",
+    "RedisText": "langchain_community.vectorstores.redis.filters",
+    "RedisNum": "langchain_community.vectorstores.redis.filters",
+    "RedisVectorStoreRetriever": "langchain_community.vectorstores.redis.base",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
 
 def __getattr__(name: str) -> Any:
     """Look up attributes dynamically."""
     return _import_attribute(name)
-__all__ = ["Redis",
-"RedisFilter",
-"RedisTag",
-"RedisText",
-"RedisNum",
-"RedisVectorStoreRetriever",
+
+
+__all__ = [
+    "Redis",
+    "RedisFilter",
+    "RedisTag",
+    "RedisText",
+    "RedisNum",
+    "RedisVectorStoreRetriever",
 ]
