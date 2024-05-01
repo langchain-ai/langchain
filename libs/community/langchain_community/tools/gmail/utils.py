@@ -23,8 +23,8 @@ def import_google() -> Tuple[Request, Credentials]:
     """
     # google-auth-httplib2
     try:
-        from google.auth.transport.requests import Request  # noqa: F401
-        from google.oauth2.credentials import Credentials  # noqa: F401
+        from google.auth.transport.requests import Request
+        from google.oauth2.credentials import Credentials
     except ImportError:
         raise ImportError(
             "You need to install google-auth-httplib2 to use this toolkit. "
