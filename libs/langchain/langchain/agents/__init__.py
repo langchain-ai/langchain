@@ -31,9 +31,6 @@ Agents select and use **Tools** and **Toolkits** for actions.
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from langchain_core._api.path import as_import_path
-from langchain_core.tools import Tool, tool
-
 from langchain._api import create_importer
 from langchain.agents.agent import (
     Agent,
@@ -53,11 +50,6 @@ from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.initialize import initialize_agent
 from langchain.agents.json_chat.base import create_json_chat_agent
-from langchain.agents.load_tools import (
-    get_all_tool_names,
-    load_huggingface_tool,
-    load_tools,
-)
 from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
 from langchain.agents.openai_functions_agent.base import (
@@ -78,6 +70,8 @@ from langchain.agents.structured_chat.base import (
 )
 from langchain.agents.tool_calling_agent.base import create_tool_calling_agent
 from langchain.agents.xml.base import XMLAgent, create_xml_agent
+from langchain_core._api.path import as_import_path
+from langchain_core.tools import Tool, tool
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.json.base import create_json_agent
@@ -88,6 +82,11 @@ if TYPE_CHECKING:
     )
     from langchain_community.agent_toolkits.spark_sql.base import create_spark_sql_agent
     from langchain_community.agent_toolkits.sql.base import create_sql_agent
+    from langchain_community.agent_toolkits.load_tools import (
+        load_huggingface_tool,
+        load_tools,
+        get_all_tool_names,
+    )
 
 DEPRECATED_CODE = [
     "create_csv_agent",
@@ -106,6 +105,9 @@ DEPRECATED_LOOKUP = {
     "create_pbi_chat_agent": "langchain_community.agent_toolkits.powerbi.chat_base",
     "create_spark_sql_agent": "langchain_community.agent_toolkits.spark_sql.base",
     "create_sql_agent": "langchain_community.agent_toolkits.sql.base",
+    "load_tools": "langchain_community.agent_toolkits.load_tools",
+    "load_huggingface_tool": "langchain_community.agent_toolkits.load_tools",
+    "get_all_tool_names": "langchain_community.agent_toolkits.load_tools",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
