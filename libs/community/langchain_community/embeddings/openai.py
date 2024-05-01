@@ -390,7 +390,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 openai.proxy = {
                     "http": self.openai_proxy,
                     "https": self.openai_proxy,
-                }  # type: ignore[assignment]  # noqa: E501
+                }  # type: ignore[assignment]
         return openai_args
 
     # please refer to

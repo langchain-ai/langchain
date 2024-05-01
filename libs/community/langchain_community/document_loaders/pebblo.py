@@ -208,7 +208,7 @@ class PebbloSafeLoader(BaseLoader):
         if loading_end is True:
             payload["loading_end"] = "true"
             if "loader_details" in payload:
-                payload["loader_details"]["source_aggregate_size"] = (  # noqa
+                payload["loader_details"]["source_aggregate_size"] = (
                     self.source_aggregate_size
                 )
         payload = Doc(**payload).dict(exclude_unset=True)

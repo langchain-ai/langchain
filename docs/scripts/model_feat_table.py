@@ -81,7 +81,7 @@ Each LLM integration can optionally provide native implementations for async, st
 
 {table}
 
-"""  # noqa: E501
+"""
 
 CHAT_MODEL_TEMPLATE = """\
 ---
@@ -102,7 +102,7 @@ The table shows, for each integration, which features have been implemented with
 
 {table}
 
-"""  # noqa: E501
+"""
 
 
 def get_llm_table():

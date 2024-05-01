@@ -444,7 +444,7 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
         Raises:
             ValueError: If the input variables are not as expected.
 
-        """  # noqa: E501
+        """
         expected_input_vars = {
             "prediction",
             "input",

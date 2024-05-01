@@ -214,7 +214,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 config={"configurable": {"user_id": "123", "conversation_id": "1"}}
             )
 
-    """  # noqa: E501
+    """
 
     get_session_history: GetSessionHistoryCallable
     input_messages_key: Optional[str] = None
@@ -297,7 +297,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 into the get_session_history factory.
             **kwargs: Arbitrary additional kwargs to pass to parent class
                 ``RunnableBindingBase`` init.
-        """  # noqa: E501
+        """
         history_chain: Runnable = RunnableLambda(
             self._enter_history, self._aenter_history
         ).with_config(run_name="load_history")
