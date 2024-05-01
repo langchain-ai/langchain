@@ -1,10 +1,11 @@
 import uuid
 
+import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from langchain_community.chat_message_histories.mssql import MssqlChatMessageHistory
 from tests.unit_tests.utils.mssql_util import asyncms_client, syncms_client
-import pytest
+
 
 @pytest.mark.skip(reason="Requires a running MSSQL server, pyodbc, and mssql tools")
 def test_sync_chat_history() -> None:
@@ -62,6 +63,7 @@ def test_sync_chat_history() -> None:
 
         chat_history.clear()
         assert chat_history.messages == []
+
 
 @pytest.mark.skip(reason="Requires a running MSSQL server, pyodbc, and mssql tools")
 async def test_async_chat_history() -> None:

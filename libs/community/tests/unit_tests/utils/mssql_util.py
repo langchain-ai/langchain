@@ -1,5 +1,5 @@
 import os
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 
 import aioodbc
 import pyodbc
@@ -11,7 +11,15 @@ MSSQL_SERVER = os.environ["TEST_MSSQL_SERVER"]
 MSSQL_DATABASE = os.environ["TEST_MSSQL_DATABASE"]
 
 
-DSN = f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={MSSQL_SERVER};DATABASE={MSSQL_DATABASE};UID={MSSQL_USERNAME};PWD={MSSQL_PASSWORD};Encrypt=no;TrustServerCertificate=yes;"
+DSN = (
+    f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+    f"SERVER={MSSQL_SERVER};"
+    f"DATABASE={MSSQL_DATABASE};"
+    f"UID={MSSQL_USERNAME};"
+    f"PWD={MSSQL_PASSWORD};"
+    f"Encrypt=no;"
+    f"TrustServerCertificate=yes;"
+)
 
 
 @asynccontextmanager

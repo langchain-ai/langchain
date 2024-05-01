@@ -44,7 +44,7 @@ def _get_messages_query(table_name: str) -> str:
     """.format(table_name=table_name)
 
 
-def _delete_by_session_id_query(table_name: str):
+def _delete_by_session_id_query(table_name: str) -> None:
     """Make a MSSQL query to delete messages for a given session"""
     return """
     DELETE FROM {table_name} WHERE session_id = ?
@@ -76,7 +76,114 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
         sync_connection: Optional[pyodbc.Connection] = None,
         async_connection: Optional[aioodbc.Connection] = None,
     ) -> None:
-        """Client for persisting chat message history in a MSSQL database."""
+        """Client for persisting chat message history in a MSSQL database,
+
+        This client provides support for both sync and async via pyodbc and aioodbc.
+
+        In order to use, you must have an ODBC driver manager installed.
+        On windows, this is usally built in. On mac, install with brew
+        install unixodbc. On linux / unix, refer to distro guides.
+
+        The client can create schema in the database and provides methods to
+        add messages, get messages, and clear the chat message history.
+
+        The schema has the following columns:
+
+        - id: A serial primary key.
+        - session_id: The session ID for the chat message history.
+        - message: The JSONB message content.
+        - created_at: The timestamp of when the message was created.
+
+        Messages are retrieved for a given session_id and are sorted by
+        the id (which should be increasing monotonically), and correspond
+        to the order in which the messages were added to the history.
+
+        The "created_at" column is not returned by the interface, but
+        has been added for the schema so the information is available in the database.
+
+        A session_id can be used to separate different chat histories in the same table,
+        the session_id should be provided when initializing the client.
+
+        This chat history client takes in a pyodbc or aioodbc connection object (either
+        Connection or AsyncConnection) and uses it to interact with the database.
+
+        This design allows to reuse the underlying connection object across
+        multiple instantiations of this class, making instantiation fast.
+
+        This chat history client is designed for prototyping applications that
+        involve chat and are based on MSSQL.
+
+        As your application grows, you will likely need to extend the schema to
+        handle more complex queries. For example, a chat application
+        may involve multiple tables like a user table, a table for storing
+        chat sessions / conversations, and this table for storing chat messages
+        for a given session. The application will require access to additional
+        endpoints like deleting messages by user id, listing conversations by
+        user id or ordering them based on last message time, etc.
+
+        Feel free to adapt this implementation to suit your application's needs.
+
+        Args:
+            session_id: The session ID to use for the chat message history
+            table_name: The name of the database table to use
+            sync_connection: An existing pyodbc connection instance
+            async_connection: An existing aioodbc async connection instance
+
+        Usage:
+            - Use the create_tables or acreate_tables method to set up the table
+              schema in the database.
+            - Initialize the class with the appropriate session ID, table name,
+              and database connection.
+            - Add messages to the database using add_messages or aadd_messages.
+            - Retrieve messages with get_messages or aget_messages.
+            - Clear the session history with clear or aclear when needed.
+
+        Note:
+            - At least one of sync_connection or async_connection must be provided.
+
+        Examples:
+
+        .. code-block:: python
+
+            import uuid
+
+            from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
+            from langchain_community.chat_message_historys.mssql
+            import MssqlChatMessageHistory
+            import pyodbc
+            import aioodbc
+
+            # Establish a synchronous connection to the database
+            # (or use aioodbc.Connection for async)
+            conn_info = f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={MSSQL_SERVER}
+            ;DATABASE={MSSQL_DATABASE};UID={MSSQL_USERNAME};
+            PWD={MSSQL_PASSWORD};Encrypt=no;TrustServerCertificate=yes;"
+
+            sync_connection = pyodbc.connect(conn_info)
+            # async_connection = await aioodbc.connect(dsn=conn_info)
+
+            # Create the table schema (only needs to be done once)
+            table_name = "chat_history"
+            MssqlChatMessageHistory.create_tables(sync_connection, table_name)
+
+            session_id = str(uuid.uuid4())
+
+            # Initialize the chat history manager
+            chat_history = MssqlChatMessageHistory(
+                table_name,
+                session_id,
+                sync_connection=sync_connection
+            )
+
+            # Add messages to the chat history
+            chat_history.add_messages([
+                SystemMessage(content="Meow"),
+                AIMessage(content="woof"),
+                HumanMessage(content="bark"),
+            ])
+
+            print(chat_history.messages)
+        """
         if not sync_connection and not async_connection:
             raise ValueError("Must provide either a sync or async connection.")
 
@@ -121,7 +228,8 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
         """Delete the table schema in the database.
 
         WARNING:
-          This will delete the given table from the database including all the databases in the table and the schema of the table.
+          This will delete the given table from the database including all
+          the databases in the table and the schema of the table.
 
         Args:
           connection: The database engine.
@@ -138,7 +246,8 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
         """Delete the table schema in the database.
 
         WARNING:
-          This will delete the given table from the database including all the databases in the table and the schema of the table.
+          This will delete the given table from the database including all
+          the databases in the table and the schema of the table.
 
         Args:
           connection: The database engine.
@@ -225,7 +334,6 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
             raise ValueError("No connection to the database.")
 
         query = _delete_by_session_id_query(self._table_name)
-        cursor = await self._aconnection.cursor()
-        await cursor.execute(query, self._session_id)
-        await cursor.commit()
-        await cursor.close()
+        async with self._aconnection.cursor() as cursor:
+            await cursor.execute(query, self._session_id)
+            await cursor.commit()
