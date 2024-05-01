@@ -9,6 +9,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.utils import guard_import
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
@@ -24,16 +25,10 @@ MAX_FLOAT = sys.float_info.max
 
 def dependable_tiledb_import() -> Any:
     """Import tiledb-vector-search if available, otherwise raise error."""
-    try:
-        import tiledb as tiledb
-        import tiledb.vector_search as tiledb_vs
-    except ImportError:
-        raise ImportError(
-            "Could not import tiledb-vector-search python package. "
-            "Please install it with `conda install -c tiledb tiledb-vector-search` "
-            "or `pip install tiledb-vector-search`"
-        )
-    return tiledb_vs, tiledb
+    return (
+        guard_import("tiledb.vector_search"),
+        guard_import("tiledb"),
+    )
 
 
 def get_vector_index_uri_from_group(group: Any) -> str:
