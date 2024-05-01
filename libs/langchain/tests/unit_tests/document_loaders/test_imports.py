@@ -63,6 +63,7 @@ EXPECTED_ALL = [
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
+    "GithubFileLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
