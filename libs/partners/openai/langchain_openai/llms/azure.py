@@ -72,6 +72,18 @@ class AzureOpenAI(BaseOpenAI):
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "openai"]
 
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {
+            "openai_api_key": "AZURE_OPENAI_API_KEY",
+            "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
+        }
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""

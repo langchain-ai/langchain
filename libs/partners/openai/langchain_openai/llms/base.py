@@ -69,10 +69,6 @@ class BaseOpenAI(BaseLLM):
     """Base OpenAI large language model class."""
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"openai_api_key": "OPENAI_API_KEY"}
-
-    @property
     def lc_attributes(self) -> Dict[str, Any]:
         attributes: Dict[str, Any] = {}
         if self.openai_api_base:
@@ -645,6 +641,10 @@ class OpenAI(BaseOpenAI):
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
         return True
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
