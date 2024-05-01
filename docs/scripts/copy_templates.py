@@ -2,8 +2,8 @@ import glob
 import os
 import re
 import shutil
-from pathlib import Path
 import sys
+from pathlib import Path
 
 if __name__ == "__main__":
     intermediate_dir = Path(sys.argv[1])
