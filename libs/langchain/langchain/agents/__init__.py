@@ -53,11 +53,6 @@ from langchain.agents.conversational.base import ConversationalAgent
 from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.initialize import initialize_agent
 from langchain.agents.json_chat.base import create_json_chat_agent
-from langchain.agents.load_tools import (
-    get_all_tool_names,
-    load_huggingface_tool,
-    load_tools,
-)
 from langchain.agents.loading import load_agent
 from langchain.agents.mrkl.base import MRKLChain, ZeroShotAgent
 from langchain.agents.openai_functions_agent.base import (
@@ -81,6 +76,11 @@ from langchain.agents.xml.base import XMLAgent, create_xml_agent
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.json.base import create_json_agent
+    from langchain_community.agent_toolkits.load_tools import (
+        get_all_tool_names,
+        load_huggingface_tool,
+        load_tools,
+    )
     from langchain_community.agent_toolkits.openapi.base import create_openapi_agent
     from langchain_community.agent_toolkits.powerbi.base import create_pbi_agent
     from langchain_community.agent_toolkits.powerbi.chat_base import (
@@ -106,6 +106,9 @@ DEPRECATED_LOOKUP = {
     "create_pbi_chat_agent": "langchain_community.agent_toolkits.powerbi.chat_base",
     "create_spark_sql_agent": "langchain_community.agent_toolkits.spark_sql.base",
     "create_sql_agent": "langchain_community.agent_toolkits.sql.base",
+    "load_tools": "langchain_community.agent_toolkits.load_tools",
+    "load_huggingface_tool": "langchain_community.agent_toolkits.load_tools",
+    "get_all_tool_names": "langchain_community.agent_toolkits.load_tools",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
