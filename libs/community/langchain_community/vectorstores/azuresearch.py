@@ -943,7 +943,7 @@ def _reorder_results_with_maximal_marginal_relevance(
         # Function can return -1 index
         if x == -1:
             break
-        ret.append((documents[x], scores[x]))
+        ret.append((documents[x], scores[x]))  # type: ignore
 
     return ret
 
