@@ -74,13 +74,24 @@ quarto-render:
 	mv $(OUTPUT_DOCS_DIR)/$(INTERMEDIATE_DIR)/* $(OUTPUT_DOCS_DIR)
 	rm -rf $(OUTPUT_DOCS_DIR)/build
 
+render:
+	$(PYTHON) scripts/notebook_convert.py $(INTERMEDIATE_DIR) $(OUTPUT_NEW_DOCS_DIR)
+
 md-sync:
 	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_DOCS_DIR)
 
+md-sync-new:
+	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
+
 build: install-py-deps generate-files copy-infra quarto-render md-sync
+
+build-new: install-py-deps generate-files copy-infra render md-sync
 
 compare:
 	diff -rq $(OUTPUT_DOCS_DIR) $(OUTPUT_NEW_DOCS_DIR)
 
 start:
 	cd $(OUTPUT_DIR) && yarn && yarn start --port=$(PORT)
+
+start-new:
+	cd $(OUTPUT_NEW_DIR) && yarn && yarn start --port=$(PORT)
