@@ -1,10 +1,10 @@
+import multiprocessing
 import sys
 from pathlib import Path
+from typing import Tuple
 
 import nbformat
 from nbconvert.exporters import MarkdownExporter
-import multiprocessing
-from typing import Tuple
 
 exporter = MarkdownExporter()
 
