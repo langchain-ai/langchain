@@ -451,7 +451,7 @@ class CassandraDatabase:
         # If a session is not provided, create one using cassio if available
         # dynamically import cassio to avoid circular imports
         try:
-            import cassio.config  # noqa: F401
+            import cassio.config
         except ImportError:
             raise ValueError(
                 "cassio package not found, please install with" " `pip install cassio`"
