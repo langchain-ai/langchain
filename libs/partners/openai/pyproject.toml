@@ -29,6 +29,7 @@ pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
 pytest-cov = "^4.1.0"
 langchain-standard-tests = { path = "../../standard-tests", develop = true }
+numpy = "^1.24"
 
 [tool.poetry.group.codespell]
 optional = true
