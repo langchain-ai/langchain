@@ -58,6 +58,22 @@ class TestDirectoryLoader:
                     "row": 1,
                 },
             ),
+            Document(
+                page_content="column1: value1\ncolumn2: value2\n"
+                             "column3: value3\nNone: value4,value5",
+                metadata={
+                    "source": self._get_csv_file_path("test_none_col.csv"),
+                    "row": 0,
+                },
+            ),
+            Document(
+                page_content="column1: value6\ncolumn2: value7\n"
+                             "column3: value8\nNone: value9",
+                metadata={
+                    "source": self._get_csv_file_path("test_none_col.csv"),
+                    "row": 1
+                },
+            ),
         ]
 
         loaded_docs = sorted(loader.load(), key=lambda doc: doc.metadata["source"])
