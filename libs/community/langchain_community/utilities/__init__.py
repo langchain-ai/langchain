@@ -265,6 +265,7 @@ _module_lookup = {
     "PowerBIDataset": "langchain_community.utilities.powerbi",
     "PubMedAPIWrapper": "langchain_community.utilities.pubmed",
     "PythonREPL": "langchain_community.utilities.python",
+    "RememberizerAPIWrapper": "langchain_community.utilities.rememberizer",
     "Requests": "langchain_community.utilities.requests",
     "RequestsWrapper": "langchain_community.utilities.requests",
     "RivaASR": "langchain_community.utilities.nvidia_riva",
