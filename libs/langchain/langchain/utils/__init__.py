@@ -6,7 +6,6 @@ These functions do not depend on any other LangChain module.
 
 from typing import TYPE_CHECKING, Any
 
-from langchain._api import create_importer
 from langchain_core.utils import (
     comma_list,
     get_from_dict_or_env,
@@ -30,6 +29,8 @@ from langchain_core.utils.utils import (
     raise_for_status_with_text,
     xor_args,
 )
+
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.utils.math import (
