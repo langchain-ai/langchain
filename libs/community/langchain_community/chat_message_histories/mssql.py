@@ -44,7 +44,7 @@ def _get_messages_query(table_name: str) -> str:
     """.format(table_name=table_name)
 
 
-def _delete_by_session_id_query(table_name: str) -> None:
+def _delete_by_session_id_query(table_name: str) -> str:
     """Make a MSSQL query to delete messages for a given session"""
     return """
     DELETE FROM {table_name} WHERE session_id = ?
@@ -155,9 +155,16 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
 
             # Establish a synchronous connection to the database
             # (or use aioodbc.Connection for async)
-            conn_info = f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={MSSQL_SERVER}
-            ;DATABASE={MSSQL_DATABASE};UID={MSSQL_USERNAME};
-            PWD={MSSQL_PASSWORD};Encrypt=no;TrustServerCertificate=yes;"
+            conn_info = (
+                f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+                f"SERVER={MSSQL_SERVER};"
+                f"DATABASE={MSSQL_DATABASE};"
+                f"UID={MSSQL_USERNAME};"
+                f"PWD={MSSQL_PASSWORD};"
+                f"Encrypt=no;"
+                f"TrustServerCertificate=yes;"
+            )
+
 
             sync_connection = pyodbc.connect(conn_info)
             # async_connection = await aioodbc.connect(dsn=conn_info)
