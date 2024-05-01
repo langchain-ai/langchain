@@ -16,6 +16,8 @@ QUARTO_CMD ?= quarto
 
 PARTNER_DEPS_LIST := $(shell ls -1 ../libs/partners | grep -vE "airbyte|ibm" | xargs -I {} echo "../libs/partners/{}" | tr '\n' ' ')
 
+PORT ?= 3001
+
 clean:
 	rm -rf build
 
@@ -75,4 +77,4 @@ md-sync:
 build: install-py-deps generate-files copy-infra quarto-render md-sync
 
 start:
-	cd $(OUTPUT_DIR) && yarn && yarn start
+	cd $(OUTPUT_DIR) && yarn && yarn start --port=$(PORT)
