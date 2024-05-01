@@ -499,7 +499,7 @@ def _import_neuraldb() -> Any:
 
     return NeuralDBVectorStore
 
-def _import_neuraldb_cleint() -> Any:
+def _import_neuraldb_client() -> Any:
     from langchain_community.vectorstores.thirdai_neuraldb import NeuralDBClientVectorStore
     
     return NeuralDBClientVectorStore
@@ -667,7 +667,7 @@ def __getattr__(name: str) -> Any:
     elif name == "NeuralDBVectorStore":
         return _import_neuraldb()
     elif name == "NeuralDBClientVectorStore":
-        return _import_neuraldb_cleint()
+        return _import_neuraldb_client()
     elif name == "Lantern":
         return _import_lantern()
     else:
@@ -751,5 +751,6 @@ __all__ = [
     "AzureCosmosDBVectorSearch",
     "VectorStore",
     "NeuralDBVectorStore",
+    "NeuralDBClientVectorStore",
     "Lantern",
 ]
