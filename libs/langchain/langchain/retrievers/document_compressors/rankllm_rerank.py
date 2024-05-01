@@ -30,8 +30,6 @@ class RankLLMRerank(BaseDocumentCompressor):
     """Top N documents to return."""
     model: str = Field(default="zephyr")
     """Name of model to use for reranking."""
-    with_retrieval: bool = Field(default=False)
-    """Perform retrieval before reranking."""
     step_size: int = Field(default=10)
     """Step size for moving sliding window."""
     gpt_model: str = Field(default="gpt-3.5-turbo")
