@@ -60,7 +60,7 @@ EXPECTED_ALL = [
     "Neo4jVector",
     "NeuralDBVectorStore",
     "OpenSearchVectorSearch",
-    "OracleVS" "PGEmbedding",
+    "PGEmbedding",
     "PGVector",
     "PathwayVectorClient",
     "Pinecone",
