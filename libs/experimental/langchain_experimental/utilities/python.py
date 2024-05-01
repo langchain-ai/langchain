@@ -3,7 +3,6 @@ import logging
 import multiprocessing
 import re
 import sys
-
 from io import StringIO
 from typing import Dict, Optional
 
