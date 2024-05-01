@@ -36,7 +36,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
         keep_separator: Union[bool, Literal["start", "end"]] = False,
-        separator_kept_at_end: bool = False,
         add_start_index: bool = False,
         strip_whitespace: bool = True,
     ) -> None:
@@ -47,7 +46,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
             keep_separator: Whether to keep the separator in the chunks
-            separator_kept_at_end: Append to next chunk or prepend to previous chunk
             add_start_index: If `True`, includes chunk's start index in metadata
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
@@ -61,7 +59,6 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
         self._keep_separator = keep_separator
-        self._separator_kept_at_end = separator_kept_at_end
         self._add_start_index = add_start_index
         self._strip_whitespace = strip_whitespace
 
