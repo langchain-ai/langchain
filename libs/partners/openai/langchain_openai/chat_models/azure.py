@@ -10,12 +10,12 @@ from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
-from langchain_openai.chat_models.base import ChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
 logger = logging.getLogger(__name__)
 
 
-class AzureChatOpenAI(ChatOpenAI):
+class AzureChatOpenAI(BaseChatOpenAI):
     """`Azure OpenAI` Chat Completion API.
 
     To use this class you
@@ -106,6 +106,10 @@ class AzureChatOpenAI(ChatOpenAI):
             "openai_api_key": "AZURE_OPENAI_API_KEY",
             "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
         }
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
