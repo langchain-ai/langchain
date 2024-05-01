@@ -126,7 +126,7 @@ def test_merge_dicts(
     ],
 )
 def test_guard_import(
-    module_name: str, pip_name: str | None, package: str | None, expected: Any
+    module_name: str, pip_name: Optional[str], package: Optional[str], expected: Any
 ) -> None:
     if package is None and pip_name is None:
         ret = guard_import(module_name)
@@ -151,7 +151,7 @@ def test_guard_import(
     ],
 )
 def test_guard_import_failure(
-    module_name: str, pip_name: str | None, package: str | None
+    module_name: str, pip_name: Optional[str], package: Optional[str]
 ) -> None:
     with pytest.raises(ImportError) as exc_info:
         if package is None and pip_name is None:
