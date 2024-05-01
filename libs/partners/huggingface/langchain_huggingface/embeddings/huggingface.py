@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Optional
 
-import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
@@ -100,5 +100,3 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         return self.embed_documents([text])[0]
-
-
