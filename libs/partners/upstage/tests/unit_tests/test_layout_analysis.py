@@ -17,7 +17,7 @@ MOCK_RESPONSE_JSON: Dict[str, Any] = {
                 {"x": 74, "y": 2338},
             ],
             "category": "header",
-            "html": "2021arXiv:2103.15348v2",
+            "html": "<header id='0'>arXiv:2103.15348v2</header>",
             "id": 0,
             "page": 1,
             "text": "arXiv:2103.15348v2",
@@ -30,7 +30,7 @@ MOCK_RESPONSE_JSON: Dict[str, Any] = {
                 {"x": 654, "y": 614},
             ],
             "category": "paragraph",
-            "html": "LayoutParser Toolkit",
+            "html": "<p id='1'>LayoutParser Toolkit</p>",
             "id": 1,
             "page": 1,
             "text": "LayoutParser Toolkit",
@@ -59,6 +59,7 @@ def test_layout_analysis_param() -> None:
                 api_key="bar",
                 output_type=output_type,
                 split=split,
+                exclude=[],
             )
             assert loader.output_type == output_type
             assert loader.split == split
@@ -77,6 +78,7 @@ def test_none_split_text_output(mock_post: Mock) -> None:
         output_type="text",
         split="none",
         api_key="valid_api_key",
+        exclude=[],
     )
     documents = loader.load()
 
@@ -98,6 +100,7 @@ def test_element_split_text_output(mock_post: Mock) -> None:
         output_type="text",
         split="element",
         api_key="valid_api_key",
+        exclude=[],
     )
     documents = loader.load()
 
@@ -122,6 +125,7 @@ def test_page_split_text_output(mock_post: Mock) -> None:
         output_type="text",
         split="page",
         api_key="valid_api_key",
+        exclude=[],
     )
     documents = loader.load()
 
@@ -144,6 +148,7 @@ def test_none_split_html_output(mock_post: Mock) -> None:
         output_type="html",
         split="none",
         api_key="valid_api_key",
+        exclude=[],
     )
     documents = loader.load()
 
@@ -165,6 +170,7 @@ def test_element_split_html_output(mock_post: Mock) -> None:
         output_type="html",
         split="element",
         api_key="valid_api_key",
+        exclude=[],
     )
     documents = loader.load()
 
@@ -189,6 +195,7 @@ def test_page_split_html_output(mock_post: Mock) -> None:
         output_type="html",
         split="page",
         api_key="valid_api_key",
+        exclude=[],
     )
     documents = loader.load()
 
