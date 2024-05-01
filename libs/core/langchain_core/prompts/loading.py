@@ -8,6 +8,7 @@ import yaml
 
 import langchain_core.output_parsers
 from langchain_core.output_parsers.base import BaseOutputParser
+from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
@@ -91,7 +92,8 @@ def _load_output_parser(config: dict) -> dict:
         output_parser_type = _config.pop("_type")
         if output_parser_type in output_parsers_map:
             output_parser = output_parsers_map[output_parser_type](**_config)
-        elif output_parser_type == "default": # backward compatibility with default type as str
+        elif output_parser_type == "default":
+            # backward compatibility with default type as str
             output_parser = StrOutputParser(**_config)
         else:
             raise ValueError(f"Unsupported output parser {output_parser_type}")
