@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional, Union
 
 from langchain_text_splitters.base import Language, TextSplitter
 
@@ -23,35 +23,36 @@ class CharacterTextSplitter(TextSplitter):
         separator = (
             self._separator if self._is_separator_regex else re.escape(self._separator)
         )
-        splits = _split_text_with_regex(
-            text,
-            separator,
-            self._keep_separator,
-            separator_kept_at_end=self._separator_kept_at_end,
-        )
+        splits = _split_text_with_regex(text, separator, self._keep_separator)
         _separator = "" if self._keep_separator else self._separator
         return self._merge_splits(splits, _separator)
 
 
 def _split_text_with_regex(
-    text: str, separator: str, keep_separator: bool, separator_kept_at_end: bool = False
+    text: str, separator: str, keep_separator: Union[bool, Literal["start", "end"]]
 ) -> List[str]:
     # Now that we have the separator, split the text
     if separator:
         if keep_separator:
+            separator_at_start = True
+            if keep_separator == "end":
+                separator_at_start = False
+
             # The parentheses in the pattern keep the delimiters in the result.
             _splits = re.split(f"({separator})", text)
             splits = (
-                ([_splits[i] + _splits[i + 1] for i in range(0, len(_splits) - 1, 2)])
-                if separator_kept_at_end
-                else ([_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)])
+                ([_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)])
+                if separator_at_start
+                else (
+                    [_splits[i] + _splits[i + 1] for i in range(0, len(_splits) - 1, 2)]
+                )
             )
             if len(_splits) % 2 == 0:
                 splits += _splits[-1:]
             splits = (
-                (splits + [_splits[-1]])
-                if separator_kept_at_end
-                else ([_splits[0]] + splits)
+                ([_splits[0]] + splits)
+                if separator_at_start
+                else (splits + [_splits[-1]])
             )
         else:
             splits = re.split(separator, text)
