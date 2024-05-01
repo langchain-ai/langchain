@@ -1,8 +1,8 @@
 from typing import Dict, List, Optional, Tuple
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
 from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 
 from langchain_experimental.video_captioning.models import (
     AudioModel,

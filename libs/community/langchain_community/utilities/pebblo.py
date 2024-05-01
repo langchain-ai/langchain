@@ -6,6 +6,7 @@ import pathlib
 import platform
 from typing import Optional, Tuple
 
+from langchain_core.documents import Document
 from langchain_core.env import get_runtime_environment
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -61,8 +62,12 @@ SUPPORTED_LOADERS = (*file_loader, *dir_loader, *in_memory)
 logger = logging.getLogger(__name__)
 
 
+class IndexedDocument(Document):
+    id: str
+
+
 class Runtime(BaseModel):
-    """This class represents a Runtime.
+    """Pebblo Runtime.
 
     Args:
         type (Optional[str]): Runtime type. Defaults to ""
@@ -90,7 +95,7 @@ class Runtime(BaseModel):
 
 
 class Framework(BaseModel):
-    """This class represents a Framework instance.
+    """Pebblo Framework instance.
 
     Args:
         name (str): Name of the Framework.
@@ -102,7 +107,7 @@ class Framework(BaseModel):
 
 
 class App(BaseModel):
-    """This class represents an AI application.
+    """Pebblo AI application.
 
     Args:
         name (str): Name of the app.
@@ -124,7 +129,7 @@ class App(BaseModel):
 
 
 class Doc(BaseModel):
-    """This class represents a pebblo document.
+    """Pebblo document.
 
     Args:
         name (str): Name of app originating this document.
@@ -148,8 +153,8 @@ class Doc(BaseModel):
 
 
 def get_full_path(path: str) -> str:
-    """Return absolute local path for a local file/directory,
-    for network related path, return as is.
+    """Return an absolute local path for a local file/directory,
+    for a network related path, return as is.
 
     Args:
         path (str): Relative path to be resolved.
@@ -164,7 +169,9 @@ def get_full_path(path: str) -> str:
         or (path in ["unknown", "-", "in-memory"])
     ):
         return path
-    full_path = pathlib.Path(path).resolve()
+    full_path = pathlib.Path(path)
+    if full_path.exists():
+        full_path = full_path.resolve()
     return str(full_path)
 
 
@@ -184,8 +191,8 @@ def get_loader_type(loader: str) -> str:
 
 
 def get_loader_full_path(loader: BaseLoader) -> str:
-    """Return absolute source path of source of loader based on the
-    keys present in Document object from loader.
+    """Return an absolute source path of source of loader based on the
+    keys present in Document.
 
     Args:
         loader (BaseLoader): Langchain document loader, derived from Baseloader.
@@ -266,7 +273,7 @@ def get_runtime() -> Tuple[Framework, Runtime]:
 
 
 def get_ip() -> str:
-    """Fetch local runtime ip address
+    """Fetch local runtime ip address.
 
     Returns:
         str: IP address

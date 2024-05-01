@@ -1,4 +1,5 @@
 """Wrapper around Perplexity APIs."""
+
 from __future__ import annotations
 
 import logging
@@ -63,10 +64,12 @@ class ChatPerplexity(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    pplx_api_key: Optional[str] = None
+    pplx_api_key: Optional[str] = Field(None, alias="api_key")
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
+        None, alias="timeout"
+    )
     """Timeout for requests to PerplexityChat completion API. Default is 600 seconds."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
@@ -117,7 +120,7 @@ class ChatPerplexity(BaseChatModel):
             values, "pplx_api_key", "PPLX_API_KEY"
         )
         try:
-            import openai  # noqa: F401
+            import openai
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
