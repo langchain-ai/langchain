@@ -375,7 +375,6 @@ def _create_search_and_rerank_params(
             field_search_params["param"] = params
         search_params[sparse_vector_field] = field_search_params
 
-    # TODO: make a default rerank_params
     if rerank_params is None:
         rerank_params = DEFAULT_RERANK_PARAMS
     return search_params, rerank_params
@@ -540,7 +539,6 @@ class MilvusHybridSearchRetriever(BaseRetriever):
                 timeout=values.get("timeout"),
             )
 
-            # TODO: duplicate code
             search_params, rerank_params = _create_search_and_rerank_params(
                 col=col,
                 vector_fields=values["vector_fields"],
