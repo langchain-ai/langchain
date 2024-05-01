@@ -98,6 +98,8 @@ class RecursiveUrlLoader(BaseLoader):
         continue_on_failure: bool = True,
         *,
         base_url: Optional[str] = None,
+        autoset_encoding: bool = True,
+        encoding: Optional[str] = None,
     ) -> None:
         """Initialize with URL to crawl and any subdirectories to exclude.
 
@@ -137,6 +139,11 @@ class RecursiveUrlLoader(BaseLoader):
             continue_on_failure: If True, continue if getting or parsing a link raises
                 an exception. Otherwise, raise the exception.
             base_url: The base url to check for outside links against.
+            autoset_encoding: Whether to automatically set the encoding of the response.
+                If True, the encoding of the response will be set to the apparent
+                encoding, unless the `encoding` argument has already been explicitly set.
+            encoding: The encoding of the response. If manually set, the encoding will be
+                set to given value, regardless of the `autoset_encoding` argument.
         """  # noqa: E501
 
         self.url = url
@@ -148,6 +155,8 @@ class RecursiveUrlLoader(BaseLoader):
             if metadata_extractor is not None
             else _metadata_extractor
         )
+        self.autoset_encoding = autoset_encoding
+        self.encoding = encoding
         self.metadata_extractor = _wrap_metadata_extractor(metadata_extractor)
         self.exclude_dirs = exclude_dirs if exclude_dirs is not None else ()
 
@@ -184,6 +193,12 @@ class RecursiveUrlLoader(BaseLoader):
         visited.add(url)
         try:
             response = requests.get(url, timeout=self.timeout, headers=self.headers)
+
+            if self.encoding is not None:
+                response.encoding = self.encoding
+            elif self.autoset_encoding:
+                response.encoding = response.apparent_encoding
+
             if self.check_response_status and 400 <= response.status_code <= 599:
                 raise ValueError(f"Received HTTP status {response.status_code}")
         except Exception as e:
