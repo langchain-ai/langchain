@@ -108,7 +108,7 @@ class WeightOnlyQuantPipeline(LLM):
             from transformers import AutoTokenizer
             from transformers import pipeline as hf_pipeline
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers` "
                 "and `pip install intel-extension-for-transformers`."
@@ -154,7 +154,7 @@ class WeightOnlyQuantPipeline(LLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
