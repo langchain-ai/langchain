@@ -2,14 +2,6 @@ from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer
 
-from .base import Redis, RedisVectorStoreRetriever
-from .filters import (
-    RedisFilter,
-    RedisNum,
-    RedisTag,
-    RedisText,
-)
-
 if TYPE_CHECKING:
     from langchain_community.vectorstores import Redis
     from langchain_community.vectorstores.redis.base import RedisVectorStoreRetriever
