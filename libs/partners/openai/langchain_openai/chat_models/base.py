@@ -785,7 +785,7 @@ class BaseChatOpenAI(BaseChatModel):
                 "any" or "required": force at least one tool to be called;
                 True: forces tool call (requires `tools` be length 1);
                 False: no effect;
-                
+
                 or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
