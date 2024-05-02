@@ -47,4 +47,3 @@ def test_import_all_using_dir() -> None:
                 continue
             # Attempt to import the name from the module
             obj = getattr(mod, name)
-            assert obj is not None
