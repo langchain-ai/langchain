@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict, List
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -55,18 +55,18 @@ def test_convert_message_to_chat_message(
     ("tgi_message", "expected"),
     [
         (
-            TGI_MESSAGE(role="assistant", content="Hello", tool_calls=None),
+            TGI_MESSAGE(role="assistant", content="Hello", tool_calls=[]),
             AIMessage(content="Hello"),
         ),
         (
-            TGI_MESSAGE(role="assistant", content=None, tool_calls=None),
+            TGI_MESSAGE(role="assistant", content="", tool_calls=[]),
             AIMessage(content=""),
         ),
         (
             TGI_MESSAGE(
                 role="assistant",
-                content=None,
-                tool_calls=[{"function": {"parameters": "'function string'"}}],
+                content="",
+                tool_calls=[{"function": {"arguments": "'function string'"}}],
             ),
             AIMessage(
                 content="",
@@ -85,7 +85,7 @@ def test_convert_TGI_message_to_LC_message(
 
 
 @pytest.fixture
-def mock_llm():
+def mock_llm() -> Mock:
     llm = Mock(spec=HuggingFaceTextGenInference)
     llm.inference_server_url = "test tgi url"
     return llm
@@ -95,17 +95,17 @@ def mock_llm():
 @patch(
     "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
 )
-def chat_hugging_face(mock_resolve_id, mock_llm):
+def chat_hugging_face(mock_resolve_id: Any, mock_llm: Any) -> ChatHuggingFace:
     chat_hf = ChatHuggingFace(llm=mock_llm, tokenizer=MagicMock())
     return chat_hf
 
 
-def test_create_chat_result(chat_hugging_face):
+def test_create_chat_result(chat_hugging_face: Any) -> None:
     mock_response = MagicMock()
     mock_response.choices = [
         MagicMock(
             message=TGI_MESSAGE(
-                role="assistant", content="test message", tool_calls=None
+                role="assistant", content="test message", tool_calls=[]
             ),
             finish_reason="test finish reason",
         )
@@ -116,10 +116,10 @@ def test_create_chat_result(chat_hugging_face):
     assert isinstance(result, ChatResult)
     assert result.generations[0].message.content == "test message"
     assert (
-        result.generations[0].generation_info["finish_reason"] == "test finish reason"
+        result.generations[0].generation_info["finish_reason"] == "test finish reason"  # type: ignore[index]
     )
-    assert result.llm_output["token_usage"]["tokens"] == 420
-    assert result.llm_output["model"] == chat_hugging_face.llm.inference_server_url
+    assert result.llm_output["token_usage"]["tokens"] == 420  # type: ignore[index]
+    assert result.llm_output["model"] == chat_hugging_face.llm.inference_server_url  # type: ignore[index]
 
 
 @pytest.mark.parametrize(
@@ -132,13 +132,15 @@ def test_create_chat_result(chat_hugging_face):
         ),
     ],
 )
-def test_to_chat_prompt_errors(chat_hugging_face, messages, expected_error):
+def test_to_chat_prompt_errors(
+    chat_hugging_face: Any, messages: List[BaseMessage], expected_error: str
+) -> None:
     with pytest.raises(ValueError) as e:
         chat_hugging_face._to_chat_prompt(messages)
     assert expected_error in str(e.value)
 
 
-def test_to_chat_prompt_valid_messages(chat_hugging_face):
+def test_to_chat_prompt_valid_messages(chat_hugging_face: Any) -> None:
     messages = [AIMessage(content="Hello"), HumanMessage(content="How are you?")]
     expected_prompt = "Generated chat prompt"
 
@@ -175,20 +177,20 @@ def test_to_chat_prompt_valid_messages(chat_hugging_face):
     ],
 )
 def test_to_chatml_format(
-    chat_hugging_face, message: BaseMessage, expected: Dict[str, str]
+    chat_hugging_face: Any, message: BaseMessage, expected: Dict[str, str]
 ) -> None:
     result = chat_hugging_face._to_chatml_format(message)
     assert result == expected
 
 
-def test_to_chatml_format_with_invalid_type(chat_hugging_face):
+def test_to_chatml_format_with_invalid_type(chat_hugging_face: Any) -> None:
     message = "Invalid message type"
     with pytest.raises(ValueError) as e:
         chat_hugging_face._to_chatml_format(message)
     assert "Unknown message type:" in str(e.value)
 
 
-def tool_mock():
+def tool_mock() -> Dict:
     return {"function": {"name": "test_tool"}}
 
 
@@ -212,8 +214,12 @@ def tool_mock():
     ],
 )
 def test_bind_tools_errors(
-    chat_hugging_face, tools, tool_choice, expected_exception, expected_message
-):
+    chat_hugging_face: Any,
+    tools: Dict[str, str],
+    tool_choice: Any,
+    expected_exception: Any,
+    expected_message: str,
+) -> None:
     with patch(
         "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
         side_effect=lambda x: x,
@@ -223,14 +229,14 @@ def test_bind_tools_errors(
         assert expected_message in str(excinfo.value)
 
 
-def test_bind_tools_successful(chat_hugging_face):
+def test_bind_tools(chat_hugging_face: Any) -> None:
     tools = [MagicMock(spec=BaseTool)]
     with patch(
         "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
         side_effect=lambda x: x,
-    ), patch("langchain_core.runnables.base.Runnable.bind") as mock_super:
+    ), patch("langchain_core.runnables.base.Runnable.bind") as mock_super_bind:
         chat_hugging_face.bind_tools(tools, tool_choice="auto")
-        mock_super.assert_called_once()
-        _, kwargs = mock_super.call_args
+        mock_super_bind.assert_called_once()
+        _, kwargs = mock_super_bind.call_args
         assert kwargs["tools"] == tools
         assert kwargs["tool_choice"] == "auto"

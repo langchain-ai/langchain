@@ -16,6 +16,7 @@ langchain-core = "^0.1.42"
 tokenizers = ">=0.19.1"
 transformers = ">=4.39.0"
 sentence-transformers = ">=2.6.0"
+text-generation = "^0.7.0"
 
 [tool.poetry.group.test]
 optional = true
@@ -26,11 +27,6 @@ pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
 langchain-standard-tests = { path = "../../standard-tests", develop = true }
 langchain-community = { path = "../../community", develop = true }
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
 
 [tool.poetry.group.codespell]
 optional = true
@@ -55,6 +51,7 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 langchain-core = { path = "../../core", develop = true }
 langchain-community = { path = "../../community", develop = true }
+ipykernel = "^6.29.2"
 
 [tool.ruff.lint]
 select = [

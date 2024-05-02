@@ -84,12 +84,12 @@ class HuggingFacePipeline(BaseLLM):
     ) -> HuggingFacePipeline:
         """Construct the pipeline object from model_id and task."""
         try:
-            from transformers import (
+            from transformers import (  # type: ignore[import]
                 AutoModelForCausalLM,
                 AutoModelForSeq2SeqLM,
                 AutoTokenizer,
             )
-            from transformers import pipeline as hf_pipeline
+            from transformers import pipeline as hf_pipeline  # type: ignore[import]
 
         except ImportError:
             raise ValueError(
@@ -104,7 +104,9 @@ class HuggingFacePipeline(BaseLLM):
             if task == "text-generation":
                 if backend == "openvino":
                     try:
-                        from optimum.intel.openvino import OVModelForCausalLM
+                        from optimum.intel.openvino import (  # type: ignore[import]
+                            OVModelForCausalLM,
+                        )
 
                     except ImportError:
                         raise ValueError(

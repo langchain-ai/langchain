@@ -133,7 +133,7 @@ class HuggingFaceTextGenInference(LLM):
         """Validate that python package exists in environment."""
 
         try:
-            import text_generation
+            import text_generation  # type: ignore[import]
 
             values["client"] = text_generation.Client(
                 values["inference_server_url"],

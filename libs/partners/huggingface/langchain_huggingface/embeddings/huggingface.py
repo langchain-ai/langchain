@@ -50,7 +50,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
         try:
-            import sentence_transformers
+            import sentence_transformers  # type: ignore[import]
 
         except ImportError as exc:
             raise ImportError(
@@ -76,7 +76,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        import sentence_transformers
+        import sentence_transformers  # type: ignore[import]
 
         texts = list(map(lambda x: x.replace("\n", " "), texts))
         if self.multi_process:

@@ -160,7 +160,7 @@ class HuggingFaceEndpoint(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that package is installed and that the API token is valid."""
         try:
-            from huggingface_hub import login
+            from huggingface_hub import login  # type: ignore[import]
 
         except ImportError:
             raise ImportError(

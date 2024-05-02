@@ -54,7 +54,10 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         )
 
         try:
-            from huggingface_hub import AsyncInferenceClient, InferenceClient
+            from huggingface_hub import (  # type: ignore[import]
+                AsyncInferenceClient,
+                InferenceClient,
+            )
 
             if values["model"]:
                 values["repo_id"] = values["model"]

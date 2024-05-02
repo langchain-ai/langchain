@@ -135,7 +135,7 @@ class ChatHuggingFace(BaseChatModel):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
-        from transformers import AutoTokenizer
+        from transformers import AutoTokenizer  # type: ignore[import]
 
         self._resolve_model_id()
 
@@ -255,7 +255,7 @@ class ChatHuggingFace(BaseChatModel):
     def _resolve_model_id(self) -> None:
         """Resolve the model_id from the LLM's inference_server_url"""
 
-        from huggingface_hub import list_inference_endpoints
+        from huggingface_hub import list_inference_endpoints  # type: ignore[import]
 
         available_endpoints = list_inference_endpoints("*")
         if isinstance(self.llm, HuggingFaceHub) or (
