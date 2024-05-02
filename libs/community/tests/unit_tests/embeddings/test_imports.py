@@ -66,6 +66,7 @@ EXPECTED_ALL = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
+    "SambaStudioEmbeddings",
     "TitanTakeoffEmbed",
     "QuantizedBgeEmbeddings",
     "PremAIEmbeddings",
