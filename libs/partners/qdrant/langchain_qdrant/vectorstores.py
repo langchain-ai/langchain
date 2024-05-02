@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import os
 import uuid
 import warnings
 from itertools import islice
@@ -1220,7 +1221,7 @@ class Qdrant(VectorStore):
                 Optional list of ids to associate with the texts. Ids have to be
                 uuid-like strings.
             location:
-                If `:memory:` - use in-memory Qdrant instance.
+                If ':memory:' - use in-memory Qdrant instance.
                 If `str` - use it as a `url` parameter.
                 If `None` - fallback to relying on `host` and `port` parameters.
             url: either host or str of "Optional[scheme], host, Optional[port],
@@ -1231,7 +1232,9 @@ class Qdrant(VectorStore):
                 If true - use gPRC interface whenever possible in custom methods.
                 Default: False
             https: If true - use HTTPS(SSL) protocol. Default: None
-            api_key: API key for authentication in Qdrant Cloud. Default: None
+            api_key:
+                    API key for authentication in Qdrant Cloud. Default: None
+                    Can also be set via environment variable `QDRANT_API_KEY`.
             prefix:
                 If not None - add prefix to the REST URL path.
                 Example: service/v1 will result in
@@ -1441,7 +1444,7 @@ class Qdrant(VectorStore):
                 Optional list of ids to associate with the texts. Ids have to be
                 uuid-like strings.
             location:
-                If `:memory:` - use in-memory Qdrant instance.
+                If ':memory:' - use in-memory Qdrant instance.
                 If `str` - use it as a `url` parameter.
                 If `None` - fallback to relying on `host` and `port` parameters.
             url: either host or str of "Optional[scheme], host, Optional[port],
@@ -1452,7 +1455,9 @@ class Qdrant(VectorStore):
                 If true - use gPRC interface whenever possible in custom methods.
                 Default: False
             https: If true - use HTTPS(SSL) protocol. Default: None
-            api_key: API key for authentication in Qdrant Cloud. Default: None
+            api_key:
+                    API key for authentication in Qdrant Cloud. Default: None
+                    Can also be set via environment variable `QDRANT_API_KEY`.
             prefix:
                 If not None - add prefix to the REST URL path.
                 Example: service/v1 will result in
@@ -2200,6 +2205,9 @@ class Qdrant(VectorStore):
         path: Optional[str] = None,
         **kwargs: Any,
     ) -> Tuple[QdrantClient, Optional[AsyncQdrantClient]]:
+        if api_key is None:
+            api_key = os.getenv("QDRANT_API_KEY")
+
         sync_client = QdrantClient(
             location=location,
             url=url,
