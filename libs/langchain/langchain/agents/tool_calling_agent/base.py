@@ -38,7 +38,7 @@ def create_tool_calling_agent(
             prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", "You are a helpful assistant"),
-                    ("placeholder", "{chat_history}",
+                    ("placeholder", "{chat_history}"),
                     ("human", "{input}"),
                     ("placeholder", "{agent_scratchpad}"),
                 ]
