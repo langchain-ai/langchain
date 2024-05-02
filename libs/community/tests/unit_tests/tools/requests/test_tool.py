@@ -72,34 +72,44 @@ def test_parse_input() -> None:
 
 
 def test_requests_get_tool(mock_requests_wrapper: TextRequestsWrapper) -> None:
-    tool = RequestsGetTool(requests_wrapper=mock_requests_wrapper)
+    tool = RequestsGetTool(
+        requests_wrapper=mock_requests_wrapper, allow_dangerous_requests=True
+    )
     assert tool.run("https://example.com") == "get_response"
     assert asyncio.run(tool.arun("https://example.com")) == "aget_response"
 
 
 def test_requests_post_tool(mock_requests_wrapper: TextRequestsWrapper) -> None:
-    tool = RequestsPostTool(requests_wrapper=mock_requests_wrapper)
+    tool = RequestsPostTool(
+        requests_wrapper=mock_requests_wrapper, allow_dangerous_requests=True
+    )
     input_text = '{"url": "https://example.com", "data": {"key": "value"}}'
     assert tool.run(input_text) == "post {'key': 'value'}"
     assert asyncio.run(tool.arun(input_text)) == "apost {'key': 'value'}"
 
 
 def test_requests_patch_tool(mock_requests_wrapper: TextRequestsWrapper) -> None:
-    tool = RequestsPatchTool(requests_wrapper=mock_requests_wrapper)
+    tool = RequestsPatchTool(
+        requests_wrapper=mock_requests_wrapper, allow_dangerous_requests=True
+    )
     input_text = '{"url": "https://example.com", "data": {"key": "value"}}'
     assert tool.run(input_text) == "patch {'key': 'value'}"
     assert asyncio.run(tool.arun(input_text)) == "apatch {'key': 'value'}"
 
 
 def test_requests_put_tool(mock_requests_wrapper: TextRequestsWrapper) -> None:
-    tool = RequestsPutTool(requests_wrapper=mock_requests_wrapper)
+    tool = RequestsPutTool(
+        requests_wrapper=mock_requests_wrapper, allow_dangerous_requests=True
+    )
     input_text = '{"url": "https://example.com", "data": {"key": "value"}}'
     assert tool.run(input_text) == "put {'key': 'value'}"
     assert asyncio.run(tool.arun(input_text)) == "aput {'key': 'value'}"
 
 
 def test_requests_delete_tool(mock_requests_wrapper: TextRequestsWrapper) -> None:
-    tool = RequestsDeleteTool(requests_wrapper=mock_requests_wrapper)
+    tool = RequestsDeleteTool(
+        requests_wrapper=mock_requests_wrapper, allow_dangerous_requests=True
+    )
     assert tool.run("https://example.com") == "delete_response"
     assert asyncio.run(tool.arun("https://example.com")) == "adelete_response"
 
@@ -154,7 +164,9 @@ def mock_json_requests_wrapper() -> JsonRequestsWrapper:
 def test_requests_get_tool_json(
     mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
-    tool = RequestsGetTool(requests_wrapper=mock_json_requests_wrapper)
+    tool = RequestsGetTool(
+        requests_wrapper=mock_json_requests_wrapper, allow_dangerous_requests=True
+    )
     assert tool.run("https://example.com") == {"response": "get_response"}
     assert asyncio.run(tool.arun("https://example.com")) == {
         "response": "aget_response"
@@ -164,7 +176,9 @@ def test_requests_get_tool_json(
 def test_requests_post_tool_json(
     mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
-    tool = RequestsPostTool(requests_wrapper=mock_json_requests_wrapper)
+    tool = RequestsPostTool(
+        requests_wrapper=mock_json_requests_wrapper, allow_dangerous_requests=True
+    )
     input_text = '{"url": "https://example.com", "data": {"key": "value"}}'
     assert tool.run(input_text) == {"response": 'post {"key": "value"}'}
     assert asyncio.run(tool.arun(input_text)) == {"response": 'apost {"key": "value"}'}
@@ -173,7 +187,9 @@ def test_requests_post_tool_json(
 def test_requests_patch_tool_json(
     mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
-    tool = RequestsPatchTool(requests_wrapper=mock_json_requests_wrapper)
+    tool = RequestsPatchTool(
+        requests_wrapper=mock_json_requests_wrapper, allow_dangerous_requests=True
+    )
     input_text = '{"url": "https://example.com", "data": {"key": "value"}}'
     assert tool.run(input_text) == {"response": 'patch {"key": "value"}'}
     assert asyncio.run(tool.arun(input_text)) == {"response": 'apatch {"key": "value"}'}
@@ -182,7 +198,9 @@ def test_requests_patch_tool_json(
 def test_requests_put_tool_json(
     mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
-    tool = RequestsPutTool(requests_wrapper=mock_json_requests_wrapper)
+    tool = RequestsPutTool(
+        requests_wrapper=mock_json_requests_wrapper, allow_dangerous_requests=True
+    )
     input_text = '{"url": "https://example.com", "data": {"key": "value"}}'
     assert tool.run(input_text) == {"response": 'put {"key": "value"}'}
     assert asyncio.run(tool.arun(input_text)) == {"response": 'aput {"key": "value"}'}
@@ -191,7 +209,9 @@ def test_requests_put_tool_json(
 def test_requests_delete_tool_json(
     mock_json_requests_wrapper: JsonRequestsWrapper,
 ) -> None:
-    tool = RequestsDeleteTool(requests_wrapper=mock_json_requests_wrapper)
+    tool = RequestsDeleteTool(
+        requests_wrapper=mock_json_requests_wrapper, allow_dangerous_requests=True
+    )
     assert tool.run("https://example.com") == {"response": "delete_response"}
     assert asyncio.run(tool.arun("https://example.com")) == {
         "response": "adelete_response"

@@ -181,3 +181,54 @@ def test_dereference_refs_integer_ref() -> None:
     }
     actual = dereference_refs(schema)
     assert actual == expected
+
+
+def test_dereference_refs_cyclical_refs() -> None:
+    schema = {
+        "type": "object",
+        "properties": {
+            "user": {"$ref": "#/$defs/user"},
+            "customer": {"$ref": "#/$defs/user"},
+        },
+        "$defs": {
+            "user": {
+                "type": "object",
+                "properties": {
+                    "friends": {"type": "array", "items": {"$ref": "#/$defs/user"}}
+                },
+            }
+        },
+    }
+    expected = {
+        "type": "object",
+        "properties": {
+            "user": {
+                "type": "object",
+                "properties": {
+                    "friends": {
+                        "type": "array",
+                        "items": {},  # Recursion is broken here
+                    }
+                },
+            },
+            "customer": {
+                "type": "object",
+                "properties": {
+                    "friends": {
+                        "type": "array",
+                        "items": {},  # Recursion is broken here
+                    }
+                },
+            },
+        },
+        "$defs": {
+            "user": {
+                "type": "object",
+                "properties": {
+                    "friends": {"type": "array", "items": {"$ref": "#/$defs/user"}}
+                },
+            }
+        },
+    }
+    actual = dereference_refs(schema)
+    assert actual == expected

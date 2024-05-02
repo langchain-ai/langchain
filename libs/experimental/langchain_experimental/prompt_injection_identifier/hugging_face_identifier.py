@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 
 class PromptInjectionException(ValueError):
+    """Exception raised when prompt injection attack is detected."""
+
     def __init__(
         self, message: str = "Prompt injection attack detected", score: float = 1.0
     ):
@@ -21,7 +23,7 @@ class PromptInjectionException(ValueError):
 
 
 def _model_default_factory(
-    model_name: str = "laiyer/deberta-v3-base-prompt-injection",
+    model_name: str = "protectai/deberta-v3-base-prompt-injection-v2",
 ) -> Pipeline:
     try:
         from transformers import (
@@ -48,7 +50,8 @@ def _model_default_factory(
 
 
 class HuggingFaceInjectionIdentifier(BaseTool):
-    """Tool that uses HF model to detect prompt injection attacks."""
+    """Tool that uses HuggingFace Prompt Injection model to
+    detect prompt injection attacks."""
 
     name: str = "hugging_face_injection_identifier"
     description: str = (
@@ -61,7 +64,7 @@ class HuggingFaceInjectionIdentifier(BaseTool):
     
     Can be specified as transformers Pipeline or string. String should correspond to the
         model name of a text-classification transformers model. Defaults to 
-        ``laiyer/deberta-v3-base-prompt-injection`` model.
+        ``protectai/deberta-v3-base-prompt-injection-v2`` model.
     """
     threshold: float = Field(
         description="Threshold for prompt injection detection.", default=0.5

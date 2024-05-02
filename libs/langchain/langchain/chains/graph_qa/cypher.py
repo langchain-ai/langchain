@@ -199,10 +199,11 @@ class GraphCypherQAChain(Chain):
                 cypher_prompt if cypher_prompt is not None else CYPHER_GENERATION_PROMPT
             )
 
-        qa_chain = LLMChain(llm=qa_llm or llm, **use_qa_llm_kwargs)
+        qa_chain = LLMChain(llm=qa_llm or llm, **use_qa_llm_kwargs)  # type: ignore[arg-type]
 
         cypher_generation_chain = LLMChain(
-            llm=cypher_llm or llm, **use_cypher_llm_kwargs
+            llm=cypher_llm or llm,  # type: ignore[arg-type]
+            **use_cypher_llm_kwargs,  # type: ignore[arg-type]
         )
 
         if exclude_types and include_types:

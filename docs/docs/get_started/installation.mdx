@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Installation
 
 ## Official release
@@ -29,18 +33,18 @@ If you want to install from source, you can do so by cloning the repo and be sur
 pip install -e .
 ```
 
-## LangChain community
-The `langchain-community` package contains third-party integrations. It is automatically installed by `langchain`, but can also be used separately. Install with:
-
-```bash
-pip install langchain-community
-```
-
 ## LangChain core
 The `langchain-core` package contains base abstractions that the rest of the LangChain ecosystem uses, along with the LangChain Expression Language. It is automatically installed by `langchain`, but can also be used separately. Install with:
 
 ```bash
 pip install langchain-core
+```
+
+## LangChain community
+The `langchain-community` package contains third-party integrations. It is automatically installed by `langchain`, but can also be used separately. Install with:
+
+```bash
+pip install langchain-community
 ```
 
 ## LangChain experimental
@@ -51,6 +55,13 @@ Install with:
 pip install langchain-experimental
 ```
 
+## LangGraph
+`langgraph` is a library for building stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain.
+Install with:
+
+```bash
+pip install langgraph
+```
 ## LangServe
 LangServe helps developers deploy LangChain runnables and chains as a REST API.
 LangServe is automatically installed by LangChain CLI.

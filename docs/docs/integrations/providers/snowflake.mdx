@@ -1,0 +1,32 @@
+# Snowflake
+
+> [Snowflake](https://www.snowflake.com/) is a cloud-based data-warehousing platform 
+> that allows you to store and query large amounts of data.
+
+This page covers how to use the `Snowflake` ecosystem within `LangChain`.
+
+## Embedding models
+
+Snowflake offers their open weight `arctic` line of embedding models for free
+on [Hugging Face](https://huggingface.co/Snowflake/snowflake-arctic-embed-l). 
+You can use these models via the 
+[HuggingFaceEmbeddings](/docs/integrations/text_embedding/huggingfacehub) connector:
+
+```shell
+pip install langchain-community sentence-transformers
+```
+
+```python
+from langchain_community.text_embeddings import HuggingFaceEmbeddings
+
+model = HuggingFaceEmbeddings(model_name="snowflake/arctic-embed-l")
+```
+
+## Document loader
+
+You can use the [`SnowflakeLoader`](/docs/integrations/document_loaders/snowflake) 
+to load data from Snowflake:
+
+```python
+from langchain_community.document_loaders import SnowflakeLoader
+```

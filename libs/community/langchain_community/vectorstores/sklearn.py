@@ -42,7 +42,7 @@ class BaseSerializer(ABC):
 
 
 class JsonSerializer(BaseSerializer):
-    """Serializes data in json using the json package from python standard library."""
+    """Serialize data in JSON using the json package from python standard library."""
 
     @classmethod
     def extension(cls) -> str:
@@ -58,7 +58,7 @@ class JsonSerializer(BaseSerializer):
 
 
 class BsonSerializer(BaseSerializer):
-    """Serializes data in binary json using the `bson` python package."""
+    """Serialize data in Binary JSON using the `bson` python package."""
 
     def __init__(self, persist_path: str) -> None:
         super().__init__(persist_path)
@@ -78,7 +78,7 @@ class BsonSerializer(BaseSerializer):
 
 
 class ParquetSerializer(BaseSerializer):
-    """Serializes data in `Apache Parquet` format using the `pyarrow` package."""
+    """Serialize data in `Apache Parquet` format using the `pyarrow` package."""
 
     def __init__(self, persist_path: str) -> None:
         super().__init__(persist_path)

@@ -460,6 +460,8 @@ class ScaNN(VectorStore):
         folder_path: str,
         embedding: Embeddings,
         index_name: str = "index",
+        *,
+        allow_dangerous_deserialization: bool = False,
         **kwargs: Any,
     ) -> ScaNN:
         """Load ScaNN index, docstore, and index_to_docstore_id from disk.
@@ -469,7 +471,25 @@ class ScaNN(VectorStore):
                 and index_to_docstore_id from.
             embeddings: Embeddings to use when generating queries
             index_name: for saving with a specific index file name
+            allow_dangerous_deserialization: whether to allow deserialization
+                of the data which involves loading a pickle file.
+                Pickle files can be modified by malicious actors to deliver a
+                malicious payload that results in execution of
+                arbitrary code on your machine.
         """
+        if not allow_dangerous_deserialization:
+            raise ValueError(
+                "The de-serialization relies loading a pickle file. "
+                "Pickle files can be modified to deliver a malicious payload that "
+                "results in execution of arbitrary code on your machine."
+                "You will need to set `allow_dangerous_deserialization` to `True` to "
+                "enable deserialization. If you do this, make sure that you "
+                "trust the source of the data. For example, if you are loading a "
+                "file that you created, and no that no one else has modified the file, "
+                "then this is safe to do. Do not set this to `True` if you are loading "
+                "a file from an untrusted source (e.g., some random site on the "
+                "internet.)."
+            )
         path = Path(folder_path)
         scann_path = path / "{index_name}.scann".format(index_name=index_name)
         scann_path.mkdir(exist_ok=True, parents=True)

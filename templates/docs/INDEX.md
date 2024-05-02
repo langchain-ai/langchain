@@ -6,7 +6,7 @@ Highlighting a few different categories of templates
 
 These are some of the more popular templates to get started with.
 
-- [Retrieval Augmented Generation Chatbot](../rag-conversation): Build a chatbot over your data. Defaults to OpenAI and Pinecone.
+- [Retrieval Augmented Generation Chatbot](../rag-conversation): Build a chatbot over your data. Defaults to OpenAI and PineconeVectorStore.
 - [Extraction with OpenAI Functions](../extraction-openai-functions): Do extraction of structured data from unstructured data. Uses OpenAI function calling.
 - [Local Retrieval Augmented Generation](../rag-chroma-private): Build a chatbot over your data. Uses only local tooling: Ollama, GPT4all, Chroma.
 - [OpenAI Functions Agent](../openai-functions-agent): Build a chatbot that can take actions. Uses OpenAI function calling and Tavily.

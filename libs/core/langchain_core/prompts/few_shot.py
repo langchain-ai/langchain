@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts.chat import (
     BaseChatPromptTemplate,
@@ -27,7 +28,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
-    example_selector: Any = None
+    example_selector: Optional[BaseExampleSelector] = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 
@@ -67,6 +68,24 @@ class _FewShotPromptTemplateMixin(BaseModel):
             return self.examples
         elif self.example_selector is not None:
             return self.example_selector.select_examples(kwargs)
+        else:
+            raise ValueError(
+                "One of 'examples' and 'example_selector' should be provided"
+            )
+
+    async def _aget_examples(self, **kwargs: Any) -> List[dict]:
+        """Get the examples to use for formatting the prompt.
+
+        Args:
+            **kwargs: Keyword arguments to be passed to the example selector.
+
+        Returns:
+            List of examples.
+        """
+        if self.examples is not None:
+            return self.examples
+        elif self.example_selector is not None:
+            return await self.example_selector.aselect_examples(kwargs)
         else:
             raise ValueError(
                 "One of 'examples' and 'example_selector' should be provided"
@@ -128,20 +147,6 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         arbitrary_types_allowed = True
 
     def format(self, **kwargs: Any) -> str:
-        """Format the prompt with the inputs.
-
-        Args:
-            **kwargs: Any arguments to be passed to the prompt template.
-
-        Returns:
-            A formatted string.
-
-        Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-        """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
         examples = self._get_examples(**kwargs)
@@ -151,6 +156,24 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         # Format the examples.
         example_strings = [
             self.example_prompt.format(**example) for example in examples
+        ]
+        # Create the overall template.
+        pieces = [self.prefix, *example_strings, self.suffix]
+        template = self.example_separator.join([piece for piece in pieces if piece])
+
+        # Format the template with the input variables.
+        return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
+
+    async def aformat(self, **kwargs: Any) -> str:
+        kwargs = self._merge_partial_and_user_variables(**kwargs)
+        # Get the examples to use.
+        examples = await self._aget_examples(**kwargs)
+        examples = [
+            {k: e[k] for k in self.example_prompt.input_variables} for e in examples
+        ]
+        # Format the examples.
+        example_strings = [
+            await self.example_prompt.aformat(**example) for example in examples
         ]
         # Create the overall template.
         pieces = [self.prefix, *example_strings, self.suffix]
@@ -325,6 +348,28 @@ class FewShotChatMessagePromptTemplate(
         ]
         return messages
 
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        """Format kwargs into a list of messages.
+
+        Args:
+            **kwargs: keyword arguments to use for filling in templates in messages.
+
+        Returns:
+            A list of formatted messages with all template variables filled in.
+        """
+        # Get the examples to use.
+        examples = await self._aget_examples(**kwargs)
+        examples = [
+            {k: e[k] for k in self.example_prompt.input_variables} for e in examples
+        ]
+        # Format the examples.
+        messages = [
+            message
+            for example in examples
+            for message in await self.example_prompt.aformat_messages(**example)
+        ]
+        return messages
+
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with inputs generating a string.
 
@@ -340,6 +385,10 @@ class FewShotChatMessagePromptTemplate(
             A string representation of the prompt
         """
         messages = self.format_messages(**kwargs)
+        return get_buffer_string(messages)
+
+    async def aformat(self, **kwargs: Any) -> str:
+        messages = await self.aformat_messages(**kwargs)
         return get_buffer_string(messages)
 
     def pretty_repr(self, html: bool = False) -> str:

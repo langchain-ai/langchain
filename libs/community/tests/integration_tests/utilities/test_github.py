@@ -19,3 +19,9 @@ def test_get_open_issues(api_client: GitHubAPIWrapper) -> None:
     """Basic test to fetch issues"""
     issues = api_client.get_issues()
     assert len(issues) != 0
+
+
+def test_search_issues_and_prs(api_client: GitHubAPIWrapper) -> None:
+    """Basic test to search issues and PRs"""
+    results = api_client.search_issues_and_prs("is:pr is:merged")
+    assert len(results) != 0

@@ -1,3 +1,19 @@
+"""**Chat message history** stores a history of the message interactions in a chat.
+
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseChatMessageHistory --> <name>ChatMessageHistory  # Examples: FileChatMessageHistory, PostgresChatMessageHistory
+
+**Main helpers:**
+
+.. code-block::
+
+    AIMessage, HumanMessage, BaseMessage
+
+"""  # noqa: E501
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -9,6 +25,7 @@ from langchain_core.messages import (
     HumanMessage,
     get_buffer_string,
 )
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import run_in_executor
 
 
@@ -168,3 +185,29 @@ class BaseChatMessageHistory(ABC):
     def __str__(self) -> str:
         """Return a string representation of the chat history."""
         return get_buffer_string(self.messages)
+
+
+class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
+    """In memory implementation of chat message history.
+
+    Stores messages in an in memory list.
+    """
+
+    messages: List[BaseMessage] = Field(default_factory=list)
+
+    async def aget_messages(self) -> List[BaseMessage]:
+        return self.messages
+
+    def add_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        self.messages.append(message)
+
+    async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
+        """Add messages to the store"""
+        self.add_messages(messages)
+
+    def clear(self) -> None:
+        self.messages = []
+
+    async def aclear(self) -> None:
+        self.clear()

@@ -165,8 +165,16 @@ class Tee(Generic[T]):
 safetee = Tee
 
 
-def batch_iterate(size: int, iterable: Iterable[T]) -> Iterator[List[T]]:
-    """Utility batching function."""
+def batch_iterate(size: Optional[int], iterable: Iterable[T]) -> Iterator[List[T]]:
+    """Utility batching function.
+
+    Args:
+        size: The size of the batch. If None, returns a single batch.
+        iterable: The iterable to batch.
+
+    Returns:
+        An iterator over the batches.
+    """
     it = iter(iterable)
     while True:
         chunk = list(islice(it, size))

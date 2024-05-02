@@ -15,6 +15,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
@@ -31,13 +32,15 @@ logger = logging.getLogger(__name__)
 VST = TypeVar("VST", bound=VectorStore)
 
 
-class Pinecone(VectorStore):
+class PineconeVectorStore(VectorStore):
     """`Pinecone` vector store.
+
+    Setup: set the `PINECONE_API_KEY` environment variable to your Pinecone API key.
 
     Example:
         .. code-block:: python
 
-            from langchain_pinecone import Pinecone
+            from langchain_pinecone import PineconeVectorStore
             from langchain_openai import OpenAIEmbeddings
 
             embeddings = OpenAIEmbeddings()
@@ -97,7 +100,7 @@ class Pinecone(VectorStore):
                 )
 
             # needs
-            client = PineconeClient(api_key=_pinecone_api_key)
+            client = PineconeClient(api_key=_pinecone_api_key, source_tag="langchain")
             self._index = client.Index(_index_name)
 
     @property
@@ -163,7 +166,8 @@ class Pinecone(VectorStore):
                     batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
                 )
             ]
-            [res.get() for res in async_res]
+            if async_req:
+                [res.get() for res in async_res]
 
         return ids
 
@@ -367,7 +371,9 @@ class Pinecone(VectorStore):
         Returns:
             Pinecone Index instance."""
         _pinecone_api_key = pinecone_api_key or os.environ.get("PINECONE_API_KEY") or ""
-        client = PineconeClient(api_key=_pinecone_api_key, pool_threads=pool_threads)
+        client = PineconeClient(
+            api_key=_pinecone_api_key, pool_threads=pool_threads, source_tag="langchain"
+        )
         indexes = client.list_indexes()
         index_names = [i.name for i in indexes.index_list["indexes"]]
 
@@ -401,7 +407,7 @@ class Pinecone(VectorStore):
         pool_threads: int = 4,
         embeddings_chunk_size: int = 1000,
         **kwargs: Any,
-    ) -> Pinecone:
+    ) -> PineconeVectorStore:
         """Construct Pinecone wrapper from raw documents.
 
         This is a user friendly interface that:
@@ -411,21 +417,22 @@ class Pinecone(VectorStore):
         This is intended to be a quick way to get started.
 
         The `pool_threads` affects the speed of the upsert operations.
+
+        Setup: set the `PINECONE_API_KEY` environment variable to your Pinecone API key.
+
         Example:
             .. code-block:: python
 
-                from langchain_community.vectorstores import Pinecone
-                from langchain_community.embeddings import OpenAIEmbeddings
-                import pinecone
+                from langchain_pinecone import PineconeVectorStore
+                from langchain_openai import OpenAIEmbeddings
 
-                # The environment should be the one specified next to the API key
-                # in your Pinecone console
-                pinecone.init(api_key="***", environment="...")
                 embeddings = OpenAIEmbeddings()
-                pinecone = Pinecone.from_texts(
+                index_name = "my-index"
+                vectorstore = PineconeVectorStore.from_texts(
                     texts,
-                    embeddings,
-                    index_name="langchain-demo"
+                    index_name=index_name,
+                    embedding=embedding,
+                    namespace=namespace,
                 )
         """
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
@@ -450,7 +457,7 @@ class Pinecone(VectorStore):
         text_key: str = "text",
         namespace: Optional[str] = None,
         pool_threads: int = 4,
-    ) -> Pinecone:
+    ) -> PineconeVectorStore:
         """Load pinecone vectorstore from index name."""
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)
         return cls(pinecone_index, embedding, text_key, namespace)
@@ -485,3 +492,10 @@ class Pinecone(VectorStore):
             raise ValueError("Either ids, delete_all, or filter must be provided.")
 
         return None
+
+
+@deprecated(since="0.0.3", removal="0.2.0", alternative="PineconeVectorStore")
+class Pinecone(PineconeVectorStore):
+    """Deprecated. Use PineconeVectorStore instead."""
+
+    pass

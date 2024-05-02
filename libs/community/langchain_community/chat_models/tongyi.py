@@ -33,6 +33,10 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
+from langchain_core.output_parsers.openai_tools import (
+    make_invalid_tool_call,
+    parse_tool_call,
+)
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -49,7 +53,11 @@ from tenacity import (
     wait_exponential,
 )
 
-from langchain_community.llms.tongyi import check_response
+from langchain_community.llms.tongyi import (
+    agenerate_with_last_element_mark,
+    check_response,
+    generate_with_last_element_mark,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +65,7 @@ logger = logging.getLogger(__name__)
 def convert_dict_to_message(
     _dict: Mapping[str, Any], is_chunk: bool = False
 ) -> Union[BaseMessage, BaseMessageChunk]:
+    """Convert a dict to a message."""
     role = _dict["role"]
     content = _dict["content"]
     if role == "user":
@@ -66,8 +75,28 @@ def convert_dict_to_message(
             else HumanMessage(content=content)
         )
     elif role == "assistant":
+        tool_calls = []
+        invalid_tool_calls = []
+        if "tool_calls" in _dict:
+            additional_kwargs = {"tool_calls": _dict["tool_calls"]}
+            for raw_tool_call in _dict["tool_calls"]:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
+        else:
+            additional_kwargs = {}
         return (
-            AIMessageChunk(content=content) if is_chunk else AIMessage(content=content)
+            AIMessageChunk(content=content)
+            if is_chunk
+            else AIMessage(
+                content=content,
+                additional_kwargs=additional_kwargs,
+                tool_calls=tool_calls,
+                invalid_tool_calls=invalid_tool_calls,
+            )
         )
     elif role == "system":
         return (
@@ -84,6 +113,7 @@ def convert_dict_to_message(
 
 
 def convert_message_chunk_to_message(message_chunk: BaseMessageChunk) -> BaseMessage:
+    """Convert a message chunk to a message."""
     if isinstance(message_chunk, HumanMessageChunk):
         return HumanMessage(content=message_chunk.content)
     elif isinstance(message_chunk, AIMessageChunk):
@@ -137,7 +167,7 @@ class ChatTongyi(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models import Tongyi
+            from langchain_community.chat_models import ChatTongyi
             Tongyi_chat = ChatTongyi()
     """
 
@@ -154,7 +184,7 @@ class ChatTongyi(BaseChatModel):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[SecretStr] = None
+    dashscope_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Dashscope api key provide by Alibaba Cloud."""
 
     streaming: bool = False
@@ -162,6 +192,11 @@ class ChatTongyi(BaseChatModel):
 
     max_retries: int = 10
     """Maximum number of retries to make when generating."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @property
     def _llm_type(self) -> str:
@@ -338,13 +373,17 @@ class ChatTongyi(BaseChatModel):
         params: Dict[str, Any] = self._invocation_params(
             messages=messages, stop=stop, stream=True, **kwargs
         )
-        for stream_resp in self.stream_completion_with_retry(**params):
+        for stream_resp, is_last_chunk in generate_with_last_element_mark(
+            self.stream_completion_with_retry(**params)
+        ):
             chunk = ChatGenerationChunk(
-                **self._chat_generation_from_qwen_resp(stream_resp, is_chunk=True)
+                **self._chat_generation_from_qwen_resp(
+                    stream_resp, is_chunk=True, is_last_chunk=is_last_chunk
+                )
             )
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -356,13 +395,17 @@ class ChatTongyi(BaseChatModel):
         params: Dict[str, Any] = self._invocation_params(
             messages=messages, stop=stop, stream=True, **kwargs
         )
-        async for stream_resp in self.astream_completion_with_retry(**params):
+        async for stream_resp, is_last_chunk in agenerate_with_last_element_mark(
+            self.astream_completion_with_retry(**params)
+        ):
             chunk = ChatGenerationChunk(
-                **self._chat_generation_from_qwen_resp(stream_resp, is_chunk=True)
+                **self._chat_generation_from_qwen_resp(
+                    stream_resp, is_chunk=True, is_last_chunk=is_last_chunk
+                )
             )
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     def _invocation_params(
         self, messages: List[BaseMessage], stop: Any, **kwargs: Any
@@ -398,18 +441,28 @@ class ChatTongyi(BaseChatModel):
 
     @staticmethod
     def _chat_generation_from_qwen_resp(
-        resp: Any, is_chunk: bool = False
+        resp: Any, is_chunk: bool = False, is_last_chunk: bool = True
     ) -> Dict[str, Any]:
+        # According to the response from dashscope,
+        # each chunk's `generation_info` overwrites the previous one.
+        # Besides, The `merge_dicts` method,
+        # which is used to concatenate `generation_info` in `GenerationChunk`,
+        # does not support merging of int type values.
+        # Therefore, we adopt the `generation_info` of the last chunk
+        # and discard the `generation_info` of the intermediate chunks.
         choice = resp["output"]["choices"][0]
         message = convert_dict_to_message(choice["message"], is_chunk=is_chunk)
-        return dict(
-            message=message,
-            generation_info=dict(
-                finish_reason=choice["finish_reason"],
-                request_id=resp["request_id"],
-                token_usage=dict(resp["usage"]),
-            ),
-        )
+        if is_last_chunk:
+            return dict(
+                message=message,
+                generation_info=dict(
+                    finish_reason=choice["finish_reason"],
+                    request_id=resp["request_id"],
+                    token_usage=dict(resp["usage"]),
+                ),
+            )
+        else:
+            return dict(message=message)
 
     @staticmethod
     def _chunk_to_generation(chunk: ChatGenerationChunk) -> ChatGeneration:

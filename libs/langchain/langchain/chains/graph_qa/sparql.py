@@ -41,15 +41,25 @@ class GraphSparqlQAChain(Chain):
     sparql_generation_update_chain: LLMChain
     sparql_intent_chain: LLMChain
     qa_chain: LLMChain
+    return_sparql_query: bool = False
     input_key: str = "query"  #: :meta private:
     output_key: str = "result"  #: :meta private:
+    sparql_query_key: str = "sparql_query"  #: :meta private:
 
     @property
     def input_keys(self) -> List[str]:
+        """Return the input keys.
+
+        :meta private:
+        """
         return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
+        """Return the output keys.
+
+        :meta private:
+        """
         _output_keys = [self.output_key]
         return _output_keys
 
@@ -135,4 +145,8 @@ class GraphSparqlQAChain(Chain):
             res = "Successfully inserted triples into the graph."
         else:
             raise ValueError("Unsupported SPARQL query type.")
-        return {self.output_key: res}
+
+        chain_result: Dict[str, Any] = {self.output_key: res}
+        if self.return_sparql_query:
+            chain_result[self.sparql_query_key] = generated_sparql
+        return chain_result

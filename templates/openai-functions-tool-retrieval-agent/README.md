@@ -36,14 +36,14 @@ langchain app add openai-functions-tool-retrieval-agent
 
 And add the following code to your `server.py` file:
 ```python
-from openai_functions_tool_retrieval_agent import chain as openai_functions_tool_retrieval_agent_chain
+from openai_functions_tool_retrieval_agent import agent_executor as openai_functions_tool_retrieval_agent_chain
 
 add_routes(app, openai_functions_tool_retrieval_agent_chain, path="/openai-functions-tool-retrieval-agent")
 ```
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

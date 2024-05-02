@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Iterator, List, Optional, Sequence
+from typing import Any, Iterator, Optional, Sequence
 
 from langchain_core.documents import Document
 
@@ -78,6 +78,3 @@ class MaxComputeLoader(BaseLoader):
             else:
                 metadata = {k: v for k, v in row.items() if k not in page_content_data}
             yield Document(page_content=page_content, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())

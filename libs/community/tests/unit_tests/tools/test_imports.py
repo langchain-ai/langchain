@@ -1,4 +1,4 @@
-from langchain_community.tools import __all__
+from langchain_community.tools import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "AINAppOps",
@@ -9,6 +9,11 @@ EXPECTED_ALL = [
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
+    "AzureAiServicesDocumentIntelligenceTool",
+    "AzureAiServicesImageAnalysisTool",
+    "AzureAiServicesSpeechToTextTool",
+    "AzureAiServicesTextToSpeechTool",
+    "AzureAiServicesTextAnalyticsForHealthTool",
     "AzureCogsFormRecognizerTool",
     "AzureCogsImageAnalysisTool",
     "AzureCogsSpeech2TextTool",
@@ -24,9 +29,14 @@ EXPECTED_ALL = [
     "BingSearchRun",
     "BraveSearch",
     "ClickTool",
+    "CogniswitchKnowledgeSourceFile",
+    "CogniswitchKnowledgeSourceURL",
+    "CogniswitchKnowledgeRequest",
+    "CogniswitchKnowledgeStatus",
     "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
+    "DataheraldTextToSQL",
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
@@ -80,8 +90,12 @@ EXPECTED_ALL = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
+    "PolygonAggregates",
+    "PolygonFinancials",
     "PolygonLastQuote",
+    "PolygonTickerNews",
     "RedditSearchRun",
+    "RedditSearchSchema",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
@@ -116,6 +130,7 @@ EXPECTED_ALL = [
     "WolframAlphaQueryRun",
     "WriteFileTool",
     "YahooFinanceNewsTool",
+    "YouSearchTool",
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
@@ -123,8 +138,10 @@ EXPECTED_ALL = [
     "format_tool_to_openai_function",
     "tool",
     "MerriamWebsterQueryRun",
+    "MojeekSearch",
 ]
 
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__) == set(_module_lookup.keys())

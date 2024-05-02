@@ -66,7 +66,7 @@ def assert_docs(docs: List[Document], all_meta: bool = False) -> None:
 def test_run_success(api_client: OutlineAPIWrapper) -> None:
     responses.add(
         responses.POST,
-        api_client.outline_instance_url + api_client.outline_search_endpoint,
+        api_client.outline_instance_url + api_client.outline_search_endpoint,  # type: ignore[operator]
         json=OUTLINE_SUCCESS_RESPONSE,
         status=200,
     )
@@ -80,7 +80,7 @@ def test_run_success_all_meta(api_client: OutlineAPIWrapper) -> None:
     api_client.load_all_available_meta = True
     responses.add(
         responses.POST,
-        api_client.outline_instance_url + api_client.outline_search_endpoint,
+        api_client.outline_instance_url + api_client.outline_search_endpoint,  # type: ignore[operator]
         json=OUTLINE_SUCCESS_RESPONSE,
         status=200,
     )
@@ -93,7 +93,7 @@ def test_run_success_all_meta(api_client: OutlineAPIWrapper) -> None:
 def test_run_no_result(api_client: OutlineAPIWrapper) -> None:
     responses.add(
         responses.POST,
-        api_client.outline_instance_url + api_client.outline_search_endpoint,
+        api_client.outline_instance_url + api_client.outline_search_endpoint,  # type: ignore[operator]
         json=OUTLINE_EMPTY_RESPONSE,
         status=200,
     )
@@ -106,7 +106,7 @@ def test_run_no_result(api_client: OutlineAPIWrapper) -> None:
 def test_run_error(api_client: OutlineAPIWrapper) -> None:
     responses.add(
         responses.POST,
-        api_client.outline_instance_url + api_client.outline_search_endpoint,
+        api_client.outline_instance_url + api_client.outline_search_endpoint,  # type: ignore[operator]
         json=OUTLINE_ERROR_RESPONSE,
         status=401,
     )

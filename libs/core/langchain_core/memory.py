@@ -1,3 +1,12 @@
+"""**Memory** maintains Chain state, incorporating context from past runs.
+
+**Class hierarchy for Memory:**
+
+.. code-block::
+
+    BaseMemory --> <name>Memory --> <name>Memory  # Examples: BaseChatMemory -> MotorheadMemory
+
+"""  # noqa: E501
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
