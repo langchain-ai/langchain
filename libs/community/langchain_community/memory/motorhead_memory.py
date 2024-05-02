@@ -6,7 +6,7 @@ from langchain_core.messages import get_buffer_string
 try:
     # Temporarily tuck import in a conditional import until
     # community pkg becomes dependent on langchain core
-    from langchain_core.memory.chat_memory import BaseChatMemory
+    from langchain.memory.chat_memory import BaseChatMemory
 
     MANAGED_URL = "https://api.getmetal.io/v1/motorhead"
 
