@@ -4,6 +4,7 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.chains.graph_qa.cypher import (
+        CYPHER_GENERATION_PROMPT,
         INTERMEDIATE_STEPS_KEY,
         GraphCypherQAChain,
         construct_schema,
@@ -18,6 +19,7 @@ DEPRECATED_LOOKUP = {
     "INTERMEDIATE_STEPS_KEY": "langchain_community.chains.graph_qa.cypher",
     "construct_schema": "langchain_community.chains.graph_qa.cypher",
     "extract_cypher": "langchain_community.chains.graph_qa.cypher",
+    "CYPHER_GENERATION_PROMPT": "langchain_community.chains.graph_qa.cypher",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -33,4 +35,5 @@ __all__ = [
     "INTERMEDIATE_STEPS_KEY",
     "construct_schema",
     "extract_cypher",
+    "CYPHER_GENERATION_PROMPT",
 ]
