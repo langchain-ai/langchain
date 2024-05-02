@@ -18,7 +18,7 @@ class SpiderLoader(BaseLoader):
         *,
         api_key: Optional[str] = None,
         mode: Literal["scrape", "crawl"] = "scrape",
-        params: Optional[dict] = {"return_format": "markdown"},
+        params: Optional[dict] = {"return_format": "markdown", "metadata": True}, # Using the metadata param slightly slows down the output
     ):
         """Initialize with API key and URL.
 
@@ -45,10 +45,6 @@ class SpiderLoader(BaseLoader):
         if params is None:
             params = {}
 
-        # Add a default value for 'metadata' if it's not already present
-        if "metadata" not in params:
-            params["metadata"] = True
-
         # Use the environment variable if the API key isn't provided
         api_key = api_key or get_from_env("api_key", "SPIDER_API_KEY")
         self.spider = Spider(api_key=api_key)
@@ -72,6 +68,10 @@ class SpiderLoader(BaseLoader):
                 spider_docs.extend(response)
 
         for doc in spider_docs:
+            # Ensure list is not empty
+            if len(doc) == 0:
+                continue
+
             if self.mode == "scrape":
                 # Ensure page_content is also not None
                 page_content = doc[0].get("content", "")
@@ -79,7 +79,11 @@ class SpiderLoader(BaseLoader):
                 # Ensure metadata is also not None
                 metadata = doc[0].get("metadata", {})
 
-                yield Document(page_content=page_content, metadata=metadata)
+                if page_content is not None:
+                    yield Document(
+                        page_content=page_content, 
+                        metadata=metadata
+                    )
             if self.mode == "crawl":
                 # Ensure page_content is also not None
                 page_content = doc.get("content", "")
