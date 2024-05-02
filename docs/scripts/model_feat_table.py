@@ -1,11 +1,11 @@
 import os
+import sys
 from pathlib import Path
 
 from langchain_community import chat_models, llms
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.language_models.llms import LLM, BaseLLM
 
-INTEGRATIONS_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "integrations"
 LLM_IGNORE = ("FakeListLLM", "OpenAIChat", "PromptLayerOpenAIChat")
 LLM_FEAT_TABLE_CORRECTION = {
     "TextGen": {"_astream": False, "_agenerate": False},
@@ -218,9 +218,17 @@ def get_chat_model_table() -> str:
 
 
 if __name__ == "__main__":
+    output_dir = Path(sys.argv[1])
+    output_integrations_dir = output_dir / "integrations"
+    output_integrations_dir_llms = output_integrations_dir / "llms"
+    output_integrations_dir_chat = output_integrations_dir / "chat"
+    output_integrations_dir_llms.mkdir(parents=True, exist_ok=True)
+    output_integrations_dir_chat.mkdir(parents=True, exist_ok=True)
+
     llm_page = LLM_TEMPLATE.format(table=get_llm_table())
-    with open(INTEGRATIONS_DIR / "llms" / "index.mdx", "w") as f:
+
+    with open(output_integrations_dir / "llms" / "index.mdx", "w") as f:
         f.write(llm_page)
     chat_model_page = CHAT_MODEL_TEMPLATE.format(table=get_chat_model_table())
-    with open(INTEGRATIONS_DIR / "chat" / "index.mdx", "w") as f:
+    with open(output_integrations_dir / "chat" / "index.mdx", "w") as f:
         f.write(chat_model_page)
