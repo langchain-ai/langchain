@@ -113,11 +113,11 @@ class KuzuQAChain(Chain):
 
         qa_chain = LLMChain(
             llm=qa_llm or llm,  # type: ignore[arg-type]
-            prompt=qa_prompt
+            prompt=qa_prompt,
         )
         cypher_generation_chain = LLMChain(
             llm=cypher_llm or llm,  # type: ignore[arg-type]
-            prompt=cypher_prompt
+            prompt=cypher_prompt,
         )
 
         return cls(
