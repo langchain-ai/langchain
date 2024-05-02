@@ -42,7 +42,10 @@ def test_import_all_using_dir() -> None:
             # Without init
             module_name = module_name.rsplit(".", 1)[0]
 
-        mod = importlib.import_module(module_name)
+        try:
+            mod = importlib.import_module(module_name)
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(f"Could not import {module_name}") from e
         all = dir(mod)
 
         for name in all:
