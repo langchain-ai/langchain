@@ -1,10 +1,10 @@
 import importlib
 from pathlib import Path
 
+import pytest
+
 # Attempt to recursively import all modules in langchain
 PKG_ROOT = Path(__file__).parent.parent.parent
-
-import pytest
 
 
 @pytest.mark.community

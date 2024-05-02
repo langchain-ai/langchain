@@ -1,5 +1,4 @@
 from langchain import chains
-from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "APIChain",
