@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock
 from langchain_community.graphs import RdfGraph
 
 from langchain.chains import LLMChain
-from langchain.chains.graph_qa.sparql import GraphSparqlQAChain
+from langchain_community.chains.graph_qa.sparql import GraphSparqlQAChain
 
 """
 cd libs/langchain/tests/integration_tests/chains/docker-compose-ontotext-graphdb
