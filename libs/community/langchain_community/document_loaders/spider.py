@@ -18,10 +18,7 @@ class SpiderLoader(BaseLoader):
         *,
         api_key: Optional[str] = None,
         mode: Literal["scrape", "crawl"] = "scrape",
-        params: Optional[dict] = {
-            "return_format": "markdown",
-            "metadata": True,
-        },  # Using the metadata param slightly slows down the output
+        params: Optional[dict] = None,
     ):
         """Initialize with API key and URL.
 
@@ -34,6 +31,12 @@ class SpiderLoader(BaseLoader):
                  crawling following subpages).
             params: Additional parameters for the Spider API.
         """
+        if params is None:
+            params = {
+                "return_format": "markdown",
+                "metadata": True,
+            }  # Using the metadata param slightly slows down the output
+
         try:
             from spider import Spider
         except ImportError:
