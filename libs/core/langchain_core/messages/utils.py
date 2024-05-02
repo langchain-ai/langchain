@@ -131,7 +131,7 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
 
 
 MessageLikeRepresentation = Union[
-    BaseMessage, Tuple[str, str], str, Dict[str, Any], List[str]
+    BaseMessage, List[str], Tuple[str, str], str, Dict[str, Any]
 ]
 
 
