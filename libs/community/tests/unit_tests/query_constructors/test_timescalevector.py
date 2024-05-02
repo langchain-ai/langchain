@@ -9,7 +9,9 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain_community.query_constructors.timescalevector import TimescaleVectorTranslator
+from langchain_community.query_constructors.timescalevector import (
+    TimescaleVectorTranslator,
+)
 
 DEFAULT_TRANSLATOR = TimescaleVectorTranslator()
 
