@@ -1,15 +1,16 @@
 import unittest
 from unittest.mock import patch
+
 import responses
+
 from langchain_community.utilities.yandex_search import YandexSearchAPIWrapper
 
-class TestYandexSearchAPIWrapper(unittest.TestCase):
 
+class TestYandexSearchAPIWrapper(unittest.TestCase):
     def setUp(self):
         """Settings."""
         self.wrapper = YandexSearchAPIWrapper(
-            yandex_api_key="fake_api_key",
-            yandex_folder_id="fake_folder_id"
+            yandex_api_key="fake_api_key", yandex_folder_id="fake_folder_id"
         )
 
     @responses.activate
@@ -19,7 +20,7 @@ class TestYandexSearchAPIWrapper(unittest.TestCase):
         responses.add(
             responses.POST,
             "https://yandex.ru/search/xml",
-            body='''<?xml version="1.0" encoding="UTF-8"?>
+            body="""<?xml version="1.0" encoding="UTF-8"?>
                     <yandexsearch version="1.0">
                         <request>
                             <query>Query Example </query>
@@ -46,19 +47,19 @@ class TestYandexSearchAPIWrapper(unittest.TestCase):
                                 </doc>
                             </group>
                         </response>
-                    </yandexsearch>''',
+                    </yandexsearch>""",
             status=200,
-            content_type='text/xml'
+            content_type="text/xml",
         )
 
         results = self.wrapper._yandex_search_results("Query Example", num_results=2)
         self.assertEqual(len(results), 2)
-        self.assertEqual(results[0]['url'], 'http://example.com')
-        self.assertEqual(results[0]['title'], 'Example Title')
-        self.assertEqual(results[0]['snippet'], 'Example Snippet')
-        self.assertEqual(results[1]['url'], 'http://example2.com')
-        self.assertEqual(results[1]['title'], 'Example Title 2')
-        self.assertEqual(results[1]['snippet'], 'Another Example Snippet')
+        self.assertEqual(results[0]["url"], "http://example.com")
+        self.assertEqual(results[0]["title"], "Example Title")
+        self.assertEqual(results[0]["snippet"], "Example Snippet")
+        self.assertEqual(results[1]["url"], "http://example2.com")
+        self.assertEqual(results[1]["title"], "Example Title 2")
+        self.assertEqual(results[1]["snippet"], "Another Example Snippet")
 
     @responses.activate
     def test_yandex_search_results_failure(self):
@@ -66,7 +67,7 @@ class TestYandexSearchAPIWrapper(unittest.TestCase):
         responses.add(
             responses.POST,
             "https://yandex.ru/search/xml",
-            body='''<?xml version="1.0" encoding="UTF-8"?>
+            body="""<?xml version="1.0" encoding="UTF-8"?>
                     <yandexsearch version="1.0">
                         <request>
                             <query>Query Example </query>
@@ -80,9 +81,9 @@ class TestYandexSearchAPIWrapper(unittest.TestCase):
                         <response>
                             <error>Unauthorized</error>
                         </response>
-                    </yandexsearch>''',
+                    </yandexsearch>""",
             status=401,
-            content_type='text/xml'
+            content_type="text/xml",
         )
 
         results = self.wrapper._yandex_search_results("test query")
@@ -94,7 +95,7 @@ class TestYandexSearchAPIWrapper(unittest.TestCase):
         responses.add(
             responses.POST,
             "https://yandex.ru/search/xml",
-            body='''<?xml version="1.0" encoding="utf-8"?>
+            body="""<?xml version="1.0" encoding="utf-8"?>
                     <yandexsearch version="1.0">
                         <request>
                             <query></query>
@@ -109,13 +110,14 @@ class TestYandexSearchAPIWrapper(unittest.TestCase):
                             <error code="2">Empty request</error>
                             <reqid>1714630572494676-9557161538559543159-balancer-l7leveler-kubr-yp-sas-144-BAL</reqid>
                         </response>
-                    </yandexsearch>''',
+                    </yandexsearch>""",
             status=400,
-            content_type='text/xml'
+            content_type="text/xml",
         )
 
         results = self.wrapper._yandex_search_results("")
         self.assertEqual(len(results), 0)
-        
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     unittest.main()

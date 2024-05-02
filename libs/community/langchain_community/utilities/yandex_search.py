@@ -1,9 +1,10 @@
-import requests
 import warnings
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
-from langchain_core.utils import get_from_dict_or_env
+
+import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.utils import get_from_dict_or_env
 
 
 class YandexSearchAPIWrapper(BaseModel):
@@ -40,13 +41,13 @@ class YandexSearchAPIWrapper(BaseModel):
             return "https://yandex.ru/search/xml"
 
     def _yandex_search_results(
-            self,
-            search_term: str, 
-            page: int = 1, 
-            num_results: int = 10, 
-            filter: str = None, 
-            lr: int = None, 
-            l10n: str = None
+        self,
+        search_term: str,
+        page: int = 1,
+        num_results: int = 10,
+        filter: str = None,
+        lr: int = None,
+        l10n: str = None,
     ) -> List[dict]:
         """
         Sends a POST request to the Yandex Search API and returns the search results.
@@ -61,7 +62,7 @@ class YandexSearchAPIWrapper(BaseModel):
 
         Returns:
             List[dict]: A list of dictionaries, each containing data about a single search result.
-        
+
         Each dictionary in the returned list contains:
             - 'url': URL of the document.
             - 'title': Title of the document.
@@ -71,56 +72,66 @@ class YandexSearchAPIWrapper(BaseModel):
         domain_url = self._get_yandex_domain(l10n if l10n is not None else self.l10n)
         headers = {}
         params = {
-            'folderid': self.yandex_folder_id,
-            'apikey': self.yandex_api_key,
-            'filter': filter if filter is not None else self.filter,
-            'lr': lr if lr is not None else self.lr,
-            'l10n': l10n if l10n is not None else self.l10n,
+            "folderid": self.yandex_folder_id,
+            "apikey": self.yandex_api_key,
+            "filter": filter if filter is not None else self.filter,
+            "lr": lr if lr is not None else self.lr,
+            "l10n": l10n if l10n is not None else self.l10n,
         }
-        body = f'''<?xml version="1.0" encoding="UTF-8"?>
+        body = f"""<?xml version="1.0" encoding="UTF-8"?>
                     <request>
                     <query>{search_term}</query>
                     <page>{page}</page>
                     <groupings>
                         <groupby attr="d" mode="deep" groups-on-page="{num_results}" docs-in-group="1" />
                     </groupings>
-                    </request>'''.encode('utf-8')
+                    </request>""".encode("utf-8")
 
         response = requests.post(domain_url, params=params, headers=headers, data=body)
 
         if response.status_code == 200:
             root = ET.fromstring(response.content)
-            ya_respoonse = root.find('response')
+            ya_respoonse = root.find("response")
 
             if ya_respoonse is None:
                 warnings.warn("Invalid XML response format.", Warning, stacklevel=3)
                 return []
-            
-            if ya_respoonse.findall('./error'):
-                warnings.warn(f"API Error: {ya_respoonse.findall('./error')[0].attrib}\nPlease check: https://yandex.cloud/en/docs/search-api/reference/error-codes", Warning, stacklevel=3)
+
+            if ya_respoonse.findall("./error"):
+                warnings.warn(
+                    f"API Error: {ya_respoonse.findall('./error')[0].attrib}\nPlease check: https://yandex.cloud/en/docs/search-api/reference/error-codes",
+                    Warning,
+                    stacklevel=3,
+                )
                 return []
- 
+
             items = []
-            for group in root.findall('.//group'):
-                for doc in group.iter('doc'):
-                    passages = doc.findall('.//passage')
-                    passage_text = ''
+            for group in root.findall(".//group"):
+                for doc in group.iter("doc"):
+                    passages = doc.findall(".//passage")
+                    passage_text = ""
                     if len(passages):
                         for passage in passages:
-                            text_parts = [f'{part.strip()} ' for part in passage.itertext()]                            
-                            passage_text = ''.join(text_parts).strip()
+                            text_parts = [
+                                f"{part.strip()} " for part in passage.itertext()
+                            ]
+                            passage_text = "".join(text_parts).strip()
 
                     item = {
-                        'url': doc.find('url').text,
-                        'title': "".join(doc.find('title').itertext()),  
-                        'domain': doc.find('domain').text,
-                        'snippet': passage_text,
+                        "url": doc.find("url").text,
+                        "title": "".join(doc.find("title").itertext()),
+                        "domain": doc.find("domain").text,
+                        "snippet": passage_text,
                     }
                     items.append(item)
-            
+
             return items
         else:
-            warnings.warn(f"HTTP Error: {response.status_code}\nPlease check: https://yandex.cloud/en/docs/search-api/", Warning, stacklevel=5)
+            warnings.warn(
+                f"HTTP Error: {response.status_code}\nPlease check: https://yandex.cloud/en/docs/search-api/",
+                Warning,
+                stacklevel=5,
+            )
             return []
 
     @root_validator()
@@ -137,7 +148,9 @@ class YandexSearchAPIWrapper(BaseModel):
 
         return values
 
-    def run(self, query: str, filter: str = None, lr: int = None, l10n: str = None) -> str:
+    def run(
+        self, query: str, filter: str = None, lr: int = None, l10n: str = None
+    ) -> str:
         """Run query through Yandex Search and parse result.
 
         Args:
@@ -151,18 +164,13 @@ class YandexSearchAPIWrapper(BaseModel):
         """
         snippets = []
         results = self._yandex_search_results(
-            search_term=query, 
-            num_results=self.k, 
-            filter=filter, 
-            lr=lr, 
-            l10n=l10n
+            search_term=query, num_results=self.k, filter=filter, lr=lr, l10n=l10n
         )
         if len(results) == 0:
             return "No good Yandex Search Result was found"
-        
+
         snippets = [result["snippet"] for result in results if "snippet" in result]
         return " ".join(snippets)
-
 
     def results(
         self,
