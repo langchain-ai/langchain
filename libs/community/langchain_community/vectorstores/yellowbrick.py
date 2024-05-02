@@ -19,7 +19,6 @@ from typing import (
     Optional,
     Tuple,
     Type,
-    Union,
 )
 
 from langchain_core.embeddings import Embeddings
@@ -66,7 +65,7 @@ class Yellowbrick(VectorStore):
     def __init__(
         self,
         embedding: Embeddings,
-        connection_info: Union["PgConnection", str],
+        connection_string: str,
         table: str,
         *,
         schema: Optional[str] = None,
@@ -77,12 +76,11 @@ class Yellowbrick(VectorStore):
         """Initialize with yellowbrick client.
         Args:
             embedding: Embedding operator
-            connection_info: Format 'postgres://username:password@host:port/database'
+            connection_string: Format 'postgres://username:password@host:port/database'
             or pg connection
             table: Table used to store / retrieve embeddings from
         """
         from psycopg2 import extras
-        from psycopg2.extensions import connection as PgConnection
 
         extras.register_uuid()
 
@@ -105,16 +103,8 @@ class Yellowbrick(VectorStore):
         self.LSH_HYPERPLANE_TABLE: str = "_lsh_hyperplane"
         self.CONTENT_TABLE: str = "_content"
 
-        if isinstance(connection_info, str):
-            self.connection_info = connection_info
-            self.connection = self.DatabaseConnection(self.connection_info, self.logger)
-        elif isinstance(connection_info, PgConnection):
-            self.connection = self.DatabaseConnection(connection_info, self.logger)
-        else:
-            raise ValueError(
-                """connection_info must be either a connection string 
-                or a psycopg2 connection object"""
-            )
+        self.connection_string = connection_string
+        self.connection = Yellowbrick.DatabaseConnection(connection_string, self.logger)
         atexit.register(self.connection.close_connection)
 
         self._schema = schema
@@ -142,40 +132,32 @@ class Yellowbrick(VectorStore):
 
     class DatabaseConnection:
         _instance = None
-        connection: Optional["PgConnection"] = None
-        connection_string: Optional[str] = None
-        logger: logging.Logger
+        _connection_string: str
+        _connection: Optional["PgConnection"] = None
+        _logger: logging.Logger
 
         def __new__(
-            cls, connection_info: Union[str, "PgConnection"], logger: logging.Logger
+            cls, connection_string: str, logger: logging.Logger
         ) -> "Yellowbrick.DatabaseConnection":
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
-                if isinstance(connection_info, str):
-                    cls._instance.connection_string = connection_info
-                elif isinstance(connection_info, PgConnection):
-                    cls._instance.connection = connection_info
-                cls.logger = logger
+                cls._instance._connection_string = connection_string
+                cls._instance._logger = logger
             return cls._instance
 
         def close_connection(self) -> None:
-            if self.connection and not self.connection.closed:
-                self.connection.close()
-                self.connection = None
+            if self._connection and not self._connection.closed:
+                self._connection.close()
+                self._connection = None
 
         def get_connection(self) -> "PgConnection":
             import psycopg2
 
-            if self.connection_string is None:
-                raise ValueError(
-                    "No connection string provided for database connection."
-                )
+            if not self._connection or self._connection.closed:
+                self._connection = psycopg2.connect(self._connection_string)
+                self._connection.autocommit = False
 
-            if not self.connection or self.connection.closed:
-                self.connection = psycopg2.connect(self.connection_string)
-                self.connection.autocommit = False
-
-            return self.connection
+            return self._connection
 
         @contextmanager
         def get_managed_connection(self) -> Generator["PgConnection", None, None]:
@@ -186,7 +168,7 @@ class Yellowbrick(VectorStore):
                 yield conn
             except DatabaseError as e:
                 conn.rollback()
-                self.logger.error(
+                self._logger.error(
                     "Database error occurred, rolling back transaction.", exc_info=True
                 )
                 raise RuntimeError("Database transaction failed.") from e
@@ -418,7 +400,7 @@ class Yellowbrick(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        connection_info: Union["PgConnection", str] = None,
+        connection_string: str = "",
         table: str = "langchain",
         schema: Optional[str] = None,
         drop: Optional[bool] = False,
@@ -435,7 +417,7 @@ class Yellowbrick(VectorStore):
         """
         vss = cls(
             embedding=embedding,
-            connection_info=connection_info,
+            connection_string=connection_string,
             table=table,
             schema=schema,
             drop=drop,
