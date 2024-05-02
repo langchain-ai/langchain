@@ -3,7 +3,9 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+      - dev
   pull_request:
 
 # If another push to the same PR or branch happens while this workflow is still running,
