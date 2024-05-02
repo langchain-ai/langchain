@@ -16,6 +16,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -68,6 +69,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         super().__init__(**kwargs)
         self._schema_format = _schema_format  # For internal use only API will change.
         self.run_map: Dict[str, Run] = {}
+        """Map of run ID to run. Cleared on run end."""
+        self.order_map: Dict[UUID, Tuple[UUID, str]] = {}
+        """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
 
     @staticmethod
     def _add_child_run(
@@ -100,26 +104,23 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Start a trace for a run."""
         current_dotted_order = run.start_time.strftime("%Y%m%dT%H%M%S%fZ") + str(run.id)
         if run.parent_run_id:
-            parent_run = self.run_map.get(str(run.parent_run_id))
-            if parent_run:
-                self._add_child_run(parent_run, run)
-                run.trace_id = parent_run.trace_id
-                if parent_run.dotted_order:
-                    run.dotted_order = (
-                        parent_run.dotted_order + "." + current_dotted_order
-                    )
-                else:
-                    # Something wrong with tracer parent run has no dotted_order
-                    logger.debug(
-                        f"Parent run with UUID {run.parent_run_id} has no dotted_order."
-                    )
+            if parent := self.order_map.get(run.parent_run_id):
+                run.trace_id, run.dotted_order = parent
+                run.dotted_order += "." + current_dotted_order
+                if parent_run := self.run_map.get(str(run.parent_run_id)):
+                    self._add_child_run(parent_run, run)
             else:
-                # Something wrong with tracer, parent run not found
-                # Calculate the trace_id and dotted_order server side
-                logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
+                logger.warning(
+                    f"Parent run {run.parent_run_id} not found for run {run.id}."
+                    " Treating as a root run."
+                )
+                run.parent_run_id = None
+                run.trace_id = run.id
+                run.dotted_order = current_dotted_order
         else:
             run.trace_id = run.id
             run.dotted_order = current_dotted_order
+        self.order_map[run.id] = (run.trace_id, run.dotted_order)
         self.run_map[str(run.id)] = run
         self._on_run_create(run)
 
