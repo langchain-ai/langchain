@@ -5,7 +5,6 @@ import json
 import uuid
 from typing import Any, Iterable, List, Optional, Type
 
-import pandas as pd
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
@@ -145,6 +144,14 @@ class DuckDB(VectorStore):
         Returns:
             List of ids of the added texts.
         """
+
+        try:
+            import pandas as pd
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import pandas, please install it with "
+                "`pip install -U pandas`"
+            ) from e
 
         # Extract ids from kwargs or generate new ones if not provided
         ids = kwargs.pop("ids", [str(uuid.uuid4()) for _ in texts])
