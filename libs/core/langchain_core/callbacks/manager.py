@@ -2010,6 +2010,10 @@ def _configure(
         if run_tree is not None:
             for handler in callback_manager.handlers:
                 if isinstance(handler, LangChainTracer):
+                    handler.order_map[run_tree.id] = (
+                        run_tree.trace_id,
+                        run_tree.dotted_order,
+                    )
                     handler.run_map[str(run_tree.id)] = cast(Run, run_tree)
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
