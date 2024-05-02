@@ -1,6 +1,7 @@
 from typing import List
 
 import pytest
+
 from langchain_community.retrievers.web_research import QuestionListOutputParser
 
 
