@@ -1,10 +1,6 @@
 from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
-from langchain_community.document_transformers.embeddings_redundant_filter import (
-    _get_embeddings_from_stateful_docs,
-    get_stateful_documents,
-)
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -53,6 +49,16 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Filter documents based on similarity of their embeddings to the query."""
+        try:
+            from langchain_community.document_transformers.embeddings_redundant_filter import (
+                _get_embeddings_from_stateful_docs,
+                get_stateful_documents,
+            )
+        except ImportError:
+            raise ImportError(
+                "To use please install langchain-community "
+                "with `pip install langchain-community`."
+            )
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = _get_embeddings_from_stateful_docs(
             self.embeddings, stateful_documents
