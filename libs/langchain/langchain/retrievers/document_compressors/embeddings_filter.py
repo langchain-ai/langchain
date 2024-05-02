@@ -60,7 +60,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     ) -> Sequence[Document]:
         """Filter documents based on similarity of their embeddings to the query."""
         try:
-            from langchain_community.document_transformers.embeddings_redundant_filter import (
+            from langchain_community.document_transformers.embeddings_redundant_filter import (  # noqa: E501
                 _get_embeddings_from_stateful_docs,
                 get_stateful_documents,
             )

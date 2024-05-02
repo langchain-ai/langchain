@@ -1,14 +1,9 @@
 """Test caching for LLMs and ChatModels."""
+import sqlite3
 from typing import Dict, Generator, List, Union
 
 import pytest
-
-pytest.importorskip("langchain_community")
-
-import sqlite3
-
 from _pytest.fixtures import FixtureRequest
-from langchain_community.cache import SQLAlchemyCache
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import FakeListChatModel, FakeListLLM
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -20,6 +15,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from langchain.globals import get_llm_cache, set_llm_cache
+
+pytest.importorskip("langchain_community")
+
+from langchain_community.cache import SQLAlchemyCache  # noqa: E402
 
 
 def get_sqlite_cache() -> SQLAlchemyCache:

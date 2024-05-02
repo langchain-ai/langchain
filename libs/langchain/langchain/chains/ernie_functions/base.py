@@ -17,12 +17,16 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "convert_python_function_to_ernie_function": "langchain_community.chains.ernie_functions.base",
+    "convert_python_function_to_ernie_function": (
+        "langchain_community.chains.ernie_functions.base"
+    ),
     "convert_to_ernie_function": "langchain_community.chains.ernie_functions.base",
     "create_ernie_fn_chain": "langchain_community.chains.ernie_functions.base",
     "create_ernie_fn_runnable": "langchain_community.chains.ernie_functions.base",
     "create_structured_output_chain": "langchain_community.chains.ernie_functions.base",
-    "create_structured_output_runnable": "langchain_community.chains.ernie_functions.base",
+    "create_structured_output_runnable": (
+        "langchain_community.chains.ernie_functions.base"
+    ),
     "get_ernie_output_parser": "langchain_community.chains.ernie_functions.base",
 }
 
