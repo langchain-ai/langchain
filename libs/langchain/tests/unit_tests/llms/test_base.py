@@ -1,4 +1,5 @@
 """Test base LLM functionality."""
+from langchain_community.cache import SQLAlchemyCache
 from sqlalchemy import Column, Integer, Sequence, String, create_engine
 
 try:
@@ -9,7 +10,6 @@ except ImportError:
 from langchain_core.caches import InMemoryCache
 from langchain_core.outputs import Generation, LLMResult
 
-from langchain.cache import SQLAlchemyCache
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain.llms.base import __all__
 from tests.unit_tests.llms.fake_llm import FakeLLM

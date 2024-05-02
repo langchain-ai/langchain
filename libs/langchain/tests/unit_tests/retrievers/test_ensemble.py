@@ -1,9 +1,8 @@
 import pytest
+from langchain_community.embeddings import FakeEmbeddings
+from langchain_community.retrievers import BM25Retriever, KNNRetriever, TFIDFRetriever
 from langchain_core.documents import Document
 
-from langchain.embeddings import FakeEmbeddings
-from langchain.retrievers import KNNRetriever, TFIDFRetriever
-from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.ensemble import EnsembleRetriever
 
 

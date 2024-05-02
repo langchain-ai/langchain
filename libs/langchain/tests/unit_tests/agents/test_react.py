@@ -2,6 +2,7 @@
 
 from typing import Union
 
+from langchain_community.docstore.base import Docstore
 from langchain_core.agents import AgentAction
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeListLLM
@@ -9,7 +10,6 @@ from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tools import Tool
 
 from langchain.agents.react.base import ReActChain, ReActDocstoreAgent
-from langchain.docstore.base import Docstore
 
 _PAGE_CONTENT = """This is a page about LangChain.
 
