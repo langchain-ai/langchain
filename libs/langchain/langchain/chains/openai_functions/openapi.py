@@ -16,7 +16,6 @@ from requests import Response
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain_community.tools import APIOperation
 
 if TYPE_CHECKING:
     from langchain_community.utilities.openapi import OpenAPISpec
@@ -100,6 +99,14 @@ def openapi_spec_to_openai_fn(
         Tuple of the OpenAI functions JSON schema and a default function for executing
             a request based on the OpenAI function schema.
     """
+    try:
+        from langchain_community.tools import APIOperation
+    except ImportError:
+        raise ImportError(
+            "Could not import langchain_community.tools. "
+            "Please install it with `pip install langchain-community`."
+        )
+
     if not spec.paths:
         return [], lambda: None
     functions = []
