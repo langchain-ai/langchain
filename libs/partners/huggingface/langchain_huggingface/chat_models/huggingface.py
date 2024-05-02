@@ -103,8 +103,8 @@ def _convert_TGI_message_to_LC_message(
         content = ""
     additional_kwargs: Dict = {}
     if tool_calls := _message.tool_calls:
-        if "parameters" in tool_calls[0]["function"]:
-            functions_string = str(tool_calls[0]["function"].pop("parameters"))
+        if "arguments" in tool_calls[0]["function"]:
+            functions_string = str(tool_calls[0]["function"].pop("arguments"))
             corrected_functions = functions_string.replace("'", '"')
             tool_calls[0]["function"]["arguments"] = corrected_functions
         additional_kwargs["tool_calls"] = tool_calls
