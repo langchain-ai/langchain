@@ -578,7 +578,7 @@ def test_convert_to_messages() -> None:
         FunctionMessage(name="greet", content="Hi!"),
         AIMessage(
             content="",
-            tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="123")],
+            tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="tool_id")],
         ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
     ]
