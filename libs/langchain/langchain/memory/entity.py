@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional
 
-from langchain_community.utilities.redis import get_client
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
@@ -180,6 +179,14 @@ class RedisEntityStore(BaseEntityStore):
             )
 
         super().__init__(*args, **kwargs)
+
+        try:
+            from langchain_community.utilities.redis import get_client
+        except ImportError:
+            raise ImportError(
+                "Could not import langchain_community.utilities.redis.get_client. "
+                "Please install it with `pip install langchain-community`."
+            )
 
         try:
             self.redis_client = get_client(redis_url=url, decode_responses=True)
