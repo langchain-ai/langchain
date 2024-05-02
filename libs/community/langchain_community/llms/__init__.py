@@ -1034,7 +1034,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "rwkv": _import_rwkv,
         "sagemaker_endpoint": _import_sagemaker_endpoint,
         "sambaverse": _import_sambaverse,
-        "samba_studio": _import_sambastudio,
+        "sambastudio": _import_sambastudio,
         "self_hosted": _import_self_hosted,
         "self_hosted_hugging_face": _import_self_hosted_hugging_face,
         "stochasticai": _import_stochasticai,
