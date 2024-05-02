@@ -1,5 +1,4 @@
 """Integration test for embedding-based redundant doc filtering."""
-import pytest
 
 from langchain_community.document_transformers.embeddings_redundant_filter import (
     EmbeddingsClusteringFilter,
