@@ -16,6 +16,15 @@ from langchain.chains.llm import LLMChain
 
 
 def remove_prefix(text: str, prefix: str) -> str:
+    """Remove a prefix from a text.
+
+    Args:
+        text: Text to remove the prefix from.
+        prefix: Prefix to remove from the text.
+
+    Returns:
+        Text with the prefix removed.
+    """
     if text.startswith(prefix):
         return text[len(prefix) :]
     return text
