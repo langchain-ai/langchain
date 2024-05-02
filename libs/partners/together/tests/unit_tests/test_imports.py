@@ -1,9 +1,8 @@
-from langchain_together import __all__
+from langchain_upstage import __all__
 
 EXPECTED_ALL = [
-    "__version__",
-    "Together",
-    "TogetherEmbeddings",
+    "ChatUpstage",
+    "UpstageEmbeddings",
 ]
 
 
