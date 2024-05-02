@@ -13,12 +13,7 @@ from typing import (
     cast,
 )
 
-from langchain_community.output_parsers.ernie_functions import (
-    JsonOutputFunctionsParser,
-    PydanticAttrOutputFunctionsParser,
-    PydanticOutputFunctionsParser,
-)
-from langchain_community.utils.ernie_functions import convert_pydantic_to_ernie_function
+from langchain.chains import LLMChain
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
@@ -29,7 +24,12 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 
-from langchain.chains import LLMChain
+from langchain_community.output_parsers.ernie_functions import (
+    JsonOutputFunctionsParser,
+    PydanticAttrOutputFunctionsParser,
+    PydanticOutputFunctionsParser,
+)
+from langchain_community.utils.ernie_functions import convert_pydantic_to_ernie_function
 
 PYTHON_TO_JSON_TYPES = {
     "str": "string",
