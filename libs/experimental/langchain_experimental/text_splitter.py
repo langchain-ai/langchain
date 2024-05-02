@@ -1,3 +1,4 @@
+"""Experimental **text splitter** based on semantic similarity."""
 import copy
 import re
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
@@ -95,7 +96,7 @@ class SemanticChunker(BaseDocumentTransformer):
     """Split the text based on semantic similarity.
 
     Taken from Greg Kamradt's wonderful notebook:
-    https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/5_Levels_Of_Text_Splitting.ipynb
+    https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/tutorials/LevelsOfTextSplitting/5_Levels_Of_Text_Splitting.ipynb
 
     All credits to him.
 
@@ -106,15 +107,19 @@ class SemanticChunker(BaseDocumentTransformer):
     def __init__(
         self,
         embeddings: Embeddings,
+        buffer_size: int = 1,
         add_start_index: bool = False,
         breakpoint_threshold_type: BreakpointThresholdType = "percentile",
         breakpoint_threshold_amount: Optional[float] = None,
         number_of_chunks: Optional[int] = None,
+        sentence_split_regex: str = r"(?<=[.?!])\s+",
     ):
         self._add_start_index = add_start_index
         self.embeddings = embeddings
+        self.buffer_size = buffer_size
         self.breakpoint_threshold_type = breakpoint_threshold_type
         self.number_of_chunks = number_of_chunks
+        self.sentence_split_regex = sentence_split_regex
         if breakpoint_threshold_amount is None:
             self.breakpoint_threshold_amount = BREAKPOINT_DEFAULTS[
                 breakpoint_threshold_type
@@ -173,7 +178,7 @@ class SemanticChunker(BaseDocumentTransformer):
         _sentences = [
             {"sentence": x, "index": i} for i, x in enumerate(single_sentences_list)
         ]
-        sentences = combine_sentences(_sentences)
+        sentences = combine_sentences(_sentences, self.buffer_size)
         embeddings = self.embeddings.embed_documents(
             [x["combined_sentence"] for x in sentences]
         )
@@ -186,8 +191,8 @@ class SemanticChunker(BaseDocumentTransformer):
         self,
         text: str,
     ) -> List[str]:
-        # Splitting the essay on '.', '?', and '!'
-        single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
+        # Splitting the essay (by default on '.', '?', and '!')
+        single_sentences_list = re.split(self.sentence_split_regex, text)
 
         # having len(single_sentences_list) == 1 would cause the following
         # np.percentile to fail.

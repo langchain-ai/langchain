@@ -17,7 +17,7 @@ def dummy_transform(inputs: Dict[str, str]) -> Dict[str, str]:
 
 def test_transform_chain() -> None:
     """Test basic transform chain."""
-    transform_chain = TransformChain(
+    transform_chain = TransformChain(  # type: ignore[call-arg]
         input_variables=["first_name", "last_name"],
         output_variables=["greeting"],
         transform=dummy_transform,
@@ -30,7 +30,7 @@ def test_transform_chain() -> None:
 
 def test_transform_chain_bad_inputs() -> None:
     """Test basic transform chain."""
-    transform_chain = TransformChain(
+    transform_chain = TransformChain(  # type: ignore[call-arg]
         input_variables=["first_name", "last_name"],
         output_variables=["greeting"],
         transform=dummy_transform,

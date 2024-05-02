@@ -1,16 +1,21 @@
 """Test Tracer classes."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, List
+from unittest.mock import MagicMock
 from uuid import uuid4
 
+import langsmith
 import pytest
 from freezegun import freeze_time
+from langsmith import Client, traceable
 
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import LLMResult
+from langchain_core.runnables import chain as as_runnable
 from langchain_core.tracers.base import BaseTracer, TracerException
 from langchain_core.tracers.schemas import Run
 
@@ -53,7 +58,7 @@ def _compare_run_with_error(run: Any, expected_run: Any) -> None:
 def test_tracer_llm_run() -> None:
     """Test tracer on an LLM run."""
     uuid = uuid4()
-    compare_run = Run(
+    compare_run = Run(  # type: ignore[call-arg]
         id=uuid,
         parent_run_id=None,
         start_time=datetime.now(timezone.utc),
@@ -63,11 +68,9 @@ def test_tracer_llm_run() -> None:
             {"name": "end", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=1,
         serialized=SERIALIZED,
         inputs={"prompts": []},
-        outputs=LLMResult(generations=[[]]),
+        outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
         error=None,
         run_type="llm",
         trace_id=uuid,
@@ -89,7 +92,7 @@ def test_tracer_chat_model_run() -> None:
         serialized=SERIALIZED_CHAT, messages=[[HumanMessage(content="")]]
     )
     compare_run = Run(
-        id=str(run_managers[0].run_id),
+        id=str(run_managers[0].run_id),  # type: ignore[arg-type]
         name="chat_model",
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
@@ -98,11 +101,9 @@ def test_tracer_chat_model_run() -> None:
             {"name": "end", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=1,
         serialized=SERIALIZED_CHAT,
         inputs=dict(prompts=["Human: "]),
-        outputs=LLMResult(generations=[[]]),
+        outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
         error=None,
         run_type="llm",
         trace_id=run_managers[0].run_id,
@@ -136,11 +137,9 @@ def test_tracer_multiple_llm_runs() -> None:
             {"name": "end", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=1,
         serialized=SERIALIZED,
         inputs=dict(prompts=[]),
-        outputs=LLMResult(generations=[[]]),
+        outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
         error=None,
         run_type="llm",
         trace_id=uuid,
@@ -160,8 +159,8 @@ def test_tracer_multiple_llm_runs() -> None:
 def test_tracer_chain_run() -> None:
     """Test tracer on a Chain run."""
     uuid = uuid4()
-    compare_run = Run(
-        id=str(uuid),
+    compare_run = Run(  # type: ignore[call-arg]
+        id=str(uuid),  # type: ignore[arg-type]
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -169,8 +168,6 @@ def test_tracer_chain_run() -> None:
             {"name": "end", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=1,
         serialized={"name": "chain"},
         inputs={},
         outputs={},
@@ -190,8 +187,8 @@ def test_tracer_chain_run() -> None:
 def test_tracer_tool_run() -> None:
     """Test tracer on a Tool run."""
     uuid = uuid4()
-    compare_run = Run(
-        id=str(uuid),
+    compare_run = Run(  # type: ignore[call-arg]
+        id=str(uuid),  # type: ignore[arg-type]
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -199,8 +196,6 @@ def test_tracer_tool_run() -> None:
             {"name": "end", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=1,
         serialized={"name": "tool"},
         inputs={"input": "test"},
         outputs={"output": "test"},
@@ -251,8 +246,8 @@ def test_tracer_nested_run() -> None:
         tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=llm_uuid2)
         tracer.on_chain_end(outputs={}, run_id=chain_uuid)
 
-    compare_run = Run(
-        id=str(chain_uuid),
+    compare_run = Run(  # type: ignore[call-arg]
+        id=str(chain_uuid),  # type: ignore[arg-type]
         error=None,
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
@@ -261,8 +256,6 @@ def test_tracer_nested_run() -> None:
             {"name": "end", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=4,
         serialized={"name": "chain"},
         inputs={},
         outputs={},
@@ -270,7 +263,7 @@ def test_tracer_nested_run() -> None:
         trace_id=chain_uuid,
         dotted_order=f"20230101T000000000000Z{chain_uuid}",
         child_runs=[
-            Run(
+            Run(  # type: ignore[call-arg]
                 id=tool_uuid,
                 parent_run_id=chain_uuid,
                 start_time=datetime.now(timezone.utc),
@@ -280,8 +273,6 @@ def test_tracer_nested_run() -> None:
                     {"name": "end", "time": datetime.now(timezone.utc)},
                 ],
                 extra={},
-                execution_order=2,
-                child_execution_order=3,
                 serialized={"name": "tool"},
                 inputs=dict(input="test"),
                 outputs=dict(output="test"),
@@ -290,9 +281,9 @@ def test_tracer_nested_run() -> None:
                 trace_id=chain_uuid,
                 dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{tool_uuid}",
                 child_runs=[
-                    Run(
-                        id=str(llm_uuid1),
-                        parent_run_id=str(tool_uuid),
+                    Run(  # type: ignore[call-arg]
+                        id=str(llm_uuid1),  # type: ignore[arg-type]
+                        parent_run_id=str(tool_uuid),  # type: ignore[arg-type]
                         error=None,
                         start_time=datetime.now(timezone.utc),
                         end_time=datetime.now(timezone.utc),
@@ -301,20 +292,18 @@ def test_tracer_nested_run() -> None:
                             {"name": "end", "time": datetime.now(timezone.utc)},
                         ],
                         extra={},
-                        execution_order=3,
-                        child_execution_order=3,
                         serialized=SERIALIZED,
                         inputs=dict(prompts=[]),
-                        outputs=LLMResult(generations=[[]]),
+                        outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
                         run_type="llm",
                         trace_id=chain_uuid,
                         dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{tool_uuid}.20230101T000000000000Z{llm_uuid1}",
                     )
                 ],
             ),
-            Run(
-                id=str(llm_uuid2),
-                parent_run_id=str(chain_uuid),
+            Run(  # type: ignore[call-arg]
+                id=str(llm_uuid2),  # type: ignore[arg-type]
+                parent_run_id=str(chain_uuid),  # type: ignore[arg-type]
                 error=None,
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
@@ -323,11 +312,9 @@ def test_tracer_nested_run() -> None:
                     {"name": "end", "time": datetime.now(timezone.utc)},
                 ],
                 extra={},
-                execution_order=4,
-                child_execution_order=4,
                 serialized=SERIALIZED,
                 inputs=dict(prompts=[]),
-                outputs=LLMResult(generations=[[]]),
+                outputs=LLMResult(generations=[[]]),  # type: ignore[arg-type]
                 run_type="llm",
                 trace_id=chain_uuid,
                 dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{llm_uuid2}",
@@ -344,8 +331,8 @@ def test_tracer_llm_run_on_error() -> None:
     exception = Exception("test")
     uuid = uuid4()
 
-    compare_run = Run(
-        id=str(uuid),
+    compare_run = Run(  # type: ignore[call-arg]
+        id=str(uuid),  # type: ignore[arg-type]
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -353,8 +340,6 @@ def test_tracer_llm_run_on_error() -> None:
             {"name": "error", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=1,
         serialized=SERIALIZED,
         inputs=dict(prompts=[]),
         outputs=None,
@@ -377,8 +362,8 @@ def test_tracer_llm_run_on_error_callback() -> None:
     exception = Exception("test")
     uuid = uuid4()
 
-    compare_run = Run(
-        id=str(uuid),
+    compare_run = Run(  # type: ignore[call-arg]
+        id=str(uuid),  # type: ignore[arg-type]
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -386,8 +371,6 @@ def test_tracer_llm_run_on_error_callback() -> None:
             {"name": "error", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=1,
         serialized=SERIALIZED,
         inputs=dict(prompts=[]),
         outputs=None,
@@ -415,8 +398,8 @@ def test_tracer_chain_run_on_error() -> None:
     exception = Exception("test")
     uuid = uuid4()
 
-    compare_run = Run(
-        id=str(uuid),
+    compare_run = Run(  # type: ignore[call-arg]
+        id=str(uuid),  # type: ignore[arg-type]
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -424,8 +407,6 @@ def test_tracer_chain_run_on_error() -> None:
             {"name": "error", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=1,
         serialized={"name": "chain"},
         inputs={},
         outputs=None,
@@ -447,8 +428,8 @@ def test_tracer_tool_run_on_error() -> None:
     exception = Exception("test")
     uuid = uuid4()
 
-    compare_run = Run(
-        id=str(uuid),
+    compare_run = Run(  # type: ignore[call-arg]
+        id=str(uuid),  # type: ignore[arg-type]
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -456,8 +437,6 @@ def test_tracer_tool_run_on_error() -> None:
             {"name": "error", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=1,
         serialized={"name": "tool"},
         inputs=dict(input="test"),
         outputs=None,
@@ -520,8 +499,8 @@ def test_tracer_nested_runs_on_error() -> None:
         tracer.on_tool_error(exception, run_id=tool_uuid)
         tracer.on_chain_error(exception, run_id=chain_uuid)
 
-    compare_run = Run(
-        id=str(chain_uuid),
+    compare_run = Run(  # type: ignore[call-arg]
+        id=str(chain_uuid),  # type: ignore[arg-type]
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         events=[
@@ -529,8 +508,6 @@ def test_tracer_nested_runs_on_error() -> None:
             {"name": "error", "time": datetime.now(timezone.utc)},
         ],
         extra={},
-        execution_order=1,
-        child_execution_order=5,
         serialized={"name": "chain"},
         error=repr(exception),
         inputs={},
@@ -539,9 +516,9 @@ def test_tracer_nested_runs_on_error() -> None:
         trace_id=chain_uuid,
         dotted_order=f"20230101T000000000000Z{chain_uuid}",
         child_runs=[
-            Run(
-                id=str(llm_uuid1),
-                parent_run_id=str(chain_uuid),
+            Run(  # type: ignore[call-arg]
+                id=str(llm_uuid1),  # type: ignore[arg-type]
+                parent_run_id=str(chain_uuid),  # type: ignore[arg-type]
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
                 events=[
@@ -549,19 +526,17 @@ def test_tracer_nested_runs_on_error() -> None:
                     {"name": "end", "time": datetime.now(timezone.utc)},
                 ],
                 extra={},
-                execution_order=2,
-                child_execution_order=2,
                 serialized=SERIALIZED,
                 error=None,
                 inputs=dict(prompts=[]),
-                outputs=LLMResult(generations=[[]], llm_output=None),
+                outputs=LLMResult(generations=[[]], llm_output=None),  # type: ignore[arg-type]
                 run_type="llm",
                 trace_id=chain_uuid,
                 dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{llm_uuid1}",
             ),
-            Run(
-                id=str(llm_uuid2),
-                parent_run_id=str(chain_uuid),
+            Run(  # type: ignore[call-arg]
+                id=str(llm_uuid2),  # type: ignore[arg-type]
+                parent_run_id=str(chain_uuid),  # type: ignore[arg-type]
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
                 events=[
@@ -569,19 +544,17 @@ def test_tracer_nested_runs_on_error() -> None:
                     {"name": "end", "time": datetime.now(timezone.utc)},
                 ],
                 extra={},
-                execution_order=3,
-                child_execution_order=3,
                 serialized=SERIALIZED,
                 error=None,
                 inputs=dict(prompts=[]),
-                outputs=LLMResult(generations=[[]], llm_output=None),
+                outputs=LLMResult(generations=[[]], llm_output=None),  # type: ignore[arg-type]
                 run_type="llm",
                 trace_id=chain_uuid,
                 dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{llm_uuid2}",
             ),
-            Run(
-                id=str(tool_uuid),
-                parent_run_id=str(chain_uuid),
+            Run(  # type: ignore[call-arg]
+                id=str(tool_uuid),  # type: ignore[arg-type]
+                parent_run_id=str(chain_uuid),  # type: ignore[arg-type]
                 start_time=datetime.now(timezone.utc),
                 end_time=datetime.now(timezone.utc),
                 events=[
@@ -589,8 +562,6 @@ def test_tracer_nested_runs_on_error() -> None:
                     {"name": "error", "time": datetime.now(timezone.utc)},
                 ],
                 extra={},
-                execution_order=4,
-                child_execution_order=5,
                 serialized={"name": "tool"},
                 error=repr(exception),
                 inputs=dict(input="test"),
@@ -599,9 +570,9 @@ def test_tracer_nested_runs_on_error() -> None:
                 trace_id=chain_uuid,
                 dotted_order=f"20230101T000000000000Z{chain_uuid}.20230101T000000000000Z{tool_uuid}",
                 child_runs=[
-                    Run(
-                        id=str(llm_uuid3),
-                        parent_run_id=str(tool_uuid),
+                    Run(  # type: ignore[call-arg]
+                        id=str(llm_uuid3),  # type: ignore[arg-type]
+                        parent_run_id=str(tool_uuid),  # type: ignore[arg-type]
                         start_time=datetime.now(timezone.utc),
                         end_time=datetime.now(timezone.utc),
                         events=[
@@ -609,8 +580,6 @@ def test_tracer_nested_runs_on_error() -> None:
                             {"name": "error", "time": datetime.now(timezone.utc)},
                         ],
                         extra={},
-                        execution_order=5,
-                        child_execution_order=5,
                         serialized=SERIALIZED,
                         error=repr(exception),
                         inputs=dict(prompts=[]),
@@ -627,3 +596,33 @@ def test_tracer_nested_runs_on_error() -> None:
     assert len(tracer.runs) == 3
     for run in tracer.runs:
         _compare_run_with_error(run, compare_run)
+
+
+def _get_mock_client() -> Client:
+    mock_session = MagicMock()
+    client = Client(session=mock_session, api_key="test")
+    return client
+
+
+def test_traceable_to_tracing() -> None:
+    has_children = False
+
+    def _collect_run(run: Any) -> None:
+        nonlocal has_children
+        has_children = bool(run.child_runs)
+
+    @as_runnable
+    def foo(x: int) -> int:
+        return x + 1
+
+    @traceable
+    def some_parent(a: int, b: int) -> int:
+        return foo.invoke(a) + foo.invoke(b)
+
+    mock_client_ = _get_mock_client()
+    with langsmith.run_helpers.tracing_context(enabled=True):
+        result = some_parent(
+            1, 2, langsmith_extra={"client": mock_client_, "on_end": _collect_run}
+        )
+    assert result == 5
+    assert has_children, "Child run not collected"

@@ -8,7 +8,7 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 @pytest.fixture
-def deeplake_datastore() -> DeepLake:
+def deeplake_datastore() -> DeepLake:  # type: ignore[misc]
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = DeepLake.from_texts(

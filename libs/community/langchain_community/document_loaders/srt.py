@@ -1,4 +1,5 @@
-from typing import List
+from pathlib import Path
+from typing import List, Union
 
 from langchain_core.documents import Document
 
@@ -8,7 +9,7 @@ from langchain_community.document_loaders.base import BaseLoader
 class SRTLoader(BaseLoader):
     """Load `.srt` (subtitle) files."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: Union[str, Path]):
         """Initialize with a file path."""
         try:
             import pysrt  # noqa:F401
@@ -16,7 +17,7 @@ class SRTLoader(BaseLoader):
             raise ImportError(
                 "package `pysrt` not found, please install it with `pip install pysrt`"
             )
-        self.file_path = file_path
+        self.file_path = str(file_path)
 
     def load(self) -> List[Document]:
         """Load using pysrt file."""

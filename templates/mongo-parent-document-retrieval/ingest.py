@@ -1,10 +1,10 @@
 import os
 import uuid
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import MongoDBAtlasVectorSearch
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pymongo import MongoClient
 
 PARENT_DOC_ID_KEY = "parent_doc_id"

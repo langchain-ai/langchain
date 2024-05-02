@@ -68,10 +68,6 @@ class CouchbaseLoader(BaseLoader):
         self.page_content_fields = page_content_fields
         self.metadata_fields = metadata_fields
 
-    def load(self) -> List[Document]:
-        """Load Couchbase data into Document objects."""
-        return list(self.lazy_load())
-
     def lazy_load(self) -> Iterator[Document]:
         """Load Couchbase data into Document objects lazily."""
         from datetime import timedelta

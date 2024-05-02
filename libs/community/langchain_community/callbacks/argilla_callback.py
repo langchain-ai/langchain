@@ -54,7 +54,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
 
     REPO_URL: str = "https://github.com/argilla-io/argilla"
     ISSUES_URL: str = f"{REPO_URL}/issues"
-    BLOG_URL: str = "https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html"  # noqa: E501
+    BLOG_URL: str = "https://docs.argilla.io/en/latest/tutorials_and_integrations/integrations/use_argilla_callback_in_langchain.html"
 
     DEFAULT_API_URL: str = "http://localhost:6900"
 
@@ -92,7 +92,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
 
         # Import Argilla (not via `import_argilla` to keep hints in IDEs)
         try:
-            import argilla as rg  # noqa: F401
+            import argilla as rg
 
             self.ARGILLA_VERSION = rg.__version__
         except ImportError:
@@ -328,7 +328,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,

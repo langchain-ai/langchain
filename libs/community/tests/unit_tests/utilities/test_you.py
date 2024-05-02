@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
+from unittest.mock import AsyncMock, patch
 
+import pytest
 import responses
 from langchain_core.documents import Document
 
@@ -187,4 +189,58 @@ def test_results_news() -> None:
     assert raw_results == expected_result
 
 
-# @todo test async methods
+@pytest.mark.asyncio
+async def test_raw_results_async() -> None:
+    instance = YouSearchAPIWrapper(ydc_api_key="test_api_key")
+
+    # Mock response object to simulate aiohttp response
+    mock_response = AsyncMock()
+    mock_response.__aenter__.return_value = (
+        mock_response  # Make the context manager return itself
+    )
+    mock_response.__aexit__.return_value = None  # No value needed for exit
+    mock_response.status = 200
+    mock_response.json = AsyncMock(return_value=MOCK_RESPONSE_RAW)
+
+    # Patch the aiohttp.ClientSession object
+    with patch("aiohttp.ClientSession.get", return_value=mock_response):
+        results = await instance.raw_results_async("test query")
+        assert results == MOCK_RESPONSE_RAW
+
+
+@pytest.mark.asyncio
+async def test_results_async() -> None:
+    instance = YouSearchAPIWrapper(ydc_api_key="test_api_key")
+
+    # Mock response object to simulate aiohttp response
+    mock_response = AsyncMock()
+    mock_response.__aenter__.return_value = (
+        mock_response  # Make the context manager return itself
+    )
+    mock_response.__aexit__.return_value = None  # No value needed for exit
+    mock_response.status = 200
+    mock_response.json = AsyncMock(return_value=MOCK_RESPONSE_RAW)
+
+    # Patch the aiohttp.ClientSession object
+    with patch("aiohttp.ClientSession.get", return_value=mock_response):
+        results = await instance.results_async("test query")
+        assert results == MOCK_PARSED_OUTPUT
+
+
+@pytest.mark.asyncio
+async def test_results_news_async() -> None:
+    instance = YouSearchAPIWrapper(endpoint_type="news", ydc_api_key="test_api_key")
+
+    # Mock response object to simulate aiohttp response
+    mock_response = AsyncMock()
+    mock_response.__aenter__.return_value = (
+        mock_response  # Make the context manager return itself
+    )
+    mock_response.__aexit__.return_value = None  # No value needed for exit
+    mock_response.status = 200
+    mock_response.json = AsyncMock(return_value=NEWS_RESPONSE_RAW)
+
+    # Patch the aiohttp.ClientSession object
+    with patch("aiohttp.ClientSession.get", return_value=mock_response):
+        results = await instance.results_async("test query")
+        assert results == NEWS_RESPONSE_PARSED

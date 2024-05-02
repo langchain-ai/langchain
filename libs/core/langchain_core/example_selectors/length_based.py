@@ -34,6 +34,10 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         string_example = self.example_prompt.format(**example)
         self.example_text_lengths.append(self.get_text_length(string_example))
 
+    async def aadd_example(self, example: Dict[str, str]) -> None:
+        """Add new example to list."""
+        self.add_example(example)
+
     @validator("example_text_lengths", always=True)
     def calculate_example_text_lengths(cls, v: List[int], values: Dict) -> List[int]:
         """Calculate text lengths if they don't exist."""
@@ -61,3 +65,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
                 remaining_length = new_length
             i += 1
         return examples
+
+    async def aselect_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+        """Select which examples to use based on the input lengths."""
+        return self.select_examples(input_variables)

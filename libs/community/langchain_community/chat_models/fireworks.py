@@ -10,6 +10,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -78,6 +79,11 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
         return ChatMessage(content=content, role=role)
 
 
+@deprecated(
+    since="0.0.26",
+    removal="0.2",
+    alternative_import="langchain_fireworks.ChatFireworks",
+)
 class ChatFireworks(BaseChatModel):
     """Fireworks Chat models."""
 

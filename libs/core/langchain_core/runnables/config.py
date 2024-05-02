@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
+import warnings
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar, copy_context
@@ -95,6 +97,12 @@ class RunnableConfig(TypedDict, total=False):
     configurable.
     """
 
+    run_id: Optional[uuid.UUID]
+    """
+    Unique identifier for the tracer run for this call. If not provided, a new UUID
+        will be generated.
+    """
+
 
 var_child_runnable_config = ContextVar(
     "child_runnable_config", default=RunnableConfig()
@@ -116,6 +124,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         metadata={},
         callbacks=None,
         recursion_limit=25,
+        run_id=None,
     )
     if var_config := var_child_runnable_config.get():
         empty.update(
@@ -158,11 +167,21 @@ def get_config_list(
             f"but got {len(config)} configs for {length} inputs"
         )
 
-    return (
-        list(map(ensure_config, config))
-        if isinstance(config, list)
-        else [ensure_config(config) for _ in range(length)]
-    )
+    if isinstance(config, list):
+        return list(map(ensure_config, config))
+    if length > 1 and isinstance(config, dict) and config.get("run_id") is not None:
+        warnings.warn(
+            "Provided run_id be used only for the first element of the batch.",
+            category=RuntimeWarning,
+        )
+        subsequent = cast(
+            RunnableConfig, {k: v for k, v in config.items() if k != "run_id"}
+        )
+        return [
+            ensure_config(subsequent) if i else ensure_config(config)
+            for i in range(length)
+        ]
+    return [ensure_config(config) for i in range(length)]
 
 
 def patch_config(
@@ -199,6 +218,8 @@ def patch_config(
         config["callbacks"] = callbacks
         if "run_name" in config:
             del config["run_name"]
+        if "run_id" in config:
+            del config["run_id"]
     if recursion_limit is not None:
         config["recursion_limit"] = recursion_limit
     if max_concurrency is not None:

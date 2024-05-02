@@ -54,7 +54,7 @@ class AthenaLoader(BaseLoader):
         try:
             import boto3
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
@@ -115,7 +115,7 @@ class AthenaLoader(BaseLoader):
         try:
             import pandas as pd
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import pandas python package. "
                 "Please install it with `pip install pandas`."
             )
@@ -157,7 +157,3 @@ class AthenaLoader(BaseLoader):
             }
             doc = Document(page_content=page_content, metadata=metadata)
             yield doc
-
-    def load(self) -> List[Document]:
-        """Load data into document objects."""
-        return list(self.lazy_load())

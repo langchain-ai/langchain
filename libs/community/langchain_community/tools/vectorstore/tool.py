@@ -56,7 +56,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         )
         return chain.invoke(
             {chain.input_key: query},
-            config={"callbacks": [run_manager.get_child() if run_manager else None]},
+            config={"callbacks": run_manager.get_child() if run_manager else None},
         )[chain.output_key]
 
     async def _arun(
@@ -73,9 +73,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         return (
             await chain.ainvoke(
                 {chain.input_key: query},
-                config={
-                    "callbacks": [run_manager.get_child() if run_manager else None]
-                },
+                config={"callbacks": run_manager.get_child() if run_manager else None},
             )
         )[chain.output_key]
 
@@ -114,7 +112,7 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
             chain.invoke(
                 {chain.question_key: query},
                 return_only_outputs=True,
-                callbacks=run_manager.get_child() if run_manager else None,
+                config={"callbacks": run_manager.get_child() if run_manager else None},
             )
         )
 
@@ -135,6 +133,6 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
             await chain.ainvoke(
                 {chain.question_key: query},
                 return_only_outputs=True,
-                callbacks=run_manager.get_child() if run_manager else None,
+                config={"callbacks": run_manager.get_child() if run_manager else None},
             )
         )

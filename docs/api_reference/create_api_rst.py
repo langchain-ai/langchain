@@ -307,7 +307,14 @@ def _package_namespace(package_name: str) -> str:
 
 def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
-    if package_name in ("langchain", "experimental", "community", "core", "cli"):
+    if package_name in (
+        "langchain",
+        "experimental",
+        "community",
+        "core",
+        "cli",
+        "text-splitters",
+    ):
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
         return (

@@ -48,9 +48,9 @@ def test_check_package_version(
         ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}),
         ({"a": True}, {"a": True}, {"a": True}),
         ({"a": False}, {"a": False}, {"a": False}),
-        ({"a": "txt"}, {"a": "txt"}, {"a": "txt"}),
-        ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2]}),
-        ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txt"}}),
+        ({"a": "txt"}, {"a": "txt"}, {"a": "txttxt"}),
+        ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}),
+        ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}),
         # Merge strings.
         ({"a": "one"}, {"a": "two"}, {"a": "onetwo"}),
         # Merge dicts.
@@ -88,6 +88,17 @@ def test_check_package_version(
                     "has unsupported type .+tuple.+."
                 ),
             ),
+        ),
+        # 'index' keyword has special handling
+        (
+            {"a": [{"index": 0, "b": "{"}]},
+            {"a": [{"index": 0, "b": "f"}]},
+            {"a": [{"index": 0, "b": "{f"}]},
+        ),
+        (
+            {"a": [{"idx": 0, "b": "{"}]},
+            {"a": [{"idx": 0, "b": "f"}]},
+            {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
     ),
 )

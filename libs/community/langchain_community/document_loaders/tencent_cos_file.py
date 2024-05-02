@@ -1,6 +1,6 @@
 import os
 import tempfile
-from typing import Any, Iterator, List
+from typing import Any, Iterator
 
 from langchain_core.documents import Document
 
@@ -20,9 +20,6 @@ class TencentCOSFileLoader(BaseLoader):
         self.conf = conf
         self.bucket = bucket
         self.key = key
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
         """Load documents."""

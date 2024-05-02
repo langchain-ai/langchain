@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, List
+from typing import Any, Iterator, List
 
 import pytest
 from langchain_core.documents import Document
@@ -34,6 +34,9 @@ class CustomLoader:
         """Load documents."""
         with open(self.path, "r") as f:
             return [Document(page_content=f.read())]
+
+    def lazy_load(self) -> Iterator[Document]:
+        raise NotImplementedError("CustomLoader does not implement lazy_load()")
 
 
 def test_exclude_ignores_matching_files(tmp_path: Path) -> None:

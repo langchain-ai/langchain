@@ -63,7 +63,7 @@ class OpenLLM(LLM):
                 model_name='flan-t5',
                 model_id='google/flan-t5-large',
             )
-            llm("What is the difference between a duck and a goose?")
+            llm.invoke("What is the difference between a duck and a goose?")
 
     For all available supported models, you can run 'openllm models'.
 
@@ -308,10 +308,12 @@ class OpenLLM(LLM):
             self._identifying_params["model_name"], **copied
         )
         if self._client:
-            async_client = openllm.client.AsyncHTTPClient(self.server_url)
+            async_client = openllm.client.AsyncHTTPClient(self.server_url, self.timeout)
             res = (
-                await async_client.generate(prompt, **config.model_dump(flatten=True))
-            ).responses[0]
+                (await async_client.generate(prompt, **config.model_dump(flatten=True)))
+                .outputs[0]
+                .text
+            )
         else:
             assert self._runner is not None
             (

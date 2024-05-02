@@ -95,7 +95,7 @@ class ChatBaichuan(BaseChatModel):
     """[DEPRECATED, keeping it for for backward compatibility] Baichuan Secret Key"""
     streaming: bool = False
     """Whether to stream the results or not."""
-    request_timeout: int = 60
+    request_timeout: int = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
     model = "Baichuan2-Turbo-192K"
     """model name of Baichuan, default is `Baichuan2-Turbo-192K`,
