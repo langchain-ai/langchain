@@ -257,6 +257,18 @@
               "link": {
                 "type": "generated-index"
               }
+            },
+            {
+              "type": "category",
+              "label": "Agents",
+              "collapsed": true,
+              "items": [
+                "how_to/agent_executor",
+                "how_to/migrate_agent"
+              ],
+              "link": {
+                "type": "generated-index"
+              }
             }
           ],
           "link": { "type": "generated-index" }
