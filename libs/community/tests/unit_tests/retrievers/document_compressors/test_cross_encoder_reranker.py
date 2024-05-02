@@ -8,7 +8,7 @@ from langchain_community.cross_encoders import FakeCrossEncoder
 
 pytest.importorskip("langchain")
 
-from langchain.retrievers.document_compressors import CrossEncoderReranker
+from langchain.retrievers.document_compressors import CrossEncoderReranker  # noqa: E402
 
 
 def test_rerank() -> None:

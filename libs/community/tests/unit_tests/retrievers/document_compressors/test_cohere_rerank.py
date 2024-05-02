@@ -5,8 +5,8 @@ from pytest_mock import MockerFixture
 
 pytest.importorskip("langchain")
 
-from langchain.retrievers.document_compressors import CohereRerank
-from langchain.schema import Document
+from langchain.retrievers.document_compressors import CohereRerank  # noqa: E402
+from langchain.schema import Document  # noqa: E402
 
 os.environ["COHERE_API_KEY"] = "foo"
 
