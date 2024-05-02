@@ -449,51 +449,65 @@ class Yellowbrick(VectorStore):
         Args:
             ids: List of ids to delete, where each id is a uuid string.
         """
-        from psycopg2 import errors, sql
+        from psycopg2 import sql
 
         if not ids:
             return None
 
-        table_suffixes = [
-            self._table + self.LSH_INDEX_TABLE,
-            self._table + self.CONTENT_TABLE,
-            self._table,
-        ]
-        status = False
-
         uuids = tuple(sql.Literal(id) for id in ids)
         ids_formatted = sql.SQL(", ").join(uuids)
         schema_prefix = (self._schema,) if self._schema else ()
+        with self.connection.get_cursor() as cursor:
+            table_identifier = sql.Identifier(
+                *schema_prefix, self._table + self.CONTENT_TABLE
+            )
+            query = sql.SQL("DELETE FROM {table} WHERE doc_id IN ({ids})").format(
+                table=table_identifier, ids=ids_formatted
+            )
+            cursor.execute(query)
 
-        for suffix in table_suffixes:
-            with self.connection.get_cursor() as cursor:
-                try:
-                    cursor.execute("BEGIN;")
-                    table_identifier = sql.Identifier(*schema_prefix, suffix)
-                    query = sql.SQL(
-                        "DELETE FROM {table} WHERE doc_id IN ({ids})"
-                    ).format(table=table_identifier, ids=ids_formatted)
-                    cursor.execute(query)
-                    cursor.execute("COMMIT;")
-                    status = True
-                except errors.UndefinedTable as e:
-                    message_primary_exists = hasattr(e.diag, "message_primary")
-                    message_primary = (
-                        e.diag.message_primary
-                        if message_primary_exists
-                        else "Unknown table"
-                    )
-                    self.logger.warning(
-                        f"Attempted to delete from a non-existent table: "
-                        f"{message_primary}"
-                    )
-                    cursor.execute("ROLLBACK;")
-                except errors.InFailedSqlTransaction:
-                    self.logger.error("Transaction in failed state, rolling back.")
-                    cursor.execute("ROLLBACK;")
-                    break
+            table_identifier = sql.Identifier(*schema_prefix, self._table)
+            query = sql.SQL("DELETE FROM {table} WHERE doc_id IN ({ids})").format(
+                table=table_identifier, ids=ids_formatted
+            )
+            cursor.execute(query)
 
-        return status
+            if self._table_exists(
+                cursor, self._table + self.LSH_INDEX_TABLE, *schema_prefix
+            ):
+                table_identifier = sql.Identifier(
+                    *schema_prefix, self._table + self.LSH_INDEX_TABLE
+                )
+                query = sql.SQL("DELETE FROM {table} WHERE doc_id IN ({ids})").format(
+                    table=table_identifier, ids=ids_formatted
+                )
+                cursor.execute(query)
+
+        return True
+
+    def _table_exists(
+        self, cursor: "PgCursor", table_name: str, schema: str = "public"
+    ) -> bool:
+        """
+        Checks if a table exists in the given schema
+        """
+        from psycopg2 import sql
+
+        schema = sql.Literal(schema)
+        table_name = sql.Literal(table_name)
+        cursor.execute(
+            sql.SQL(
+                """
+                SELECT COUNT(*)
+                FROM sys.table t INNER JOIN sys.schema s ON t.schema_id = s.schema_id
+                WHERE s.name = {schema} AND t.name = {table_name}
+            """
+            ).format(
+                schema=schema,
+                table_name=table_name,
+            )
+        )
+        return cursor.fetchone()[0] > 0
 
     def _generate_vector_uuid(self, vector: List[float]) -> uuid.UUID:
         import hashlib

@@ -42,6 +42,7 @@ EXPECTED_ALL = [
     "PythonREPL",
     "Requests",
     "RequestsWrapper",
+    "RememberizerAPIWrapper",
     "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearchApiAPIWrapper",

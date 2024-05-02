@@ -6,7 +6,6 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
-from langchain_community.utilities.openapi import OpenAPISpec
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
@@ -20,6 +19,7 @@ from langchain.chains.sequential import SequentialChain
 from langchain.tools import APIOperation
 
 if TYPE_CHECKING:
+    from langchain_community.utilities.openapi import OpenAPISpec
     from openapi_pydantic import Parameter
 
 
@@ -255,6 +255,13 @@ def get_openapi_chain(
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
     """
+    try:
+        from langchain_community.utilities.openapi import OpenAPISpec
+    except ImportError as e:
+        raise ImportError(
+            "Could not import langchain_community.utilities.openapi. "
+            "Please install it with `pip install langchain-community`."
+        ) from e
     if isinstance(spec, str):
         for conversion in (
             OpenAPISpec.from_url,
