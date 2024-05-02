@@ -173,7 +173,13 @@ def _enhanced_schema_cypher(
                         f" distinct_count: size(`{prop_name}_values`)"
                     )
                 )
-            elif prop_type in ["INTEGER", "FLOAT", "DATE", "DATE_TIME"]:
+            elif prop_type in [
+                "INTEGER",
+                "FLOAT",
+                "DATE",
+                "DATE_TIME",
+                "LOCAL_DATE_TIME",
+            ]:
                 with_clauses.append(f"min(n.`{prop_name}`) AS `{prop_name}_min`")
                 with_clauses.append(f"max(n.`{prop_name}`) AS `{prop_name}_max`")
                 with_clauses.append(
@@ -214,7 +220,13 @@ def _enhanced_schema_cypher(
                     )
                 )
                 return_clauses.append(f"values: `{prop_name}_values`")
-            elif prop_type in ["INTEGER", "FLOAT", "DATE", "DATE_TIME"]:
+            elif prop_type in [
+                "INTEGER",
+                "FLOAT",
+                "DATE",
+                "DATE_TIME",
+                "LOCAL_DATE_TIME",
+            ]:
                 with_clauses.append(
                     f"collect(distinct toString(n.`{prop_name}`)) "
                     f"AS `{prop_name}_values`"
@@ -238,7 +250,7 @@ def _enhanced_schema_cypher(
     with_clause = "WITH " + ",\n     ".join(with_clauses)
     return_clause = (
         "RETURN {"
-        + ", ".join(f"{k}: {v}" for k, v in output_dict.items())
+        + ", ".join(f"`{k}`: {v}" for k, v in output_dict.items())
         + "} AS output"
     )
 
@@ -273,7 +285,13 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                             else ""
                         )
 
-                elif prop["type"] in ["INTEGER", "FLOAT", "DATE", "DATE_TIME"]:
+                elif prop["type"] in [
+                    "INTEGER",
+                    "FLOAT",
+                    "DATE",
+                    "DATE_TIME",
+                    "LOCAL_DATE_TIME",
+                ]:
                     if prop.get("min") is not None:
                         example = f'Min: {prop["min"]}, Max: {prop["max"]}'
                     else:
@@ -312,7 +330,13 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                             if prop["values"]
                             else ""
                         )
-                elif prop["type"] in ["INTEGER", "FLOAT", "DATE", "DATE_TIME"]:
+                elif prop["type"] in [
+                    "INTEGER",
+                    "FLOAT",
+                    "DATE",
+                    "DATE_TIME",
+                    "LOCAL_DATE_TIME",
+                ]:
                     if prop.get("min"):  # If we have min/max
                         example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
                     else:  # return a single value
@@ -543,7 +567,9 @@ class Neo4jGraph(GraphStore):
                 # Skip bloom labels
                 if node["name"] in EXCLUDED_LABELS:
                     continue
-                node_props = self.structured_schema["node_props"][node["name"]]
+                node_props = self.structured_schema["node_props"].get(node["name"])
+                if not node_props:  # The node has no properties
+                    continue
                 enhanced_cypher = _enhanced_schema_cypher(
                     node["name"], node_props, node["count"] < EXHAUSTIVE_SEARCH_LIMIT
                 )
@@ -557,7 +583,7 @@ class Neo4jGraph(GraphStore):
                 if rel["name"] in EXCLUDED_RELS:
                     continue
                 rel_props = self.structured_schema["rel_props"].get(rel["name"])
-                if not rel_props:
+                if not rel_props:  # The rel has no properties
                     continue
                 enhanced_cypher = _enhanced_schema_cypher(
                     rel["name"],
