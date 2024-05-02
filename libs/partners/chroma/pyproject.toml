@@ -49,7 +49,7 @@ optional = true
 ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1.10.0"
 langchain-core = { path = "../../core", develop = true }
 langchain-community = { path = "../../community", develop = true }
 types-requests = "^2.31.0.20240406"
