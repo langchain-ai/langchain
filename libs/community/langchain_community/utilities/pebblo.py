@@ -214,9 +214,9 @@ def get_loader_full_path(loader: BaseLoader) -> str:
     loader_name = loader.__class__.__name__
     try:
         if "bucket" in loader_dict:
-            if isinstance(loader, GCSFileLoader):
+            if loader_name == "GCSFileLoader":
                 location = f"gc://{loader.bucket}/{loader.blob}"
-            elif isinstance(loader, S3FileLoader):
+            elif loader_name == "S3FileLoader":
                 location = f"s3://{loader.bucket}/{loader.key}"
         elif "source" in loader_dict:
             location = loader_dict["source"]
@@ -232,11 +232,6 @@ def get_loader_full_path(loader: BaseLoader) -> str:
             web_paths = loader_dict["web_paths"]
             if web_paths and isinstance(web_paths, list) and len(web_paths) > 0:
                 location = web_paths[0]
-        # For in-memory types:
-        elif isinstance(loader, DataFrameLoader):
-            location = "in-memory"
-        elif isinstance(loader, NotionDBLoader):
-            location = f"notiondb://{loader.database_id}"
         elif loader_name == "GoogleDriveLoader":
             if loader_dict.get("folder_id"):
                 folder_id = loader_dict.get("folder_id")
@@ -257,6 +252,11 @@ def get_loader_full_path(loader: BaseLoader) -> str:
                         for doc_id in document_ids
                         ]
                 )
+        # For in-memory types:
+        elif loader_name == "DataFrameLoader":
+            location = "in-memory"
+        elif loader_name == "NotionDBLoader":
+            location = f"notiondb://{loader.database_id}"
     except Exception:
         pass
     return get_full_path(str(location))
