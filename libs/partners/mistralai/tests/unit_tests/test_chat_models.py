@@ -55,7 +55,7 @@ def test_mistralai_initialization() -> None:
         ),
         (
             AIMessage(content="Hello"),
-            dict(role="assistant", content="Hello", tool_calls=[]),
+            dict(role="assistant", content="Hello"),
         ),
         (
             ChatMessage(role="assistant", content="Hello"),
@@ -148,6 +148,7 @@ def test__convert_dict_to_message_tool_call() -> None:
         ],
     )
     assert result == expected_output
+    del message["content"]
     assert _convert_message_to_mistral_chat_message(expected_output) == message
 
     # Test malformed tool call
@@ -189,6 +190,7 @@ def test__convert_dict_to_message_tool_call() -> None:
         ],
     )
     assert result == expected_output
+    del message["content"]
     assert _convert_message_to_mistral_chat_message(expected_output) == message
 
 

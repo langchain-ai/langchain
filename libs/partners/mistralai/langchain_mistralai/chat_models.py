@@ -259,6 +259,7 @@ def _convert_message_to_mistral_chat_message(
     elif isinstance(message, HumanMessage):
         return dict(role="user", content=message.content)
     elif isinstance(message, AIMessage):
+        message_dict: Dict[str, Any] = {"role": "assistant"}
         tool_calls = []
         if message.tool_calls or message.invalid_tool_calls:
             for tool_call in message.tool_calls:
@@ -287,11 +288,11 @@ def _convert_message_to_mistral_chat_message(
             content: Any = ""
         else:
             content = message.content
-        return {
-            "role": "assistant",
-            "content": content,
-            "tool_calls": tool_calls,
-        }
+        if tool_calls:
+            message_dict["tool_calls"] = tool_calls
+        if content:
+            message_dict["content"] = content
+        return message_dict
     elif isinstance(message, SystemMessage):
         return dict(role="system", content=message.content)
     elif isinstance(message, ToolMessage):
