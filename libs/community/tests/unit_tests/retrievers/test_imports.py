@@ -32,6 +32,8 @@ EXPECTED_ALL = [
     "RememberizerRetriever",
     "SVMRetriever",
     "TavilySearchAPIRetriever",
+    "NeuralDBRetriever",
+    "RememberizerRetriever",
     "TFIDFRetriever",
     "BM25Retriever",
     "VespaRetriever",
