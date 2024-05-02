@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import pytest
 import pkgutil
 from types import ModuleType
 
@@ -54,6 +55,7 @@ def import_all_modules(package_name: str) -> dict:
     return classes
 
 
+@pytest.mark.community
 def test_import_all_modules() -> None:
     """Test import all modules works as expected"""
     all_modules = import_all_modules("langchain")
@@ -75,6 +77,7 @@ def test_import_all_modules() -> None:
     ]
 
 
+@pytest.mark.community
 def test_serializable_mapping() -> None:
     to_skip = {
         # This should have had a different namespace, as it was never

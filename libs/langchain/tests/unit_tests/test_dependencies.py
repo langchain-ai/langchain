@@ -94,6 +94,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     )
 
 
+@pytest.mark.community
 def test_imports() -> None:
     """Test that you can import all top level things okay."""
     from langchain_community.callbacks import OpenAICallbackHandler  # noqa: F401

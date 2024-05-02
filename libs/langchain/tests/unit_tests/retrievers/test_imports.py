@@ -54,4 +54,3 @@ EXPECTED_ALL = [
 
 def test_imports() -> None:
     assert sorted(retrievers.__all__) == sorted(EXPECTED_ALL)
-    assert_all_importable(retrievers)

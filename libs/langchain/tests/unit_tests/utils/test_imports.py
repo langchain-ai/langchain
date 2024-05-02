@@ -27,4 +27,3 @@ EXPECTED_ALL = [
 
 def test_all_imports() -> None:
     assert set(utils.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(utils)

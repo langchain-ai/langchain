@@ -4,7 +4,10 @@ from pathlib import Path
 # Attempt to recursively import all modules in langchain
 PKG_ROOT = Path(__file__).parent.parent.parent
 
+import pytest
 
+
+@pytest.mark.community
 def test_import_all() -> None:
     """Generate the public API for this package."""
     library_code = PKG_ROOT / "langchain"

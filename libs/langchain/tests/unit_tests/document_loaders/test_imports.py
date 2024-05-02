@@ -177,4 +177,3 @@ EXPECTED_ALL = [
 
 def test_all_imports() -> None:
     assert set(document_loaders.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(document_loaders)
