@@ -608,7 +608,9 @@ def test_faiss_local_save_load() -> None:
     temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
         docsearch.save_local(temp_folder)
-        new_docsearch = FAISS.load_local(temp_folder, FakeEmbeddings())
+        new_docsearch = FAISS.load_local(
+            temp_folder, FakeEmbeddings(), allow_dangerous_deserialization=True
+        )
     assert new_docsearch.index is not None
 
 
@@ -620,7 +622,9 @@ async def test_faiss_async_local_save_load() -> None:
     temp_timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with tempfile.TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
         docsearch.save_local(temp_folder)
-        new_docsearch = FAISS.load_local(temp_folder, FakeEmbeddings())
+        new_docsearch = FAISS.load_local(
+            temp_folder, FakeEmbeddings(), allow_dangerous_deserialization=True
+        )
     assert new_docsearch.index is not None
 
 

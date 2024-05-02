@@ -5,7 +5,7 @@ from langchain.indexes._api import _HashedDocument
 
 
 def test_hashed_document_hashing() -> None:
-    hashed_document = _HashedDocument(
+    hashed_document = _HashedDocument(  # type: ignore[call-arg]
         uid="123", page_content="Lorem ipsum dolor sit amet", metadata={"key": "value"}
     )
     assert isinstance(hashed_document.hash_, str)
@@ -21,7 +21,7 @@ def test_hashing_with_missing_content() -> None:
 
 def test_uid_auto_assigned_to_hash() -> None:
     """Test uid is auto-assigned to the hashed_document hash."""
-    hashed_document = _HashedDocument(
+    hashed_document = _HashedDocument(  # type: ignore[call-arg]
         page_content="Lorem ipsum dolor sit amet", metadata={"key": "value"}
     )
     assert hashed_document.uid == hashed_document.hash_
@@ -29,7 +29,7 @@ def test_uid_auto_assigned_to_hash() -> None:
 
 def test_to_document() -> None:
     """Test to_document method."""
-    hashed_document = _HashedDocument(
+    hashed_document = _HashedDocument(  # type: ignore[call-arg]
         page_content="Lorem ipsum dolor sit amet", metadata={"key": "value"}
     )
     doc = hashed_document.to_document()

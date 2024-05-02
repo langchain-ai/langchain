@@ -100,7 +100,7 @@ class PineconeVectorStore(VectorStore):
                 )
 
             # needs
-            client = PineconeClient(api_key=_pinecone_api_key)
+            client = PineconeClient(api_key=_pinecone_api_key, source_tag="langchain")
             self._index = client.Index(_index_name)
 
     @property
@@ -166,7 +166,8 @@ class PineconeVectorStore(VectorStore):
                     batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
                 )
             ]
-            [res.get() for res in async_res]
+            if async_req:
+                [res.get() for res in async_res]
 
         return ids
 
@@ -370,7 +371,9 @@ class PineconeVectorStore(VectorStore):
         Returns:
             Pinecone Index instance."""
         _pinecone_api_key = pinecone_api_key or os.environ.get("PINECONE_API_KEY") or ""
-        client = PineconeClient(api_key=_pinecone_api_key, pool_threads=pool_threads)
+        client = PineconeClient(
+            api_key=_pinecone_api_key, pool_threads=pool_threads, source_tag="langchain"
+        )
         indexes = client.list_indexes()
         index_names = [i.name for i in indexes.index_list["indexes"]]
 

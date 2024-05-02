@@ -3,6 +3,7 @@
 import importlib
 import inspect
 import os
+import sys
 import typing
 from enum import Enum
 from pathlib import Path
@@ -306,7 +307,14 @@ def _package_namespace(package_name: str) -> str:
 
 def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
-    if package_name in ("langchain", "experimental", "community", "core", "cli"):
+    if package_name in (
+        "langchain",
+        "experimental",
+        "community",
+        "core",
+        "cli",
+        "text-splitters",
+    ):
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
         return (
@@ -344,28 +352,29 @@ def _doc_first_line(package_name: str) -> str:
     return f".. {package_name.replace('-', '_')}_api_reference:\n\n"
 
 
-def main() -> None:
+def main(dirs: Optional[list] = None) -> None:
     """Generate the api_reference.rst file for each package."""
     print("Starting to build API reference files.")
-    for dir in os.listdir(ROOT_DIR / "libs"):
+    if not dirs:
+        dirs = [
+            dir_
+            for dir_ in os.listdir(ROOT_DIR / "libs")
+            if dir_ not in ("cli", "partners")
+        ]
+        dirs += os.listdir(ROOT_DIR / "libs" / "partners")
+    for dir_ in dirs:
         # Skip any hidden directories
         # Some of these could be present by mistake in the code base
         # e.g., .pytest_cache from running tests from the wrong location.
-        if dir.startswith("."):
-            print("Skipping dir:", dir)
-            continue
-
-        if dir in ("cli", "partners"):
+        if dir_.startswith("."):
+            print("Skipping dir:", dir_)
             continue
         else:
-            print("Building package:", dir)
-            _build_rst_file(package_name=dir)
-    partner_packages = os.listdir(ROOT_DIR / "libs" / "partners")
-    print("Building partner packages:", partner_packages)
-    for dir in partner_packages:
-        _build_rst_file(package_name=dir)
+            print("Building package:", dir_)
+            _build_rst_file(package_name=dir_)
     print("API reference files built.")
 
 
 if __name__ == "__main__":
-    main()
+    dirs = sys.argv[1:] or None
+    main(dirs=dirs)

@@ -21,6 +21,7 @@ def test_chroma() -> None:
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
+    assert len(docsearch) == 3
 
 
 async def test_chroma_async() -> None:
@@ -134,8 +135,6 @@ def test_chroma_with_persistence() -> None:
 
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
-
-    docsearch.persist()
 
     # Get a new VectorStore from the persisted directory
     docsearch = Chroma(

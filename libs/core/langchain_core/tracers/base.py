@@ -1,4 +1,5 @@
 """Base interfaces for tracing runs."""
+
 from __future__ import annotations
 
 import logging
@@ -102,9 +103,10 @@ class BaseTracer(BaseCallbackHandler, ABC):
             parent_run = self.run_map.get(str(run.parent_run_id))
             if parent_run:
                 self._add_child_run(parent_run, run)
-                parent_run.child_execution_order = max(
-                    parent_run.child_execution_order, run.child_execution_order
-                )
+                if hasattr(parent_run, "child_execution_order"):
+                    parent_run.child_execution_order = max(
+                        parent_run.child_execution_order, run.child_execution_order
+                    )
                 run.trace_id = parent_run.trace_id
                 if parent_run.dotted_order:
                     run.dotted_order = (
@@ -135,7 +137,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
             elif (
                 run.child_execution_order is not None
-                and parent_run.child_execution_order is not None
+                and getattr(parent_run, "child_execution_order", None) is not None
                 and run.child_execution_order > parent_run.child_execution_order
             ):
                 parent_run.child_execution_order = run.child_execution_order
@@ -151,10 +153,11 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if parent_run is None:
             logger.debug(f"Parent run with UUID {parent_run_id} not found.")
             return 1
-        if parent_run.child_execution_order is None:
-            raise TracerException(
-                f"Parent run with UUID {parent_run_id} has no child execution order."
+        if getattr(parent_run, "child_execution_order", None) is None:
+            logger.debug(
+                f"Parent run with UUID {parent_run_id} has no child_execution_order."
             )
+            return 1
 
         return parent_run.child_execution_order + 1
 
@@ -222,7 +225,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             # Changing this to "chat_model" may break triggering on_llm_start
             run_type="chat_model",
             tags=tags,
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
@@ -259,7 +262,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             run_type="llm",
             tags=tags or [],
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
         self._start_trace(llm_run)
         self._on_llm_start(llm_run)
@@ -390,7 +393,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_execution_order=execution_order,
             child_runs=[],
             run_type=run_type or "chain",
-            name=name,
+            name=name,  # type: ignore[arg-type]
             tags=tags or [],
         )
         self._start_trace(chain_run)
@@ -498,13 +501,13 @@ class BaseTracer(BaseCallbackHandler, ABC):
             child_runs=[],
             run_type="tool",
             tags=tags or [],
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
         self._start_trace(tool_run)
         self._on_tool_start(tool_run)
         return tool_run
 
-    def on_tool_end(self, output: str, *, run_id: UUID, **kwargs: Any) -> Run:
+    def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for a tool run."""
         tool_run = self._get_run(run_id, run_type="tool")
         tool_run.outputs = {"output": output}

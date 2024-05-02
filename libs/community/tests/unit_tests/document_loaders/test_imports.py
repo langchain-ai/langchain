@@ -1,4 +1,4 @@
-from langchain_community.document_loaders import __all__
+from langchain_community.document_loaders import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "AcreomLoader",
@@ -20,6 +20,7 @@ EXPECTED_ALL = [
     "ApifyDatasetLoader",
     "ArcGISLoader",
     "ArxivLoader",
+    "AssemblyAIAudioLoaderById",
     "AssemblyAIAudioTranscriptLoader",
     "AstraDBLoader",
     "AsyncHtmlLoader",
@@ -37,6 +38,7 @@ EXPECTED_ALL = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
+    "BrowserbaseLoader",
     "BrowserlessLoader",
     "CassandraLoader",
     "CSVLoader",
@@ -64,10 +66,12 @@ EXPECTED_ALL = [
     "FaunaLoader",
     "FigmaFileLoader",
     "FileSystemBlobLoader",
+    "FireCrawlLoader",
     "GCSDirectoryLoader",
     "GCSFileLoader",
     "GeoDataFrameLoader",
     "GithubFileLoader",
+    "GlueCatalogLoader",
     "GitHubIssuesLoader",
     "GitLoader",
     "GitbookLoader",
@@ -78,12 +82,15 @@ EXPECTED_ALL = [
     "GutenbergLoader",
     "HNLoader",
     "HuggingFaceDatasetLoader",
+    "HuggingFaceModelLoader",
     "IFixitLoader",
     "IMSDbLoader",
     "ImageCaptionLoader",
     "IuguLoader",
     "JSONLoader",
     "JoplinLoader",
+    "KineticaLoader",
+    "LLMSherpaFileLoader",
     "LarkSuiteDocLoader",
     "LakeFSLoader",
     "MHTMLLoader",
@@ -105,6 +112,7 @@ EXPECTED_ALL = [
     "OneDriveLoader",
     "OnlinePDFLoader",
     "OpenCityDataLoader",
+    "OracleAutonomousDatabaseLoader",
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
@@ -128,12 +136,14 @@ EXPECTED_ALL = [
     "RocksetLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
+    "SQLDatabaseLoader",
     "SRTLoader",
     "SeleniumURLLoader",
     "SharePointLoader",
     "SitemapLoader",
     "SlackDirectoryLoader",
     "SnowflakeLoader",
+    "SpiderLoader",
     "SpreedlyLoader",
     "StripeLoader",
     "SurrealDBLoader",
@@ -151,6 +161,7 @@ EXPECTED_ALL = [
     "TwitterTweetLoader",
     "UnstructuredAPIFileIOLoader",
     "UnstructuredAPIFileLoader",
+    "UnstructuredCHMLoader",
     "UnstructuredCSVLoader",
     "UnstructuredEPubLoader",
     "UnstructuredEmailLoader",
@@ -178,8 +189,10 @@ EXPECTED_ALL = [
     "XorbitsLoader",
     "YoutubeAudioLoader",
     "YoutubeLoader",
+    "YuqueLoader",
 ]
 
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__) == set(_module_lookup.keys())

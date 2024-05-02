@@ -50,7 +50,7 @@ class _KdtSuggestContext(BaseModel):
         lines.append("(")
 
         if not self.columns or len(self.columns) == 0:
-            ValueError(detail="columns list can't be null.")  # type: ignore
+            ValueError("columns list can't be null.")
 
         columns = []
         for column in self.columns:

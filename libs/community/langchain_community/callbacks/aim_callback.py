@@ -20,7 +20,7 @@ def import_aim() -> Any:
 
 
 class BaseMetadataCallbackHandler:
-    """This class handles the metadata and associated function states for callbacks.
+    """Callback handler for the metadata and associated function states for callbacks.
 
     Attributes:
         step (int): The current step.
@@ -314,8 +314,9 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         self._run.track(aim.Text(input_str), name="on_tool_start", context=resp)
 
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running."""
+        output = str(output)
         aim = import_aim()
         self.step += 1
         self.tool_ends += 1

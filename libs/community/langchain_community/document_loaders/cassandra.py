@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Callable,
     Iterator,
-    List,
     Optional,
     Sequence,
     Union,
@@ -14,6 +14,7 @@ from typing import (
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.utilities.cassandra import wrapped_response_future
 
 _NOT_SET = object()
 
@@ -106,11 +107,20 @@ class CassandraLoader(BaseLoader):
         if query_execution_profile is not _NOT_SET:
             self.query_kwargs["execution_profile"] = query_execution_profile
 
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
-
     def lazy_load(self) -> Iterator[Document]:
         for row in self.session.execute(self.query, **self.query_kwargs):
+            metadata = self.metadata.copy()
+            metadata.update(self.metadata_mapper(row))
+            yield Document(
+                page_content=self.page_content_mapper(row), metadata=metadata
+            )
+
+    async def alazy_load(self) -> AsyncIterator[Document]:
+        for row in await wrapped_response_future(
+            self.session.execute_async,
+            self.query,
+            **self.query_kwargs,
+        ):
             metadata = self.metadata.copy()
             metadata.update(self.metadata_mapper(row))
             yield Document(

@@ -1,9 +1,8 @@
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +36,11 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
     """Clarifai application id to use."""
     user_id: Optional[str] = None
     """Clarifai user id to use."""
-    pat: Optional[str] = None
+    pat: Optional[str] = Field(default=None, exclude=True)
     """Clarifai personal access token to use."""
+    token: Optional[str] = Field(default=None, exclude=True)
+    """Clarifai session token to use."""
+    model: Any = Field(default=None, exclude=True)  #: :meta private:
     api_base: str = "https://api.clarifai.com"
 
     class Config:
@@ -51,21 +53,32 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
         """Validate that we have all required info to access Clarifai
         platform and python package exists in environment."""
 
-        values["pat"] = get_from_dict_or_env(values, "pat", "CLARIFAI_PAT")
+        try:
+            from clarifai.client.model import Model
+        except ImportError:
+            raise ImportError(
+                "Could not import clarifai python package. "
+                "Please install it with `pip install clarifai`."
+            )
         user_id = values.get("user_id")
         app_id = values.get("app_id")
         model_id = values.get("model_id")
+        model_version_id = values.get("model_version_id")
         model_url = values.get("model_url")
+        api_base = values.get("api_base")
+        pat = values.get("pat")
+        token = values.get("token")
 
-        if model_url is not None and model_id is not None:
-            raise ValueError("Please provide either model_url or model_id, not both.")
-
-        if model_url is None and model_id is None:
-            raise ValueError("Please provide one of model_url or model_id.")
-
-        if model_url is None and model_id is not None:
-            if user_id is None or app_id is None:
-                raise ValueError("Please provide a user_id and app_id.")
+        values["model"] = Model(
+            url=model_url,
+            app_id=app_id,
+            user_id=user_id,
+            model_version=dict(id=model_version_id),
+            pat=pat,
+            token=token,
+            model_id=model_id,
+            base_url=api_base,
+        )
 
         return values
 
@@ -78,27 +91,9 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        try:
-            from clarifai.client.input import Inputs
-            from clarifai.client.model import Model
-        except ImportError:
-            raise ImportError(
-                "Could not import clarifai python package. "
-                "Please install it with `pip install clarifai`."
-            )
-        if self.pat is not None:
-            pat = self.pat
-        if self.model_url is not None:
-            _model_init = Model(url=self.model_url, pat=pat)
-        else:
-            _model_init = Model(
-                model_id=self.model_id,
-                user_id=self.user_id,
-                app_id=self.app_id,
-                pat=pat,
-            )
+        from clarifai.client.input import Inputs
 
-        input_obj = Inputs(pat=pat)
+        input_obj = Inputs.from_auth_helper(self.model.auth_helper)
         batch_size = 32
         embeddings = []
 
@@ -109,7 +104,7 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
                     input_obj.get_text_input(input_id=str(id), raw_text=inp)
                     for id, inp in enumerate(batch)
                 ]
-                predict_response = _model_init.predict(input_batch)
+                predict_response = self.model.predict(input_batch)
                 embeddings.extend(
                     [
                         list(output.data.embeddings[0].vector)
@@ -131,27 +126,9 @@ class ClarifaiEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        try:
-            from clarifai.client.model import Model
-        except ImportError:
-            raise ImportError(
-                "Could not import clarifai python package. "
-                "Please install it with `pip install clarifai`."
-            )
-        if self.pat is not None:
-            pat = self.pat
-        if self.model_url is not None:
-            _model_init = Model(url=self.model_url, pat=pat)
-        else:
-            _model_init = Model(
-                model_id=self.model_id,
-                user_id=self.user_id,
-                app_id=self.app_id,
-                pat=pat,
-            )
 
         try:
-            predict_response = _model_init.predict_by_bytes(
+            predict_response = self.model.predict_by_bytes(
                 bytes(text, "utf-8"), input_type="text"
             )
             embeddings = [

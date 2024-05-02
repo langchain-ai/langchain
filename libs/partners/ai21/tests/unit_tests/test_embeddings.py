@@ -1,4 +1,6 @@
 """Test embedding model integration."""
+
+from typing import List
 from unittest.mock import Mock
 
 import pytest
@@ -64,4 +66,37 @@ def test_embed_documents(mock_client_with_embeddings: Mock) -> None:
     mock_client_with_embeddings.embed.create.assert_called_once_with(
         texts=texts,
         type=EmbedType.SEGMENT,
+    )
+
+
+@pytest.mark.parametrize(
+    ids=[
+        "empty_texts",
+        "chunk_size_greater_than_texts_length",
+        "chunk_size_equal_to_texts_length",
+        "chunk_size_less_than_texts_length",
+        "chunk_size_one_with_multiple_texts",
+        "chunk_size_greater_than_texts_length",
+    ],
+    argnames=["texts", "chunk_size", "expected_internal_embeddings_calls"],
+    argvalues=[
+        ([], 3, 0),
+        (["text1", "text2", "text3"], 5, 1),
+        (["text1", "text2", "text3"], 3, 1),
+        (["text1", "text2", "text3", "text4", "text5"], 2, 3),
+        (["text1", "text2", "text3"], 1, 3),
+        (["text1", "text2", "text3"], 10, 1),
+    ],
+)
+def test_get_len_safe_embeddings(
+    mock_client_with_embeddings: Mock,
+    texts: List[str],
+    chunk_size: int,
+    expected_internal_embeddings_calls: int,
+) -> None:
+    llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)
+    llm.embed_documents(texts=texts, batch_size=chunk_size)
+    assert (
+        mock_client_with_embeddings.embed.create.call_count
+        == expected_internal_embeddings_calls
     )

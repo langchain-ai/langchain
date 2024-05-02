@@ -108,6 +108,41 @@ pages[4].page_content
 </CodeOutputBlock>
 
 
+## Using PyMuPDF
+
+This is the fastest of the PDF parsing options, and contains detailed metadata about the PDF and its pages, as well as returns one document per page.
+
+
+```python
+from langchain_community.document_loaders import PyMuPDFLoader
+```
+
+
+```python
+loader = PyMuPDFLoader("example_data/layout-parser-paper.pdf")
+```
+
+
+```python
+data = loader.load()
+```
+
+
+```python
+data[0]
+```
+
+<CodeOutputBlock lang="python">
+
+```
+    Document(page_content='LayoutParser: A Uniﬁed Toolkit for Deep\nLearning Based Document Image Analysis\nZejiang Shen1 (�), Ruochen Zhang2, Melissa Dell3, Benjamin Charles Germain\nLee4, Jacob Carlson3, and Weining Li5\n1 Allen Institute for AI\nshannons@allenai.org\n2 Brown University\nruochen zhang@brown.edu\n3 Harvard University\n{melissadell,jacob carlson}@fas.harvard.edu\n4 University of Washington\nbcgl@cs.washington.edu\n5 University of Waterloo\nw422li@uwaterloo.ca\nAbstract. Recent advances in document image analysis (DIA) have been\nprimarily driven by the application of neural networks. Ideally, research\noutcomes could be easily deployed in production and extended for further\ninvestigation. However, various factors like loosely organized codebases\nand sophisticated model conﬁgurations complicate the easy reuse of im-\nportant innovations by a wide audience. Though there have been on-going\neﬀorts to improve reusability and simplify deep learning (DL) model\ndevelopment in disciplines like natural language processing and computer\nvision, none of them are optimized for challenges in the domain of DIA.\nThis represents a major gap in the existing toolkit, as DIA is central to\nacademic research across a wide range of disciplines in the social sciences\nand humanities. This paper introduces LayoutParser, an open-source\nlibrary for streamlining the usage of DL in DIA research and applica-\ntions. The core LayoutParser library comes with a set of simple and\nintuitive interfaces for applying and customizing DL models for layout de-\ntection, character recognition, and many other document processing tasks.\nTo promote extensibility, LayoutParser also incorporates a community\nplatform for sharing both pre-trained models and full document digiti-\nzation pipelines. We demonstrate that LayoutParser is helpful for both\nlightweight and large-scale digitization pipelines in real-word use cases.\nThe library is publicly available at https://layout-parser.github.io.\nKeywords: Document Image Analysis · Deep Learning · Layout Analysis\n· Character Recognition · Open Source library · Toolkit.\n1\nIntroduction\nDeep Learning(DL)-based approaches are the state-of-the-art for a wide range of\ndocument image analysis (DIA) tasks including document image classiﬁcation [11,\narXiv:2103.15348v2  [cs.CV]  21 Jun 2021\n', lookup_str='', metadata={'file_path': 'example_data/layout-parser-paper.pdf', 'page_number': 1, 'total_pages': 16, 'format': 'PDF 1.5', 'title': '', 'author': '', 'subject': '', 'keywords': '', 'creator': 'LaTeX with hyperref', 'producer': 'pdfTeX-1.40.21', 'creationDate': 'D:20210622012710Z', 'modDate': 'D:20210622012710Z', 'trapped': '', 'encryption': None}, lookup_index=0)
+```
+
+</CodeOutputBlock>
+
+Additionally, you can pass along any of the options from the [PyMuPDF documentation](https://pymupdf.readthedocs.io/en/latest/app1.html#plain-text/) as keyword arguments in the `load` call, and it will be pass along to the `get_text()` call.
+
+
 ## Using MathPix
 
 Inspired by Daniel Gross's [https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21](https://gist.github.com/danielgross/3ab4104e14faccc12b49200843adab21)
@@ -129,6 +164,11 @@ data = loader.load()
 
 ## Using Unstructured
 
+The `unstructured[all-docs]` package currently supports loading of text files, powerpoints, html, pdfs, images, and more.
+
+```bash
+pip install unstructured[pdf]
+```
 
 ```python
 from langchain_community.document_loaders import UnstructuredPDFLoader
@@ -225,6 +265,11 @@ data = loader.load()
 
 ## Using PDFMiner
 
+PDFMiner is a tool that can help with extracting information and analyzing data from PDF documents. 
+
+```bash
+pip install pdfminer.six
+```
 
 ```python
 from langchain_community.document_loaders import PDFMinerLoader
@@ -298,7 +343,7 @@ snippets.append((cur_text,cur_fs))
 
 
 ```python
-from langchain.docstore.document import Document
+from langchain_community.docstore.document import Document
 cur_idx = -1
 semantic_snippets = []
 # Assumption: headings have higher font size than their respective content
@@ -339,39 +384,6 @@ semantic_snippets[4]
 
 </CodeOutputBlock>
 
-## Using PyMuPDF
-
-This is the fastest of the PDF parsing options, and contains detailed metadata about the PDF and its pages, as well as returns one document per page.
-
-
-```python
-from langchain_community.document_loaders import PyMuPDFLoader
-```
-
-
-```python
-loader = PyMuPDFLoader("example_data/layout-parser-paper.pdf")
-```
-
-
-```python
-data = loader.load()
-```
-
-
-```python
-data[0]
-```
-
-<CodeOutputBlock lang="python">
-
-```
-    Document(page_content='LayoutParser: A Uniﬁed Toolkit for Deep\nLearning Based Document Image Analysis\nZejiang Shen1 (�), Ruochen Zhang2, Melissa Dell3, Benjamin Charles Germain\nLee4, Jacob Carlson3, and Weining Li5\n1 Allen Institute for AI\nshannons@allenai.org\n2 Brown University\nruochen zhang@brown.edu\n3 Harvard University\n{melissadell,jacob carlson}@fas.harvard.edu\n4 University of Washington\nbcgl@cs.washington.edu\n5 University of Waterloo\nw422li@uwaterloo.ca\nAbstract. Recent advances in document image analysis (DIA) have been\nprimarily driven by the application of neural networks. Ideally, research\noutcomes could be easily deployed in production and extended for further\ninvestigation. However, various factors like loosely organized codebases\nand sophisticated model conﬁgurations complicate the easy reuse of im-\nportant innovations by a wide audience. Though there have been on-going\neﬀorts to improve reusability and simplify deep learning (DL) model\ndevelopment in disciplines like natural language processing and computer\nvision, none of them are optimized for challenges in the domain of DIA.\nThis represents a major gap in the existing toolkit, as DIA is central to\nacademic research across a wide range of disciplines in the social sciences\nand humanities. This paper introduces LayoutParser, an open-source\nlibrary for streamlining the usage of DL in DIA research and applica-\ntions. The core LayoutParser library comes with a set of simple and\nintuitive interfaces for applying and customizing DL models for layout de-\ntection, character recognition, and many other document processing tasks.\nTo promote extensibility, LayoutParser also incorporates a community\nplatform for sharing both pre-trained models and full document digiti-\nzation pipelines. We demonstrate that LayoutParser is helpful for both\nlightweight and large-scale digitization pipelines in real-word use cases.\nThe library is publicly available at https://layout-parser.github.io.\nKeywords: Document Image Analysis · Deep Learning · Layout Analysis\n· Character Recognition · Open Source library · Toolkit.\n1\nIntroduction\nDeep Learning(DL)-based approaches are the state-of-the-art for a wide range of\ndocument image analysis (DIA) tasks including document image classiﬁcation [11,\narXiv:2103.15348v2  [cs.CV]  21 Jun 2021\n', lookup_str='', metadata={'file_path': 'example_data/layout-parser-paper.pdf', 'page_number': 1, 'total_pages': 16, 'format': 'PDF 1.5', 'title': '', 'author': '', 'subject': '', 'keywords': '', 'creator': 'LaTeX with hyperref', 'producer': 'pdfTeX-1.40.21', 'creationDate': 'D:20210622012710Z', 'modDate': 'D:20210622012710Z', 'trapped': '', 'encryption': None}, lookup_index=0)
-```
-
-</CodeOutputBlock>
-
-Additionally, you can pass along any of the options from the [PyMuPDF documentation](https://pymupdf.readthedocs.io/en/latest/app1.html#plain-text/) as keyword arguments in the `load` call, and it will be pass along to the `get_text()` call.
 
 ## PyPDF Directory
 
@@ -436,4 +448,58 @@ Besides the AWS configuration, it is very similar to the other PDF loaders, whil
 from langchain_community.document_loaders import AmazonTextractPDFLoader
 loader = AmazonTextractPDFLoader("example_data/alejandro_rosalez_sample-small.jpeg")
 documents = loader.load()
+```
+
+## Using AzureAIDocumentIntelligenceLoader
+
+[Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known as `Azure Form Recognizer`) is machine-learning 
+based service that extracts texts (including handwriting), tables, document structures (e.g., titles, section headings, etc.) and key-value-pairs from
+digital or scanned PDFs, images, Office and HTML files. Document Intelligence supports `PDF`, `JPEG/JPG`, `PNG`, `BMP`, `TIFF`, `HEIF`, `DOCX`, `XLSX`, `PPTX` and `HTML`.
+
+This [current implementation](https://aka.ms/di-langchain) of a loader using `Document Intelligence` can incorporate content page-wise and turn it into LangChain documents. The default output format is markdown, which can be easily chained with `MarkdownHeaderTextSplitter` for semantic document chunking. You can also use `mode="single"` or `mode="page"` to return pure texts in a single page or document split by page.
+
+### Prerequisite
+
+An Azure AI Document Intelligence resource in one of the 3 preview regions: **East US**, **West US2**, **West Europe** - follow [this document](https://learn.microsoft.com/azure/ai-services/document-intelligence/create-document-intelligence-resource?view=doc-intel-4.0.0) to create one if you don't have. You will be passing `<endpoint>` and `<key>` as parameters to the loader.
+
+```python
+%pip install --upgrade --quiet  langchain langchain-community azure-ai-documentintelligence
+
+from langchain_community.document_loaders import AzureAIDocumentIntelligenceLoader
+
+file_path = "<filepath>"
+endpoint = "<endpoint>"
+key = "<key>"
+loader = AzureAIDocumentIntelligenceLoader(
+    api_endpoint=endpoint, api_key=key, file_path=file_path, api_model="prebuilt-layout"
+)
+
+documents = loader.load()
+```
+
+## Using UpstageLayoutAnalysisLoader
+
+The UpstageLayoutAnalysisLoader invokes the [Upstage Layout Analysis API](https://developers.upstage.ai/docs/apis/layout-analyzer) to detect document elements, including tables and figures, from various document formats. This loader employs pure OCR to extract textual information and detect elements within documents such as `JPEG`, `PNG`, `BMP`, `PDF`, `TIFF`, and `HEIC` files. In the case of digital born PDF documents, users have the option to forego OCR and utilize text information within the file by setting use_ocr=False, which is the default value. Both single and multi-page documents are supported, with a limit of 100 pages and a file size of 50 MB when use_ocr=True, while there are no restrictions when use_ocr=False (applicable to PDF files only).
+
+### Prerequisite
+
+To access the Upstage Layout Analysis API, you require an API access token. Kindly refer to the [quick start guide](https://developers.upstage.ai/docs/getting-started/quick-start) provided to obtain the access token and begin utilizing the Upstage Layout Analysis API.
+
+```bash
+pip install langchain_upstage
+```
+
+### Example
+
+```python
+import os
+
+os.environ["UPSTAGE_DOCUMENT_AI_API_KEY"] = "YOUR_API_KEY"
+
+from langchain_upstage import UpstageLayoutAnalysisLoader
+
+file_path = "/PATH/TO/FILE.pdf"
+
+loader = UpstageLayoutAnalysisLoader(file_path)
+data = loader.load()
 ```

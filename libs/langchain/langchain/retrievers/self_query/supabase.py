@@ -1,6 +1,6 @@
 from typing import Any, Dict, Tuple
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,
@@ -68,14 +68,14 @@ class SupabaseVectorTranslator(Visitor):
             return self.visit_operation(
                 Operation(
                     operator=Operator.AND,
-                    arguments=(
+                    arguments=[
                         Comparison(
                             comparator=comparison.comparator,
                             attribute=comparison.attribute,
                             value=value,
                         )
                         for value in comparison.value
-                    ),
+                    ],
                 )
             )
 

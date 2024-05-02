@@ -72,6 +72,18 @@ class AzureOpenAI(BaseOpenAI):
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "openai"]
 
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {
+            "openai_api_key": "AZURE_OPENAI_API_KEY",
+            "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
+        }
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
@@ -160,10 +172,17 @@ class AzureOpenAI(BaseOpenAI):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
-        values["client"] = openai.AzureOpenAI(**client_params).completions
-        values["async_client"] = openai.AsyncAzureOpenAI(**client_params).completions
+        if not values.get("client"):
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.AzureOpenAI(
+                **client_params, **sync_specific
+            ).completions
+        if not values.get("async_client"):
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncAzureOpenAI(
+                **client_params, **async_specific
+            ).completions
 
         return values
 

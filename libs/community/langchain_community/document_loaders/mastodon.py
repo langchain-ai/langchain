@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+)
 
 from langchain_core.documents import Document
 
@@ -54,9 +63,8 @@ class MastodonTootsLoader(BaseLoader):
         self.number_toots = number_toots
         self.exclude_replies = exclude_replies
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load toots into documents."""
-        results: List[Document] = []
         for account in self.mastodon_accounts:
             user = self.api.account_lookup(account)
             toots = self.api.account_statuses(
@@ -67,9 +75,7 @@ class MastodonTootsLoader(BaseLoader):
                 exclude_reblogs=True,
                 limit=self.number_toots,
             )
-            docs = self._format_toots(toots, user)
-            results.extend(docs)
-        return results
+            yield from self._format_toots(toots, user)
 
     def _format_toots(
         self, toots: List[Dict[str, Any]], user_info: dict
