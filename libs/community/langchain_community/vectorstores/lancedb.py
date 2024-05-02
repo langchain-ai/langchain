@@ -162,6 +162,7 @@ class LanceDB(VectorStore):
 
     def create_index(
         self,
+        metric : Optional[str] = 'L2',
         col_name: Optional[str] = None,
         vector_col: Optional[str] = None,
         num_partitions: Optional[int] = 256,
@@ -183,6 +184,7 @@ class LanceDB(VectorStore):
         """
         if vector_col:
             self._connection.create_index(
+                metric = metric,
                 vector_column_name=vector_col,
                 num_partitions=num_partitions,
                 num_sub_vectors=num_sub_vectors,
