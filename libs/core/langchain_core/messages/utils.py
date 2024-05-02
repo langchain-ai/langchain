@@ -138,6 +138,7 @@ def _create_message_from_message_type(
     content: str,
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
+    tool_calls: Optional[List[Dict[str, Any]]] = None,
     id: Optional[str] = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
@@ -159,6 +160,8 @@ def _create_message_from_message_type(
         kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
     if id is not None:
         kwargs["id"] = id
+    if tool_calls is not None:
+        kwargs["tool_calls"] = tool_calls
     if message_type in ("human", "user"):
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):

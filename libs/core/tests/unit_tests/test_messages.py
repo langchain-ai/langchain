@@ -554,6 +554,13 @@ def test_convert_to_messages() -> None:
                 "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'},
             },
             {"role": "function", "name": "greet", "content": "Hi!"},
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {"name": "greet", "args": {"name": "Jane"}, "id": "tool_id"}
+                ],
+            },
             {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
         ]
     ) == [
@@ -569,6 +576,10 @@ def test_convert_to_messages() -> None:
             },
         ),
         FunctionMessage(name="greet", content="Hi!"),
+        AIMessage(
+            content="",
+            tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="123")],
+        ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
     ]
 
