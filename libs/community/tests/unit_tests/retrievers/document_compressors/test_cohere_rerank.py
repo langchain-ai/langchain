@@ -3,6 +3,8 @@ import os
 import pytest
 from pytest_mock import MockerFixture
 
+pytest.importorskip("langchain")
+
 from langchain.retrievers.document_compressors import CohereRerank
 from langchain.schema import Document
 

@@ -1,8 +1,12 @@
 """Integration test for CrossEncoderReranker."""
 from typing import List
 
-from langchain_community.cross_encoders import FakeCrossEncoder
+import pytest
 from langchain_core.documents import Document
+
+from langchain_community.cross_encoders import FakeCrossEncoder
+
+pytest.importorskip("langchain")
 
 from langchain.retrievers.document_compressors import CrossEncoderReranker
 
