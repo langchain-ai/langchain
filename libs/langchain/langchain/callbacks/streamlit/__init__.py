@@ -56,10 +56,11 @@ def StreamlitCallbackHandler(
     # guaranteed to support the same set of kwargs.
     try:
         from streamlit.external.langchain import (
-            StreamlitCallbackHandler as OfficialStreamlitCallbackHandler,  # type: ignore # noqa: 501
+            StreamlitCallbackHandler,  # noqa: 501
         )
 
-        return OfficialStreamlitCallbackHandler(
+        # This is the official handler, so we can just return it.
+        return StreamlitCallbackHandler(
             parent_container,
             max_thought_containers=max_thought_containers,
             expand_new_thoughts=expand_new_thoughts,
