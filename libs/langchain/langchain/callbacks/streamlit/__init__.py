@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Optional
 from langchain_core.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
-    from streamlit.delta_generator import DeltaGenerator
     from langchain_community.callbacks import LLMThoughtLabeler
+    from streamlit.delta_generator import DeltaGenerator
 
 
 def StreamlitCallbackHandler(
