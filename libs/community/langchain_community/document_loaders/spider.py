@@ -18,7 +18,10 @@ class SpiderLoader(BaseLoader):
         *,
         api_key: Optional[str] = None,
         mode: Literal["scrape", "crawl"] = "scrape",
-        params: Optional[dict] = {"return_format": "markdown", "metadata": True}, # Using the metadata param slightly slows down the output
+        params: Optional[dict] = {
+            "return_format": "markdown",
+            "metadata": True,
+        },  # Using the metadata param slightly slows down the output
     ):
         """Initialize with API key and URL.
 
@@ -80,10 +83,7 @@ class SpiderLoader(BaseLoader):
                 metadata = doc[0].get("metadata", {})
 
                 if page_content is not None:
-                    yield Document(
-                        page_content=page_content, 
-                        metadata=metadata
-                    )
+                    yield Document(page_content=page_content, metadata=metadata)
             if self.mode == "crawl":
                 # Ensure page_content is also not None
                 page_content = doc.get("content", "")
