@@ -1,6 +1,7 @@
 from typing import Type, cast
 
 import pytest
+from langchain_core.load import dumpd
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
@@ -187,3 +188,19 @@ def test_openai_uses_actual_secret_value_from_secretstr(model_class: Type) -> No
     """Test that the actual secret value is correctly retrieved."""
     model = model_class(openai_api_key="secret-api-key")
     assert cast(SecretStr, model.openai_api_key).get_secret_value() == "secret-api-key"
+
+
+@pytest.mark.parametrize("model_class", [AzureChatOpenAI, AzureOpenAI])
+def test_azure_serialized_secrets(model_class: Type) -> None:
+    """Test that the actual secret value is correctly retrieved."""
+    model = model_class(
+        openai_api_key="secret-api-key", api_version="foo", azure_endpoint="foo"
+    )
+    serialized = dumpd(model)
+    assert serialized["kwargs"]["openai_api_key"]["id"] == ["AZURE_OPENAI_API_KEY"]
+
+    model = model_class(
+        azure_ad_token="secret-token", api_version="foo", azure_endpoint="foo"
+    )
+    serialized = dumpd(model)
+    assert serialized["kwargs"]["azure_ad_token"]["id"] == ["AZURE_OPENAI_AD_TOKEN"]
