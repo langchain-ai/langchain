@@ -120,7 +120,8 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                     if content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "image_url":
-                        if content_part.get("image_url") and isinstance(
+                        if isinstance(
+                            content_part.get("image_url"), dict) and isinstance(
                             content_part.get("image_url").get("url"), str
                         ):
                             image_url_components = content_part["image_url"][
