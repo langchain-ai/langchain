@@ -10,8 +10,8 @@ from langchain_qdrant.vectorstores import QdrantException
 from tests.integration_tests.common import (
     ConsistentFakeEmbeddings,
     assert_documents_equals,
-    qdrant_is_not_running,
 )
+from tests.integration_tests.fixtures import qdrant_locations
 
 
 def test_qdrant_from_texts_stores_duplicated_texts() -> None:
@@ -263,8 +263,8 @@ def test_qdrant_from_texts_stores_metadatas(
     )
 
 
-@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
-def test_from_texts_passed_optimizers_config_and_on_disk_payload() -> None:
+@pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
+def test_from_texts_passed_optimizers_config_and_on_disk_payload(location: str) -> None:
     from qdrant_client import models
 
     collection_name = uuid.uuid4().hex
@@ -279,6 +279,7 @@ def test_from_texts_passed_optimizers_config_and_on_disk_payload() -> None:
         on_disk_payload=True,
         on_disk=True,
         collection_name=collection_name,
+        location=location,
     )
 
     collection_info = vec_store.client.get_collection(collection_name)

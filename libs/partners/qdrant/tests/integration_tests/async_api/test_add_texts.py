@@ -1,11 +1,14 @@
+import os
 import uuid
 from typing import Optional
 
 import pytest
 
 from langchain_qdrant import Qdrant
-from tests.integration_tests.async_api.fixtures import qdrant_locations
 from tests.integration_tests.common import ConsistentFakeEmbeddings
+from tests.integration_tests.fixtures import qdrant_locations
+
+API_KEY = os.getenv("QDRANT_API_KEY")
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -35,7 +38,7 @@ async def test_qdrant_aadd_texts_stores_duplicated_texts(
     from qdrant_client import QdrantClient
     from qdrant_client.http import models as rest
 
-    client = QdrantClient(location=qdrant_location)
+    client = QdrantClient(location=qdrant_location, api_key=API_KEY)
     collection_name = uuid.uuid4().hex
     vectors_config = rest.VectorParams(size=10, distance=rest.Distance.COSINE)
     if vector_name is not None:
@@ -68,7 +71,7 @@ async def test_qdrant_aadd_texts_stores_ids(
         "cdc1aa36-d6ab-4fb2-8a94-56674fd27484",
     ]
 
-    client = QdrantClient(location=qdrant_location)
+    client = QdrantClient(location=qdrant_location, api_key=API_KEY)
     collection_name = uuid.uuid4().hex
     client.recreate_collection(
         collection_name,
@@ -97,7 +100,7 @@ async def test_qdrant_aadd_texts_stores_embeddings_as_named_vectors(
 
     collection_name = uuid.uuid4().hex
 
-    client = QdrantClient(location=qdrant_location)
+    client = QdrantClient(location=qdrant_location, api_key=API_KEY)
     client.recreate_collection(
         collection_name,
         vectors_config={

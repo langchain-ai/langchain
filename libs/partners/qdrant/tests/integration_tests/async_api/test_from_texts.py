@@ -1,3 +1,4 @@
+import os
 import uuid
 from typing import Optional
 
@@ -6,13 +7,12 @@ from langchain_core.documents import Document
 
 from langchain_qdrant import Qdrant
 from langchain_qdrant.vectorstores import QdrantException
-from tests.integration_tests.async_api.fixtures import (
-    qdrant_locations,
-)
 from tests.integration_tests.common import (
     ConsistentFakeEmbeddings,
     assert_documents_equals,
-    qdrant_is_not_running,
+)
+from tests.integration_tests.fixtures import (
+    qdrant_locations,
 )
 
 
@@ -85,10 +85,10 @@ async def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
     )
 
 
+@pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
-@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_reuses_same_collection(
-    vector_name: Optional[str],
+    location: str, vector_name: Optional[str]
 ) -> None:
     """Test if Qdrant.afrom_texts reuses the same collection"""
     collection_name = uuid.uuid4().hex
@@ -99,6 +99,7 @@ async def test_qdrant_from_texts_reuses_same_collection(
         embeddings,
         collection_name=collection_name,
         vector_name=vector_name,
+        location=location,
     )
 
     vec_store = await Qdrant.afrom_texts(
@@ -106,15 +107,17 @@ async def test_qdrant_from_texts_reuses_same_collection(
         embeddings,
         collection_name=collection_name,
         vector_name=vector_name,
+        location=location,
     )
 
     client = vec_store.client
     assert 7 == client.count(collection_name).count
 
 
+@pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
-@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
+    location: str,
     vector_name: Optional[str],
 ) -> None:
     """Test if Qdrant.afrom_texts raises an exception if dimensionality does not
@@ -126,6 +129,7 @@ async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
         ConsistentFakeEmbeddings(dimensionality=10),
         collection_name=collection_name,
         vector_name=vector_name,
+        location=location,
     )
 
     with pytest.raises(QdrantException):
@@ -134,9 +138,11 @@ async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
             ConsistentFakeEmbeddings(dimensionality=5),
             collection_name=collection_name,
             vector_name=vector_name,
+            location=location,
         )
 
 
+@pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize(
     ["first_vector_name", "second_vector_name"],
     [
@@ -145,8 +151,8 @@ async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
         ("my-first-vector", "my-second_vector"),
     ],
 )
-@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_raises_error_on_different_vector_name(
+    location: str,
     first_vector_name: Optional[str],
     second_vector_name: Optional[str],
 ) -> None:
@@ -158,6 +164,7 @@ async def test_qdrant_from_texts_raises_error_on_different_vector_name(
         ConsistentFakeEmbeddings(dimensionality=10),
         collection_name=collection_name,
         vector_name=first_vector_name,
+        location=location,
     )
 
     with pytest.raises(QdrantException):
@@ -166,11 +173,14 @@ async def test_qdrant_from_texts_raises_error_on_different_vector_name(
             ConsistentFakeEmbeddings(dimensionality=5),
             collection_name=collection_name,
             vector_name=second_vector_name,
+            location=location,
         )
 
 
-@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
-async def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
+@pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
+async def test_qdrant_from_texts_raises_error_on_different_distance(
+    location: str,
+) -> None:
     """Test if Qdrant.afrom_texts raises an exception if distance does not match"""
     collection_name = uuid.uuid4().hex
 
@@ -179,6 +189,7 @@ async def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
         ConsistentFakeEmbeddings(dimensionality=10),
         collection_name=collection_name,
         distance_func="Cosine",
+        location=location,
     )
 
     with pytest.raises(QdrantException):
@@ -187,12 +198,14 @@ async def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
             ConsistentFakeEmbeddings(dimensionality=5),
             collection_name=collection_name,
             distance_func="Euclid",
+            location=location,
         )
 
 
+@pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
-@pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_recreates_collection_on_force_recreate(
+    location: str,
     vector_name: Optional[str],
 ) -> None:
     """Test if Qdrant.afrom_texts recreates the collection even if config mismatches"""
@@ -205,6 +218,7 @@ async def test_qdrant_from_texts_recreates_collection_on_force_recreate(
         ConsistentFakeEmbeddings(dimensionality=10),
         collection_name=collection_name,
         vector_name=vector_name,
+        location=location,
     )
 
     await Qdrant.afrom_texts(
@@ -213,9 +227,10 @@ async def test_qdrant_from_texts_recreates_collection_on_force_recreate(
         collection_name=collection_name,
         vector_name=vector_name,
         force_recreate=True,
+        location=location,
     )
 
-    client = QdrantClient()
+    client = QdrantClient(location=location, api_key=os.getenv("QDRANT_API_KEY"))
     assert 2 == client.count(collection_name).count
     vector_params = client.get_collection(collection_name).config.params.vectors
     if vector_name is not None:

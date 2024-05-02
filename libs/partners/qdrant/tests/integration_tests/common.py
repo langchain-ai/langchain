@@ -5,15 +5,15 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
 
-def qdrant_is_not_running() -> bool:
-    """Check if Qdrant is not running."""
+def qdrant_running_locally() -> bool:
+    """Check if Qdrant is running at http://localhost:6333."""
 
     try:
         response = requests.get("http://localhost:6333", timeout=10.0)
         response_json = response.json()
-        return response_json.get("title") != "qdrant - vector search engine"
+        return response_json.get("title") == "qdrant - vector search engine"
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-        return True
+        return False
 
 
 def assert_documents_equals(actual: List[Document], expected: List[Document]):  # type: ignore[no-untyped-def]
