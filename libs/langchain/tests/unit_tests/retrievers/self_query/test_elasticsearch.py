@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
+from langchain_community.query_constructors.elasticsearch import ElasticsearchTranslator
 
 DEFAULT_TRANSLATOR = ElasticsearchTranslator()
 

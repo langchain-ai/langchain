@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.pinecone import PineconeTranslator
+from langchain_community.query_constructors.pinecone import PineconeTranslator
 
 DEFAULT_TRANSLATOR = PineconeTranslator()
 

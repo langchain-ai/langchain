@@ -59,32 +59,32 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Pinecone as CommunityPinecone,
     )
 
-    from langchain.retrievers.self_query.astradb import AstraDBTranslator
-    from langchain.retrievers.self_query.chroma import ChromaTranslator
-    from langchain.retrievers.self_query.dashvector import DashvectorTranslator
-    from langchain.retrievers.self_query.databricks_vector_search import (
+    from langchain_community.query_constructors.astradb import AstraDBTranslator
+    from langchain_community.query_constructors.chroma import ChromaTranslator
+    from langchain_community.query_constructors.dashvector import DashvectorTranslator
+    from langchain_community.query_constructors.databricks_vector_search import (
         DatabricksVectorSearchTranslator,
     )
-    from langchain.retrievers.self_query.deeplake import DeepLakeTranslator
-    from langchain.retrievers.self_query.dingo import DingoDBTranslator
-    from langchain.retrievers.self_query.elasticsearch import ElasticsearchTranslator
-    from langchain.retrievers.self_query.milvus import MilvusTranslator
-    from langchain.retrievers.self_query.mongodb_atlas import MongoDBAtlasTranslator
-    from langchain.retrievers.self_query.myscale import MyScaleTranslator
-    from langchain.retrievers.self_query.opensearch import OpenSearchTranslator
-    from langchain.retrievers.self_query.pgvector import PGVectorTranslator
-    from langchain.retrievers.self_query.pinecone import PineconeTranslator
-    from langchain.retrievers.self_query.qdrant import QdrantTranslator
-    from langchain.retrievers.self_query.redis import RedisTranslator
-    from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
-    from langchain.retrievers.self_query.tencentvectordb import (
+    from langchain_community.query_constructors.deeplake import DeepLakeTranslator
+    from langchain_community.query_constructors.dingo import DingoDBTranslator
+    from langchain_community.query_constructors.elasticsearch import ElasticsearchTranslator
+    from langchain_community.query_constructors.milvus import MilvusTranslator
+    from langchain_community.query_constructors.mongodb_atlas import MongoDBAtlasTranslator
+    from langchain_community.query_constructors.myscale import MyScaleTranslator
+    from langchain_community.query_constructors.opensearch import OpenSearchTranslator
+    from langchain_community.query_constructors.pgvector import PGVectorTranslator
+    from langchain_community.query_constructors.pinecone import PineconeTranslator
+    from langchain_community.query_constructors.qdrant import QdrantTranslator
+    from langchain_community.query_constructors.redis import RedisTranslator
+    from langchain_community.query_constructors.supabase import SupabaseVectorTranslator
+    from langchain_community.query_constructors.tencentvectordb import (
         TencentVectorDBTranslator,
     )
-    from langchain.retrievers.self_query.timescalevector import (
+    from langchain_community.query_constructors.timescalevector import (
         TimescaleVectorTranslator,
     )
-    from langchain.retrievers.self_query.vectara import VectaraTranslator
-    from langchain.retrievers.self_query.weaviate import WeaviateTranslator
+    from langchain_community.query_constructors.vectara import VectaraTranslator
+    from langchain_community.query_constructors.weaviate import WeaviateTranslator
 
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,

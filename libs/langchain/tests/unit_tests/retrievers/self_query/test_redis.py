@@ -21,7 +21,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.redis import RedisTranslator
+from langchain_community.query_constructors.redis import RedisTranslator
 
 
 @pytest.fixture

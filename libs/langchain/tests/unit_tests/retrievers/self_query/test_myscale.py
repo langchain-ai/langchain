@@ -9,7 +9,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.myscale import MyScaleTranslator
+from langchain_community.query_constructors.myscale import MyScaleTranslator
 
 DEFAULT_TRANSLATOR = MyScaleTranslator()
 

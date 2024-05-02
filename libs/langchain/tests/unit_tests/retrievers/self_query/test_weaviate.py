@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.weaviate import WeaviateTranslator
+from langchain_community.query_constructors.weaviate import WeaviateTranslator
 
 DEFAULT_TRANSLATOR = WeaviateTranslator()
 

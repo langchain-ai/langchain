@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.dingo import DingoDBTranslator
+from langchain_community.query_constructors.dingo import DingoDBTranslator
 
 DEFAULT_TRANSLATOR = DingoDBTranslator()
 

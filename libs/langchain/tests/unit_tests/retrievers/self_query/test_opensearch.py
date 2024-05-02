@@ -6,7 +6,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.opensearch import OpenSearchTranslator
+from langchain_community.query_constructors.opensearch import OpenSearchTranslator
 
 DEFAULT_TRANSLATOR = OpenSearchTranslator()
 

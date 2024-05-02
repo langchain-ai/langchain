@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.chroma import ChromaTranslator
+from langchain_community.query_constructors.chroma import ChromaTranslator
 
 DEFAULT_TRANSLATOR = ChromaTranslator()
 

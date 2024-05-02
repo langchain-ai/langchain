@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.supabase import SupabaseVectorTranslator
+from langchain_community.query_constructors.supabase import SupabaseVectorTranslator
 
 DEFAULT_TRANSLATOR = SupabaseVectorTranslator()
 

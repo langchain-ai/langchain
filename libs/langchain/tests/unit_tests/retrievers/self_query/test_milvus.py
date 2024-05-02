@@ -9,7 +9,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.milvus import MilvusTranslator
+from langchain_community.query_constructors.milvus import MilvusTranslator
 
 DEFAULT_TRANSLATOR = MilvusTranslator()
 

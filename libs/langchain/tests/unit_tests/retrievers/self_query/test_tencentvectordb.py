@@ -6,7 +6,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.tencentvectordb import TencentVectorDBTranslator
+from langchain_community.query_constructors.tencentvectordb import TencentVectorDBTranslator
 
 
 def test_translate_with_operator() -> None:

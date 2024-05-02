@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     Operator,
 )
 
-from langchain.retrievers.self_query.dashvector import DashvectorTranslator
+from langchain_community.query_constructors.dashvector import DashvectorTranslator
 
 DEFAULT_TRANSLATOR = DashvectorTranslator()
 

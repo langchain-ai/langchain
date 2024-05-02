@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.vectara import VectaraTranslator
+from langchain_community.query_constructors.vectara import VectaraTranslator
 
 DEFAULT_TRANSLATOR = VectaraTranslator()
 

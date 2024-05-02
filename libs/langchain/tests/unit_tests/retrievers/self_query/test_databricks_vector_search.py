@@ -9,7 +9,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.databricks_vector_search import (
+from langchain_community.query_constructors.databricks_vector_search import (
     DatabricksVectorSearchTranslator,
 )
 

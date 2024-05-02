@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.mongodb_atlas import MongoDBAtlasTranslator
+from langchain_community.query_constructors.mongodb_atlas import MongoDBAtlasTranslator
 
 DEFAULT_TRANSLATOR = MongoDBAtlasTranslator()
 

@@ -9,7 +9,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.pgvector import PGVectorTranslator
+from langchain_community.query_constructors.pgvector import PGVectorTranslator
 
 DEFAULT_TRANSLATOR = PGVectorTranslator()
 

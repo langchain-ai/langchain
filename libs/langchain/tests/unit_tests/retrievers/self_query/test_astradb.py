@@ -8,7 +8,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
 )
 
-from langchain.retrievers.self_query.astradb import AstraDBTranslator
+from langchain_community.query_constructors.astradb import AstraDBTranslator
 
 DEFAULT_TRANSLATOR = AstraDBTranslator()
 
