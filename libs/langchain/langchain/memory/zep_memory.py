@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
-DEPRECATED_LOOKUP = {"ZepMemory": "langchain_community.memory.zep"}
+DEPRECATED_LOOKUP = {"ZepMemory": "langchain_community.memory.zep_memory"}
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
