@@ -1,6 +1,8 @@
 import asyncio
+import numpy as np
 from typing import (
     Any,
+    Dict,
     Iterable,
     List,
     Optional,
@@ -10,6 +12,9 @@ from typing import (
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
+
+DEFAULT_K = 4  # Number of Documents to return.
 
 
 class SurrealDBStore(VectorStore):
@@ -202,7 +207,7 @@ class SurrealDBStore(VectorStore):
         return asyncio.run(_delete(ids, **kwargs))
 
     async def _asimilarity_search_by_vector_with_score(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self, embedding: List[float], k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search for query embedding asynchronously
         and return documents and scores
@@ -225,6 +230,7 @@ class SurrealDBStore(VectorStore):
             id,
             text,
             metadata,
+            embedding,
             vector::similarity::cosine(embedding, $embedding) as similarity
         from ⟨{args["collection"]}⟩
         where vector::similarity::cosine(embedding, $embedding) >= $score_threshold
@@ -250,12 +256,13 @@ class SurrealDBStore(VectorStore):
                     metadata={"id": doc["id"], **(doc.get("metadata", None) or {})},
                 ),
                 doc["similarity"],
+                doc["embedding"]
             )
             for doc in result["result"]
         ]
 
     async def asimilarity_search_with_relevance_scores(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search asynchronously and return relevance scores
 
@@ -269,7 +276,7 @@ class SurrealDBStore(VectorStore):
         query_embedding = self.embedding_function.embed_query(query)
         return [
             (document, similarity)
-            for document, similarity in (
+            for document, similarity, _ in (
                 await self._asimilarity_search_by_vector_with_score(
                     query_embedding, k, **kwargs
                 )
@@ -277,7 +284,7 @@ class SurrealDBStore(VectorStore):
         ]
 
     def similarity_search_with_relevance_scores(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search synchronously and return relevance scores
 
@@ -300,7 +307,7 @@ class SurrealDBStore(VectorStore):
         return asyncio.run(_similarity_search_with_relevance_scores())
 
     async def asimilarity_search_with_score(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search asynchronously and return distance scores
 
@@ -314,7 +321,7 @@ class SurrealDBStore(VectorStore):
         query_embedding = self.embedding_function.embed_query(query)
         return [
             (document, similarity)
-            for document, similarity in (
+            for document, similarity, _ in (
                 await self._asimilarity_search_by_vector_with_score(
                     query_embedding, k, **kwargs
                 )
@@ -322,7 +329,7 @@ class SurrealDBStore(VectorStore):
         ]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search synchronously and return distance scores
 
@@ -334,14 +341,14 @@ class SurrealDBStore(VectorStore):
             List of Documents most similar along with relevance distance scores
         """
 
-        async def _similarity_search_with_score() -> List[Tuple[Document, float]]:
+        async def _similarity_search_with_score() -> (List[Tuple[Document, float]]):
             await self.initialize()
             return await self.asimilarity_search_with_score(query, k, **kwargs)
 
         return asyncio.run(_similarity_search_with_score())
 
     async def asimilarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self, embedding: List[float], k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Document]:
         """Run similarity search on query embedding asynchronously
 
@@ -360,7 +367,7 @@ class SurrealDBStore(VectorStore):
         ]
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
+        self, embedding: List[float], k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Document]:
         """Run similarity search on query embedding
 
@@ -379,7 +386,7 @@ class SurrealDBStore(VectorStore):
         return asyncio.run(_similarity_search_by_vector())
 
     async def asimilarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Document]:
         """Run similarity search on query asynchronously
 
@@ -394,7 +401,7 @@ class SurrealDBStore(VectorStore):
         return await self.asimilarity_search_by_vector(query_embedding, k, **kwargs)
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self, query: str, k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Document]:
         """Run similarity search on query
 
@@ -411,6 +418,166 @@ class SurrealDBStore(VectorStore):
             return await self.asimilarity_search(query, k, **kwargs)
 
         return asyncio.run(_similarity_search())
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+
+        result = [
+            (document, similarity, embedding)
+            for document, similarity, embedding in (
+                await self._asimilarity_search_by_vector_with_score(
+                    embedding, fetch_k, **kwargs
+                )
+            )
+        ]
+
+        results = [(sub[0], sub[1]) for sub in result]  # extract only (document, similarity) from result
+        embeddings = [sub[-1] for sub in result]  # extract only embedding from result
+
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            embeddings,
+            k=k,
+            lambda_mult=lambda_mult
+        )
+
+        return [results[i] for i in mmr_selected]
+        
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+
+        async def _max_marginal_relevance_search_by_vector() -> List[Document]:
+            await self.initialize()
+            return await self.amax_marginal_relevance_search_by_vector(
+                self,
+                embedding,
+                k,
+                fetch_k,
+                lambda_mult
+            )
+
+        return asyncio.run(_max_marginal_relevance_search_by_vector())
+
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+
+        embedding = self.embedding_function.embed_query(query)
+        docs = await self.amax_marginal_relevance_search_by_vector(
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult
+        )
+        return docs
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+
+        async def _max_marginal_relevance_search() -> List[Document]:
+            await self.initialize()
+            return await self.amax_marginal_relevance_search(
+                query,
+                k,
+                fetch_k,
+                lambda_mult,
+                **kwargs
+            )
+
+        return asyncio.run(_max_marginal_relevance_search())
 
     @classmethod
     async def afrom_texts(
