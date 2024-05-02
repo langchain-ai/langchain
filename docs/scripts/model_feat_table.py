@@ -67,6 +67,7 @@ LLM_TEMPLATE = """\
 ---
 sidebar_position: 1
 sidebar_class_name: hidden
+keywords: [compatibility]
 ---
 
 # LLMs
@@ -87,6 +88,7 @@ CHAT_MODEL_TEMPLATE = """\
 ---
 sidebar_position: 0
 sidebar_class_name: hidden
+keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output]
 ---
 
 # Chat models
@@ -143,7 +145,6 @@ def get_llm_table():
         "_astream",
         "batch_generate",
         "batch_agenerate",
-        "tool_calling",
     ]
     title = [
         "Model",
@@ -153,7 +154,6 @@ def get_llm_table():
         "Async stream",
         "Batch",
         "Async batch",
-        "Tool calling",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
