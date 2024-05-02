@@ -138,6 +138,7 @@ def _create_message_from_message_type(
     content: str,
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
+    id: Optional[str] = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
     """Create a message from a message type and content string.
@@ -156,6 +157,8 @@ def _create_message_from_message_type(
         kwargs["tool_call_id"] = tool_call_id
     if additional_kwargs:
         kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
+    if id is not None:
+        kwargs["id"] = id
     if message_type in ("human", "user"):
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
@@ -197,15 +200,16 @@ def _convert_to_message(
         _message = message
     elif isinstance(message, str):
         _message = _create_message_from_message_type("human", message)
-    elif isinstance(message, tuple):
-        if len(message) != 2:
-            raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
+    elif isinstance(message, Sequence) and len(message) == 2:
         message_type_str, template = message
         _message = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
         try:
-            msg_type = msg_kwargs.pop("role")
+            try:
+                msg_type = msg_kwargs.pop("role")
+            except KeyError:
+                msg_type = msg_kwargs.pop("type")
             msg_content = msg_kwargs.pop("content")
         except KeyError:
             raise ValueError(
