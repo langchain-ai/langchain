@@ -4,11 +4,6 @@ import re
 from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain
-from langchain.chains.graph_qa.prompts import (
-    CYPHER_QA_PROMPT,
-    NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
-    NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT,
-)
 from langchain.chains.llm import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -16,6 +11,11 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.pydantic_v1 import Field
 
+from langchain_community.chains.graph_qa.prompts import (
+    CYPHER_QA_PROMPT,
+    NEPTUNE_OPENCYPHER_GENERATION_PROMPT,
+    NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT,
+)
 from langchain_community.graphs import BaseNeptuneGraph
 
 INTERMEDIATE_STEPS_KEY = "intermediate_steps"
