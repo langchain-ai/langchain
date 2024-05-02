@@ -15,10 +15,10 @@ import requests
 
 
 try:
-    _package_version = importlib.metadata.version('langchain-azure')
+    _package_version = importlib.metadata.version('langchain-azure-dynamic-sessions')
 except importlib.metadata.PackageNotFoundError:
     _package_version = "0.0.0"
-USER_AGENT = f"langchain-azure/{_package_version} (Language=Python)"
+USER_AGENT = f"langchain-azure-dynamic-sessions/{_package_version} (Language=Python)"
 
 def _access_token_provider_factory() -> Callable[[], Optional[str]]:
     """Factory function for creating an access token provider function.

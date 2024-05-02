@@ -1,12 +1,13 @@
+import re
 import time
 from unittest import mock
 import uuid
 from azure.core.credentials import AccessToken
-from langchain_azure import SessionsPythonREPLTool
-from langchain_azure.tools.sessions import _access_token_provider_factory
+from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
+from langchain_azure_dynamic_sessions.tools.sessions import _access_token_provider_factory
 
 
-POOL_MANAGEMENT_ENDPOINT = "https://westus2.acasessions.io/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/sessions-rg/sessionPools/my-pool/"
+POOL_MANAGEMENT_ENDPOINT = "https://westus2.acasessions.io/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/sessions-rg/sessionPools/my-pool"
 
 
 def test_default_access_token_provider_returns_token():
@@ -56,10 +57,11 @@ def test_code_execution_calls_api(mock_get_token, mock_post: mock.MagicMock):
     
     assert result == "result:\n\n\nstdout:\nhello world\n\n\nstderr:\n"
     
-    api_url = f"{POOL_MANAGEMENT_ENDPOINT}python/execute"
+    api_url = f"{POOL_MANAGEMENT_ENDPOINT}/python/execute"
     headers = {
         "Authorization": f"Bearer token_value",
         "Content-Type": "application/json",
+        "User-Agent": mock.ANY,
     }
     body = {
         "properties": {
@@ -71,6 +73,8 @@ def test_code_execution_calls_api(mock_get_token, mock_post: mock.MagicMock):
     }
     mock_post.assert_called_once_with(api_url, headers=headers, json=body)
 
+    called_headers = mock_post.call_args.kwargs['headers']
+    assert re.match(r"^langchain-azure-dynamic-sessions/\d+\.\d+\.\d+ \(Language=Python\)", called_headers["User-Agent"])
 
 @mock.patch("requests.post")
 @mock.patch("azure.identity.DefaultAzureCredential.get_token")

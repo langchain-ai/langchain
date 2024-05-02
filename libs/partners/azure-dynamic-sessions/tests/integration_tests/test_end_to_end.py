@@ -1,6 +1,6 @@
 import os
 from tempfile import NamedTemporaryFile
-from langchain_azure import SessionsPythonREPLTool
+from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
 import dotenv
 
 
