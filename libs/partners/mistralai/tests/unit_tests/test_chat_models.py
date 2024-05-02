@@ -148,7 +148,6 @@ def test__convert_dict_to_message_tool_call() -> None:
         ],
     )
     assert result == expected_output
-    del message["content"]
     assert _convert_message_to_mistral_chat_message(expected_output) == message
 
     # Test malformed tool call
@@ -190,7 +189,6 @@ def test__convert_dict_to_message_tool_call() -> None:
         ],
     )
     assert result == expected_output
-    del message["content"]
     assert _convert_message_to_mistral_chat_message(expected_output) == message
 
 
