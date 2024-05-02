@@ -235,7 +235,7 @@ def get_loader_full_path(loader: BaseLoader) -> str:
                     [
                         f"https://drive.google.com/file/d/{file_id}/view"
                         for file_id in file_ids
-                        ]
+                    ]
                 )
             elif loader_dict.get("document_ids"):
                 document_ids = loader_dict.get("document_ids")
@@ -243,7 +243,7 @@ def get_loader_full_path(loader: BaseLoader) -> str:
                     [
                         f"https://docs.google.com/document/d/{doc_id}/edit"
                         for doc_id in document_ids
-                        ]
+                    ]
                 )
         # For in-memory types:
         elif loader_name == "DataFrameLoader":
