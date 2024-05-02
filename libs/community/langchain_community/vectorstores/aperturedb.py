@@ -14,20 +14,39 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
+# Configure some defaults
 ENGINE = "HNSW"
 METRIC = "L2"
 DESCRIPTOR_SET = "langchain"
 
+PROPERTY_PREFIX = "lc_" # Prefix for properties that are in the client metadata
+
 
 class ApertureDB(VectorStore):
     def __init__(self,
-                 embeddings: Embeddings = None,
+                 embeddings: Embeddings,
                  descriptor_set: str = DESCRIPTOR_SET,
                  dimensions: Optional[int] = None,
                  engine: str = None,
                  metric: str = None,
-                 log_level: int = logging.INFO,
+                 log_level: int = logging.WARN,
+                 use_blobs = None,
                  **kwargs):
+        """Create a vectorstore backed by ApertureDB
+
+        A single ApertureDB instance can support many vectorstores, distinguished by 'descriptor_set' name.  The descriptor set is created if it does not exist.  Different descriptor sets can use different engines and metrics, be supplied by different emnedding models, and have different dimensions.
+
+        See [ApertureDB documentation on `AddDescriptorSet`](https://docs.aperturedata.io/query_language/Reference/descriptor_commands/desc_set_commands/AddDescriptorSet) for more information on the engine and metric options.
+
+        Args:
+            embeddings (Embeddings): Embeddings object
+            descriptor_set (str, optional): Descriptor set name. Defaults to "lamgchain".
+            dimensions (Optional[int], optional): Number of dimensions of the embeddings. Defaults to None.
+            engine (str, optional): Engine to use. Defaults to "HNSW" for new descriptorsets. 
+            metric (str, optional): Metric to use. Defaults to "L2" for new descriptorsets.
+            log_level (int, optional): Logging level. Defaults to logging.WARN.
+            use_blobs (bool, optional): Whether to store the text in blobs. Defaults to False for new descriptorsets.  Use this option when dealing with very large (>64kb) documents.
+        """
         super().__init__(**kwargs)
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(log_level)
@@ -37,10 +56,12 @@ class ApertureDB(VectorStore):
         self.dimensions = dimensions
         self.engine = engine
         self.metric = metric
+        self.use_blobs = use_blobs
 
         if embeddings is None:
-            self.logger.warning(
+            self.logger.fatal(
                 "No embedding function provided.")
+            raise ValueError("No embedding function provided.")
 
         try:
             import aperturedb
@@ -84,6 +105,9 @@ class ApertureDB(VectorStore):
                 "engines": True,
                 "metrics": True,
                 "dimensions" : True,
+                "results": {
+                    "list": ["embeddings_type", "embeddings_name", "use_blobs"]
+                }
             }
         }]
         r, b = self.connection.query(find_ds_query)
@@ -118,19 +142,44 @@ class ApertureDB(VectorStore):
 
             if self.dimensions is None:
                 self.dimensions = len(
-                    self.embedding_function.embed_query("test"))
+                    self.embedding_function.embed_query(""))
+
+            # TEMP for testing    
+            if "use_blobs" not in e: e["use_blobs"] = True
+
+            if self.use_blobs is None:
+                self.use_blobs = e["use_blobs"]
+            elif self.use_blobs != e["use_blobs"]:
+                self.logger.fatal(f"use_blobs mismatch: {self.use_blobs} != {e['_use_blobs']}")
+                raise ValueError(f"use_blobs mismatch: {self.use_blobs} != {e['_use_blobs']}")
                 
         else:
             self.logger.info(f"Descriptor set {descriptor_set} does not exist. Creating it")
-            success = self.utils.add_descriptorset(
-                descriptor_set, self.dimensions, engine=self.engine, metric=[self.metric])
-            assert success, self.connection.get_last_response_str()
+            assert self.dimensions is not None, "Dimensions must be set for new descriptorsets"
+            if self.engine is None:
+                self.engine = ENGINE
+            if self.metric is None:
+                self.metric = METRIC
+            if self.use_blobs is None:
+                self.use_blobs = False
+            query = [{
+                "AddDescriptorSet": {
+                    "name": descriptor_set,
+                    "dimensions": self.dimensions,
+                    "engine": self.engine,
+                    "metric": self.metric , 
+                    "properties": {
+                        "use_blobs": self.use_blobs
+                    }
+                }
+            }]
+            response,blobs_out = self.connector.query(query)
+            assert self.connection.last_query_ok(), self.connection.get_last_response_str()
 
             # Create indexes
             self.utils.create_entity_index("_Descriptor", "_create_txn")
             self.utils.create_entity_index("_DescriptorSet", "_name")
             self.utils.create_entity_index("_Descriptor", "_uniqueid")
-
 
     def add_texts(self, texts: Iterable[str],
                   metadatas: Optional[List[dict]] = None,
@@ -149,26 +198,30 @@ class ApertureDB(VectorStore):
         commands = []
         blobs = []
         for text, embedding, metadata, ref in data:
+            properties = { PROPERTY_PREFIX + k: v for k, v in metadata.items() }
+            if not self.use_blobs:
+                properties["adb_text"] = text
             commands.append({
                 "AddDescriptor": {
                     "set": self.descriptor_set,
-                    "_ref": ref
+                    "_ref": ref,
+                    "properties": properties,
                 }
             })
             npem = np.array(embedding, dtype=np.float32)
             blobs.append(npem.tobytes())
 
-            commands.append({
-                "AddBlob": {
-                    "_ref": ref+1,
-                    "properties": metadata,
-                    "connect": {
-                        "class": "has_descriptor",
-                        "ref": ref
+            if self.use_blobs:
+                commands.append({
+                    "AddBlob": {
+                        "_ref": ref+1,
+                        "connect": {
+                            "class": "has_descriptor",
+                            "ref": ref
+                        }
                     }
-                }
-            })
-            blobs.append(text.encode())
+                })
+                blobs.append(text.encode())
 
             commands.append({
                 "FindDescriptor": {
@@ -183,10 +236,12 @@ class ApertureDB(VectorStore):
             })
 
         status, responses, blobs = aperturedb.ParallelQuery.execute_batch(
-            q=commands, blobs=blobs, db=self.connection, commands_per_query=3, blobs_per_query=2)
+            q=commands, blobs=blobs, db=self.connection, 
+            commands_per_query=3 if self.use_blobs else 2, 
+            blobs_per_query=2 if self.use_blobs else 1)
         assert status == 0, responses
         unique_ids = [r["_uniqueid"]
-                      for r in responses[2::3]["FindDescriptor"]["entities"]]
+                      for r in responses[2::3 if self.use_blobs else 2]["FindDescriptor"]["entities"]] 
         return unique_ids
 
     def delete(self, ids: List[str]) -> Optional[bool]:
@@ -207,16 +262,20 @@ class ApertureDB(VectorStore):
                     "_ref": ref,
                     "id": id
                 }
-            }, {
-                "DeleteBlob": {
-                    "is_connected_to": {
-                        "ref": ref
-                    }
-                }
             }])
+            
+            if self.use_blobs:
+                commands.extend([{
+                    "DeleteBlob": {
+                        "is_connected_to": {
+                            "ref": ref
+                        }
+                    }
+                }])
 
         status, responses, blobs = aperturedb.ParallelQuery.execute_batch(
-            q=commands, blobs=blobs, db=self.connection, commands_per_query=3, blobs_per_query=0)
+            q=commands, blobs=blobs, db=self.connection, 
+            commands_per_query=3 if self.use_blobs else 2, blobs_per_query=0)
         assert status == 0, responses
         results = [r["DeleteDescriptor"]["results"]
                    ["count"] == 1 for r in responses[1::3]]
@@ -245,44 +304,52 @@ class ApertureDB(VectorStore):
                 "set": self.descriptor_set,
                 "k_neighbors": k,
                 "_ref": 1,
-                "results": {"list": ["_uniqueid"]},
+                "results": {"all_properties": True},
                 "blobs": vectors,
                 "distances": True,
             }
-        }, {
-            "FindBlob": {
-                "is_connected_to": {
-                    "ref": 1
-                },
-                "results": {"all_properties": True},
-                "blobs": True,
-            }
         }]
+        if self.use_blobs:
+            query.extend([{
+                "FindBlob": {
+                    "is_connected_to": {
+                        "ref": 1,
+                    },
+                    "results": { "list": ["_blob_index"]},
+                    "blobs": True,
+                }
+            }])
         self.logger.debug(f"query: {query}")
         blobs_in = [np.array(embedding, dtype=np.float32).tobytes()]
         start_time = time.time()
         responses, blobs_out = self.connection.query(query, blobs_in)
-        print(f"ApertureDB query completed in {time.time() - start_time:.1f}s")
-        # print(f"responses: {responses}")
+        self.logger.info(f"ApertureDB query completed in {time.time() - start_time:.1f}s")        
+        # self.logger.debug(f"responses: {responses}")
         assert self.connection.last_query_ok(), self.connection.get_last_response_str()
         results = []
         descriptors = responses[0]["FindDescriptor"]["entities"]
-        blobs = responses[1]["FindBlob"]["entities"]
-        for d, b in zip(descriptors, blobs):
-            unique_id = d["_uniqueid"]
+        if self.use_blobs:
+            blobs_start = responses[1]["FindBlob"]["blobs_start"]
+        for i, d in enumerate(descriptors):
+            metadata = {}
+            metadata["adb_uniqueid"] = d["_uniqueid"]
+            for k, v in d.items():
+                if k.startswith(PROPERTY_PREFIX):
+                    metadata[k] = v[len(PROPERTY_PREFIX):]
             distance = d["_distance"]
-            blob_index = b["_blob_index"]
-            text = blobs_out[blob_index].decode()
-            # consider filtering internal properties out of metadata
+            if self.use_blobs:
+                blob_index = blobs_start + i
+                text = blobs_out[blob_index].decode()
+            else:
+                text = d["adb_text"]
+            doc = Document(page_content=text, **metadata)
             if vectors:
                 vector_blob_index = d["_blob_index"]
                 vector = np.frombuffer(
                     blobs_out[vector_blob_index], dtype=np.float32)
-                results.append(
-                    (Document(page_content=text, **d), distance, vector))
+                results.append((doc, distance, vector))
             else:
-                results.append(
-                    (Document(page_content=text, **d), distance))
+                results.append((doc, distance))
         # print(f"results: {results}")
         return results
 
