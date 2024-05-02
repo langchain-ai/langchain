@@ -111,8 +111,14 @@ class KuzuQAChain(Chain):
                 ", and 'llm', but not all three simultaneously."
             )
 
-        qa_chain = LLMChain(llm=qa_llm or llm, prompt=qa_prompt)
-        cypher_generation_chain = LLMChain(llm=cypher_llm or llm, prompt=cypher_prompt)
+        qa_chain = LLMChain(
+            llm=qa_llm or llm,  # type: ignore[arg-type]
+            prompt=qa_prompt
+        )
+        cypher_generation_chain = LLMChain(
+            llm=cypher_llm or llm,  # type: ignore[arg-type]
+            prompt=cypher_prompt
+        )
 
         return cls(
             qa_chain=qa_chain,
