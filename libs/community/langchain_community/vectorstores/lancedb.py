@@ -158,8 +158,10 @@ class LanceDB(VectorStore):
         Fetches a table object from the database.
 
         Args:
-            name (str, optional): The name of the table to fetch. Defaults to None and fetches current table object.
-            set_default (bool, optional): Whether to set the fetched table as the default table object. Defaults to False.
+            name (str, optional): The name of the table to fetch. Defaults to None
+                                    and fetches current table object.
+            set_default (bool, optional): Sets fetched table as the default table.
+                                        Defaults to False.
 
         Returns:
             Any: The fetched table object.
