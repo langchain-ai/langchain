@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock, Mock
 
 import pytest
+from langchain_community.chains.graph_qa.ontotext_graphdb import OntotextGraphDBQAChain
 from langchain_community.graphs import OntotextGraphDBGraph
 
 from langchain.chains import LLMChain
-from langchain_community.chains.graph_qa.ontotext_graphdb import OntotextGraphDBQAChain
 
 """
 cd libs/langchain/tests/integration_tests/chains/docker-compose-ontotext-graphdb

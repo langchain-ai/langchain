@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple
 
 
-
 class BaseCrossEncoder(ABC):
     """Interface for cross encoder models."""
 
