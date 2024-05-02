@@ -67,6 +67,16 @@ def StreamlitCallbackHandler(
             thought_labeler=thought_labeler,
         )
     except ImportError:
+        try:
+            from langchain_community.callbacks.streamlit.streamlit_callback_handler import (  # noqa: E501
+                StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
+            )
+        except ImportError:
+            raise ImportError(
+                "To use the StreamlitCallbackHandler, please install "
+                "langchain-community with `pip install langchain-community`."
+            )
+
         return _InternalStreamlitCallbackHandler(
             parent_container,
             max_thought_containers=max_thought_containers,
