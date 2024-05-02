@@ -1,4 +1,7 @@
 """Unit tests for document transformers."""
+import pytest
+pytest.importorskip("langchain_community")
+
 from langchain_community.document_transformers.embeddings_redundant_filter import (
     _filter_similar_embeddings,
 )

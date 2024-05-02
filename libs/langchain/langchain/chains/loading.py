@@ -23,7 +23,6 @@ from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
-from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
@@ -31,6 +30,8 @@ from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 
 if TYPE_CHECKING:
     from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+
+    from langchain.chains.llm_requests import LLMRequestsChain
 
 try:
     from langchain_community.llms.loading import load_llm, load_llm_from_config
@@ -598,6 +599,15 @@ def _load_api_chain(config: dict, **kwargs: Any) -> APIChain:
 
 
 def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
+    try:
+        from langchain.chains.llm_requests import LLMRequestsChain
+    except ImportError:
+        raise ImportError(
+            "To use this LLMRequestsChain functionality you must install the "
+            "langchain package. "
+            "You can install it with `pip install langchain`"
+        )
+
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config, **kwargs)
