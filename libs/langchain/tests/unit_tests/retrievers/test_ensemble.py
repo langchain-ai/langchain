@@ -1,8 +1,8 @@
 import pytest
-
-from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain_core.documents import Document
 from langchain_core.embeddings import FakeEmbeddings
+
+from langchain.retrievers.ensemble import EnsembleRetriever
 
 pytest.importorskip("langchain_community")
 

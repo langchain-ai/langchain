@@ -1,11 +1,11 @@
 """Test for Serializable base class"""
 
 import pytest
-
-from langchain.chains.llm import LLMChain
 from langchain_core.load.dump import dumpd, dumps
 from langchain_core.load.load import load, loads
 from langchain_core.prompts.prompt import PromptTemplate
+
+from langchain.chains.llm import LLMChain
 
 
 class NotSerializable:
@@ -14,8 +14,8 @@ class NotSerializable:
 
 @pytest.mark.requires("openai", "langchain_openai")
 def test_loads_openai_llm() -> None:
-    from langchain_openai import OpenAI
     from langchain_community.llms.openai import OpenAI as CommunityOpenAI
+    from langchain_openai import OpenAI
 
     llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     llm_string = dumps(llm)
@@ -29,9 +29,8 @@ def test_loads_openai_llm() -> None:
 
 @pytest.mark.requires("openai", "langchain_openai")
 def test_loads_llmchain() -> None:
-    from langchain_openai import OpenAI
-
     from langchain_community.llms.openai import OpenAI as CommunityOpenAI
+    from langchain_openai import OpenAI
 
     llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
@@ -91,9 +90,8 @@ def test_loads_llmchain_with_non_serializable_arg() -> None:
 
 @pytest.mark.requires("openai", "langchain_openai")
 def test_load_openai_llm() -> None:
-    from langchain_openai import OpenAI
-
     from langchain_community.llms.openai import OpenAI as CommunityOpenAI
+    from langchain_openai import OpenAI
 
     llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     llm_obj = dumpd(llm)
@@ -106,8 +104,8 @@ def test_load_openai_llm() -> None:
 
 @pytest.mark.requires("openai", "langchain_openai")
 def test_load_llmchain() -> None:
-    from langchain_openai import OpenAI
     from langchain_community.llms.openai import OpenAI as CommunityOpenAI
+    from langchain_openai import OpenAI
 
     llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
