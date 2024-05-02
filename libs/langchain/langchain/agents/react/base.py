@@ -1,7 +1,8 @@
 """Chain that implements the ReAct paper from https://arxiv.org/pdf/2210.03629.pdf."""
-from typing import Any, List, Optional, Sequence
+from __future__ import annotations
 
-from langchain_community.docstore.base import Docstore
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence
+
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
@@ -15,6 +16,9 @@ from langchain.agents.react.output_parser import ReActOutputParser
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.utils import validate_tools_single_input
+
+if TYPE_CHECKING:
+    from langchain_community.docstore.base import Docstore
 
 
 @deprecated("0.1.0", removal="0.2.0")

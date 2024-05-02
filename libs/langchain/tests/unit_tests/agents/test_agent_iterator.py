@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import pytest
-from langchain_community.llms import FakeListLLM
+from langchain_core.language_models import FakeListLLM
 from langchain_core.tools import Tool
 
 from langchain.agents import (
