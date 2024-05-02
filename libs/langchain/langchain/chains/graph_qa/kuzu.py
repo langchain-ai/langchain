@@ -103,7 +103,8 @@ class KuzuQAChain(Chain):
         if not qa_llm and not llm:
             raise ValueError(
                 "Either `llm` or `qa_llm` parameters must be provided along with"
-                " `cypher_llm`")
+                " `cypher_llm`"
+            )
         if cypher_llm and qa_llm and llm:
             raise ValueError(
                 "You can specify up to two of 'cypher_llm', 'qa_llm'"
