@@ -32,6 +32,36 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             " Please install it using `pip install langchain-community`."
         )
 
+    from langchain_community.query_constructors.astradb import AstraDBTranslator
+    from langchain_community.query_constructors.chroma import ChromaTranslator
+    from langchain_community.query_constructors.dashvector import DashvectorTranslator
+    from langchain_community.query_constructors.databricks_vector_search import (
+        DatabricksVectorSearchTranslator,
+    )
+    from langchain_community.query_constructors.deeplake import DeepLakeTranslator
+    from langchain_community.query_constructors.dingo import DingoDBTranslator
+    from langchain_community.query_constructors.elasticsearch import (
+        ElasticsearchTranslator,
+    )
+    from langchain_community.query_constructors.milvus import MilvusTranslator
+    from langchain_community.query_constructors.mongodb_atlas import (
+        MongoDBAtlasTranslator,
+    )
+    from langchain_community.query_constructors.myscale import MyScaleTranslator
+    from langchain_community.query_constructors.opensearch import OpenSearchTranslator
+    from langchain_community.query_constructors.pgvector import PGVectorTranslator
+    from langchain_community.query_constructors.pinecone import PineconeTranslator
+    from langchain_community.query_constructors.qdrant import QdrantTranslator
+    from langchain_community.query_constructors.redis import RedisTranslator
+    from langchain_community.query_constructors.supabase import SupabaseVectorTranslator
+    from langchain_community.query_constructors.tencentvectordb import (
+        TencentVectorDBTranslator,
+    )
+    from langchain_community.query_constructors.timescalevector import (
+        TimescaleVectorTranslator,
+    )
+    from langchain_community.query_constructors.vectara import VectaraTranslator
+    from langchain_community.query_constructors.weaviate import WeaviateTranslator
     from langchain_community.vectorstores import (
         AstraDB,
         Chroma,
@@ -58,33 +88,6 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.vectorstores import (
         Pinecone as CommunityPinecone,
     )
-
-    from langchain_community.query_constructors.astradb import AstraDBTranslator
-    from langchain_community.query_constructors.chroma import ChromaTranslator
-    from langchain_community.query_constructors.dashvector import DashvectorTranslator
-    from langchain_community.query_constructors.databricks_vector_search import (
-        DatabricksVectorSearchTranslator,
-    )
-    from langchain_community.query_constructors.deeplake import DeepLakeTranslator
-    from langchain_community.query_constructors.dingo import DingoDBTranslator
-    from langchain_community.query_constructors.elasticsearch import ElasticsearchTranslator
-    from langchain_community.query_constructors.milvus import MilvusTranslator
-    from langchain_community.query_constructors.mongodb_atlas import MongoDBAtlasTranslator
-    from langchain_community.query_constructors.myscale import MyScaleTranslator
-    from langchain_community.query_constructors.opensearch import OpenSearchTranslator
-    from langchain_community.query_constructors.pgvector import PGVectorTranslator
-    from langchain_community.query_constructors.pinecone import PineconeTranslator
-    from langchain_community.query_constructors.qdrant import QdrantTranslator
-    from langchain_community.query_constructors.redis import RedisTranslator
-    from langchain_community.query_constructors.supabase import SupabaseVectorTranslator
-    from langchain_community.query_constructors.tencentvectordb import (
-        TencentVectorDBTranslator,
-    )
-    from langchain_community.query_constructors.timescalevector import (
-        TimescaleVectorTranslator,
-    )
-    from langchain_community.query_constructors.vectara import VectaraTranslator
-    from langchain_community.query_constructors.weaviate import WeaviateTranslator
 
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,

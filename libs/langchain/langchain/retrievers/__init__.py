@@ -25,7 +25,6 @@ from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.retrievers.outline import OutlineRetriever
 from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
 from langchain.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
