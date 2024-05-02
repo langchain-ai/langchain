@@ -2,10 +2,8 @@ import logging
 import re
 from typing import List, Optional
 
-from langchain_community.document_loaders import AsyncHtmlLoader
-from langchain_community.document_transformers import Html2TextTransformer
-from langchain_community.llms import LlamaCpp
-from langchain_community.utilities import GoogleSearchAPIWrapper
+from langchain.chains import LLMChain
+from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -19,8 +17,10 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 
-from langchain.chains import LLMChain
-from langchain.chains.prompt_selector import ConditionalPromptSelector
+from langchain_community.document_loaders import AsyncHtmlLoader
+from langchain_community.document_transformers import Html2TextTransformer
+from langchain_community.llms import LlamaCpp
+from langchain_community.utilities import GoogleSearchAPIWrapper
 
 logger = logging.getLogger(__name__)
 

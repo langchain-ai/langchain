@@ -32,7 +32,6 @@ from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
-from langchain.retrievers.web_research import WebResearchRetriever
 
 if TYPE_CHECKING:
     from langchain_community.retrievers import (
@@ -70,6 +69,7 @@ if TYPE_CHECKING:
         TFIDFRetriever,
         VespaRetriever,
         WeaviateHybridSearchRetriever,
+        WebResearchRetriever,
         WikipediaRetriever,
         ZepRetriever,
         ZillizRetriever,
@@ -106,12 +106,13 @@ DEPRECATED_LOOKUP = {
     "RemoteLangChainRetriever": "langchain_community.retrievers",
     "SVMRetriever": "langchain_community.retrievers",
     "TavilySearchAPIRetriever": "langchain_community.retrievers",
-    "TFIDFRetriever": "langchain_community.retrievers",
     "BM25Retriever": "langchain_community.retrievers",
-    "VespaRetriever": "langchain_community.retrievers",
-    "NeuralDBRetriever": "langchain_community.retrievers",
     "DriaRetriever": "langchain_community.retrievers",
+    "NeuralDBRetriever": "langchain_community.retrievers",
+    "TFIDFRetriever": "langchain_community.retrievers",
+    "VespaRetriever": "langchain_community.retrievers",
     "WeaviateHybridSearchRetriever": "langchain_community.retrievers",
+    "WebResearchRetriever": "langchain_community.retrievers",
     "WikipediaRetriever": "langchain_community.retrievers",
     "ZepRetriever": "langchain_community.retrievers",
     "ZillizRetriever": "langchain_community.retrievers",
