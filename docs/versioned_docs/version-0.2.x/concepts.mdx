@@ -531,12 +531,3 @@ The results of those actions can then be fed back into the agent and it determin
 
 [LangGraph](https://github.com/langchain-ai/langgraph) is an extension of LangChain specifically aimed at creating highly controllable and customizable agents.
 Please check out that documentation for a more in depth overview of agent concepts.
-
-There is a legacy agent concept in LangChain that we are moving towards deprecating: `AgentExecutor`.
-AgentExecutor was essentially a runtime for agents.
-It was a great place to get started, however, it was not flexible enough as you started to have more customized agents.
-In order to solve that we built LangGraph to be this flexible, highly-controllable runtime.
-
-If you are still using AgentExecutor, do not fear: we still have a guide on [how to use AgentExecutor](/docs/how_to/agent_executor).
-It is recommended, however, that you start to transition to LangGraph.
-In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent)
