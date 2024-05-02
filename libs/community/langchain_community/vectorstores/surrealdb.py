@@ -207,7 +207,11 @@ class SurrealDBStore(VectorStore):
         return asyncio.run(_delete(ids, **kwargs))
 
     async def _asimilarity_search_by_vector_with_score(
-        self, embedding: List[float], k: int = DEFAULT_K, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search for query embedding asynchronously
         and return documents and scores
@@ -215,6 +219,7 @@ class SurrealDBStore(VectorStore):
         Args:
             embedding (List[float]): Query embedding.
             k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar along with scores
@@ -225,6 +230,19 @@ class SurrealDBStore(VectorStore):
             "k": k,
             "score_threshold": kwargs.get("score_threshold", 0),
         }
+
+        # build additional filter criteria
+        custom_filter = ""
+        if filter:
+            for key in filter:
+                # check value type
+                if type(filter[key]) in [str, bool]:
+                    filter_value = f"'{filter[key]}'"
+                else:
+                    filter_value = f"{filter[key]}"
+
+                custom_filter += f"and metadata.{key} = {filter_value} "
+
         query = f"""
         select
             id,
@@ -234,6 +252,7 @@ class SurrealDBStore(VectorStore):
             vector::similarity::cosine(embedding, $embedding) as similarity
         from ⟨{args["collection"]}⟩
         where vector::similarity::cosine(embedding, $embedding) >= $score_threshold
+          {custom_filter}
         order by similarity desc LIMIT $k;
         """
         results = await self.sdb.query(query, args)
@@ -256,19 +275,24 @@ class SurrealDBStore(VectorStore):
                     metadata={"id": doc["id"], **(doc.get("metadata", None) or {})},
                 ),
                 doc["similarity"],
-                doc["embedding"]
+                doc["embedding"],
             )
             for doc in result["result"]
         ]
 
     async def asimilarity_search_with_relevance_scores(
-        self, query: str, k: int = DEFAULT_K, **kwargs: Any
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search asynchronously and return relevance scores
 
         Args:
             query (str): Query
             k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar along with relevance scores
@@ -278,19 +302,24 @@ class SurrealDBStore(VectorStore):
             (document, similarity)
             for document, similarity, _ in (
                 await self._asimilarity_search_by_vector_with_score(
-                    query_embedding, k, **kwargs
+                    query_embedding, k, filter, **kwargs
                 )
             )
         ]
 
     def similarity_search_with_relevance_scores(
-        self, query: str, k: int = DEFAULT_K, **kwargs: Any
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search synchronously and return relevance scores
 
         Args:
             query (str): Query
             k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar along with relevance scores
@@ -301,19 +330,24 @@ class SurrealDBStore(VectorStore):
         ):
             await self.initialize()
             return await self.asimilarity_search_with_relevance_scores(
-                query, k, **kwargs
+                query, k, filter, **kwargs
             )
 
         return asyncio.run(_similarity_search_with_relevance_scores())
 
     async def asimilarity_search_with_score(
-        self, query: str, k: int = DEFAULT_K, **kwargs: Any
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search asynchronously and return distance scores
 
         Args:
             query (str): Query
             k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar along with relevance distance scores
@@ -323,19 +357,24 @@ class SurrealDBStore(VectorStore):
             (document, similarity)
             for document, similarity, _ in (
                 await self._asimilarity_search_by_vector_with_score(
-                    query_embedding, k, **kwargs
+                    query_embedding, k, filter, **kwargs
                 )
             )
         ]
 
     def similarity_search_with_score(
-        self, query: str, k: int = DEFAULT_K, **kwargs: Any
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search synchronously and return distance scores
 
         Args:
             query (str): Query
             k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar along with relevance distance scores
@@ -343,37 +382,49 @@ class SurrealDBStore(VectorStore):
 
         async def _similarity_search_with_score() -> (List[Tuple[Document, float]]):
             await self.initialize()
-            return await self.asimilarity_search_with_score(query, k, **kwargs)
+            return await self.asimilarity_search_with_score(
+                query, k, filter, **kwargs
+            )
 
         return asyncio.run(_similarity_search_with_score())
 
     async def asimilarity_search_by_vector(
-        self, embedding: List[float], k: int = DEFAULT_K, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search on query embedding asynchronously
 
         Args:
             embedding (List[float]): Query embedding
             k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar to the query
         """
         return [
             document
-            for document, _ in await self._asimilarity_search_by_vector_with_score(
-                embedding, k, **kwargs
+            for document, _, _ in await self._asimilarity_search_by_vector_with_score(
+                embedding, k, filter, **kwargs
             )
         ]
 
     def similarity_search_by_vector(
-        self, embedding: List[float], k: int = DEFAULT_K, **kwargs: Any
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search on query embedding
 
         Args:
             embedding (List[float]): Query embedding
             k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar to the query
@@ -381,33 +432,47 @@ class SurrealDBStore(VectorStore):
 
         async def _similarity_search_by_vector() -> List[Document]:
             await self.initialize()
-            return await self.asimilarity_search_by_vector(embedding, k, **kwargs)
+            return await self.asimilarity_search_by_vector(
+                embedding, k, filter, **kwargs
+            )
 
         return asyncio.run(_similarity_search_by_vector())
 
     async def asimilarity_search(
-        self, query: str, k: int = DEFAULT_K, **kwargs: Any
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search on query asynchronously
 
         Args:
             query (str): Query
             k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar to the query
         """
         query_embedding = self.embedding_function.embed_query(query)
-        return await self.asimilarity_search_by_vector(query_embedding, k, **kwargs)
+        return await self.asimilarity_search_by_vector(
+            query_embedding, k, filter, **kwargs
+        )
 
     def similarity_search(
-        self, query: str, k: int = DEFAULT_K, **kwargs: Any
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search on query
 
         Args:
             query (str): Query
             k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents most similar to the query
@@ -415,7 +480,7 @@ class SurrealDBStore(VectorStore):
 
         async def _similarity_search() -> List[Document]:
             await self.initialize()
-            return await self.asimilarity_search(query, k, **kwargs)
+            return await self.asimilarity_search(query, k, filter, **kwargs)
 
         return asyncio.run(_similarity_search())
 
@@ -426,7 +491,6 @@ class SurrealDBStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
-        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -451,29 +515,36 @@ class SurrealDBStore(VectorStore):
             (document, similarity, embedding)
             for document, similarity, embedding in (
                 await self._asimilarity_search_by_vector_with_score(
-                    embedding, fetch_k, **kwargs
+                    embedding, fetch_k, filter, **kwargs
                 )
             )
         ]
 
-        results = [(sub[0], sub[1]) for sub in result]  # extract only (document, similarity) from result
-        embeddings = [sub[-1] for sub in result]  # extract only embedding from result
+        # extract only document from result
+        results = [
+            sub[0] for sub in result
+        ]
+        # extract only embedding from result
+        embeddings = [
+            sub[-1] for sub in result
+        ]
 
         mmr_selected = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
             embeddings,
             k=k,
-            lambda_mult=lambda_mult
+            lambda_mult=lambda_mult,
         )
 
         return [results[i] for i in mmr_selected]
-        
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
         k: int = DEFAULT_K,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -489,6 +560,8 @@ class SurrealDBStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -496,11 +569,7 @@ class SurrealDBStore(VectorStore):
         async def _max_marginal_relevance_search_by_vector() -> List[Document]:
             await self.initialize()
             return await self.amax_marginal_relevance_search_by_vector(
-                self,
-                embedding,
-                k,
-                fetch_k,
-                lambda_mult
+                self, embedding, k, fetch_k, lambda_mult, filter
             )
 
         return asyncio.run(_max_marginal_relevance_search_by_vector())
@@ -511,6 +580,7 @@ class SurrealDBStore(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -526,16 +596,15 @@ class SurrealDBStore(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
 
         embedding = self.embedding_function.embed_query(query)
         docs = await self.amax_marginal_relevance_search_by_vector(
-            embedding,
-            k,
-            fetch_k,
-            lambda_mult=lambda_mult
+            embedding, k, fetch_k, lambda_mult, filter, **kwargs
         )
         return docs
 
@@ -546,7 +615,6 @@ class SurrealDBStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[Dict[str, str]] = None,
-        where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -570,11 +638,7 @@ class SurrealDBStore(VectorStore):
         async def _max_marginal_relevance_search() -> List[Document]:
             await self.initialize()
             return await self.amax_marginal_relevance_search(
-                query,
-                k,
-                fetch_k,
-                lambda_mult,
-                **kwargs
+                query, k, fetch_k, lambda_mult, filter, **kwargs
             )
 
         return asyncio.run(_max_marginal_relevance_search())
