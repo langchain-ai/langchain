@@ -729,7 +729,11 @@ class SambaStudio(LLM):
             ValueError: If the prediction fails.
         """
         response = sdk.nlp_predict(
-            self.sambastudio_project_id, self.sambastudio_endpoint_id, self.sambastudio_api_key, prompt, tuning_params
+            self.sambastudio_project_id,
+            self.sambastudio_endpoint_id,
+            self.sambastudio_api_key,
+            prompt,
+            tuning_params,
         )
         if response["status_code"] != 200:
             optional_detail = response["detail"]
@@ -774,7 +778,11 @@ class SambaStudio(LLM):
             An iterator of GenerationChunks.
         """
         for chunk in sdk.nlp_predict_stream(
-            self.sambastudio_project_id, self.sambastudio_endpoint_id, self.sambastudio_api_key, prompt, tuning_params
+            self.sambastudio_project_id,
+            self.sambastudio_endpoint_id,
+            self.sambastudio_api_key,
+            prompt,
+            tuning_params,
         ):
             yield chunk
 
