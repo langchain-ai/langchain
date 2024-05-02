@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from io import BufferedReader, BytesIO
 import os
 import re
+import urllib
 from typing import Any, Callable, Optional, Annotated
 from uuid import uuid4
 from langchain_core.tools import BaseTool
@@ -33,7 +34,7 @@ def _access_token_provider_factory() -> Callable[[], Optional[str]]:
         nonlocal access_token
         if access_token is None or datetime.fromtimestamp(access_token.expires_on, timezone.utc) < datetime.now(timezone.utc) + timedelta(minutes=5):
             credential = DefaultAzureCredential()
-            access_token = credential.get_token("https://acasessions.io/.default")
+            access_token = credential.get_token("https://dynamicsessions.io/.default")
         return access_token.token
     
     return access_token_provider
@@ -75,9 +76,10 @@ class RemoteFileMetadata:
     @staticmethod
     def from_dict(data: dict) -> "RemoteFileMetadata":
         """Create a RemoteFileMetadata object from a dictionary."""
+        properties = data.get("properties", {})
         return RemoteFileMetadata(
-            filename=data.get("filename"),
-            size_in_bytes=data.get("size"),
+            filename=properties.get("filename"),
+            size_in_bytes=properties.get("size"),
         )
 
 
@@ -110,14 +112,18 @@ class SessionsPythonREPLTool(BaseTool):
             raise ValueError("pool_management_endpoint is not set")
         if not pool_management_endpoint.endswith("/"):
             pool_management_endpoint += "/"
-        return pool_management_endpoint + path
+        encoded_session_id = urllib.parse.quote(self.session_id)
+        query = f"identifier={encoded_session_id}&api-version=2024-02-02-preview"
+        query_separator = "&" if "?" in pool_management_endpoint else "?"
+        full_url = pool_management_endpoint + path + query_separator + query
+        return full_url
 
     def _run(self, python_code: str) -> Any:
         if self.sanitize_input:
             python_code = _sanitize_input(python_code)
 
         access_token = self.access_token_provider()
-        api_url = self._build_url("python/execute")
+        api_url = self._build_url("code/execute")
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
@@ -125,18 +131,17 @@ class SessionsPythonREPLTool(BaseTool):
         }
         body = {
             "properties": {
-                "identifier": self.session_id,
                 "codeInputType": "inline",
                 "executionType": "synchronous",
-                "pythonCode": python_code,
+                "code": python_code,
             }
         }
 
         response = requests.post(api_url, headers=headers, json=body)
         response.raise_for_status()
         response_json = response.json()
-
-        return f"result:\n{response_json['result']}\n\nstdout:\n{response_json['stdout']}\n\nstderr:\n{response_json['stderr']}"
+        properties = response_json.get("properties", {})
+        return f"result:\n{properties['result']}\n\nstdout:\n{properties['stdout']}\n\nstderr:\n{properties['stderr']}"
 
     async def _arun(self, python_code: str) -> Any:
         """Use the tool asynchronously."""
@@ -166,7 +171,7 @@ class SessionsPythonREPLTool(BaseTool):
             data = open(local_file_path, "rb")
 
         access_token = self.access_token_provider()
-        api_url = self._build_url(f"python/uploadFile?identifier={self.session_id}")
+        api_url = self._build_url(f"files/upload")
         headers = {
             "Authorization": f"Bearer {access_token}",
             "User-Agent": USER_AGENT,
@@ -180,7 +185,7 @@ class SessionsPythonREPLTool(BaseTool):
         response.raise_for_status()
 
         response_json = response.json()
-        return RemoteFileMetadata.from_dict(response_json['$values'][0])
+        return RemoteFileMetadata.from_dict(response_json['value'][0])
     
     def download_file(self, *, remote_file_path: str, local_file_path: str = None) -> Optional[BufferedReader]:
         """Download a file from the session pool.
@@ -193,7 +198,8 @@ class SessionsPythonREPLTool(BaseTool):
             BufferedReader: The data of the downloaded file.
         """
         access_token = self.access_token_provider()
-        api_url = self._build_url(f"python/downloadFile?identifier={self.session_id}&filename={remote_file_path}")
+        encoded_remote_file_path = urllib.parse.quote(remote_file_path)
+        api_url = self._build_url(f"files/content/{encoded_remote_file_path}")
         headers = {
             "Authorization": f"Bearer {access_token}",
             "User-Agent": USER_AGENT,
@@ -216,7 +222,7 @@ class SessionsPythonREPLTool(BaseTool):
             list[RemoteFileMetadata]: The metadata for the files in the session pool
         """
         access_token = self.access_token_provider()
-        api_url = self._build_url(f"python/files?identifier={self.session_id}")
+        api_url = self._build_url(f"files")
         headers = {
             "Authorization": f"Bearer {access_token}",
             "User-Agent": USER_AGENT,
@@ -226,4 +232,4 @@ class SessionsPythonREPLTool(BaseTool):
         response.raise_for_status()
 
         response_json = response.json()
-        return [RemoteFileMetadata.from_dict(entry) for entry in response_json["$values"]]
+        return [RemoteFileMetadata.from_dict(entry) for entry in response_json['value']]

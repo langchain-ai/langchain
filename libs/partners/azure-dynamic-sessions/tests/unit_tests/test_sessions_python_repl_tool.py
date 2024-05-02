@@ -1,6 +1,7 @@
 import re
 import time
 from unittest import mock
+from urllib.parse import parse_qs, urlparse
 import uuid
 from azure.core.credentials import AccessToken
 from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
@@ -50,14 +51,14 @@ def test_default_access_token_provider_refreshes_expiring_token():
 @mock.patch("azure.identity.DefaultAzureCredential.get_token")
 def test_code_execution_calls_api(mock_get_token, mock_post: mock.MagicMock):
     tool = SessionsPythonREPLTool(pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT)
-    mock_post.return_value.json.return_value = {"result": "", "stdout": "hello world\n", "stderr": ""}
+    mock_post.return_value.json.return_value = {'$id': '1', 'properties': {'$id': '2', 'status': 'Success', 'stdout': 'hello world\n', 'stderr': '', 'result': '', 'executionTimeInMilliseconds': 33}}
     mock_get_token.return_value = AccessToken("token_value", time.time() + 1000)
     
     result = tool.run("print('hello world')")
     
     assert result == "result:\n\n\nstdout:\nhello world\n\n\nstderr:\n"
     
-    api_url = f"{POOL_MANAGEMENT_ENDPOINT}/python/execute"
+    api_url = f"{POOL_MANAGEMENT_ENDPOINT}/code/execute"
     headers = {
         "Authorization": f"Bearer token_value",
         "Content-Type": "application/json",
@@ -65,16 +66,18 @@ def test_code_execution_calls_api(mock_get_token, mock_post: mock.MagicMock):
     }
     body = {
         "properties": {
-            "identifier": mock.ANY,
             "codeInputType": "inline",
             "executionType": "synchronous",
-            "pythonCode": "print('hello world')",
+            "code": "print('hello world')",
         }
     }
-    mock_post.assert_called_once_with(api_url, headers=headers, json=body)
+    mock_post.assert_called_once_with(mock.ANY, headers=headers, json=body)
 
     called_headers = mock_post.call_args.kwargs['headers']
     assert re.match(r"^langchain-azure-dynamic-sessions/\d+\.\d+\.\d+ \(Language=Python\)", called_headers["User-Agent"])
+
+    called_api_url = mock_post.call_args.args[0]
+    assert called_api_url.startswith(api_url)
 
 @mock.patch("requests.post")
 @mock.patch("azure.identity.DefaultAzureCredential.get_token")
@@ -83,29 +86,31 @@ def test_uses_specified_session_id(mock_get_token, mock_post: mock.MagicMock):
         pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT,
         session_id="00000000-0000-0000-0000-000000000003",
     )
-    mock_post.return_value.json.return_value = {"result": "2", "stdout": "", "stderr": ""}
+    mock_post.return_value.json.return_value = {'$id': '1', 'properties': {'$id': '2', 'status': 'Success', 'stdout': '', 'stderr': '', 'result': '2', 'executionTimeInMilliseconds': 33}}
     mock_get_token.return_value = AccessToken("token_value", time.time() + 1000)
     tool.run("1 + 1")
-    body = mock_post.call_args.kwargs["json"]
-    assert body["properties"]["identifier"] == "00000000-0000-0000-0000-000000000003"
+    call_url = mock_post.call_args.args[0]
+    parsed_url = urlparse(call_url)
+    call_identifier = parse_qs(parsed_url.query)["identifier"][0]
+    assert call_identifier == "00000000-0000-0000-0000-000000000003"
 
 
 def test_sanitizes_input():
     tool = SessionsPythonREPLTool(pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT)
     with mock.patch("requests.post") as mock_post:
-        mock_post.return_value.json.return_value = {"result": "", "stdout": "", "stderr": ""}
+        mock_post.return_value.json.return_value = {'$id': '1', 'properties': {'$id': '2', 'status': 'Success', 'stdout': '', 'stderr': '', 'result': '', 'executionTimeInMilliseconds': 33}}
         tool.run("```python\nprint('hello world')\n```")
         body = mock_post.call_args.kwargs["json"]
-        assert body["properties"]["pythonCode"] == "print('hello world')"
+        assert body["properties"]["code"] == "print('hello world')"
 
 
 def test_does_not_sanitize_input():
     tool = SessionsPythonREPLTool(pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT, sanitize_input=False)
     with mock.patch("requests.post") as mock_post:
-        mock_post.return_value.json.return_value = {"result": "", "stdout": "", "stderr": ""}
+        mock_post.return_value.json.return_value = {'$id': '1', 'properties': {'$id': '2', 'status': 'Success', 'stdout': '', 'stderr': '', 'result': '', 'executionTimeInMilliseconds': 33}}
         tool.run("```python\nprint('hello world')\n```")
         body = mock_post.call_args.kwargs["json"]
-        assert body["properties"]["pythonCode"] == "```python\nprint('hello world')\n```"
+        assert body["properties"]["code"] == "```python\nprint('hello world')\n```"
 
 
 def test_uses_custom_access_token_provider():
@@ -118,7 +123,7 @@ def test_uses_custom_access_token_provider():
     )
 
     with mock.patch("requests.post") as mock_post:
-        mock_post.return_value.json.return_value = {"result": "", "stdout": "", "stderr": ""}
+        mock_post.return_value.json.return_value = {'$id': '1', 'properties': {'$id': '2', 'status': 'Success', 'stdout': '', 'stderr': '', 'result': '', 'executionTimeInMilliseconds': 33}}
         tool.run("print('hello world')")
         headers = mock_post.call_args.kwargs["headers"]
         assert headers["Authorization"] == "Bearer custom_token"
