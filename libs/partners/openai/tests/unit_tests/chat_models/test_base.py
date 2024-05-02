@@ -1,7 +1,7 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
-from typing import Any
+from typing import Any, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -19,6 +19,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _format_message_content,
 )
 
 
@@ -279,3 +280,44 @@ def test_openai_invoke_name(mock_completion: dict) -> None:
         # check return type has name
         assert res.content == "Bar Baz"
         assert res.name == "Erick"
+
+
+def test_custom_token_counting() -> None:
+    def token_encoder(text: str) -> List[int]:
+        return [1, 2, 3]
+
+    llm = ChatOpenAI(custom_get_token_ids=token_encoder)
+    assert llm.get_token_ids("foo") == [1, 2, 3]
+
+
+def test_format_message_content() -> None:
+    content: Any = "hello"
+    assert content == _format_message_content(content)
+
+    content = None
+    assert content == _format_message_content(content)
+
+    content = []
+    assert content == _format_message_content(content)
+
+    content = [
+        {"type": "text", "text": "What is in this image?"},
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": "url.com",
+            },
+        },
+    ]
+    assert content == _format_message_content(content)
+
+    content = [
+        {"type": "text", "text": "hello"},
+        {
+            "type": "tool_use",
+            "id": "toolu_01A09q90qw90lq917835lq9",
+            "name": "get_weather",
+            "input": {"location": "San Francisco, CA", "unit": "celsius"},
+        },
+    ]
+    assert [{"type": "text", "text": "hello"}] == _format_message_content(content)

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 def import_clearml() -> Any:
     """Import the clearml python package and raise an error if it is not installed."""
     try:
-        import clearml  # noqa: F401
+        import clearml
     except ImportError:
         raise ImportError(
             "To use the clearml callback manager you need to have the `clearml` python "

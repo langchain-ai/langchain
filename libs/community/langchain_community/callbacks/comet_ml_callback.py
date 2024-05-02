@@ -22,7 +22,7 @@ LANGCHAIN_MODEL_NAME = "langchain-model"
 def import_comet_ml() -> Any:
     """Import comet_ml and raise an error if it is not installed."""
     try:
-        import comet_ml  # noqa: F401
+        import comet_ml
     except ImportError:
         raise ImportError(
             "To use the comet_ml callback manager you need to have the "
