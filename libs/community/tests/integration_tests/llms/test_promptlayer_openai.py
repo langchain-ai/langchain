@@ -12,7 +12,7 @@ from langchain_community.llms.promptlayer_openai import PromptLayerOpenAI
 def test_promptlayer_openai_call() -> None:
     """Test valid call to promptlayer openai."""
     llm = PromptLayerOpenAI(max_tokens=10)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -36,9 +36,9 @@ def test_promptlayer_openai_stop_valid() -> None:
     """Test promptlayer openai stop logic on valid configuration."""
     query = "write an ordered list of five items"
     first_llm = PromptLayerOpenAI(stop="3", temperature=0)
-    first_output = first_llm(query)
+    first_output = first_llm.invoke(query)
     second_llm = PromptLayerOpenAI(temperature=0)
-    second_output = second_llm(query, stop=["3"])
+    second_output = second_llm.invoke(query, stop=["3"])
     # Because it stops on new lines, shouldn't return anything
     assert first_output == second_output
 
@@ -47,7 +47,7 @@ def test_promptlayer_openai_stop_error() -> None:
     """Test promptlayer openai stop logic on bad configuration."""
     llm = PromptLayerOpenAI(stop="3", temperature=0)
     with pytest.raises(ValueError):
-        llm("write an ordered list of five items", stop=["\n"])
+        llm.invoke("write an ordered list of five items", stop=["\n"])
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:

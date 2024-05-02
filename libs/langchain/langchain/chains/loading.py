@@ -1,16 +1,15 @@
 """Functionality for loading chains."""
+
 import json
 from pathlib import Path
 from typing import Any, Union
 
 import yaml
-from langchain_community.llms.loading import load_llm, load_llm_from_config
 from langchain_core.prompts.loading import (
     _load_output_parser,
     load_prompt,
     load_prompt_from_config,
 )
-from langchain_core.utils.loading import try_load_from_hub
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.api.base import APIChain
@@ -29,6 +28,27 @@ from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
+
+try:
+    from langchain_community.llms.loading import load_llm, load_llm_from_config
+except ImportError:
+
+    def load_llm(*args: Any, **kwargs: Any) -> None:  # type: ignore
+        raise ImportError(
+            "To use this load_llm functionality you must install the "
+            "langchain_community package. "
+            "You can install it with `pip install langchain_community`"
+        )
+
+    def load_llm_from_config(  # type: ignore
+        *args: Any, **kwargs: Any
+    ) -> None:
+        raise ImportError(
+            "To use this load_llm_from_config functionality you must install the "
+            "langchain_community package. "
+            "You can install it with `pip install langchain_community`"
+        )
+
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
 
@@ -134,7 +154,7 @@ def _load_map_reduce_documents_chain(
     )
 
 
-def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:
+def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocumentsChain:  # type: ignore[valid-type]
     combine_documents_chain = None
     collapse_documents_chain = None
 
@@ -187,7 +207,7 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
             config.pop("collapse_document_chain_path"), **kwargs
         )
 
-    return ReduceDocumentsChain(
+    return ReduceDocumentsChain(  # type: ignore[misc]
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_documents_chain,
         **config,
@@ -383,7 +403,7 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
         raise ValueError("`database` must be present.")
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
-        chain = load_chain_from_config(llm_chain_config, **kwargs, **kwargs)
+        chain = load_chain_from_config(llm_chain_config, **kwargs)
         return SQLDatabaseChain(llm_chain=chain, database=database, **config)
     if "llm" in config:
         llm_config = config.pop("llm")
@@ -622,12 +642,13 @@ def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
 
 def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
     """Unified method for loading a chain from LangChainHub or local fs."""
-    if hub_result := try_load_from_hub(
-        path, _load_chain_from_file, "chains", {"json", "yaml"}, **kwargs
-    ):
-        return hub_result
-    else:
-        return _load_chain_from_file(path, **kwargs)
+    if isinstance(path, str) and path.startswith("lc://"):
+        raise RuntimeError(
+            "Loading from the deprecated github-based Hub is no longer supported. "
+            "Please use the new LangChain Hub at https://smith.langchain.com/hub "
+            "instead."
+        )
+    return _load_chain_from_file(path, **kwargs)
 
 
 def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:

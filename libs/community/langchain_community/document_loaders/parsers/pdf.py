@@ -87,17 +87,17 @@ class PyPDFParser(BaseBlobParser):
         self.password = password
         self.extract_images = extract_images
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
         import pypdf
 
-        with blob.as_bytes_io() as pdf_file_obj:
+        with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
             pdf_reader = pypdf.PdfReader(pdf_file_obj, password=self.password)
             yield from [
                 Document(
                     page_content=page.extract_text()
                     + self._extract_images_from_page(page),
-                    metadata={"source": blob.source, "page": page_number},
+                    metadata={"source": blob.source, "page": page_number},  # type: ignore[attr-defined]
                 )
                 for page_number, page in enumerate(pdf_reader.pages)
             ]
@@ -140,16 +140,16 @@ class PDFMinerParser(BaseBlobParser):
         self.extract_images = extract_images
         self.concatenate_pages = concatenate_pages
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
 
         if not self.extract_images:
             from pdfminer.high_level import extract_text
 
-            with blob.as_bytes_io() as pdf_file_obj:
+            with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
                 if self.concatenate_pages:
                     text = extract_text(pdf_file_obj)
-                    metadata = {"source": blob.source}
+                    metadata = {"source": blob.source}  # type: ignore[attr-defined]
                     yield Document(page_content=text, metadata=metadata)
                 else:
                     from pdfminer.pdfpage import PDFPage
@@ -157,7 +157,7 @@ class PDFMinerParser(BaseBlobParser):
                     pages = PDFPage.get_pages(pdf_file_obj)
                     for i, _ in enumerate(pages):
                         text = extract_text(pdf_file_obj, page_numbers=[i])
-                        metadata = {"source": blob.source, "page": str(i)}
+                        metadata = {"source": blob.source, "page": str(i)}  # type: ignore[attr-defined]
                         yield Document(page_content=text, metadata=metadata)
         else:
             import io
@@ -168,7 +168,7 @@ class PDFMinerParser(BaseBlobParser):
             from pdfminer.pdfpage import PDFPage
 
             text_io = io.StringIO()
-            with blob.as_bytes_io() as pdf_file_obj:
+            with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
                 pages = PDFPage.get_pages(pdf_file_obj)
                 rsrcmgr = PDFResourceManager()
                 device_for_text = TextConverter(rsrcmgr, text_io, laparams=LAParams())
@@ -183,7 +183,7 @@ class PDFMinerParser(BaseBlobParser):
                     )
                     text_io.truncate(0)
                     text_io.seek(0)
-                    metadata = {"source": blob.source, "page": str(i)}
+                    metadata = {"source": blob.source, "page": str(i)}  # type: ignore[attr-defined]
                     yield Document(page_content=content, metadata=metadata)
 
     def _extract_images_from_page(self, page: pdfminer.layout.LTPage) -> str:
@@ -231,12 +231,12 @@ class PyMuPDFParser(BaseBlobParser):
         self.text_kwargs = text_kwargs or {}
         self.extract_images = extract_images
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
         import fitz
 
-        with blob.as_bytes_io() as file_path:
-            if blob.data is None:
+        with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
+            if blob.data is None:  # type: ignore[attr-defined]
                 doc = fitz.open(file_path)
             else:
                 doc = fitz.open(stream=file_path, filetype="pdf")
@@ -247,8 +247,8 @@ class PyMuPDFParser(BaseBlobParser):
                     + self._extract_images_from_page(doc, page),
                     metadata=dict(
                         {
-                            "source": blob.source,
-                            "file_path": blob.source,
+                            "source": blob.source,  # type: ignore[attr-defined]
+                            "file_path": blob.source,  # type: ignore[attr-defined]
                             "page": page.number,
                             "total_pages": len(doc),
                         },
@@ -297,13 +297,13 @@ class PyPDFium2Parser(BaseBlobParser):
             )
         self.extract_images = extract_images
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
         import pypdfium2
 
         # pypdfium2 is really finicky with respect to closing things,
         # if done incorrectly creates seg faults.
-        with blob.as_bytes_io() as file_path:
+        with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
             pdf_reader = pypdfium2.PdfDocument(file_path, autoclose=True)
             try:
                 for page_number, page in enumerate(pdf_reader):
@@ -312,7 +312,7 @@ class PyPDFium2Parser(BaseBlobParser):
                     text_page.close()
                     content += "\n" + self._extract_images_from_page(page)
                     page.close()
-                    metadata = {"source": blob.source, "page": page_number}
+                    metadata = {"source": blob.source, "page": page_number}  # type: ignore[attr-defined]
                     yield Document(page_content=content, metadata=metadata)
             finally:
                 pdf_reader.close()
@@ -349,11 +349,11 @@ class PDFPlumberParser(BaseBlobParser):
         self.dedupe = dedupe
         self.extract_images = extract_images
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
         import pdfplumber
 
-        with blob.as_bytes_io() as file_path:
+        with blob.as_bytes_io() as file_path:  # type: ignore[attr-defined]
             doc = pdfplumber.open(file_path)  # open document
 
             yield from [
@@ -363,8 +363,8 @@ class PDFPlumberParser(BaseBlobParser):
                     + self._extract_images_from_page(page),
                     metadata=dict(
                         {
-                            "source": blob.source,
-                            "file_path": blob.source,
+                            "source": blob.source,  # type: ignore[attr-defined]
+                            "file_path": blob.source,  # type: ignore[attr-defined]
                             "page": page.page_number - 1,
                             "total_pages": len(doc.pages),
                         },
@@ -514,14 +514,14 @@ class AmazonTextractPDFParser(BaseBlobParser):
         else:
             self.boto3_textract_client = client
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Iterates over the Blob pages and returns an Iterator with a Document
         for each page, like the other parsers If multi-page document, blob.path
         has to be set to the S3 URI and for single page docs
         the blob.data is taken
         """
 
-        url_parse_result = urlparse(str(blob.path)) if blob.path else None
+        url_parse_result = urlparse(str(blob.path)) if blob.path else None  # type: ignore[attr-defined]
         # Either call with S3 path (multi-page) or with bytes (single-page)
         if (
             url_parse_result
@@ -529,13 +529,13 @@ class AmazonTextractPDFParser(BaseBlobParser):
             and url_parse_result.netloc
         ):
             textract_response_json = self.tc.call_textract(
-                input_document=str(blob.path),
+                input_document=str(blob.path),  # type: ignore[attr-defined]
                 features=self.textract_features,
                 boto3_textract_client=self.boto3_textract_client,
             )
         else:
             textract_response_json = self.tc.call_textract(
-                input_document=blob.as_bytes(),
+                input_document=blob.as_bytes(),  # type: ignore[attr-defined]
                 features=self.textract_features,
                 call_mode=self.tc.Textract_Call_Mode.FORCE_SYNC,
                 boto3_textract_client=self.boto3_textract_client,
@@ -546,7 +546,7 @@ class AmazonTextractPDFParser(BaseBlobParser):
         for idx, page in enumerate(document.pages):
             yield Document(
                 page_content=page.get_text(config=self.linearization_config),
-                metadata={"source": blob.source, "page": idx + 1},
+                metadata={"source": blob.source, "page": idx + 1},  # type: ignore[attr-defined]
             )
 
 
@@ -566,23 +566,23 @@ class DocumentIntelligenceParser(BaseBlobParser):
         self.client = client
         self.model = model
 
-    def _generate_docs(self, blob: Blob, result: Any) -> Iterator[Document]:
+    def _generate_docs(self, blob: Blob, result: Any) -> Iterator[Document]:  # type: ignore[valid-type]
         for p in result.pages:
             content = " ".join([line.content for line in p.lines])
 
             d = Document(
                 page_content=content,
                 metadata={
-                    "source": blob.source,
+                    "source": blob.source,  # type: ignore[attr-defined]
                     "page": p.page_number,
                 },
             )
             yield d
 
-    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
 
-        with blob.as_bytes_io() as file_obj:
+        with blob.as_bytes_io() as file_obj:  # type: ignore[attr-defined]
             poller = self.client.begin_analyze_document(self.model, file_obj)
             result = poller.result()
 

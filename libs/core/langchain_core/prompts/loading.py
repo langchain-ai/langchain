@@ -1,4 +1,5 @@
 """Load prompts."""
+
 import json
 import logging
 from pathlib import Path
@@ -11,7 +12,6 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.utils import try_load_from_hub
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/prompts/"
 logger = logging.getLogger(__name__)
@@ -127,12 +127,13 @@ def _load_prompt(config: dict) -> PromptTemplate:
 
 def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs."""
-    if hub_result := try_load_from_hub(
-        path, _load_prompt_from_file, "prompts", {"py", "json", "yaml"}
-    ):
-        return hub_result
-    else:
-        return _load_prompt_from_file(path)
+    if isinstance(path, str) and path.startswith("lc://"):
+        raise RuntimeError(
+            "Loading from the deprecated github-based Hub is no longer supported. "
+            "Please use the new LangChain Hub at https://smith.langchain.com/hub "
+            "instead."
+        )
+    return _load_prompt_from_file(path)
 
 
 def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:

@@ -36,6 +36,7 @@ jobs:
       dirs-to-lint: ${{ steps.set-matrix.outputs.dirs-to-lint }}
       dirs-to-test: ${{ steps.set-matrix.outputs.dirs-to-test }}
       dirs-to-extended-test: ${{ steps.set-matrix.outputs.dirs-to-extended-test }}
+      docs-edited: ${{ steps.set-matrix.outputs.docs-edited }}
   lint:
     name: cd ${{ matrix.working-directory }}
     needs: [ build ]
@@ -60,9 +61,9 @@ jobs:
       working-directory: ${{ matrix.working-directory }}
     secrets: inherit
 
-  test_doc_imports:
+  test-doc-imports:
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
+    if: ${{ needs.build.outputs.dirs-to-test != '[]' || needs.build.outputs.docs-edited }}
     uses: ./.github/workflows/_test_doc_imports.yml
     secrets: inherit
 
@@ -140,7 +141,7 @@ jobs:
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
   ci_success:
     name: "CI Success"
-    needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests]
+    needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests, test-doc-imports]
     if: |
       always()
     runs-on: ubuntu-latest

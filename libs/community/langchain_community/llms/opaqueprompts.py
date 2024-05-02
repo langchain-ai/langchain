@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.llms import LLM
+from langchain_core.messages import AIMessage
 from langchain_core.pydantic_v1 import Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpaquePrompts(LLM):
-    """An LLM wrapper that uses OpaquePrompts to sanitize prompts.
+    """LLM that uses OpaquePrompts to sanitize prompts.
 
     Wraps another LLM and sanitizes prompts before passing it to the LLM, then
         de-sanitizes the response.
@@ -83,7 +84,7 @@ class OpaquePrompts(LLM):
         Example:
             .. code-block:: python
 
-                response = op_llm("Tell me a joke.")
+                response = op_llm.invoke("Tell me a joke.")
         """
         import opaqueprompts as op
 
@@ -95,10 +96,11 @@ class OpaquePrompts(LLM):
 
         # TODO: Add in callbacks once child runs for LLMs are supported by LangSmith.
         # call the LLM with the sanitized prompt and get the response
-        llm_response = self.base_llm.predict(
+        llm_response = self.base_llm.bind(stop=stop).invoke(
             sanitized_prompt_value_str,
-            stop=stop,
         )
+        if isinstance(llm_response, AIMessage):
+            llm_response = llm_response.content
 
         # desanitize the response by restoring the original sensitive information
         desanitize_response: op.DesanitizeResponse = op.desanitize(

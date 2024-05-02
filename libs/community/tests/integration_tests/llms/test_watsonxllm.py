@@ -10,5 +10,5 @@ def test_watsonxllm_call() -> None:
         apikey="***",
         project_id="***",
     )
-    response = watsonxllm("What color sunflower is?")
+    response = watsonxllm.invoke("What color sunflower is?")
     assert isinstance(response, str)

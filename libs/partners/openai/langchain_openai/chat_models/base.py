@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -28,7 +29,6 @@ from typing import (
 
 import openai
 import tiktoken
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -50,8 +50,10 @@ from langchain_core.messages import (
     FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    InvalidToolCall,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
     ToolMessage,
     ToolMessageChunk,
 )
@@ -63,6 +65,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -103,10 +107,24 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
-        if tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
+        tool_calls = []
+        invalid_tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
         return AIMessage(
-            content=content, additional_kwargs=additional_kwargs, name=name, id=id_
+            content=content,
+            additional_kwargs=additional_kwargs,
+            name=name,
+            id=id_,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
         )
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
@@ -129,6 +147,26 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)
 
 
+def _format_message_content(content: Any) -> Any:
+    """Format message content."""
+    if content and isinstance(content, list):
+        # Remove unexpected block types
+        formatted_content = []
+        for block in content:
+            if (
+                isinstance(block, dict)
+                and "type" in block
+                and block["type"] == "tool_use"
+            ):
+                continue
+            else:
+                formatted_content.append(block)
+    else:
+        formatted_content = content
+
+    return formatted_content
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -139,7 +177,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         The dictionary.
     """
     message_dict: Dict[str, Any] = {
-        "content": message.content,
+        "content": _format_message_content(message.content),
     }
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
@@ -153,14 +191,25 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = "assistant"
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
-            # If function call only, content is None not empty string
-            if message_dict["content"] == "":
-                message_dict["content"] = None
-        if "tool_calls" in message.additional_kwargs:
+        if message.tool_calls or message.invalid_tool_calls:
+            message_dict["tool_calls"] = [
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+            ] + [
+                _lc_invalid_tool_call_to_openai_tool_call(tc)
+                for tc in message.invalid_tool_calls
+            ]
+        elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
-            # If tool calls only, content is None not empty string
-            if message_dict["content"] == "":
-                message_dict["content"] = None
+            tool_call_supported_props = {"id", "type", "function"}
+            message_dict["tool_calls"] = [
+                {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
+                for tool_call in message_dict["tool_calls"]
+            ]
+        else:
+            pass
+        # If tool calls present, content null value should be None not empty string.
+        if "function_call" in message_dict or "tool_calls" in message_dict:
+            message_dict["content"] = message_dict["content"] or None
     elif isinstance(message, SystemMessage):
         message_dict["role"] = "system"
     elif isinstance(message, FunctionMessage):
@@ -188,14 +237,30 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
-    if _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = _dict["tool_calls"]
+    tool_call_chunks = []
+    if raw_tool_calls := _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        try:
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc["index"],
+                }
+                for rtc in raw_tool_calls
+            ]
+        except KeyError:
+            pass
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(
-            content=content, additional_kwargs=additional_kwargs, id=id_
+            content=content,
+            additional_kwargs=additional_kwargs,
+            id=id_,
+            tool_call_chunks=tool_call_chunks,
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content, id=id_)
@@ -226,52 +291,7 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
-class ChatOpenAI(BaseChatModel):
-    """`OpenAI` Chat large language models API.
-
-    To use, you should have the environment variable ``OPENAI_API_KEY``
-    set with your API key, or pass it as a named parameter to the constructor.
-
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
-
-    Example:
-        .. code-block:: python
-
-            from langchain_openai import ChatOpenAI
-
-            model = ChatOpenAI(model_name="gpt-3.5-turbo")
-    """
-
-    @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"openai_api_key": "OPENAI_API_KEY"}
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "chat_models", "openai"]
-
-    @property
-    def lc_attributes(self) -> Dict[str, Any]:
-        attributes: Dict[str, Any] = {}
-
-        if self.openai_organization:
-            attributes["openai_organization"] = self.openai_organization
-
-        if self.openai_api_base:
-            attributes["openai_api_base"] = self.openai_api_base
-
-        if self.openai_proxy:
-            attributes["openai_proxy"] = self.openai_proxy
-
-        return attributes
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
-        return True
-
+class BaseChatOpenAI(BaseChatModel):
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
@@ -457,30 +477,33 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        for chunk in self.client.create(messages=message_dicts, **params):
-            if not isinstance(chunk, dict):
-                chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
-                continue
-            choice = chunk["choices"][0]
-            if choice["delta"] is None:
-                continue
-            chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
-            default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
-            )
-            if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
-            yield chunk
+        with self.client.create(messages=message_dicts, **params) as response:
+            for chunk in response:
+                if not isinstance(chunk, dict):
+                    chunk = chunk.model_dump()
+                if len(chunk["choices"]) == 0:
+                    continue
+                choice = chunk["choices"][0]
+                if choice["delta"] is None:
+                    continue
+                chunk = _convert_delta_to_message_chunk(
+                    choice["delta"], default_chunk_class
+                )
+                generation_info = {}
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
+                default_chunk_class = chunk.__class__
+                chunk = ChatGenerationChunk(
+                    message=chunk, generation_info=generation_info or None
+                )
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text, chunk=chunk, logprobs=logprobs
+                    )
+                yield chunk
 
     def _generate(
         self,
@@ -553,34 +576,34 @@ class ChatOpenAI(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
-        async for chunk in await self.async_client.create(
-            messages=message_dicts, **params
-        ):
-            if not isinstance(chunk, dict):
-                chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
-                continue
-            choice = chunk["choices"][0]
-            if choice["delta"] is None:
-                continue
-            chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
-            default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
-            )
-            if run_manager:
-                await run_manager.on_llm_new_token(
-                    token=chunk.text, chunk=chunk, logprobs=logprobs
+        response = await self.async_client.create(messages=message_dicts, **params)
+        async with response:
+            async for chunk in response:
+                if not isinstance(chunk, dict):
+                    chunk = chunk.model_dump()
+                if len(chunk["choices"]) == 0:
+                    continue
+                choice = chunk["choices"][0]
+                if choice["delta"] is None:
+                    continue
+                chunk = _convert_delta_to_message_chunk(
+                    choice["delta"], default_chunk_class
                 )
-            yield chunk
+                generation_info = {}
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
+                default_chunk_class = chunk.__class__
+                chunk = ChatGenerationChunk(
+                    message=chunk, generation_info=generation_info or None
+                )
+                if run_manager:
+                    await run_manager.on_llm_new_token(
+                        token=chunk.text, chunk=chunk, logprobs=logprobs
+                    )
+                yield chunk
 
     async def _agenerate(
         self,
@@ -635,6 +658,8 @@ class ChatOpenAI(BaseChatModel):
 
     def get_token_ids(self, text: str) -> List[int]:
         """Get the tokens present in the text with tiktoken package."""
+        if self.custom_get_token_ids is not None:
+            return self.custom_get_token_ids(text)
         # tiktoken NOT supported for Python 3.7 or below
         if sys.version_info[1] <= 7:
             return super().get_token_ids(text)
@@ -773,7 +798,10 @@ class ChatOpenAI(BaseChatModel):
                         "function": {"name": tool_choice},
                     }
             elif isinstance(tool_choice, bool):
-                tool_choice = formatted_tools[0]
+                tool_choice = {
+                    "type": "function",
+                    "function": {"name": formatted_tools[0]["function"]["name"]},
+                }
             elif isinstance(tool_choice, dict):
                 if (
                     formatted_tools[0]["function"]["name"]
@@ -813,7 +841,6 @@ class ChatOpenAI(BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
-    @beta()
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
@@ -1021,5 +1048,76 @@ class ChatOpenAI(BaseChatModel):
             return llm | output_parser
 
 
+class ChatOpenAI(BaseChatOpenAI):
+    """`OpenAI` Chat large language models API.
+
+    To use, you should have the environment variable ``OPENAI_API_KEY``
+    set with your API key, or pass it as a named parameter to the constructor.
+
+    Any parameters that are valid to be passed to the openai.create call can be passed
+    in, even if not explicitly saved on this class.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+
+            model = ChatOpenAI(model="gpt-3.5-turbo")
+    """
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "chat_models", "openai"]
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+
+        if self.openai_organization:
+            attributes["openai_organization"] = self.openai_organization
+
+        if self.openai_api_base:
+            attributes["openai_api_base"] = self.openai_api_base
+
+        if self.openai_proxy:
+            attributes["openai_proxy"] = self.openai_proxy
+
+        return attributes
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
+
+
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and issubclass(obj, BaseModel)
+
+
+def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict:
+    return {
+        "type": "function",
+        "id": tool_call["id"],
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        },
+    }
+
+
+def _lc_invalid_tool_call_to_openai_tool_call(
+    invalid_tool_call: InvalidToolCall,
+) -> dict:
+    return {
+        "type": "function",
+        "id": invalid_tool_call["id"],
+        "function": {
+            "name": invalid_tool_call["name"],
+            "arguments": invalid_tool_call["args"],
+        },
+    }

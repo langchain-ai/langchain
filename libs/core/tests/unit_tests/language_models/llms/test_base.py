@@ -60,7 +60,7 @@ def test_batch_size() -> None:
 
     llm = FakeListLLM(responses=["foo"] * 1)
     with collect_runs() as cb:
-        llm.predict("foo")
+        llm.invoke("foo")
         assert len(cb.traced_runs) == 1
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
 
