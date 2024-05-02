@@ -197,13 +197,6 @@ def get_loader_full_path(loader: BaseLoader) -> str:
     Args:
         loader (BaseLoader): Langchain document loader, derived from Baseloader.
     """
-    from langchain_community.document_loaders import (
-        DataFrameLoader,
-        GCSFileLoader,
-        NotionDBLoader,
-        S3FileLoader,
-    )
-
     location = "-"
     if not isinstance(loader, BaseLoader):
         logger.error(
