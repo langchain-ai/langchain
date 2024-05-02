@@ -46,9 +46,15 @@ DEPRECATED_LOOKUP = {
     "KUZU_EXTRA_INSTRUCTIONS": "langchain_community.chains.graph_qa.prompts",
     "KUZU_GENERATION_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
     "NEBULAGRAPH_EXTRA_INSTRUCTIONS": "langchain_community.chains.graph_qa.prompts",
-    "NEPTUNE_OPENCYPHER_EXTRA_INSTRUCTIONS": "langchain_community.chains.graph_qa.prompts",
-    "NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
-    "NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
+    "NEPTUNE_OPENCYPHER_EXTRA_INSTRUCTIONS": (
+        "langchain_community.chains.graph_qa.prompts"
+    ),
+    "NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE": (
+        "langchain_community.chains.graph_qa.prompts"
+    ),
+    "NEPTUNE_OPENCYPHER_GENERATION_TEMPLATE": (
+        "langchain_community.chains.graph_qa.prompts"
+    ),
     "NGQL_GENERATION_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
     "SPARQL_GENERATION_SELECT_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
     "SPARQL_GENERATION_UPDATE_TEMPLATE": "langchain_community.chains.graph_qa.prompts",

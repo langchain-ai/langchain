@@ -25,7 +25,7 @@ QUERY_CONSTRUCTOR_RUN_NAME = "query_constructor"
 def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     try:
-        import langchain_community
+        import langchain_community  # noqa: F401
     except ImportError:
         raise ImportError(
             "The langchain-community package must be installed to use this feature."
