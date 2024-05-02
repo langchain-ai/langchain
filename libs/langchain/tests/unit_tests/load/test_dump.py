@@ -6,8 +6,6 @@ from typing import Any, Dict, List
 from unittest.mock import patch
 
 import pytest
-from langchain_community.chat_models.openai import ChatOpenAI
-from langchain_community.llms.openai import OpenAI
 from langchain_core.load.dump import dumps
 from langchain_core.load.serializable import Serializable
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
@@ -78,6 +76,8 @@ def test_typeerror() -> None:
 
 @pytest.mark.requires("openai")
 def test_serialize_openai_llm(snapshot: Any) -> None:
+    from langchain_community.llms.openai import OpenAI
+
     with patch.dict(os.environ, {"LANGCHAIN_API_KEY": "test-api-key"}):
         llm = OpenAI(  # type: ignore[call-arg]
             model="davinci",
@@ -92,6 +92,8 @@ def test_serialize_openai_llm(snapshot: Any) -> None:
 
 @pytest.mark.requires("openai")
 def test_serialize_llmchain(snapshot: Any) -> None:
+    from langchain_community.llms.openai import OpenAI
+
     llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
@@ -100,6 +102,8 @@ def test_serialize_llmchain(snapshot: Any) -> None:
 
 @pytest.mark.requires("openai")
 def test_serialize_llmchain_env() -> None:
+    from langchain_community.llms.openai import OpenAI
+
     llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
@@ -122,6 +126,8 @@ def test_serialize_llmchain_env() -> None:
 
 @pytest.mark.requires("openai")
 def test_serialize_llmchain_chat(snapshot: Any) -> None:
+    from langchain_community.chat_models.openai import ChatOpenAI
+
     llm = ChatOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = ChatPromptTemplate.from_messages(
         [HumanMessagePromptTemplate.from_template("hello {name}!")]
@@ -149,6 +155,8 @@ def test_serialize_llmchain_chat(snapshot: Any) -> None:
 
 @pytest.mark.requires("openai")
 def test_serialize_llmchain_with_non_serializable_arg(snapshot: Any) -> None:
+    from langchain_community.llms.openai import OpenAI
+
     llm = OpenAI(  # type: ignore[call-arg]
         model="davinci",
         temperature=0.5,

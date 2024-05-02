@@ -46,4 +46,4 @@ def test_import_all_using_dir() -> None:
             if name.strip().startswith("_"):
                 continue
             # Attempt to import the name from the module
-            obj = getattr(mod, name)
+            getattr(mod, name)
