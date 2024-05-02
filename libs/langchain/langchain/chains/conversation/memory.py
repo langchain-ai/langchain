@@ -7,9 +7,9 @@ from langchain.memory.buffer import (
 from langchain.memory.buffer_window import ConversationBufferWindowMemory
 from langchain.memory.combined import CombinedMemory
 from langchain.memory.entity import ConversationEntityMemory
-from langchain.memory.kg import ConversationKGMemory
 from langchain.memory.summary import ConversationSummaryMemory
 from langchain.memory.summary_buffer import ConversationSummaryBufferMemory
+from langchain_community.memory.kg import ConversationKGMemory
 
 # This is only for backwards compatibility.
 

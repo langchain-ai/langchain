@@ -3,13 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from langchain_core.callbacks.base import BaseCallbackHandler
-
-from langchain.callbacks.streamlit.streamlit_callback_handler import (
-    LLMThoughtLabeler as LLMThoughtLabeler,
-)
-from langchain.callbacks.streamlit.streamlit_callback_handler import (
-    StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
-)
+from langchain_community.callbacks import LLMThoughtLabeler
+from langchain_community.callbacks.streamlit.streamlit_callback_handler import StreamlitCallbackHandler
 
 if TYPE_CHECKING:
     from streamlit.delta_generator import DeltaGenerator

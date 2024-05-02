@@ -16,7 +16,7 @@ from requests import Response
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain.tools import APIOperation
+from langchain_community.tools import APIOperation
 
 if TYPE_CHECKING:
     from langchain_community.utilities.openapi import OpenAPISpec

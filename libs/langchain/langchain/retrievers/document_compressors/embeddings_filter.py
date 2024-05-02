@@ -9,7 +9,7 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
-from langchain.utils.math import cosine_similarity
+from langchain_community.utils.math import cosine_similarity
 
 
 class EmbeddingsFilter(BaseDocumentCompressor):
