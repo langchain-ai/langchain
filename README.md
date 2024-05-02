@@ -16,7 +16,7 @@
     <br />
     <a href="https://github.com/ai-forever/gigachain/issues">Создать issue</a>
     ·
-    <a href="https://developers.sber.ru/docs/ru/gigachat/overview">Документация GigaChat</a>
+    <a href="https://developers.sber.ru/docs/ru/gigachat/sdk/overview">Документация GigaChain</a>
   </p>
 </div>
 
