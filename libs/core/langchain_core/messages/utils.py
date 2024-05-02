@@ -204,7 +204,8 @@ def _convert_to_message(
     elif isinstance(message, str):
         _message = _create_message_from_message_type("human", message)
     elif isinstance(message, Sequence) and len(message) == 2:
-        message_type_str, template = message
+        # mypy doesn't realise this can't be a string given the previous branch
+        message_type_str, template = message  # type: ignore[misc]
         _message = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
