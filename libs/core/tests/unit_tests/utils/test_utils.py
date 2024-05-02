@@ -148,6 +148,7 @@ def test_guard_import(
         ("langchain_core.utilsW", "langchain-core-2", None),
         ("langchain_core.utilsW", None, "langchain-coreWX"),
         ("langchain_core.utilsW", "langchain-core-2", "langchain-coreWX"),
+        ("langchain_coreW", None, None),  # ModuleNotFoundError
     ],
 )
 def test_guard_import_failure(
