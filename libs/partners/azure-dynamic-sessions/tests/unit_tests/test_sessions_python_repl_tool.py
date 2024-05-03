@@ -1,6 +1,5 @@
 import re
 import time
-import uuid
 from unittest import mock
 from urllib.parse import parse_qs, urlparse
 
@@ -79,7 +78,7 @@ def test_code_execution_calls_api(mock_get_token, mock_post: mock.MagicMock):
 
     api_url = f"{POOL_MANAGEMENT_ENDPOINT}/code/execute"
     headers = {
-        "Authorization": f"Bearer token_value",
+        "Authorization": "Bearer token_value",
         "Content-Type": "application/json",
         "User-Agent": mock.ANY,
     }

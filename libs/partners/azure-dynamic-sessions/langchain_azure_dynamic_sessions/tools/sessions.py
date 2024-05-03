@@ -5,13 +5,12 @@ import urllib
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BufferedReader, BytesIO
-from typing import Annotated, Any, Callable, Optional
+from typing import Any, Callable, Optional
 from uuid import uuid4
 
 import requests
 from azure.core.credentials import AccessToken
 from azure.identity import DefaultAzureCredential
-from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 
@@ -87,7 +86,8 @@ class RemoteFileMetadata:
 
 
 class SessionsPythonREPLTool(BaseTool):
-    """A tool for running Python code in an Azure Container Apps dynamic sessions code interpreter."""
+    """A tool for running Python code in an Azure Container Apps dynamic sessions
+    code interpreter."""
 
     name: str = "Sessions_Python_REPL"
     description: str = (
@@ -146,8 +146,12 @@ class SessionsPythonREPLTool(BaseTool):
         response.raise_for_status()
         response_json = response.json()
         properties = response_json.get("properties", {})
-        return f"result:\n{properties['result']}\n\nstdout:\n{properties['stdout']}\n\nstderr:\n{properties['stderr']}"
-
+        return (
+            f"result:\n{properties['result']}\n\n"
+            f"stdout:\n{properties['stdout']}\n\n"
+            f"stderr:\n{properties['stderr']}"
+        )
+    
     async def _arun(self, python_code: str) -> Any:
         """Use the tool asynchronously."""
         if self.sanitize_input:
@@ -166,7 +170,9 @@ class SessionsPythonREPLTool(BaseTool):
 
         Args:
             data: The data to upload.
-            remote_file_path: The path to upload the file to, relative to `/mnt/data`. If local_file_path is provided, this is defaulted to its filename.
+            remote_file_path: The path to upload the file to, relative to
+                `/mnt/data`. If local_file_path is provided, this is defaulted 
+                to its filename.
             local_file_path: The path to the local file to upload.
 
         Returns:
@@ -182,7 +188,7 @@ class SessionsPythonREPLTool(BaseTool):
             data = open(local_file_path, "rb")
 
         access_token = self.access_token_provider()
-        api_url = self._build_url(f"files/upload")
+        api_url = self._build_url("files/upload")
         headers = {
             "Authorization": f"Bearer {access_token}",
             "User-Agent": USER_AGENT,
@@ -204,8 +210,10 @@ class SessionsPythonREPLTool(BaseTool):
         """Download a file from the session pool.
 
         Args:
-            remote_file_path: The path to download the file from, relative to `/mnt/data`.
-            local_file_path: The path to save the downloaded file to. If not provided, the file is returned as a BufferedReader.
+            remote_file_path: The path to download the file from, 
+                relative to `/mnt/data`.
+            local_file_path: The path to save the downloaded file to. 
+                If not provided, the file is returned as a BufferedReader.
 
         Returns:
             BufferedReader: The data of the downloaded file.
@@ -235,7 +243,7 @@ class SessionsPythonREPLTool(BaseTool):
             list[RemoteFileMetadata]: The metadata for the files in the session pool
         """
         access_token = self.access_token_provider()
-        api_url = self._build_url(f"files")
+        api_url = self._build_url("files")
         headers = {
             "Authorization": f"Bearer {access_token}",
             "User-Agent": USER_AGENT,
