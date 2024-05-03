@@ -151,7 +151,7 @@ class SessionsPythonREPLTool(BaseTool):
             f"stdout:\n{properties['stdout']}\n\n"
             f"stderr:\n{properties['stderr']}"
         )
-    
+
     async def _arun(self, python_code: str) -> Any:
         """Use the tool asynchronously."""
         if self.sanitize_input:
@@ -171,7 +171,7 @@ class SessionsPythonREPLTool(BaseTool):
         Args:
             data: The data to upload.
             remote_file_path: The path to upload the file to, relative to
-                `/mnt/data`. If local_file_path is provided, this is defaulted 
+                `/mnt/data`. If local_file_path is provided, this is defaulted
                 to its filename.
             local_file_path: The path to the local file to upload.
 
@@ -210,9 +210,9 @@ class SessionsPythonREPLTool(BaseTool):
         """Download a file from the session pool.
 
         Args:
-            remote_file_path: The path to download the file from, 
+            remote_file_path: The path to download the file from,
                 relative to `/mnt/data`.
-            local_file_path: The path to save the downloaded file to. 
+            local_file_path: The path to save the downloaded file to.
                 If not provided, the file is returned as a BufferedReader.
 
         Returns:
