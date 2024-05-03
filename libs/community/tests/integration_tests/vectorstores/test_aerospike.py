@@ -12,6 +12,7 @@ from langchain_core.documents import Document
 from langchain_community.vectorstores.aerospike import (
     Aerospike,
 )
+from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
     FakeEmbeddings,
@@ -25,14 +26,9 @@ if TYPE_CHECKING:
 TEST_INDEX_NAME = "test-index"
 TEST_NAMESPACE = "test"
 TEST_AEROSPIKE_HOST_PORT = ("localhost", 5002)
-TEST_SINGLE_RESULT = [Document(page_content="foo")]
-TEST_SINGLE_WITH_METADATA = {"a": "b"}
-TEST_RESULT = [Document(page_content="foo"), Document(page_content="foo")]
 TEXT_KEY = "_text"
 VECTOR_KEY = "_vector"
-RANGE_SCORE = pytest.approx(0.0513, abs=0.002)
-COSINE_SCORE = pytest.approx(0.05, abs=0.002)
-IP_SCORE = -8.0
+ID_KEY = "_id"
 EUCLIDEAN_SCORE = 1.0
 
 
@@ -57,16 +53,12 @@ def compose_down() -> None:
 
 @pytest.fixture(scope="class", autouse=True)
 def docker_compose():
-    from aerospike_vector_search import (
-        Client,
-    )
-
     compose_up()
     yield
     compose_down()
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def seeds():
     from aerospike_vector_search.types import HostPort
 
@@ -76,21 +68,19 @@ def seeds():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def admin_client(seeds) -> Any:
     from aerospike_vector_search.admin import Client as AdminClient
-    from aerospike_vector_search.types import HostPort
 
     with AdminClient(seeds=seeds, is_loadbalancer=True) as admin_client:
         yield admin_client
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def client(seeds) -> Any:
     from aerospike_vector_search import Client
-    from aerospike_vector_search.types import HostPort
 
-    with Client(seeds=seeds) as client:
+    with Client(seeds=seeds, is_loadbalancer=True) as client:
         yield client
 
 
@@ -102,19 +92,34 @@ def embedder() -> Any:
 @pytest.fixture
 def aerospike(client, embedder) -> Aerospike:
     client: Client = client
-    aerospike = Aerospike(client, embedder, TEXT_KEY, VECTOR_KEY, TEST_NAMESPACE)
-    yield aerospike
+
+    yield Aerospike(
+        client,
+        embedder,
+        TEST_NAMESPACE,
+        vector_key=VECTOR_KEY,
+        text_key=TEXT_KEY,
+        id_key=ID_KEY,
+    )
 
 
 def get_func_name() -> str:
+    """
+    Used to get the name of the calling function. The name is used for the index
+    and set name in Aerospike tests for debugging purposes.
+    """
     return inspect.stack()[1].function
 
 
+"""
+TODO: Add tests for delete()
+"""
+
+
+@pytest.mark.requires("aerospike_vector_search")
 class TestAerospike:
-    def test_search_blocking(self, aerospike: Aerospike, admin_client):
-        """Test end to end construction and search."""
+    def test_from_text(self, client, admin_client, embedder: ConsistentFakeEmbeddings):
         admin_client: AdminClient = admin_client
-        expected = [Document(page_content="foo", metadata={"_id": "1"})]
         index_name = set_name = get_func_name()
         admin_client.index_create(
             namespace=TEST_NAMESPACE,
@@ -123,14 +128,74 @@ class TestAerospike:
             vector_field=VECTOR_KEY,
             dimensions=10,
         )
+        aerospike = Aerospike.from_texts(
+            client,
+            ["foo", "bar", "baz", "bay", "bax", "baw", "bav"],
+            embedder,
+            TEST_NAMESPACE,
+            index_name=index_name,
+            ids=["1", "2", "3", "4", "5", "6", "7"],
+            set_name=set_name,
+        )
+
+        expected = [
+            Document(
+                page_content="foo",
+                metadata={
+                    ID_KEY: "1",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+                },
+            ),
+            Document(
+                page_content="bar",
+                metadata={
+                    ID_KEY: "2",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                },
+            ),
+            Document(
+                page_content="baz",
+                metadata={
+                    ID_KEY: "3",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0],
+                },
+            ),
+        ]
+        actual = aerospike.search(
+            "foo", k=3, index_name=index_name, search_type="similarity"
+        )
+
+        actual = sorted(
+            actual, key=lambda x: x.metadata[ID_KEY]
+        )  # TODO: Remove this line after next release
+
+        assert actual == expected
+
+    def test_search_blocking(self, aerospike: Aerospike, admin_client):
+        """Test end to end construction and search."""
+        admin_client: AdminClient = admin_client
+        index_name = set_name = get_func_name()
+        admin_client.index_create(
+            namespace=TEST_NAMESPACE,
+            sets=set_name,
+            name=index_name,
+            vector_field=VECTOR_KEY,
+            dimensions=10,
+        )
+
         aerospike.add_texts(
             ["foo", "bar", "baz"],
             ids=["1", "2", "3"],
             index_name=index_name,
             set_name=set_name,
         )  # Blocks until all vectors are indexed
+        expected = [Document(page_content="foo", metadata={ID_KEY: "1"})]
         actual = aerospike.search(
-            "foo", k=1, index_name=index_name, search_type="similarity"
+            "foo",
+            k=1,
+            index_name=index_name,
+            search_type="similarity",
+            metadata_keys=[ID_KEY],
         )
 
         assert actual == expected
@@ -138,7 +203,6 @@ class TestAerospike:
     def test_search_nonblocking(self, aerospike: Aerospike, admin_client):
         """Test end to end construction and search."""
         admin_client: AdminClient = admin_client
-        expected = [Document(page_content="foo", metadata={"_id": "1"})]
         index_name = set_name = get_func_name()
         admin_client.index_create(
             namespace=TEST_NAMESPACE,
@@ -147,23 +211,41 @@ class TestAerospike:
             vector_field=VECTOR_KEY,
             dimensions=10,
         )
+
         aerospike.add_texts(
             ["foo", "bar", "baz"],
             ids=["1", "2", "3"],
             index_name=index_name,
             set_name=set_name,
+            wait_for_index=True,
         )  # blocking
-        aerospike.add_texts(["bay"], set_name=set_name)  # non-blocking
+        aerospike.add_texts(
+            ["bay"], index_name=index_name, set_name=set_name, wait_for_index=False
+        )
+        expected = [
+            Document(page_content="foo", metadata={ID_KEY: "1"}),
+            Document(page_content="bar", metadata={ID_KEY: "2"}),
+            Document(page_content="baz", metadata={ID_KEY: "3"}),
+        ]
         actual = aerospike.search(
-            "foo", k=1, index_name=index_name, search_type="similarity"
+            "foo",
+            k=4,
+            index_name=index_name,
+            search_type="similarity",
+            metadata_keys=[ID_KEY],
         )
 
+        actual = sorted(
+            actual, key=lambda x: x.metadata[ID_KEY]
+        )  # TODO: Remove this line after next release
+
+        # "bay"
         assert actual == expected
 
     def test_similarity_search_with_score(self, aerospike: Aerospike, admin_client):
         """Test end to end construction and search."""
         admin_client: AdminClient = admin_client
-        expected = [(Document(page_content="foo", metadata={"_id": "1"}), 0.0)]
+        expected = [(Document(page_content="foo", metadata={ID_KEY: "1"}), 0.0)]
         index_name = set_name = get_func_name()
         admin_client.index_create(
             namespace=TEST_NAMESPACE,
@@ -179,7 +261,7 @@ class TestAerospike:
             set_name=set_name,
         )
         actual = aerospike.similarity_search_with_score(
-            "foo", k=1, index_name=index_name
+            "foo", k=1, index_name=index_name, metadata_keys=[ID_KEY]
         )
 
         assert actual == expected
@@ -190,7 +272,7 @@ class TestAerospike:
         """Test end to end construction and search."""
         admin_client: AdminClient = admin_client
         expected = [
-            (Document(page_content="foo", metadata={"a": "b", "_id": "1"}), 0.0)
+            (Document(page_content="foo", metadata={"a": "b", ID_KEY: "1"}), 0.0)
         ]
         index_name = set_name = get_func_name()
         admin_client.index_create(
@@ -211,7 +293,7 @@ class TestAerospike:
             embedder.embed_query("foo"),
             k=1,
             index_name=index_name,
-            metadata_keys=["a", "_id"],
+            metadata_keys=["a", ID_KEY],
         )
 
         assert actual == expected
@@ -222,8 +304,8 @@ class TestAerospike:
         """Test end to end construction and search."""
         admin_client: AdminClient = admin_client
         expected = [
-            Document(page_content="foo", metadata={"a": "b", "_id": "1"}),
-            Document(page_content="bar", metadata={"a": "c", "_id": "2"}),
+            Document(page_content="foo", metadata={"a": "b", ID_KEY: "1"}),
+            Document(page_content="bar", metadata={"a": "c", ID_KEY: "2"}),
         ]
         index_name = set_name = get_func_name()
         admin_client.index_create(
@@ -244,11 +326,11 @@ class TestAerospike:
             embedder.embed_query("foo"),
             k=2,
             index_name=index_name,
-            metadata_keys=["a", "_id"],
+            metadata_keys=["a", ID_KEY],
         )
 
         actual = sorted(
-            actual, key=lambda x: x.metadata["_id"]
+            actual, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
 
         assert actual == expected
@@ -257,9 +339,9 @@ class TestAerospike:
         """Test end to end construction and search."""
         admin_client: AdminClient = admin_client
         expected = [
-            Document(page_content="foo", metadata={"_id": "1"}),
-            Document(page_content="bar", metadata={"_id": "2"}),
-            Document(page_content="baz", metadata={"_id": "3"}),
+            Document(page_content="foo", metadata={ID_KEY: "1"}),
+            Document(page_content="bar", metadata={ID_KEY: "2"}),
+            Document(page_content="baz", metadata={ID_KEY: "3"}),
         ]
         index_name = set_name = get_func_name()
         admin_client.index_create(
@@ -275,18 +357,19 @@ class TestAerospike:
             index_name=index_name,
             set_name=set_name,
         )  # blocking
-        actual = aerospike.similarity_search("foo", k=3, index_name=index_name)
+        actual = aerospike.similarity_search(
+            "foo", k=3, index_name=index_name, metadata_keys=[ID_KEY]
+        )
 
         actual = sorted(
-            actual, key=lambda x: x.metadata["_id"]
+            actual, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
 
         assert actual == expected
 
     def test_max_marginal_relevance_search_by_vector(
-        self, seeds, admin_client, embedder: ConsistentFakeEmbeddings
+        self, client, admin_client, embedder: ConsistentFakeEmbeddings
     ):
-        """Test end to end construction and search."""
         """Test max marginal relevance search."""
         admin_client: AdminClient = admin_client
         index_name = set_name = get_func_name()
@@ -298,33 +381,33 @@ class TestAerospike:
             dimensions=10,
         )
         aerospike = Aerospike.from_texts(
-            seeds,
+            client,
             ["foo", "bar", "baz", "bay", "bax", "baw", "bav"],
             embedder,
             TEST_NAMESPACE,
-            index_name,
+            index_name=index_name,
             ids=["1", "2", "3", "4", "5", "6", "7"],
             set_name=set_name,
         )
 
         mmr_output = aerospike.max_marginal_relevance_search_by_vector(
-            embedder.embed_query("foo"), index_name, k=3, fetch_k=3
+            embedder.embed_query("foo"), index_name=index_name, k=3, fetch_k=3
         )
-        sim_output = aerospike.similarity_search("foo", index_name, k=3)
+        sim_output = aerospike.similarity_search("foo", index_name=index_name, k=3)
         mmr_output = sorted(
-            mmr_output, key=lambda x: x.metadata["_id"]
+            mmr_output, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
         sim_output = sorted(
-            sim_output, key=lambda x: x.metadata["_id"]
+            sim_output, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
         assert len(mmr_output) == 3
         assert mmr_output == sim_output
 
         mmr_output = aerospike.max_marginal_relevance_search_by_vector(
-            embedder.embed_query("foo"), index_name, k=2, fetch_k=3
+            embedder.embed_query("foo"), index_name=index_name, k=2, fetch_k=3
         )
         mmr_output = sorted(
-            mmr_output, key=lambda x: x.metadata["_id"]
+            mmr_output, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
         assert len(mmr_output) == 2
         assert mmr_output[0].page_content == "foo"
@@ -332,13 +415,13 @@ class TestAerospike:
 
         mmr_output = aerospike.max_marginal_relevance_search_by_vector(
             embedder.embed_query("foo"),
-            index_name,
+            index_name=index_name,
             k=2,
             fetch_k=3,
             lambda_mult=0.1,  # more diversity
         )
         mmr_output = sorted(
-            mmr_output, key=lambda x: x.metadata["_id"]
+            mmr_output, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
         assert len(mmr_output) == 2
         assert mmr_output[0].page_content == "foo"
@@ -346,11 +429,9 @@ class TestAerospike:
 
         # if fetch_k < k, then the output will be less than k
         mmr_output = aerospike.max_marginal_relevance_search_by_vector(
-            embedder.embed_query("foo"), index_name, k=3, fetch_k=2
+            embedder.embed_query("foo"), index_name=index_name, k=3, fetch_k=2
         )
         assert len(mmr_output) == 2
-        
-        
 
     def test_max_marginal_relevance_search(
         self, aerospike: Aerospike, admin_client
@@ -373,23 +454,23 @@ class TestAerospike:
         )
 
         mmr_output = aerospike.max_marginal_relevance_search(
-            "foo", index_name, k=3, fetch_k=3
+            "foo", index_name=index_name, k=3, fetch_k=3
         )
-        sim_output = aerospike.similarity_search("foo", index_name, k=3)
+        sim_output = aerospike.similarity_search("foo", index_name=index_name, k=3)
         mmr_output = sorted(
-            mmr_output, key=lambda x: x.metadata["_id"]
+            mmr_output, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
         sim_output = sorted(
-            sim_output, key=lambda x: x.metadata["_id"]
+            sim_output, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
         assert len(mmr_output) == 3
         assert mmr_output == sim_output
 
         mmr_output = aerospike.max_marginal_relevance_search(
-            "foo", index_name, k=2, fetch_k=3
+            "foo", index_name=index_name, k=2, fetch_k=3
         )
         mmr_output = sorted(
-            mmr_output, key=lambda x: x.metadata["_id"]
+            mmr_output, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
         assert len(mmr_output) == 2
         assert mmr_output[0].page_content == "foo"
@@ -397,13 +478,13 @@ class TestAerospike:
 
         mmr_output = aerospike.max_marginal_relevance_search(
             "foo",
-            index_name,
+            index_name=index_name,
             k=2,
             fetch_k=3,
             lambda_mult=0.1,  # more diversity
         )
         mmr_output = sorted(
-            mmr_output, key=lambda x: x.metadata["_id"]
+            mmr_output, key=lambda x: x.metadata[ID_KEY]
         )  # TODO: Remove this line after next release
         assert len(mmr_output) == 2
         assert mmr_output[0].page_content == "foo"
@@ -411,372 +492,175 @@ class TestAerospike:
 
         # if fetch_k < k, then the output will be less than k
         mmr_output = aerospike.max_marginal_relevance_search(
-            "foo", index_name, k=3, fetch_k=2
+            "foo", index_name=index_name, k=3, fetch_k=2
         )
         assert len(mmr_output) == 2
 
-
-# def test_redis_new_vector(texts: List[str]) -> None:
-#     """Test adding a new document"""
-#     docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
-#     docsearch.add_texts(["foo"])
-#     output = docsearch.similarity_search("foo", k=2, return_metadata=False)
-#     assert output == TEST_RESULT
-#     assert drop(docsearch.index_name)
-
-
-# def test_redis_from_existing(texts: List[str]) -> None:
-#     """Test adding a new document"""
-#     docsearch = Redis.from_texts(
-#         texts, FakeEmbeddings(), index_name=TEST_INDEX_NAME, redis_url=TEST_REDIS_URL
-#     )
-#     schema: Dict = docsearch.schema
-
-#     # write schema for the next test
-#     docsearch.write_schema("test_schema.yml")
-
-#     # Test creating from an existing
-#     docsearch2 = Redis.from_existing_index(
-#         FakeEmbeddings(),
-#         index_name=TEST_INDEX_NAME,
-#         redis_url=TEST_REDIS_URL,
-#         schema=schema,
-#     )
-#     output = docsearch2.similarity_search("foo", k=1, return_metadata=False)
-#     assert output == TEST_SINGLE_RESULT
-
-
-# def test_redis_add_texts_to_existing() -> None:
-#     """Test adding a new document"""
-#     # Test creating from an existing with yaml from file
-#     docsearch = Redis.from_existing_index(
-#         FakeEmbeddings(),
-#         index_name=TEST_INDEX_NAME,
-#         redis_url=TEST_REDIS_URL,
-#         schema="test_schema.yml",
-#     )
-#     docsearch.add_texts(["foo"])
-#     output = docsearch.similarity_search("foo", k=2, return_metadata=False)
-#     assert output == TEST_RESULT
-#     assert drop(TEST_INDEX_NAME)
-#     # remove the test_schema.yml file
-#     os.remove("test_schema.yml")
-
-
-# def test_redis_from_texts_return_keys(texts: List[str]) -> None:
-#     """Test from_texts_return_keys constructor."""
-#     docsearch, keys = Redis.from_texts_return_keys(
-#         texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL
-#     )
-#     output = docsearch.similarity_search("foo", k=1, return_metadata=False)
-#     assert output == TEST_SINGLE_RESULT
-#     assert len(keys) == len(texts)
-#     assert drop(docsearch.index_name)
-
-
-# def test_redis_from_documents(texts: List[str]) -> None:
-#     """Test from_documents constructor."""
-#     docs = [Document(page_content=t, metadata={"a": "b"}) for t in texts]
-#     docsearch = Redis.from_documents(docs, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
-#     output = docsearch.similarity_search("foo", k=1, return_metadata=True)
-#     assert "a" in output[0].metadata.keys()
-#     assert "b" in output[0].metadata.values()
-#     assert drop(docsearch.index_name)
-
-
-# def test_custom_keys(texts: List[str]) -> None:
-#     keys_in = ["test_key_1", "test_key_2", "test_key_3"]
-#     docsearch, keys_out = Redis.from_texts_return_keys(
-#         texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, keys=keys_in
-#     )
-#     # it will append the index key prefix to all keys
-#     assert keys_out == [docsearch.key_prefix + ":" + key for key in keys_in]
-#     assert drop(docsearch.index_name)
-
-
-# def test_custom_keys_from_docs(texts: List[str]) -> None:
-#     keys_in = ["test_key_1", "test_key_2", "test_key_3"]
-#     docs = [Document(page_content=t, metadata={"a": "b"}) for t in texts]
-
-#     docsearch = Redis.from_documents(
-#         docs, FakeEmbeddings(), redis_url=TEST_REDIS_URL, keys=keys_in
-#     )
-#     client = docsearch.client
-#     # test keys are correct
-#     assert client.hget(docsearch.key_prefix + ":" + "test_key_1", "content")
-#     # test metadata is stored
-#     assert client.hget(docsearch.key_prefix + ":" + "test_key_1", "a") == bytes(
-#         "b", "utf-8"
-#     )
-#     # test all keys are stored
-#     assert client.hget(docsearch.key_prefix + ":" + "test_key_2", "content")
-#     assert drop(docsearch.index_name)
-
-
-# # -- test filters -- #
-
-
-# @pytest.mark.parametrize(
-#     "filter_expr, expected_length, expected_nums",
-#     [
-#         (RedisText("text") == "foo", 1, None),
-#         (RedisFilter.text("text") == "foo", 1, None),
-#         (RedisText("text") % "ba*", 2, ["bar", "baz"]),
-#         (RedisNum("num") > 2, 1, [3]),
-#         (RedisNum("num") < 2, 1, [1]),
-#         (RedisNum("num") >= 2, 2, [2, 3]),
-#         (RedisNum("num") <= 2, 2, [1, 2]),
-#         (RedisNum("num") != 2, 2, [1, 3]),
-#         (RedisFilter.num("num") != 2, 2, [1, 3]),
-#         (RedisFilter.tag("category") == "a", 3, None),
-#         (RedisFilter.tag("category") == "b", 2, None),
-#         (RedisFilter.tag("category") == "c", 2, None),
-#         (RedisFilter.tag("category") == ["b", "c"], 3, None),
-#     ],
-#     ids=[
-#         "text-filter-equals-foo",
-#         "alternative-text-equals-foo",
-#         "text-filter-fuzzy-match-ba",
-#         "number-filter-greater-than-2",
-#         "number-filter-less-than-2",
-#         "number-filter-greater-equals-2",
-#         "number-filter-less-equals-2",
-#         "number-filter-not-equals-2",
-#         "alternative-number-not-equals-2",
-#         "tag-filter-equals-a",
-#         "tag-filter-equals-b",
-#         "tag-filter-equals-c",
-#         "tag-filter-equals-b-or-c",
-#     ],
-# )
-# def test_redis_filters_1(
-#     filter_expr: RedisFilterExpression,
-#     expected_length: int,
-#     expected_nums: Optional[list],
-# ) -> None:
-#     metadata = [
-#         {"name": "joe", "num": 1, "text": "foo", "category": ["a", "b"]},
-#         {"name": "john", "num": 2, "text": "bar", "category": ["a", "c"]},
-#         {"name": "jane", "num": 3, "text": "baz", "category": ["b", "c", "a"]},
-#     ]
-#     documents = [Document(page_content="foo", metadata=m) for m in metadata]
-#     docsearch = Redis.from_documents(
-#         documents, FakeEmbeddings(), redis_url=TEST_REDIS_URL
-#     )
-
-#     sim_output = docsearch.similarity_search("foo", k=3, filter=filter_expr)
-#     mmr_output = docsearch.max_marginal_relevance_search(
-#         "foo", k=3, fetch_k=5, filter=filter_expr
-#     )
-
-#     assert len(sim_output) == expected_length
-#     assert len(mmr_output) == expected_length
-
-#     if expected_nums is not None:
-#         for out in sim_output:
-#             assert (
-#                 out.metadata["text"] in expected_nums
-#                 or int(out.metadata["num"]) in expected_nums
-#             )
-#         for out in mmr_output:
-#             assert (
-#                 out.metadata["text"] in expected_nums
-#                 or int(out.metadata["num"]) in expected_nums
-#             )
-
-#     assert drop(docsearch.index_name)
-
-
-# # -- test index specification -- #
-
-
-# def test_index_specification_generation() -> None:
-#     index_schema = {
-#         "text": [{"name": "job"}, {"name": "title"}],
-#         "numeric": [{"name": "salary"}],
-#     }
-
-#     text = ["foo"]
-#     meta = {"job": "engineer", "title": "principal engineer", "salary": 100000}
-#     docs = [Document(page_content=t, metadata=meta) for t in text]
-#     r = Redis.from_documents(
-#         docs, FakeEmbeddings(), redis_url=TEST_REDIS_URL, index_schema=index_schema
-#     )
-
-#     output = r.similarity_search("foo", k=1, return_metadata=True)
-#     assert output[0].metadata["job"] == "engineer"
-#     assert output[0].metadata["title"] == "principal engineer"
-#     assert int(output[0].metadata["salary"]) == 100000
-
-#     info = convert_bytes(r.client.ft(r.index_name).info())
-#     attributes = info["attributes"]
-#     assert len(attributes) == 5
-#     for attr in attributes:
-#         d = make_dict(attr)
-#         if d["identifier"] == "job":
-#             assert d["type"] == "TEXT"
-#         elif d["identifier"] == "title":
-#             assert d["type"] == "TEXT"
-#         elif d["identifier"] == "salary":
-#             assert d["type"] == "NUMERIC"
-#         elif d["identifier"] == "content":
-#             assert d["type"] == "TEXT"
-#         elif d["identifier"] == "content_vector":
-#             assert d["type"] == "VECTOR"
-#         else:
-#             raise ValueError("Unexpected attribute in index schema")
-
-#     assert drop(r.index_name)
-
-
-# # -- test distance metrics -- #
-
-# cosine_schema: Dict = {"distance_metric": "cosine"}
-# ip_schema: Dict = {"distance_metric": "IP"}
-# l2_schema: Dict = {"distance_metric": "L2"}
-
-
-# def test_cosine(texts: List[str]) -> None:
-#     """Test cosine distance."""
-#     docsearch = Redis.from_texts(
-#         texts,
-#         FakeEmbeddings(),
-#         redis_url=TEST_REDIS_URL,
-#         vector_schema=cosine_schema,
-#     )
-#     output = docsearch.similarity_search_with_score("far", k=2)
-#     _, score = output[1]
-#     assert score == COSINE_SCORE
-#     assert drop(docsearch.index_name)
-
-
-# def test_l2(texts: List[str]) -> None:
-#     """Test Flat L2 distance."""
-#     docsearch = Redis.from_texts(
-#         texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, vector_schema=l2_schema
-#     )
-#     output = docsearch.similarity_search_with_score("far", k=2)
-#     _, score = output[1]
-#     assert score == EUCLIDEAN_SCORE
-#     assert drop(docsearch.index_name)
-
-
-# def test_ip(texts: List[str]) -> None:
-#     """Test inner product distance."""
-#     docsearch = Redis.from_texts(
-#         texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, vector_schema=ip_schema
-#     )
-#     output = docsearch.similarity_search_with_score("far", k=2)
-#     _, score = output[1]
-#     assert score == IP_SCORE
-#     assert drop(docsearch.index_name)
-
-
-# def test_similarity_search_limit_distance(texts: List[str]) -> None:
-#     """Test similarity search limit score."""
-#     docsearch = Redis.from_texts(
-#         texts,
-#         FakeEmbeddings(),
-#         redis_url=TEST_REDIS_URL,
-#     )
-#     output = docsearch.similarity_search(texts[0], k=3, distance_threshold=0.1)
-
-#     # can't check score but length of output should be 2
-#     assert len(output) == 2
-#     assert drop(docsearch.index_name)
-
-
-# def test_similarity_search_with_score_with_limit_distance(texts: List[str]) -> None:
-#     """Test similarity search with score with limit score."""
-#     docsearch = Redis.from_texts(
-#         texts, ConsistentFakeEmbeddings(), redis_url=TEST_REDIS_URL
-#     )
-#     output = docsearch.similarity_search_with_score(
-#         texts[0], k=3, distance_threshold=0.1, return_metadata=True
-#     )
-
-#     assert len(output) == 2
-#     for out, score in output:
-#         if out.page_content == texts[1]:
-#             score == COSINE_SCORE
-#     assert drop(docsearch.index_name)
-
-
-# def test_max_marginal_relevance_search(texts: List[str]) -> None:
-#     """Test max marginal relevance search."""
-#     docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
-
-#     mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=3)
-#     sim_output = docsearch.similarity_search(texts[0], k=3)
-#     assert mmr_output == sim_output
-
-#     mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=2, fetch_k=3)
-#     assert len(mmr_output) == 2
-#     assert mmr_output[0].page_content == texts[0]
-#     assert mmr_output[1].page_content == texts[1]
-
-#     mmr_output = docsearch.max_marginal_relevance_search(
-#         texts[0],
-#         k=2,
-#         fetch_k=3,
-#         lambda_mult=0.1,  # more diversity
-#     )
-#     assert len(mmr_output) == 2
-#     assert mmr_output[0].page_content == texts[0]
-#     assert mmr_output[1].page_content == texts[2]
-
-#     # if fetch_k < k, then the output will be less than k
-#     mmr_output = docsearch.max_marginal_relevance_search(texts[0], k=3, fetch_k=2)
-#     assert len(mmr_output) == 2
-#     assert drop(docsearch.index_name)
-
-
-# def test_delete(texts: List[str]) -> None:
-#     """Test deleting a new document"""
-#     docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
-#     ids = docsearch.add_texts(["foo"])
-#     got = docsearch.delete(ids=ids, redis_url=TEST_REDIS_URL)
-#     assert got
-#     assert drop(docsearch.index_name)
-
-
-# def test_redis_as_retriever() -> None:
-#     texts = ["foo", "foo", "foo", "foo", "bar"]
-#     docsearch = Redis.from_texts(
-#         texts, ConsistentFakeEmbeddings(), redis_url=TEST_REDIS_URL
-#     )
-
-#     retriever = docsearch.as_retriever(search_type="similarity", search_kwargs={"k": 3})
-#     results = retriever.invoke("foo")
-#     assert len(results) == 3
-#     assert all([d.page_content == "foo" for d in results])
-
-#     assert drop(docsearch.index_name)
-
-
-# def test_redis_retriever_distance_threshold() -> None:
-#     texts = ["foo", "bar", "baz"]
-#     docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
-
-#     retriever = docsearch.as_retriever(
-#         search_type="similarity_distance_threshold",
-#         search_kwargs={"k": 3, "distance_threshold": 0.1},
-#     )
-#     results = retriever.invoke("foo")
-#     assert len(results) == 2
-
-#     assert drop(docsearch.index_name)
-
-
-# def test_redis_retriever_score_threshold() -> None:
-#     texts = ["foo", "bar", "baz"]
-#     docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
-
-#     retriever = docsearch.as_retriever(
-#         search_type="similarity_score_threshold",
-#         search_kwargs={"k": 3, "score_threshold": 0.91},
-#     )
-#     results = retriever.invoke("foo")
-#     assert len(results) == 2
-
-#     assert drop(docsearch.index_name)
+    def test_cosine_distance(self, aerospike: Aerospike, admin_client) -> None:
+        """Test cosine distance."""
+        from aerospike_vector_search import types
+
+        admin_client: AdminClient = admin_client
+        index_name = set_name = get_func_name()
+        admin_client.index_create(
+            namespace=TEST_NAMESPACE,
+            sets=set_name,
+            name=index_name,
+            vector_field=VECTOR_KEY,
+            dimensions=10,
+            vector_distance_metric=types.VectorDistanceMetric.COSINE,
+        )
+        aerospike.add_texts(
+            ["foo", "bar", "baz"],
+            ids=["1", "2", "3"],
+            index_name=index_name,
+            set_name=set_name,
+        )  # blocking
+
+        """
+        foo vector = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]
+        far vector = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 3.0]
+        cosine similarity ~= 0.71
+        cosine distance ~= 1 - cosine similarity = 0.29
+        """
+        expected = pytest.approx(0.292, abs=0.002)
+        output = aerospike.similarity_search_with_score(
+            "far", index_name=index_name, k=3
+        )
+        output.sort(
+            key=lambda x: x[0].metadata[ID_KEY]
+        )  # TODO: Remove this line after next release
+        _, actual_score = output[0]
+
+        assert actual_score == expected
+
+    def test_dot_product_distance(self, aerospike: Aerospike, admin_client) -> None:
+        """Test dot product distance."""
+        from aerospike_vector_search import types
+
+        admin_client: AdminClient = admin_client
+        index_name = set_name = get_func_name()
+        admin_client.index_create(
+            namespace=TEST_NAMESPACE,
+            sets=set_name,
+            name=index_name,
+            vector_field=VECTOR_KEY,
+            dimensions=10,
+            vector_distance_metric=types.VectorDistanceMetric.DOT_PRODUCT,
+        )
+        aerospike.add_texts(
+            ["foo", "bar", "baz"],
+            ids=["1", "2", "3"],
+            index_name=index_name,
+            set_name=set_name,
+        )  # blocking
+
+        """
+        foo vector = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]
+        far vector = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 3.0]
+        dot product = 9.0
+        dot product distance = dot product * -1 = -9.0
+        """
+        expected = -9.0
+        output = aerospike.similarity_search_with_score(
+            "far", index_name=index_name, k=3
+        )
+        output.sort(
+            key=lambda x: x[0].metadata[ID_KEY]
+        )  # TODO: Remove this line after next release
+        _, actual_score = output[0]
+
+        assert actual_score == expected
+
+    def test_euclidean_distance(self, aerospike: Aerospike, admin_client) -> None:
+        """Test dot product distance."""
+        from aerospike_vector_search import types
+
+        admin_client: AdminClient = admin_client
+        index_name = set_name = get_func_name()
+        admin_client.index_create(
+            namespace=TEST_NAMESPACE,
+            sets=set_name,
+            name=index_name,
+            vector_field=VECTOR_KEY,
+            dimensions=10,
+            vector_distance_metric=types.VectorDistanceMetric.SQUARED_EUCLIDEAN,
+        )
+        aerospike.add_texts(
+            ["foo", "bar", "baz"],
+            ids=["1", "2", "3"],
+            index_name=index_name,
+            set_name=set_name,
+        )  # blocking
+
+        """
+        foo vector = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]
+        far vector = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 3.0]
+        euclidean distance = 9.0
+        """
+        expected = 9.0
+        output = aerospike.similarity_search_with_score(
+            "far", index_name=index_name, k=3
+        )
+        output.sort(
+            key=lambda x: x[0].metadata[ID_KEY]
+        )  # TODO: Remove this line after next release
+        _, actual_score = output[0]
+
+        assert actual_score == expected
+
+    def test_as_retriever(self, aerospike: Aerospike, admin_client) -> None:
+        admin_client: AdminClient = admin_client
+        index_name = set_name = get_func_name()
+        admin_client.index_create(
+            namespace=TEST_NAMESPACE,
+            sets=set_name,
+            name=index_name,
+            vector_field=VECTOR_KEY,
+            dimensions=10,
+        )
+        aerospike.add_texts(
+            ["foo", "foo", "foo", "foo", "bar"],
+            ids=["1", "2", "3"],
+            index_name=index_name,
+            set_name=set_name,
+        )  # blocking
+
+        aerospike._index_name = index_name
+        retriever = aerospike.as_retriever(
+            search_type="similarity", search_kwargs={"k": 3}
+        )
+        results = retriever.invoke("foo")
+        assert len(results) == 3
+        assert all([d.page_content == "foo" for d in results])
+
+    def test_as_retriever_distance_threshold(
+        self, aerospike: Aerospike, admin_client
+    ) -> None:
+        admin_client: AdminClient = admin_client
+        index_name = set_name = get_func_name()
+        admin_client.index_create(
+            namespace=TEST_NAMESPACE,
+            sets=set_name,
+            name=index_name,
+            vector_field=VECTOR_KEY,
+            dimensions=10,
+        )
+        aerospike.add_texts(
+            ["foo", "foo", "foo", "bar", "bar", "bar", "bar", "bar"],
+            ids=["1", "2", "3"],
+            index_name=index_name,
+            set_name=set_name,
+        )  # blocking
+
+        aerospike._index_name = index_name
+        retriever = aerospike.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={"k": 9, "score_threshold": 0.1},
+        )
+        results = retriever.invoke("foo")
+
+        for r in results:
+            assert r.page_content == "foo"
+
+        assert len(results) == 3

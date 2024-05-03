@@ -17,7 +17,7 @@ from langchain_community.vectorstores.utils import (
 
 if TYPE_CHECKING:
     from aerospike_vector_search import Client
-    from aerospike_vector_search.types import HostPort, Neighbor
+    from aerospike_vector_search.types import Neighbor
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +44,14 @@ class Aerospike(VectorStore):
         client: Client,
         embedding: Union[Embeddings, Callable],
         namespace: str,
+        index_name: Optional[str] = None,
         vector_key: str = "_vector",
         text_key: str = "_text",
         id_key: str = "_id",
         set_name: Optional[str] = None,
-        distance_strategy: Optional[DistanceStrategy] = DistanceStrategy.COSINE,
+        distance_strategy: Optional[
+            DistanceStrategy
+        ] = DistanceStrategy.EUCLIDEAN_DISTANCE,
     ):
         """Initialize with Aerospike client.
 
@@ -65,6 +68,8 @@ class Aerospike(VectorStore):
             set_name: Default set name to use for storing vectors.
             distance_strategy: Distance strategy to use for similarity search.
         """
+
+        # TODO should we accept seeds and create the client for them?
 
         aerospike = _import_aerospike()
 
@@ -84,9 +89,11 @@ class Aerospike(VectorStore):
         self._embedding = embedding
         self._text_key = text_key
         self._vector_key = vector_key
+        self._id_key = id_key
+        self._index_name = index_name
         self._namespace = namespace
         self._set_name = set_name
-        self.distance_strategy = distance_strategy
+        self._distance_strategy = distance_strategy
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -117,6 +124,7 @@ class Aerospike(VectorStore):
             str
         ] = None,  # TODO: Should we allow namespaces to be passed in? They are much less flexible than pinecones.
         embedding_chunk_size: int = 1000,
+        wait_for_index: bool = True,
         **kwargs,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -141,6 +149,12 @@ class Aerospike(VectorStore):
         if set_name is None:
             set_name = self._set_name
 
+        if index_name is None:
+            index_name = self._index_name
+
+        if wait_for_index and index_name is None:
+            raise ValueError("If wait_for_index is True, index_name must be provided.")
+
         # TODO: Should we check that the index already exists before inserting?
 
         texts = list(texts)
@@ -159,7 +173,7 @@ class Aerospike(VectorStore):
                 metadata[self._text_key] = text
 
             for id, metadata in zip(chunk_ids, chunk_metadatas):
-                metadata["_id"] = id
+                metadata[self._id_key] = id
                 self._client.put(
                     namespace=self._namespace,
                     key=id,
@@ -168,7 +182,7 @@ class Aerospike(VectorStore):
                     **kwargs,
                 )
 
-        if index_name:
+        if wait_for_index:
             self._client.wait_for_index_completion(
                 namespace=self._namespace,
                 name=index_name,
@@ -194,9 +208,9 @@ class Aerospike(VectorStore):
     def similarity_search_with_score(
         self,
         query: str,
-        index_name: str,
         k: int = 4,
         metadata_keys: Optional[List[str]] = None,
+        index_name: Optional[str] = None,
         **kwargs,
     ) -> List[Tuple[Document, float]]:
         """Return aerospike documents most similar to query, along with scores.
@@ -211,19 +225,18 @@ class Aerospike(VectorStore):
 
         return self.similarity_search_by_vector_with_score(
             self._embed_query(query),
-            index_name,
             k=k,
             metadata_keys=metadata_keys,
+            index_name=index_name,
             **kwargs,
         )
 
     def similarity_search_by_vector_with_score(
         self,
         embedding: List[float],
-        index_name: str,
-        *,
         k: int = 4,
         metadata_keys: Optional[List[str]] = None,
+        index_name: Optional[str] = None,
         **kwargs,
     ) -> List[Tuple[Document, float]]:
         """Return aerospike documents most similar to embedding, along with scores.
@@ -244,6 +257,12 @@ class Aerospike(VectorStore):
 
         if metadata_keys:
             metadata_keys = [self._text_key] + metadata_keys
+
+        if index_name is None:
+            index_name = self._index_name
+
+        if index_name is None:
+            raise ValueError("index_name must be provided.")
 
         results: list[Neighbor] = self._client.vector_search(
             index_name=index_name,
@@ -272,9 +291,9 @@ class Aerospike(VectorStore):
     def similarity_search_by_vector(
         self,
         embedding: List[float],
-        index_name: str,
         k: int = 4,
         metadata_keys: Optional[List[str]] = None,
+        index_name: Optional[str] = None,
         **kwargs,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -292,32 +311,36 @@ class Aerospike(VectorStore):
         return [
             doc
             for doc, _ in self.similarity_search_by_vector_with_score(
-                embedding, index_name, k=k, metadata_keys=metadata_keys, **kwargs
+                embedding,
+                k=k,
+                metadata_keys=metadata_keys,
+                index_name=index_name,
+                **kwargs,
             )
         ]
 
     def similarity_search(
         self,
         query: str,
-        index_name: str,
         k: int = 4,
         metadata_keys: Optional[List[str]] = None,
+        index_name: Optional[str] = None,
         **kwargs,
     ) -> List[Document]:
         """Return aerospike documents most similar to query.
 
         Args:
             query: Text to look up documents similar to.
-            index_name: Name of the index to search.
             k: Number of Documents to return. Defaults to 4.
             metadata_keys: List of metadata keys to return with the documents.
                 If None, all metadata keys will be returned. Defaults to None.
+            index_name: Name of the index to search.
 
         Returns:
             List of Documents most similar to the query and score for each
         """
         docs_and_scores = self.similarity_search_with_score(
-            query, index_name, k=k, metadata_keys=metadata_keys, **kwargs
+            query, k=k, metadata_keys=metadata_keys, index_name=index_name, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -336,16 +359,16 @@ class Aerospike(VectorStore):
         TODO: This is only true for dot product and euclidean distance.
         """
 
-        if self.distance_strategy == DistanceStrategy.COSINE:
+        if self._distance_strategy == DistanceStrategy.COSINE:
             return self._cosine_relevance_score_fn
-        elif self.distance_strategy == DistanceStrategy.MAX_INNER_PRODUCT:
+        elif self._distance_strategy == DistanceStrategy.DOT_PRODUCT:
             return self._max_inner_product_relevance_score_fn
-        elif self.distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
+        elif self._distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
             return self._euclidean_relevance_score_fn
         else:
             raise ValueError(
-                "Unknown distance strategy, must be cosine, max_inner_product "
-                "(dot product), or euclidean"
+                "Unknown distance strategy, must be cosine, dot_product"
+                ", or euclidean"
             )
 
     @staticmethod
@@ -359,11 +382,11 @@ class Aerospike(VectorStore):
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
-        index_name: str,
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         metadata_keys: Optional[List[str]] = None,
+        index_name: Optional[str] = None,
         **kwargs,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -373,7 +396,6 @@ class Aerospike(VectorStore):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            index_name: Name of the index to search.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
@@ -382,6 +404,7 @@ class Aerospike(VectorStore):
                         Defaults to 0.5.
             metadata_keys: List of metadata keys to return with the documents.
                         If None, all metadata keys will be returned. Defaults to None.
+            index_name: Name of the index to search.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
@@ -390,7 +413,11 @@ class Aerospike(VectorStore):
             metadata_keys = [self._vector_key] + metadata_keys
 
         docs = self.similarity_search_by_vector(
-            embedding, index_name, k=fetch_k, metadata_keys=metadata_keys, **kwargs
+            embedding,
+            k=fetch_k,
+            metadata_keys=metadata_keys,
+            index_name=index_name,
+            **kwargs,
         )
         mmr_selected = maximal_marginal_relevance(
             np.array([embedding], dtype=np.float32),
@@ -408,11 +435,11 @@ class Aerospike(VectorStore):
     def max_marginal_relevance_search(
         self,
         query: str,
-        index_name: str,
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         metadata_keys: Optional[List[str]] = None,
+        index_name: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -422,31 +449,31 @@ class Aerospike(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            index_name: Name of the index to search.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            index_name: Name of the index to search.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
         embedding = self._embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding,
-            index_name,
             k,
             fetch_k,
             lambda_mult,
             metadata_keys=metadata_keys,
+            index_name=index_name,
             **kwargs,
         )
 
     @classmethod
     def from_texts(
         cls,
-        seeds: List[HostPort],
+        client: Client,
         texts: List[str],
         embedding: Embeddings,
         namespace: str,
@@ -454,7 +481,6 @@ class Aerospike(VectorStore):
         ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
         embeddings_chunk_size: int = 1000,
-        client_kwargs: Optional[dict] = None,
         **kwargs,
     ) -> Aerospike:
         """
@@ -479,8 +505,6 @@ class Aerospike(VectorStore):
                     namespace=namespace,
                 )
         """
-        Client: Client = _import_aerospike()
-        client = Client(seeds=seeds, **(client_kwargs or {}))
         aerospike = cls(
             client,
             embedding,

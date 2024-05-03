@@ -6,7 +6,7 @@ services:
     networks:
       - aerospike-test
     volumes:
-      - ./container-volumes/aerospike/etc/aerospike:/opt/aerospike/etc/aerospike
+      - .:/opt/aerospike/etc/aerospike
     command:
       - "--config-file"
       - "/opt/aerospike/etc/aerospike/aerospike.conf"
@@ -17,10 +17,7 @@ services:
     networks:
       - aerospike-test
     volumes:
-      - ./container-volumes/proximus/etc/aerospike-proximus:/etc/aerospike-proximus
+      - .:/etc/aerospike-proximus
   
 networks:
-  proximus-demo: {}
-
-volumes:
- app_data: {}
+  aerospike-test: {}
