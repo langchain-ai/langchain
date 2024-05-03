@@ -57,7 +57,10 @@ generate-files:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(INTERMEDIATE_DIR)
 
 
-	mkdir -p $(VERSIONED_INTERMEDIATE_DIR)/{templates,integrations/{,llms,chat}}
+	mkdir -p $(VERIONED_INTERMEDIATE_DIR)
+	mkdir -p $(VERIONED_INTERMEDIATE_DIR)/templates
+	mkdir -p $(VERIONED_INTERMEDIATE_DIR)/integrations
+	mkdir -p $(VERIONED_INTERMEDIATE_DIR)/integrations/llms
 	cp $(INTERMEDIATE_DIR)/integrations/llms/index.mdx $(VERIONED_INTERMEDIATE_DIR)/integrations/llms/
 	cp $(INTERMEDIATE_DIR)/integrations/chat/index.mdx $(VERIONED_INTERMEDIATE_DIR)/integrations/chat/
 	cp -r $(INTERMEDIATE_DIR)/templates/* $(VERIONED_INTERMEDIATE_DIR)/templates/
