@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
-import warnings
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -50,7 +49,6 @@ class NeMoEmbeddings(BaseModel, Embeddings):
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
-        print(values)
         warnings.warn(
             "Directly instantiating a NeMoEmbeddings from langchain-community is deprecated. "
             "Please use langchain-nvidia-ai-endpoints NVIDIAEmbeddings interface."
