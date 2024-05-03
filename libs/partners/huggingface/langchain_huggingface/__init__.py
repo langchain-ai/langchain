@@ -6,7 +6,6 @@ from langchain_huggingface.embeddings import (
 from langchain_huggingface.llms import (
     HuggingFaceEndpoint,
     HuggingFacePipeline,
-    HuggingFaceTextGenInference,
 )
 
 __all__ = [
@@ -15,5 +14,4 @@ __all__ = [
     "HuggingFaceEmbeddings",
     "HuggingFaceEndpoint",
     "HuggingFacePipeline",
-    "HuggingFaceTextGenInference",
 ]

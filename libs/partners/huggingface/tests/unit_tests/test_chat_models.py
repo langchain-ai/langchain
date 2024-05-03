@@ -18,8 +18,8 @@ from langchain_huggingface.chat_models import (  # type: ignore[import]
     _convert_message_to_chat_message,
     _convert_TGI_message_to_LC_message,
 )
-from langchain_huggingface.llms.huggingface_text_gen_inference import (
-    HuggingFaceTextGenInference,
+from langchain_huggingface.llms.huggingface_endpoint import (
+    HuggingFaceEndpoint,
 )
 
 
@@ -86,8 +86,8 @@ def test_convert_TGI_message_to_LC_message(
 
 @pytest.fixture
 def mock_llm() -> Mock:
-    llm = Mock(spec=HuggingFaceTextGenInference)
-    llm.inference_server_url = "test tgi url"
+    llm = Mock(spec=HuggingFaceEndpoint)
+    llm.inference_server_url = "test endpoint url"
     return llm
 
 

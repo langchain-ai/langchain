@@ -15,6 +15,9 @@ from typing import (
 )
 
 from langchain_community.llms.huggingface_hub import HuggingFaceHub
+from langchain_community.llms.huggingface_text_gen_inference import (
+    HuggingFaceTextGenInference,
+)
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -36,9 +39,6 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
-from langchain_huggingface.llms.huggingface_text_gen_inference import (
-    HuggingFaceTextGenInference,
-)
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
@@ -179,8 +179,11 @@ class ChatHuggingFace(BaseChatModel):
     ) -> ChatResult:
         if isinstance(self.llm, HuggingFaceTextGenInference):
             message_dicts = self._create_message_dicts(messages, stop)
-
             answer = self.llm.client.chat(messages=message_dicts, **kwargs)
+            return self._create_chat_result(answer)
+        elif isinstance(self.llm, HuggingFaceEndpoint):
+            message_dicts = self._create_message_dicts(messages, stop)
+            answer = self.llm.client.chat_completion(messages=message_dicts, **kwargs)
             return self._create_chat_result(answer)
         else:
             llm_input = self._to_chat_prompt(messages)
