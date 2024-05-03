@@ -1,11 +1,11 @@
 """Test Upstash Redis cache functionality."""
 import uuid
 
+import langchain
 import pytest
-from langchain_community.cache import UpstashRedisCache
 from langchain_core.outputs import Generation, LLMResult
 
-import langchain
+from langchain_community.cache import UpstashRedisCache
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 

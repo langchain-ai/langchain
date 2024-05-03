@@ -1,7 +1,7 @@
-from langchain_community.cache import OpenSearchSemanticCache
+from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
 
-from langchain.globals import get_llm_cache, set_llm_cache
+from langchain_community.cache import OpenSearchSemanticCache
 from tests.integration_tests.cache.fake_embeddings import (
     FakeEmbeddings,
 )

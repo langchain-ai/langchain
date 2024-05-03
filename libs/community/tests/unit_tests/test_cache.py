@@ -4,6 +4,7 @@ from typing import Dict, Generator, List, Union
 
 import pytest
 from _pytest.fixtures import FixtureRequest
+from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import FakeListChatModel, FakeListLLM
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -13,8 +14,6 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-
-from langchain.globals import get_llm_cache, set_llm_cache
 
 pytest.importorskip("langchain_community")
 

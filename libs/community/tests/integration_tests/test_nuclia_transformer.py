@@ -3,11 +3,12 @@ import json
 from typing import Any
 from unittest import mock
 
+from langchain_core.documents import Document
+
 from langchain_community.document_transformers.nuclia_text_transform import (
     NucliaTextTransformer,
 )
 from langchain_community.tools.nuclia.tool import NucliaUnderstandingAPI
-from langchain_core.documents import Document
 
 
 def fakerun(**args: Any) -> Any:

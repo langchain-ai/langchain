@@ -10,14 +10,14 @@ import os
 import uuid
 
 import pytest
+from langchain.globals import get_llm_cache, set_llm_cache
+from langchain_core.outputs import Generation
+
 from langchain_community.cache import AzureCosmosDBSemanticCache
 from langchain_community.vectorstores.azure_cosmos_db import (
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
 )
-from langchain_core.outputs import Generation
-
-from langchain.globals import get_llm_cache, set_llm_cache
 from tests.integration_tests.cache.fake_embeddings import (
     FakeEmbeddings,
 )

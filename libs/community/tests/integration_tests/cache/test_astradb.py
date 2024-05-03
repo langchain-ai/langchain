@@ -15,13 +15,13 @@ import os
 from typing import AsyncIterator, Iterator
 
 import pytest
-from langchain_community.cache import AstraDBCache, AstraDBSemanticCache
-from langchain_community.utilities.astradb import SetupMode
+from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.caches import BaseCache
 from langchain_core.language_models import LLM
 from langchain_core.outputs import Generation, LLMResult
 
-from langchain.globals import get_llm_cache, set_llm_cache
+from langchain_community.cache import AstraDBCache, AstraDBSemanticCache
+from langchain_community.utilities.astradb import SetupMode
 from tests.integration_tests.cache.fake_embeddings import FakeEmbeddings
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
