@@ -1,10 +1,10 @@
-"""Test Redis functionality."""
+"""Test Aerospike functionality."""
 
 import inspect
 import os
 import subprocess
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_core.documents import Document
@@ -12,16 +12,15 @@ from langchain_core.documents import Document
 from langchain_community.vectorstores.aerospike import (
     Aerospike,
 )
-from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
-    FakeEmbeddings,
 )
+
+pytestmark = pytest.mark.requires("aerospike_vector_search")
 
 if TYPE_CHECKING:
     from aerospike_vector_search import Client
     from aerospike_vector_search.admin import Client as AdminClient
-    from aerospike_vector_search.types import HostPort
 
 TEST_INDEX_NAME = "test-index"
 TEST_NAMESPACE = "test"
@@ -30,11 +29,6 @@ TEXT_KEY = "_text"
 VECTOR_KEY = "_vector"
 ID_KEY = "_id"
 EUCLIDEAN_SCORE = 1.0
-
-
-@pytest.fixture
-def texts() -> List[str]:
-    return ["foo", "bar", "baz"]
 
 
 def compose_up() -> None:
@@ -53,6 +47,11 @@ def compose_down() -> None:
 
 @pytest.fixture(scope="class", autouse=True)
 def docker_compose():
+    try:
+        import aerospike_vector_search  # noqa
+    except ImportError:
+        pytest.skip("aerospike_vector_search not installed")
+
     compose_up()
     yield
     compose_down()
@@ -60,7 +59,10 @@ def docker_compose():
 
 @pytest.fixture(scope="class")
 def seeds():
-    from aerospike_vector_search.types import HostPort
+    try:
+        from aerospike_vector_search.types import HostPort
+    except ImportError:
+        pytest.skip("aerospike_vector_search not installed")
 
     yield HostPort(
         host=TEST_AEROSPIKE_HOST_PORT[0],
@@ -69,18 +71,26 @@ def seeds():
 
 
 @pytest.fixture(scope="class")
+@pytest.mark.requires("aerospike_vector_search")
 def admin_client(seeds) -> Any:
-    from aerospike_vector_search.admin import Client as AdminClient
+    try:
+        from aerospike_vector_search.admin import Client as AdminClient
+    except ImportError:
+        pytest.skip("aerospike_vector_search not installed")
 
-    with AdminClient(seeds=seeds, is_loadbalancer=True) as admin_client:
+    with AdminClient(seeds=seeds) as admin_client:
         yield admin_client
 
 
 @pytest.fixture(scope="class")
+@pytest.mark.requires("aerospike_vector_search")
 def client(seeds) -> Any:
-    from aerospike_vector_search import Client
+    try:
+        from aerospike_vector_search import Client
+    except ImportError:
+        pytest.skip("aerospike_vector_search not installed")
 
-    with Client(seeds=seeds, is_loadbalancer=True) as client:
+    with Client(seeds=seeds) as client:
         yield client
 
 
@@ -116,7 +126,6 @@ TODO: Add tests for delete()
 """
 
 
-@pytest.mark.requires("aerospike_vector_search")
 class TestAerospike:
     def test_from_text(self, client, admin_client, embedder: ConsistentFakeEmbeddings):
         admin_client: AdminClient = admin_client

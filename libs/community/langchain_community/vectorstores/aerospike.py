@@ -27,7 +27,7 @@ def _import_aerospike() -> Any:  # TODO: Replace this with Any
         from aerospike_vector_search import Client
     except ImportError as e:
         raise ImportError(
-            "Could not import aerospike_vector python package. "
+            "Could not import aerospike_vector_search python package. "
             "Please install it with `pip install aerospike_vector`."
         ) from e
     return Client
@@ -36,7 +36,7 @@ def _import_aerospike() -> Any:  # TODO: Replace this with Any
 class Aerospike(VectorStore):
     """`Aerospike` vector store.
 
-    To use, you should have the ``aerospike_vector`` python package installed.
+    To use, you should have the ``aerospike_vector_search`` python package installed.
     """
 
     def __init__(
@@ -58,15 +58,15 @@ class Aerospike(VectorStore):
         Args:
             client: Aerospike client.
             embedding: Embeddings object or Callable (deprecated) to embed text.
-            text_key: Key to use for text in metadata.
-            vector_key: Key to use for vector in metadata. This should match the
-            key used during index creation.
-            index_name: Name of the index previously created in Aerospike. This
-            should match the index name used during index creation.
             namespace: Namespace to use for storing vectors. This should match
-            the key used during index creation.
+            index_name: Name of the index previously created in Aerospike. This
+            vector_key: Key to use for vector in metadata. This should match the
+                key used during index creation.
+            text_key: Key to use for text in metadata.
+            id_key: Key to use for id in metadata.
             set_name: Default set name to use for storing vectors.
-            distance_strategy: Distance strategy to use for similarity search.
+            distance_strategy: Distance strategy to use for similarity search
+                This should match the distance strategy used during index creation.
         """
 
         # TODO should we accept seeds and create the client for them?
@@ -79,9 +79,9 @@ class Aerospike(VectorStore):
                 " Embeddings object instead."
             )
 
-        if not isinstance(client, aerospike):  # TODO: Add "or aerospike.AsycnClient"
+        if not isinstance(client, aerospike):
             raise ValueError(
-                f"client should be an instance of aerospike_vector.Client, "
+                f"client should be an instance of aerospike_vector_search.Client, "
                 f"got {type(client)}"
             )
 
@@ -119,11 +119,11 @@ class Aerospike(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        index_name: Optional[str] = None,
         set_name: Optional[
             str
         ] = None,  # TODO: Should we allow namespaces to be passed in? They are much less flexible than pinecones.
         embedding_chunk_size: int = 1000,
+        index_name: Optional[str] = None,
         wait_for_index: bool = True,
         **kwargs,
     ) -> List[str]:
@@ -134,13 +134,13 @@ class Aerospike(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of ids to associate with the texts.
-            index_name: Optional aerospike index name. The index name is not
-                used for adding the texts to the vectorstore. The index name is
-                used to block while waiting for all vectors to be indexed for a
-                particular index. If None, no blocking will occur.
             set_name: Optional aerospike set name to add the texts to.
             batch_size: Batch size to use when adding the texts to the vectorstore.
             embedding_chunk_size: Chunk size to use when embedding the texts.
+            index_name: Optional aerospike index name used for waiting for index
+                completion. If not provided, the default index_name will be used.
+            wait_for_index: If True, wait for the all the texts to be indexed
+                before returning. Requires index_name to be provided. Defaults to True.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -153,7 +153,7 @@ class Aerospike(VectorStore):
             index_name = self._index_name
 
         if wait_for_index and index_name is None:
-            raise ValueError("If wait_for_index is True, index_name must be provided.")
+            raise ValueError("if wait_for_index is True, index_name must be provided")
 
         # TODO: Should we check that the index already exists before inserting?
 
@@ -218,6 +218,11 @@ class Aerospike(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            metadata_keys: List of metadata keys to return with the documents.
+                If None, all metadata keys will be returned. Defaults to None.
+            index_name: Name of the index to search. Overrides the default
+                index_name.
+            kwargs: Additional keyword arguments to pass to the search method.
 
         Returns:
             List of Documents most similar to the query and associated scores.
@@ -243,10 +248,13 @@ class Aerospike(VectorStore):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            index_name: Name of the index to search.
             k: Number of Documents to return. Defaults to 4.
             metadata_keys: List of metadata keys to return with the documents.
-            If None, all metadata keys will be returned. Defaults to None.
+                If None, all metadata keys will be returned. Defaults to None.
+            index_name: Name of the index to search. Overrides the default
+                index_name.
+            kwargs: Additional keyword arguments to pass to the client
+                vector_search method.
 
         Returns:
             List of Documents most similar to the query and associated scores.
@@ -255,14 +263,14 @@ class Aerospike(VectorStore):
 
         docs = []
 
-        if metadata_keys:
+        if metadata_keys and self._text_key not in metadata_keys:
             metadata_keys = [self._text_key] + metadata_keys
 
         if index_name is None:
             index_name = self._index_name
 
         if index_name is None:
-            raise ValueError("index_name must be provided.")
+            raise ValueError("index_name must be provided")
 
         results: list[Neighbor] = self._client.vector_search(
             index_name=index_name,
@@ -300,10 +308,13 @@ class Aerospike(VectorStore):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            index_name: Name of the index to search.
             k: Number of Documents to return. Defaults to 4.
             metadata_keys: List of metadata keys to return with the documents.
                 If None, all metadata keys will be returned. Defaults to None.
+            index_name: Name of the index to search. Overrides the default
+                index_name.
+            kwargs: Additional keyword arguments to pass to the search method.
+            
 
         Returns:
             List of Documents most similar to the query vector.
@@ -334,7 +345,8 @@ class Aerospike(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             metadata_keys: List of metadata keys to return with the documents.
                 If None, all metadata keys will be returned. Defaults to None.
-            index_name: Name of the index to search.
+            index_name: Optional name of the index to search. Overrides the
+                default index_name.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -355,8 +367,8 @@ class Aerospike(VectorStore):
 
         0 is dissimilar, 1 is similar.
 
-        Aerospike's relevance_fn assume embeddings are normalized to unit norm.
-        TODO: This is only true for dot product and euclidean distance.
+        Aerospike's relevance_fn assume euclidean and dot product embeddings are
+        normalized to unit norm.
         """
 
         if self._distance_strategy == DistanceStrategy.COSINE:
@@ -398,18 +410,18 @@ class Aerospike(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+            lambda_mult: Number between 0 and 1 that determines the degree of
+                diversity among the results with 0 corresponding to maximum
+                diversity and 1 to minimum diversity. Defaults to 0.5.
             metadata_keys: List of metadata keys to return with the documents.
-                        If None, all metadata keys will be returned. Defaults to None.
-            index_name: Name of the index to search.
+                If None, all metadata keys will be returned. Defaults to None.
+            index_name: Optional name of the index to search. Overrides the
+                default index_name.
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
 
-        if metadata_keys:
+        if metadata_keys and self._vector_key not in metadata_keys:
             metadata_keys = [self._vector_key] + metadata_keys
 
         docs = self.similarity_search_by_vector(
@@ -493,17 +505,13 @@ class Aerospike(VectorStore):
         Example:
             .. code-block:: python
 
-                from langchain_community import AerospikeVectorStore TODO check this
+                from langchain_community import Aerospike
                 from langchain_openai import OpenAIEmbeddings
-
-                embeddings = OpenAIEmbeddings()
-                index_name = "my-index"
-                namespace = "my-namespace"
-                vectorstore = Aerospike(
-                    index_name=index_name,
-                    embedding=embedding,
-                    namespace=namespace,
-                )
+                from aerospike_vector_search import Client
+                from aerospike_vector_search.admin import Client as AdminClient
+                from aerospike_vector_search.types import HostPort
+                
+                TODO
         """
         aerospike = cls(
             client,
