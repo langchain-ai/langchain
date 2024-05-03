@@ -8,6 +8,7 @@ import logging
 import os
 import uuid
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -21,8 +22,10 @@ from typing import (
     cast,
 )
 
+if TYPE_CHECKING:
+    from oracledb import Connection
+
 import numpy as np
-import oracledb
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -67,7 +70,15 @@ def _handle_exceptions(func: T) -> T:
     return cast(T, wrapper)
 
 
-def _table_exists(client: oracledb.Connection, table_name: str) -> bool:
+def _table_exists(client: Connection, table_name: str) -> bool:
+    try:
+        import oracledb
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import oracledb, please install with "
+            "`pip install -U oracledb`."
+        ) from e
+
     try:
         with client.cursor() as cursor:
             cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
@@ -80,7 +91,7 @@ def _table_exists(client: oracledb.Connection, table_name: str) -> bool:
 
 
 @_handle_exceptions
-def _index_exists(client: oracledb.Connection, index_name: str) -> bool:
+def _index_exists(client: Connection, index_name: str) -> bool:
     # Check if the index exists
     query = """
         SELECT index_name 
@@ -120,9 +131,7 @@ def _get_index_name(base_name: str) -> str:
 
 
 @_handle_exceptions
-def _create_table(
-    client: oracledb.Connection, table_name: str, embedding_dim: int
-) -> None:
+def _create_table(client: Connection, table_name: str, embedding_dim: int) -> None:
     cols_dict = {
         "id": "RAW(16) DEFAULT SYS_GUID() PRIMARY KEY",
         "text": "CLOB",
@@ -144,7 +153,7 @@ def _create_table(
 
 @_handle_exceptions
 def create_index(
-    client: oracledb.Connection,
+    client: Connection,
     vector_store: OracleVS,
     params: Optional[dict[str, Any]] = None,
 ) -> None:
@@ -170,7 +179,7 @@ def create_index(
 
 @_handle_exceptions
 def _create_hnsw_index(
-    client: oracledb.Connection,
+    client: Connection,
     table_name: str,
     distance_strategy: DistanceStrategy,
     params: Optional[dict[str, Any]] = None,
@@ -254,7 +263,7 @@ def _create_hnsw_index(
 
 @_handle_exceptions
 def _create_ivf_index(
-    client: oracledb.Connection,
+    client: Connection,
     table_name: str,
     distance_strategy: DistanceStrategy,
     params: Optional[dict[str, Any]] = None,
@@ -325,7 +334,7 @@ def _create_ivf_index(
 
 
 @_handle_exceptions
-def drop_table_purge(client: oracledb.Connection, table_name: str) -> None:
+def drop_table_purge(client: Connection, table_name: str) -> None:
     if _table_exists(client, table_name):
         cursor = client.cursor()
         with cursor:
@@ -338,7 +347,7 @@ def drop_table_purge(client: oracledb.Connection, table_name: str) -> None:
 
 
 @_handle_exceptions
-def drop_index_if_exists(client: oracledb.Connection, index_name: str) -> None:
+def drop_index_if_exists(client: Connection, index_name: str) -> None:
     if _index_exists(client, index_name):
         drop_query = f"DROP INDEX {index_name}"
         with client.cursor() as cursor:
@@ -374,7 +383,7 @@ class OracleVS(VectorStore):
 
     def __init__(
         self,
-        client: oracledb.Connection,
+        client: Connection,
         embedding_function: Union[
             Callable[[str], List[float]],
             Embeddings,
@@ -384,6 +393,14 @@ class OracleVS(VectorStore):
         query: Optional[str] = "What is a Oracle database",
         params: Optional[Dict[str, Any]] = None,
     ):
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
+
         try:
             """Initialize with oracledb client."""
             self.client = client
@@ -476,6 +493,7 @@ class OracleVS(VectorStore):
           the vector store.
           kwargs: vectorstore specific parameters
         """
+
         texts = list(texts)
         if ids:
             # If ids are provided, hash them to maintain consistency
@@ -562,6 +580,14 @@ class OracleVS(VectorStore):
 
     @_handle_exceptions
     def _get_clob_value(self, result: Any) -> str:
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
+
         clob_value = ""
         if result:
             if isinstance(result, oracledb.LOB):
@@ -840,6 +866,7 @@ class OracleVS(VectorStore):
           ids: List of ids to delete.
           **kwargs
         """
+
         if ids is None:
             raise ValueError("No ids provided to delete.")
 

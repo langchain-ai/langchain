@@ -11,12 +11,13 @@ from __future__ import annotations
 import json
 import logging
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-import oracledb
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
-from oracledb import Connection
+
+if TYPE_CHECKING:
+    from oracledb import Connection
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +95,14 @@ class OracleEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each input text.
         """
+
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
 
         if texts is None:
             return None

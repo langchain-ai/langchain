@@ -11,11 +11,12 @@ from __future__ import annotations
 import json
 import logging
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-import oracledb
 from langchain_core.documents import Document
-from oracledb import Connection
+
+if TYPE_CHECKING:
+    from oracledb import Connection
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,14 @@ class OracleSummary:
         Returns:
             List of summary text, one for each input doc.
         """
+
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
 
         if docs is None:
             return []

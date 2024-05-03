@@ -388,7 +388,13 @@ class OracleTextSplitter(TextSplitter):
         try:
             import json
 
-            import oracledb
+            try:
+                import oracledb
+            except ImportError as e:
+                raise ImportError(
+                    "Unable to import oracledb, please install with "
+                    "`pip install -U oracledb`."
+                ) from e
 
             self._oracledb = oracledb
             self._json = json
@@ -401,7 +407,14 @@ class OracleTextSplitter(TextSplitter):
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
-        import oracledb
+
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
 
         splits = []
 

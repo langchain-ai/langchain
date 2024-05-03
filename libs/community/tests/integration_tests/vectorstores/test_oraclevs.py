@@ -1,4 +1,5 @@
 """Test Oracle AI Vector Search functionality."""
+
 # import required modules
 import sys
 import threading
