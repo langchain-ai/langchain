@@ -3470,7 +3470,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.48"
+version = "0.1.50"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -9377,4 +9377,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2969376d2a87e03a131de56041582bb58728edf154d3d67add7f91f6d6e4ed4d"
+content-hash = "99c6692964eb665e7746911ab0c834a4893215b40d3d4733c0c5fa5904669769"

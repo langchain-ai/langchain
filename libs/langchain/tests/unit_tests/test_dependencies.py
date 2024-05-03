@@ -42,7 +42,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "aiohttp",
             "async-timeout",
             "dataclasses-json",
-            "jsonpatch",
             "langchain-core",
             "langchain-text-splitters",
             "langsmith",
