@@ -1,9 +1,10 @@
 """Test Infinispan functionality."""
-
+import logging
 from typing import Any, List, Optional
-
+import httpx
 import pytest
 from langchain_core.documents import Document
+import warnings
 
 from langchain_community.vectorstores.infinispanvs import InfinispanVS
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -11,9 +12,14 @@ from tests.integration_tests.vectorstores.fake_embeddings import (
     fake_texts,
 )
 
+"""
+cd tests/integration_tests/vectorstores/docker-compose
+./infinispan.sh
+"""
 
-def _infinispan_setup_noautoconf() -> None:
-    ispnvs = InfinispanVS(auto_config=False)
+
+def _infinispan_setup_noautoconf(**kwargs: Any) -> None:
+    ispnvs = InfinispanVS(http2=_hasHttp2(), auto_config=False, **kwargs)
     ispnvs.cache_delete()
     ispnvs.schema_delete()
     proto = """
@@ -53,65 +59,103 @@ def _infinispanvs_from_texts(
         metadatas=metadatas,
         ids=ids,
         clear_old=clear_old,
-        auto_config=auto_config,
+        auto_config=auto_config, http2=_hasHttp2(),
         **kwargs,
     )
 
+def _hasHttp2() -> bool:
+    try:
+        httpx.Client(http2=True)
+        return True, False
+    except:
+        return False
+
 
 @pytest.mark.parametrize("autoconfig", [False, True])
+@pytest.mark.parametrize(
+    "conn_opts",
+    [
+        {},
+        {
+            "user": "user",
+            "password": "password",
+            "hosts": ["localhost:11232"],
+            "schema": "http",
+        },
+        {
+            "user": "user",
+            "password": "password",
+            "hosts": ["localhost:11242"],
+            "schema": "https",
+            "verify": False,
+        },
+    ],
+)
 class TestBasic:
-    def test_infinispan(self, autoconfig: bool) -> None:
+    def test_infinispan(self, autoconfig: bool, conn_opts: dict) -> None:
         """Test end to end construction and search."""
         if not autoconfig:
-            _infinispan_setup_noautoconf()
-        docsearch = _infinispanvs_from_texts(auto_config=autoconfig)
+            _infinispan_setup_noautoconf(**conn_opts)
+        docsearch = _infinispanvs_from_texts(auto_config=autoconfig, **conn_opts)
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
 
-    def test_infinispan_with_metadata(self, autoconfig: bool) -> None:
+    def test_infinispan_with_auth(self, autoconfig: bool, conn_opts: dict) -> None:
+        """Test end to end construction and search."""
+        if not autoconfig:
+            _infinispan_setup_noautoconf(**conn_opts)
+        docsearch = _infinispanvs_from_texts(auto_config=autoconfig, **conn_opts)
+        output = docsearch.similarity_search("foo", k=1)
+        assert output == [Document(page_content="foo")]
+
+    def test_infinispan_with_metadata(self, autoconfig: bool, conn_opts: dict) -> None:
         """Test with metadata"""
         if not autoconfig:
-            _infinispan_setup_noautoconf()
+            _infinispan_setup_noautoconf(**conn_opts)
         meta = []
         for _ in range(len(fake_texts)):
             meta.append({"label": "test"})
-        docsearch = _infinispanvs_from_texts(metadatas=meta, auto_config=autoconfig)
+        docsearch = _infinispanvs_from_texts(
+            metadatas=meta, auto_config=autoconfig, **conn_opts
+        )
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo", metadata={"label": "test"})]
 
     def test_infinispan_with_metadata_with_output_fields(
-        self, autoconfig: bool
+        self, autoconfig: bool, conn_opts: dict
     ) -> None:
         """Test with metadata"""
         if not autoconfig:
-            _infinispan_setup_noautoconf()
+            _infinispan_setup_noautoconf(**conn_opts)
         metadatas = [
             {"page": i, "label": "label" + str(i)} for i in range(len(fake_texts))
         ]
         c = {"output_fields": ["label", "page", "text"]}
         docsearch = _infinispanvs_from_texts(
-            metadatas=metadatas, configuration=c, auto_config=autoconfig
+            metadatas=metadatas, configuration=c, auto_config=autoconfig, **conn_opts
         )
         output = docsearch.similarity_search("foo", k=1)
         assert output == [
             Document(page_content="foo", metadata={"label": "label0", "page": 0})
         ]
 
-    def test_infinispanvs_with_id(self, autoconfig: bool) -> None:
+    def test_infinispanvs_with_id(self, autoconfig: bool, conn_opts: dict) -> None:
         """Test with ids"""
         ids = ["id_" + str(i) for i in range(len(fake_texts))]
-        docsearch = _infinispanvs_from_texts(ids=ids, auto_config=autoconfig)
+        docsearch = _infinispanvs_from_texts(
+            ids=ids, auto_config=autoconfig, **conn_opts
+        )
         output = docsearch.similarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
 
-    def test_infinispan_with_score(self, autoconfig: bool) -> None:
+    def test_infinispan_with_score(self, autoconfig: bool, conn_opts: dict) -> None:
         """Test end to end construction and search with scores and IDs."""
         if not autoconfig:
-            _infinispan_setup_noautoconf()
+            _infinispan_setup_noautoconf(**conn_opts)
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = _infinispanvs_from_texts(
-            metadatas=metadatas, auto_config=autoconfig
+            metadatas=metadatas, auto_config=autoconfig, **conn_opts
         )
         output = docsearch.similarity_search_with_score("foo", k=3)
         docs = [o[0] for o in output]
@@ -123,14 +167,14 @@ class TestBasic:
         ]
         assert scores[0] >= scores[1] >= scores[2]
 
-    def test_infinispan_add_texts(self, autoconfig: bool) -> None:
+    def test_infinispan_add_texts(self, autoconfig: bool, conn_opts: dict) -> None:
         """Test end to end construction and MRR search."""
         if not autoconfig:
-            _infinispan_setup_noautoconf()
+            _infinispan_setup_noautoconf(**conn_opts)
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = _infinispanvs_from_texts(
-            metadatas=metadatas, auto_config=autoconfig
+            metadatas=metadatas, auto_config=autoconfig, **conn_opts
         )
 
         docsearch.add_texts(texts, metadatas)
@@ -138,19 +182,22 @@ class TestBasic:
         output = docsearch.similarity_search("foo", k=10)
         assert len(output) == 6
 
-    def test_infinispan_no_clear_old(self, autoconfig: bool) -> None:
+    def test_infinispan_no_clear_old(self, autoconfig: bool, conn_opts: dict) -> None:
         """Test end to end construction and MRR search."""
         if not autoconfig:
-            _infinispan_setup_noautoconf()
+            _infinispan_setup_noautoconf(**conn_opts)
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = _infinispanvs_from_texts(
-            metadatas=metadatas, auto_config=autoconfig
+            metadatas=metadatas, auto_config=autoconfig, **conn_opts
         )
         del docsearch
         try:
             docsearch = _infinispanvs_from_texts(
-                metadatas=metadatas, clear_old=False, auto_config=autoconfig
+                metadatas=metadatas,
+                clear_old=False,
+                auto_config=autoconfig,
+                **conn_opts,
             )
         except AssertionError:
             if autoconfig:
@@ -159,3 +206,12 @@ class TestBasic:
                 raise
         output = docsearch.similarity_search("foo", k=10)
         assert len(output) == 6
+
+
+class TestHttp2:
+    def test_http2(self):
+        try:
+            httpx.Client(http2=True)
+        except:
+            warnings.warn("pip install \"httpx[http2]\" if you need HTTP/2")
+        pass

@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Iterable, List, Optional, Tuple, Type, cast
+from typing import Any, Iterable, List, Optional, Tuple, Type, Union, cast
 
-import requests
+import httpx
+from httpx import DigestAuth
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -121,7 +122,7 @@ repeated float %s = 1;
         metadata_proto += "}\n"
         return metadata_proto
 
-    def schema_create(self, proto: str) -> requests.Response:
+    def schema_create(self, proto: str) -> httpx.Response:
         """Deploy the schema for the vector db
         Args:
             proto(str): protobuf schema
@@ -130,14 +131,14 @@ repeated float %s = 1;
         """
         return self.ispn.schema_post(self._entity_name + ".proto", proto)
 
-    def schema_delete(self) -> requests.Response:
+    def schema_delete(self) -> httpx.Response:
         """Delete the schema for the vector db
         Returns:
             An http Response containing the result of the operation
         """
         return self.ispn.schema_delete(self._entity_name + ".proto")
 
-    def cache_create(self, config: str = "") -> requests.Response:
+    def cache_create(self, config: str = "") -> httpx.Response:
         """Create the cache for the vector db
         Args:
             config(str): configuration of the cache.
@@ -172,14 +173,14 @@ repeated float %s = 1;
             )
         return self.ispn.cache_post(self._cache_name, config)
 
-    def cache_delete(self) -> requests.Response:
+    def cache_delete(self) -> httpx.Response:
         """Delete the cache for the vector db
         Returns:
             An http Response containing the result of the operation
         """
         return self.ispn.cache_delete(self._cache_name)
 
-    def cache_clear(self) -> requests.Response:
+    def cache_clear(self) -> httpx.Response:
         """Clear the cache for the vector db
         Returns:
             An http Response containing the result of the operation
@@ -193,14 +194,14 @@ repeated float %s = 1;
         """
         return self.ispn.cache_exists(self._cache_name)
 
-    def cache_index_clear(self) -> requests.Response:
+    def cache_index_clear(self) -> httpx.Response:
         """Clear the index for the vector db
         Returns:
             An http Response containing the result of the operation
         """
         return self.ispn.index_clear(self._cache_name)
 
-    def cache_index_reindex(self) -> requests.Response:
+    def cache_index_reindex(self) -> httpx.Response:
         """Rebuild the for the vector db
         Returns:
             An http Response containing the result of the operation
@@ -325,12 +326,16 @@ repeated float %s = 1;
     def configure(self, metadata: dict, dimension: int) -> None:
         schema = self.schema_builder(metadata, dimension)
         output = self.schema_create(schema)
-        assert output.ok, "Unable to create schema. Already exists? "
+        assert (
+            output.status_code == httpx.codes.OK
+        ), "Unable to create schema. Already exists? "
         "Consider using clear_old=True"
         assert json.loads(output.text)["error"] is None
         if not self.cache_exists():
             output = self.cache_create()
-            assert output.ok, "Unable to create cache. Already exists? "
+            assert (
+                output.status_code == httpx.codes.OK
+            ), "Unable to create cache. Already exists? "
             "Consider using clear_old=True"
             # Ensure index is clean
             self.cache_index_clear()
@@ -384,6 +389,8 @@ class Infinispan:
     def __init__(self, **kwargs: Any):
         self._configuration = kwargs
         self._schema = str(self._configuration.get("schema", "http"))
+        self._user = str(self._configuration.get("user"))
+        self._password = str(self._configuration.get("password"))
         self._host = str(self._configuration.get("hosts", ["127.0.0.1:11222"])[0])
         self._default_node = self._schema + "://" + self._host
         self._cache_url = str(self._configuration.get("cache_url", "/rest/v2/caches"))
@@ -391,10 +398,21 @@ class Infinispan:
         self._use_post_for_query = str(
             self._configuration.get("use_post_for_query", True)
         )
+        self._http2 = self._configuration.get("http2", True)
+        if self._user and self._password:
+            if self._schema == "http":
+                auth: Union[Tuple[str, str], DigestAuth] = httpx.DigestAuth(
+                    username=self._user, password=self._password
+                )
+            else:
+                auth = (self._user, self._password)
+        self._h2c = httpx.Client(
+            http2=self._http2, http1=not self._http2, auth=auth, verify=self._configuration.get("verify")
+        )
 
     def req_query(
         self, query: str, cache_name: str, local: bool = False
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Request a query
         Args:
             query(str): query requested
@@ -409,7 +427,7 @@ class Infinispan:
 
     def _query_post(
         self, query_str: str, cache_name: str, local: bool = False
-    ) -> requests.Response:
+    ) -> httpx.Response:
         api_url = (
             self._default_node
             + self._cache_url
@@ -420,9 +438,9 @@ class Infinispan:
         )
         data = {"query": query_str}
         data_json = json.dumps(data)
-        response = requests.post(
+        response = self._h2c.post(
             api_url,
-            data_json,
+            content=data_json,
             headers={"Content-Type": "application/json"},
             timeout=REST_TIMEOUT,
         )
@@ -430,7 +448,7 @@ class Infinispan:
 
     def _query_get(
         self, query_str: str, cache_name: str, local: bool = False
-    ) -> requests.Response:
+    ) -> httpx.Response:
         api_url = (
             self._default_node
             + self._cache_url
@@ -441,10 +459,10 @@ class Infinispan:
             + "&local="
             + str(local)
         )
-        response = requests.get(api_url, timeout=REST_TIMEOUT)
+        response = self._h2c.get(api_url, timeout=REST_TIMEOUT)
         return response
 
-    def post(self, key: str, data: str, cache_name: str) -> requests.Response:
+    def post(self, key: str, data: str, cache_name: str) -> httpx.Response:
         """Post an entry
         Args:
             key(str): key of the entry
@@ -454,15 +472,15 @@ class Infinispan:
             An http Response containing the result of the operation
         """
         api_url = self._default_node + self._cache_url + "/" + cache_name + "/" + key
-        response = requests.post(
+        response = self._h2c.post(
             api_url,
-            data,
+            content=data,
             headers={"Content-Type": "application/json"},
             timeout=REST_TIMEOUT,
         )
         return response
 
-    def put(self, key: str, data: str, cache_name: str) -> requests.Response:
+    def put(self, key: str, data: str, cache_name: str) -> httpx.Response:
         """Put an entry
         Args:
             key(str): key of the entry
@@ -472,15 +490,15 @@ class Infinispan:
             An http Response containing the result of the operation
         """
         api_url = self._default_node + self._cache_url + "/" + cache_name + "/" + key
-        response = requests.put(
+        response = self._h2c.put(
             api_url,
-            data,
+            content=data,
             headers={"Content-Type": "application/json"},
             timeout=REST_TIMEOUT,
         )
         return response
 
-    def get(self, key: str, cache_name: str) -> requests.Response:
+    def get(self, key: str, cache_name: str) -> httpx.Response:
         """Get an entry
         Args:
             key(str): key of the entry
@@ -489,12 +507,12 @@ class Infinispan:
             An http Response containing the entry or errors
         """
         api_url = self._default_node + self._cache_url + "/" + cache_name + "/" + key
-        response = requests.get(
+        response = self._h2c.get(
             api_url, headers={"Content-Type": "application/json"}, timeout=REST_TIMEOUT
         )
         return response
 
-    def schema_post(self, name: str, proto: str) -> requests.Response:
+    def schema_post(self, name: str, proto: str) -> httpx.Response:
         """Deploy a schema
         Args:
             name(str): name of the schema. Will be used as a key
@@ -503,10 +521,10 @@ class Infinispan:
             An http Response containing the result of the operation
         """
         api_url = self._default_node + self._schema_url + "/" + name
-        response = requests.post(api_url, proto, timeout=REST_TIMEOUT)
+        response = self._h2c.post(api_url, content=proto, timeout=REST_TIMEOUT)
         return response
 
-    def cache_post(self, name: str, config: str) -> requests.Response:
+    def cache_post(self, name: str, config: str) -> httpx.Response:
         """Create a cache
         Args:
             name(str): name of the cache.
@@ -515,15 +533,15 @@ class Infinispan:
             An http Response containing the result of the operation
         """
         api_url = self._default_node + self._cache_url + "/" + name
-        response = requests.post(
+        response = self._h2c.post(
             api_url,
-            config,
+            content=config,
             headers={"Content-Type": "application/json"},
             timeout=REST_TIMEOUT,
         )
         return response
 
-    def schema_delete(self, name: str) -> requests.Response:
+    def schema_delete(self, name: str) -> httpx.Response:
         """Delete a schema
         Args:
             name(str): name of the schema.
@@ -531,10 +549,10 @@ class Infinispan:
             An http Response containing the result of the operation
         """
         api_url = self._default_node + self._schema_url + "/" + name
-        response = requests.delete(api_url, timeout=REST_TIMEOUT)
+        response = self._h2c.delete(api_url, timeout=REST_TIMEOUT)
         return response
 
-    def cache_delete(self, name: str) -> requests.Response:
+    def cache_delete(self, name: str) -> httpx.Response:
         """Delete a cache
         Args:
             name(str): name of the cache.
@@ -542,10 +560,10 @@ class Infinispan:
             An http Response containing the result of the operation
         """
         api_url = self._default_node + self._cache_url + "/" + name
-        response = requests.delete(api_url, timeout=REST_TIMEOUT)
+        response = self._h2c.delete(api_url, timeout=REST_TIMEOUT)
         return response
 
-    def cache_clear(self, cache_name: str) -> requests.Response:
+    def cache_clear(self, cache_name: str) -> httpx.Response:
         """Clear a cache
         Args:
             cache_name(str): name of the cache.
@@ -555,7 +573,7 @@ class Infinispan:
         api_url = (
             self._default_node + self._cache_url + "/" + cache_name + "?action=clear"
         )
-        response = requests.post(api_url, timeout=REST_TIMEOUT)
+        response = self._h2c.post(api_url, timeout=REST_TIMEOUT)
         return response
 
     def cache_exists(self, cache_name: str) -> bool:
@@ -570,18 +588,17 @@ class Infinispan:
         )
         return self.resource_exists(api_url)
 
-    @staticmethod
-    def resource_exists(api_url: str) -> bool:
+    def resource_exists(self, api_url: str) -> bool:
         """Check if a resource exists
         Args:
             api_url(str): url of the resource.
         Returns:
             true if resource exists
         """
-        response = requests.head(api_url, timeout=REST_TIMEOUT)
-        return response.ok
+        response = self._h2c.head(api_url, timeout=REST_TIMEOUT)
+        return response.status_code == httpx.codes.OK
 
-    def index_clear(self, cache_name: str) -> requests.Response:
+    def index_clear(self, cache_name: str) -> httpx.Response:
         """Clear an index on a cache
         Args:
             cache_name(str): name of the cache.
@@ -595,9 +612,9 @@ class Infinispan:
             + cache_name
             + "/search/indexes?action=clear"
         )
-        return requests.post(api_url, timeout=REST_TIMEOUT)
+        return self._h2c.post(api_url, timeout=REST_TIMEOUT)
 
-    def index_reindex(self, cache_name: str) -> requests.Response:
+    def index_reindex(self, cache_name: str) -> httpx.Response:
         """Rebuild index on a cache
         Args:
             cache_name(str): name of the cache.
@@ -611,4 +628,4 @@ class Infinispan:
             + cache_name
             + "/search/indexes?action=reindex"
         )
-        return requests.post(api_url, timeout=REST_TIMEOUT)
+        return self._h2c.post(api_url, timeout=REST_TIMEOUT)
