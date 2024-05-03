@@ -5,7 +5,6 @@ import csv
 import enum
 import json
 import logging
-import random
 import uuid
 from contextlib import contextmanager
 from io import StringIO
@@ -70,7 +69,6 @@ class Yellowbrick(VectorStore):
         *,
         schema: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
-        seed: float = 0.42,
         drop: bool = False,
     ) -> None:
         """Initialize with yellowbrick client.
@@ -124,10 +122,6 @@ class Yellowbrick(VectorStore):
 
             self._create_schema(cursor)
             self._create_table(cursor)
-
-        if seed is not None:
-            random.seed(seed)
-        self._seed = seed
 
     class DatabaseConnection:
         _instance = None
@@ -836,9 +830,6 @@ class Yellowbrick(VectorStore):
             WITH parameters AS (
                 SELECT {num_hyperplanes} AS num_hyperplanes,
                     {dims_per_hyperplane} AS dims_per_hyperplane
-            ),
-            seed AS (
-                SELECT setseed({seed_value})
             )
             INSERT INTO {hyperplanes_table} (id, hyperplane_id, hyperplane)
                 SELECT id, hyperplane_id, (random() * 2 - 1) AS hyperplane
@@ -856,7 +847,6 @@ class Yellowbrick(VectorStore):
             num_hyperplanes=sql.Literal(num_hyperplanes),
             dims_per_hyperplane=sql.Literal(num_dimensions),
             hyperplanes_table=hyperplanes_table,
-            seed_value=sql.Literal(self._seed),
         )
         cursor.execute(insert_query)
 
