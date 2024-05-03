@@ -6,13 +6,13 @@ from langchain_core.documents import BaseDocumentTransformer, Document
 
 class MarkdownifyTransformer(BaseDocumentTransformer):
     """Converts HTML documents to Markdown format with customizable options for handling
-    links, images, and heading styles using the markdownify library.
+    links, images, other tags and heading styles using the markdownify library.
 
     Arguments:
         strip: A list of tags to strip. This option can't be used with the convert option.
         convert: A list of tags to convert. This option can't be used with the strip option.
         autolinks: A boolean indicating whether the "automatic link" style should be used when a a tag's contents match its href. Defaults to True.
-        heading_style: Defines how headings should be converted. Accepted values are ATX, ATX_CLOSED, SETEXT, and UNDERLINED (which is an alias for SETEXT). Defaults to UNDERLINED.
+        heading_style: Defines how headings should be converted. Accepted values are ATX, ATX_CLOSED, SETEXT, and UNDERLINED (which is an alias for SETEXT). Defaults to ATX.
         **kwargs: Additional options to pass to markdownify.
 
     Example:
@@ -30,7 +30,7 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
         strip: Optional[Union[str, List[str]]] = None,
         convert: Optional[Union[str, List[str]]] = None,
         autolinks: bool = True,
-        heading_style: str = "UNDERLINED",
+        heading_style: str = "ATX",
         **kwargs: Any,
     ) -> None:
         self.strip = [strip] if isinstance(strip, str) else strip
