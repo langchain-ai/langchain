@@ -17,11 +17,12 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field
+from requests import Response
 from requests.exceptions import HTTPError
 
 
 class MaritalkHTTPError(HTTPError):
-    def __init__(self, request_obj) -> None:
+    def __init__(self, request_obj: Response) -> None:
         self.request_obj = request_obj
         try:
             response_json = request_obj.json()
@@ -164,7 +165,7 @@ class ChatMaritalk(BaseChatModel):
         if response.ok:
             return response.json().get("answer", "No answer found")
         else:
-            raise MaritalkHTTPError(response)
+            raise MaritalkHTTPError(response) # type: ignore
 
     async def _acall(
         self,
@@ -212,7 +213,7 @@ class ChatMaritalk(BaseChatModel):
             if response.status_code == 200:
                 return response.json().get("answer", "No answer found")
             else:
-                raise MaritalkHTTPError(response)
+                raise MaritalkHTTPError(response) # type: ignore
 
         except ImportError:
             raise ImportError(
@@ -267,7 +268,7 @@ class ChatMaritalk(BaseChatModel):
                             yield chunk
 
         else:
-            raise MaritalkHTTPError(response)
+            raise MaritalkHTTPError(response) # type: ignore
 
     async def _astream(
         self,
@@ -300,7 +301,7 @@ class ChatMaritalk(BaseChatModel):
                 async with client.stream(
                     "POST",
                     "https://chat.maritaca.ai/api/chat/inference",
-                    data=json.dumps(data),  # type: ignore
+                    data=json.dumps(data), # type: ignore
                     headers=headers,
                     timeout=None,
                 ) as response:
@@ -322,7 +323,7 @@ class ChatMaritalk(BaseChatModel):
                                         yield chunk
 
                     else:
-                        raise MaritalkHTTPError(response)
+                        raise MaritalkHTTPError(response) # type: ignore
 
         except ImportError:
             raise ImportError(
