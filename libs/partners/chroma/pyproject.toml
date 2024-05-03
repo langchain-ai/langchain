@@ -61,7 +61,7 @@ optional = true
 langchain-core = { path = "../../core", develop = true }
 langchain-community = { path = "../../community", develop = true }
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",    # pycodestyle
   "F",    # pyflakes

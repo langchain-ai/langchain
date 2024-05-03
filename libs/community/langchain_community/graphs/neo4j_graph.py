@@ -13,7 +13,6 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 LIST_LIMIT = 128
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
-NL = "\n"
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -50,6 +49,10 @@ include_docs_query = (
     "SET d += $document.metadata "
     "WITH d "
 )
+
+
+def clean_string_values(text: str) -> str:
+    return text.replace("\n", " ").replace("\r", " ")
 
 
 def value_sanitize(d: Any) -> Any:
@@ -170,7 +173,13 @@ def _enhanced_schema_cypher(
                         f" distinct_count: size(`{prop_name}_values`)"
                     )
                 )
-            elif prop_type in ["INTEGER", "FLOAT", "DATE"]:
+            elif prop_type in [
+                "INTEGER",
+                "FLOAT",
+                "DATE",
+                "DATE_TIME",
+                "LOCAL_DATE_TIME",
+            ]:
                 with_clauses.append(f"min(n.`{prop_name}`) AS `{prop_name}_min`")
                 with_clauses.append(f"max(n.`{prop_name}`) AS `{prop_name}_max`")
                 with_clauses.append(
@@ -194,7 +203,8 @@ def _enhanced_schema_cypher(
                     f"min_size: `{prop_name}_size_min`, "
                     f"max_size: `{prop_name}_size_max`"
                 )
-
+            elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
+                continue
             output_dict[prop_name] = "{" + return_clauses.pop() + "}"
     else:
         # Just sample 5 random nodes
@@ -210,7 +220,13 @@ def _enhanced_schema_cypher(
                     )
                 )
                 return_clauses.append(f"values: `{prop_name}_values`")
-            elif prop_type in ["INTEGER", "FLOAT", "DATE"]:
+            elif prop_type in [
+                "INTEGER",
+                "FLOAT",
+                "DATE",
+                "DATE_TIME",
+                "LOCAL_DATE_TIME",
+            ]:
                 with_clauses.append(
                     f"collect(distinct toString(n.`{prop_name}`)) "
                     f"AS `{prop_name}_values`"
@@ -226,13 +242,15 @@ def _enhanced_schema_cypher(
                 return_clauses.append(
                     f"min_size: `{prop_name}_size_min`,max_size: `{prop_name}_size_max`"
                 )
+            elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
+                continue
 
             output_dict[prop_name] = "{" + return_clauses.pop() + "}"
 
     with_clause = "WITH " + ",\n     ".join(with_clauses)
     return_clause = (
         "RETURN {"
-        + ", ".join(f"{k}: {v}" for k, v in output_dict.items())
+        + ", ".join(f"`{k}`: {v}" for k, v in output_dict.items())
         + "} AS output"
     )
 
@@ -253,7 +271,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                 if prop["type"] == "STRING":
                     if prop.get("distinct_count", 11) > DISTINCT_VALUE_LIMIT:
                         example = (
-                            f'Example: "{prop["values"][0].replace(NL, " ")}"'
+                            f'Example: "{clean_string_values(prop["values"][0])}"'
                             if prop["values"]
                             else ""
                         )
@@ -261,13 +279,19 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         example = (
                             (
                                 "Available options: "
-                                f'{[el.replace(NL, " ") for el in prop["values"]]}'
+                                f'{[clean_string_values(el) for el in prop["values"]]}'
                             )
                             if prop["values"]
                             else ""
                         )
 
-                elif prop["type"] in ["INTEGER", "FLOAT", "DATE"]:
+                elif prop["type"] in [
+                    "INTEGER",
+                    "FLOAT",
+                    "DATE",
+                    "DATE_TIME",
+                    "LOCAL_DATE_TIME",
+                ]:
                     if prop.get("min") is not None:
                         example = f'Min: {prop["min"]}, Max: {prop["max"]}'
                     else:
@@ -282,7 +306,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
                     )
                 formatted_node_props.append(
-                    f"  - `{prop['property']}: {prop['type']}` {example}"
+                    f"  - `{prop['property']}`: {prop['type']}` {example}"
                 )
 
         # Enhanced formatting for relationships
@@ -293,7 +317,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                 if prop["type"] == "STRING":
                     if prop.get("distinct_count", 11) > DISTINCT_VALUE_LIMIT:
                         example = (
-                            f'Example: "{prop["values"][0].replace(NL, " ")}"'
+                            f'Example: "{clean_string_values(prop["values"][0])}"'
                             if prop["values"]
                             else ""
                         )
@@ -301,12 +325,18 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         example = (
                             (
                                 "Available options: "
-                                f'{[el.replace(NL, " ") for el in prop["values"]]}'
+                                f'{[clean_string_values(el) for el in prop["values"]]}'
                             )
                             if prop["values"]
                             else ""
                         )
-                elif prop["type"] in ["INTEGER", "FLOAT", "DATE"]:
+                elif prop["type"] in [
+                    "INTEGER",
+                    "FLOAT",
+                    "DATE",
+                    "DATE_TIME",
+                    "LOCAL_DATE_TIME",
+                ]:
                     if prop.get("min"):  # If we have min/max
                         example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
                     else:  # return a single value
@@ -537,7 +567,9 @@ class Neo4jGraph(GraphStore):
                 # Skip bloom labels
                 if node["name"] in EXCLUDED_LABELS:
                     continue
-                node_props = self.structured_schema["node_props"][node["name"]]
+                node_props = self.structured_schema["node_props"].get(node["name"])
+                if not node_props:  # The node has no properties
+                    continue
                 enhanced_cypher = _enhanced_schema_cypher(
                     node["name"], node_props, node["count"] < EXHAUSTIVE_SEARCH_LIMIT
                 )
@@ -551,7 +583,7 @@ class Neo4jGraph(GraphStore):
                 if rel["name"] in EXCLUDED_RELS:
                     continue
                 rel_props = self.structured_schema["rel_props"].get(rel["name"])
-                if not rel_props:
+                if not rel_props:  # The rel has no properties
                     continue
                 enhanced_cypher = _enhanced_schema_cypher(
                     rel["name"],

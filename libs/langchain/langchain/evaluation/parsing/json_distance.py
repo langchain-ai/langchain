@@ -46,7 +46,7 @@ class JsonEditDistanceEvaluator(StringEvaluator):
             self._string_distance = string_distance
         else:
             try:
-                from rapidfuzz import distance as rfd  # noqa: F401
+                from rapidfuzz import distance as rfd
             except ImportError:
                 raise ImportError(
                     "The default string_distance operator for the "
