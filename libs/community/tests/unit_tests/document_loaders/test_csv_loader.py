@@ -91,15 +91,16 @@ class TestCSVLoader:
         expected_docs = [
             Document(
                 page_content="column1: value1\ncolumn2: value2\n"
-                             "column3: value3\nNone: value4,value5",
+                "column3: value3\nNone: value4,value5",
                 metadata={"source": file_path, "row": 0},
             ),
             Document(
                 page_content="column1: value6\ncolumn2: value7\n"
-                             "column3: value8\nNone: value9",
+                "column3: value8\nNone: value9",
                 metadata={"source": file_path, "row": 1},
             ),
         ]
+
         # Exercise
         loader = CSVLoader(file_path=file_path)
         result = loader.load()

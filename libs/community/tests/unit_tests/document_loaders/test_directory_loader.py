@@ -60,7 +60,7 @@ class TestDirectoryLoader:
             ),
             Document(
                 page_content="column1: value1\ncolumn2: value2\n"
-                             "column3: value3\nNone: value4,value5",
+                "column3: value3\nNone: value4,value5",
                 metadata={
                     "source": self._get_csv_file_path("test_none_col.csv"),
                     "row": 0,
@@ -68,10 +68,10 @@ class TestDirectoryLoader:
             ),
             Document(
                 page_content="column1: value6\ncolumn2: value7\n"
-                             "column3: value8\nNone: value9",
+                "column3: value8\nNone: value9",
                 metadata={
                     "source": self._get_csv_file_path("test_none_col.csv"),
-                    "row": 1
+                    "row": 1,
                 },
             ),
         ]
