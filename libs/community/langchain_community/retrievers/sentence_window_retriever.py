@@ -6,8 +6,8 @@ from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
-from langchain_pinecone import PineconeVectorStore
 
+# from langchain_pinecone import PineconeVectorStore
 from langchain_community.vectorstores import FAISS, Chroma
 from langchain_community.vectorstores.faiss import (
     dependable_faiss_import,
@@ -21,8 +21,8 @@ class SentenceWindowRetriever(BaseRetriever):
     by appending adjacent chunks to the retrieved chunk to provide
     additional context to the generation model
 
-    Currently, it supports 3 backends:
-    FAISS, Chroma, Pinecone
+    Currently, it supports 2 backends:
+    FAISS, Chroma
     """
 
     store: VectorStore
@@ -38,9 +38,13 @@ class SentenceWindowRetriever(BaseRetriever):
     @root_validator
     def check_database_type(cls, values: Dict) -> Dict:
         k = values.get("k", -1)
+        window_size = values.get("window_size", -1)
 
         if k < 0:
             raise ValueError("The value of k must be greater than 0")
+
+        if window_size < 0:
+            raise ValueError("The value of window_size must be greater than 0")
 
         return values
 
@@ -51,15 +55,15 @@ class SentenceWindowRetriever(BaseRetriever):
 
         if type(self.store) == Chroma:
             return self._sentence_window_retriever_chroma(query=query)
-        elif type(self.store) == PineconeVectorStore:
-            return self._sentence_window_retriever_pinecone(query=query)
+        # elif type(self.store) == PineconeVectorStore:
+        #     return self._sentence_window_retriever_pinecone(query=query)
         elif type(self.store) == FAISS:
             return self._sentence_window_retriever_faiss(query=query)
         else:
             raise ValueError(
                 """Only the following databases are currently supported for 
                 the implementation of Sentence Window Retriever : 
-                FAISS, Chroma, Pinecone"""
+                FAISS, Chroma"""
             )
 
     def _sentence_window_retriever_chroma(self, query: str) -> List[Document]:
@@ -105,71 +109,6 @@ class SentenceWindowRetriever(BaseRetriever):
             metadata = {
                 "primary_index": primary_index,
                 "chroma_id": id,
-                "page": list(set(pages)),
-                "type": "sentence_window",
-            }
-
-            if source_text:
-                metadata["source"] = source_text
-
-            output_doc = Document(page_content=page_content, metadata=metadata)
-
-            doc_list.append(output_doc)
-
-        return doc_list
-
-    def _sentence_window_retriever_pinecone(self, query: str) -> List[Document]:
-        assert isinstance(self.store, PineconeVectorStore)
-
-        top_results = self.store.similarity_search(query, k=self.k)
-
-        vector_dimension = self.store._index.describe_index_stats()["dimension"]
-
-        doc_list = []
-
-        for doc in top_results:
-            primary_index = doc.metadata.get("chunk_id")
-
-            if primary_index is None:
-                raise ValueError(
-                    "chunk_id metadata variable is missing in retrieved documents"
-                )
-
-            source_text = doc.metadata.get("source")
-
-            start_index = max(0, primary_index - self.window_size)
-            end_index = primary_index + self.window_size
-
-            if source_text:
-                filter_value = {
-                    "$and": [
-                        {"source": source_text},
-                        {"chunk_id": {"$gte": start_index}},
-                        {"chunk_id": {"$lte": end_index}},
-                    ]
-                }
-            else:
-                filter_value = {
-                    "$and": [
-                        {"chunk_id": {"$gte": start_index}},
-                        {"chunk_id": {"$lte": end_index}},
-                    ]
-                }
-
-            output = self.store._index.query(
-                vector=[0] * vector_dimension,
-                top_k=2 * self.window_size + 1,
-                filter=filter_value,
-                include_metadata=True,
-            )
-
-            output = sorted(output["matches"], key=lambda x: x["metadata"]["chunk_id"])
-
-            page_content = " ".join([x["metadata"].get("text") for x in output])
-            pages = [x["metadata"].get("page") for x in output]
-
-            metadata = {
-                "primary_index": primary_index,
                 "page": list(set(pages)),
                 "type": "sentence_window",
             }
