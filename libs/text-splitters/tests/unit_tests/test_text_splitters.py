@@ -119,7 +119,7 @@ def test_character_text_splitter_keep_separator_regex_start(
     separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
-    that is a regex special character.
+    that is a regex special character and placing it at the start of each chunk.
     """
     text = "foo.bar.baz.123"
     splitter = CharacterTextSplitter(
@@ -141,7 +141,7 @@ def test_character_text_splitter_keep_separator_regex_end(
     separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
-    that is a regex special character.
+    that is a regex special character and placing it at the end of each chunk.
     """
     text = "foo.bar.baz.123"
     splitter = CharacterTextSplitter(
