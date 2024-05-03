@@ -1,10 +1,10 @@
+import pathlib
 from typing import Any, Dict, List
 
 import pandas as pd
+
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.memory import ConversationBufferMemory, ReadOnlySharedMemory
-from langchain_core.prompts import PromptTemplate
-
 from langchain_community.chains.graph_qa.cypher import (
     GraphCypherQAChain,
     construct_schema,
@@ -16,6 +16,7 @@ from langchain_community.chains.graph_qa.cypher_utils import (
 )
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
+from langchain_core.prompts import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -301,8 +302,13 @@ def test_include_types3() -> None:
     assert output == expected_schema
 
 
+HERE = pathlib.Path(__file__).parent
+
+UNIT_TESTS_ROOT = HERE.parent
+
+
 def test_validating_cypher_statements() -> None:
-    cypher_file = "tests/unit_tests/data/cypher_corrector.csv"
+    cypher_file = str(UNIT_TESTS_ROOT / "data/cypher_corrector.csv")
     examples = pd.read_csv(cypher_file)
     examples.fillna("", inplace=True)
     for _, row in examples.iterrows():
