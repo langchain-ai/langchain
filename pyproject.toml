@@ -31,7 +31,7 @@ nbdoc = "^0.0.82"
 gigachat = "^0.1.23"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = "^0.4.0"
 gigachain-core = { path = "libs/core/", develop = true }
 gigachain-text-splitters = { path = "libs/text-splitters", develop = true }
 gigachain-community = { path = "libs/community/", develop = true }

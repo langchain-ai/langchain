@@ -1,5 +1,4 @@
 """Integration test for Dataherald API Wrapper."""
-
 from langchain_community.utilities.dataherald import DataheraldAPIWrapper
 
 

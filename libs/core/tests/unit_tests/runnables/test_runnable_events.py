@@ -1,5 +1,4 @@
 """Module that contains tests for runnable.astream_events API."""
-
 import sys
 from itertools import cycle
 from typing import Any, AsyncIterator, Dict, List, Sequence, cast
@@ -454,6 +453,192 @@ async def test_astream_events_from_model() -> None:
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
+        },
+    ]
+
+    @RunnableLambda
+    def i_dont_stream(input: Any, config: RunnableConfig) -> Any:
+        if sys.version_info >= (3, 11):
+            return model.invoke(input)
+        else:
+            return model.invoke(input, config)
+
+    events = await _collect_events(i_dont_stream.astream_events("hello", version="v1"))
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "i_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+            "event": "on_chat_model_start",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {
+                "input": {"messages": [[HumanMessage(content="hello")]]},
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessage(
+                                    content="hello world!", id=AnyStr()
+                                ),
+                                "text": "hello world!",
+                                "type": "ChatGeneration",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            "event": "on_chat_model_end",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessage(content="hello world!", id=AnyStr())},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "i_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": AIMessage(content="hello world!", id=AnyStr())},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "i_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+    ]
+
+    @RunnableLambda
+    async def ai_dont_stream(input: Any, config: RunnableConfig) -> Any:
+        if sys.version_info >= (3, 11):
+            return await model.ainvoke(input)
+        else:
+            return await model.ainvoke(input, config)
+
+    events = await _collect_events(ai_dont_stream.astream_events("hello", version="v1"))
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "ai_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+            "event": "on_chat_model_start",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
+            "event": "on_chat_model_stream",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {
+                "input": {"messages": [[HumanMessage(content="hello")]]},
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessage(
+                                    content="hello world!", id=AnyStr()
+                                ),
+                                "text": "hello world!",
+                                "type": "ChatGeneration",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
+            },
+            "event": "on_chat_model_end",
+            "metadata": {"a": "b"},
+            "name": "my_model",
+            "run_id": "",
+            "tags": ["my_model"],
+        },
+        {
+            "data": {"chunk": AIMessage(content="hello world!", id=AnyStr())},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "ai_dont_stream",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": AIMessage(content="hello world!", id=AnyStr())},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "ai_dont_stream",
+            "run_id": "",
+            "tags": [],
         },
     ]
 

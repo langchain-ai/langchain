@@ -1,6 +1,6 @@
 
 [tool.poetry]
-name = "gigachain-pinecone"
+name = "langchain-pinecone"
 version = "0.1.0"
 description = "An integration package connecting Pinecone and LangChain"
 authors = []
@@ -14,7 +14,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 # <3.13 is due to restriction in pinecone-client package
 python = ">=3.8.1,<3.13"
-gigachain-core = "^0.1.40"
+langchain-core = "^0.1.40"
 pinecone-client = "^3.2.2"
 numpy = "^1"
 
@@ -58,7 +58,7 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 gigachain-core = { path = "../../core", develop = true }
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",    # pycodestyle
   "F",    # pyflakes

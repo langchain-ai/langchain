@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
-from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain.chains.base import Chain
@@ -132,6 +131,20 @@ def load_evaluator(
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
         try:
+            try:
+                from langchain_openai import ChatOpenAI
+            except ImportError:
+                try:
+                    from langchain_community.chat_models.openai import ChatOpenAI
+                except ImportError:
+                    raise ImportError(
+                        "Could not import langchain_openai or fallback onto "
+                        "langchain_community. Please install langchain_openai "
+                        "or specify a language model explicitly. "
+                        "It's recommended to install langchain_openai AND "
+                        "specify a language model explicitly."
+                    )
+
             llm = llm or ChatOpenAI(  # type: ignore[call-arg]
                 model="gpt-4", model_kwargs={"seed": 42}, temperature=0
             )

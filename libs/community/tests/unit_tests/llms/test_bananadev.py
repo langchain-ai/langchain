@@ -1,5 +1,4 @@
 """Test Banana llm"""
-
 from typing import cast
 
 from langchain_core.pydantic_v1 import SecretStr

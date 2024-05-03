@@ -27,8 +27,7 @@ DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."
 
 
 class ChatMLX(BaseChatModel):
-    """
-    Wrapper for using MLX LLM's as ChatModels.
+    """MLX chat models.
 
     Works with `MLXPipeline` LLM.
 
@@ -142,15 +141,12 @@ class ChatMLX(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        import mlx.core as mx
-        from mlx_lm.utils import generate_step
-
         try:
             import mlx.core as mx
             from mlx_lm.utils import generate_step
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import mlx_lm python package. "
                 "Please install it with `pip install mlx_lm`."
             )

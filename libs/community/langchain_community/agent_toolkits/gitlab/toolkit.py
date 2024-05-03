@@ -2,7 +2,8 @@
 
 from typing import Dict, List
 
-from langchain_community.agent_toolkits.base import BaseToolkit
+from langchain_core.tools import BaseToolkit
+
 from langchain_community.tools import BaseTool
 from langchain_community.tools.gitlab.prompt import (
     COMMENT_ON_ISSUE_PROMPT,

@@ -47,7 +47,7 @@ class NeuralDBVectorStore(VectorStore):
 
             licensing.activate(thirdai_key or os.getenv("THIRDAI_KEY"))
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import thirdai python package and neuraldb dependencies. "
                 "Please install it with `pip install thirdai[neural_db]`."
             )
@@ -85,48 +85,6 @@ class NeuralDBVectorStore(VectorStore):
         from thirdai import neural_db as ndb
 
         return cls(db=ndb.NeuralDB(**model_kwargs))  # type: ignore[call-arg]
-
-    @classmethod
-    def from_bazaar(  # type: ignore[no-untyped-def]
-        cls,
-        base: str,
-        bazaar_cache: Optional[str] = None,
-        thirdai_key: Optional[str] = None,
-    ):
-        """
-        Create a NeuralDBVectorStore with a base model from the ThirdAI
-        model bazaar.
-
-        To use, set the ``THIRDAI_KEY`` environment variable with your ThirdAI
-        API key, or pass ``thirdai_key`` as a named parameter.
-
-        Example:
-            .. code-block:: python
-
-                from langchain_community.vectorstores import NeuralDBVectorStore
-
-                vectorstore = NeuralDBVectorStore.from_bazaar(
-                    base="General QnA",
-                    thirdai_key="your-thirdai-key",
-                )
-
-                vectorstore.insert([
-                    "/path/to/doc.pdf",
-                    "/path/to/doc.docx",
-                    "/path/to/doc.csv",
-                ])
-
-                documents = vectorstore.similarity_search("AI-driven music therapy")
-        """
-        NeuralDBVectorStore._verify_thirdai_library(thirdai_key)
-        from thirdai import neural_db as ndb
-
-        cache = bazaar_cache or str(Path(os.getcwd()) / "model_bazaar")
-        if not os.path.exists(cache):
-            os.mkdir(cache)
-        model_bazaar = ndb.Bazaar(cache)
-        model_bazaar.fetch()
-        return cls(db=model_bazaar.get_model(base))  # type: ignore[call-arg]
 
     @classmethod
     def from_checkpoint(  # type: ignore[no-untyped-def]
