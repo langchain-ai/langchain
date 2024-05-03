@@ -1,7 +1,7 @@
 import importlib
 from typing import Any, Callable, Dict, Optional
 
-from langchain_core._api import warn_deprecated
+from langchain_core._api import internal, warn_deprecated
 
 from langchain._api.interactive_env import is_interactive_env
 
@@ -111,18 +111,24 @@ def create_importer(
                     and name in deprecated_lookups
                     and _should_deprecate_for_package(package)
                 ):
-                    warn_deprecated(
-                        since="0.1",
-                        pending=False,
-                        removal="0.4",
-                        message=(
-                            f"Importing {name} from {package} is deprecated."
-                            f"Please replace imports that look like:"
-                            f"`from {package} import {name}`\n"
-                            "with the following:\n "
-                            f"from {new_module} import {name}"
-                        ),
-                    )
+                    # Depth 3:
+                    # internal.py
+                    # module_import.py
+                    # Module in langchain that uses this function
+                    # [calling code] whose frame we want to inspect.
+                    if not internal.is_caller_internal(depth=3):
+                        warn_deprecated(
+                            since="0.1",
+                            pending=False,
+                            removal="0.4",
+                            message=(
+                                f"Importing {name} from {package} is deprecated. "
+                                f"Please replace deprecated imports:\n\n"
+                                f">> from {package} import {name}\n\n"
+                                "with new imports of:\n\n"
+                                f">> from {new_module} import {name}\n"
+                            ),
+                        )
                 return result
             except Exception as e:
                 raise AttributeError(
@@ -134,18 +140,24 @@ def create_importer(
                 module = importlib.import_module(fallback_module)
                 result = getattr(module, name)
                 if not is_interactive_env() and _should_deprecate_for_package(package):
-                    warn_deprecated(
-                        since="0.1",
-                        pending=False,
-                        removal="0.4",
-                        message=(
-                            f"Importing {name} from {package} is deprecated."
-                            f"Please replace imports that look like:"
-                            f"`from {package} import {name}`\n"
-                            "with the following:\n "
-                            f"from {fallback_module} import {name}"
-                        ),
-                    )
+                    # Depth 3:
+                    # internal.py
+                    # module_import.py
+                    # Module in langchain that uses this function
+                    # [calling code] whose frame we want to inspect.
+                    if not internal.is_caller_internal(depth=3):
+                        warn_deprecated(
+                            since="0.1",
+                            pending=False,
+                            removal="0.4",
+                            message=(
+                                f"Importing {name} from {package} is deprecated. "
+                                f"Please replace deprecated imports:\n\n"
+                                f">> from {package} import {name}\n\n"
+                                "with new imports of:\n\n"
+                                f">> from {fallback_module} import {name}\n"
+                            ),
+                        )
                 return result
 
             except Exception as e:
