@@ -1,7 +1,7 @@
 """Test MistralAI Chat API wrapper."""
 
 import os
-from typing import Any, AsyncGenerator, Dict, Generator, cast
+from typing import Any, AsyncGenerator, Dict, Generator, List, cast
 from unittest.mock import patch
 
 import pytest
@@ -55,7 +55,7 @@ def test_mistralai_initialization() -> None:
         ),
         (
             AIMessage(content="Hello"),
-            dict(role="assistant", content="Hello", tool_calls=[]),
+            dict(role="assistant", content="Hello"),
         ),
         (
             ChatMessage(role="assistant", content="Hello"),
@@ -128,8 +128,9 @@ async def test_astream_with_callback() -> None:
 
 def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_call = {
+        "id": "abc123",
         "function": {
-            "arguments": '{"name":"Sally","hair_color":"green"}',
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
             "name": "GenerateUsername",
         },
     }
@@ -142,7 +143,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
-                id=None,
+                id="abc123",
             )
         ],
     )
@@ -152,14 +153,16 @@ def test__convert_dict_to_message_tool_call() -> None:
     # Test malformed tool call
     raw_tool_calls = [
         {
+            "id": "def456",
             "function": {
-                "arguments": "oops",
+                "arguments": '{"name": "Sally", "hair_color": "green"}',
                 "name": "GenerateUsername",
             },
         },
         {
+            "id": "abc123",
             "function": {
-                "arguments": '{"name":"Sally","hair_color":"green"}',
+                "arguments": "oops",
                 "name": "GenerateUsername",
             },
         },
@@ -174,16 +177,24 @@ def test__convert_dict_to_message_tool_call() -> None:
                 name="GenerateUsername",
                 args="oops",
                 error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
-                id=None,
+                id="abc123",
             ),
         ],
         tool_calls=[
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
-                id=None,
+                id="def456",
             ),
         ],
     )
     assert result == expected_output
     assert _convert_message_to_mistral_chat_message(expected_output) == message
+
+
+def test_custom_token_counting() -> None:
+    def token_encoder(text: str) -> List[int]:
+        return [1, 2, 3]
+
+    llm = ChatMistralAI(custom_get_token_ids=token_encoder)
+    assert llm.get_token_ids("foo") == [1, 2, 3]

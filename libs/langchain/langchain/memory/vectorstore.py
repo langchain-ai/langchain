@@ -55,7 +55,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
         """Return history buffer."""
         input_key = self._get_prompt_input_key(inputs)
         query = inputs[input_key]
-        docs = self.retriever.get_relevant_documents(query)
+        docs = self.retriever.invoke(query)
         return self._documents_to_memory_variables(docs)
 
     async def aload_memory_variables(
@@ -64,7 +64,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
         """Return history buffer."""
         input_key = self._get_prompt_input_key(inputs)
         query = inputs[input_key]
-        docs = await self.retriever.aget_relevant_documents(query)
+        docs = await self.retriever.ainvoke(query)
         return self._documents_to_memory_variables(docs)
 
     def _form_documents(

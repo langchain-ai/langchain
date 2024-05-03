@@ -12,10 +12,35 @@ The primary goal of these storages is to support caching.
 
     BaseStore --> <name>Store  # Examples: MongoDBStore, RedisStore
 
-"""  # noqa: E501
+"""
 
 import importlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_community.storage.astradb import (
+        AstraDBByteStore,
+        AstraDBStore,
+    )
+    from langchain_community.storage.mongodb import (
+        MongoDBStore,
+    )
+    from langchain_community.storage.redis import (
+        RedisStore,
+    )
+    from langchain_community.storage.upstash_redis import (
+        UpstashRedisByteStore,
+        UpstashRedisStore,
+    )
+
+__all__ = [
+    "AstraDBByteStore",
+    "AstraDBStore",
+    "MongoDBStore",
+    "RedisStore",
+    "UpstashRedisByteStore",
+    "UpstashRedisStore",
+]
 
 _module_lookup = {
     "AstraDBByteStore": "langchain_community.storage.astradb",

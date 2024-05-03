@@ -194,7 +194,7 @@ Prompt templates convert raw user input to better input to the LLM.
 ```python
 from langchain_core.prompts import ChatPromptTemplate
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are world class technical documentation writer."),
+    ("system", "You are a world class technical documentation writer."),
     ("user", "{input}")
 ])
 ```
@@ -293,7 +293,7 @@ embeddings = OllamaEmbeddings()
 Make sure you have the `cohere` package installed and the appropriate environment variables set (these are the same as needed for the LLM).
 
 ```python
-from langchain_community.embeddings import CohereEmbeddings
+from langchain_cohere.embeddings import CohereEmbeddings
 
 embeddings = CohereEmbeddings()
 ```

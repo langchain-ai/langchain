@@ -1,11 +1,24 @@
 import importlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from langchain_core.document_loaders import Blob, BlobLoader
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders.blob_loaders.file_system import (
+        FileSystemBlobLoader,
+    )
+    from langchain_community.document_loaders.blob_loaders.youtube_audio import (
+        YoutubeAudioLoader,
+    )
+
 
 _module_lookup = {
-    "Blob": "langchain_community.document_loaders.blob_loaders.schema",
-    "BlobLoader": "langchain_community.document_loaders.blob_loaders.schema",
-    "FileSystemBlobLoader": "langchain_community.document_loaders.blob_loaders.file_system",  # noqa: E501
-    "YoutubeAudioLoader": "langchain_community.document_loaders.blob_loaders.youtube_audio",  # noqa: E501
+    "FileSystemBlobLoader": (
+        "langchain_community.document_loaders.blob_loaders.file_system"
+    ),
+    "YoutubeAudioLoader": (
+        "langchain_community.document_loaders.blob_loaders.youtube_audio"
+    ),
 }
 
 
@@ -16,4 +29,9 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = list(_module_lookup.keys())
+__all__ = [
+    "BlobLoader",
+    "Blob",
+    "FileSystemBlobLoader",
+    "YoutubeAudioLoader",
+]

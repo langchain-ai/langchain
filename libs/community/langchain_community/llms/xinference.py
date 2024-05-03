@@ -62,7 +62,7 @@ class Xinference(LLM):
             model_uid = {model_uid} # replace model_uid with the model UID return from launching the model
         )
 
-        llm(
+        llm.invoke(
             prompt="Q: where can we visit in the capital of France? A:",
             generate_config={"max_tokens": 1024, "stream": True},
         )

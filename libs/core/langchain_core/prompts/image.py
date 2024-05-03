@@ -8,7 +8,7 @@ from langchain_core.utils import image as image_utils
 
 
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
-    """An image prompt template for a multimodal model."""
+    """Image prompt template for a multimodal model."""
 
     template: dict = Field(default_factory=dict)
     """Template for the prompt."""

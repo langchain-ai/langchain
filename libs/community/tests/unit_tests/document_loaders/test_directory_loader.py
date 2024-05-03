@@ -8,6 +8,64 @@ from langchain_community.document_loaders.directory import DirectoryLoader
 
 
 class TestDirectoryLoader:
+    # Tests that when multhreading is enabled, multiple documents are read successfully.
+    def test_directory_loader_with_multithreading_enabled(self) -> None:
+        dir_path = self._get_csv_dir_path()
+        loader = DirectoryLoader(
+            dir_path, glob="**/*.csv", loader_cls=CSVLoader, use_multithreading=True
+        )
+
+        expected_docs = [
+            Document(
+                page_content="column1: value1",
+                metadata={
+                    "source": self._get_csv_file_path("test_one_col.csv"),
+                    "row": 0,
+                },
+            ),
+            Document(
+                page_content="column1: value2",
+                metadata={
+                    "source": self._get_csv_file_path("test_one_col.csv"),
+                    "row": 1,
+                },
+            ),
+            Document(
+                page_content="column1: value3",
+                metadata={
+                    "source": self._get_csv_file_path("test_one_col.csv"),
+                    "row": 2,
+                },
+            ),
+            Document(
+                page_content="column1: value1\ncolumn2: value2\ncolumn3: value3",
+                metadata={
+                    "source": self._get_csv_file_path("test_one_row.csv"),
+                    "row": 0,
+                },
+            ),
+            Document(
+                page_content="column1: value1\ncolumn2: value2\ncolumn3: value3",
+                metadata={
+                    "source": self._get_csv_file_path("test_nominal.csv"),
+                    "row": 0,
+                },
+            ),
+            Document(
+                page_content="column1: value4\ncolumn2: value5\ncolumn3: value6",
+                metadata={
+                    "source": self._get_csv_file_path("test_nominal.csv"),
+                    "row": 1,
+                },
+            ),
+        ]
+
+        loaded_docs = sorted(loader.load(), key=lambda doc: doc.metadata["source"])
+        expected_docs = sorted(expected_docs, key=lambda doc: doc.metadata["source"])
+
+        for i, doc in enumerate(loaded_docs):
+            assert doc == expected_docs[i]
+
     # Tests that lazy loading a CSV file with multiple documents is successful.
     def test_directory_loader_lazy_load_single_file_multiple_docs(self) -> None:
         # Setup
