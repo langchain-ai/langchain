@@ -38,7 +38,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
         try:
             from optimum.intel.openvino import OVModelForSequenceClassification
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import optimum-intel python package. "
                 "Please install it with: "
                 "pip install -U 'optimum[openvino,nncf]'"
@@ -47,7 +47,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
         try:
             from huggingface_hub import HfApi
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with: "
                 "`pip install -U huggingface_hub`."

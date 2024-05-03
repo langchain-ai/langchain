@@ -150,7 +150,7 @@ class _AnthropicCommon(BaseLanguageModel):
 
 @deprecated(
     since="0.0.28",
-    removal="0.2",
+    removal="0.3",
     alternative_import="langchain_anthropic.AnthropicLLM",
 )
 class Anthropic(LLM, _AnthropicCommon):

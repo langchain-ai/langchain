@@ -94,7 +94,7 @@ class HuggingFacePipeline(BaseLLM):
             from transformers import pipeline as hf_pipeline
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
@@ -109,7 +109,7 @@ class HuggingFacePipeline(BaseLLM):
                         from optimum.intel.openvino import OVModelForCausalLM
 
                     except ImportError:
-                        raise ValueError(
+                        raise ImportError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
                             "pip install 'optimum[openvino,nncf]' "
@@ -135,7 +135,7 @@ class HuggingFacePipeline(BaseLLM):
                         from optimum.intel.openvino import OVModelForSeq2SeqLM
 
                     except ImportError:
-                        raise ValueError(
+                        raise ImportError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
                             "pip install 'optimum[openvino,nncf]' "
@@ -161,7 +161,7 @@ class HuggingFacePipeline(BaseLLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
