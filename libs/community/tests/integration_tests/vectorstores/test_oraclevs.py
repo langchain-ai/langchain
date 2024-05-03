@@ -599,7 +599,7 @@ def test_add_texts_test() -> None:
     except Exception:
         sys.exit(1)
     # 1. Add 2 records to table
-    # Expectation:Successfull
+    # Expectation:Successful
     texts = ["Rohan", "Shailendra"]
     metadata = [
         {"id": "100", "link": "Document Example Test 1"},
@@ -625,10 +625,10 @@ def test_add_texts_test() -> None:
     #    ids are passed as multi-line string
     #    ids are passed as "<string>"
     # Expectations:
-    # Successfull
-    # Successfull
-    # Successfull
-    # Successfull
+    # Successful
+    # Successful
+    # Successful
+    # Successful
 
     vs_obj = OracleVS(connection, model, "TB4", DistanceStrategy.EUCLIDEAN_DISTANCE)
     ids3 = ["114", "124"]
@@ -655,7 +655,7 @@ def test_add_texts_test() -> None:
     drop_table_purge(connection, "TB7")
 
     # 4. Add records with ids and metadatas
-    # Expectation:Successfull
+    # Expectation:Successful
     vs_obj = OracleVS(connection, model, "TB8", DistanceStrategy.EUCLIDEAN_DISTANCE)
     texts3 = ["Sri Ram 6", "Krishna 6"]
     ids7 = ["1", "2"]
@@ -667,7 +667,7 @@ def test_add_texts_test() -> None:
     drop_table_purge(connection, "TB8")
 
     # 5. Add 10000 records
-    # Expectation:Successfull
+    # Expectation:Successful
     vs_obj = OracleVS(connection, model, "TB9", DistanceStrategy.EUCLIDEAN_DISTANCE)
     texts4 = ["Sri Ram{0}".format(i) for i in range(1, 10000)]
     ids8 = ["Hello{0}".format(i) for i in range(1, 10000)]
@@ -675,7 +675,7 @@ def test_add_texts_test() -> None:
     drop_table_purge(connection, "TB9")
 
     # 6. Add 2 different record concurrently
-    # Expectation:Successfull
+    # Expectation:Successful
     def add(val: str) -> None:
         model = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-mpnet-base-v2"
@@ -696,7 +696,7 @@ def test_add_texts_test() -> None:
     drop_table_purge(connection, "TB10")
 
     # 7. Add 2 same record concurrently
-    # Expectation:Successfull, For one of the insert,get primary key violation error
+    # Expectation:Successful, For one of the insert,get primary key violation error
     def add1(val: str) -> None:
         model = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-mpnet-base-v2"
@@ -783,7 +783,7 @@ def test_create_index_test() -> None:
     except Exception:
         sys.exit(1)
     # 1. No optional parameters passed
-    # Expectation:Successfull
+    # Expectation:Successful
     model1 = HuggingFaceEmbeddings(
         model_name="sentence-transformers/paraphrase-mpnet-base-v2"
     )
@@ -793,21 +793,21 @@ def test_create_index_test() -> None:
     drop_table_purge(connection, "TB1")
 
     # 2. ivf index
-    # Expectation:Successfull
+    # Expectation:Successful
     vs = OracleVS(connection, model1, "TB2", DistanceStrategy.EUCLIDEAN_DISTANCE)
     create_index(connection, vs, {"idx_type": "IVF", "idx_name": "IVF"})
     drop_index_if_exists(connection, "IVF")
     drop_table_purge(connection, "TB2")
 
     # 3. ivf index with neighbour_part passed as parameter
-    # Expectation:Successfull
+    # Expectation:Successful
     vs = OracleVS(connection, model1, "TB3", DistanceStrategy.EUCLIDEAN_DISTANCE)
     create_index(connection, vs, {"idx_type": "IVF", "neighbor_part": 10})
     drop_index_if_exists(connection, "IVF")
     drop_table_purge(connection, "TB3")
 
     # 4. ivf index with neighbour_part and accuracy passed as parameter
-    # Expectation:Successfull
+    # Expectation:Successful
     vs = OracleVS(connection, model1, "TB4", DistanceStrategy.EUCLIDEAN_DISTANCE)
     create_index(
         connection, vs, {"idx_type": "IVF", "neighbor_part": 10, "accuracy": 90}
@@ -816,7 +816,7 @@ def test_create_index_test() -> None:
     drop_table_purge(connection, "TB4")
 
     # 5. ivf index with neighbour_part and parallel passed as parameter
-    # Expectation:Successfull
+    # Expectation:Successful
     vs = OracleVS(connection, model1, "TB5", DistanceStrategy.EUCLIDEAN_DISTANCE)
     create_index(
         connection, vs, {"idx_type": "IVF", "neighbor_part": 10, "parallel": 90}
@@ -825,7 +825,7 @@ def test_create_index_test() -> None:
     drop_table_purge(connection, "TB5")
 
     # 6. ivf index and then perform dml(insert)
-    # Expectation:Successfull
+    # Expectation:Successful
     vs = OracleVS(connection, model1, "TB6", DistanceStrategy.EUCLIDEAN_DISTANCE)
     create_index(connection, vs, {"idx_type": "IVF", "idx_name": "IVF"})
     texts = ["Sri Ram", "Krishna"]
@@ -836,7 +836,7 @@ def test_create_index_test() -> None:
     drop_table_purge(connection, "TB6")
 
     # 7. ivf index with neighbour_part,parallel and accuracy passed as parameter
-    # Expectation:Successfull
+    # Expectation:Successful
     vs = OracleVS(connection, model1, "TB7", DistanceStrategy.EUCLIDEAN_DISTANCE)
     create_index(
         connection,
