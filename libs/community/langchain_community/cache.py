@@ -1096,10 +1096,11 @@ class CassandraCache(BaseCache):
         if skip_provisioning:
             warn_deprecated(
                 "0.0.33",
+                name="skip_provisioning",
                 alternative=(
-                    "Use setup_mode=langchain_community.utilities."
-                    "cassandra.SetupMode.OFF instead."
+                    "setup_mode=langchain_community.utilities.cassandra.SetupMode.OFF"
                 ),
+                pending=True,
             )
         try:
             from cassio.table import ElasticCassandraTable
@@ -1130,7 +1131,6 @@ class CassandraCache(BaseCache):
         )
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
         item = self.kv_cache.get(
             llm_string=_hash(llm_string),
             prompt=_hash(prompt),
@@ -1151,7 +1151,6 @@ class CassandraCache(BaseCache):
             return None
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
         blob = _dumps_generations(return_val)
         self.kv_cache.put(
             llm_string=_hash(llm_string),
@@ -1282,10 +1281,11 @@ class CassandraSemanticCache(BaseCache):
         if skip_provisioning:
             warn_deprecated(
                 "0.0.33",
+                name="skip_provisioning",
                 alternative=(
-                    "Use setup_mode=langchain_community.utilities."
-                    "cassandra.SetupMode.OFF instead."
+                    "setup_mode=langchain_community.utilities.cassandra.SetupMode.OFF"
                 ),
+                pending=True,
             )
         try:
             from cassio.table import MetadataVectorCassandraTable
@@ -1300,12 +1300,12 @@ class CassandraSemanticCache(BaseCache):
 
         # detect if legacy 'distance_metric' parameter used
         if distance_metric is not None:
-            # if passed, takes precedence over 'similarity_measure',
-            # but we issue a warning.
-            warnings.warn(
-                "Argument 'distance_metric' to CassandraSemanticCache "
-                "should be renamed to 'similarity_measure'. "
-                "Please update your code accordingly."
+            # if passed, takes precedence over 'similarity_measure', but we warn:
+            warn_deprecated(
+                "0.0.33",
+                name="distance_metric",
+                alternative="similarity_measure",
+                pending=True,
             )
             similarity_measure = distance_metric
 
@@ -1363,7 +1363,6 @@ class CassandraSemanticCache(BaseCache):
         return len(await self._aget_embedding(text="This is a sample sentence."))
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
         embedding_vector = self._get_embedding(text=prompt)
         llm_string_hash = _hash(llm_string)
         body = _dumps_generations(return_val)
@@ -1400,7 +1399,6 @@ class CassandraSemanticCache(BaseCache):
         )
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        """Look up based on prompt and llm_string."""
         hit_with_id = self.lookup_with_id(prompt, llm_string)
         if hit_with_id is not None:
             return hit_with_id[1]
