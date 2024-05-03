@@ -101,6 +101,29 @@ def test_yellowbrick_delete() -> None:
 
 
 @pytest.mark.requires("yb-vss")
+def test_yellowbrick_delete_all() -> None:
+    """Test end to end construction and search."""
+    docsearches = [
+        _yellowbrick_vector_from_texts(),
+        _yellowbrick_vector_from_texts_no_schema(),
+    ]
+    for docsearch in docsearches:
+        output = docsearch.similarity_search("foo", k=1)
+        assert output == [Document(page_content="foo", metadata={})]
+        texts = ["oof"]
+        docsearch.add_texts(texts)
+        output = docsearch.similarity_search("oof", k=1)
+        assert output == [Document(page_content="oof", metadata={})]
+        docsearch.delete(delete_all=True)
+        output = docsearch.similarity_search("oof", k=1)
+        assert output != [Document(page_content="oof", metadata={})]
+        output = docsearch.similarity_search("foo", k=1)
+        assert output != [Document(page_content="foo", metadata={})]
+        docsearch.drop(table=YELLOWBRICK_TABLE, schema=docsearch._schema)
+        docsearch.drop(table=YELLOWBRICK_CONTENT, schema=docsearch._schema)
+
+
+@pytest.mark.requires("yb-vss")
 def test_yellowbrick_lsh_search() -> None:
     """Test end to end construction and search."""
     docsearches = [
@@ -166,6 +189,35 @@ def test_yellowbrick_lsh_delete() -> None:
         docsearch.delete(added_docs)
         output = docsearch.similarity_search("oof", k=1, index_params=index_params)
         assert output != [Document(page_content="oof", metadata={})]
+        docsearch.drop(table=YELLOWBRICK_TABLE, schema=docsearch._schema)
+        docsearch.drop(table=YELLOWBRICK_CONTENT, schema=docsearch._schema)
+        docsearch.drop_index(index_params=index_params)
+
+
+@pytest.mark.requires("yb-vss")
+def test_yellowbrick_lsh_delete_all() -> None:
+    """Test end to end construction and search."""
+    docsearches = [
+        _yellowbrick_vector_from_texts(),
+        _yellowbrick_vector_from_texts_no_schema(),
+    ]
+    for docsearch in docsearches:
+        index_params = Yellowbrick.IndexParams(
+            Yellowbrick.IndexType.LSH, {"num_hyperplanes": 10, "hamming_distance": 0}
+        )
+        docsearch.drop_index(index_params)
+        docsearch.create_index(index_params)
+        output = docsearch.similarity_search("foo", k=1, index_params=index_params)
+        assert output == [Document(page_content="foo", metadata={})]
+        texts = ["oof"]
+        docsearch.add_texts(texts, index_params=index_params)
+        output = docsearch.similarity_search("oof", k=1, index_params=index_params)
+        assert output == [Document(page_content="oof", metadata={})]
+        docsearch.delete(delete_all=True)
+        output = docsearch.similarity_search("oof", k=1, index_params=index_params)
+        assert output != [Document(page_content="oof", metadata={})]
+        output = docsearch.similarity_search("foo", k=1, index_params=index_params)
+        assert output != [Document(page_content="foo", metadata={})]
         docsearch.drop(table=YELLOWBRICK_TABLE, schema=docsearch._schema)
         docsearch.drop(table=YELLOWBRICK_CONTENT, schema=docsearch._schema)
         docsearch.drop_index(index_params=index_params)

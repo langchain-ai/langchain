@@ -70,14 +70,13 @@ class Yellowbrick(VectorStore):
         *,
         schema: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
-        seed: Optional[float] = 0.42,
-        drop: Optional[bool] = False,
+        seed: float = 0.42,
+        drop: bool = False,
     ) -> None:
         """Initialize with yellowbrick client.
         Args:
             embedding: Embedding operator
             connection_string: Format 'postgres://username:password@host:port/database'
-            or pg connection
             table: Table used to store / retrieve embeddings from
         """
         from psycopg2 import extras
@@ -402,15 +401,15 @@ class Yellowbrick(VectorStore):
         metadatas: Optional[List[dict]] = None,
         connection_string: str = "",
         table: str = "langchain",
-        schema: Optional[str] = None,
-        drop: Optional[bool] = False,
+        schema: str = "public",
+        drop: bool = False,
         **kwargs: Any,
     ) -> Yellowbrick:
         """Add texts to the vectorstore index.
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            connection_opt: URI to Yellowbrick instance or a pg connection
+            connection_string: URI to Yellowbrick instance
             embedding: Embedding function
             table: table to store embeddings
             kwargs: vectorstore specific parameters
@@ -425,7 +424,12 @@ class Yellowbrick(VectorStore):
         vss.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return vss
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        delete_all: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> None:
         """Delete vectors by uuids.
 
         Args:
@@ -433,24 +437,38 @@ class Yellowbrick(VectorStore):
         """
         from psycopg2 import sql
 
-        if not ids:
-            return None
+        if delete_all:
+            where_sql = sql.SQL(
+                """
+                WHERE 1=1
+            """
+            )
+        elif ids is not None:
+            uuids = tuple(sql.Literal(id) for id in ids)
+            ids_formatted = sql.SQL(", ").join(uuids)
+            where_sql = sql.SQL(
+                """
+                WHERE doc_id IN ({ids})
+            """
+            ).format(
+                ids=ids_formatted,
+            )
+        else:
+            raise ValueError("Either ids or delete_all must be provided.")
 
-        uuids = tuple(sql.Literal(id) for id in ids)
-        ids_formatted = sql.SQL(", ").join(uuids)
         schema_prefix = (self._schema,) if self._schema else ()
         with self.connection.get_cursor() as cursor:
             table_identifier = sql.Identifier(
                 *schema_prefix, self._table + self.CONTENT_TABLE
             )
-            query = sql.SQL("DELETE FROM {table} WHERE doc_id IN ({ids})").format(
-                table=table_identifier, ids=ids_formatted
+            query = sql.SQL("DELETE FROM {table} {where_sql}").format(
+                table=table_identifier, where_sql=where_sql
             )
             cursor.execute(query)
 
             table_identifier = sql.Identifier(*schema_prefix, self._table)
-            query = sql.SQL("DELETE FROM {table} WHERE doc_id IN ({ids})").format(
-                table=table_identifier, ids=ids_formatted
+            query = sql.SQL("DELETE FROM {table} {where_sql}").format(
+                table=table_identifier, where_sql=where_sql
             )
             cursor.execute(query)
 
@@ -460,12 +478,12 @@ class Yellowbrick(VectorStore):
                 table_identifier = sql.Identifier(
                     *schema_prefix, self._table + self.LSH_INDEX_TABLE
                 )
-                query = sql.SQL("DELETE FROM {table} WHERE doc_id IN ({ids})").format(
-                    table=table_identifier, ids=ids_formatted
+                query = sql.SQL("DELETE FROM {table} {where_sql}").format(
+                    table=table_identifier, where_sql=where_sql
                 )
                 cursor.execute(query)
 
-        return True
+        return None
 
     def _table_exists(
         self, cursor: "PgCursor", table_name: str, schema: str = "public"
