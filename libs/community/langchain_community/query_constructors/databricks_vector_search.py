@@ -74,6 +74,10 @@ class DatabricksVectorSearchTranslator(Visitor):
             return self._visit_or_operation(operation)
         elif operation.operator == Operator.NOT:
             return self._visit_not_operation(operation)
+        else:
+            raise NotImplementedError(
+                f'Operator "{operation.operator}" is not supported'
+            )
 
     def visit_comparison(self, comparison: Comparison) -> Dict:
         self._validate_func(comparison.comparator)
