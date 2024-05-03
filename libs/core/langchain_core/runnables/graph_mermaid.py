@@ -64,8 +64,8 @@ def draw_mermaid(
     subgraph = ""
     # Add edges to the graph
     for edge in edges:
-        src_prefix = edge.source.split(":")[0]
-        tgt_prefix = edge.target.split(":")[0]
+        src_prefix = edge.source.split(":")[0] if ":" in edge.source else None
+        tgt_prefix = edge.target.split(":")[0] if ":" in edge.target else None
         # exit subgraph if source or target is not in the same subgraph
         if subgraph and (subgraph != src_prefix or subgraph != tgt_prefix):
             mermaid_graph += "\tend\n"
