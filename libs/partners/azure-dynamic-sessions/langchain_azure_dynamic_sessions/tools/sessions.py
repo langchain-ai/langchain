@@ -1,25 +1,26 @@
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from io import BufferedReader, BytesIO
+import importlib.metadata
 import os
 import re
 import urllib
-from typing import Any, Callable, Optional, Annotated
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from io import BufferedReader, BytesIO
+from typing import Annotated, Any, Callable, Optional
 from uuid import uuid4
-from langchain_core.tools import BaseTool
-from langchain_core.pydantic_v1 import Field
-from azure.core.credentials import AccessToken
-from langchain_core.runnables.config import run_in_executor
-from azure.identity import DefaultAzureCredential
-import importlib.metadata
-import requests
 
+import requests
+from azure.core.credentials import AccessToken
+from azure.identity import DefaultAzureCredential
+from langchain_core.pydantic_v1 import Field
+from langchain_core.runnables.config import run_in_executor
+from langchain_core.tools import BaseTool
 
 try:
-    _package_version = importlib.metadata.version('langchain-azure-dynamic-sessions')
+    _package_version = importlib.metadata.version("langchain-azure-dynamic-sessions")
 except importlib.metadata.PackageNotFoundError:
     _package_version = "0.0.0"
 USER_AGENT = f"langchain-azure-dynamic-sessions/{_package_version} (Language=Python)"
+
 
 def _access_token_provider_factory() -> Callable[[], Optional[str]]:
     """Factory function for creating an access token provider function.
@@ -27,16 +28,18 @@ def _access_token_provider_factory() -> Callable[[], Optional[str]]:
     Returns:
         Callable[[], Optional[str]]: The access token provider function
     """
-    
+
     access_token: AccessToken = None
 
     def access_token_provider() -> Optional[str]:
         nonlocal access_token
-        if access_token is None or datetime.fromtimestamp(access_token.expires_on, timezone.utc) < datetime.now(timezone.utc) + timedelta(minutes=5):
+        if access_token is None or datetime.fromtimestamp(
+            access_token.expires_on, timezone.utc
+        ) < datetime.now(timezone.utc) + timedelta(minutes=5):
             credential = DefaultAzureCredential()
             access_token = credential.get_token("https://dynamicsessions.io/.default")
         return access_token.token
-    
+
     return access_token_provider
 
 
@@ -72,7 +75,7 @@ class RemoteFileMetadata:
     def full_path(self) -> str:
         """Get the full path of the file."""
         return f"/mnt/data/{self.filename}"
-    
+
     @staticmethod
     def from_dict(data: dict) -> "RemoteFileMetadata":
         """Create a RemoteFileMetadata object from a dictionary."""
@@ -100,7 +103,9 @@ class SessionsPythonREPLTool(BaseTool):
     pool_management_endpoint: str
     """The management endpoint of the session pool. Should end with a '/'."""
 
-    access_token_provider: Callable[[], Optional[str]] = _access_token_provider_factory()
+    access_token_provider: Callable[
+        [], Optional[str]
+    ] = _access_token_provider_factory()
     """A function that returns the access token to use for the session pool."""
 
     session_id: str = str(uuid4())
@@ -150,7 +155,13 @@ class SessionsPythonREPLTool(BaseTool):
 
         return await run_in_executor(None, self.run, python_code)
 
-    def upload_file(self, *, data: BufferedReader = None, remote_file_path: str = None, local_file_path: str = None) -> RemoteFileMetadata:
+    def upload_file(
+        self,
+        *,
+        data: BufferedReader = None,
+        remote_file_path: str = None,
+        local_file_path: str = None,
+    ) -> RemoteFileMetadata:
         """Upload a file to the session pool.
 
         Args:
@@ -177,17 +188,19 @@ class SessionsPythonREPLTool(BaseTool):
             "User-Agent": USER_AGENT,
         }
         payload = {}
-        files=[
-            ('file',(remote_file_path, data, 'application/octet-stream'))
-        ]
+        files = [("file", (remote_file_path, data, "application/octet-stream"))]
 
-        response = requests.request("POST", api_url, headers=headers, data=payload, files=files)
+        response = requests.request(
+            "POST", api_url, headers=headers, data=payload, files=files
+        )
         response.raise_for_status()
 
         response_json = response.json()
-        return RemoteFileMetadata.from_dict(response_json['value'][0])
-    
-    def download_file(self, *, remote_file_path: str, local_file_path: str = None) -> Optional[BufferedReader]:
+        return RemoteFileMetadata.from_dict(response_json["value"][0])
+
+    def download_file(
+        self, *, remote_file_path: str, local_file_path: str = None
+    ) -> Optional[BufferedReader]:
         """Download a file from the session pool.
 
         Args:
@@ -232,4 +245,4 @@ class SessionsPythonREPLTool(BaseTool):
         response.raise_for_status()
 
         response_json = response.json()
-        return [RemoteFileMetadata.from_dict(entry) for entry in response_json['value']]
+        return [RemoteFileMetadata.from_dict(entry) for entry in response_json["value"]]
