@@ -7,8 +7,10 @@
 
 SOURCE_DIR = docs/
 INTERMEDIATE_DIR = build/intermediate/docs
+VERIONED_INTERMEDIATE_DIR = build/versioned_intermediate/version-0.2.x/docs
 OUTPUT_DIR = build/output
 OUTPUT_DOCS_DIR = $(OUTPUT_DIR)/docs
+VERSIONED_DOCS_DIR = $(OUTPUT_DIR)/versioned_docs/version-0.2.x
 
 PYTHON = .venv/bin/python
 
@@ -54,6 +56,23 @@ generate-files:
 
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(INTERMEDIATE_DIR)
 
+
+	mkdir -p $(VERIONED_INTERMEDIATE_DIR)
+	mkdir -p $(VERIONED_INTERMEDIATE_DIR)/templates
+	cp $(INTERMEDIATE_DIR)/integrations/llms/index.mdx $(VERIONED_INTERMEDIATE_DIR)/integrations/llms/
+	cp $(INTERMEDIATE_DIR)/integrations/chat/index.mdx $(VERIONED_INTERMEDIATE_DIR)/integrations/chat/
+	cp -r $(INTERMEDIATE_DIR)/templates/* $(VERIONED_INTERMEDIATE_DIR)/templates/
+
+	wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O $(VERIONED_INTERMEDIATE_DIR)/langserve.md
+	$(PYTHON) scripts/resolve_local_links.py $(VERIONED_INTERMEDIATE_DIR)/langserve.md https://github.com/langchain-ai/langserve/tree/main/
+
+	wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O $(VERIONED_INTERMEDIATE_DIR)/langgraph.md
+	$(PYTHON) scripts/resolve_local_links.py $(VERIONED_INTERMEDIATE_DIR)/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
+
+	$(PYTHON) scripts/resolve_versioned_links_in_markdown.py $(VERIONED_INTERMEDIATE_DIR) /docs/0.2.x/
+	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(VERIONED_INTERMEDIATE_DIR)
+
+
 copy-infra:
 	mkdir -p $(OUTPUT_DIR)
 	cp -r src $(OUTPUT_DIR)
@@ -70,6 +89,10 @@ quarto-render:
 	$(QUARTO_CMD) render $(INTERMEDIATE_DIR) --output-dir $(OUTPUT_DOCS_DIR) --no-execute
 	mv $(OUTPUT_DOCS_DIR)/$(INTERMEDIATE_DIR)/* $(OUTPUT_DOCS_DIR)
 	rm -rf $(OUTPUT_DOCS_DIR)/build
+
+	$(QUARTO_CMD) render $(VERIONED_INTERMEDIATE_DIR) --output-dir $(VERSIONED_DOCS_DIR) --no-execute
+	mv $(VERSIONED_DOCS_DIR)/$(VERIONED_INTERMEDIATE_DIR)/* $(VERSIONED_DOCS_DIR)
+	rm -rf $(VERSIONED_DOCS_DIR)/build
 
 md-sync:
 	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_DOCS_DIR)
