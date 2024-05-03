@@ -113,8 +113,6 @@ class ToolRun(BaseRun):
 class Run(BaseRunV2):
     """Run schema for the V2 API in the Tracer."""
 
-    execution_order: int
-    child_execution_order: int
     child_runs: List[Run] = Field(default_factory=list)
     tags: Optional[List[str]] = Field(default_factory=list)
     events: List[Dict[str, Any]] = Field(default_factory=list)
