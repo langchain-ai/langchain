@@ -134,8 +134,6 @@ class FakeTracer(BaseTracer):
                     self.uuids_map[run.parent_run_id] if run.parent_run_id else None
                 ),
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
-                "execution_order": None,
-                "child_execution_order": None,
                 "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
                 "dotted_order": new_dotted_order,
                 "inputs": (
