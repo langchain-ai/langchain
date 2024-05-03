@@ -206,7 +206,8 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> dict: ...
+    ) -> dict:
+        ...
 
     @overload
     @staticmethod
@@ -216,7 +217,8 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> Iterable: ...
+    ) -> Iterable:
+        ...
 
     @staticmethod
     def create(
@@ -247,7 +249,8 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> dict: ...
+    ) -> dict:
+        ...
 
     @overload
     @staticmethod
@@ -257,7 +260,8 @@ class ChatCompletion:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> AsyncIterator: ...
+    ) -> AsyncIterator:
+        ...
 
     @staticmethod
     async def acreate(
@@ -315,7 +319,8 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> ChatCompletions: ...
+    ) -> ChatCompletions:
+        ...
 
     @overload
     @staticmethod
@@ -325,7 +330,8 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> Iterable: ...
+    ) -> Iterable:
+        ...
 
     @staticmethod
     def create(
@@ -360,7 +366,8 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[False] = False,
         **kwargs: Any,
-    ) -> ChatCompletions: ...
+    ) -> ChatCompletions:
+        ...
 
     @overload
     @staticmethod
@@ -370,7 +377,8 @@ class Completions:
         provider: str = "ChatOpenAI",
         stream: Literal[True],
         **kwargs: Any,
-    ) -> AsyncIterator: ...
+    ) -> AsyncIterator:
+        ...
 
     @staticmethod
     async def acreate(
