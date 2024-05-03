@@ -14,21 +14,17 @@ import logging
 import os
 import random
 import struct
-import sys
 import time
 import traceback
-from typing import Any, Dict, List, Optional, Tuple, Union
+from html.parser import HTMLParser
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-if True:
-    sys.path.append(sys.path.pop(0))
-    from html.parser import HTMLParser
+from langchain.document_loaders.base import BaseLoader
+from langchain.text_splitter import TextSplitter
+from langchain_core.documents import Document
 
-    import oracledb
-    from langchain.document_loaders.base import BaseLoader
-    from langchain.text_splitter import TextSplitter
-    from langchain_core.documents import Document
+if TYPE_CHECKING:
     from oracledb import Connection
-
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +117,13 @@ class OracleDocReader:
 
         metadata: Dict[str, Any] = {}
         try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
+        try:
             oracledb.defaults.fetch_lobs = False
             cursor = conn.cursor()
 
@@ -192,12 +195,18 @@ class OracleDocLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         """Load data into LangChain Document objects..."""
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
 
         ncols = 0
         results: List[Document] = []
         metadata: Dict[str, Any] = {}
         m_params = {"plaintext": "false"}
-
         try:
             # extract the parameters
             if self.params is not None:
@@ -392,6 +401,8 @@ class OracleTextSplitter(TextSplitter):
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
+        import oracledb
+
         splits = []
 
         try:
@@ -421,37 +432,3 @@ class OracleTextSplitter(TextSplitter):
             logger.info(f"An exception occurred :: {ex}")
             traceback.print_exc()
             raise
-
-
-# uncomment the following code block to run the test
-
-"""
-# A sample unit test.
-
-# get the Oracle connection
-conn = oracledb.connect(
-    user="",
-    password="",
-    dsn="",
-)
-print("Oracle connection is established...")
-
-# params
-loader_params = {"owner": "ut", "tablename": "demo_tab", "colname": "data"}
-splitter_params = {"by": "words", "max": "100"}
-
-# instances 
-loader = OracleDocLoader(conn=conn, params=loader_params)
-splitter = OracleTextSplitter(conn=conn, params=splitter_params)
-
-print("Processing the documents...")
-docs = loader.load()
-for id, doc in enumerate(docs, start=1):
-    print(f"Document#{id}, Metadata: {doc.metadata}")
-    chunks = splitter.split_text(doc.page_content)
-    print(f"Document#{id}, Num of Chunk: {len(chunks)}\n")
-
-conn.close()
-print("Connection is closed.")
-
-"""
