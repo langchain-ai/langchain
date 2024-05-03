@@ -78,3 +78,6 @@ build: install-py-deps generate-files copy-infra quarto-render md-sync
 
 start:
 	cd $(OUTPUT_DIR) && yarn && yarn start --port=$(PORT)
+
+build-local:
+	./.local_build.sh
