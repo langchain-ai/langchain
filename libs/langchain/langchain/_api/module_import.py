@@ -1,8 +1,7 @@
 import importlib
-import warnings
 from typing import Any, Callable, Dict, Optional
 
-from langchain_core._api import LangChainDeprecationWarning
+from langchain_core._api import warn_deprecated
 
 from langchain._api.interactive_env import is_interactive_env
 
@@ -11,6 +10,33 @@ ALLOWED_TOP_LEVEL_PKGS = {
     "langchain_core",
     "langchain",
 }
+
+
+# For 0.1 releases keep this here
+# Remove for 0.2 release so that deprecation warnings will
+# be raised for all the new namespaces.
+_NAMESPACES_WITH_DEPRECATION_WARNINGS_IN_0_1 = {
+    "langchain",
+    "langchain.adapters.openai",
+    "langchain.agents.agent_toolkits",
+    "langchain.callbacks",
+    "langchain.chat_models",
+    "langchain.docstore",
+    "langchain.document_loaders",
+    "langchain.document_transformers",
+    "langchain.embeddings",
+    "langchain.llms",
+    "langchain.memory.chat_message_histories",
+    "langchain.storage",
+    "langchain.tools",
+    "langchain.utilities",
+    "langchain.vectorstores",
+}
+
+
+def _should_deprecate_for_package(package: str) -> bool:
+    """Should deprecate for this package?"""
+    return bool(package in _NAMESPACES_WITH_DEPRECATION_WARNINGS_IN_0_1)
 
 
 def create_importer(
@@ -83,12 +109,19 @@ def create_importer(
                     not is_interactive_env()
                     and deprecated_lookups
                     and name in deprecated_lookups
+                    and _should_deprecate_for_package(package)
                 ):
-                    warnings.warn(
-                        f"Importing {name} from {package} is deprecated. "
-                        "Please replace the import with the following:\n"
-                        f"from {new_module} import {name}",
-                        category=LangChainDeprecationWarning,
+                    warn_deprecated(
+                        since="0.1",
+                        pending=False,
+                        removal="0.4",
+                        message=(
+                            f"Importing {name} from {package} is deprecated."
+                            f"Please replace imports that look like:"
+                            f"`from {package} import {name}`\n"
+                            "with the following:\n "
+                            f"from {new_module} import {name}"
+                        ),
                     )
                 return result
             except Exception as e:
@@ -100,12 +133,18 @@ def create_importer(
             try:
                 module = importlib.import_module(fallback_module)
                 result = getattr(module, name)
-                if not is_interactive_env():
-                    warnings.warn(
-                        f"Importing {name} from {package} is deprecated. "
-                        "Please replace the import with the following:\n"
-                        f"from {fallback_module} import {name}",
-                        category=LangChainDeprecationWarning,
+                if not is_interactive_env() and _should_deprecate_for_package(package):
+                    warn_deprecated(
+                        since="0.1",
+                        pending=False,
+                        removal="0.4",
+                        message=(
+                            f"Importing {name} from {package} is deprecated."
+                            f"Please replace imports that look like:"
+                            f"`from {package} import {name}`\n"
+                            "with the following:\n "
+                            f"from {fallback_module} import {name}"
+                        ),
                     )
                 return result
 
