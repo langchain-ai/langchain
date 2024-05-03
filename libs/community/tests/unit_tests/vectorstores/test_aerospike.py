@@ -9,6 +9,7 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 pytestmark = pytest.mark.requires("aerospike_vector_search")
 
+
 @pytest.fixture(scope="module")
 def client():
     try:
@@ -22,9 +23,9 @@ def client():
             HostPort(host="dummy-host", port=3000),
         ],
     )
-    
+
     yield client
-    
+
     client.close()
 
 
@@ -212,7 +213,7 @@ def test_similarity_search_by_vector_with_score_overwrite_index_name(
         (DistanceStrategy.COSINE, Aerospike._cosine_relevance_score_fn),
         (DistanceStrategy.EUCLIDEAN_DISTANCE, Aerospike._euclidean_relevance_score_fn),
         (DistanceStrategy.DOT_PRODUCT, Aerospike._max_inner_product_relevance_score_fn),
-        (DistanceStrategy.JACCARD, ValueError)
+        (DistanceStrategy.JACCARD, ValueError),
     ],
 )
 def test_select_relevance_score_fn(client, distance_strategy, expected_fn):

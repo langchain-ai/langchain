@@ -314,7 +314,7 @@ class Aerospike(VectorStore):
             index_name: Name of the index to search. Overrides the default
                 index_name.
             kwargs: Additional keyword arguments to pass to the search method.
-            
+
 
         Returns:
             List of Documents most similar to the query vector.
@@ -510,7 +510,7 @@ class Aerospike(VectorStore):
                 from aerospike_vector_search import Client
                 from aerospike_vector_search.admin import Client as AdminClient
                 from aerospike_vector_search.types import HostPort
-                
+
                 TODO
         """
         aerospike = cls(
