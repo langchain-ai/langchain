@@ -12,12 +12,31 @@ ALLOWED_TOP_LEVEL_PKGS = {
 }
 
 
+# For 0.1 releases keep this here
+# Remove for 0.2 release so that deprecation warnings will
+# be raised for all the new namespaces.
+_NAMESPACES_WITH_DEPRECATION_WARNINGS_IN_0_1 = {
+    "langchain",
+    "langchain.adapters.openai",
+    "langchain.agents.agent_toolkits",
+    "langchain.callbacks",
+    "langchain.chat_models",
+    "langchain.docstore",
+    "langchain.document_loaders",
+    "langchain.document_transformers",
+    "langchain.embeddings",
+    "langchain.llms",
+    "langchain.memory.chat_message_histories",
+    "langchain.storage",
+    "langchain.tools",
+    "langchain.utilities",
+    "langchain.vectorstores",
+}
+
+
 def _should_deprecate_for_package(package: str) -> bool:
     """Should deprecate for this package?"""
-    if len(package.split(".")) <= 2:
-        return True
-    # Add exceptions here
-    return False
+    return bool(package in _NAMESPACES_WITH_DEPRECATION_WARNINGS_IN_0_1)
 
 
 def create_importer(
