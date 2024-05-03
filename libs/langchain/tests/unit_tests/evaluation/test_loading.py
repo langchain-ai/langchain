@@ -2,7 +2,7 @@
 from typing import List
 
 import pytest
-from langchain_community.embeddings.fake import FakeEmbeddings
+from langchain_core.embeddings import FakeEmbeddings
 
 from langchain.evaluation.loading import EvaluatorType, load_evaluators
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator

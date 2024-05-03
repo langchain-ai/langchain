@@ -55,7 +55,7 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.azuresearch import (
         AzureSearch,
     )
-    from langchain_community.vectorstores.bageldb import (
+    from langchain_community.vectorstores.bagel import (
         Bagel,
     )
     from langchain_community.vectorstores.baiducloud_vector_search import (
