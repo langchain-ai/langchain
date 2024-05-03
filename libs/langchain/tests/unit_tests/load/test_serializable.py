@@ -64,15 +64,17 @@ def test_import_all_modules() -> None:
     ]
     # This test will need to be updated if new serializable classes are added
     # to community
-    assert filtered_modules == [
-        ("langchain", "chat_models", "azure_openai", "AzureChatOpenAI"),
-        ("langchain", "chat_models", "bedrock", "BedrockChat"),
-        ("langchain", "chat_models", "anthropic", "ChatAnthropic"),
-        ("langchain", "chat_models", "fireworks", "ChatFireworks"),
-        ("langchain", "chat_models", "google_palm", "ChatGooglePalm"),
-        ("langchain", "chat_models", "openai", "ChatOpenAI"),
-        ("langchain", "chat_models", "vertexai", "ChatVertexAI"),
-    ]
+    assert sorted(filtered_modules) == sorted(
+        [
+            ("langchain", "chat_models", "azure_openai", "AzureChatOpenAI"),
+            ("langchain", "chat_models", "bedrock", "BedrockChat"),
+            ("langchain", "chat_models", "anthropic", "ChatAnthropic"),
+            ("langchain", "chat_models", "fireworks", "ChatFireworks"),
+            ("langchain", "chat_models", "google_palm", "ChatGooglePalm"),
+            ("langchain", "chat_models", "openai", "ChatOpenAI"),
+            ("langchain", "chat_models", "vertexai", "ChatVertexAI"),
+        ]
+    )
 
 
 def test_serializable_mapping() -> None:
