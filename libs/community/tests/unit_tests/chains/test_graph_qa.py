@@ -2,9 +2,10 @@ import pathlib
 from typing import Any, Dict, List
 
 import pandas as pd
-
 from langchain.chains.graph_qa.prompts import CYPHER_GENERATION_PROMPT, CYPHER_QA_PROMPT
 from langchain.memory import ConversationBufferMemory, ReadOnlySharedMemory
+from langchain_core.prompts import PromptTemplate
+
 from langchain_community.chains.graph_qa.cypher import (
     GraphCypherQAChain,
     construct_schema,
@@ -16,7 +17,6 @@ from langchain_community.chains.graph_qa.cypher_utils import (
 )
 from langchain_community.graphs.graph_document import GraphDocument
 from langchain_community.graphs.graph_store import GraphStore
-from langchain_core.prompts import PromptTemplate
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
