@@ -25,7 +25,6 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_core.callbacks.manager import CallbackManagerForChainRun
 
 from langchain_experimental.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_experimental.rl_chain.metrics import (
