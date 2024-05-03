@@ -541,6 +541,7 @@ class Yellowbrick(VectorStore):
                 doc_id UUID,
                 embedding_id SMALLINT,
                 embedding FLOAT)
+                ON COMMIT DROP
                 DISTRIBUTE REPLICATE
             """
             ).format(sql.Identifier(tmp_embeddings_table))
@@ -553,7 +554,6 @@ class Yellowbrick(VectorStore):
                 "INSERT INTO {} (doc_id, embedding_id, embedding) VALUES %s"
             ).format(sql.Identifier(tmp_embeddings_table))
             execute_values(cursor, insert_query, data_input)
-            cursor.connection.commit()
 
             v1 = sql.Identifier(tmp_embeddings_table)
             schema_prefix = (self._schema,) if self._schema else ()
@@ -566,7 +566,6 @@ class Yellowbrick(VectorStore):
                     tmp_embeddings_table,
                     tmp_hash_table,
                 )
-                cursor.connection.commit()
 
                 schema_prefix = (self._schema,) if self._schema else ()
                 lsh_index = sql.Identifier(
@@ -623,8 +622,6 @@ class Yellowbrick(VectorStore):
                     (k,),
                 )
                 results = cursor.fetchall()
-                self.drop(table=tmp_hash_table, cursor=cursor)
-                self.drop(table=tmp_embeddings_table, cursor=cursor)
             else:
                 sql_query = sql.SQL(
                     """
@@ -658,7 +655,6 @@ class Yellowbrick(VectorStore):
                 )
                 cursor.execute(sql_query, (k,))
                 results = cursor.fetchall()
-                self.drop(table=tmp_embeddings_table, cursor=cursor)
 
         documents: List[Tuple[Document, float]] = []
         for result in results:
@@ -787,7 +783,9 @@ class Yellowbrick(VectorStore):
         )
         tmp_embedding_table_id = sql.Identifier(tmp_embedding_table)
         tmp_hash_table_id = sql.Identifier(tmp_hash_table)
-        query_prefix = sql.SQL("CREATE TEMPORARY TABLE {} AS").format(tmp_hash_table_id)
+        query_prefix = sql.SQL("CREATE TEMPORARY TABLE {} ON COMMIT DROP AS").format(
+            tmp_hash_table_id
+        )
         group_by = sql.SQL("GROUP BY 1")
 
         input_query = sql.SQL(
@@ -799,6 +797,7 @@ class Yellowbrick(VectorStore):
             FROM {embedding_table} e
             INNER JOIN {hyperplanes} h ON e.embedding_id = h.hyperplane_id
             {group_by}
+            DISTRIBUTE REPLICATE
         """
         ).format(
             query_prefix=query_prefix,
