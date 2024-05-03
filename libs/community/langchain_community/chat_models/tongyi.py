@@ -216,15 +216,24 @@ class ChatTongyi(BaseChatModel):
                 "Could not import dashscope python package. "
                 "Please install it with `pip install dashscope --upgrade`."
             )
-        try:
-            values["client"] = dashscope.Generation
-        except AttributeError:
-            raise ValueError(
-                "`dashscope` has no `Generation` attribute, this is likely "
-                "due to an old version of the dashscope package. Try upgrading it "
-                "with `pip install --upgrade dashscope`."
-            )
-
+        if values["model_name"] == "qwen-vl-v1" or values["model_name"] == "qwen-vl-chat-v1" or values["model_name"]=="qwen-audio-turbo":
+            try:
+                values["client"] = dashscope.MultiModalConversation
+            except AttributeError:
+                raise ValueError(
+                    "`dashscope` has no `MultiModalConversation` attribute, this is likely "
+                    "due to an old version of the dashscope package. Try upgrading it "
+                    "with `pip install --upgrade dashscope`."
+                )
+        else:
+            try:
+                values["client"] = dashscope.Generation
+            except AttributeError:
+                raise ValueError(
+                    "`dashscope` has no `Generation` attribute, this is likely "
+                    "due to an old version of the dashscope package. Try upgrading it "
+                    "with `pip install --upgrade dashscope`."
+                )
         return values
 
     @property
