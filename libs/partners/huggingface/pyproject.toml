@@ -54,6 +54,12 @@ langchain-core = { path = "../../core", develop = true }
 langchain-community = { path = "../../community", develop = true }
 ipykernel = "^6.29.2"
 
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.test_integration.dependencies]
+
+
 [tool.ruff.lint]
 select = [
   "E",    # pycodestyle
