@@ -22,7 +22,7 @@ from requests.exceptions import HTTPError
 
 
 class MaritalkHTTPError(HTTPError):
-    def __init__(self, request_obj: Response) -> None:
+    def __init__(self, request_obj) -> None:
         self.request_obj = request_obj
         try:
             response_json = request_obj.json()
@@ -301,7 +301,7 @@ class ChatMaritalk(BaseChatModel):
                 async with client.stream(
                     "POST",
                     "https://chat.maritaca.ai/api/chat/inference",
-                    data=json.dumps(data),
+                    data=json.dumps(data), # type: ignore
                     headers=headers,
                     timeout=None,
                 ) as response:
