@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import uuid
 from typing import Any, Iterable, List, Optional, Type
+import warnings
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -106,8 +107,6 @@ class DuckDB(VectorStore):
             raise ValueError("An embedding function or model must be provided.")
 
         if connection is None:
-            import warnings
-
             warnings.warn(
                 "No DuckDB connection provided. A new connection will be created."
                 "This connection is running in memory and no data will be persisted."
@@ -144,14 +143,15 @@ class DuckDB(VectorStore):
         Returns:
             List of ids of the added texts.
         """
-
+        have_pandas = False
         try:
             import pandas as pd
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import pandas, please install it with "
-                "`pip install -U pandas`"
-            ) from e
+            have_pandas = True
+        except ImportError:
+            warnings.warn(
+                "Unable to import pandas. "
+                "Please install it with `pip install -U pandas` to improve performance of add_texts()."
+            )
 
         # Extract ids from kwargs or generate new ones if not provided
         ids = kwargs.pop("ids", [str(uuid.uuid4()) for _ in texts])
@@ -168,19 +168,27 @@ class DuckDB(VectorStore):
                 if metadatas and idx < len(metadatas)
                 else None
             )
-            data.append(
-                {
-                    self._id_key: ids[idx],
-                    self._text_key: text,
-                    self._vector_key: embedding,
-                    "metadata": metadata,
-                }
+            if have_pandas:
+                data.append(
+                    {
+                        self._id_key: ids[idx],
+                        self._text_key: text,
+                        self._vector_key: embedding,
+                        "metadata": metadata,
+                    }
+                )
+            else:
+                self._connection.execute(
+                    f"INSERT INTO {self._table_name} VALUES (?,?,?,?)",
+                    [ids[idx], text, embedding, metadata],
+                )
+
+        if have_pandas:
+            # noinspection PyUnusedLocal
+            df = pd.DataFrame.from_dict(data)  # noqa: F841
+            self._connection.execute(
+                f"INSERT INTO {self._table_name} SELECT * FROM df",
             )
-        # noinspection PyUnusedLocal
-        df = pd.DataFrame.from_dict(data)  # noqa: F841
-        self._connection.execute(
-            f"INSERT INTO {self._table_name} SELECT * FROM df",
-        )
         return ids
 
     def similarity_search(
