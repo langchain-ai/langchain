@@ -116,7 +116,7 @@ def deprecated(
 
         def emit_warning() -> None:
             """Emit the warning."""
-            warn_deprecated(
+            _warn_deprecated(
                 since,
                 message=_message,
                 name=_name,
@@ -295,7 +295,7 @@ def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
         yield
 
 
-def warn_deprecated(
+def _warn_deprecated(
     since: str,
     *,
     message: str = "",
@@ -398,6 +398,66 @@ def warn_deprecated(
     )
     warning = warning_cls(message)
     warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=2)
+
+
+def warn_deprecated(
+    since: str,
+    *,
+    message: str = "",
+    name: str = "",
+    alternative: str = "",
+    alternative_import: str = "",
+    pending: bool = False,
+    obj_type: str = "",
+    addendum: str = "",
+    removal: str = "",
+    package: str = "",
+) -> None:
+    """Display a standardized deprecation.
+
+    Arguments:
+        since : str
+            The release at which this API became deprecated.
+        message : str, optional
+            Override the default deprecation message. The %(since)s,
+            %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
+            and %(removal)s format specifiers will be replaced by the
+            values of the respective arguments passed to this function.
+        name : str, optional
+            The name of the deprecated object.
+        alternative : str, optional
+            An alternative API that the user may use in place of the
+            deprecated API. The deprecation warning will tell the user
+            about this alternative if provided.
+        pending : bool, optional
+            If True, uses a PendingDeprecationWarning instead of a
+            DeprecationWarning. Cannot be used together with removal.
+        obj_type : str, optional
+            The object type being deprecated.
+        addendum : str, optional
+            Additional text appended directly to the final message.
+        removal : str, optional
+            The expected removal version. With the default (an empty
+            string), a removal version is automatically computed from
+            since. Set to other Falsy values to not schedule a removal
+            date. Cannot be used together with pending.
+    """
+    # Same as _warn_deprecated but makes sure to filter out
+    # any warnings that arise from purely internal code;
+    # e.g., if some code in langchain is calling other langchain deprecated code.
+    if not is_caller_internal():
+        _warn_deprecated(
+            since=since,
+            message=message,
+            name=name,
+            alternative=alternative,
+            alternative_import=alternative_import,
+            pending=pending,
+            obj_type=obj_type,
+            addendum=addendum,
+            removal=removal,
+            package=package,
+        )
 
 
 def surface_langchain_deprecation_warnings() -> None:
