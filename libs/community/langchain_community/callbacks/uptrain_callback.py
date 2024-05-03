@@ -2,12 +2,12 @@
 UpTrain Callback Handler
 
 UpTrain is an open-source platform to evaluate and improve LLM applications. It provides
-grades for 20+ preconfigured checks (covering language, code, embedding use cases), 
-performs root cause analyses on instances of failure cases and provides guidance for 
+grades for 20+ preconfigured checks (covering language, code, embedding use cases),
+performs root cause analyses on instances of failure cases and provides guidance for
 resolving them.
 
-This module contains a callback handler for integrating UpTrain seamlessly into your 
-pipeline and facilitating diverse evaluations. The callback handler automates various 
+This module contains a callback handler for integrating UpTrain seamlessly into your
+pipeline and facilitating diverse evaluations. The callback handler automates various
 evaluations to assess the performance and effectiveness of the components within the
 pipeline.
 
@@ -29,7 +29,7 @@ The evaluations conducted include:
 
 3. Context Compression and Reranking:
    Re-ranking involves reordering nodes based on relevance to the query and selecting
-   top n nodes. 
+   top n nodes.
    Due to the potential reduction in the number of nodes after re-ranking, the following
    evaluations
    are performed in addition to the RAG evaluations:

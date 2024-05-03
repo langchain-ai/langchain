@@ -300,7 +300,7 @@ class ChatMaritalk(BaseChatModel):
                 async with client.stream(
                     "POST",
                     "https://chat.maritaca.ai/api/chat/inference",
-                    data=json.dumps(data), # type: ignore
+                    data=json.dumps(data),  # type: ignore
                     headers=headers,
                     timeout=None,
                 ) as response:

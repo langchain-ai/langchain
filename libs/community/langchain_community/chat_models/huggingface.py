@@ -1,4 +1,5 @@
 """Hugging Face Chat Wrapper."""
+
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
 from langchain_core.callbacks.manager import (

@@ -104,9 +104,9 @@ class _BaseYandexGPT(Serializable):
         if values["model_uri"] == "" and values["folder_id"] == "":
             raise ValueError("Either 'model_uri' or 'folder_id' must be provided.")
         if not values["model_uri"]:
-            values[
-                "model_uri"
-            ] = f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            values["model_uri"] = (
+                f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            )
         if values["disable_request_logging"]:
             values["_grpc_metadata"].append(
                 (
