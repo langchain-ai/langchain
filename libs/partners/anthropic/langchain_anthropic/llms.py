@@ -232,7 +232,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
                 prompt = "What are the biggest risks facing humanity?"
                 prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                response = model(prompt)
+                response = model.invoke(prompt)
 
         """
         if self.streaming:
@@ -360,6 +360,6 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return self.count_tokens(text)
 
 
-@deprecated(since="0.1.0", removal="0.2.0", alternative="AnthropicLLM")
+@deprecated(since="0.1.0", removal="0.3.0", alternative="AnthropicLLM")
 class Anthropic(AnthropicLLM):
     pass

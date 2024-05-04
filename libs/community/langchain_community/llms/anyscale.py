@@ -75,7 +75,7 @@ class Anyscale(BaseOpenAI):
             # To leverage Ray for parallel processing
             @ray.remote(num_cpus=1)
             def send_query(llm, text):
-                resp = llm(text)
+                resp = llm.invoke(text)
                 return resp
             futures = [send_query.remote(anyscalellm, text) for text in texts]
             results = ray.get(futures)

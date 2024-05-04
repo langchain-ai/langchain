@@ -580,7 +580,6 @@ class ChatAnthropic(BaseChatModel):
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
         return self.bind(tools=formatted_tools, **kwargs)
 
-    @beta()
     def with_structured_output(
         self,
         schema: Union[Dict, Type[BaseModel]],
@@ -757,6 +756,6 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
     return blocks
 
 
-@deprecated(since="0.1.0", removal="0.2.0", alternative="ChatAnthropic")
+@deprecated(since="0.1.0", removal="0.3.0", alternative="ChatAnthropic")
 class ChatAnthropicMessages(ChatAnthropic):
     pass

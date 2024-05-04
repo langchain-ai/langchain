@@ -17,7 +17,7 @@ def test_litellm_call() -> None:
         model="test",
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -42,7 +42,7 @@ def test_litellm_streaming() -> None:
     """Test streaming tokens from anthropic."""
     chat = ChatLiteLLM(model="test", streaming=True)
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -58,5 +58,5 @@ def test_litellm_streaming_callback() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Write me a sentence with 10 words.")
-    chat([message])
+    chat.invoke([message])
     assert callback_handler.llm_streams > 1

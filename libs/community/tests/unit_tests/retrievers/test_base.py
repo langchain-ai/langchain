@@ -50,8 +50,8 @@ def test_fake_retriever_v1_upgrade(fake_retriever_v1: BaseRetriever) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v1._new_arg_supported is False
     assert fake_retriever_v1._expects_other_args is False
-    results: List[Document] = fake_retriever_v1.get_relevant_documents(
-        "Foo", callbacks=[callbacks]
+    results: List[Document] = fake_retriever_v1.invoke(
+        "Foo", config={"callbacks": [callbacks]}
     )
     assert results[0].page_content == "Foo"
     assert callbacks.retriever_starts == 1
@@ -65,8 +65,8 @@ async def test_fake_retriever_v1_upgrade_async(
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v1._new_arg_supported is False
     assert fake_retriever_v1._expects_other_args is False
-    results: List[Document] = await fake_retriever_v1.aget_relevant_documents(
-        "Foo", callbacks=[callbacks]
+    results: List[Document] = await fake_retriever_v1.ainvoke(
+        "Foo", config={"callbacks": [callbacks]}
     )
     assert results[0].page_content == "Async query Foo"
     assert callbacks.retriever_starts == 1
@@ -111,8 +111,8 @@ def test_fake_retriever_v1_with_kwargs_upgrade(
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v1_with_kwargs._new_arg_supported is False
     assert fake_retriever_v1_with_kwargs._expects_other_args is True
-    results: List[Document] = fake_retriever_v1_with_kwargs.get_relevant_documents(
-        "Foo", callbacks=[callbacks], where_filter={"foo": "bar"}
+    results: List[Document] = fake_retriever_v1_with_kwargs.invoke(
+        "Foo", config={"callbacks": [callbacks]}, where_filter={"foo": "bar"}
     )
     assert results[0].page_content == "Foo"
     assert results[0].metadata == {"foo": "bar"}
@@ -127,10 +127,8 @@ async def test_fake_retriever_v1_with_kwargs_upgrade_async(
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v1_with_kwargs._new_arg_supported is False
     assert fake_retriever_v1_with_kwargs._expects_other_args is True
-    results: List[
-        Document
-    ] = await fake_retriever_v1_with_kwargs.aget_relevant_documents(
-        "Foo", callbacks=[callbacks], where_filter={"foo": "bar"}
+    results: List[Document] = await fake_retriever_v1_with_kwargs.ainvoke(
+        "Foo", config={"callbacks": [callbacks]}, where_filter={"foo": "bar"}
     )
     assert results[0].page_content == "Async query Foo"
     assert results[0].metadata == {"foo": "bar"}
@@ -188,15 +186,15 @@ def test_fake_retriever_v2(
 ) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v2._new_arg_supported is True
-    results = fake_retriever_v2.get_relevant_documents("Foo", callbacks=[callbacks])
+    results = fake_retriever_v2.invoke("Foo", config={"callbacks": [callbacks]})
     assert results[0].page_content == "Foo"
     assert callbacks.retriever_starts == 1
     assert callbacks.retriever_ends == 1
     assert callbacks.retriever_errors == 0
-    fake_retriever_v2.get_relevant_documents("Foo", callbacks=[callbacks])
+    fake_retriever_v2.invoke("Foo", config={"callbacks": [callbacks]})
 
     with pytest.raises(ValueError, match="Test error"):
-        fake_erroring_retriever_v2.get_relevant_documents("Foo", callbacks=[callbacks])
+        fake_erroring_retriever_v2.invoke("Foo", config={"callbacks": [callbacks]})
     assert callbacks.retriever_errors == 1
 
 
@@ -205,15 +203,13 @@ async def test_fake_retriever_v2_async(
 ) -> None:
     callbacks = FakeCallbackHandler()
     assert fake_retriever_v2._new_arg_supported is True
-    results = await fake_retriever_v2.aget_relevant_documents(
-        "Foo", callbacks=[callbacks]
-    )
+    results = await fake_retriever_v2.ainvoke("Foo", config={"callbacks": [callbacks]})
     assert results[0].page_content == "Async query Foo"
     assert callbacks.retriever_starts == 1
     assert callbacks.retriever_ends == 1
     assert callbacks.retriever_errors == 0
-    await fake_retriever_v2.aget_relevant_documents("Foo", callbacks=[callbacks])
+    await fake_retriever_v2.ainvoke("Foo", config={"callbacks": [callbacks]})
     with pytest.raises(ValueError, match="Test error"):
-        await fake_erroring_retriever_v2.aget_relevant_documents(
-            "Foo", callbacks=[callbacks]
+        await fake_erroring_retriever_v2.ainvoke(
+            "Foo", config={"callbacks": [callbacks]}
         )

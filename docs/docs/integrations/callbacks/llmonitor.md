@@ -107,7 +107,7 @@ User tracking allows you to identify your users, track their cost, conversations
 from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler, identify
 
 with identify("user-123"):
-    llm("Tell me a joke")
+    llm.invoke("Tell me a joke")
 
 with identify("user-456", user_props={"email": "user456@test.com"}):
     agen.run("Who is Leo DiCaprio's girlfriend?")
