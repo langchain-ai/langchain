@@ -145,7 +145,7 @@ def _xml_to_tool_calls(elem: Any, tools: List[Dict]) -> List[Dict[str, Any]]:
 
 @deprecated(
     "0.1.5",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative="ChatAnthropic",
     message=(
         "Tool-calling is now officially supported by the Anthropic API so this "
