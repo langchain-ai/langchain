@@ -6,7 +6,6 @@ from typing import Callable, Literal, Optional
 
 import openai
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import validator
 from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
