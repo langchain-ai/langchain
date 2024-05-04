@@ -114,7 +114,3 @@ class OpenAITextToSpeechTool(BaseTool):
             raise
 
         return output_file
-
-    def _default_output_name(self) -> str:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"{self._DEFAULT_OUTPUT_NAME_PREFIX}_{timestamp}"
