@@ -16,18 +16,12 @@ function Imports({ imports }) {
         borderBottomRightRadius: "var(--ifm-code-border-radius)",
       }}
     >
-      <h4 style={{ paddingLeft: "0.65rem", marginBottom: "0.45rem" }}>
+      <b style={{ paddingLeft: "0.65rem", marginBottom: "0.45rem" }}>
         API Reference:
-      </h4>
-      <ul style={{ paddingBottom: "1rem" }}>
+      </b>
         {imports.map(({ imported, source, docs }) => (
-          <li key={imported}>
-            <a href={docs}>
-              <span>{imported}</span>
-            </a>
-          </li>
+          <span key={imported}> | <a href={docs}>{imported}</a></span>
         ))}
-      </ul>
     </div>
   );
 }
