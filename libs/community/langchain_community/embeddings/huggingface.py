@@ -329,7 +329,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
 
     @property
     def _headers(self) -> dict:
-        return {"Authorization": f"Bearer {self.api_key.get_secret_value()}"}|self.additional_headers
+        return {"Authorization": f"Bearer {self.api_key.get_secret_value()}", **self.additional_headers}
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Get the embeddings for a list of texts.
