@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import asyncio
 import logging
-from functools import partial
 from pathlib import Path
 from typing import (
     Any,
@@ -13,6 +11,7 @@ from typing import (
     Optional,
     Union,
 )
+from starlette.concurrency import run_in_threadpool
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -334,10 +333,7 @@ class LlamaCpp(LLM):
         else:
             params = self._get_parameters(stop)
             params = {**params, **kwargs}
-            loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(
-                None, partial(self.client, prompt=prompt, **params)
-            )
+            result = await run_in_threadpool(self.client, prompt=prompt, **params)
             return result["choices"][0]["text"]
 
     def _stream(
@@ -408,13 +404,9 @@ class LlamaCpp(LLM):
             An async generator representing the stream of tokens being generated.
         """
         params = {**self._get_parameters(stop), **kwargs}
-
-        loop = asyncio.get_running_loop()
-        iterator = await loop.run_in_executor(
-            None, partial(self.client, prompt=prompt, stream=True, **params)
-        )
+        iterator = await run_in_threadpool(self.client, prompt=prompt, stream=True, **params)
         while True:
-            part: Any = await loop.run_in_executor(None, next, iterator, None)
+            part: Any = await run_in_threadpool(next, iterator, None)
             if part is None:
                 break
 
