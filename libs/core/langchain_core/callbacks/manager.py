@@ -1881,6 +1881,10 @@ T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 H = TypeVar("H", bound=BaseCallbackHandler, covariant=True)
 
 
+class InvalidCallbackManagerError(ValueError):
+    """Raised when an invalid callback manager is provided."""
+
+
 def _configure(
     callback_manager_cls: Type[T],
     inheritable_callbacks: Callbacks = None,
@@ -1922,6 +1926,12 @@ def _configure(
     parent_run_id = None if run_tree is None else getattr(run_tree, "id")
     callback_manager = callback_manager_cls(handlers=[], parent_run_id=parent_run_id)
     if inheritable_callbacks or local_callbacks:
+        invalid_handler_msg = (
+            "Unrecognized callback manager. Expected either a list of handlers"
+            " or a single callback manager instance."
+            " Did you mean to pass your callbacks as a list?"
+            ' my_chain.invoke(..., {"callbacks": [MyTracer()]})?'
+        )
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
             inheritable_callbacks_ = inheritable_callbacks or []
             callback_manager = callback_manager_cls(
@@ -1930,6 +1940,8 @@ def _configure(
                 parent_run_id=parent_run_id,
             )
         else:
+            if not hasattr(inheritable_callbacks, "handlers"):
+                raise InvalidCallbackManagerError(invalid_handler_msg)
             callback_manager = callback_manager_cls(
                 handlers=inheritable_callbacks.handlers.copy(),
                 inheritable_handlers=inheritable_callbacks.inheritable_handlers.copy(),
@@ -1939,11 +1951,12 @@ def _configure(
                 metadata=inheritable_callbacks.metadata.copy(),
                 inheritable_metadata=inheritable_callbacks.inheritable_metadata.copy(),
             )
-        local_handlers_ = (
-            local_callbacks
-            if isinstance(local_callbacks, list)
-            else (local_callbacks.handlers if local_callbacks else [])
-        )
+        if isinstance(local_callbacks, list) or not local_callbacks:
+            local_handlers_ = local_callbacks or []
+        else:
+            if not hasattr(local_callbacks, "handlers"):
+                raise InvalidCallbackManagerError(invalid_handler_msg)
+            local_handlers_ = local_callbacks.handlers
         for handler in local_handlers_:
             callback_manager.add_handler(handler, False)
     if inheritable_tags or local_tags:
