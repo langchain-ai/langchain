@@ -6,9 +6,6 @@
 # -----------------------------------------------------------------------------
 import sys
 
-import oracledb
-import pytest
-
 from langchain_community.document_loaders.oracleai import (
     OracleDocLoader,
     OracleTextSplitter,
@@ -27,8 +24,12 @@ v_dsn = "100.70.107.245:1521/cdb1_pdb1.regress.rdbms.dev.us.oracle.com"
 
 
 ### Test loader #####
-@pytest.mark.requires("oracledb")
 def test_loader_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         # oracle connection
         connection = oracledb.connect(user=uname, password=passwd, dsn=v_dsn)
@@ -127,8 +128,12 @@ def test_loader_test() -> None:
 
 
 ### Test splitter ####
-@pytest.mark.requires("oracledb")
 def test_splitter_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         # oracle connection
         connection = oracledb.connect(user=uname, password=passwd, dsn=v_dsn)
@@ -303,8 +308,12 @@ def test_splitter_test() -> None:
 
 
 #### Test summary ####
-@pytest.mark.requires("oracledb")
 def test_summary_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         # oracle connection
         connection = oracledb.connect(user=uname, password=passwd, dsn=v_dsn)

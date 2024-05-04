@@ -4,9 +4,6 @@
 import sys
 import threading
 
-import oracledb
-import pytest
-
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores.oraclevs import (
     OracleVS,
@@ -27,8 +24,12 @@ dsn = ""
 ############################
 ####### table_exists #######
 ############################
-@pytest.mark.requires("oracledb")
 def test_table_exists_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
     except Exception:
@@ -95,8 +96,12 @@ def test_table_exists_test() -> None:
 ############################
 
 
-@pytest.mark.requires("oracledb")
 def test_create_table_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
     except Exception:
@@ -236,8 +241,12 @@ def test_create_table_test() -> None:
 ##################################
 
 
-@pytest.mark.requires("oracledb")
 def test_create_hnsw_index_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
     except Exception:
@@ -514,8 +523,12 @@ def test_create_hnsw_index_test() -> None:
 ##################################
 
 
-@pytest.mark.requires("oracledb")
 def test_index_exists_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
     except Exception:
@@ -593,8 +606,12 @@ def test_index_exists_test() -> None:
 ##################################
 
 
-@pytest.mark.requires("oracledb")
 def test_add_texts_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
     except Exception:
@@ -736,8 +753,12 @@ def test_add_texts_test() -> None:
 ##################################
 ####### embed_documents(text) ####
 ##################################
-@pytest.mark.requires("oracledb")
 def test_embed_documents_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
     except Exception:
@@ -756,8 +777,12 @@ def test_embed_documents_test() -> None:
 ##################################
 ####### embed_query(text) ########
 ##################################
-@pytest.mark.requires("oracledb")
 def test_embed_query_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
     except Exception:
@@ -777,8 +802,12 @@ def test_embed_query_test() -> None:
 ##################################
 ####### create_index #############
 ##################################
-@pytest.mark.requires("oracledb")
 def test_create_index_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
     except Exception:
@@ -851,8 +880,12 @@ def test_create_index_test() -> None:
 ##################################
 ####### perform_search ###########
 ##################################
-@pytest.mark.requires("oracledb")
 def test_perform_search_test() -> None:
+    try:
+        import oracledb
+    except ImportError:
+        return
+
     try:
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
     except Exception:
