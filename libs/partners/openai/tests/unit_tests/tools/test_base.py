@@ -3,6 +3,7 @@
 import os
 import tempfile
 import uuid
+from typing import Literal
 from unittest.mock import Mock, mock_open, patch
 
 from langchain_openai import OpenAITextToSpeechTool
@@ -11,12 +12,13 @@ os.environ["OPENAI_API_KEY"] = "foo"
 
 
 def test_openai_tts_run() -> None:
-    model, voice, file_extension = "tts-1", "alloy", "flac"
+    model = "tts-1"
+    voice: Literal["alloy", "echo", "fable", "onyx", "nova", "shimmer"] = "alloy"
+    file_extension: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"] = "wav"
+
     with tempfile.TemporaryDirectory() as tmp_dir, patch(
         "uuid.uuid4"
-    ) as mock_uuid, patch(
-        "builtins.open", mock_open()
-    ) as mock_file:
+    ) as mock_uuid, patch("builtins.open", mock_open()) as mock_file:
         input_query = "Dummy input"
 
         mock_uuid_value = uuid.UUID("00000000-0000-0000-0000-000000000000")
@@ -30,8 +32,8 @@ def test_openai_tts_run() -> None:
         tts = OpenAITextToSpeechTool(
             model=model,
             voice=voice,
-            speed=1.5,
             file_extension=file_extension,
+            speed=1.5,
         )
 
         with patch("openai.audio.speech.create") as mock_tts:
