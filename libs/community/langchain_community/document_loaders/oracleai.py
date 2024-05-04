@@ -19,9 +19,9 @@ import traceback
 from html.parser import HTMLParser
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-from langchain.document_loaders.base import BaseLoader
-from langchain.text_splitter import TextSplitter
+from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
+from langchain_text_splitters import TextSplitter
 
 if TYPE_CHECKING:
     from oracledb import Connection
