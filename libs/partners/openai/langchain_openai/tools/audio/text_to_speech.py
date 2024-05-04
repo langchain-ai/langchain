@@ -34,6 +34,8 @@ class OpenAITextToSpeechTool(BaseTool):
     """Model name."""
     voice: Literal["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
     """Voice name."""
+    speed: float
+    """Audio speed."""
     file_extension: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"]
     """File extension of the output audio file."""
     destination_dir: str
