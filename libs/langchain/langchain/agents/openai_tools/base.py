@@ -13,7 +13,10 @@ from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputP
 
 
 def create_openai_tools_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate, tool_choice: Optional[BaseTool] = None
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: ChatPromptTemplate,
+    tool_choice: Optional[BaseTool] = None,
 ) -> Runnable:
     """Create an agent that uses OpenAI tools.
 
@@ -91,7 +94,9 @@ def create_openai_tools_agent(
             tool_choice=tool_choice.name,
         )
     else:
-        llm_with_tools = llm.bind(tools=[convert_to_openai_tool(tool) for tool in tools])
+        llm_with_tools = llm.bind(
+            tools=[convert_to_openai_tool(tool) for tool in tools]
+        )
 
     agent = (
         RunnablePassthrough.assign(

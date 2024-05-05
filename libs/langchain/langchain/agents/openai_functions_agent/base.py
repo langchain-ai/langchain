@@ -230,7 +230,10 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
 
 def create_openai_functions_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate, tool_choice: Optional[BaseTool] = None
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: ChatPromptTemplate,
+    tool_choice: Optional[BaseTool] = None,
 ) -> Runnable:
     """Create an agent that uses OpenAI function calling.
 
@@ -312,8 +315,10 @@ def create_openai_functions_agent(
             function_call=tool_choice.name,
         )
     else:
-        llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
-    
+        llm_with_tools = llm.bind(
+            functions=[convert_to_openai_function(t) for t in tools]
+        )
+
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_function_messages(
