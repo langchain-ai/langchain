@@ -100,7 +100,7 @@ class ChatBaichuan(BaseChatModel):
     model = "Baichuan2-Turbo-192K"
     """model name of Baichuan, default is `Baichuan2-Turbo-192K`,
     other options include `Baichuan2-Turbo`"""
-    temperature: float = 0.3
+    temperature: Optional[float] = Field(default=0.3)
     """What sampling temperature to use."""
     top_k: int = 5
     """What search sampling control to use."""
