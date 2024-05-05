@@ -230,7 +230,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
 
 def create_openai_functions_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate, tool_choice: Optional[BaseTool] = None
 ) -> Runnable:
     """Create an agent that uses OpenAI function calling.
 
@@ -240,6 +240,7 @@ def create_openai_functions_agent(
             a different model that adds in equivalent support.
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more.
+        tool_choice: Optional name of a tool to force
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
@@ -305,7 +306,14 @@ def create_openai_functions_agent(
             "Prompt must have input variable `agent_scratchpad`, but wasn't found. "
             f"Found {prompt.input_variables} instead."
         )
-    llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
+    if tool_choice:
+        llm_with_tools = llm.bind(
+            functions=[convert_to_openai_function(tool_choice)],
+            function_call=tool_choice.name,
+        )
+    else:
+        llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
+    
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_function_messages(
