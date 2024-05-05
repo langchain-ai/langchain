@@ -438,7 +438,6 @@ def test_anthropic_api_key_masked_when_passed_from_env(
     monkeypatch.setenv("ANTHROPIC_API_KEY ", "secret-api-key")
     chat_model = ChatAnthropic(
         model="claude-3-opus-20240229",
-        anthropic_api_key="secret-api-key",
     )
     print(chat_model.anthropic_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
