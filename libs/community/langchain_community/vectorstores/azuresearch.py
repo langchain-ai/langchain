@@ -398,9 +398,9 @@ class AzureSearch(VectorStore):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         search_type = kwargs.pop("search_type", self.search_type)
-        if search_type == "similarity":
+        if search_type in ("similarity", "similarity_score_threshold"):
             docs = self.vector_search(query, k=k, **kwargs)
-        elif search_type == "hybrid":
+        elif search_type in ("hybrid", "hybrid_score_threshold"):
             docs = self.hybrid_search(query, k=k, **kwargs)
         elif search_type == "semantic_hybrid":
             docs = self.semantic_hybrid_search(query, k=k, **kwargs)
@@ -758,15 +758,9 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
-        if self.search_type in ("similarity", "similarity_score_threshold"):
-            docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
-        elif self.search_type in ("hybrid", "hybrid_score_threshold"):
-            docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
-        elif self.search_type == "semantic_hybrid":
-            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
-        else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
-        return docs
+        return self.vectorstore.similarity_search(
+            query, k=self.k, search_type=self.search_type, **kwargs
+        )
 
     async def _aget_relevant_documents(
         self,
