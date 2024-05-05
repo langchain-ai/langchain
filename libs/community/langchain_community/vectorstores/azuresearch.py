@@ -397,7 +397,7 @@ class AzureSearch(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        search_type = kwargs.pop("search_type", self.search_type)
+        search_type = kwargs.get("search_type", self.search_type)
         if search_type in ("similarity", "similarity_score_threshold"):
             docs = self.vector_search(query, k=k, **kwargs)
         elif search_type in ("hybrid", "hybrid_score_threshold"):
@@ -517,8 +517,8 @@ class AzureSearch(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-           filters: OData $filter expression to apply to the search query.
-           score_threshold: Optional threshold to filter the results.
+            filters: OData $filter expression to apply to the search query.
+            score_threshold: Optional threshold to filter the results.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -537,11 +537,9 @@ class AzureSearch(VectorStore):
             filter=kwargs.get("filters", None),
             top=k,
         )
-
         # Convert results to Document objects
-        docs = []
         score_threshold: Optional[float] = kwargs.get("score_threshold", None)
-
+        docs = []
         for result in results:
             score = float(result["@search.score"])
             if score_threshold is None or score > score_threshold:
