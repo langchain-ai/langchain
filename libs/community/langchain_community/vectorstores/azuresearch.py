@@ -20,6 +20,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -396,7 +397,7 @@ class AzureSearch(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        search_type = kwargs.get("search_type", self.search_type)
+        search_type = kwargs.pop("search_type", self.search_type)
         if search_type == "similarity":
             docs = self.vector_search(query, k=k, **kwargs)
         elif search_type == "hybrid":
@@ -410,38 +411,13 @@ class AzureSearch(VectorStore):
     def similarity_search_with_relevance_scores(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
-        score_threshold = kwargs.pop("score_threshold", None)
-        result = self.vector_search_with_score(query, k=k, **kwargs)
-        return (
-            result
-            if score_threshold is None
-            else [r for r in result if r[1] >= score_threshold]
-        )
-
-    def vector_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
-        """
-        Returns the most similar indexed documents to the query text.
-
-        Args:
-            query (str): The query text for which to find similar documents.
-            k (int): The number of documents to return. Default is 4.
-
-        Returns:
-            List[Document]: A list of documents that are most similar to the query text.
-        """
-        docs_and_scores = self.vector_search_with_score(
-            query, k=k, filters=kwargs.get("filters", None)
-        )
-        return [doc for doc, _ in docs_and_scores]
-
-    def vector_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[str] = None
-    ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filters: OData $filter expression to apply to the search query.
+            score_threshold: Optional threshold to filter the results.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -458,25 +434,53 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            filter=filters,
+            filter=kwargs.pop("filters", None),
             top=k,
         )
         # Convert results to Document objects
-        docs = [
-            (
-                Document(
+        docs = []
+        score_threshold: Optional[float] = kwargs.pop("score_threshold", None)
+
+        for result in results:
+            score = float(result["@search.score"])
+            if score_threshold is None or score > score_threshold:
+                document = Document(
                     page_content=result.pop(FIELDS_CONTENT),
                     metadata=json.loads(result[FIELDS_METADATA])
                     if FIELDS_METADATA in result
                     else {
                         k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
                     },
-                ),
-                float(result["@search.score"]),
-            )
-            for result in results
-        ]
+                )
+                docs.append((document, score))
         return docs
+
+    def vector_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
+        """
+        Returns the most similar indexed documents to the query text.
+
+        Args:
+            query (str): The query text for which to find similar documents.
+            k (int): The number of documents to return. Default is 4.
+            filters: OData $filter expression to apply to the search query.
+            score_threshold: Optional threshold to filter the results.
+
+        Returns:
+            List[Document]: A list of documents that are most similar to the query text.
+        """
+        docs_and_scores = self.similarity_search_with_relevance_scores(
+            query,
+            k=k,
+            filters=kwargs.get("filters", None),
+            score_threshold=kwargs.get("score_threshold", None),
+        )
+        return [doc for doc, _ in docs_and_scores]
+
+    @deprecated("0.0.37", alternative="similarity_search_with_relevance_scores")
+    def vector_search_with_score(
+        self, query: str, k: int = 4, filters: Optional[str] = None
+    ) -> List[Tuple[Document, float]]:
+        return self.similarity_search_with_relevance_scores(query, k=k, filters=filters)
 
     def hybrid_search(self, query: str, k: int = 4, **kwargs: Any) -> List[Document]:
         """
@@ -485,23 +489,36 @@ class AzureSearch(VectorStore):
         Args:
             query (str): The query text for which to find similar documents.
             k (int): The number of documents to return. Default is 4.
+            filters: OData $filter expression to apply to the search query.
+            score_threshold: Optional threshold to filter the results.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.hybrid_search_with_score(
-            query, k=k, filters=kwargs.get("filters", None)
+        docs_and_scores = self.hybrid_search_with_relevance_scores(
+            query,
+            k=k,
+            filters=kwargs.get("filters", None),
+            score_threshold=kwargs.get("score_threshold", None),
         )
         return [doc for doc, _ in docs_and_scores]
 
+    @deprecated("0.0.37", alternative="hybrid_search_with_relevance_scores")
     def hybrid_search_with_score(
         self, query: str, k: int = 4, filters: Optional[str] = None
+    ) -> List[Tuple[Document, float]]:
+        return self.hybrid_search_with_relevance_scores(query, k=k, filters=filters)
+
+    def hybrid_search_with_relevance_scores(
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with a hybrid query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+           filters: OData $filter expression to apply to the search query.
+           score_threshold: Optional threshold to filter the results.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -517,36 +534,27 @@ class AzureSearch(VectorStore):
                     fields=FIELDS_CONTENT_VECTOR,
                 )
             ],
-            filter=filters,
+            filter=kwargs.get("filters", None),
             top=k,
         )
+
         # Convert results to Document objects
-        docs = [
-            (
-                Document(
+        docs = []
+        score_threshold: Optional[float] = kwargs.get("score_threshold", None)
+
+        for result in results:
+            score = float(result["@search.score"])
+            if score_threshold is None or score > score_threshold:
+                document = Document(
                     page_content=result.pop(FIELDS_CONTENT),
                     metadata=json.loads(result[FIELDS_METADATA])
                     if FIELDS_METADATA in result
                     else {
                         k: v for k, v in result.items() if k != FIELDS_CONTENT_VECTOR
                     },
-                ),
-                float(result["@search.score"]),
-            )
-            for result in results
-        ]
+                )
+                docs.append((document, score))
         return docs
-
-    def hybrid_search_with_relevance_scores(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
-        score_threshold = kwargs.pop("score_threshold", None)
-        result = self.hybrid_search_with_score(query, k=k, **kwargs)
-        return (
-            result
-            if score_threshold is None
-            else [r for r in result if r[1] >= score_threshold]
-        )
 
     def semantic_hybrid_search(
         self, query: str, k: int = 4, **kwargs: Any
@@ -750,24 +758,10 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
-        if self.search_type == "similarity":
+        if self.search_type in ("similarity", "similarity_score_threshold"):
             docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
-        elif self.search_type == "similarity_score_threshold":
-            docs = [
-                doc
-                for doc, _ in self.vectorstore.similarity_search_with_relevance_scores(
-                    query, k=self.k, **kwargs
-                )
-            ]
-        elif self.search_type == "hybrid":
+        elif self.search_type in ("hybrid", "hybrid_score_threshold"):
             docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
-        elif self.search_type == "hybrid_score_threshold":
-            docs = [
-                doc
-                for doc, _ in self.vectorstore.hybrid_search_with_relevance_scores(
-                    query, k=self.k, **kwargs
-                )
-            ]
         elif self.search_type == "semantic_hybrid":
             docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
         else:
