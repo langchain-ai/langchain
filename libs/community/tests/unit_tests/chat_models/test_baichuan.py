@@ -26,7 +26,7 @@ def test_initialization() -> None:
 
     for model in [
         ChatBaichuan(
-            model="Baichuan2-Turbo-192K", baichuan_api_key="test-api-key", timeout=40
+            model="Baichuan2-Turbo-192K", api_key="test-api-key", timeout=40
         ),
         ChatBaichuan(
             model="Baichuan2-Turbo-192K",
@@ -35,6 +35,7 @@ def test_initialization() -> None:
         ),
     ]:
         assert model.model == "Baichuan2-Turbo-192K"
+        assert model.baichuan_api_key == 'test-api-key'
         assert model.request_timeout == 40
 
 
