@@ -2,8 +2,8 @@
 name: Basic Prompt
 description: A basic prompt that uses the GPT-3 chat API to answer questions
 authors:
-  - sethjuarez
-  - jietong
+  - author_1
+  - author_2
 model:
   api: chat
   configuration:

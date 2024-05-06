@@ -3,8 +3,6 @@ import json
 import traceback
 from pathlib import Path
 from typing import Dict, List, Union
-from opentelemetry import trace as otracer
-
 from .core import (
     Frontmatter,
     ModelSettings,

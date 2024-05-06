@@ -7,7 +7,6 @@ import json
 import abc
 from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, FilePath
-from opentelemetry.sdk.trace import Span
 from typing import List, Literal, Dict, Union, Generic, TypeVar
 
 T = TypeVar("T")
