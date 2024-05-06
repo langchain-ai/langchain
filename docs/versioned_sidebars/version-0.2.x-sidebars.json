@@ -1,6 +1,15 @@
 {
   "docs": [
-    "introduction",
+    {
+      "type": "category",
+      "label": "Introduction",
+      "collapsed": false,
+      "collapsible": false,
+      "link": {"type": "doc", "id": "introduction"},
+      "items": [
+        "installation"
+      ]
+    },
     {
       "type": "doc",
       "id": "tutorials/index",
