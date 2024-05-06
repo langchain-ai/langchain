@@ -479,6 +479,15 @@ class GenerateUsername(BaseModel):
     hair_color: str
 
 
+class MakeASandwich(BaseModel):
+    "Make a sandwich given a list of ingredients."
+
+    bread_type: str
+    cheese_type: str
+    condiments: List[str]
+    vegetables: List[str]
+
+
 def test_tool_use() -> None:
     llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
@@ -561,6 +570,21 @@ def test_manual_tool_call_msg() -> None:
     ]
     with pytest.raises(Exception):
         llm_with_tool.invoke(msgs)
+
+
+def test_bind_tools_tool_choice() -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    for tool_choice in ("any", "required"):
+        llm_with_tools = llm.bind_tools(
+            tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice
+        )
+        msg = cast(AIMessage, llm_with_tools.invoke("how are you"))
+        assert msg.tool_calls
+
+    llm_with_tools = llm.bind_tools(tools=[GenerateUsername, MakeASandwich])
+    msg = cast(AIMessage, llm_with_tools.invoke("how are you"))
+    assert not msg.tool_calls
 
 
 def test_openai_structured_output() -> None:
