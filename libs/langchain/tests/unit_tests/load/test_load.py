@@ -141,13 +141,16 @@ def test_load_llmchain_env() -> None:
         del os.environ["OPENAI_API_KEY"]
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "langchain_openai")
 def test_load_llmchain_with_non_serializable_arg() -> None:
-    llm = CommunityOpenAI(  # type: ignore[call-arg]
+    import httpx
+    from langchain_openai import OpenAI
+
+    llm = OpenAI(  # type: ignore[call-arg]
         model="davinci",
         temperature=0.5,
         openai_api_key="hello",
-        http_client=NotSerializable,
+        http_client=httpx.Client(),
     )
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
