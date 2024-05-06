@@ -95,8 +95,8 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
     @messages.setter
     def messages(self, messages: List[BaseMessage]) -> None:
         raise NotImplementedError(
-            "Direct assignment to 'messages' is not allowed." 
-            " Use the 'add_messages' instead." 
+            "Direct assignment to 'messages' is not allowed."
+            " Use the 'add_messages' instead."
         )
 
     def add_message(self, message: BaseMessage) -> None:
