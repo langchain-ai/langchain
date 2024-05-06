@@ -35,7 +35,7 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
             f"and Y has shape {Y.shape}."
         )
     try:
-        import simsimd as simd
+        import simsimd as simd  # type: ignore
 
         X = np.array(X, dtype=np.float32)
         Y = np.array(Y, dtype=np.float32)
@@ -381,7 +381,7 @@ class Milvus(VectorStore):
             FieldSchema,
             MilvusException,
         )
-        from pymilvus.orm.types import infer_dtype_bydata
+        from pymilvus.orm.types import infer_dtype_bydata  # type: ignore
 
         # Determine embedding dim
         dim = len(embeddings[0])
@@ -558,7 +558,7 @@ class Milvus(VectorStore):
     ) -> None:
         """Load the collection if available."""
         from pymilvus import Collection, utility
-        from pymilvus.client.types import LoadState
+        from pymilvus.client.types import LoadState  # type: ignore
 
         timeout = self.timeout or timeout
         if (

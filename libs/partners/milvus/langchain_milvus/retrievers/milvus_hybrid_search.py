@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 from pymilvus import AnnSearchRequest, Collection
-from pymilvus.client.abstract import BaseRanker, SearchResult
+from pymilvus.client.abstract import BaseRanker, SearchResult  # type: ignore
 
 
 class MilvusCollectionHybridSearchRetriever(BaseRetriever):

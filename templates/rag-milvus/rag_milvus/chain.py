@@ -1,9 +1,9 @@
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import Milvus
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 # Example for document loading (from url), splitting, and creating vectorstore
 
@@ -41,7 +41,7 @@ vectorstore = Milvus.from_texts(
         "user": "",
         "password": "",
         "secure": False,
-    }
+    },
 )
 retriever = vectorstore.as_retriever()
 
@@ -58,10 +58,10 @@ model = ChatOpenAI()
 
 # RAG chain
 chain = (
-        RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
-        | prompt
-        | model
-        | StrOutputParser()
+    RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
+    | prompt
+    | model
+    | StrOutputParser()
 )
 
 
