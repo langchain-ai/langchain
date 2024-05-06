@@ -8,6 +8,7 @@ import aiohttp
 import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core._api.deprecation import deprecated
 
 
 def is_endpoint_live(url: str, headers: Optional[dict], payload: Any) -> bool:
@@ -40,20 +41,15 @@ def is_endpoint_live(url: str, headers: Optional[dict], payload: Any) -> bool:
         # Handle any exceptions (e.g., connection errors)
         raise Exception(f"Error querying the endpoint: {e}")
 
+@deprecated(
+    since="0.0.10", removal="0.1.0", message="Directly instantiating a NeMoEmbeddings from langchain-community is deprecated. Please use langchain-nvidia-ai-endpoints NVIDIAEmbeddings interface."
+)
 class NeMoEmbeddings(BaseModel, Embeddings):
     """NeMo embedding models."""
 
     batch_size: int = 16
     model: str = "NV-Embed-QA-003"
     api_endpoint_url: str = "http://localhost:8088/v1/embeddings"
-
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
-        warnings.warn(
-            "Directly instantiating a NeMoEmbeddings from langchain-community is deprecated. "
-            "Please use langchain-nvidia-ai-endpoints NVIDIAEmbeddings interface."
-        )
-        return values
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
