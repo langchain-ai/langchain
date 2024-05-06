@@ -201,7 +201,7 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     field = inst.__fields__.get(key)
     if not field:
         return False
-    return field.required or field.get_default() != value
+    return field.required is True or field.get_default() != value
 
 
 def _replace_secrets(
