@@ -59,9 +59,9 @@ def test_aerospike(client) -> None:
         distance_strategy=DistanceStrategy.COSINE,
     )
 
-    embedded_query = embedding.embed_query(query_string)
+    # TODO: Remove grpc import when aerospike_vector_search wraps grpc errors
     with pytest.raises(grpc.RpcError):
-        store.similarity_search_by_vector(embedded_query)
+        store.similarity_search_by_vector(embedding.embed_query(query_string))
 
 
 def test_init_bad_embedding(client):

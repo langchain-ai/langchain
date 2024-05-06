@@ -393,6 +393,7 @@ __all__ = [
 ]
 
 _module_lookup = {
+    "Aerospike": "langchain_community.vectorstores.aerospike",
     "AlibabaCloudOpenSearch": "langchain_community.vectorstores.alibabacloud_opensearch",  # noqa: E501
     "AlibabaCloudOpenSearchSettings": "langchain_community.vectorstores.alibabacloud_opensearch",  # noqa: E501
     "AnalyticDB": "langchain_community.vectorstores.analyticdb",
