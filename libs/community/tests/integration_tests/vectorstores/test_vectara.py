@@ -4,19 +4,16 @@ import urllib.request
 import pytest
 from langchain_core.documents import Document
 
-# from langchain_community.vectorstores.vectara import Vectara, SummaryConfig
 from langchain_community.vectorstores.vectara import SummaryConfig, Vectara
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 #
 # For this test to run properly, please setup as follows:
-# 1. Create a Vectara account: sign up at https://console.vectara.com/signup
+# 1. Create a Vectara account: sign up at https://www.vectara.com/integrations/langchain 
 # 2. Create a corpus in your Vectara account, with a filter attribute called "test_num".
 # 3. Create an API_KEY for this corpus with permissions for query and indexing
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
 #
-
 
 def get_abbr(s: str) -> str:
     words = s.split(" ")  # Split the string into words
@@ -50,8 +47,7 @@ def vectara1():  # type: ignore[no-untyped-def]
     yield vectara1
 
     # Tear down code
-    for doc_id in doc_ids:
-        vectara1._delete_doc(doc_id)
+    vectara1.delete(doc_ids)
 
 
 def test_vectara_add_documents(vectara1) -> None:  # type: ignore[no-untyped-def]
@@ -61,25 +57,27 @@ def test_vectara_add_documents(vectara1) -> None:  # type: ignore[no-untyped-def
     output1 = vectara1.similarity_search(
         "large language model",
         k=2,
-        n_sentence_context=0,
+        n_sentence_before=0,
+        n_sentence_after=0,
     )
     assert len(output1) == 2
     assert output1[0].page_content == "large language model"
     assert output1[0].metadata["abbr"] == "llm"
-    assert output1[1].page_content == "grounded generation"
-    assert output1[1].metadata["abbr"] == "gg"
+    assert output1[1].page_content == "information retrieval"
+    assert output1[1].metadata["abbr"] == "ir"
 
     # test with metadata filter (doc level)
     # since the query does not match test_num=1 directly we get "LLM" as the result
     output2 = vectara1.similarity_search(
         "large language model",
         k=1,
-        n_sentence_context=0,
+        n_sentence_before=0,
+        n_sentence_after=0,
         filter="doc.test_num = 1",
     )
     assert len(output2) == 1
-    assert output2[0].page_content == "grounded generation"
-    assert output2[0].metadata["abbr"] == "gg"
+    assert output2[0].page_content == "retrieval augmented generation"
+    assert output2[0].metadata["abbr"] == "rag"
 
     # test without filter but with similarity score
     # this is similar to the first test, but given the score threshold
@@ -87,17 +85,17 @@ def test_vectara_add_documents(vectara1) -> None:  # type: ignore[no-untyped-def
     output3 = vectara1.similarity_search_with_score(
         "large language model",
         k=2,
-        score_threshold=0.8,
-        n_sentence_context=0,
+        score_threshold=0.5,
+        n_sentence_before=0,
+        n_sentence_after=0,
     )
     assert len(output3) == 1
     assert output3[0][0].page_content == "large language model"
     assert output3[0][0].metadata["abbr"] == "llm"
 
 
-def test_vectara_from_files() -> None:
-    """Test end to end construction and search."""
-
+@pytest.fixture(scope="function")
+def vectara2():  # type: ignore[no-untyped-def]
     # download documents to local storage and then upload as files
     # attention paper and deep learning book
     urls = [
@@ -117,50 +115,38 @@ def test_vectara_from_files() -> None:
         urllib.request.urlretrieve(url, name)
         files_list.append(name)
 
-    docsearch: Vectara = Vectara()
-    doc_ids = docsearch.add_files(
+    vectara2: Vectara = Vectara()
+    doc_ids = vectara2.add_files(
         files_list=files_list,
-        embedding=FakeEmbeddings(),
         metadatas=[{"url": url, "test_num": "2"} for url in urls],
     )
 
+    yield vectara2
+
+    # Tear down code
+    vectara2.delete(doc_ids)
+
+def test_vectara_from_files(vectara2) -> None:
+    """Test end to end construction and search."""
     # finally do a similarity search to see if all works okay
-    output = docsearch.similarity_search(
+    output = vectara2.similarity_search(
         "By the commonly adopted machine learning tradition",
         k=1,
-        n_sentence_context=0,
+        n_sentence_before=0,
+        n_sentence_after=0,
         filter="doc.test_num = 2",
     )
-    assert output[0].page_content == (
-        "By the commonly adopted machine learning tradition "
-        "(e.g., Chapter 28 in Murphy, 2012; Deng and Li, 2013), it may be natural "
-        "to just classify deep learning techniques into deep discriminative models "
-        "(e.g., DNNs) and deep probabilistic generative models (e.g., DBN, Deep "
-        "Boltzmann Machine (DBM))."
-    )
+    assert "Deep learning is part of a broader family" in output[0].page_content
 
-    # finally do a similarity search to see if all works okay
-    output = docsearch.similarity_search(
+    # another similarity search, this time with n_sentences_before/after = 1
+    output = vectara2.similarity_search(
         "By the commonly adopted machine learning tradition",
         k=1,
-        n_sentence_context=1,
+        n_sentence_before=1,
+        n_sentence_after=1,
         filter="doc.test_num = 2",
     )
-    assert output[0].page_content == (
-        """\
-Note the use of “hybrid” in 3) above is different from that used sometimes in the literature, \
-which for example refers to the hybrid systems for speech recognition feeding the output probabilities of a neural network into an HMM \
-(Bengio et al., 1991; Bourlard and Morgan, 1993; Morgan, 2012). \
-By the commonly adopted machine learning tradition (e.g., Chapter 28 in Murphy, 2012; Deng and Li, 2013), \
-it may be natural to just classify deep learning techniques into deep discriminative models (e.g., DNNs) \
-and deep probabilistic generative models (e.g., DBN, Deep Boltzmann Machine (DBM)). \
-This classification scheme, however, misses a key insight gained in deep learning research about how generative \
-models can greatly improve the training of DNNs and other deep discriminative models via better regularization.\
-"""  # noqa: E501
-    )
-
-    for doc_id in doc_ids:
-        docsearch._delete_doc(doc_id)
+    assert "Deep learning is part of a broader family" in output[0].page_content
 
 
 @pytest.fixture(scope="function")
@@ -206,8 +192,7 @@ def vectara3():  # type: ignore[no-untyped-def]
     yield vectara3
 
     # Tear down code
-    for doc_id in doc_ids:
-        vectara3._delete_doc(doc_id)
+    vectara3.delete(doc_ids)
 
 
 def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
@@ -217,28 +202,22 @@ def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
         k=2,
         fetch_k=6,
         lambda_mult=1.0,  # no diversity bias
-        n_sentence_context=0,
+        n_sentence_before=0,
+        n_sentence_after=0,
     )
     assert len(output1) == 2
-    assert "Generative AI promises to revolutionize how" in output1[0].page_content
-    assert (
-        "This is why today we're adding a fundamental capability"
-        in output1[1].page_content
-    )
+    assert "Generative AI promises to revolutionize how you can benefit from your data" in output1[1].page_content
 
     output2 = vectara3.max_marginal_relevance_search(
         "generative AI",
         k=2,
         fetch_k=6,
         lambda_mult=0.0,  # only diversity bias
-        n_sentence_context=0,
+        n_sentence_before=0,
+        n_sentence_after=0,
     )
     assert len(output2) == 2
-    assert "Generative AI promises to revolutionize how" in output2[0].page_content
-    assert (
-        "Neural LLM systems are excellent at understanding the context"
-        in output2[1].page_content
-    )
+    assert "You can try it out on your own on our newly launched AskNews demo" in output2[1].page_content
 
 
 def test_vectara_with_summary(vectara3) -> None:  # type: ignore[no-untyped-def]
