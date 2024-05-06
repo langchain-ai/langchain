@@ -12,7 +12,7 @@ from typing import (
 
 from typing_extensions import NotRequired
 
-from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
+from langchain_core.pydantic_v1 import BaseModel
 
 
 class BaseSerialized(TypedDict):
@@ -113,12 +113,6 @@ class Serializable(BaseModel, ABC):
             for k, v in super().__repr_args__()
             if (k not in self.__fields__ or try_neq_default(v, k, self))
         ]
-
-    _lc_kwargs = PrivateAttr(default_factory=dict)
-
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self._lc_kwargs = kwargs
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         if not self.is_lc_serializable():
