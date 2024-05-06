@@ -1,15 +1,46 @@
 """**Graphs** provide a natural language interface to graph databases."""
+from typing import TYPE_CHECKING, Any
 
-from langchain.graphs.arangodb_graph import ArangoGraph
-from langchain.graphs.falkordb_graph import FalkorDBGraph
-from langchain.graphs.hugegraph import HugeGraph
-from langchain.graphs.kuzu_graph import KuzuGraph
-from langchain.graphs.memgraph_graph import MemgraphGraph
-from langchain.graphs.nebula_graph import NebulaGraph
-from langchain.graphs.neo4j_graph import Neo4jGraph
-from langchain.graphs.neptune_graph import NeptuneGraph
-from langchain.graphs.networkx_graph import NetworkxEntityGraph
-from langchain.graphs.rdf_graph import RdfGraph
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.graphs import (
+        ArangoGraph,
+        FalkorDBGraph,
+        HugeGraph,
+        KuzuGraph,
+        MemgraphGraph,
+        NebulaGraph,
+        Neo4jGraph,
+        NeptuneGraph,
+        NetworkxEntityGraph,
+        RdfGraph,
+    )
+
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "MemgraphGraph": "langchain_community.graphs",
+    "NetworkxEntityGraph": "langchain_community.graphs",
+    "Neo4jGraph": "langchain_community.graphs",
+    "NebulaGraph": "langchain_community.graphs",
+    "NeptuneGraph": "langchain_community.graphs",
+    "KuzuGraph": "langchain_community.graphs",
+    "HugeGraph": "langchain_community.graphs",
+    "RdfGraph": "langchain_community.graphs",
+    "ArangoGraph": "langchain_community.graphs",
+    "FalkorDBGraph": "langchain_community.graphs",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
 
 __all__ = [
     "MemgraphGraph",

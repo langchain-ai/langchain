@@ -2,19 +2,20 @@ from __future__ import annotations
 
 from typing import Any, List
 
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.output_parsers.json import parse_and_check_json_markdown
+from langchain_core.pydantic_v1 import BaseModel
+
 from langchain.output_parsers.format_instructions import (
     STRUCTURED_FORMAT_INSTRUCTIONS,
     STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS,
 )
-from langchain.output_parsers.json import parse_and_check_json_markdown
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BaseOutputParser
 
 line_template = '\t"{name}": {type}  // {description}'
 
 
 class ResponseSchema(BaseModel):
-    """A schema for a response from a structured output parser."""
+    """Schema for a response from a structured output parser."""
 
     name: str
     """The name of the schema."""
@@ -66,7 +67,7 @@ class StructuredOutputParser(BaseOutputParser):
 
         parser = StructuredOutputParser.from_response_schemas(response_schemas)
 
-        print(parser.get_format_instructions())
+        print(parser.get_format_instructions())  # noqa: T201
 
         output:
         # The output should be a Markdown code snippet formatted in the following

@@ -1,13 +1,15 @@
 """Evaluators for parsing strings."""
+import json
 from operator import eq
 from typing import Any, Callable, Optional, Union, cast
 
+from langchain_core.utils.json import parse_json_markdown
+
 from langchain.evaluation.schema import StringEvaluator
-from langchain.output_parsers.json import parse_json_markdown
 
 
 class JsonValidityEvaluator(StringEvaluator):
-    """Evaluates whether the prediction is valid JSON.
+    """Evaluate whether the prediction is valid JSON.
 
     This evaluator checks if the prediction is a valid JSON string. It does not
         require any input or reference.
@@ -68,14 +70,14 @@ class JsonValidityEvaluator(StringEvaluator):
 
         """
         try:
-            parse_json_markdown(prediction)
+            parse_json_markdown(prediction, parser=json.loads)
             return {"score": 1}
         except Exception as e:
             return {"score": 0, "reasoning": str(e)}
 
 
 class JsonEqualityEvaluator(StringEvaluator):
-    """Evaluates whether the prediction is equal to the reference after
+    """Evaluate whether the prediction is equal to the reference after
         parsing both as JSON.
 
     This evaluator checks if the prediction, after parsing as JSON, is equal

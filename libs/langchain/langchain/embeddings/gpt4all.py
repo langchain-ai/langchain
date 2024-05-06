@@ -1,60 +1,23 @@
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
-from langchain.pydantic_v1 import BaseModel, root_validator
-from langchain.schema.embeddings import Embeddings
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.embeddings import GPT4AllEmbeddings
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"GPT4AllEmbeddings": "langchain_community.embeddings"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GPT4AllEmbeddings(BaseModel, Embeddings):
-    """GPT4All embedding models.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    To use, you should have the gpt4all python package installed
 
-    Example:
-        .. code-block:: python
-
-            from langchain.embeddings import GPT4AllEmbeddings
-
-            embeddings = GPT4AllEmbeddings()
-    """
-
-    client: Any  #: :meta private:
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that GPT4All library is installed."""
-
-        try:
-            from gpt4all import Embed4All
-
-            values["client"] = Embed4All()
-        except ImportError:
-            raise ImportError(
-                "Could not import gpt4all library. "
-                "Please install the gpt4all library to "
-                "use this embedding model: pip install gpt4all"
-            )
-        return values
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed a list of documents using GPT4All.
-
-        Args:
-            texts: The list of texts to embed.
-
-        Returns:
-            List of embeddings, one for each text.
-        """
-
-        embeddings = [self.client.embed(text) for text in texts]
-        return [list(map(float, e)) for e in embeddings]
-
-    def embed_query(self, text: str) -> List[float]:
-        """Embed a query using GPT4All.
-
-        Args:
-            text: The text to embed.
-
-        Returns:
-            Embeddings for the text.
-        """
-        return self.embed_documents([text])[0]
+__all__ = [
+    "GPT4AllEmbeddings",
+]

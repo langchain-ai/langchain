@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "vertexai-chuck-norris"
+version = "0.0.1"
+description = "This template makes jokes about Chuck Norris using Vertex AI PaLM2"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+google-cloud-aiplatform = "^1.36.4"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "vertexai_chuck_norris.chain"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "chatbot"
+author = "LangChain"
+integrations = ["Google"]
+tags = ["conversation"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

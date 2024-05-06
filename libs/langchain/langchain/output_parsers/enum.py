@@ -1,8 +1,9 @@
 from enum import Enum
 from typing import Any, Dict, List, Type
 
-from langchain.pydantic_v1 import root_validator
-from langchain.schema import BaseOutputParser, OutputParserException
+from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.pydantic_v1 import root_validator
 
 
 class EnumOutputParser(BaseOutputParser):

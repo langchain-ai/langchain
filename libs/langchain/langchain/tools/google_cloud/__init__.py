@@ -1,5 +1,24 @@
 """Google Cloud Tools."""
+from typing import TYPE_CHECKING, Any
 
-from langchain.tools.google_cloud.texttospeech import GoogleCloudTextToSpeechTool
+from langchain._api import create_importer
 
-__all__ = ["GoogleCloudTextToSpeechTool"]
+if TYPE_CHECKING:
+    from langchain_community.tools import GoogleCloudTextToSpeechTool
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"GoogleCloudTextToSpeechTool": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "GoogleCloudTextToSpeechTool",
+]

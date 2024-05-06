@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Tuple
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,
@@ -31,6 +31,7 @@ class QdrantTranslator(Visitor):
         Comparator.LTE,
         Comparator.GT,
         Comparator.GTE,
+        Comparator.LIKE,
     )
     """Subset of allowed logical comparators."""
 
@@ -68,6 +69,10 @@ class QdrantTranslator(Visitor):
         if comparison.comparator == Comparator.EQ:
             return rest.FieldCondition(
                 key=attribute, match=rest.MatchValue(value=comparison.value)
+            )
+        if comparison.comparator == Comparator.LIKE:
+            return rest.FieldCondition(
+                key=attribute, match=rest.MatchText(text=comparison.value)
             )
         kwargs = {comparison.comparator.value: comparison.value}
         return rest.FieldCondition(key=attribute, range=rest.Range(**kwargs))

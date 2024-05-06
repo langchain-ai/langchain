@@ -2,11 +2,12 @@
 
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Field
+from langchain_core.vectorstores import VectorStoreRetriever
+
 from langchain.memory.chat_memory import BaseMemory
 from langchain.memory.utils import get_prompt_input_key
-from langchain.pydantic_v1 import Field
-from langchain.schema import Document
-from langchain.schema.vectorstore import VectorStoreRetriever
 
 
 class VectorStoreRetrieverMemory(BaseMemory):
@@ -38,19 +39,33 @@ class VectorStoreRetrieverMemory(BaseMemory):
             return get_prompt_input_key(inputs, self.memory_variables)
         return self.input_key
 
-    def load_memory_variables(
-        self, inputs: Dict[str, Any]
+    def _documents_to_memory_variables(
+        self, docs: List[Document]
     ) -> Dict[str, Union[List[Document], str]]:
-        """Return history buffer."""
-        input_key = self._get_prompt_input_key(inputs)
-        query = inputs[input_key]
-        docs = self.retriever.get_relevant_documents(query)
         result: Union[List[Document], str]
         if not self.return_docs:
             result = "\n".join([doc.page_content for doc in docs])
         else:
             result = docs
         return {self.memory_key: result}
+
+    def load_memory_variables(
+        self, inputs: Dict[str, Any]
+    ) -> Dict[str, Union[List[Document], str]]:
+        """Return history buffer."""
+        input_key = self._get_prompt_input_key(inputs)
+        query = inputs[input_key]
+        docs = self.retriever.invoke(query)
+        return self._documents_to_memory_variables(docs)
+
+    async def aload_memory_variables(
+        self, inputs: Dict[str, Any]
+    ) -> Dict[str, Union[List[Document], str]]:
+        """Return history buffer."""
+        input_key = self._get_prompt_input_key(inputs)
+        query = inputs[input_key]
+        docs = await self.retriever.ainvoke(query)
+        return self._documents_to_memory_variables(docs)
 
     def _form_documents(
         self, inputs: Dict[str, Any], outputs: Dict[str, str]
@@ -72,5 +87,15 @@ class VectorStoreRetrieverMemory(BaseMemory):
         documents = self._form_documents(inputs, outputs)
         self.retriever.add_documents(documents)
 
+    async def asave_context(
+        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+    ) -> None:
+        """Save context from this conversation to buffer."""
+        documents = self._form_documents(inputs, outputs)
+        await self.retriever.aadd_documents(documents)
+
     def clear(self) -> None:
+        """Nothing to clear."""
+
+    async def aclear(self) -> None:
         """Nothing to clear."""

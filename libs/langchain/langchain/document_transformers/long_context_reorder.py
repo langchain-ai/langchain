@@ -1,43 +1,23 @@
-"""Reorder documents"""
-from typing import Any, List, Sequence
+from typing import TYPE_CHECKING, Any
 
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema import BaseDocumentTransformer, Document
+from langchain._api import create_importer
 
+if TYPE_CHECKING:
+    from langchain_community.document_transformers import LongContextReorder
 
-def _litm_reordering(documents: List[Document]) -> List[Document]:
-    """Lost in the middle reorder: the less relevant documents will be at the
-    middle of the list and more relevant elements at beginning / end.
-    See: https://arxiv.org/abs//2307.03172"""
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"LongContextReorder": "langchain_community.document_transformers"}
 
-    documents.reverse()
-    reordered_result = []
-    for i, value in enumerate(documents):
-        if i % 2 == 1:
-            reordered_result.append(value)
-        else:
-            reordered_result.insert(0, value)
-    return reordered_result
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class LongContextReorder(BaseDocumentTransformer, BaseModel):
-    """Lost in the middle:
-    Performance degrades when models must access relevant information
-    in the middle of long contexts.
-    See: https://arxiv.org/abs//2307.03172"""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    class Config:
-        """Configuration for this pydantic object."""
 
-        arbitrary_types_allowed = True
-
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Reorders documents."""
-        return _litm_reordering(list(documents))
-
-    async def atransform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        raise NotImplementedError
+__all__ = [
+    "LongContextReorder",
+]

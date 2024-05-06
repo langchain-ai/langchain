@@ -9,13 +9,13 @@ from typing import (
     Tuple,
 )
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
 )
-from langchain.schema.messages import (
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     ChatMessage,
@@ -76,6 +76,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatLlamaAPI(BaseChatModel):
+    """Chat model using the Llama API."""
+
     client: Any  #: :meta private:
 
     def _generate(

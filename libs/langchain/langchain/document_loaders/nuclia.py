@@ -1,32 +1,23 @@
-import json
-import uuid
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.tools.nuclia.tool import NucliaUnderstandingAPI
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders.nuclia import NucliaLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"NucliaLoader": "langchain_community.document_loaders.nuclia"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class NucliaLoader(BaseLoader):
-    """Load from any file type using `Nuclia Understanding API`."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, path: str, nuclia_tool: NucliaUnderstandingAPI):
-        self.nua = nuclia_tool
-        self.id = str(uuid.uuid4())
-        self.nua.run({"action": "push", "id": self.id, "path": path, "text": None})
 
-    def load(self) -> List[Document]:
-        """Load documents."""
-        data = self.nua.run(
-            {"action": "pull", "id": self.id, "path": None, "text": None}
-        )
-        if not data:
-            return []
-        obj = json.loads(data)
-        text = obj["extracted_text"][0]["body"]["text"]
-        print(text)
-        metadata = {
-            "file": obj["file_extracted_data"][0],
-            "metadata": obj["field_metadata"][0],
-        }
-        return [Document(page_content=text, metadata=metadata)]
+__all__ = [
+    "NucliaLoader",
+]

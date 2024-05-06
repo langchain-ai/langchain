@@ -1,21 +1,10 @@
 """Test formatting functionality."""
-import unittest
 from typing import Union
 
 import pytest
-
-from langchain.prompts.base import StringPromptValue
-from langchain.prompts.chat import ChatPromptValueConcrete
-from langchain.pydantic_v1 import BaseModel, ValidationError
-from langchain.schema import (
-    AgentAction,
-    AgentFinish,
-    ChatGeneration,
-    Document,
-    Generation,
-)
-from langchain.schema.agent import AgentActionMessageLog
-from langchain.schema.messages import (
+from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
+from langchain_core.documents import Document
+from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,
@@ -26,71 +15,10 @@ from langchain.schema.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    get_buffer_string,
-    messages_from_dict,
-    messages_to_dict,
 )
-from langchain.schema.output import ChatGenerationChunk
-
-
-class TestGetBufferString(unittest.TestCase):
-    def setUp(self) -> None:
-        self.human_msg = HumanMessage(content="human")
-        self.ai_msg = AIMessage(content="ai")
-        self.sys_msg = SystemMessage(content="sys")
-
-    def test_empty_input(self) -> None:
-        self.assertEqual(get_buffer_string([]), "")
-
-    def test_valid_single_message(self) -> None:
-        expected_output = f"Human: {self.human_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.human_msg]),
-            expected_output,
-        )
-
-    def test_custom_human_prefix(self) -> None:
-        prefix = "H"
-        expected_output = f"{prefix}: {self.human_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.human_msg], human_prefix="H"),
-            expected_output,
-        )
-
-    def test_custom_ai_prefix(self) -> None:
-        prefix = "A"
-        expected_output = f"{prefix}: {self.ai_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.ai_msg], ai_prefix="A"),
-            expected_output,
-        )
-
-    def test_multiple_msg(self) -> None:
-        msgs = [self.human_msg, self.ai_msg, self.sys_msg]
-        expected_output = "\n".join(
-            [
-                f"Human: {self.human_msg.content}",
-                f"AI: {self.ai_msg.content}",
-                f"System: {self.sys_msg.content}",
-            ]
-        )
-        self.assertEqual(
-            get_buffer_string(msgs),
-            expected_output,
-        )
-
-
-def test_multiple_msg() -> None:
-    human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
-    ai_msg = AIMessage(content="ai")
-    sys_msg = SystemMessage(content="sys")
-
-    msgs = [
-        human_msg,
-        ai_msg,
-        sys_msg,
-    ]
-    assert messages_from_dict(messages_to_dict(msgs)) == msgs
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, Generation
+from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
+from langchain_core.pydantic_v1 import BaseModel, ValidationError
 
 
 def test_serialization_of_wellknown_objects() -> None:

@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "rag-momento-vector-index"
+version = "0.0.1"
+description = "RAG on momento vectorDB"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+momento = "^1.12.0"
+openai = "<2"
+tiktoken = "^0.5.1"
+langchain-text-splitters = ">=0.0.1,<0.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.poetry.group.index.dependencies]
+bs4 = "^0.0.1"
+
+[tool.poetry.group.test.dependencies]
+langserve = "^0.0.21"
+
+[tool.langserve]
+export_module = "rag_momento_vector_index"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI", "Momento"]
+tags = ["vectordbs"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

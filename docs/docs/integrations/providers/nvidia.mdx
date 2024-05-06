@@ -1,0 +1,63 @@
+# NVIDIA
+
+>NVIDIA provides an integration package for LangChain: `langchain-nvidia-ai-endpoints`.
+
+## NVIDIA AI Foundation Endpoints
+
+> [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to NVIDIA hosted API endpoints for 
+> NVIDIA AI Foundation Models like `Mixtral 8x7B`, `Llama 2`, `Stable Diffusion`, etc. These models, 
+> hosted on the [NVIDIA API catalog](https://build.nvidia.com/), are optimized, tested, and hosted on 
+> the NVIDIA AI platform, making them fast and easy to evaluate, further customize, 
+> and seamlessly run at peak performance on any accelerated stack.
+> 
+> With [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/), you can get quick results from a fully 
+> accelerated stack running on [NVIDIA DGX Cloud](https://www.nvidia.com/en-us/data-center/dgx-cloud/). Once customized, these 
+> models can be deployed anywhere with enterprise-grade security, stability, 
+> and support using [NVIDIA AI Enterprise](https://www.nvidia.com/en-us/data-center/products/ai-enterprise/).
+
+A selection of NVIDIA AI Foundation models is supported directly in LangChain with familiar APIs.
+
+The supported models can be found [in build.nvidia.com](https://build.nvidia.com/).
+
+These models can be accessed via the [`langchain-nvidia-ai-endpoints`](https://pypi.org/project/langchain-nvidia-ai-endpoints/) 
+package, as shown below.
+
+### Setting up
+
+1. Create a free account with [NVIDIA](https://build.nvidia.com/), which hosts NVIDIA AI Foundation models
+
+2. Click on your model of choice
+
+3. Under `Input` select the `Python` tab, and click `Get API Key`. Then click `Generate Key`.
+
+4. Copy and save the generated key as `NVIDIA_API_KEY`. From there, you should have access to the endpoints.
+
+```bash
+export NVIDIA_API_KEY=nvapi-XXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+- Install a package:
+
+```bash
+pip install -U langchain-nvidia-ai-endpoints
+```
+
+### Chat models
+
+See a [usage example](/docs/integrations/chat/nvidia_ai_endpoints).
+
+```python
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
+
+llm = ChatNVIDIA(model="mixtral_8x7b")
+result = llm.invoke("Write a ballad about LangChain.")
+print(result.content)
+```
+
+### Embedding models
+
+See a [usage example](/docs/integrations/text_embedding/nvidia_ai_endpoints).
+
+```python
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
+```

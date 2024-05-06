@@ -1,32 +1,23 @@
-"""
-This tool allows agents to interact with the python-gitlab library
-and operate on a GitLab repository.
+from typing import TYPE_CHECKING, Any
 
-To use this tool, you must first set as environment variables:
-    GITLAB_PRIVATE_ACCESS_TOKEN
-    GITLAB_REPOSITORY -> format: {owner}/{repo}
+from langchain._api import create_importer
 
-"""
-from typing import Optional
+if TYPE_CHECKING:
+    from langchain_community.tools.gitlab.tool import GitLabAction
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import Field
-from langchain.tools.base import BaseTool
-from langchain.utilities.gitlab import GitLabAPIWrapper
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"GitLabAction": "langchain_community.tools.gitlab.tool"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GitLabAction(BaseTool):
-    """Tool for interacting with the GitLab API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    api_wrapper: GitLabAPIWrapper = Field(default_factory=GitLabAPIWrapper)
-    mode: str
-    name: str = ""
-    description: str = ""
 
-    def _run(
-        self,
-        instructions: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the GitLab API to run an operation."""
-        return self.api_wrapper.run(self.mode, instructions)
+__all__ = [
+    "GitLabAction",
+]

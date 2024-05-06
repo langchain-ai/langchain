@@ -1,4 +1,4 @@
-# __package_name_last__
+# __package_name__
 
 TODO: What does this package do
 
@@ -11,7 +11,7 @@ TODO: What environment variables need to be set (if any)
 To use this package, you should first have the LangChain CLI installed:
 
 ```shell
-pip install -U "langchain-cli[serve]"
+pip install -U langchain-cli
 ```
 
 To create a new LangChain project and install this as the only package, you can do:
@@ -33,7 +33,7 @@ __app_route_code__
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

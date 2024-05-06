@@ -1,50 +1,28 @@
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools.base import BaseTool
-from langchain.tools.file_management.utils import (
-    INVALID_PATH_TEMPLATE,
-    BaseFileToolMixin,
-    FileValidationError,
-)
+from langchain._api import create_importer
 
+if TYPE_CHECKING:
+    from langchain_community.tools import WriteFileTool
+    from langchain_community.tools.file_management.write import WriteFileInput
 
-class WriteFileInput(BaseModel):
-    """Input for WriteFileTool."""
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "WriteFileInput": "langchain_community.tools.file_management.write",
+    "WriteFileTool": "langchain_community.tools",
+}
 
-    file_path: str = Field(..., description="name of file")
-    text: str = Field(..., description="text to write to file")
-    append: bool = Field(
-        default=False, description="Whether to append to an existing file."
-    )
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class WriteFileTool(BaseFileToolMixin, BaseTool):
-    """Tool that writes a file to disk."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "write_file"
-    args_schema: Type[BaseModel] = WriteFileInput
-    description: str = "Write file to disk"
 
-    def _run(
-        self,
-        file_path: str,
-        text: str,
-        append: bool = False,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        try:
-            write_path = self.get_relative_path(file_path)
-        except FileValidationError:
-            return INVALID_PATH_TEMPLATE.format(arg_name="file_path", value=file_path)
-        try:
-            write_path.parent.mkdir(exist_ok=True, parents=False)
-            mode = "a" if append else "w"
-            with write_path.open(mode, encoding="utf-8") as f:
-                f.write(text)
-            return f"File written successfully to {file_path}."
-        except Exception as e:
-            return "Error: " + str(e)
-
-    # TODO: Add aiofiles method
+__all__ = [
+    "WriteFileInput",
+    "WriteFileTool",
+]

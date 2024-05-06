@@ -1,39 +1,23 @@
-from typing import Iterator, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.utilities.pubmed import PubMedAPIWrapper
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import PubMedLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"PubMedLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class PubMedLoader(BaseLoader):
-    """Load from the `PubMed` biomedical library.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    Attributes:
-        query: The query to be passed to the PubMed API.
-        load_max_docs: The maximum number of documents to load.
-    """
 
-    def __init__(
-        self,
-        query: str,
-        load_max_docs: Optional[int] = 3,
-    ):
-        """Initialize the PubMedLoader.
-
-        Args:
-            query: The query to be passed to the PubMed API.
-            load_max_docs: The maximum number of documents to load.
-              Defaults to 3.
-        """
-        self.query = query
-        self.load_max_docs = load_max_docs
-        self._client = PubMedAPIWrapper(
-            top_k_results=load_max_docs,
-        )
-
-    def load(self) -> List[Document]:
-        return list(self._client.lazy_load_docs(self.query))
-
-    def lazy_load(self) -> Iterator[Document]:
-        for doc in self._client.lazy_load_docs(self.query):
-            yield doc
+__all__ = [
+    "PubMedLoader",
+]

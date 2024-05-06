@@ -1,37 +1,23 @@
-from typing import Any, List
+from typing import TYPE_CHECKING, Any
 
-from langchain.document_loaders.unstructured import (
-    UnstructuredFileLoader,
-    validate_unstructured_version,
-)
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import UnstructuredTSVLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"UnstructuredTSVLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class UnstructuredTSVLoader(UnstructuredFileLoader):
-    """Load `TSV` files using `Unstructured`.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    Like other
-    Unstructured loaders, UnstructuredTSVLoader can be used in both
-    "single" and "elements" mode. If you use the loader in "elements"
-    mode, the TSV file will be a single Unstructured Table element.
-    If you use the loader in "elements" mode, an HTML representation
-    of the table will be available in the "text_as_html" key in the
-    document metadata.
 
-    Examples
-    --------
-    from langchain.document_loaders.tsv import UnstructuredTSVLoader
-
-    loader = UnstructuredTSVLoader("stanley-cups.tsv", mode="elements")
-    docs = loader.load()
-    """
-
-    def __init__(
-        self, file_path: str, mode: str = "single", **unstructured_kwargs: Any
-    ):
-        validate_unstructured_version(min_unstructured_version="0.7.6")
-        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
-
-    def _get_elements(self) -> List:
-        from unstructured.partition.tsv import partition_tsv
-
-        return partition_tsv(filename=self.file_path, **self.unstructured_kwargs)
+__all__ = [
+    "UnstructuredTSVLoader",
+]

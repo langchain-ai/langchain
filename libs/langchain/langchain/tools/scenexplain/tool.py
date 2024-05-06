@@ -1,31 +1,28 @@
-"""Tool for the SceneXplain API."""
-from typing import Optional
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools.base import BaseTool
-from langchain.utilities.scenexplain import SceneXplainAPIWrapper
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.tools import SceneXplainTool
+    from langchain_community.tools.scenexplain.tool import SceneXplainInput
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "SceneXplainInput": "langchain_community.tools.scenexplain.tool",
+    "SceneXplainTool": "langchain_community.tools",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class SceneXplainInput(BaseModel):
-    """Input for SceneXplain."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    query: str = Field(..., description="The link to the image to explain")
 
-
-class SceneXplainTool(BaseTool):
-    """Tool that explains images."""
-
-    name: str = "image_explainer"
-    description: str = (
-        "An Image Captioning Tool: Use this tool to generate a detailed caption "
-        "for an image. The input can be an image file of any format, and "
-        "the output will be a text description that covers every detail of the image."
-    )
-    api_wrapper: SceneXplainAPIWrapper = Field(default_factory=SceneXplainAPIWrapper)
-
-    def _run(
-        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
-    ) -> str:
-        """Use the tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "SceneXplainInput",
+    "SceneXplainTool",
+]

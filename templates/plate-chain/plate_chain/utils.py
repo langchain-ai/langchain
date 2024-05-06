@@ -1,6 +1,6 @@
 import json
 
-from pydantic import BaseModel, Field, conint
+from langchain_core.pydantic_v1 import BaseModel, Field, conint
 
 
 class LLMPlateResponse(BaseModel):

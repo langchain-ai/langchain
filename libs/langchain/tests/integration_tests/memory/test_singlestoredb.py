@@ -1,7 +1,8 @@
 import json
 
+from langchain_core.messages import message_to_dict
+
 from langchain.memory import ConversationBufferMemory, SingleStoreDBChatMessageHistory
-from langchain.schema.messages import _message_to_dict
 
 # Replace these with your mongodb connection string
 TEST_SINGLESTOREDB_URL = "root:pass@localhost:3306/db"
@@ -24,7 +25,7 @@ def test_memory_with_message_store() -> None:
 
     # get the message history from the memory store and turn it into a json
     messages = memory.chat_memory.messages
-    messages_json = json.dumps([_message_to_dict(msg) for msg in messages])
+    messages_json = json.dumps([message_to_dict(msg) for msg in messages])
 
     assert "This is me, the AI" in messages_json
     assert "This is me, the human" in messages_json

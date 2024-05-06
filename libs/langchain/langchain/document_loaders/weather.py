@@ -1,50 +1,23 @@
-"""Simple reader that reads weather data from OpenWeatherMap API"""
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from datetime import datetime
-from typing import Iterator, List, Optional, Sequence
+from langchain._api import create_importer
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import WeatherDataLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"WeatherDataLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class WeatherDataLoader(BaseLoader):
-    """Load weather data with `Open Weather Map` API.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    Reads the forecast & current weather of any location using OpenWeatherMap's free
-    API. Checkout 'https://openweathermap.org/appid' for more on how to generate a free
-    OpenWeatherMap API.
-    """
 
-    def __init__(
-        self,
-        client: OpenWeatherMapAPIWrapper,
-        places: Sequence[str],
-    ) -> None:
-        """Initialize with parameters."""
-        super().__init__()
-        self.client = client
-        self.places = places
-
-    @classmethod
-    def from_params(
-        cls, places: Sequence[str], *, openweathermap_api_key: Optional[str] = None
-    ) -> WeatherDataLoader:
-        client = OpenWeatherMapAPIWrapper(openweathermap_api_key=openweathermap_api_key)
-        return cls(client, places)
-
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
-        """Lazily load weather data for the given locations."""
-        for place in self.places:
-            metadata = {"queried_at": datetime.now()}
-            content = self.client.run(place)
-            yield Document(page_content=content, metadata=metadata)
-
-    def load(
-        self,
-    ) -> List[Document]:
-        """Load weather data for the given locations."""
-        return list(self.lazy_load())
+__all__ = [
+    "WeatherDataLoader",
+]

@@ -1,56 +1,23 @@
-from typing import List, Optional
+from typing import TYPE_CHECKING, Any
 
-import aiohttp
-import requests
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
-from langchain.schema import BaseRetriever, Document
+if TYPE_CHECKING:
+    from langchain_community.retrievers import RemoteLangChainRetriever
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"RemoteLangChainRetriever": "langchain_community.retrievers"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class RemoteLangChainRetriever(BaseRetriever):
-    """`LangChain API` retriever."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    url: str
-    """URL of the remote LangChain API."""
-    headers: Optional[dict] = None
-    """Headers to use for the request."""
-    input_key: str = "message"
-    """Key to use for the input in the request."""
-    response_key: str = "response"
-    """Key to use for the response in the request."""
-    page_content_key: str = "page_content"
-    """Key to use for the page content in the response."""
-    metadata_key: str = "metadata"
-    """Key to use for the metadata in the response."""
 
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        response = requests.post(
-            self.url, json={self.input_key: query}, headers=self.headers
-        )
-        result = response.json()
-        return [
-            Document(
-                page_content=r[self.page_content_key], metadata=r[self.metadata_key]
-            )
-            for r in result[self.response_key]
-        ]
-
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        async with aiohttp.ClientSession() as session:
-            async with session.request(
-                "POST", self.url, headers=self.headers, json={self.input_key: query}
-            ) as response:
-                result = await response.json()
-        return [
-            Document(
-                page_content=r[self.page_content_key], metadata=r[self.metadata_key]
-            )
-            for r in result[self.response_key]
-        ]
+__all__ = [
+    "RemoteLangChainRetriever",
+]

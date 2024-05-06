@@ -1,11 +1,35 @@
 """Gmail tools."""
+from typing import TYPE_CHECKING, Any
 
-from langchain.tools.gmail.create_draft import GmailCreateDraft
-from langchain.tools.gmail.get_message import GmailGetMessage
-from langchain.tools.gmail.get_thread import GmailGetThread
-from langchain.tools.gmail.search import GmailSearch
-from langchain.tools.gmail.send_message import GmailSendMessage
-from langchain.tools.gmail.utils import get_gmail_credentials
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.tools import (
+        GmailCreateDraft,
+        GmailGetMessage,
+        GmailGetThread,
+        GmailSearch,
+        GmailSendMessage,
+    )
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "GmailCreateDraft": "langchain_community.tools",
+    "GmailSendMessage": "langchain_community.tools",
+    "GmailSearch": "langchain_community.tools",
+    "GmailGetMessage": "langchain_community.tools",
+    "GmailGetThread": "langchain_community.tools",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
 
 __all__ = [
     "GmailCreateDraft",
@@ -13,5 +37,4 @@ __all__ = [
     "GmailSearch",
     "GmailGetMessage",
     "GmailGetThread",
-    "get_gmail_credentials",
 ]

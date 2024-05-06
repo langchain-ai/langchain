@@ -11,10 +11,10 @@ from datetime import timedelta
 from typing import Iterator
 
 import pytest
+from langchain_core.outputs import Generation, LLMResult
 
 from langchain.cache import MomentoCache
 from langchain.globals import set_llm_cache
-from langchain.schema import Generation, LLMResult
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

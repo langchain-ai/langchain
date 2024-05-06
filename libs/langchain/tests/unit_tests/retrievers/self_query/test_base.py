@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Tuple, Union
 
 import pytest
-
-from langchain.callbacks.manager import (
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
-from langchain.chains.query_constructor.ir import (
+from langchain_core.documents import Document
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,
@@ -14,9 +14,9 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers import SelfQueryRetriever
-from langchain.schema import Document
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -130,7 +130,6 @@ def test__get_relevant_documents(fake_self_query_retriever: SelfQueryRetriever) 
     assert relevant_documents[0].metadata["foo"] == "bar"
 
 
-@pytest.mark.asyncio
 async def test__aget_relevant_documents(
     fake_self_query_retriever: SelfQueryRetriever,
 ) -> None:

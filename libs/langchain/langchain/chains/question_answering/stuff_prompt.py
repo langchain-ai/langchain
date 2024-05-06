@@ -1,7 +1,7 @@
 # flake8: noqa
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.prompts import PromptTemplate
-from langchain.prompts.chat import (
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,

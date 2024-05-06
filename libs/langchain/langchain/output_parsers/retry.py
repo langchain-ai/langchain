@@ -2,14 +2,11 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import (
-    BaseOutputParser,
-    BasePromptTemplate,
-    OutputParserException,
-    PromptValue,
-)
-from langchain.schema.language_model import BaseLanguageModel
+from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompt_values import PromptValue
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}
@@ -37,7 +34,7 @@ T = TypeVar("T")
 
 
 class RetryOutputParser(BaseOutputParser[T]):
-    """Wraps a parser and tries to fix parsing errors.
+    """Wrap a parser and try to fix parsing errors.
 
     Does this by passing the original prompt and the completion to another
     LLM, and telling it the completion did not satisfy criteria in the prompt.
@@ -59,7 +56,7 @@ class RetryOutputParser(BaseOutputParser[T]):
         prompt: BasePromptTemplate = NAIVE_RETRY_PROMPT,
         max_retries: int = 1,
     ) -> RetryOutputParser[T]:
-        """Create an OutputFixingParser from a language model and a parser.
+        """Create an RetryOutputParser from a language model and a parser.
 
         Args:
             llm: llm to use for fixing
@@ -141,7 +138,7 @@ class RetryOutputParser(BaseOutputParser[T]):
 
 
 class RetryWithErrorOutputParser(BaseOutputParser[T]):
-    """Wraps a parser and tries to fix parsing errors.
+    """Wrap a parser and try to fix parsing errors.
 
     Does this by passing the original prompt, the completion, AND the error
     that was raised to another language model and telling it that the completion

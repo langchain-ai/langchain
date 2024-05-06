@@ -11,8 +11,8 @@ chain against specified criteria.
 
 Examples
 --------
-Using a pre-defined criterion:
->>> from langchain.llms import OpenAI
+Using a predefined criterion:
+>>> from langchain_community.llms import OpenAI
 >>> from langchain.evaluation.criteria import CriteriaEvalChain
 
 >>> llm = OpenAI()
@@ -26,7 +26,7 @@ Using a pre-defined criterion:
 
 Using a custom criterion:
 
->>> from langchain.llms import OpenAI
+>>> from langchain_community.llms import OpenAI
 >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
 
 >>> llm = OpenAI()

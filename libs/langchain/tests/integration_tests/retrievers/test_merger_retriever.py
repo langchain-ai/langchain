@@ -1,6 +1,7 @@
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+
 from langchain.retrievers.merger_retriever import MergerRetriever
-from langchain.vectorstores import Chroma
 
 
 def test_merger_retriever_get_relevant_docs() -> None:
@@ -26,7 +27,7 @@ def test_merger_retriever_get_relevant_docs() -> None:
     # The Lord of the Retrievers.
     lotr = MergerRetriever(retrievers=[retriever_a, retriever_b])
 
-    actual = lotr.get_relevant_documents("Tell me about the Celtics")
+    actual = lotr.invoke("Tell me about the Celtics")
     assert len(actual) == 2
     assert texts_group_a[0] in [d.page_content for d in actual]
     assert texts_group_b[1] in [d.page_content for d in actual]

@@ -1,0 +1,30 @@
+# Streamlit
+
+>[Streamlit](https://streamlit.io/) is a faster way to build and share data apps.
+>`Streamlit` turns data scripts into shareable web apps in minutes. All in pure Python. No front‑end experience required.
+>See more examples at [streamlit.io/generative-ai](https://streamlit.io/generative-ai).
+
+## Installation and Setup
+
+We need to install the  `streamlit` Python package:
+
+```bash
+pip install streamlit
+```
+
+
+## Memory
+
+See a [usage example](/docs/integrations/memory/streamlit_chat_message_history).
+
+```python
+from langchain_community.chat_message_histories import StreamlitChatMessageHistory
+```
+
+## Callbacks
+
+See a [usage example](/docs/integrations/callbacks/streamlit).
+
+```python
+from langchain_community.callbacks import StreamlitCallbackHandler
+```

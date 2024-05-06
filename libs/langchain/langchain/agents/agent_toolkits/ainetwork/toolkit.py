@@ -1,52 +1,25 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import TYPE_CHECKING, List, Literal, Optional
-
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.pydantic_v1 import root_validator
-from langchain.tools import BaseTool
-from langchain.tools.ainetwork.app import AINAppOps
-from langchain.tools.ainetwork.owner import AINOwnerOps
-from langchain.tools.ainetwork.rule import AINRuleOps
-from langchain.tools.ainetwork.transfer import AINTransfer
-from langchain.tools.ainetwork.utils import authenticate
-from langchain.tools.ainetwork.value import AINValueOps
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from ain.ain import Ain
+    from langchain_community.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "AINetworkToolkit": "langchain_community.agent_toolkits.ainetwork.toolkit"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AINetworkToolkit(BaseToolkit):
-    """Toolkit for interacting with AINetwork Blockchain.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    *Security Note*: This toolkit contains tools that can read and modify
-        the state of a service; e.g., by reading, creating, updating, deleting
-        data associated with this service.
 
-        See https://python.langchain.com/docs/security for more information.
-    """
-
-    network: Optional[Literal["mainnet", "testnet"]] = "testnet"
-    interface: Optional[Ain] = None
-
-    @root_validator(pre=True)
-    def set_interface(cls, values: dict) -> dict:
-        if not values.get("interface"):
-            values["interface"] = authenticate(network=values.get("network", "testnet"))
-        return values
-
-    class Config:
-        """Pydantic config."""
-
-        validate_all = True
-        arbitrary_types_allowed = True
-
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return [
-            AINAppOps(),
-            AINOwnerOps(),
-            AINRuleOps(),
-            AINTransfer(),
-            AINValueOps(),
-        ]
+__all__ = [
+    "AINetworkToolkit",
+]

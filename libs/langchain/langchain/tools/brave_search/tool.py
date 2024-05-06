@@ -1,44 +1,23 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import Any, Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.tools.base import BaseTool
-from langchain.utilities.brave_search import BraveSearchWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import BraveSearch
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"BraveSearch": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class BraveSearch(BaseTool):
-    """Tool that queries the BraveSearch."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    name: str = "brave_search"
-    description: str = (
-        "a search engine. "
-        "useful for when you need to answer questions about current events."
-        " input should be a search query."
-    )
-    search_wrapper: BraveSearchWrapper
 
-    @classmethod
-    def from_api_key(
-        cls, api_key: str, search_kwargs: Optional[dict] = None, **kwargs: Any
-    ) -> BraveSearch:
-        """Create a tool from an api key.
-
-        Args:
-            api_key: The api key to use.
-            search_kwargs: Any additional kwargs to pass to the search wrapper.
-            **kwargs: Any additional kwargs to pass to the tool.
-
-        Returns:
-            A tool.
-        """
-        wrapper = BraveSearchWrapper(api_key=api_key, search_kwargs=search_kwargs or {})
-        return cls(search_wrapper=wrapper, **kwargs)
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return self.search_wrapper.run(query)
+__all__ = [
+    "BraveSearch",
+]

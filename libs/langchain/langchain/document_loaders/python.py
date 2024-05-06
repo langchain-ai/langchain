@@ -1,17 +1,22 @@
-import tokenize
+from typing import TYPE_CHECKING, Any
 
-from langchain.document_loaders.text import TextLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders.python import PythonLoader
 
 
-class PythonLoader(TextLoader):
-    """Load `Python` files, respecting any non-default encoding if specified."""
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"PythonLoader": "langchain_community.document_loaders.python"}
 
-    def __init__(self, file_path: str):
-        """Initialize with a file path.
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
-        Args:
-            file_path: The path to the file to load.
-        """
-        with open(file_path, "rb") as f:
-            encoding, _ = tokenize.detect_encoding(f.readline)
-        super().__init__(file_path=file_path, encoding=encoding)
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = ["PythonLoader"]

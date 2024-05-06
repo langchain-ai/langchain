@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "rag-timescale-hybrid-search-time"
+version = "0.0.1"
+description = "RAG using timescale-vector DB with the self-query retriver for metadata filtering on time"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+timescale-vector = "^0.0.3"
+lark = "^1.1.8"
+tiktoken = "^0.5.1"
+langchain-text-splitters = ">=0.0.1,<0.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "rag_timescale_hybrid_search_time.chain"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Timescale"
+integrations = ["OpenAI", "Timescale"]
+tags = ["vectordbs", "hybrid-search", "timeseries"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

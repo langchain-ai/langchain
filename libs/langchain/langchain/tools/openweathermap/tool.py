@@ -1,29 +1,23 @@
-"""Tool for the OpenWeatherMap API."""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import Field
-from langchain.tools.base import BaseTool
-from langchain.utilities.openweathermap import OpenWeatherMapAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import OpenWeatherMapQueryRun
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"OpenWeatherMapQueryRun": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class OpenWeatherMapQueryRun(BaseTool):
-    """Tool that queries the OpenWeatherMap API."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    api_wrapper: OpenWeatherMapAPIWrapper = Field(
-        default_factory=OpenWeatherMapAPIWrapper
-    )
 
-    name: str = "OpenWeatherMap"
-    description: str = (
-        "A wrapper around OpenWeatherMap API. "
-        "Useful for fetching current weather information for a specified location. "
-        "Input should be a location string (e.g. London,GB)."
-    )
-
-    def _run(
-        self, location: str, run_manager: Optional[CallbackManagerForToolRun] = None
-    ) -> str:
-        """Use the OpenWeatherMap tool."""
-        return self.api_wrapper.run(location)
+__all__ = [
+    "OpenWeatherMapQueryRun",
+]

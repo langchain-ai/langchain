@@ -5,7 +5,7 @@ be they LLMs, Chains, or otherwise. This can be based on a variety of
 criteria and or a reference answer.
 
 Example:
-    >>> from langchain.chat_models import ChatOpenAI
+    >>> from langchain_community.chat_models import ChatOpenAI
     >>> from langchain.evaluation.scoring import ScoreStringEvalChain
     >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
     >>> chain = ScoreStringEvalChain.from_llm(llm=llm)

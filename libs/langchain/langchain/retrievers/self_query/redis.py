@@ -2,16 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Tuple
 
-from langchain.chains.query_constructor.ir import (
-    Comparator,
-    Comparison,
-    Operation,
-    Operator,
-    StructuredQuery,
-    Visitor,
-)
-from langchain.vectorstores.redis import Redis
-from langchain.vectorstores.redis.filters import (
+from langchain_community.vectorstores.redis import Redis
+from langchain_community.vectorstores.redis.filters import (
     RedisFilterExpression,
     RedisFilterField,
     RedisFilterOperator,
@@ -19,7 +11,15 @@ from langchain.vectorstores.redis.filters import (
     RedisTag,
     RedisText,
 )
-from langchain.vectorstores.redis.schema import RedisModel
+from langchain_community.vectorstores.redis.schema import RedisModel
+from langchain_core.structured_query import (
+    Comparator,
+    Comparison,
+    Operation,
+    Operator,
+    StructuredQuery,
+    Visitor,
+)
 
 _COMPARATOR_TO_BUILTIN_METHOD = {
     Comparator.EQ: "__eq__",
@@ -34,7 +34,7 @@ _COMPARATOR_TO_BUILTIN_METHOD = {
 
 
 class RedisTranslator(Visitor):
-    """Translate"""
+    """Visitor for translating structured queries to Redis filter expressions."""
 
     allowed_comparators = (
         Comparator.EQ,

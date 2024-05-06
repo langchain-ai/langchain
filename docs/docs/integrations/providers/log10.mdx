@@ -17,8 +17,8 @@ Log10 is an [open-source](https://github.com/log10-io/log10) proxiless LLM data 
 Integration with log10 is a simple one-line `log10_callback` integration as shown below:
 
 ```python
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
 from log10.langchain import Log10Callback
 from log10.llm import Log10Config
@@ -30,20 +30,20 @@ messages = [
     HumanMessage(content="Ping?"),
 ]
 
-llm = ChatOpenAI(model_name="gpt-3.5-turbo", callbacks=[log10_callback])
+llm = ChatOpenAI(model="gpt-3.5-turbo", callbacks=[log10_callback])
 ```
 
 [Log10 + Langchain + Logs docs](https://github.com/log10-io/log10/blob/main/logging.md#langchain-logger)
 
-[More details + screenshots](https://log10.io/docs/logs) including instructions for self-hosting logs
+[More details + screenshots](https://log10.io/docs/observability/logs) including instructions for self-hosting logs
 
 ## How to use tags with Log10
 
 ```python
-from langchain.llms import OpenAI
-from langchain.chat_models import ChatAnthropic
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
+from langchain_openai import OpenAI
+from langchain_community.chat_models import ChatAnthropic
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
 from log10.langchain import Log10Callback
 from log10.llm import Log10Config
@@ -55,7 +55,7 @@ messages = [
     HumanMessage(content="Ping?"),
 ]
 
-llm = ChatOpenAI(model_name="gpt-3.5-turbo", callbacks=[log10_callback], temperature=0.5, tags=["test"])
+llm = ChatOpenAI(model="gpt-3.5-turbo", callbacks=[log10_callback], temperature=0.5, tags=["test"])
 completion = llm.predict_messages(messages, tags=["foobar"])
 print(completion)
 
@@ -63,7 +63,7 @@ llm = ChatAnthropic(model="claude-2", callbacks=[log10_callback], temperature=0.
 llm.predict_messages(messages)
 print(completion)
 
-llm = OpenAI(model_name="text-davinci-003", callbacks=[log10_callback], temperature=0.5)
+llm = OpenAI(model_name="gpt-3.5-turbo-instruct", callbacks=[log10_callback], temperature=0.5)
 completion = llm.predict("You are a ping pong machine.\nPing?\n")
 print(completion)
 ```
@@ -74,7 +74,7 @@ You can also intermix direct OpenAI calls and Langchain LLM calls:
 import os
 from log10.load import log10, log10_session
 import openai
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 
 log10(openai)
 
@@ -99,6 +99,6 @@ with log10_session(tags=["foo", "bar"]):
 
 ## How to debug Langchain calls
 
-[Example of debugging](https://log10.io/docs/prompt_chain_debugging)
+[Example of debugging](https://log10.io/docs/observability/prompt_chain_debugging)
 
 [More Langchain examples](https://github.com/log10-io/log10/tree/main/examples#langchain)

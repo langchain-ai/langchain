@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "rag-matching-engine"
+version = "0.0.1"
+description = "RAG using Google Cloud Platform's Vertex AI"
+authors = ["Leonid Kuligin"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+google-cloud-aiplatform = "^1.35.0"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "rag_matching_engine"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "Google"
+integrations = ["OpenAI", "Google"]
+tags = ["vectordbs"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

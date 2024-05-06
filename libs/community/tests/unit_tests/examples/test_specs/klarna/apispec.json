@@ -1,0 +1,111 @@
+{
+   "openapi": "3.0.1",
+   "info": {
+      "version": "v0",
+      "title": "Open AI Klarna product Api"
+   },
+   "servers": [
+      {
+         "url": "https://www.klarna.com/us/shopping"
+      }
+   ],
+   "tags": [
+      {
+         "name": "open-ai-product-endpoint",
+         "description": "Open AI Product Endpoint. Query for products."
+      }
+   ],
+   "paths": {
+      "/public/openai/v0/products": {
+         "get": {
+            "tags": [
+               "open-ai-product-endpoint"
+            ],
+            "summary": "API for fetching Klarna product information",
+            "operationId": "productsUsingGET",
+            "parameters": [
+               {
+                  "name": "q",
+                  "in": "query",
+                  "description": "query, must be between 2 and 100 characters",
+                  "required": true,
+                  "schema": {
+                     "type": "string"
+                  }
+               },
+               {
+                  "name": "size",
+                  "in": "query",
+                  "description": "number of products returned",
+                  "required": false,
+                  "schema": {
+                     "type": "integer"
+                  }
+               },
+               {
+                  "name": "budget",
+                  "in": "query",
+                  "description": "maximum price of the matching product in local currency, filters results",
+                  "required": false,
+                  "schema": {
+                     "type": "integer"
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "Products found",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/ProductResponse"
+                        }
+                     }
+                  }
+               },
+               "503": {
+                  "description": "one or more services are unavailable"
+               }
+            },
+            "deprecated": false
+         }
+      }
+   },
+   "components": {
+      "schemas": {
+         "Product": {
+            "type": "object",
+            "properties": {
+               "attributes": {
+                  "type": "array",
+                  "items": {
+                     "type": "string"
+                  }
+               },
+               "name": {
+                  "type": "string"
+               },
+               "price": {
+                  "type": "string"
+               },
+               "url": {
+                  "type": "string"
+               }
+            },
+            "title": "Product"
+         },
+         "ProductResponse": {
+            "type": "object",
+            "properties": {
+               "products": {
+                  "type": "array",
+                  "items": {
+                     "$ref": "#/components/schemas/Product"
+                  }
+               }
+            },
+            "title": "ProductResponse"
+         }
+      }
+   }
+}

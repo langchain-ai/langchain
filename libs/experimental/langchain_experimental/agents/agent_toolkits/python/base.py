@@ -6,10 +6,10 @@ from langchain.agents.agent import AgentExecutor, BaseSingleActionAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent
 from langchain.agents.types import AgentType
-from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains.llm import LLMChain
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import SystemMessage
+from langchain_core.callbacks.base import BaseCallbackManager
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import SystemMessage
 
 from langchain_experimental.agents.agent_toolkits.python.prompt import PREFIX
 from langchain_experimental.tools.python.tool import PythonREPLTool

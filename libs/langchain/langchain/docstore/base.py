@@ -1,29 +1,27 @@
-"""Interface to access to place that stores documents."""
-from abc import ABC, abstractmethod
-from typing import Dict, List, Union
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
+from langchain._api import create_importer
 
+if TYPE_CHECKING:
+    from langchain_community.docstore.base import AddableMixin, Docstore
 
-class Docstore(ABC):
-    """Interface to access to place that stores documents."""
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "Docstore": "langchain_community.docstore.base",
+    "AddableMixin": "langchain_community.docstore.base",
+}
 
-    @abstractmethod
-    def search(self, search: str) -> Union[str, Document]:
-        """Search for document.
-
-        If page exists, return the page summary, and a Document object.
-        If page does not exist, return similar entries.
-        """
-
-    def delete(self, ids: List) -> None:
-        """Deleting IDs from in memory dictionary."""
-        raise NotImplementedError
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AddableMixin(ABC):
-    """Mixin class that supports adding texts."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    @abstractmethod
-    def add(self, texts: Dict[str, Document]) -> None:
-        """Add more documents."""
+
+__all__ = [
+    "Docstore",
+    "AddableMixin",
+]

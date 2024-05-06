@@ -7,8 +7,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-
-from langchain.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 PORT = 7289
 
@@ -127,7 +126,7 @@ async def goto(x: int, y: int, z: int, cautiousness: Cautiousness) -> Dict[str, 
 
 @app.get("/get_state", description="Get the robot's state")
 async def get_state(
-    fields: List[StateItems] = Query(..., description="List of state items to return")
+    fields: List[StateItems] = Query(..., description="List of state items to return"),
 ) -> Dict[str, Any]:
     state = {}
     for field in fields:

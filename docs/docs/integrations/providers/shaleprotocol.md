@@ -19,8 +19,8 @@ As of June 2023, the API supports Vicuna-13B by default. We are going to support
 
 For example
 ```python
-from langchain.llms import OpenAI
-from langchain.prompts import PromptTemplate
+from langchain_openai import OpenAI
+from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 import os
@@ -33,7 +33,7 @@ template = """Question: {question}
 
 # Answer: Let's think step by step."""
 
-prompt = PromptTemplate(template=template, input_variables=["question"])
+prompt = PromptTemplate.from_template(template)
 
 llm_chain = LLMChain(prompt=prompt, llm=llm)
 

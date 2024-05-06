@@ -1,36 +1,28 @@
-"""Tool for the Google search API."""
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional, Type
+from langchain._api import create_importer
 
-from langchain.callbacks.manager import CallbackManagerForToolRun
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.tools.base import BaseTool
-from langchain.utilities.google_places_api import GooglePlacesAPIWrapper
+if TYPE_CHECKING:
+    from langchain_community.tools import GooglePlacesTool
+    from langchain_community.tools.google_places.tool import GooglePlacesSchema
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "GooglePlacesSchema": "langchain_community.tools.google_places.tool",
+    "GooglePlacesTool": "langchain_community.tools",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class GooglePlacesSchema(BaseModel):
-    """Input for GooglePlacesTool."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    query: str = Field(..., description="Query for google maps")
 
-
-class GooglePlacesTool(BaseTool):
-    """Tool that queries the Google places API."""
-
-    name: str = "google_places"
-    description: str = (
-        "A wrapper around Google Places. "
-        "Useful for when you need to validate or "
-        "discover addressed from ambiguous text. "
-        "Input should be a search query."
-    )
-    api_wrapper: GooglePlacesAPIWrapper = Field(default_factory=GooglePlacesAPIWrapper)
-    args_schema: Type[BaseModel] = GooglePlacesSchema
-
-    def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Use the tool."""
-        return self.api_wrapper.run(query)
+__all__ = [
+    "GooglePlacesSchema",
+    "GooglePlacesTool",
+]

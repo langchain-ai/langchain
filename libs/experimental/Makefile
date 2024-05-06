@@ -9,7 +9,7 @@ TEST_FILE ?= tests/unit_tests/
 test:
 	poetry run pytest $(TEST_FILE)
 
-tests: 
+tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
@@ -21,6 +21,9 @@ extended_tests:
 integration_tests:
 	poetry run pytest tests/integration_tests
 
+check_imports: $(shell find langchain_experimental -name '*.py')
+	poetry run python ./scripts/check_imports.py $^
+
 
 ######################
 # LINTING AND FORMATTING
@@ -28,16 +31,21 @@ integration_tests:
 
 # Define a variable for Python and notebook files.
 PYTHON_FILES=.
+MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/experimental --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain_experimental
+lint_tests: PYTHON_FILES=tests
+lint_tests: MYPY_CACHE=.mypy_cache_test
 
-lint lint_diff:
-	poetry run mypy $(PYTHON_FILES)
-	poetry run black $(PYTHON_FILES) --check
+lint lint_diff lint_package lint_tests:
 	poetry run ruff .
+	poetry run ruff format $(PYTHON_FILES) --diff
+	poetry run ruff --select I $(PYTHON_FILES)
+	mkdir -p $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	poetry run black $(PYTHON_FILES)
+	poetry run ruff format $(PYTHON_FILES)
 	poetry run ruff --select I --fix $(PYTHON_FILES)
 
 spell_check:

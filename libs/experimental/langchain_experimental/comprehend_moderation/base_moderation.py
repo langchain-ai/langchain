@@ -1,10 +1,9 @@
 import uuid
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
-from langchain.prompts.base import StringPromptValue
-from langchain.prompts.chat import ChatPromptValue
-from langchain.schema import AIMessage, HumanMessage
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 
 from langchain_experimental.comprehend_moderation.pii import ComprehendPII
 from langchain_experimental.comprehend_moderation.prompt_safety import (
@@ -14,6 +13,8 @@ from langchain_experimental.comprehend_moderation.toxicity import ComprehendToxi
 
 
 class BaseModeration:
+    """Base class for moderation."""
+
     def __init__(
         self,
         client: Any,
@@ -55,10 +56,10 @@ class BaseModeration:
             message = prompt.messages[-1]
             self.chat_message_index = len(prompt.messages) - 1
             if isinstance(message, HumanMessage):
-                input_text = message.content
+                input_text = cast(str, message.content)
 
             if isinstance(message, AIMessage):
-                input_text = message.content
+                input_text = cast(str, message.content)
         else:
             raise ValueError(
                 f"Invalid input type {type(input_text)}. "
@@ -110,6 +111,8 @@ class BaseModeration:
             self.run_manager.on_text(message)
 
     def moderate(self, prompt: Any) -> str:
+        """Moderate the input prompt."""
+
         from langchain_experimental.comprehend_moderation.base_moderation_config import (  # noqa: E501
             ModerationPiiConfig,
             ModerationPromptSafetyConfig,

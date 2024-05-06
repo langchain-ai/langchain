@@ -1,7 +1,8 @@
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import EmbeddingsFilter
-from langchain.vectorstores import FAISS
 
 
 def test_contextual_compression_retriever_get_relevant_docs() -> None:
@@ -20,6 +21,6 @@ def test_contextual_compression_retriever_get_relevant_docs() -> None:
         base_compressor=base_compressor, base_retriever=base_retriever
     )
 
-    actual = retriever.get_relevant_documents("Tell me about the Celtics")
+    actual = retriever.invoke("Tell me about the Celtics")
     assert len(actual) == 2
     assert texts[-1] not in [d.page_content for d in actual]

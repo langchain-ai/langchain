@@ -1,18 +1,23 @@
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import BaseRetriever, Document
-from langchain.utilities.wikipedia import WikipediaAPIWrapper
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.retrievers import WikipediaRetriever
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"WikipediaRetriever": "langchain_community.retrievers"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class WikipediaRetriever(BaseRetriever, WikipediaAPIWrapper):
-    """`Wikipedia API` retriever.
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    It wraps load() to get_relevant_documents().
-    It uses all WikipediaAPIWrapper arguments without any change.
-    """
 
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        return self.load(query=query)
+__all__ = [
+    "WikipediaRetriever",
+]

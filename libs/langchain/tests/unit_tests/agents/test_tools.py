@@ -4,6 +4,7 @@ from typing import Any, Type
 from unittest.mock import MagicMock, Mock
 
 import pytest
+from langchain_core.tools import Tool, ToolException, tool
 
 from langchain.agents import load_tools
 from langchain.agents.agent import Agent
@@ -13,8 +14,6 @@ from langchain.agents.conversational_chat.base import ConversationalChatAgent
 from langchain.agents.mrkl.base import ZeroShotAgent
 from langchain.agents.react.base import ReActDocstoreAgent, ReActTextWorldAgent
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchAgent
-from langchain.agents.tools import Tool, tool
-from langchain.tools.base import ToolException
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -72,7 +71,11 @@ def test_load_tools_with_callback_manager_raises_deprecation_warning() -> None:
     """Test load_tools raises a deprecation for old callback manager kwarg."""
     callback_manager = MagicMock()
     with pytest.warns(DeprecationWarning, match="callback_manager is deprecated"):
-        tools = load_tools(["requests_get"], callback_manager=callback_manager)
+        tools = load_tools(
+            ["requests_get"],
+            callback_manager=callback_manager,
+            allow_dangerous_tools=True,
+        )
     assert len(tools) == 1
     assert tools[0].callbacks == callback_manager
 
@@ -80,7 +83,11 @@ def test_load_tools_with_callback_manager_raises_deprecation_warning() -> None:
 def test_load_tools_with_callbacks_is_called() -> None:
     """Test callbacks are called when provided to load_tools fn."""
     callbacks = [FakeCallbackHandler()]
-    tools = load_tools(["requests_get"], callbacks=callbacks)  # type: ignore
+    tools = load_tools(
+        ["requests_get"],  # type: ignore
+        callbacks=callbacks,  # type: ignore
+        allow_dangerous_tools=True,
+    )
     assert len(tools) == 1
     # Patch the requests.get() method to return a mock response
     with unittest.mock.patch(

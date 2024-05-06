@@ -1,49 +1,25 @@
-from typing import Any, Iterator, List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.tencent_cos_file import TencentCOSFileLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import TencentCOSDirectoryLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "TencentCOSDirectoryLoader": "langchain_community.document_loaders"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class TencentCOSDirectoryLoader(BaseLoader):
-    """Load from `Tencent Cloud COS` directory."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, conf: Any, bucket: str, prefix: str = ""):
-        """Initialize with COS config, bucket and prefix.
-        :param conf(CosConfig): COS config.
-        :param bucket(str): COS bucket.
-        :param prefix(str): prefix.
-        """
-        self.conf = conf
-        self.bucket = bucket
-        self.prefix = prefix
 
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())
-
-    def lazy_load(self) -> Iterator[Document]:
-        """Load documents."""
-        try:
-            from qcloud_cos import CosS3Client
-        except ImportError:
-            raise ImportError(
-                "Could not import cos-python-sdk-v5 python package. "
-                "Please install it with `pip install cos-python-sdk-v5`."
-            )
-        client = CosS3Client(self.conf)
-        contents = []
-        marker = ""
-        while True:
-            response = client.list_objects(
-                Bucket=self.bucket, Prefix=self.prefix, Marker=marker, MaxKeys=1000
-            )
-            if "Contents" in response:
-                contents.extend(response["Contents"])
-            if response["IsTruncated"] == "false":
-                break
-            marker = response["NextMarker"]
-        for content in contents:
-            if content["Key"].endswith("/"):
-                continue
-            loader = TencentCOSFileLoader(self.conf, self.bucket, content["Key"])
-            yield loader.load()[0]
+__all__ = [
+    "TencentCOSDirectoryLoader",
+]

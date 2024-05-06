@@ -1,8 +1,7 @@
-import datetime
 import re
 from typing import Any, Callable, Dict, Tuple
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,
@@ -106,9 +105,9 @@ class MyScaleTranslator(Visitor):
         value = f"'{value}'" if isinstance(value, str) else value
 
         # convert timestamp for datetime objects
-        if type(value) is datetime.date:
+        if isinstance(value, dict) and value.get("type") == "date":
             attr = f"parseDateTime32BestEffort({attr})"
-            value = f"parseDateTime32BestEffort('{value.strftime('%Y-%m-%d')}')"
+            value = f"parseDateTime32BestEffort('{value['date']}')"
 
         # string pattern match
         if comp is Comparator.LIKE:
@@ -118,7 +117,7 @@ class MyScaleTranslator(Visitor):
     def visit_structured_query(
         self, structured_query: StructuredQuery
     ) -> Tuple[str, dict]:
-        print(structured_query)
+        print(structured_query)  # noqa: T201
         if structured_query.filter is None:
             kwargs = {}
         else:

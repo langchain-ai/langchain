@@ -25,7 +25,7 @@ The Marqo vectorstore can also work with existing multimodel indexes where your 
 
 To import this vectorstore:
 ```python
-from langchain.vectorstores import Marqo
+from langchain_community.vectorstores import Marqo
 ```
 
 For a more detailed walkthrough of the Marqo wrapper and some of its unique features, see [this notebook](/docs/integrations/vectorstores/marqo)

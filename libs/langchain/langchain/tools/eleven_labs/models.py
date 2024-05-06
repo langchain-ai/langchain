@@ -1,8 +1,23 @@
-from enum import Enum
+from typing import TYPE_CHECKING, Any
+
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.tools.eleven_labs.models import ElevenLabsModel
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"ElevenLabsModel": "langchain_community.tools.eleven_labs.models"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class ElevenLabsModel(str, Enum):
-    """Models available for Eleven Labs Text2Speech."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    MULTI_LINGUAL = "eleven_multilingual_v1"
-    MONO_LINGUAL = "eleven_monolingual_v1"
+
+__all__ = [
+    "ElevenLabsModel",
+]

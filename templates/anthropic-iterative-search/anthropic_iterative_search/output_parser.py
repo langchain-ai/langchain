@@ -1,6 +1,6 @@
 import re
 
-from langchain.schema.agent import AgentAction, AgentFinish
+from langchain_core.agents import AgentAction, AgentFinish
 
 from .agent_scratchpad import _format_docs
 

@@ -7,7 +7,7 @@
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/langchain-ai/streamlit-agent?quickstart=1)
 
 In this guide we will demonstrate how to use `StreamlitCallbackHandler` to display the thoughts and actions of an agent in an
-interactive Streamlit app. Try it out with the running app below using the [MRKL agent](/docs/modules/agents/how_to/mrkl/):
+interactive Streamlit app. Try it out with the running app below using the MRKL agent:
 
 <iframe loading="lazy" src="https://langchain-mrkl.streamlit.app/?embed=true&embed_options=light_theme"
     style={{ width: 100 + '%', border: 'none', marginBottom: 1 + 'rem', height: 600 }}
@@ -28,7 +28,9 @@ You can run `streamlit hello` to load a sample app and validate your install suc
 To create a `StreamlitCallbackHandler`, you just need to provide a parent container to render the output.
 
 ```python
-from langchain.callbacks import StreamlitCallbackHandler
+from langchain_community.callbacks.streamlit import (
+    StreamlitCallbackHandler,
+)
 import streamlit as st
 
 st_callback = StreamlitCallbackHandler(st.container())
@@ -44,23 +46,25 @@ agent in your Streamlit app and simply pass the `StreamlitCallbackHandler` to `a
 thoughts and actions live in your app.
 
 ```python
-from langchain.llms import OpenAI
-from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.callbacks import StreamlitCallbackHandler
 import streamlit as st
+from langchain import hub
+from langchain.agents import AgentExecutor, create_react_agent, load_tools
+from langchain_openai import OpenAI
 
 llm = OpenAI(temperature=0, streaming=True)
 tools = load_tools(["ddg-search"])
-agent = initialize_agent(
-    tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
-)
+prompt = hub.pull("hwchase17/react")
+agent = create_react_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
 if prompt := st.chat_input():
     st.chat_message("user").write(prompt)
     with st.chat_message("assistant"):
         st_callback = StreamlitCallbackHandler(st.container())
-        response = agent.run(prompt, callbacks=[st_callback])
-        st.write(response)
+        response = agent_executor.invoke(
+            {"input": prompt}, {"callbacks": [st_callback]}
+        )
+        st.write(response["output"])
 ```
 
 **Note:** You will need to set `OPENAI_API_KEY` for the above app code to run successfully.

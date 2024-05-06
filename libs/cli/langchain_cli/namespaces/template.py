@@ -9,10 +9,9 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from langserve.packages import get_langserve_export
 from typing_extensions import Annotated
 
-from langchain_cli.utils.packages import get_package_root
+from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -58,7 +57,7 @@ def new(
     pyproject = destination_dir / "pyproject.toml"
     pyproject_contents = pyproject.read_text()
     pyproject.write_text(
-        pyproject_contents.replace("__package_name__", module_name).replace(
+        pyproject_contents.replace("__package_name__", package_name).replace(
             "__module_name__", module_name
         )
     )
@@ -67,11 +66,16 @@ def new(
     package_dir = destination_dir / module_name
     shutil.move(destination_dir / "package_template", package_dir)
 
+    # update init
+    init = package_dir / "__init__.py"
+    init_contents = init.read_text()
+    init.write_text(init_contents.replace("__module_name__", module_name))
+
     # replace readme
     readme = destination_dir / "README.md"
     readme_contents = readme.read_text()
     readme.write_text(
-        readme_contents.replace("__package_name_last__", package_name).replace(
+        readme_contents.replace("__package_name__", package_name).replace(
             "__app_route_code__", app_route_code
         )
     )
@@ -90,6 +94,20 @@ def serve(
     host: Annotated[
         Optional[str], typer.Option(help="The host to run the server on")
     ] = None,
+    configurable: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--configurable/--no-configurable",
+            help="Whether to include a configurable route",
+        ),
+    ] = None,  # defaults to `not chat_playground`
+    chat_playground: Annotated[
+        bool,
+        typer.Option(
+            "--chat-playground/--no-chat-playground",
+            help="Whether to include a chat playground route",
+        ),
+    ] = False,
 ) -> None:
     """
     Starts a demo app for this template.
@@ -101,17 +119,36 @@ def serve(
     # get langserve export - throws KeyError if invalid
     get_langserve_export(pyproject)
 
-    port_str = str(port) if port is not None else "8000"
     host_str = host if host is not None else "127.0.0.1"
 
-    command = [
-        "uvicorn",
-        "--factory",
-        "langchain_cli.dev_scripts:create_demo_server",
-        "--reload",
-        "--port",
-        port_str,
-        "--host",
-        host_str,
-    ]
-    subprocess.run(command)
+    script = (
+        "langchain_cli.dev_scripts:create_demo_server_chat"
+        if chat_playground
+        else (
+            "langchain_cli.dev_scripts:create_demo_server_configurable"
+            if configurable
+            else "langchain_cli.dev_scripts:create_demo_server"
+        )
+    )
+
+    import uvicorn
+
+    uvicorn.run(
+        script,
+        factory=True,
+        reload=True,
+        port=port if port is not None else 8000,
+        host=host_str,
+    )
+
+
+@package_cli.command()
+def list(contains: Annotated[Optional[str], typer.Argument()] = None) -> None:
+    """
+    List all or search for available templates.
+    """
+    from langchain_cli.utils.github import list_packages
+
+    packages = list_packages(contains=contains)
+    for package in packages:
+        typer.echo(package)

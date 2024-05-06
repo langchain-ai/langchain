@@ -1,50 +1,33 @@
-from typing import Any, Callable, Dict, Optional
-from uuid import UUID
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain._api import create_importer
 
-
-def _default_approve(_input: str) -> bool:
-    msg = (
-        "Do you approve of the following input? "
-        "Anything except 'Y'/'Yes' (case-insensitive) will be treated as a no."
+if TYPE_CHECKING:
+    from langchain_community.callbacks.human import (
+        AsyncHumanApprovalCallbackHandler,
+        HumanApprovalCallbackHandler,
+        HumanRejectedException,
     )
-    msg += "\n\n" + _input + "\n"
-    resp = input(msg)
-    return resp.lower() in ("yes", "y")
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "HumanRejectedException": "langchain_community.callbacks.human",
+    "HumanApprovalCallbackHandler": "langchain_community.callbacks.human",
+    "AsyncHumanApprovalCallbackHandler": "langchain_community.callbacks.human",
+}
+
+_import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-def _default_true(_: Dict[str, Any]) -> bool:
-    return True
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
-class HumanRejectedException(Exception):
-    """Exception to raise when a person manually review and rejects a value."""
-
-
-class HumanApprovalCallbackHandler(BaseCallbackHandler):
-    """Callback for manually validating values."""
-
-    raise_error: bool = True
-
-    def __init__(
-        self,
-        approve: Callable[[Any], bool] = _default_approve,
-        should_check: Callable[[Dict[str, Any]], bool] = _default_true,
-    ):
-        self._approve = approve
-        self._should_check = should_check
-
-    def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        if self._should_check(serialized) and not self._approve(input_str):
-            raise HumanRejectedException(
-                f"Inputs {input_str} to tool {serialized} were rejected."
-            )
+__all__ = [
+    "HumanRejectedException",
+    "HumanApprovalCallbackHandler",
+    "AsyncHumanApprovalCallbackHandler",
+]

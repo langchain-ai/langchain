@@ -1,31 +1,23 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import TYPE_CHECKING, List
-
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.pydantic_v1 import Field
-from langchain.tools import BaseTool
-from langchain.tools.amadeus.closest_airport import AmadeusClosestAirport
-from langchain.tools.amadeus.flight_search import AmadeusFlightSearch
-from langchain.tools.amadeus.utils import authenticate
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from amadeus import Client
+    from langchain_community.agent_toolkits.amadeus.toolkit import AmadeusToolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "AmadeusToolkit": "langchain_community.agent_toolkits.amadeus.toolkit"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AmadeusToolkit(BaseToolkit):
-    """Toolkit for interacting with Amadeus which offers APIs for travel search."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    client: Client = Field(default_factory=authenticate)
 
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return [
-            AmadeusClosestAirport(),
-            AmadeusFlightSearch(),
-        ]
+__all__ = ["AmadeusToolkit"]

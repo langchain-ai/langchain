@@ -9,6 +9,7 @@ $ langchain [OPTIONS] COMMAND [ARGS]...
 **Options**:
 
 * `--help`: Show this message and exit.
+* `-v, --version`: Print current CLI version.
 
 **Commands**:
 

@@ -1,34 +1,23 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-import tempfile
-from typing import TYPE_CHECKING, List
-
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.unstructured import UnstructuredFileLoader
-from langchain.pydantic_v1 import BaseModel, Field
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from O365.drive import File
+    from langchain_community.document_loaders import OneDriveFileLoader
 
-CHUNK_SIZE = 1024 * 1024 * 5
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"OneDriveFileLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class OneDriveFileLoader(BaseLoader, BaseModel):
-    """Load a file from `Microsoft OneDrive`."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    file: File = Field(...)
-    """The file to load."""
 
-    class Config:
-        arbitrary_types_allowed = True
-        """Allow arbitrary types. This is needed for the File type. Default is True.
-         See https://pydantic-docs.helpmanual.io/usage/types/#arbitrary-types-allowed"""
-
-    def load(self) -> List[Document]:
-        """Load Documents"""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = f"{temp_dir}/{self.file.name}"
-            self.file.download(to_path=temp_dir, chunk_size=CHUNK_SIZE)
-            loader = UnstructuredFileLoader(file_path)
-            return loader.load()
+__all__ = [
+    "OneDriveFileLoader",
+]

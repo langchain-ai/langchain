@@ -1,7 +1,9 @@
 """Integration test for doc reordering."""
-from langchain.document_transformers.long_context_reorder import LongContextReorder
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_community.document_transformers.long_context_reorder import (
+    LongContextReorder,
+)
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
 
 
 def test_long_context_reorder() -> None:
@@ -23,7 +25,7 @@ def test_long_context_reorder() -> None:
         search_kwargs={"k": 10}
     )
     reordering = LongContextReorder()
-    docs = retriever.get_relevant_documents("Tell me about the Celtics")
+    docs = retriever.invoke("Tell me about the Celtics")
     actual = reordering.transform_documents(docs)
 
     # First 2 and Last 2 elements must contain the most relevant
