@@ -74,7 +74,6 @@
           ]
         }
       },
-      "middle": [],
       "last": {
         "lc": 1,
         "type": "constructor",
@@ -109,8 +108,7 @@
                     "buz"
                   ],
                   "template": "what did baz say to {buz}",
-                  "template_format": "f-string",
-                  "partial_variables": {}
+                  "template_format": "f-string"
                 },
                 "name": "PromptTemplate",
                 "graph": {
@@ -151,7 +149,6 @@
                   ]
                 }
               },
-              "middle": [],
               "last": {
                 "lc": 1,
                 "type": "not_implemented",
@@ -200,8 +197,7 @@
                     }
                   ]
                 }
-              },
-              "name": null
+              }
             },
             "name": "RunnableSequence",
             "graph": {
@@ -284,8 +280,7 @@
                       "buz"
                     ],
                     "template": "what did baz say to {buz}",
-                    "template_format": "f-string",
-                    "partial_variables": {}
+                    "template_format": "f-string"
                   },
                   "name": "PromptTemplate",
                   "graph": {
@@ -326,7 +321,6 @@
                     ]
                   }
                 },
-                "middle": [],
                 "last": {
                   "lc": 1,
                   "type": "not_implemented",
@@ -375,8 +369,7 @@
                       }
                     ]
                   }
-                },
-                "name": null
+                }
               },
               "name": "RunnableSequence",
               "graph": {
@@ -434,19 +427,7 @@
                 ]
               }
             }
-          ],
-          "exceptions_to_handle": [
-            {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "builtins",
-                "Exception"
-              ],
-              "repr": "<class 'Exception'>"
-            }
-          ],
-          "exception_key": null
+          ]
         },
         "name": "RunnableWithFallbacks",
         "graph": {
@@ -486,8 +467,7 @@
             }
           ]
         }
-      },
-      "name": null
+      }
     },
     "name": "RunnableSequence",
     "graph": {
@@ -579,11 +559,7 @@
                 "runnable",
                 "RunnablePassthrough"
               ],
-              "kwargs": {
-                "func": null,
-                "afunc": null,
-                "input_type": null
-              },
+              "kwargs": {},
               "name": "RunnablePassthrough",
               "graph": {
                 "nodes": [
@@ -664,7 +640,6 @@
           ]
         }
       },
-      "middle": [],
       "last": {
         "lc": 1,
         "type": "constructor",
@@ -697,17 +672,6 @@
                 "RunnableLambda"
               ],
               "repr": "RunnableLambda(_dont_raise_error)"
-            }
-          ],
-          "exceptions_to_handle": [
-            {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "builtins",
-                "Exception"
-              ],
-              "repr": "<class 'Exception'>"
             }
           ],
           "exception_key": "exception"
@@ -750,8 +714,7 @@
             }
           ]
         }
-      },
-      "name": null
+      }
     },
     "name": "RunnableSequence",
     "graph": {
@@ -922,19 +885,7 @@
             ]
           }
         }
-      ],
-      "exceptions_to_handle": [
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "builtins",
-            "Exception"
-          ],
-          "repr": "<class 'Exception'>"
-        }
-      ],
-      "exception_key": null
+      ]
     },
     "name": "RunnableWithFallbacks",
     "graph": {
@@ -1137,19 +1088,7 @@
             ]
           }
         }
-      ],
-      "exceptions_to_handle": [
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "builtins",
-            "Exception"
-          ],
-          "repr": "<class 'Exception'>"
-        }
-      ],
-      "exception_key": null
+      ]
     },
     "name": "RunnableWithFallbacks",
     "graph": {

@@ -128,8 +128,9 @@ class Serializable(BaseModel, ABC):
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {
             k: getattr(self, k, v)
-            for k, v in self._lc_kwargs.items()
+            for k, v in self
             if not (self.__exclude_fields__ or {}).get(k, False)  # type: ignore
+            and _is_field_useful(self, k, v)
         }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
@@ -184,6 +185,23 @@ class Serializable(BaseModel, ABC):
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
         return to_json_not_implemented(self)
+
+
+def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
+    """Check if a field is useful as a constructor argument.
+
+    Args:
+        inst: The instance.
+        key: The key.
+        value: The value.
+
+    Returns:
+        Whether the field is useful.
+    """
+    field = inst.__fields__.get(key)
+    if not field:
+        return False
+    return field.required or field.get_default() != value
 
 
 def _replace_secrets(
