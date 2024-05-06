@@ -14,10 +14,10 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
 )
-from langchain_openai import ChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
 
-class ChatTogether(ChatOpenAI):
+class ChatTogether(BaseChatOpenAI):
     """ChatTogether chat model.
 
     To use, you should have the environment variable `TOGETHER_API_KEY`
