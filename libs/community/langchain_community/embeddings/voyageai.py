@@ -61,7 +61,7 @@ def embed_with_retry(embeddings: VoyageEmbeddings, **kwargs: Any) -> Any:
 
 @deprecated(
     since="0.0.29",
-    removal="0.2",
+    removal="0.3",
     alternative_import="langchain_voyageai.VoyageAIEmbeddings",
 )
 class VoyageEmbeddings(BaseModel, Embeddings):

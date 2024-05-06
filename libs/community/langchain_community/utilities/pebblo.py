@@ -169,7 +169,9 @@ def get_full_path(path: str) -> str:
         or (path in ["unknown", "-", "in-memory"])
     ):
         return path
-    full_path = pathlib.Path(path).resolve()
+    full_path = pathlib.Path(path)
+    if full_path.exists():
+        full_path = full_path.resolve()
     return str(full_path)
 
 
@@ -190,7 +192,7 @@ def get_loader_type(loader: str) -> str:
 
 def get_loader_full_path(loader: BaseLoader) -> str:
     """Return an absolute source path of source of loader based on the
-    keys present in Document object from loader.
+    keys present in Document.
 
     Args:
         loader (BaseLoader): Langchain document loader, derived from Baseloader.

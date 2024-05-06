@@ -68,24 +68,6 @@ def _stream_response_to_generation_chunk(
 class BaseOpenAI(BaseLLM):
     """Base OpenAI large language model class."""
 
-    @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"openai_api_key": "OPENAI_API_KEY"}
-
-    @property
-    def lc_attributes(self) -> Dict[str, Any]:
-        attributes: Dict[str, Any] = {}
-        if self.openai_api_base:
-            attributes["openai_api_base"] = self.openai_api_base
-
-        if self.openai_organization:
-            attributes["openai_organization"] = self.openai_organization
-
-        if self.openai_proxy:
-            attributes["openai_proxy"] = self.openai_proxy
-
-        return attributes
-
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo-instruct", alias="model")
@@ -649,3 +631,21 @@ class OpenAI(BaseOpenAI):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"model": self.model_name}, **super()._invocation_params}
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+        if self.openai_api_base:
+            attributes["openai_api_base"] = self.openai_api_base
+
+        if self.openai_organization:
+            attributes["openai_organization"] = self.openai_organization
+
+        if self.openai_proxy:
+            attributes["openai_proxy"] = self.openai_proxy
+
+        return attributes
