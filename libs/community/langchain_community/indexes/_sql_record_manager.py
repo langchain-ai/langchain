@@ -16,8 +16,17 @@ allow it to work with a variety of SQL as a backend.
 import contextlib
 import decimal
 import uuid
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Sequence, \
-    Union, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from sqlalchemy import (
     URL,
@@ -179,7 +188,7 @@ class SQLRecordManager(RecordManager):
         if not isinstance(self.engine, AsyncEngine):
             raise AssertionError("This method is not supported for sync engines.")
 
-        async with cast(AsyncSession,self.session_factory()) as session:
+        async with cast(AsyncSession, self.session_factory()) as session:
             yield session
 
     def get_time(self) -> float:
