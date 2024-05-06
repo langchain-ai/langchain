@@ -1,5 +1,6 @@
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -80,7 +81,7 @@ def get_cohere_chat_request(
         "AUTO" if documents is not None or connectors is not None else None
     )
 
-    return {
+    req = {
         "message": messages[-1].content,
         "chat_history": [
             {"role": get_role(x), "message": x.content} for x in messages[:-1]
@@ -91,7 +92,12 @@ def get_cohere_chat_request(
         **kwargs,
     }
 
+    return {k: v for k, v in req.items() if v is not None}
 
+
+@deprecated(
+    since="0.0.30", removal="0.3.0", alternative_import="langchain_cohere.ChatCohere"
+)
 class ChatCohere(BaseChatModel, BaseCohere):
     """`Cohere` chat large language models.
 
@@ -142,14 +148,19 @@ class ChatCohere(BaseChatModel, BaseCohere):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        stream = self.client.chat(**request, stream=True)
+
+        if hasattr(self.client, "chat_stream"):  # detect and support sdk v5
+            stream = self.client.chat_stream(**request)
+        else:
+            stream = self.client.chat(**request, stream=True)
 
         for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
-                    run_manager.on_llm_new_token(delta)
+                    run_manager.on_llm_new_token(delta, chunk=chunk)
+                yield chunk
 
     async def _astream(
         self,
@@ -159,14 +170,19 @@ class ChatCohere(BaseChatModel, BaseCohere):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        stream = await self.async_client.chat(**request, stream=True)
+
+        if hasattr(self.async_client, "chat_stream"):  # detect and support sdk v5
+            stream = await self.async_client.chat_stream(**request)
+        else:
+            stream = await self.async_client.chat(**request, stream=True)
 
         async for data in stream:
             if data.event_type == "text-generation":
                 delta = data.text
-                yield ChatGenerationChunk(message=AIMessageChunk(content=delta))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
                 if run_manager:
-                    await run_manager.on_llm_new_token(delta)
+                    await run_manager.on_llm_new_token(delta, chunk=chunk)
+                yield chunk
 
     def _get_generation_info(self, response: Any) -> Dict[str, Any]:
         """Get the generation info from cohere API response."""
@@ -218,7 +234,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
             return await agenerate_from_stream(stream_iter)
 
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
-        response = self.client.chat(**request, stream=False)
+        response = self.client.chat(**request)
 
         message = AIMessage(content=response.text)
         generation_info = None
@@ -232,4 +248,4 @@ class ChatCohere(BaseChatModel, BaseCohere):
 
     def get_num_tokens(self, text: str) -> int:
         """Calculate number of tokens."""
-        return len(self.client.tokenize(text).tokens)
+        return len(self.client.tokenize(text=text).tokens)

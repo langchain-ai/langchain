@@ -25,13 +25,13 @@ def import_comet_llm_api() -> SimpleNamespace:
     """Import comet_llm api and raise an error if it is not installed."""
     try:
         from comet_llm import (
-            experiment_info,  # noqa: F401
-            flush,  # noqa: F401
+            experiment_info,
+            flush,
         )
-        from comet_llm.chains import api as chain_api  # noqa: F401
+        from comet_llm.chains import api as chain_api
         from comet_llm.chains import (
-            chain,  # noqa: F401
-            span,  # noqa: F401
+            chain,
+            span,
         )
 
     except ImportError:
@@ -70,24 +70,26 @@ class CometTracer(BaseTracer):
         self._flush: Callable[[], None] = comet_llm_api.flush
 
     def _persist_run(self, run: "Run") -> None:
+        run_dict: Dict[str, Any] = run.dict()
         chain_ = self._chains_map[run.id]
-        chain_.set_outputs(outputs=run.outputs)
+        chain_.set_outputs(outputs=run_dict["outputs"])
         self._chain_api.log_chain(chain_)
 
     def _process_start_trace(self, run: "Run") -> None:
+        run_dict: Dict[str, Any] = run.dict()
         if not run.parent_run_id:
             # This is the first run, which maps to a chain
             chain_: "Chain" = self._chain.Chain(
-                inputs=run.inputs,
+                inputs=run_dict["inputs"],
                 metadata=None,
                 experiment_info=self._experiment_info.get(),
             )
             self._chains_map[run.id] = chain_
         else:
             span: "Span" = self._span.Span(
-                inputs=run.inputs,
+                inputs=run_dict["inputs"],
                 category=_get_run_type(run),
-                metadata=run.extra,
+                metadata=run_dict["extra"],
                 name=run.name,
             )
             span.__api__start__(self._chains_map[run.parent_run_id])
@@ -95,12 +97,13 @@ class CometTracer(BaseTracer):
             self._span_map[run.id] = span
 
     def _process_end_trace(self, run: "Run") -> None:
+        run_dict: Dict[str, Any] = run.dict()
         if not run.parent_run_id:
             pass
             # Langchain will call _persist_run for us
         else:
             span = self._span_map[run.id]
-            span.set_outputs(outputs=run.outputs)
+            span.set_outputs(outputs=run_dict["outputs"])
             span.__api__end__()
 
     def flush(self) -> None:

@@ -25,7 +25,7 @@ class NucliaLoader(BaseLoader):
             return []
         obj = json.loads(data)
         text = obj["extracted_text"][0]["body"]["text"]
-        print(text)
+        print(text)  # noqa: T201
         metadata = {
             "file": obj["file_extracted_data"][0],
             "metadata": obj["field_metadata"][0],

@@ -1,0 +1,9 @@
+version: '3.7'
+
+services:
+
+  graphdb:
+    image: graphdb
+    container_name: graphdb
+    ports:
+      - "7200:7200"

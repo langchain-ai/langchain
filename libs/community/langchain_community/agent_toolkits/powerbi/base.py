@@ -58,7 +58,7 @@ def create_pbi_agent(
                 input_variables=input_variables,
                 **prompt_params,
             ),
-            callback_manager=callback_manager,  # type: ignore
+            callback_manager=callback_manager,
             verbose=verbose,
         ),
         allowed_tools=[tool.name for tool in tools],

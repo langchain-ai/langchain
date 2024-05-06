@@ -12,8 +12,8 @@ openai = "<2"
 presidio-analyzer = "^2.2.350"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
-fastapi = "^0.104.0"
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
@@ -27,7 +27,5 @@ integrations = ["OpenAI", "Microsoft Presidio"]
 tags = ["data", "redaction"]
 
 [build-system]
-requires = [
-    "poetry-core",
-]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

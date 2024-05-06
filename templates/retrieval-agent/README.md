@@ -8,10 +8,9 @@ By default, this does retrieval over Arxiv.
 Since we are using Azure OpenAI, we will need to set the following environment variables:
 
 ```shell
-export AZURE_OPENAI_API_BASE=...
+export AZURE_OPENAI_ENDPOINT=...
 export AZURE_OPENAI_API_VERSION=...
 export AZURE_OPENAI_API_KEY=...
-export AZURE_OPENAI_DEPLOYMENT_NAME=...
 ```
 
 ## Usage
@@ -43,7 +42,7 @@ add_routes(app, retrieval_agent_chain, path="/retrieval-agent")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

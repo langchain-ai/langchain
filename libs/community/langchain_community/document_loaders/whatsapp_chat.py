@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import List
+from typing import Iterator
 
 from langchain_core.documents import Document
 
@@ -19,8 +19,7 @@ class WhatsAppChatLoader(BaseLoader):
         """Initialize with path."""
         self.file_path = path
 
-    def load(self) -> List[Document]:
-        """Load documents."""
+    def lazy_load(self) -> Iterator[Document]:
         p = Path(self.file_path)
         text_content = ""
 
@@ -62,4 +61,4 @@ class WhatsAppChatLoader(BaseLoader):
 
         metadata = {"source": str(p)}
 
-        return [Document(page_content=text_content, metadata=metadata)]
+        yield Document(page_content=text_content, metadata=metadata)

@@ -14,9 +14,10 @@ openai = "<2"
 tiktoken = ">=0.5.1"
 pinecone-client = ">=2.2.4"
 beautifulsoup4 = "^4.12.2"
+langchain-text-splitters = ">=0.0.1,<0.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_conversation"

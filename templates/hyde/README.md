@@ -1,7 +1,7 @@
 
 # hyde
 
-This template HyDE with RAG. 
+This template uses HyDE with RAG. 
 
 Hyde is a retrieval method that stands for Hypothetical Document Embeddings (HyDE). It is a method used to enhance retrieval by generating a hypothetical document for an incoming query. 
 
@@ -44,7 +44,7 @@ add_routes(app, hyde_chain, path="/hyde")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

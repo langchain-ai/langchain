@@ -1,7 +1,7 @@
 import re
 from typing import Any, Callable, Dict, Tuple
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,
@@ -117,7 +117,7 @@ class MyScaleTranslator(Visitor):
     def visit_structured_query(
         self, structured_query: StructuredQuery
     ) -> Tuple[str, dict]:
-        print(structured_query)
+        print(structured_query)  # noqa: T201
         if structured_query.filter is None:
             kwargs = {}
         else:

@@ -20,7 +20,7 @@ def test_chat_wasm_service() -> None:
     messages = [system_message, user_message]
 
     # chat with wasm-chat service
-    response = chat(messages)
+    response = chat.invoke(messages)
 
     # check response
     assert isinstance(response, AIMessage)
@@ -46,7 +46,7 @@ def test_chat_wasm_service_streaming() -> None:
 
     output = ""
     for chunk in chat.stream(messages):
-        print(chunk.content, end="", flush=True)
-        output += chunk.content
+        print(chunk.content, end="", flush=True)  # noqa: T201
+        output += chunk.content  # type: ignore[operator]
 
     assert "Paris" in output

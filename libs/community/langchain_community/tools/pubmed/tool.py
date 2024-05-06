@@ -10,7 +10,7 @@ from langchain_community.utilities.pubmed import PubMedAPIWrapper
 class PubmedQueryRun(BaseTool):
     """Tool that searches the PubMed API."""
 
-    name: str = "PubMed"
+    name: str = "pub_med"
     description: str = (
         "A wrapper around PubMed. "
         "Useful for when you need to answer questions about medicine, health, "

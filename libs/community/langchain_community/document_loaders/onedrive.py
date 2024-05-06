@@ -91,7 +91,3 @@ class OneDriveLoader(O365BaseLoader):
         if self.object_ids:
             for blob in self._load_from_object_ids(drive, self.object_ids):
                 yield from blob_parser.lazy_parse(blob)
-
-    def load(self) -> List[Document]:
-        """Load all documents."""
-        return list(self.lazy_load())

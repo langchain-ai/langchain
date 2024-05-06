@@ -29,7 +29,7 @@ def test_language_loader_for_python() -> None:
     assert (
         docs[0].page_content
         == """def main():
-    print("Hello World!")
+    print("Hello World!")  # noqa: T201
 
     return 0"""
     )
@@ -67,7 +67,7 @@ def esprima_installed() -> bool:
 
         return True
     except Exception as e:
-        print(f"esprima not installed, skipping test {e}")
+        print(f"esprima not installed, skipping test {e}")  # noqa: T201
         return False
 
 

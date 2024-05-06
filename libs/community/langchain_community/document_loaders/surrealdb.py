@@ -46,8 +46,6 @@ class SurrealDBLoader(BaseLoader):
         self.sdb = Surreal(self.dburl)
         self.kwargs = kwargs
 
-        asyncio.run(self.initialize())
-
     async def initialize(self) -> None:
         """
         Initialize connection to surrealdb database

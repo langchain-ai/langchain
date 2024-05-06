@@ -32,7 +32,7 @@ def store(request: pytest.FixtureRequest) -> BigQueryVectorSearch:
         TestBigQueryVectorStore.dataset_name, exists_ok=True
     )
     TestBigQueryVectorStore.store = BigQueryVectorSearch(
-        project_id=os.environ.get("PROJECT", None),
+        project_id=os.environ.get("PROJECT", None),  # type: ignore[arg-type]
         embedding=FakeEmbeddings(),
         dataset_name=TestBigQueryVectorStore.dataset_name,
         table_name=TEST_TABLE_NAME,
@@ -79,7 +79,7 @@ class TestBigQueryVectorStore:
     def test_semantic_search(self, store: BigQueryVectorSearch) -> None:
         """Test on semantic similarity."""
         docs = store.similarity_search("food", k=4)
-        print(docs)
+        print(docs)  # noqa: T201
         kinds = [d.metadata["kind"] for d in docs]
         assert "fruit" in kinds
         assert "treat" in kinds

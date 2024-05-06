@@ -38,6 +38,13 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             This may also contain global and local secondary index keys.
         kms_key_id: an optional AWS KMS Key ID, AWS KMS Key ARN, or AWS KMS Alias for
             client-side encryption
+        ttl: Optional Time-to-live (TTL) in seconds. Allows you to define a per-item
+            expiration timestamp that indicates when an item can be deleted from the
+            table. DynamoDB handles deletion of expired items without consuming
+            write throughput. To enable this feature on the table, follow the
+            [AWS DynamoDB documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-how-to.html)
+        history_size: Maximum number of messages to store. If None then there is no
+            limit. If not None then only the latest `history_size` messages are stored.
     """
 
     def __init__(
@@ -49,6 +56,9 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         key: Optional[Dict[str, str]] = None,
         boto3_session: Optional[Session] = None,
         kms_key_id: Optional[str] = None,
+        ttl: Optional[int] = None,
+        ttl_key_name: str = "expireAt",
+        history_size: Optional[int] = None,
     ):
         if boto3_session:
             client = boto3_session.resource("dynamodb", endpoint_url=endpoint_url)
@@ -66,6 +76,9 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         self.table = client.Table(table_name)
         self.session_id = session_id
         self.key: Dict = key or {primary_key_name: session_id}
+        self.ttl = ttl
+        self.ttl_key_name = ttl_key_name
+        self.history_size = history_size
 
         if kms_key_id:
             try:
@@ -94,7 +107,7 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
             )
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from DynamoDB"""
         try:
             from botocore.exceptions import ClientError
@@ -120,6 +133,13 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         messages = messages_from_dict(items)
         return messages
 
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError(
+            "Direct assignment to 'messages' is not allowed."
+            " Use the 'add_messages' instead."
+        )
+
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in DynamoDB"""
         try:
@@ -133,8 +153,19 @@ class DynamoDBChatMessageHistory(BaseChatMessageHistory):
         _message = message_to_dict(message)
         messages.append(_message)
 
+        if self.history_size:
+            messages = messages[-self.history_size :]
+
         try:
-            self.table.put_item(Item={**self.key, "History": messages})
+            if self.ttl:
+                import time
+
+                expireAt = int(time.time()) + self.ttl
+                self.table.put_item(
+                    Item={**self.key, "History": messages, self.ttl_key_name: expireAt}
+                )
+            else:
+                self.table.put_item(Item={**self.key, "History": messages})
         except ClientError as err:
             logger.error(err)
 

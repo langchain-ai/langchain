@@ -1,0 +1,36 @@
+name: LangChain People
+
+on:
+  schedule:
+    - cron: "0 14 1 * *"
+  push:
+    branches: [jacob/people]
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: 'false'
+
+jobs:
+  langchain-people:
+    if: github.repository_owner == 'langchain-ai'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - uses: actions/checkout@v4
+      # Ref: https://github.com/actions/runner/issues/2033
+      - name: Fix git safe.directory in container
+        run: mkdir -p /home/runner/work/_temp/_github_home && printf "[safe]\n\tdirectory = /github/workspace" > /home/runner/work/_temp/_github_home/.gitconfig
+      # Allow debugging with tmate
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled == 'true' }}
+        with:
+          limit-access-to-actor: true
+      - uses: ./.github/actions/people
+        with:
+          token: ${{ secrets.LANGCHAIN_PEOPLE_GITHUB_TOKEN }}

@@ -32,7 +32,7 @@ class RedisStore(ByteStore):
 
             # Iterate over keys
             for key in redis_store.yield_keys():
-                print(key)
+                print(key)  # noqa: T201
     """
 
     def __init__(

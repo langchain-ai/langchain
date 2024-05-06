@@ -52,6 +52,6 @@ Note: SessionId must be received from previous Browser window creation."""
             try:
                 multion.close_session(sessionId)
             except Exception as e:
-                print(f"{e}, retrying...")
+                print(f"{e}, retrying...")  # noqa: T201
         except Exception as e:
             raise Exception(f"An error occurred: {e}")

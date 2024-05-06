@@ -1,6 +1,7 @@
 ---
 sidebar_position: 4
 title: Retrievers
+sidebar_class_name: hidden
 ---
 
 # Retrievers
@@ -49,7 +50,7 @@ Since retrievers are `Runnable`'s, we can easily compose them with other `Runnab
 ```python
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.schema import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 template = """Answer the question based only on the following context:
@@ -79,23 +80,4 @@ chain.invoke("What did the president say about technology?")
 
 ## Custom Retriever
 
-Since the retriever interface is so simple, it's pretty easy to write a custom one.
-
-```python
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
-from langchain_core.documents import Document
-from typing import List
-
-
-class CustomRetriever(BaseRetriever):
-    
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        return [Document(page_content=query)]
-
-retriever = CustomRetriever()
-
-retriever.get_relevant_documents("bar")
-```
+See the [documentation here](/docs/modules/data_connection/retrievers/custom_retriever) to implement a custom retriever.

@@ -96,16 +96,3 @@ class BibtexLoader(BaseLoader):
             doc = self._load_entry(entry)
             if doc:
                 yield doc
-
-    def load(self) -> List[Document]:
-        """Load bibtex file documents from the given bibtex file path.
-
-        See https://bibtexparser.readthedocs.io/en/master/
-
-        Args:
-            file_path: the path to the bibtex file
-
-        Returns:
-            a list of documents with the document.page_content in text format
-        """
-        return list(self.lazy_load())

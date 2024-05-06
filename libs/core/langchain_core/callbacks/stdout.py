@@ -1,4 +1,5 @@
 """Callback Handler that prints to std out."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, Optional
@@ -22,11 +23,11 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Print out that we are entering a chain."""
         class_name = serialized.get("name", serialized.get("id", ["<unknown>"])[-1])
-        print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")
+        print(f"\n\n\033[1m> Entering new {class_name} chain...\033[0m")  # noqa: T201
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
         """Print out that we finished a chain."""
-        print("\n\033[1m> Finished chain.\033[0m")
+        print("\n\033[1m> Finished chain.\033[0m")  # noqa: T201
 
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
@@ -36,13 +37,14 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         color: Optional[str] = None,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation."""
+        output = str(output)
         if observation_prefix is not None:
             print_text(f"\n{observation_prefix}")
         print_text(output, color=color or self.color)

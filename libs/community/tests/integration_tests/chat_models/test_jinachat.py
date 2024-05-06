@@ -24,7 +24,7 @@ def test_jinachat_api_key_masked_when_passed_from_env(
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("JINACHAT_API_KEY", "secret-api-key")
     llm = JinaChat()
-    print(llm.jinachat_api_key, end="")
+    print(llm.jinachat_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -35,7 +35,7 @@ def test_jinachat_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = JinaChat(jinachat_api_key="secret-api-key")
-    print(llm.jinachat_api_key, end="")
+    print(llm.jinachat_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -51,7 +51,7 @@ def test_jinachat() -> None:
     """Test JinaChat wrapper."""
     chat = JinaChat(max_tokens=10)
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -61,7 +61,7 @@ def test_jinachat_system_message() -> None:
     chat = JinaChat(max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
-    response = chat([system_message, human_message])
+    response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -93,7 +93,7 @@ def test_jinachat_streaming() -> None:
         verbose=True,
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
 

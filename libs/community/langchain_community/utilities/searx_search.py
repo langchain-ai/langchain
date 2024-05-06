@@ -225,7 +225,7 @@ class SearxSearchWrapper(BaseModel):
 
                 urllib3.disable_warnings()
             except ImportError as e:
-                print(e)
+                print(e)  # noqa: T201
 
         return v
 
@@ -246,7 +246,7 @@ class SearxSearchWrapper(BaseModel):
 
         searx_host = get_from_dict_or_env(values, "searx_host", "SEARX_HOST")
         if not searx_host.startswith("http"):
-            print(
+            print(  # noqa: T201
                 f"Warning: missing the url scheme on host \
                 ! assuming secure https://{searx_host} "
             )

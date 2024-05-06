@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 def import_flytekit() -> Tuple[flytekit, renderer]:
     """Import flytekit and flytekitplugins-deck-standard."""
     try:
-        import flytekit  # noqa: F401
-        from flytekitplugins.deck import renderer  # noqa: F401
+        import flytekit
+        from flytekitplugins.deck import renderer
     except ImportError:
         raise ImportError(
             "To use the flyte callback manager you need"
@@ -79,12 +79,8 @@ def analyze_text(
     if nlp is not None:
         spacy = import_spacy()
         doc = nlp(text)
-        dep_out = spacy.displacy.render(  # type: ignore
-            doc, style="dep", jupyter=False, page=True
-        )
-        ent_out = spacy.displacy.render(  # type: ignore
-            doc, style="ent", jupyter=False, page=True
-        )
+        dep_out = spacy.displacy.render(doc, style="dep", jupyter=False, page=True)
+        ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
         text_visualizations = {
             "dependency_tree": dep_out,
             "entities": ent_out,
@@ -95,7 +91,7 @@ def analyze_text(
 
 
 class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
-    """This callback handler that is used within a Flyte task."""
+    """Callback handler that is used within a Flyte task."""
 
     def __init__(self) -> None:
         """Initialize callback handler."""
@@ -199,7 +195,7 @@ class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
                     complexity_metrics: Dict[str, float] = generation_resp.pop(
                         "text_complexity_metrics"
-                    )  # type: ignore  # noqa: E501
+                    )
                     self.deck.append(
                         self.markdown_renderer().to_html("#### Text Complexity Metrics")
                     )

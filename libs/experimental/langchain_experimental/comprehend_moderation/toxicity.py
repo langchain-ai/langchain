@@ -8,6 +8,8 @@ from langchain_experimental.comprehend_moderation.base_moderation_exceptions imp
 
 
 class ComprehendToxicity:
+    """Class to handle toxicity moderation."""
+
     def __init__(
         self,
         client: Any,

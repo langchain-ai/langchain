@@ -14,7 +14,7 @@ from tests.integration_tests.llms.utils import assert_llm_equality
 def test_nlpcloud_call() -> None:
     """Test valid call to nlpcloud."""
     llm = NLPCloud(max_length=10)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -37,7 +37,7 @@ def test_nlpcloud_api_key(monkeypatch: MonkeyPatch, capsys: CaptureFixture) -> N
 
     assert cast(SecretStr, llm.nlpcloud_api_key).get_secret_value() == "secret-api-key"
 
-    print(llm.nlpcloud_api_key, end="")
+    print(llm.nlpcloud_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

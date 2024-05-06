@@ -4,12 +4,16 @@ from operator import itemgetter
 from typing import List, Optional, Tuple
 
 from dotenv import find_dotenv, load_dotenv
-from langchain.schema import AIMessage, HumanMessage, format_document
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.timescalevector import TimescaleVector
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    format_document,
+)
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import (
@@ -147,12 +151,16 @@ _inputs = RunnableParallel(
 )
 
 _datetime_to_string = RunnablePassthrough.assign(
-    start_date=lambda x: x.get("start_date", None).isoformat()
-    if x.get("start_date", None) is not None
-    else None,
-    end_date=lambda x: x.get("end_date", None).isoformat()
-    if x.get("end_date", None) is not None
-    else None,
+    start_date=lambda x: (
+        x.get("start_date", None).isoformat()
+        if x.get("start_date", None) is not None
+        else None
+    ),
+    end_date=lambda x: (
+        x.get("end_date", None).isoformat()
+        if x.get("end_date", None) is not None
+        else None
+    ),
 ).with_types(input_type=ChatHistory)
 
 chain = (

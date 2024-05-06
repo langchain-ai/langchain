@@ -8,6 +8,7 @@ from langchain_community.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
+from tests.integration_tests.vectorstores.qdrant.common import assert_documents_equals
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -32,7 +33,7 @@ def test_qdrant_similarity_search(
         vector_name=vector_name,
     )
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert_documents_equals(actual=output, expected=[Document(page_content="foo")])
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -58,7 +59,7 @@ def test_qdrant_similarity_search_by_vector(
     )
     embeddings = ConsistentFakeEmbeddings().embed_query("foo")
     output = docsearch.similarity_search_by_vector(embeddings, k=1)
-    assert output == [Document(page_content="foo")]
+    assert_documents_equals(output, [Document(page_content="foo")])
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -86,7 +87,7 @@ def test_qdrant_similarity_search_with_score_by_vector(
     output = docsearch.similarity_search_with_score_by_vector(embeddings, k=1)
     assert len(output) == 1
     document, score = output[0]
-    assert document == Document(page_content="foo")
+    assert_documents_equals(actual=[document], expected=[Document(page_content="foo")])
     assert score >= 0
 
 
@@ -113,12 +114,16 @@ def test_qdrant_similarity_search_filters(
     output = docsearch.similarity_search(
         "foo", k=1, filter={"page": 1, "metadata": {"page": 2, "pages": [3]}}
     )
-    assert output == [
-        Document(
-            page_content="bar",
-            metadata={"page": 1, "metadata": {"page": 2, "pages": [3, -1]}},
-        )
-    ]
+
+    assert_documents_equals(
+        actual=output,
+        expected=[
+            Document(
+                page_content="bar",
+                metadata={"page": 1, "metadata": {"page": 2, "pages": [3, -1]}},
+            )
+        ],
+    )
 
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
@@ -240,12 +245,15 @@ def test_qdrant_similarity_search_filters_with_qdrant_filters(
         ]
     )
     output = docsearch.similarity_search("foo", k=1, filter=qdrant_filter)
-    assert output == [
-        Document(
-            page_content="bar",
-            metadata={"page": 1, "details": {"page": 2, "pages": [3, -1]}},
-        )
-    ]
+    assert_documents_equals(
+        actual=output,
+        expected=[
+            Document(
+                page_content="bar",
+                metadata={"page": 1, "details": {"page": 2, "pages": [3, -1]}},
+            )
+        ],
+    )
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])

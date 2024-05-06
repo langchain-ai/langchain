@@ -2,6 +2,9 @@
 
 from pathlib import Path
 
+from langchain_core.pydantic_v1 import SecretStr
+from pytest import MonkeyPatch
+
 from langchain_community.llms.cohere import Cohere
 from langchain_community.llms.loading import load_llm
 from tests.integration_tests.llms.utils import assert_llm_equality
@@ -10,8 +13,18 @@ from tests.integration_tests.llms.utils import assert_llm_equality
 def test_cohere_call() -> None:
     """Test valid call to cohere."""
     llm = Cohere(max_tokens=10)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
+
+
+def test_cohere_api_key(monkeypatch: MonkeyPatch) -> None:
+    """Test that cohere api key is a secret key."""
+    # test initialization from init
+    assert isinstance(Cohere(cohere_api_key="1").cohere_api_key, SecretStr)
+
+    # test initialization from env variable
+    monkeypatch.setenv("COHERE_API_KEY", "secret-api-key")
+    assert isinstance(Cohere().cohere_api_key, SecretStr)
 
 
 def test_saving_loading_llm(tmp_path: Path) -> None:

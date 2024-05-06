@@ -1,4 +1,5 @@
 """Test Minimax llm"""
+
 from typing import cast
 
 from langchain_core.pydantic_v1 import SecretStr
@@ -19,7 +20,7 @@ def test_api_key_masked_when_passed_from_env(
     monkeypatch.setenv("MINIMAX_API_KEY", "secret-api-key")
     monkeypatch.setenv("MINIMAX_GROUP_ID", "group_id")
     llm = Minimax()
-    print(llm.minimax_api_key, end="")
+    print(llm.minimax_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -30,7 +31,7 @@ def test_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = Minimax(minimax_api_key="secret-api-key", minimax_group_id="group_id")
-    print(llm.minimax_api_key, end="")
+    print(llm.minimax_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"

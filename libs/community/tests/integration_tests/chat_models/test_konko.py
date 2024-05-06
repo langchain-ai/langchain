@@ -1,4 +1,5 @@
 """Evaluate ChatKonko Interface."""
+
 from typing import Any, cast
 
 import pytest
@@ -21,11 +22,11 @@ def test_konko_key_masked_when_passed_from_env(
 
     chat = ChatKonko()
 
-    print(chat.openai_api_key, end="")
+    print(chat.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
-    print(chat.konko_api_key, end="")
+    print(chat.konko_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
@@ -36,11 +37,11 @@ def test_konko_key_masked_when_passed_via_constructor(
     """Test initialization with an API key provided via the initializer"""
     chat = ChatKonko(openai_api_key="test-openai-key", konko_api_key="test-konko-key")
 
-    print(chat.konko_api_key, end="")
+    print(chat.konko_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
-    print(chat.konko_secret_key, end="")
+    print(chat.konko_secret_key, end="")  # type: ignore[attr-defined] # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
 
@@ -49,23 +50,23 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
     """Test that actual secret is retrieved using `.get_secret_value()`."""
     chat = ChatKonko(openai_api_key="test-openai-key", konko_api_key="test-konko-key")
     assert cast(SecretStr, chat.konko_api_key).get_secret_value() == "test-openai-key"
-    assert cast(SecretStr, chat.konko_secret_key).get_secret_value() == "test-konko-key"
+    assert cast(SecretStr, chat.konko_secret_key).get_secret_value() == "test-konko-key"  # type: ignore[attr-defined]
 
 
 def test_konko_chat_test() -> None:
     """Evaluate basic ChatKonko functionality."""
     chat_instance = ChatKonko(max_tokens=10)
     msg = HumanMessage(content="Hi")
-    chat_response = chat_instance([msg])
+    chat_response = chat_instance.invoke([msg])
     assert isinstance(chat_response, BaseMessage)
     assert isinstance(chat_response.content, str)
 
 
 def test_konko_chat_test_openai() -> None:
     """Evaluate basic ChatKonko functionality."""
-    chat_instance = ChatKonko(max_tokens=10, model="gpt-3.5-turbo")
+    chat_instance = ChatKonko(max_tokens=10, model="meta-llama/llama-2-70b-chat")
     msg = HumanMessage(content="Hi")
-    chat_response = chat_instance([msg])
+    chat_response = chat_instance.invoke([msg])
     assert isinstance(chat_response, BaseMessage)
     assert isinstance(chat_response.content, str)
 
@@ -90,7 +91,7 @@ def test_konko_system_msg_test() -> None:
     chat_instance = ChatKonko(max_tokens=10)
     sys_msg = SystemMessage(content="Initiate user chat.")
     user_msg = HumanMessage(content="Hi there")
-    chat_response = chat_instance([sys_msg, user_msg])
+    chat_response = chat_instance.invoke([sys_msg, user_msg])
     assert isinstance(chat_response, BaseMessage)
     assert isinstance(chat_response.content, str)
 
@@ -134,7 +135,7 @@ def test_konko_streaming_callback_test() -> None:
         verbose=True,
     )
     msg = HumanMessage(content="Hi")
-    chat_response = chat_instance([msg])
+    chat_response = chat_instance.invoke([msg])
     assert callback_instance.llm_streams > 0
     assert isinstance(chat_response, BaseMessage)
 

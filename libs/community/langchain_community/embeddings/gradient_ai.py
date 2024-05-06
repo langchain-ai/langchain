@@ -162,5 +162,5 @@ class TinyAsyncGradientEmbeddingClient:  #: :meta private:
     It might be entirely removed in the future.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         raise ValueError("Deprecated,TinyAsyncGradientEmbeddingClient was removed.")

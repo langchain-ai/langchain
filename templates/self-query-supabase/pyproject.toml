@@ -16,7 +16,7 @@ supabase = "^1.2.0"
 lark = "^1.1.8"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 [tool.poetry.group.dev.dependencies.python-dotenv]
 extras = [
     "cli",

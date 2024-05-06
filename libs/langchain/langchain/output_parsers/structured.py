@@ -15,7 +15,7 @@ line_template = '\t"{name}": {type}  // {description}'
 
 
 class ResponseSchema(BaseModel):
-    """A schema for a response from a structured output parser."""
+    """Schema for a response from a structured output parser."""
 
     name: str
     """The name of the schema."""
@@ -67,7 +67,7 @@ class StructuredOutputParser(BaseOutputParser):
 
         parser = StructuredOutputParser.from_response_schemas(response_schemas)
 
-        print(parser.get_format_instructions())
+        print(parser.get_format_instructions())  # noqa: T201
 
         output:
         # The output should be a Markdown code snippet formatted in the following

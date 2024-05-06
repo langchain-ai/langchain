@@ -11,9 +11,7 @@ from langchain_core.output_parsers.json import parse_and_check_json_markdown
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.runnables import Runnable
-
-from langchain.chains.llm import LLMChain
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     FilterDirective,
@@ -21,6 +19,8 @@ from langchain.chains.query_constructor.ir import (
     Operator,
     StructuredQuery,
 )
+
+from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.parser import get_parser
 from langchain.chains.query_constructor.prompt import (
     DEFAULT_EXAMPLES,
@@ -137,15 +137,18 @@ def fix_filter_directive(
         if allowed_operators and filter.operator not in allowed_operators:
             return None
         args = [
-            fix_filter_directive(
-                arg,
-                allowed_comparators=allowed_comparators,
-                allowed_operators=allowed_operators,
-                allowed_attributes=allowed_attributes,
+            cast(
+                FilterDirective,
+                fix_filter_directive(
+                    arg,
+                    allowed_comparators=allowed_comparators,
+                    allowed_operators=allowed_operators,
+                    allowed_attributes=allowed_attributes,
+                ),
             )
             for arg in filter.arguments
+            if arg is not None
         ]
-        args = [arg for arg in args if arg is not None]
         if not args:
             return None
         elif len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
@@ -323,7 +326,8 @@ def load_query_constructor_runnable(
 
     Args:
         llm: BaseLanguageModel to use for the chain.
-        document_contents: The contents of the document to be queried.
+        document_contents: Description of the page contents of the document to be
+            queried.
         attribute_info: Sequence of attributes in the document.
         examples: Optional list of examples to use for the chain.
         allowed_comparators: Sequence of allowed comparators. Defaults to all

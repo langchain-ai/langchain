@@ -28,7 +28,7 @@ def test_api_key_masked_when_passed_via_constructor(
         volc_engine_maas_ak="secret-volc-ak",
         volc_engine_maas_sk="secret-volc-sk",
     )
-    print(llm.volc_engine_maas_ak, end="")
+    print(llm.volc_engine_maas_ak, end="")  # noqa: T201
     captured = capsys.readouterr()
 
     assert captured.out == "**********"
@@ -37,7 +37,7 @@ def test_api_key_masked_when_passed_via_constructor(
 def test_default_call() -> None:
     """Test valid call to volc engine."""
     llm = VolcEngineMaasLLM()
-    output = llm("tell me a joke")
+    output = llm.invoke("tell me a joke")
     assert isinstance(output, str)
 
 

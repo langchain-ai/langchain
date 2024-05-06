@@ -1,4 +1,5 @@
 """O365 tool utils."""
+
 from __future__ import annotations
 
 import logging
@@ -35,7 +36,7 @@ def clean_body(body: str) -> str:
 
 
 def authenticate() -> Account:
-    """Authenticate using the Microsoft Grah API"""
+    """Authenticate using the Microsoft Graph API"""
     try:
         from O365 import Account
     except ImportError as e:
@@ -66,7 +67,7 @@ def authenticate() -> Account:
                 "https://graph.microsoft.com/MailboxSettings.ReadWrite",
             ]
         ):
-            print("Error: Could not authenticate")
+            print("Error: Could not authenticate")  # noqa: T201
             return None
         else:
             return account
