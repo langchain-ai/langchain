@@ -6,7 +6,7 @@ import urllib
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from typing import Any, BinaryIO, Callable, Optional
+from typing import Any, BinaryIO, Callable, List, Optional
 from uuid import uuid4
 
 import requests
@@ -253,7 +253,7 @@ class SessionsPythonREPLTool(BaseTool):
 
         return BytesIO(response.content)
 
-    def list_files(self) -> list[RemoteFileMetadata]:
+    def list_files(self) -> List[RemoteFileMetadata]:
         """List the files in the session.
 
         Returns:
