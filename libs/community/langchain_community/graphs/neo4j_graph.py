@@ -710,7 +710,10 @@ class Neo4jGraph(GraphStore):
                         )
                     )
                     return_clauses.append(
-                        f"min_size: `{prop_name}_size_min`,max_size: `{prop_name}_size_max`"
+                        (
+                            f"min_size: `{prop_name}_size_min`, "
+                            f"max_size: `{prop_name}_size_max`"
+                        )
                     )
                 elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                     continue
