@@ -6,8 +6,8 @@ from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.render import format_tool_to_openai_function
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_openai.chat_models import ChatOpenAI
 
 from neo4j_semantic_layer.information_tool import InformationTool
 from neo4j_semantic_layer.memory_tool import MemoryTool

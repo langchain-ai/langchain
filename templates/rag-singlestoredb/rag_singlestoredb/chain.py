@@ -1,12 +1,12 @@
 import os
 
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import SingleStoreDB
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai.chat_models import ChatOpenAI
 
 if os.environ.get("SINGLESTOREDB_URL", None) is None:
     raise Exception("Missing `SINGLESTOREDB_URL` environment variable.")

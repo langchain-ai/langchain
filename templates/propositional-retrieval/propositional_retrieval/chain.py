@@ -1,9 +1,9 @@
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.load import load
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnablePassthrough
+from langchain_openai.chat_models import ChatOpenAI
 
 from propositional_retrieval.constants import DOCSTORE_ID_KEY
 from propositional_retrieval.storage import get_multi_vector_retriever

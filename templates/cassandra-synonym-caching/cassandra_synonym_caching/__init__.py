@@ -3,10 +3,10 @@ import os
 import cassio
 import langchain
 from langchain.cache import CassandraCache
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda
+from langchain_openai.chat_models import ChatOpenAI
 
 use_cassandra = int(os.environ.get("USE_CASSANDRA_CLUSTER", "0"))
 if use_cassandra:

@@ -2,7 +2,6 @@ import base64
 import io
 from pathlib import Path
 
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
@@ -10,6 +9,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_experimental.open_clip import OpenCLIPEmbeddings
+from langchain_openai.chat_models import ChatOpenAI
 from PIL import Image
 
 

@@ -13,7 +13,7 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
     Example:
         .. code-block:: python
 
-                from langchain_community.chat_models import ChatOpenAI
+                from langchain_openai.chat_models import ChatOpenAI
                 from langchain_community.document_transformers import OpenAIMetadataTagger
                 from langchain_core.documents import Document
 
@@ -96,7 +96,7 @@ def create_metadata_tagger(
     Example:
         .. code-block:: python
 
-                from langchain_community.chat_models import ChatOpenAI
+                from langchain_openai.chat_models import ChatOpenAI
                 from langchain_community.document_transformers import create_metadata_tagger
                 from langchain_core.documents import Document
 

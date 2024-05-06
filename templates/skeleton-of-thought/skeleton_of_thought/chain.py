@@ -1,8 +1,8 @@
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnablePassthrough
+from langchain_openai.chat_models import ChatOpenAI
 
 skeleton_generator_template = """[User:] You’re an organizer responsible for only \
 giving the skeleton (not the full content) for answering the question.

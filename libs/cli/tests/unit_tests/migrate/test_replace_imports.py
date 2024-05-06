@@ -28,14 +28,14 @@ class TestReplaceImportsCommand(CodemodTest):
         from langchain.chat_models import ChatOpenAI
         """
         after = """
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai.chat_models import ChatOpenAI
         """
         self.assertCodemod(before, after)
 
     def test_from_community_to_partner(self) -> None:
         """Test that we can replace imports from community to partner."""
         before = """
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai.chat_models import ChatOpenAI
         """
         after = """
         from langchain_openai import ChatOpenAI
@@ -50,7 +50,7 @@ class TestReplaceImportsCommand(CodemodTest):
 
     def test_mixed_imports(self) -> None:
         before = """
-        from langchain_community.chat_models import ChatOpenAI, ChatAnthropic, foo
+        from langchain_openai.chat_models import ChatOpenAI, ChatAnthropic, foo
         """
         after = """
         from langchain_community.chat_models import foo

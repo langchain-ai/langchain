@@ -4,7 +4,6 @@ from typing import Any
 import requests
 from bs4 import BeautifulSoup
 from langchain.retrievers.tavily_search_api import TavilySearchAPIRetriever
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -16,6 +15,7 @@ from langchain_core.runnables import (
     RunnableParallel,
     RunnablePassthrough,
 )
+from langchain_openai.chat_models import ChatOpenAI
 
 RESULTS_PER_QUESTION = 3
 

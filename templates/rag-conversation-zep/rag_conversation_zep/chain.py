@@ -2,7 +2,6 @@ import os
 from operator import itemgetter
 from typing import List, Tuple
 
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.vectorstores.zep import CollectionConfig, ZepVectorStore
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -22,6 +21,7 @@ from langchain_core.runnables import (
     RunnablePassthrough,
 )
 from langchain_core.runnables.utils import ConfigurableFieldSingleOption
+from langchain_openai.chat_models import ChatOpenAI
 
 ZEP_API_URL = os.environ.get("ZEP_API_URL", "http://localhost:8000")
 ZEP_API_KEY = os.environ.get("ZEP_API_KEY", None)

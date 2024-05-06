@@ -9,7 +9,7 @@ from urllib.error import HTTPError
 
 import pytest
 from langchain_community.agent_toolkits.ainetwork.toolkit import AINetworkToolkit
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai.chat_models import ChatOpenAI
 from langchain_community.tools.ainetwork.utils import authenticate
 
 from langchain.agents import AgentType, initialize_agent

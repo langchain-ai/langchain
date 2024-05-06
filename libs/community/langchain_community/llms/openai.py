@@ -249,7 +249,7 @@ class BaseOpenAI(BaseLLM):
             warnings.warn(
                 "You are trying to use a chat model. This way of initializing it is "
                 "no longer supported. Instead, please use: "
-                "`from langchain_community.chat_models import ChatOpenAI`"
+                "`from langchain_openai.chat_models import ChatOpenAI`"
             )
             return OpenAIChat(**data)
         return super().__new__(cls)
@@ -1070,7 +1070,7 @@ class OpenAIChat(BaseLLM):
         warnings.warn(
             "You are trying to use a chat model. This way of initializing it is "
             "no longer supported. Instead, please use: "
-            "`from langchain_community.chat_models import ChatOpenAI`"
+            "`from langchain_openai.chat_models import ChatOpenAI`"
         )
         return values
 

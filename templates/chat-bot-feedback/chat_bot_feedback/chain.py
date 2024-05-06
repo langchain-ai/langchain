@@ -12,11 +12,11 @@ from langchain.schema import (
     StrOutputParser,
     get_buffer_string,
 )
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import Runnable
+from langchain_openai.chat_models import ChatOpenAI
 from langsmith.evaluation import EvaluationResult, RunEvaluator
 from langsmith.schemas import Example
 

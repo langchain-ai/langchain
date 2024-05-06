@@ -94,7 +94,7 @@ def test_imports() -> None:
     from langchain_core.prompts import BasePromptTemplate  # noqa: F401
 
     from langchain_community.callbacks import OpenAICallbackHandler  # noqa: F401
-    from langchain_community.chat_models import ChatOpenAI  # noqa: F401
+    from langchain_openai.chat_models import ChatOpenAI  # noqa: F401
     from langchain_community.document_loaders import BSHTMLLoader  # noqa: F401
     from langchain_community.embeddings import OpenAIEmbeddings  # noqa: F401
     from langchain_community.llms import OpenAI  # noqa: F401

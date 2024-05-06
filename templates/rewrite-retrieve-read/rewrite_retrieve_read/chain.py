@@ -1,9 +1,9 @@
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnablePassthrough
+from langchain_openai.chat_models import ChatOpenAI
 
 template = """Answer the users question based only on the following context:
 

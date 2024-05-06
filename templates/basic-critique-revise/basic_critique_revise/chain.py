@@ -5,7 +5,6 @@ from operator import itemgetter
 from typing import Any, Dict, Sequence
 
 from langchain.chains.openai_functions import convert_to_openai_function
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError, conint
 from langchain_core.runnables import (
@@ -14,6 +13,7 @@ from langchain_core.runnables import (
     RunnableLambda,
     RunnablePassthrough,
 )
+from langchain_openai.chat_models import ChatOpenAI
 
 
 class TaskType(str, Enum):

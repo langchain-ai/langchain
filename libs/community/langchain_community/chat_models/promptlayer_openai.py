@@ -9,7 +9,7 @@ from langchain_core.callbacks import (
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
 
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai.chat_models import ChatOpenAI
 
 
 class PromptLayerChatOpenAI(ChatOpenAI):

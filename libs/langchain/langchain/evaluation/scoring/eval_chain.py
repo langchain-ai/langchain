@@ -150,7 +150,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         output_parser (BaseOutputParser): The output parser for the chain.
 
     Example:
-        >>> from langchain_community.chat_models import ChatOpenAI
+        >>> from langchain_openai.chat_models import ChatOpenAI
         >>> from langchain.evaluation.scoring import ScoreStringEvalChain
         >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
         >>> chain = ScoreStringEvalChain.from_llm(llm=llm)

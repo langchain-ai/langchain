@@ -8,7 +8,6 @@ from langchain.retrievers import (
     WikipediaRetriever,
 )
 from langchain.utils.openai_functions import convert_pydantic_to_openai_function
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
@@ -20,6 +19,7 @@ from langchain_core.runnables import (
     RunnableParallel,
     RunnablePassthrough,
 )
+from langchain_openai.chat_models import ChatOpenAI
 
 pubmed = PubMedRetriever(top_k_results=5).with_config(run_name="pubmed")
 arxiv = ArxivRetriever(top_k_results=5).with_config(run_name="arxiv")

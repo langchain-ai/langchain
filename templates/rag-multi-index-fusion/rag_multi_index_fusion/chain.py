@@ -8,7 +8,6 @@ from langchain.retrievers import (
     WikipediaRetriever,
 )
 from langchain.utils.math import cosine_similarity
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -17,6 +16,7 @@ from langchain_core.runnables import (
     RunnableParallel,
     RunnablePassthrough,
 )
+from langchain_openai.chat_models import ChatOpenAI
 
 pubmed = PubMedRetriever(top_k_results=5).with_config(run_name="pubmed")
 arxiv = ArxivRetriever(top_k_results=5).with_config(run_name="arxiv")

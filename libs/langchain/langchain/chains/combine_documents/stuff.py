@@ -52,7 +52,7 @@ def create_stuff_documents_chain(
 
             # pip install -U langchain langchain-community
 
-            from langchain_community.chat_models import ChatOpenAI
+            from langchain_openai.chat_models import ChatOpenAI
             from langchain_core.documents import Document
             from langchain_core.prompts import ChatPromptTemplate
             from langchain.chains.combine_documents import create_stuff_documents_chain

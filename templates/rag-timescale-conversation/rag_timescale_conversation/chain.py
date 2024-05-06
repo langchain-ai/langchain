@@ -4,7 +4,6 @@ from operator import itemgetter
 from typing import List, Optional, Tuple
 
 from dotenv import find_dotenv, load_dotenv
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.timescalevector import TimescaleVector
 from langchain_core.messages import AIMessage, HumanMessage
@@ -22,6 +21,7 @@ from langchain_core.runnables import (
     RunnableParallel,
     RunnablePassthrough,
 )
+from langchain_openai.chat_models import ChatOpenAI
 
 from .load_sample_dataset import load_ts_git_dataset
 

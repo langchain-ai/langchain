@@ -1,6 +1,6 @@
 import pytest
 from langchain_community.agent_toolkits import PowerBIToolkit, create_pbi_agent
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai.chat_models import ChatOpenAI
 from langchain_community.utilities.powerbi import PowerBIDataset
 
 from langchain.utils import get_from_env

@@ -1,10 +1,10 @@
 import base64
 import json
 
-from langchain_community.chat_models import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
 from langchain_core.pydantic_v1 import Field
+from langchain_openai.chat_models import ChatOpenAI
 from langserve import CustomUserType
 
 from .prompts import (
