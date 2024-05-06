@@ -4,7 +4,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_together import ChatTogether
 
 
-def test_chat_upstage_model() -> None:
+def test_chat_together_model() -> None:
     """Test ChatTogether wrapper handles model_name."""
     chat = ChatTogether(model="foo")
     assert chat.model_name == "foo"
@@ -12,7 +12,7 @@ def test_chat_upstage_model() -> None:
     assert chat.model_name == "bar"
 
 
-def test_chat_upstage_system_message() -> None:
+def test_chat_together_system_message() -> None:
     """Test ChatOpenAI wrapper with system message."""
     chat = ChatTogether(max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
@@ -22,7 +22,7 @@ def test_chat_upstage_system_message() -> None:
     assert isinstance(response.content, str)
 
 
-def test_chat_upstage_llm_output_contains_model_name() -> None:
+def test_chat_together_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
     chat = ChatTogether(max_tokens=10)
     message = HumanMessage(content="Hello")
@@ -31,7 +31,7 @@ def test_chat_upstage_llm_output_contains_model_name() -> None:
     assert llm_result.llm_output["model_name"] == chat.model_name
 
 
-def test_chat_upstage_streaming_llm_output_contains_model_name() -> None:
+def test_chat_together_streaming_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
     chat = ChatTogether(max_tokens=10, streaming=True)
     message = HumanMessage(content="Hello")
@@ -40,7 +40,7 @@ def test_chat_upstage_streaming_llm_output_contains_model_name() -> None:
     assert llm_result.llm_output["model_name"] == chat.model_name
 
 
-def test_chat_upstage_invalid_streaming_params() -> None:
+def test_chat_together_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
         ChatTogether(
@@ -51,8 +51,8 @@ def test_chat_upstage_invalid_streaming_params() -> None:
         )
 
 
-def test_chat_upstage_extra_kwargs() -> None:
-    """Test extra kwargs to chat upstage."""
+def test_chat_together_extra_kwargs() -> None:
+    """Test extra kwargs to chat together."""
     # Check that foo is saved in extra_kwargs.
     llm = ChatTogether(foo=3, max_tokens=10)
     assert llm.max_tokens == 10

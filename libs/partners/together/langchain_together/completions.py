@@ -14,6 +14,8 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
+from langchain_together.version import __version__
+
 logger = logging.getLogger(__name__)
 
 
@@ -108,7 +110,7 @@ class Together(LLM):
 
     @staticmethod
     def get_user_agent() -> str:
-        return "langchain-together/0.3"
+        return f"langchain-together/{__version__}"
 
     @property
     def default_params(self) -> Dict[str, Any]:

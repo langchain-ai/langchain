@@ -9,7 +9,7 @@ from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 from langchain_together import ChatTogether
 
 
-class TestUpstageStandard(ChatModelIntegrationTests):
+class TestTogethertandard(ChatModelIntegrationTests):
     @pytest.fixture
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatTogether
