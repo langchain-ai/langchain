@@ -3,12 +3,12 @@ from typing import Dict
 
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.moonshot import MOONSHOT_SERVICE_URL_BASE, MoonshotCommon
 
 
-class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc]
+class MoonshotChat(MoonshotCommon, BaseChatOpenAI):  # type: ignore[misc]
     """Moonshot large language models.
 
     To use, you should have the ``openai`` python package installed, and the
@@ -42,7 +42,7 @@ class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc]
             )
 
         client_params = {
-            "api_key": values["moonshot_api_key"],
+            "api_key": values["moonshot_api_key"].get_secret_value(),
             "base_url": values["base_url"]
             if "base_url" in values
             else MOONSHOT_SERVICE_URL_BASE,
