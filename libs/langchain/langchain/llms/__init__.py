@@ -177,7 +177,7 @@ def _import_edenai() -> Any:
 
 
 def _import_fake() -> Any:
-    from langchain_community.llms.fake import FakeListLLM
+    from langchain_core.language_models import FakeListLLM
 
     return FakeListLLM
 

@@ -2,9 +2,9 @@
 
 from typing import Union
 
-from langchain_community.llms.fake import FakeListLLM
 from langchain_core.agents import AgentAction
 from langchain_core.documents import Document
+from langchain_core.language_models import FakeListLLM
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tools import Tool
 
