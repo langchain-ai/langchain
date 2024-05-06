@@ -49,6 +49,7 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
     assert result == expected
 
 
+@pytest.mark.requires("premai")
 def test_premai_initialization() -> None:
     for model in [
         ChatPremAI(model="prem-ai-model", premai_api_key="xyz", project_id=8),
