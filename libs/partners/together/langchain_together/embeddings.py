@@ -1,3 +1,5 @@
+"""Wrapper around Together AI's Embeddings API."""
+
 import logging
 import os
 import warnings
@@ -41,26 +43,26 @@ class TogetherEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain_upstage import UpstageEmbeddings
+            from langchain_together import TogetherEmbeddings
 
-            model = UpstageEmbeddings()
+            model = TogetherEmbeddings()
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model: str = "solar-1-mini-embedding"
+    model: str = "togethercomputer/m2-bert-80M-8k-retrieval"
     """Embeddings model name to use. Do not add suffixes like `-query` and `-passage`.
-    Instead, use 'solar-1-mini-embedding' for example.
+    Instead, use 'togethercomputer/m2-bert-80M-8k-retrieval' for example.
     """
     dimensions: Optional[int] = None
     """The number of dimensions the resulting output embeddings should have.
 
     Not yet supported.
     """
-    upstage_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    together_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """API Key for Solar API."""
-    upstage_api_base: str = Field(
-        default="https://api.upstage.ai/v1/solar", alias="base_url"
+    together_api_base: str = Field(
+        default="https://api.together.ai/v1/embeddings", alias="base_url"
     )
     """Endpoint URL to use."""
     embedding_ctx_length: int = 4096
@@ -82,7 +84,7 @@ class TogetherEmbeddings(BaseModel, Embeddings):
     request_timeout: Optional[Union[float, Tuple[float, float], Any]] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to Upstage embedding API. Can be float, httpx.Timeout or
+    """Timeout for requests to Together embedding API. Can be float, httpx.Timeout or
         None."""
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding.
@@ -142,22 +144,22 @@ class TogetherEmbeddings(BaseModel, Embeddings):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
 
-        upstage_api_key = get_from_dict_or_env(
-            values, "upstage_api_key", "UPSTAGE_API_KEY"
+        together_api_key = get_from_dict_or_env(
+            values, "together_api_key", "TOGETHER_API_KEY"
         )
-        values["upstage_api_key"] = (
-            convert_to_secret_str(upstage_api_key) if upstage_api_key else None
+        values["together_api_key"] = (
+            convert_to_secret_str(together_api_key) if together_api_key else None
         )
-        values["upstage_api_base"] = values["upstage_api_base"] or os.getenv(
-            "UPSTAGE_API_BASE"
+        values["together_api_base"] = values["together_api_base"] or os.getenv(
+            "TOGETHER_API_BASE"
         )
         client_params = {
             "api_key": (
-                values["upstage_api_key"].get_secret_value()
-                if values["upstage_api_key"]
+                values["together_api_key"].get_secret_value()
+                if values["together_api_key"]
                 else None
             ),
-            "base_url": values["upstage_api_base"],
+            "base_url": values["together_api_base"],
             "timeout": values["request_timeout"],
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],

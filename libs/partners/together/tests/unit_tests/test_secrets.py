@@ -1,13 +1,13 @@
-from langchain_upstage import ChatUpstage, UpstageEmbeddings
+from langchain_together import ChatTogether, TogetherEmbeddings
 
 
 def test_chat_upstage_secrets() -> None:
-    o = ChatUpstage(upstage_api_key="foo")
+    o = ChatTogether(together_api_key="foo")
     s = str(o)
     assert "foo" not in s
 
 
 def test_upstage_embeddings_secrets() -> None:
-    o = UpstageEmbeddings(upstage_api_key="foo")
+    o = TogetherEmbeddings(together_api_key="foo")
     s = str(o)
     assert "foo" not in s

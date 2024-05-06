@@ -1,8 +1,8 @@
 import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
+
 from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
@@ -15,18 +15,18 @@ from langchain_openai.chat_models.base import (
     _convert_message_to_dict,
 )
 
-from langchain_upstage import ChatUpstage
+from langchain_together import ChatTogether
 
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    ChatUpstage()
+    ChatTogether()
 
 
-def test_upstage_model_param() -> None:
-    llm = ChatUpstage(model="foo")
+def test_together_model_param() -> None:
+    llm = ChatTogether(model="foo")
     assert llm.model_name == "foo"
-    llm = ChatUpstage(model_name="foo")
+    llm = ChatTogether(model_name="foo")
     assert llm.model_name == "foo"
 
 
@@ -107,7 +107,7 @@ def mock_completion() -> dict:
         "id": "chatcmpl-7fcZavknQda3SQ",
         "object": "chat.completion",
         "created": 1689989000,
-        "model": "solar-1-mini-chat",
+        "model": "meta-llama/Llama-3-8b-chat-hf",
         "choices": [
             {
                 "index": 0,
@@ -122,8 +122,8 @@ def mock_completion() -> dict:
     }
 
 
-def test_upstage_invoke(mock_completion: dict) -> None:
-    llm = ChatUpstage()
+def test_together_invoke(mock_completion: dict) -> None:
+    llm = ChatTogether()
     mock_client = MagicMock()
     completed = False
 
@@ -143,8 +143,8 @@ def test_upstage_invoke(mock_completion: dict) -> None:
     assert completed
 
 
-async def test_upstage_ainvoke(mock_completion: dict) -> None:
-    llm = ChatUpstage()
+async def test_together_ainvoke(mock_completion: dict) -> None:
+    llm = ChatTogether()
     mock_client = AsyncMock()
     completed = False
 
@@ -164,8 +164,8 @@ async def test_upstage_ainvoke(mock_completion: dict) -> None:
     assert completed
 
 
-def test_upstage_invoke_name(mock_completion: dict) -> None:
-    llm = ChatUpstage()
+def test_together_invoke_name(mock_completion: dict) -> None:
+    llm = ChatTogether()
 
     mock_client = MagicMock()
     mock_client.create.return_value = mock_completion

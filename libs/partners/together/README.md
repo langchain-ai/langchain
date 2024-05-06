@@ -10,7 +10,7 @@ This package contains the LangChain integrations for [Together AI](https://www.t
 pip install -U langchain-together
 ```
 
-- Get your Together AI api key from the [Together Dashboard](https://api.together.xyz/settings/api-keys) and set it as an environment variable (`TOGETHER_API_KEY`)
+- Get your Together AI api key from the [Together Dashboard](https://api.together.ai/settings/api-keys) and set it as an environment variable (`TOGETHER_API_KEY`)
 
 ## Chat Completions
 

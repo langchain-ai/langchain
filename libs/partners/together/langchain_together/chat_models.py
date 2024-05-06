@@ -1,3 +1,5 @@
+"""Wrapper around Together AI's Chat Completions API."""
+
 import os
 from typing import (
     Any,
@@ -57,7 +59,7 @@ class ChatTogether(ChatOpenAI):
     together_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env are `TOGETHER_API_KEY` if not provided."""
     together_api_base: Optional[str] = Field(
-        default="https://api.together.xyz/v1", alias="base_url"
+        default="https://api.together.ai/v1/chat/completions", alias="base_url"
     )
 
     @root_validator()
