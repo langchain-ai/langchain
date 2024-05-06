@@ -3964,7 +3964,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.48"
+version = "0.1.51"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -4004,6 +4004,26 @@ extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
 [package.source]
 type = "directory"
 url = "../text-splitters"
+
+[[package]]
+name = "langkit"
+version = "0.0.31"
+description = "A language toolkit for monitoring LLM interactions"
+optional = true
+python-versions = ">=3.8,<4"
+files = [
+    {file = "langkit-0.0.31-py3-none-any.whl", hash = "sha256:052b9a0a710bb2a4319cf407771fa4441cbdc4c5f01d483bdc4545bc94571913"},
+    {file = "langkit-0.0.31.tar.gz", hash = "sha256:91d60086a43d0642326e08b591f95105067bcfc7b46788cf41920161e05f9153"},
+]
+
+[package.dependencies]
+pandas = "*"
+textstat = ">=0.7.3,<0.8.0"
+whylogs = ">=1.3.19,<2.0.0"
+xformers = {version = "*", markers = "python_full_version >= \"3.8.0\" and python_version < \"4\" and sys_platform == \"!macos\""}
+
+[package.extras]
+all = ["datasets (>=2.12.0,<3.0.0)", "detoxify (>=0.5.2,<0.6.0)", "evaluate (>=0.4.0,<0.5.0)", "h5py (>=3.10.0,<4.0.0)", "ipywidgets (>=8.1.1,<9.0.0)", "nltk (>=3.8.1,<4.0.0)", "numpy", "openai (>=0.27.6,<2.0.0)", "presidio-analyzer (>=2.2.351,<3.0.0)", "sentence-transformers (>=2.2.2,<3.0.0)", "torch", "vadersentiment (>=3.3.2,<4.0.0)"]
 
 [[package]]
 name = "langsmith"
@@ -5837,18 +5857,18 @@ files = [
 
 [[package]]
 name = "platformdirs"
-version = "4.2.0"
+version = "3.11.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
-    {file = "platformdirs-4.2.0-py3-none-any.whl", hash = "sha256:0614df2a2f37e1a662acbd8e2b25b92ccf8632929bc6d43467e17fe89c75e068"},
-    {file = "platformdirs-4.2.0.tar.gz", hash = "sha256:ef0cc731df711022c174543cb70a9b5bd22e5a9337c8624ef2c2ceb8ddad8768"},
+    {file = "platformdirs-3.11.0-py3-none-any.whl", hash = "sha256:e9d171d00af68be50e9202731309c4e658fd8bc76f55c11c7dd760d023bda68e"},
+    {file = "platformdirs-3.11.0.tar.gz", hash = "sha256:cf8ee52a3afdb965072dcc652433e0c7e3e40cf5ea1477cd4b3b1d2eb75495b3"},
 ]
 
 [package.extras]
-docs = ["furo (>=2023.9.10)", "proselint (>=0.13)", "sphinx (>=7.2.6)", "sphinx-autodoc-typehints (>=1.25.2)"]
-test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.4.3)", "pytest-cov (>=4.1)", "pytest-mock (>=3.12)"]
+docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx (>=7.1.1)", "sphinx-autodoc-typehints (>=1.24)"]
+test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.4)", "pytest-cov (>=4.1)", "pytest-mock (>=3.11.1)"]
 
 [[package]]
 name = "pluggy"
@@ -6774,6 +6794,21 @@ files = [
     {file = "pypdfium2-4.28.0-py3-none-win_arm64.whl", hash = "sha256:61cb7f54d6cf26e9d9b996f553f803f2658d93fcee4f76016264b268f41c9bf7"},
     {file = "pypdfium2-4.28.0.tar.gz", hash = "sha256:1f18981bcceb3a9e59c6de3e4e7e070cddc4de1f7faf419d9ad5f677b06fd909"},
 ]
+
+[[package]]
+name = "pyphen"
+version = "0.15.0"
+description = "Pure Python module to hyphenate text"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "pyphen-0.15.0-py3-none-any.whl", hash = "sha256:999b430916ab42ae9912537cd95c074e0c6691e89a9d05999f9b610a68f34858"},
+    {file = "pyphen-0.15.0.tar.gz", hash = "sha256:a430623decac53dc3691241253263cba36b9dd7a44ffd2680b706af368cda2f2"},
+]
+
+[package.extras]
+doc = ["sphinx", "sphinx_rtd_theme"]
+test = ["pytest", "ruff"]
 
 [[package]]
 name = "pyproj"
@@ -8598,6 +8633,20 @@ test = ["pre-commit", "pytest (>=7.0)", "pytest-timeout"]
 typing = ["mypy (>=1.6,<2.0)", "traitlets (>=5.11.1)"]
 
 [[package]]
+name = "textstat"
+version = "0.7.3"
+description = "Calculate statistical features from text"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "textstat-0.7.3-py3-none-any.whl", hash = "sha256:cbd9d641aa5abff0852638f0489913f31ea52fe597ccbaa337b4fc2a44efd15e"},
+    {file = "textstat-0.7.3.tar.gz", hash = "sha256:60b63cf8949f45bbb3b4205e4411bbc1cd66df4c08aef12545811c7e6e24f011"},
+]
+
+[package.dependencies]
+pyphen = "*"
+
+[[package]]
 name = "threadpoolctl"
 version = "3.3.0"
 description = "threadpoolctl"
@@ -9690,6 +9739,96 @@ files = [
 ]
 
 [[package]]
+name = "whylabs-client"
+version = "0.6.3"
+description = "WhyLabs API client"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "whylabs-client-0.6.3.tar.gz", hash = "sha256:4df4daa436f7899c60575c5a72641a2b3cbfe9d2f0cc0d6b4831746d13342088"},
+    {file = "whylabs_client-0.6.3-py3-none-any.whl", hash = "sha256:050bcfd1493fbb303f38b02b750fb5321abeeed1e775f7dfd570998d3bf5719b"},
+]
+
+[package.dependencies]
+python-dateutil = "*"
+urllib3 = ">=1.25.3"
+
+[[package]]
+name = "whylogs"
+version = "1.3.31"
+description = "Profile and monitor your ML data pipeline end-to-end"
+optional = true
+python-versions = "<4,>=3.7.1"
+files = [
+    {file = "whylogs-1.3.31-py3-none-any.whl", hash = "sha256:a6e4e316cd7a977e0c92bdc510697268a490e4fd4581e971465733566b1f37c5"},
+    {file = "whylogs-1.3.31.tar.gz", hash = "sha256:68a6c1cfd711371c820dac52b032a6486f7276b969bbf86f537034cc034f9512"},
+]
+
+[package.dependencies]
+platformdirs = ">=3.5.0,<4.0.0"
+protobuf = ">=3.19.4"
+requests = ">=2.27,<3.0"
+types-requests = ">=2.30.0.0,<3.0.0.0"
+typing-extensions = {version = ">=3.10", markers = "python_version < \"4\""}
+whylabs-client = ">=0.6.0,<0.7.0"
+whylogs-sketching = ">=3.4.1.dev3"
+
+[package.extras]
+all = ["Pillow (>=9.2.0,<10.0.0)", "boto3 (>=1.22.13,<2.0.0)", "faster-fifo (>=1.4.5,<2.0.0)", "fugue (>=0.8.1,<0.9.0)", "google-cloud-storage (>=2.5.0,<3.0.0)", "ipython", "mlflow-skinny (<2.0.1)", "mlflow-skinny (>=2.5.0,<3.0.0)", "numpy", "numpy (>=1.23.2)", "orjson (>=3.8.10,<4.0.0)", "pandas", "pyarrow (>=8.0.0,<13)", "pybars3 (>=0.9,<0.10)", "pyspark (>=3.0.0,<4.0.0)", "scikit-learn (>=1.0.2,<2.0.0)", "scikit-learn (>=1.1.2,<2)", "scipy (>=1.5)", "scipy (>=1.9.2)"]
+datasets = ["pandas"]
+docs = ["furo (>=2022.3.4,<2023.0.0)", "ipython_genutils (>=0.2.0,<0.3.0)", "myst-parser[sphinx] (>=0.17.2,<0.18.0)", "nbconvert (>=7.0.0,<8.0.0)", "nbsphinx (>=0.8.9,<0.9.0)", "sphinx", "sphinx-autoapi", "sphinx-autobuild (>=2021.3.14,<2022.0.0)", "sphinx-copybutton (>=0.5.0,<0.6.0)", "sphinx-inline-tabs", "sphinxext-opengraph (>=0.6.3,<0.7.0)"]
+embeddings = ["numpy", "numpy (>=1.23.2)", "scikit-learn (>=1.0.2,<2.0.0)", "scikit-learn (>=1.1.2,<2)"]
+fugue = ["fugue (>=0.8.1,<0.9.0)"]
+gcs = ["google-cloud-storage (>=2.5.0,<3.0.0)"]
+image = ["Pillow (>=9.2.0,<10.0.0)", "numpy", "numpy (>=1.23.2)"]
+mlflow = ["mlflow-skinny (<2.0.1)", "mlflow-skinny (>=2.5.0,<3.0.0)"]
+proc = ["faster-fifo (>=1.4.5,<2.0.0)", "orjson (>=3.8.10,<4.0.0)", "pandas"]
+proc-mp = ["orjson (>=3.8.10,<4.0.0)", "pandas"]
+s3 = ["boto3 (>=1.22.13,<2.0.0)"]
+spark = ["pyarrow (>=8.0.0,<13)", "pyspark (>=3.0.0,<4.0.0)"]
+viz = ["Pillow (>=9.2.0,<10.0.0)", "ipython", "numpy", "numpy (>=1.23.2)", "pybars3 (>=0.9,<0.10)", "scipy (>=1.5)", "scipy (>=1.9.2)"]
+
+[[package]]
+name = "whylogs-sketching"
+version = "3.4.1.dev3"
+description = "sketching library of whylogs"
+optional = true
+python-versions = "*"
+files = [
+    {file = "whylogs-sketching-3.4.1.dev3.tar.gz", hash = "sha256:40b90eb9d5e4cbbfa63f6a1f3a3332b72258d270044b79030dc5d720fddd9499"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9c20134eda881064099264f795d60321777b5e6c2357125a7a2787c9f15db684"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e76ac4c2d0214b8de8598867e721f774cca8877267bc2a9b2d0d06950fe76bd5"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:edc2b463d926ccacb7ee2147d206850bb0cbfea8766f091e8c575ada48db1cfd"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fdc2a3bd73895d1ffac1b3028ff55aaa6b60a9ec42d7b6b5785fa140f303dec0"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:46460eefcf22bcf20b0e6208de32e358478c17b1239221eb038d434f14ec427c"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp310-cp310-win_amd64.whl", hash = "sha256:58b99a070429a7119a5727ac61c4e9ebcd6e92eed3d2646931a487fff3d6630e"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:531a4af8f707c1e8138a4ae41a117ba53241372bf191666a9e6b44ab6cd9e634"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0ba536fca5f9578fa34d106c243fdccfef7d75b9d1fffb9d93df0debfe8e3ebc"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:afa843c68cafa08e82624e6a33d13ab7f00ad0301101960872fe152d5af5ab53"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp311-cp311-win_amd64.whl", hash = "sha256:303d55c37565340c2d21c268c64a712fad612504cc4b98b1d1df848cac6d934f"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:9d65fcf8dade1affe50181582b8894929993e37d7daa922d973a811790cd0208"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c4845e77c208ae64ada9170e1b92ed0abe28fe311c0fc35f9d8efa6926211ca2"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp36-cp36m-musllinux_1_1_x86_64.whl", hash = "sha256:02cac1c87ac42d7fc7e6597862ac50bc035825988d21e8a2d763b416e83e845f"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp36-cp36m-win_amd64.whl", hash = "sha256:52a174784e69870543fb87910e5549759f01a7f4cb6cac1773b2cc194ec0b72f"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:0931fc7500b78baf8f44222f1e3b58cfb707b0120328bc16cc50beaab5a954ec"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:803c104338a5c4e1c6eb077d35ca3a4443e455aa4e7f2769c93560bf135cdeb3"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:49e8f20351077497880b088dff9342f4b54d2d3c650c0b43daf121d97fb42468"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp37-cp37m-win_amd64.whl", hash = "sha256:f9f3507b5df34de7a95b75f80009644371dd6406f9d8795e820edf8a594aeacc"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:2986dd5b35a93267e6d89e7aa256f714105bbe61bdb0381aeab588c2688e46b6"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:14f1bf4903e9cd2a196fe5a7268cca1434d423233e073917130d5b845f539c2a"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2ecfe0e4a629a4cefec9d7c7fac234119688085ba5f62feabed710cb5a322f8b"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:000e2c11b7bbbdefb3a343c15955868a682c02d607557fef7bad5a6ffd09a0cf"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:1e70ed1ed2f9c174a80673ae2ca24c1ec0e2a01c0bd6b0728640492fd5a50178"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp38-cp38-win_amd64.whl", hash = "sha256:9efd56d5a21566fc49126ef54d37116078763bb9f8955b9c77421b4ca3fd8fc6"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:832247fd9d3ecf13791418a75c359db6c3aeffd51d7372d026e95f307ef286cc"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:cc81b547e331d96f6f4227280b9b5968ca4bd48dd7cb0c8b68c022037800009f"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3abf13da4347393a302843c2f06ce4e5fc56fd9c8564f64da13ceafb81eef90b"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d1d6e7d0ddb66ab725d7af63518ef6a24cd45b075b81e1d2081709df4c989853"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:0b05112e3f70cfccddd2f72e464fa113307d97188891433133d4219b9f8f5456"},
+    {file = "whylogs_sketching-3.4.1.dev3-cp39-cp39-win_amd64.whl", hash = "sha256:23759a00dd0e7019fbac06d9e9ab005ad6c14f80ec7935ccebccb7127296bc06"},
+]
+
+[[package]]
 name = "widgetsnbextension"
 version = "4.0.10"
 description = "Jupyter interactive widgets for Jupyter Notebook"
@@ -9795,6 +9934,28 @@ deprecation = ">=2.1.0,<3.0.0"
 orjson = ">=3.8.1,<4.0.0"
 python-dotenv = ">=0.21,<2.0"
 requests = ">=2.28.1,<3.0.0"
+
+[[package]]
+name = "xformers"
+version = "0.0.26.post1"
+description = "XFormers: A collection of composable Transformer building blocks."
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "xformers-0.0.26.post1-cp310-cp310-manylinux2014_x86_64.whl", hash = "sha256:1fe0f9a3dddb7f6175c2e34de2f318d6742eec28c068b8334b093016b2c9c2c8"},
+    {file = "xformers-0.0.26.post1-cp310-cp310-win_amd64.whl", hash = "sha256:e34b8dd6982077bee0c8eb2db8bc1513177201bfe0af890a4db42d8d31c966a5"},
+    {file = "xformers-0.0.26.post1-cp311-cp311-manylinux2014_x86_64.whl", hash = "sha256:0d35615870b9237077aec51802a5a821f9e9d2708730c8914d5cff301fb29558"},
+    {file = "xformers-0.0.26.post1-cp311-cp311-win_amd64.whl", hash = "sha256:d05c547b4ba603fc8e21fad03a342138eaaece35fe0a1692e6ee0d061ddd21ac"},
+    {file = "xformers-0.0.26.post1-cp38-cp38-manylinux2014_x86_64.whl", hash = "sha256:f3afa385266264d5f713e75ad1b31de99add9a719f2f461f98e032c259170cc9"},
+    {file = "xformers-0.0.26.post1-cp38-cp38-win_amd64.whl", hash = "sha256:e96e2c1a11e84a6aac8386a304e3e338057c95029c82b221bf6aa1658aeacdf0"},
+    {file = "xformers-0.0.26.post1-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:16dcfa801450a03f148d6d5f7ba2b5540a27c52517946570fe0e1f75238d73a1"},
+    {file = "xformers-0.0.26.post1-cp39-cp39-win_amd64.whl", hash = "sha256:cf267bac8f4454db1056e4e6ff9e4df1e02b2b31d8116d50913af15fa6ae7132"},
+    {file = "xformers-0.0.26.post1.tar.gz", hash = "sha256:1d14b5f999ede649198379b0470ebdd25007ba224ae336ef958124158a6de8b1"},
+]
+
+[package.dependencies]
+numpy = "*"
+torch = "2.3.0"
 
 [[package]]
 name = "xmltodict"
@@ -10044,9 +10205,9 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 cli = ["typer"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "azure-identity", "azure-search-documents", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cloudpickle", "cloudpickle", "cohere", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "friendli-client", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hdbcli", "hologres-vector", "html2text", "httpx", "httpx-sse", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "nvidia-riva-client", "oci", "openai", "openapi-pydantic", "oracle-ads", "oracledb", "pandas", "pdfminer-six", "pgvector", "praw", "premai", "psychicapi", "py-trello", "pyjwt", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "tidb-vector", "timescale-vector", "tqdm", "tree-sitter", "tree-sitter-languages", "upstash-redis", "vdms", "xata", "xmltodict"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "azure-identity", "azure-search-documents", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cloudpickle", "cloudpickle", "cohere", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "friendli-client", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hdbcli", "hologres-vector", "html2text", "httpx", "httpx-sse", "javelin-sdk", "jinja2", "jq", "jsonschema", "langkit", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "nvidia-riva-client", "oci", "openai", "openapi-pydantic", "oracle-ads", "oracledb", "pandas", "pdfminer-six", "pgvector", "praw", "premai", "psychicapi", "py-trello", "pyjwt", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "tidb-vector", "timescale-vector", "tqdm", "tree-sitter", "tree-sitter-languages", "upstash-redis", "vdms", "xata", "xmltodict"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "7e34ee736dde96d95158527f55b184576ecef8bebcf85a00c3d4dc753d6ae28a"
+content-hash = "afed24ab59e1d55215312c1629ea3c144b477aba751b4e2ec6f367431c99432b"
