@@ -169,6 +169,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.optimum_intel import (
         QuantizedBiEncoderEmbeddings,
     )
+    from langchain_community.embeddings.oracleai import (
+        OracleEmbeddings,  # noqa: F401
+    )
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,
     )
@@ -270,6 +273,7 @@ __all__ = [
     "OpenAIEmbeddings",
     "OpenVINOBgeEmbeddings",
     "OpenVINOEmbeddings",
+    "OracleEmbeddings",
     "PremAIEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "QuantizedBgeEmbeddings",
@@ -348,6 +352,7 @@ _module_lookup = {
     "QianfanEmbeddingsEndpoint": "langchain_community.embeddings.baidu_qianfan_endpoint",  # noqa: E501
     "QuantizedBgeEmbeddings": "langchain_community.embeddings.itrex",
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
+    "OracleEmbeddings": "langchain_community.embeddings.oracleai",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
     "SambaStudioEmbeddings": "langchain_community.embeddings.sambanova",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
