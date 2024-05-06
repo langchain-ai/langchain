@@ -17,6 +17,8 @@ class Device(str, Enum):
 
 
 class ReaderConfig(BaseModel):
+    """Configuration for the reader to be deployed in Titan Takeoff API."""
+
     class Config:
         protected_namespaces = ()
 
