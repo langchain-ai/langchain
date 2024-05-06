@@ -233,8 +233,8 @@ if TYPE_CHECKING:
         TencentVectorDB,
     )
     from langchain_community.vectorstores.thirdai_neuraldb import (
-        NeuralDBVectorStore,
         NeuralDBClientVectorStore,
+        NeuralDBVectorStore,
     )
     from langchain_community.vectorstores.tidb_vector import (
         TiDBVectorStore,
@@ -343,8 +343,8 @@ __all__ = [
     "MyScale",
     "MyScaleSettings",
     "Neo4jVector",
-    "NeuralDBVectorStore",
     "NeuralDBClientVectorStore",
+    "NeuralDBVectorStore",
     "OpenSearchVectorSearch",
     "PGEmbedding",
     "PGVector",
@@ -439,6 +439,7 @@ _module_lookup = {
     "MyScale": "langchain_community.vectorstores.myscale",
     "MyScaleSettings": "langchain_community.vectorstores.myscale",
     "Neo4jVector": "langchain_community.vectorstores.neo4j_vector",
+    "NeuralDBClientVectorStore": "langchain_community.vectorstores.thirdai_neuraldb", # noqa: E501
     "NeuralDBVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "OpenSearchVectorSearch": "langchain_community.vectorstores.opensearch_vector_search",  # noqa: E501
     "PathwayVectorClient": "langchain_community.vectorstores.pathway",

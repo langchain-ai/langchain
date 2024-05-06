@@ -3,10 +3,6 @@ import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
-import requests
-from functools import wraps
-from urllib.parse import urljoin
-import json
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -170,7 +166,7 @@ class NeuralDBVectorStore(VectorStore):
         offset = self.db._savable_state.documents.get_source_by_id(source_id)[1]
         return [str(offset + i) for i in range(len(texts))]  # type: ignore[arg-type]
 
-    @root_validator()
+    @root_validator(allow_reuse=True)
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate ThirdAI environment variables."""
         values["thirdai_key"] = convert_to_secret_str(
@@ -334,7 +330,8 @@ class NeuralDBClientVectorStore(VectorStore):
             bazaar = ModelBazaar(base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/")
             bazaar.log_in(email="user@thirdai.com", password="1234")
 
-            ndb_client = NeuralDBClient(deployment_identifier="user/model-0:user/deployment-0",base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/", bazaar=bazaar)
+            ndb_client = NeuralDBClient(deployment_identifier="user/model-0:user/
+            deployment-0",base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/", bazaar=bazaar)
             vectorstore = NeuralDBClientVectorStore(db=ndb_client)
             retriever = vectorstore.as_retriever(search_kwargs={'k':5})
 
@@ -380,15 +377,18 @@ class NeuralDBClientVectorStore(VectorStore):
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
         
-    def insert(self, documents: list[dict[str, Any]]): # type: ignore[no-untyped-def]:
+    def insert(self, documents: list[dict[str, Any]]): # type: ignore[no-untyped-def]
         """
         Inserts documents into the VectorStore and return the corresponding Sources.
 
         Args:
-            documents (List[dict[str, Any]]): A list of dictionaries that represent documents to be inserted to the VectorStores.
+            documents (List[dict[str, Any]]): A list of dictionaries that 
+            represent documents to be inserted to the VectorStores.
             The document dictionaries must be in the following format:
-            {"document_type": "DOCUMENT_TYPE", **kwargs} where "DOCUMENT_TYPE" is one of the following:
-            "PDF", "CSV", "DOCX", "URL", "SentenceLevelPDF", "SentenceLevelDOCX", "Unstructured", "InMemoryText".
+            {"document_type": "DOCUMENT_TYPE", **kwargs} where "DOCUMENT_TYPE" 
+            is one of the following:
+            "PDF", "CSV", "DOCX", "URL", "SentenceLevelPDF", "SentenceLevelDOCX", 
+            "Unstructured", "InMemoryText".
             The kwargs for each document type are shown below:
 
             class PDF(Document):
@@ -456,11 +456,12 @@ class NeuralDBClientVectorStore(VectorStore):
                 global_metadata: Optional[dict[str, Any]] = None
                 on_disk: bool = False
 
-            For Document types with the arg "path", ensure that the path exists on your local machine.
+            For Document types with the arg "path", ensure that 
+            the path exists on your local machine.
         """
         return self.db.insert(documents)
         
-    def delete(self, source_ids: List[str]): # type: ignore[no-untyped-def]:
+    def delete(self, source_ids: List[str]): # type: ignore[no-untyped-def]
         """
         Deletes documents from the VectorStore using source ids.
 
