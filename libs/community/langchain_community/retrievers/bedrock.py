@@ -115,13 +115,15 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
         results = response["retrievalResults"]
         documents = []
         for result in results:
+            content = result["content"]["text"]
+            result.pop("content", None)
+            if "score" not in result:
+                result["score"] = 0
+            result["sourceMetadata"] = result.pop("metadata", None)
             documents.append(
                 Document(
-                    page_content=result["content"]["text"],
-                    metadata={
-                        "location": result["location"],
-                        "score": result["score"] if "score" in result else 0,
-                    },
+                    page_content=content,
+                    metadata=result,
                 )
             )
 
