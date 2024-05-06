@@ -1,7 +1,7 @@
 import warnings
-import yaml
 from typing import Any, Dict, List, Optional
 
+import yaml
 from langchain_core._api import deprecated
 
 from langchain_community.graphs.graph_document import GraphDocument
@@ -152,7 +152,7 @@ class FalkorDBGraph(GraphStore):
             nodes_list.append({"label": node[0]["label"], "keys": node[0]["keys"]})
 
         return nodes_list
-        
+
     def _dump_edges_schema(self) -> List[Any]:
         """Returns the schema of the edges in the FalkorDB database"""
         schema = self.query(rel_properties_query)
@@ -162,7 +162,7 @@ class FalkorDBGraph(GraphStore):
             edges_list.append({"types": edge[0]["types"], "keys": edge[0]["keys"]})
 
         return edges_list
-        
+
     def _dump_relationships_schema(self) -> List[Any]:
         """Returns the schema of the relationships in the FalkorDB database"""
         schema = self.query(rel_query)
