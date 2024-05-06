@@ -29,6 +29,13 @@ pytest-asyncio = "^0.21.1"
 langchain-core = {path = "../../core", develop = true}
 python-dotenv = "^1.0.1"
 
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.test_integration.dependencies]
+pytest = "^7.3.0"
+python-dotenv = "^1.0.1"
+
 [tool.poetry.group.codespell]
 optional = true
 
