@@ -9,7 +9,7 @@ GigaChain предоставляет компоненты для разрабо�
 
 Архитектура примера соответствует описанной в [вводном разделе](../../../docs/use_cases/question_answering/) и включает два компонента:
 
-* Конвейер для загрузки данных из источника и их индексирование. Как правило индексирование работает в автономном режиме.
+* Конвейер для загрузки данных из источника и их индексирование. Как правило, индексирование работает в автономном режиме.
 * Цепочка RAG, которая в реальном времени обрабатывает запрос пользователя, извлекает соответствующие данные из индекса и передает их модели.
 
 Процесс генерации ответа на основе необработанных данных можно представить следующим образом:
@@ -164,15 +164,12 @@ trace](https://smith.langchain.com/public/1c6ca97e-445b-4d00-84b4-c7befcbc59fe/r
 Cначала загружается содержимое поста. Для этого используются объекты [DocumentLoaders](../../../docs/modules/data_connection/document_loaders/), которые загружают данные из источника и возвращают список документов ([`Documents`](https://api.python.langchain.com/en/latest/documents/langchain_core.documents.base.Document.html)).
 Экземпляр `Document` — объект с полями:
 
-* `page_content` (str) — содержимое страницы.
+* `page_content` (str) — содержимое страницы;
 * `metadata` (dict) — метаданные.
-
-In this case we’ll use the [WebBaseLoader](../../../docs/integrations/document_loaders/web_base), which uses `urllib` to load HTML from web URLs and `BeautifulSoup` to parse it to text. We can customize the HTML -\> text parsing by passing  in parameters to the `BeautifulSoup` parser via `bs_kwargs` (see [BeautifulSoup docs](https://beautiful-soup-4.readthedocs.io/en/latest/#beautifulsoup)).
-In this case only HTML tags with class “post-content”, “post-title”, or “post-header” are relevant, so we’ll remove all others.
 
 Код в примере загружает HTML по заданному адресу и преобразовывает его в текст с помощью компонента [WebBaseLoader](../../../docs/integrations/document_loaders/web_base), который использует библиотеки `urllib` и `BeautifulSoup`.
 Правила преобразования можно задать с помощью параметров парсера `BeautifulSoup` переданных в `bs_kwargs` (подробнее в [документации BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/#beautifulsoup)).
-Для представленного примера актуальны только HTML-теги с классами post-content, post-title и post-header.
+Для представленного примера актуальны только HTML-теги с классами `post-content`, `post-title` и `post-header`.
 
 ```python
 import bs4
@@ -215,8 +212,8 @@ In
 ### Дополнительная информация
 
 `DocumentLoader` — объект, который загружает данные в виде списка документов `Documents`. 
-* [Документация для `DocumentLoaders`](../../../docs/modules/data_connection/document_loaders/). 
-integrations to choose from. 
+
+* [Документация для `DocumentLoaders`](../../../docs/modules/data_connection/document_loaders/).
 * [Справка API](https://api.python.langchain.com/en/latest/document_loaders/langchain_core.document_loaders.base.BaseLoader.html) базового интерфейса.
 
 <!--
@@ -454,16 +451,18 @@ Task decomposition is a technique used to break down complex tasks into smaller 
 #### Выбор модели
 
 `ChatModel` — чат-модель, в основе которой лежит LLM. Объект принимает на вход последовательность сообщений и возвращает ответ модели в виде сообщения. 
-* [документация](../../../docs/modules/model_io/chat/);
-* [справка API](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.chat_models.BaseChatModel.html) для базового интерфейса.
+
+* [Документация](../../../docs/modules/model_io/chat/);
+* [Справка API](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.chat_models.BaseChatModel.html) для базового интерфейса.
 
 <!--
 - [Integrations](../../../docs/integrations/chat/): 25+ integrations to choose from.
 -->
 
 `LLM` — LLM, которая принимает и возвращает строку.
-* [документация](../../../docs/modules/model_io/llms);
-* [справка API](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.llms.BaseLLM.html) для базового интерфейса.
+
+* [Документация](../../../docs/modules/model_io/llms);
+* [Справка API](https://api.python.langchain.com/en/latest/language_models/langchain_core.language_models.llms.BaseLLM.html) для базового интерфейса.
 
 <!--
 - [Integrations](../../../docs/integrations/llms): 75+ integrations to choose from. 
@@ -472,8 +471,6 @@ Task decomposition is a technique used to break down complex tasks into smaller 
 Руководство по реализации [RAG с помощью локальных моделей](../../../docs/use_cases/question_answering/local_retrieval_qa).
 
 #### Настройка промпта
-
-As shown above, we can load prompts (e.g., [this RAG prompt](https://smith.langchain.com/hub/rlm/rag-prompt)) from the prompt hub. The prompt can also be easily customized:
 
 В примере выше RAG-промпт загружается из [хаба промптов LangChain](https://smith.langchain.com/hub/rlm/rag-prompt).
 Текст промпта можно настроить:
@@ -511,6 +508,6 @@ rag_chain.invoke("What is Task Decomposition?")
 
 Для лучшего погружения в тему ознакомьтесь с разделами:
 
-* [Возврат исходных документов](../../../docs/use_cases/question_answering/sources);
-* [Потоковая передача выходных данных и промежуточных шагов](../../../docs/use_cases/question_answering/streaming);
+* [Возврат исходных документов](../../../docs/use_cases/question_answering/sources).
+* [Потоковая передача выходных данных и промежуточных шагов](../../../docs/use_cases/question_answering/streaming).
 * [Добавление истории сообщений](../../../docs/use_cases/question_answering/chat_history).
