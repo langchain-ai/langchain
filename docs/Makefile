@@ -36,7 +36,7 @@ install-py-deps:
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install --upgrade uv
 	$(PYTHON) -m uv pip install -r vercel_requirements.txt
-	$(PYTHON) -m uv pip install --editable $(PARTNER_DEPS_LIST)
+	$(PYTHON) -m uv -v pip install --editable $(PARTNER_DEPS_LIST)
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
@@ -69,6 +69,18 @@ copy-infra:
 	cp -r static $(OUTPUT_DIR)
 	cp yarn.lock $(OUTPUT_DIR)
 
+copy-infra-new:
+	mkdir -p $(OUTPUT_NEW_DIR)
+	cp -r src $(OUTPUT_NEW_DIR)
+	cp vercel.json $(OUTPUT_NEW_DIR)
+	cp babel.config.js $(OUTPUT_NEW_DIR)
+	cp -r data $(OUTPUT_NEW_DIR)
+	cp docusaurus.config.js $(OUTPUT_NEW_DIR)
+	cp package.json $(OUTPUT_NEW_DIR)
+	cp sidebars.js $(OUTPUT_NEW_DIR)
+	cp -r static $(OUTPUT_NEW_DIR)
+	cp yarn.lock $(OUTPUT_NEW_DIR)
+
 quarto-render:
 	$(QUARTO_CMD) render $(INTERMEDIATE_DIR) --output-dir $(OUTPUT_DOCS_DIR) --no-execute
 	mv $(OUTPUT_DOCS_DIR)/$(INTERMEDIATE_DIR)/* $(OUTPUT_DOCS_DIR)
@@ -85,7 +97,7 @@ md-sync-new:
 
 build: install-py-deps generate-files copy-infra quarto-render md-sync
 
-build-new: install-py-deps generate-files copy-infra render md-sync-new
+build-new: install-py-deps generate-files copy-infra-new render md-sync-new
 
 compare:
 	diff -rq $(OUTPUT_DOCS_DIR) $(OUTPUT_NEW_DOCS_DIR)
