@@ -1,17 +1,17 @@
 import importlib.metadata
+import json
 import os
 import re
 import urllib
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from io import BufferedReader, BytesIO
-from typing import Any, Callable, Optional
+from io import BytesIO
+from typing import Any, BinaryIO, Callable, Optional
 from uuid import uuid4
 
 import requests
 from azure.core.credentials import AccessToken
 from azure.identity import DefaultAzureCredential
-from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 
 try:
@@ -28,7 +28,7 @@ def _access_token_provider_factory() -> Callable[[], Optional[str]]:
         Callable[[], Optional[str]]: The access token provider function
     """
 
-    access_token: AccessToken = None
+    access_token: Optional[AccessToken] = None
 
     def access_token_provider() -> Optional[str]:
         nonlocal access_token
@@ -87,14 +87,22 @@ class RemoteFileMetadata:
 
 class SessionsPythonREPLTool(BaseTool):
     """A tool for running Python code in an Azure Container Apps dynamic sessions
-    code interpreter."""
+    code interpreter.
 
-    name: str = "Sessions_Python_REPL"
+    Example:
+
+        .. code-block:: python
+        from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
+        tool = SessionsPythonREPLTool(pool_management_endpoint="...")
+        result = tool.run("6 * 7")
+    """
+
+    name: str = "Python_REPL"
     description: str = (
         "A Python shell. Use this to execute python commands "
         "when you need to perform calculations or computations. "
         "Input should be a valid python command. "
-        "Returns the result, stdout, and stderr. "
+        "Returns a JSON object with the result, stdout, and stderr. "
     )
 
     sanitize_input: bool = True
@@ -109,9 +117,9 @@ class SessionsPythonREPLTool(BaseTool):
     """A function that returns the access token to use for the session pool."""
 
     session_id: str = str(uuid4())
-    """The session ID to use for the session pool. Defaults to a random UUID."""
+    """The session ID to use for the code interpreter. Defaults to a random UUID."""
 
-    def _build_url(self, path) -> str:
+    def _build_url(self, path: str) -> str:
         pool_management_endpoint = self.pool_management_endpoint
         if not pool_management_endpoint:
             raise ValueError("pool_management_endpoint is not set")
@@ -123,7 +131,9 @@ class SessionsPythonREPLTool(BaseTool):
         full_url = pool_management_endpoint + path + query_separator + query
         return full_url
 
-    def _run(self, python_code: str) -> Any:
+    def execute(self, python_code: str) -> Any:
+        """Execute Python code in the session."""
+
         if self.sanitize_input:
             python_code = _sanitize_input(python_code)
 
@@ -146,27 +156,34 @@ class SessionsPythonREPLTool(BaseTool):
         response.raise_for_status()
         response_json = response.json()
         properties = response_json.get("properties", {})
-        return (
-            f"result:\n{properties['result']}\n\n"
-            f"stdout:\n{properties['stdout']}\n\n"
-            f"stderr:\n{properties['stderr']}"
+        return properties
+
+    def _run(self, python_code: str) -> Any:
+        response = self.execute(python_code)
+
+        # if the result is an image, remove the base64 data
+        result = response.get("result")
+        if isinstance(result, dict):
+            if result.get("type") == "image" and "base64_data" in result:
+                result.pop("base64_data")
+
+        return json.dumps(
+            {
+                "result": result,
+                "stdout": response.get("stdout"),
+                "stderr": response.get("stderr"),
+            },
+            indent=2,
         )
-
-    async def _arun(self, python_code: str) -> Any:
-        """Use the tool asynchronously."""
-        if self.sanitize_input:
-            python_code = _sanitize_input(python_code)
-
-        return await run_in_executor(None, self.run, python_code)
 
     def upload_file(
         self,
         *,
-        data: BufferedReader = None,
-        remote_file_path: str = None,
-        local_file_path: str = None,
+        data: Optional[BinaryIO] = None,
+        remote_file_path: Optional[str] = None,
+        local_file_path: Optional[str] = None,
     ) -> RemoteFileMetadata:
-        """Upload a file to the session pool.
+        """Upload a file to the session.
 
         Args:
             data: The data to upload.
@@ -182,10 +199,12 @@ class SessionsPythonREPLTool(BaseTool):
         if data and local_file_path:
             raise ValueError("data and local_file_path cannot be provided together")
 
-        if local_file_path:
+        if data:
+            file_data = data
+        elif local_file_path:
             if not remote_file_path:
                 remote_file_path = os.path.basename(local_file_path)
-            data = open(local_file_path, "rb")
+            file_data = open(local_file_path, "rb")
 
         access_token = self.access_token_provider()
         api_url = self._build_url("files/upload")
@@ -193,11 +212,10 @@ class SessionsPythonREPLTool(BaseTool):
             "Authorization": f"Bearer {access_token}",
             "User-Agent": USER_AGENT,
         }
-        payload = {}
-        files = [("file", (remote_file_path, data, "application/octet-stream"))]
+        files = [("file", (remote_file_path, file_data, "application/octet-stream"))]
 
         response = requests.request(
-            "POST", api_url, headers=headers, data=payload, files=files
+            "POST", api_url, headers=headers, data={}, files=files
         )
         response.raise_for_status()
 
@@ -205,9 +223,9 @@ class SessionsPythonREPLTool(BaseTool):
         return RemoteFileMetadata.from_dict(response_json["value"][0])
 
     def download_file(
-        self, *, remote_file_path: str, local_file_path: str = None
-    ) -> Optional[BufferedReader]:
-        """Download a file from the session pool.
+        self, *, remote_file_path: str, local_file_path: Optional[str] = None
+    ) -> BinaryIO:
+        """Download a file from the session.
 
         Args:
             remote_file_path: The path to download the file from,
@@ -216,7 +234,7 @@ class SessionsPythonREPLTool(BaseTool):
                 If not provided, the file is returned as a BufferedReader.
 
         Returns:
-            BufferedReader: The data of the downloaded file.
+            BinaryIO: The data of the downloaded file.
         """
         access_token = self.access_token_provider()
         encoded_remote_file_path = urllib.parse.quote(remote_file_path)
@@ -232,15 +250,14 @@ class SessionsPythonREPLTool(BaseTool):
         if local_file_path:
             with open(local_file_path, "wb") as f:
                 f.write(response.content)
-            return None
 
         return BytesIO(response.content)
 
     def list_files(self) -> list[RemoteFileMetadata]:
-        """List the files in the session pool.
+        """List the files in the session.
 
         Returns:
-            list[RemoteFileMetadata]: The metadata for the files in the session pool
+            list[RemoteFileMetadata]: The metadata for the files in the session
         """
         access_token = self.access_token_provider()
         api_url = self._build_url("files")

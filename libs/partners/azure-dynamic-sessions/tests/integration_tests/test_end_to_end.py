@@ -1,4 +1,6 @@
+import json
 import os
+from io import BytesIO
 
 import dotenv
 
@@ -11,14 +13,18 @@ TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "testdata.txt")
 TEST_DATA_CONTENT = open(TEST_DATA_PATH, "rb").read()
 
 
-def test_end_to_end():
+def test_end_to_end() -> None:
     tool = SessionsPythonREPLTool(pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT)
     result = tool.run("print('hello world')\n1 + 1")
-    assert result == "result:\n2\n\nstdout:\nhello world\n\n\nstderr:\n"
+    assert json.loads(result) == {
+        "result": 2,
+        "stdout": "hello world\n",
+        "stderr": "",
+    }
 
     # upload file content
     uploaded_file1_metadata = tool.upload_file(
-        remote_file_path="test1.txt", data=b"hello world!!!!!"
+        remote_file_path="test1.txt", data=BytesIO(b"hello world!!!!!")
     )
     assert uploaded_file1_metadata.filename == "test1.txt"
     assert uploaded_file1_metadata.size_in_bytes == 16

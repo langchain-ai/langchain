@@ -1,3 +1,4 @@
+import json
 import re
 import time
 from unittest import mock
@@ -10,10 +11,10 @@ from langchain_azure_dynamic_sessions.tools.sessions import (
     _access_token_provider_factory,
 )
 
-POOL_MANAGEMENT_ENDPOINT = "https://westus2.acasessions.io/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/sessions-rg/sessionPools/my-pool"
+POOL_MANAGEMENT_ENDPOINT = "https://westus2.dynamicsessions.io/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/sessions-rg/sessionPools/my-pool"
 
 
-def test_default_access_token_provider_returns_token():
+def test_default_access_token_provider_returns_token() -> None:
     access_token_provider = _access_token_provider_factory()
     with mock.patch(
         "azure.identity.DefaultAzureCredential.get_token"
@@ -23,33 +24,39 @@ def test_default_access_token_provider_returns_token():
         assert access_token == "token_value"
 
 
-def test_default_access_token_provider_returns_cached_token():
+def test_default_access_token_provider_returns_cached_token() -> None:
     access_token_provider = _access_token_provider_factory()
     with mock.patch(
         "azure.identity.DefaultAzureCredential.get_token"
     ) as mock_get_token:
-        mock_get_token.return_value = AccessToken("token_value", time.time() + 1000)
+        mock_get_token.return_value = AccessToken(
+            "token_value", int(time.time() + 1000)
+        )
         access_token = access_token_provider()
         assert access_token == "token_value"
         assert mock_get_token.call_count == 1
 
-        mock_get_token.return_value = AccessToken("new_token_value", time.time() + 1000)
+        mock_get_token.return_value = AccessToken(
+            "new_token_value", int(time.time() + 1000)
+        )
         access_token = access_token_provider()
         assert access_token == "token_value"
         assert mock_get_token.call_count == 1
 
 
-def test_default_access_token_provider_refreshes_expiring_token():
+def test_default_access_token_provider_refreshes_expiring_token() -> None:
     access_token_provider = _access_token_provider_factory()
     with mock.patch(
         "azure.identity.DefaultAzureCredential.get_token"
     ) as mock_get_token:
-        mock_get_token.return_value = AccessToken("token_value", time.time() - 1)
+        mock_get_token.return_value = AccessToken("token_value", int(time.time() - 1))
         access_token = access_token_provider()
         assert access_token == "token_value"
         assert mock_get_token.call_count == 1
 
-        mock_get_token.return_value = AccessToken("new_token_value", time.time() + 1000)
+        mock_get_token.return_value = AccessToken(
+            "new_token_value", int(time.time() + 1000)
+        )
         access_token = access_token_provider()
         assert access_token == "new_token_value"
         assert mock_get_token.call_count == 2
@@ -57,7 +64,9 @@ def test_default_access_token_provider_refreshes_expiring_token():
 
 @mock.patch("requests.post")
 @mock.patch("azure.identity.DefaultAzureCredential.get_token")
-def test_code_execution_calls_api(mock_get_token, mock_post: mock.MagicMock):
+def test_code_execution_calls_api(
+    mock_get_token: mock.MagicMock, mock_post: mock.MagicMock
+) -> None:
     tool = SessionsPythonREPLTool(pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT)
     mock_post.return_value.json.return_value = {
         "$id": "1",
@@ -70,11 +79,15 @@ def test_code_execution_calls_api(mock_get_token, mock_post: mock.MagicMock):
             "executionTimeInMilliseconds": 33,
         },
     }
-    mock_get_token.return_value = AccessToken("token_value", time.time() + 1000)
+    mock_get_token.return_value = AccessToken("token_value", int(time.time() + 1000))
 
     result = tool.run("print('hello world')")
 
-    assert result == "result:\n\n\nstdout:\nhello world\n\n\nstderr:\n"
+    assert json.loads(result) == {
+        "result": "",
+        "stdout": "hello world\n",
+        "stderr": "",
+    }
 
     api_url = f"{POOL_MANAGEMENT_ENDPOINT}/code/execute"
     headers = {
@@ -103,7 +116,9 @@ def test_code_execution_calls_api(mock_get_token, mock_post: mock.MagicMock):
 
 @mock.patch("requests.post")
 @mock.patch("azure.identity.DefaultAzureCredential.get_token")
-def test_uses_specified_session_id(mock_get_token, mock_post: mock.MagicMock):
+def test_uses_specified_session_id(
+    mock_get_token: mock.MagicMock, mock_post: mock.MagicMock
+) -> None:
     tool = SessionsPythonREPLTool(
         pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT,
         session_id="00000000-0000-0000-0000-000000000003",
@@ -119,7 +134,7 @@ def test_uses_specified_session_id(mock_get_token, mock_post: mock.MagicMock):
             "executionTimeInMilliseconds": 33,
         },
     }
-    mock_get_token.return_value = AccessToken("token_value", time.time() + 1000)
+    mock_get_token.return_value = AccessToken("token_value", int(time.time() + 1000))
     tool.run("1 + 1")
     call_url = mock_post.call_args.args[0]
     parsed_url = urlparse(call_url)
@@ -127,7 +142,7 @@ def test_uses_specified_session_id(mock_get_token, mock_post: mock.MagicMock):
     assert call_identifier == "00000000-0000-0000-0000-000000000003"
 
 
-def test_sanitizes_input():
+def test_sanitizes_input() -> None:
     tool = SessionsPythonREPLTool(pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT)
     with mock.patch("requests.post") as mock_post:
         mock_post.return_value.json.return_value = {
@@ -146,7 +161,7 @@ def test_sanitizes_input():
         assert body["properties"]["code"] == "print('hello world')"
 
 
-def test_does_not_sanitize_input():
+def test_does_not_sanitize_input() -> None:
     tool = SessionsPythonREPLTool(
         pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT, sanitize_input=False
     )
@@ -167,8 +182,8 @@ def test_does_not_sanitize_input():
         assert body["properties"]["code"] == "```python\nprint('hello world')\n```"
 
 
-def test_uses_custom_access_token_provider():
-    def custom_access_token_provider():
+def test_uses_custom_access_token_provider() -> None:
+    def custom_access_token_provider() -> str:
         return "custom_token"
 
     tool = SessionsPythonREPLTool(

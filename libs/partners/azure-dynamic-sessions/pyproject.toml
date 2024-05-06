@@ -35,11 +35,6 @@ optional = true
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
-
 [tool.poetry.group.lint]
 optional = true
 
@@ -56,6 +51,9 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 langchain-core = {path = "../../core", develop = true}
 ipykernel = "^6.29.4"
+langchain-openai = {path = "../openai", develop = true}
+langchain = {path = "../../langchain", develop = true}
+langchainhub = "^0.1.15"
 
 [tool.ruff]
 select = [
