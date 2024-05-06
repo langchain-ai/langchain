@@ -638,15 +638,13 @@ class Neo4jGraph(GraphStore):
                 prop_type = prop["type"]
 
                 # Check if indexed property, we can still do exhaustive
-                prop_index = None
-                if not is_relationship:
-                    prop_index = [
-                        el
-                        for el in self.structured_schema["metadata"]["index"]
-                        if el["label"] == label_or_type
-                        and el["properties"] == [prop_name]
-                        and el["type"] == "RANGE"
-                    ]
+                prop_index = [
+                    el
+                    for el in self.structured_schema["metadata"]["index"]
+                    if el["label"] == label_or_type
+                    and el["properties"] == [prop_name]
+                    and el["type"] == "RANGE"
+                ]
                 if prop_type == "STRING":
                     if (
                         prop_index
