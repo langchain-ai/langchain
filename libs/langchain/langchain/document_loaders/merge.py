@@ -1,3 +1,23 @@
-from langchain_community.document_loaders.merge import MergedDataLoader
+from typing import TYPE_CHECKING, Any
 
-__all__ = ["MergedDataLoader"]
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import MergedDataLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"MergedDataLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "MergedDataLoader",
+]

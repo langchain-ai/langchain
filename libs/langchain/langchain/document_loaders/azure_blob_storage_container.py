@@ -1,5 +1,25 @@
-from langchain_community.document_loaders.azure_blob_storage_container import (
-    AzureBlobStorageContainerLoader,
-)
+from typing import TYPE_CHECKING, Any
 
-__all__ = ["AzureBlobStorageContainerLoader"]
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import AzureBlobStorageContainerLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "AzureBlobStorageContainerLoader": "langchain_community.document_loaders"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "AzureBlobStorageContainerLoader",
+]
