@@ -1,14 +1,12 @@
 import os
 
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain_openai.chat_models import ChatOpenAI
-
 from langchain_community.vectorstores import Vectara
 from langchain_community.vectorstores.vectara import SummaryConfig, VectaraQueryConfig
-
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai.chat_models import ChatOpenAI
 
 if os.environ.get("VECTARA_CUSTOMER_ID", None) is None:
     raise Exception("Missing `VECTARA_CUSTOMER_ID` environment variable.")
@@ -22,12 +20,14 @@ if os.environ.get("VECTARA_API_KEY", None) is None:
 vectara = Vectara()
 
 # Define the query configuration:
-summary_config = SummaryConfig(is_enabled=True, max_results=5, response_lang='eng')
+summary_config = SummaryConfig(is_enabled=True, max_results=5, response_lang="eng")
 config = VectaraQueryConfig(k=10, lambda_val=0.025, summary_config=summary_config)
 
 # Setup the Multi-query retriever
 llm = ChatOpenAI(temperature=0)
-retriever = MultiQueryRetriever.from_llm(retriever=vectara.as_retriever(config), llm=llm)
+retriever = MultiQueryRetriever.from_llm(
+    retriever=vectara.as_retriever(config), llm=llm
+)
 
 # Setup RAG pipeline with multi-query.
 # We extract the summary from the RAG output, which is the last document in the list.
