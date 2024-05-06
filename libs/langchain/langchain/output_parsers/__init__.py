@@ -35,7 +35,6 @@ from langchain.output_parsers.datetime import DatetimeOutputParser
 from langchain.output_parsers.enum import EnumOutputParser
 from langchain.output_parsers.fix import OutputFixingParser
 from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
-from langchain.output_parsers.rail_parser import GuardrailsOutputParser
 from langchain.output_parsers.regex import RegexParser
 from langchain.output_parsers.regex_dict import RegexDictParser
 from langchain.output_parsers.retry import RetryOutputParser, RetryWithErrorOutputParser
