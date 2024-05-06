@@ -2,11 +2,7 @@
   "docs": [
     "introduction",
     "tutorials",
-    {
-      "type": "doc",
-      "id": "how_to",
-      "label": "How-To Guides"
-    },
+    "how_to",
     "concepts",
     {
       "type": "category",
