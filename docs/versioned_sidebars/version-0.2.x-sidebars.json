@@ -1,8 +1,16 @@
 {
   "docs": [
     "introduction",
-    "tutorials",
-    "how_to",
+    {
+      "type": "doc",
+      "id": "tutorials/index",
+      "label": "Tutorials"
+    },
+    {
+      "type": "doc",
+      "id": "how_to/index",
+      "label": "How-To Guides"
+    },
     "concepts",
     {
       "type": "category",
