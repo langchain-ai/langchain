@@ -3964,7 +3964,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.48"
+version = "0.1.51"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -5441,6 +5441,49 @@ tensorflow = ["oracle_ads[viz]", "tensorflow"]
 text = ["spacy", "wordcloud (>=1.8.1)"]
 torch = ["oracle_ads[viz]", "torch", "torchvision"]
 viz = ["bokeh (>=3.0.0,<3.2.0)", "folium (>=0.12.1)", "graphviz (<0.17)", "scipy (>=1.5.4)", "seaborn (>=0.11.0)"]
+
+[[package]]
+name = "oracledb"
+version = "2.2.0"
+description = "Python interface to Oracle Database"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "oracledb-2.2.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:253a85eef53d97815b4d838e5275d0a99e33ec340eb4b945cd2371e2bcede46b"},
+    {file = "oracledb-2.2.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fa5c2982076366f59dade28b554b43a257ad426e55359124bc37f191f51c2d46"},
+    {file = "oracledb-2.2.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:19408844bd4af5b4d40f06c3e5b88c6bfce4a749f61ab766f41b22c4070c5c15"},
+    {file = "oracledb-2.2.0-cp310-cp310-win32.whl", hash = "sha256:c2e2e3f00d7eb7f4dabfa8996dc70db03bd7dbe474d2d1dc381daeff54cfdeff"},
+    {file = "oracledb-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:efed536635b0fec5c1484eda55fad4affa57672b87596ec6273123a3133ba5b6"},
+    {file = "oracledb-2.2.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:c4b7e14b04dc2af4697ca561f9bcac110a67a7be2ccf868d789e92771017feca"},
+    {file = "oracledb-2.2.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:61bbf9cd64a2f3b65a12550329b2f0caed7d9aa5e892c0ce69d9ea7b3cb3cb8e"},
+    {file = "oracledb-2.2.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4e461d1c7ef4d3f03d84595a13754390a62300976782d7c29efc07fcc915e1b3"},
+    {file = "oracledb-2.2.0-cp311-cp311-win32.whl", hash = "sha256:6c7da69d18cf02e469e15215af9c6f219256972a172c0e544a2ecc2a5cab9aa5"},
+    {file = "oracledb-2.2.0-cp311-cp311-win_amd64.whl", hash = "sha256:d0245f677e27ee0990eb0213485031dacdc837a89569563f1594b82ccb362255"},
+    {file = "oracledb-2.2.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:10d2cd354a15e2b7e191256a0179874068fc64fa6543b2e20c9c1c38f0dd0839"},
+    {file = "oracledb-2.2.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fbf07e0e88c9ff1555c9301d95c69e0d48263cf7df63172043fe0a042539e687"},
+    {file = "oracledb-2.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c6a1365d3e05ca73b638ef939f9a609fed0ae5da75d13b2cfb75601ab8b85fce"},
+    {file = "oracledb-2.2.0-cp312-cp312-win32.whl", hash = "sha256:3fe57091a1463efac692b352e99f9daeab5ab375bab2060c5caba9a3a7743c15"},
+    {file = "oracledb-2.2.0-cp312-cp312-win_amd64.whl", hash = "sha256:e5ca9c050e18b2b1005b40d44a2098155445836071253ee5d547c7f285fc7729"},
+    {file = "oracledb-2.2.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:b5ad105aabc8ff32e3d3a343a92cf84976cf2454b6a6ff02065383fc3863e68d"},
+    {file = "oracledb-2.2.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:14a7f2572c358604186d857c80f384ad03226e372731770911856541a06bdd34"},
+    {file = "oracledb-2.2.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:aa1fe78ed0cbf98593c1f3f620f751b725b189f8c845577e39a372f44b2bf384"},
+    {file = "oracledb-2.2.0-cp37-cp37m-win32.whl", hash = "sha256:bcef115bd147d6f267e3b09cbc3fc04189bff69e94d05c1e266c698668061e8d"},
+    {file = "oracledb-2.2.0-cp37-cp37m-win_amd64.whl", hash = "sha256:1272bf562bcd6ff5e23b1e1fe8c3363d7a66fe8f48b1e00c4fb081d5436e1df5"},
+    {file = "oracledb-2.2.0-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:e0010aee0ed0a57964ce9f6cb0e2315a4ffce947121e0bb1c618e5091e64bab4"},
+    {file = "oracledb-2.2.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:437d7c5a36f7e72ca36e1ac3f1a7c087bffa1cd0ba3a84471e54506c8572a5ad"},
+    {file = "oracledb-2.2.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:581b7067283910a53b1ac1a50c0046058a21bd5c073d529bf695113db6d25f62"},
+    {file = "oracledb-2.2.0-cp38-cp38-win32.whl", hash = "sha256:97fdc27a15f6441434a7ef563f522c8ceac19c2933f2da1082125670a2e2fc6b"},
+    {file = "oracledb-2.2.0-cp38-cp38-win_amd64.whl", hash = "sha256:c22a2052997a01e59a4c9c33c9c0593eebcb1d893addeda9cd57003c2e088a85"},
+    {file = "oracledb-2.2.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:b924ee3e7d41edb367e5bb4cbb30990ad447fedda9ef0fe29b691d36a8d338c2"},
+    {file = "oracledb-2.2.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:de3f9fa10b5f5c5dbe80dc7bdea5e5746abd411217e812fae66cc61c68f3f8f6"},
+    {file = "oracledb-2.2.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ba96a450275bceb5e0928e0dc01b5fb200e81ba04e99499d4930ccba681fd88a"},
+    {file = "oracledb-2.2.0-cp39-cp39-win32.whl", hash = "sha256:35b6524b57979dbe8463af06648ad9972bce06e014a292ad96fec34c62665a8b"},
+    {file = "oracledb-2.2.0-cp39-cp39-win_amd64.whl", hash = "sha256:0b4968f39871d501ab16a2fe05b5b4ae954e338e6b9dcefeb9bced998ddd4c4b"},
+    {file = "oracledb-2.2.0.tar.gz", hash = "sha256:f52c7df38b13243b5ce583457b80748a34682b9bb8370da2497868b71976798b"},
+]
+
+[package.dependencies]
+cryptography = ">=3.2.1"
 
 [[package]]
 name = "orjson"
@@ -9996,9 +10039,9 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 cli = ["typer"]
-extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "azure-identity", "azure-search-documents", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cloudpickle", "cloudpickle", "cohere", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "friendli-client", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hdbcli", "hologres-vector", "html2text", "httpx", "httpx-sse", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "nvidia-riva-client", "oci", "openai", "openapi-pydantic", "oracle-ads", "pandas", "pdfminer-six", "pgvector", "praw", "premai", "psychicapi", "py-trello", "pyjwt", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "tidb-vector", "timescale-vector", "tqdm", "tree-sitter", "tree-sitter-languages", "upstash-redis", "vdms", "xata", "xmltodict"]
+extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "assemblyai", "atlassian-python-api", "azure-ai-documentintelligence", "azure-identity", "azure-search-documents", "beautifulsoup4", "bibtexparser", "cassio", "chardet", "cloudpickle", "cloudpickle", "cohere", "databricks-vectorsearch", "datasets", "dgml-utils", "elasticsearch", "esprima", "faiss-cpu", "feedparser", "fireworks-ai", "friendli-client", "geopandas", "gitpython", "google-cloud-documentai", "gql", "gradientai", "hdbcli", "hologres-vector", "html2text", "httpx", "httpx-sse", "javelin-sdk", "jinja2", "jq", "jsonschema", "lxml", "markdownify", "motor", "msal", "mwparserfromhell", "mwxml", "newspaper3k", "numexpr", "nvidia-riva-client", "oci", "openai", "openapi-pydantic", "oracle-ads", "oracledb", "pandas", "pdfminer-six", "pgvector", "praw", "premai", "psychicapi", "py-trello", "pyjwt", "pymupdf", "pypdf", "pypdfium2", "pyspark", "rank-bm25", "rapidfuzz", "rapidocr-onnxruntime", "rdflib", "requests-toolbelt", "rspace_client", "scikit-learn", "sqlite-vss", "streamlit", "sympy", "telethon", "tidb-vector", "timescale-vector", "tqdm", "tree-sitter", "tree-sitter-languages", "upstash-redis", "vdms", "xata", "xmltodict"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "df095fde2d52bf7dc2ebe6ddc54792cd2b0e189660a62af372480bb2cac20a3e"
+content-hash = "ca64e52a60e8ee6f2f4ea303e1779a4508f401e283f63861161cb6a9560e2178"

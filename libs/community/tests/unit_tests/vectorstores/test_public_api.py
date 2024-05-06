@@ -55,6 +55,7 @@ _EXPECTED = [
     "MyScaleSettings",
     "Neo4jVector",
     "OpenSearchVectorSearch",
+    "OracleVS",
     "PGEmbedding",
     "PGVector",
     "PathwayVectorClient",
