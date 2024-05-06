@@ -141,7 +141,7 @@ def test_load_llmchain_env() -> None:
         del os.environ["OPENAI_API_KEY"]
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "langchain_openai")
 def test_load_llmchain_with_non_serializable_arg() -> None:
     import httpx
     from langchain_openai import OpenAI
