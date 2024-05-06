@@ -151,7 +151,7 @@ class TimescaleVector(VectorStore):
         num_dimensions = len(embeddings[0])
 
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -192,7 +192,7 @@ class TimescaleVector(VectorStore):
         num_dimensions = len(embeddings[0])
 
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -233,7 +233,7 @@ class TimescaleVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -260,7 +260,7 @@ class TimescaleVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]

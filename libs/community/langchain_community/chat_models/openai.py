@@ -68,7 +68,7 @@ def _import_tiktoken() -> Any:
     try:
         import tiktoken
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import tiktoken python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install tiktoken`."

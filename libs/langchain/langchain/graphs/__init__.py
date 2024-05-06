@@ -1,28 +1,45 @@
 """**Graphs** provide a natural language interface to graph databases."""
+from typing import TYPE_CHECKING, Any
 
-import warnings
-from typing import Any
+from langchain._api import create_importer
 
-from langchain_core._api import LangChainDeprecationWarning
+if TYPE_CHECKING:
+    from langchain_community.graphs import (
+        ArangoGraph,
+        FalkorDBGraph,
+        HugeGraph,
+        KuzuGraph,
+        MemgraphGraph,
+        NebulaGraph,
+        Neo4jGraph,
+        NeptuneGraph,
+        NetworkxEntityGraph,
+        RdfGraph,
+    )
 
-from langchain.utils.interactive_env import is_interactive_env
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "MemgraphGraph": "langchain_community.graphs",
+    "NetworkxEntityGraph": "langchain_community.graphs",
+    "Neo4jGraph": "langchain_community.graphs",
+    "NebulaGraph": "langchain_community.graphs",
+    "NeptuneGraph": "langchain_community.graphs",
+    "KuzuGraph": "langchain_community.graphs",
+    "HugeGraph": "langchain_community.graphs",
+    "RdfGraph": "langchain_community.graphs",
+    "ArangoGraph": "langchain_community.graphs",
+    "FalkorDBGraph": "langchain_community.graphs",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
-    from langchain_community import graphs
-
-    # If not in interactive env, raise warning.
-    if not is_interactive_env():
-        warnings.warn(
-            "Importing graphs from langchain is deprecated. Importing from "
-            "langchain will no longer be supported as of langchain==0.2.0. "
-            "Please import from langchain-community instead:\n\n"
-            f"`from langchain_community.graphs import {name}`.\n\n"
-            "To install gigachain-community run `pip install -U gigachain-community`.",
-            category=LangChainDeprecationWarning,
-        )
-
-    return getattr(graphs, name)
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
 __all__ = [

@@ -2,6 +2,7 @@
 
 from typing import Any, List, Optional, Sequence
 
+from langchain_community.docstore.base import Docstore
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
@@ -15,7 +16,6 @@ from langchain.agents.react.output_parser import ReActOutputParser
 from langchain.agents.react.textworld_prompt import TEXTWORLD_PROMPT
 from langchain.agents.react.wiki_prompt import WIKI_PROMPT
 from langchain.agents.utils import validate_tools_single_input
-from langchain.docstore.base import Docstore
 
 
 @deprecated("0.1.0", removal="0.2.0")

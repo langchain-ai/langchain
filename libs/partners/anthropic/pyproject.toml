@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "gigachain-anthropic"
-version = "0.1.8"
+version = "0.1.11"
 description = "An integration package connecting AnthropicMessages and LangChain"
 authors = []
 readme = "README.md"
@@ -16,7 +16,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1.42"
+gigachain-core = "^0.1.43"
 anthropic = ">=0.23.0,<1"
 defusedxml = { version = "^0.7.1", optional = true }
 

@@ -1,5 +1,4 @@
 """Integration test for CrossEncoderReranker."""
-
 from typing import List
 
 from langchain_community.cross_encoders import FakeCrossEncoder

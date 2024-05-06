@@ -81,7 +81,7 @@ class MLXPipeline(LLM):
             from mlx_lm import load
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import mlx_lm python package. "
                 "Please install it with `pip install mlx_lm`."
             )
@@ -130,7 +130,7 @@ class MLXPipeline(LLM):
             from mlx_lm import generate
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import mlx_lm python package. "
                 "Please install it with `pip install mlx_lm`."
             )
@@ -151,7 +151,7 @@ class MLXPipeline(LLM):
             from mlx_lm.utils import generate_step
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import mlx_lm python package. "
                 "Please install it with `pip install mlx_lm`."
             )

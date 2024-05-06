@@ -102,7 +102,7 @@ class _VectorStoreClient:
         filepath_globpattern: Optional[str] = None,
     ) -> list:
         """
-        Fetch information on documents in the the vector store.
+        Fetch information on documents in the vector store.
 
         Args:
             metadata_filter: optional string representing the metadata filtering query

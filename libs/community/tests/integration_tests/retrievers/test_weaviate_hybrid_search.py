@@ -40,7 +40,7 @@ class TestWeaviateHybridSearchRetriever:
         client.schema.delete_all()
 
     @pytest.mark.vcr(ignore_localhost=True)
-    def test_get_relevant_documents(self, weaviate_url: str) -> None:
+    def test_invoke(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""
         from weaviate import Client
 
@@ -60,7 +60,7 @@ class TestWeaviateHybridSearchRetriever:
                 [Document(page_content=text, metadata=metadatas[i])]
             )
 
-        output = retriever.get_relevant_documents("foo")
+        output = retriever.invoke("foo")
         assert output == [
             Document(page_content="foo", metadata={"page": 0}),
             Document(page_content="baz", metadata={"page": 2}),
@@ -68,7 +68,7 @@ class TestWeaviateHybridSearchRetriever:
         ]
 
     @pytest.mark.vcr(ignore_localhost=True)
-    def test_get_relevant_documents_with_score(self, weaviate_url: str) -> None:
+    def test_invoke_with_score(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""
         from weaviate import Client
 
@@ -88,12 +88,12 @@ class TestWeaviateHybridSearchRetriever:
                 [Document(page_content=text, metadata=metadatas[i])]
             )
 
-        output = retriever.get_relevant_documents("foo", score=True)
+        output = retriever.invoke("foo", score=True)
         for doc in output:
             assert "_additional" in doc.metadata
 
     @pytest.mark.vcr(ignore_localhost=True)
-    def test_get_relevant_documents_with_filter(self, weaviate_url: str) -> None:
+    def test_invoke_with_filter(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""
         from weaviate import Client
 
@@ -115,13 +115,13 @@ class TestWeaviateHybridSearchRetriever:
 
         where_filter = {"path": ["page"], "operator": "Equal", "valueNumber": 0}
 
-        output = retriever.get_relevant_documents("foo", where_filter=where_filter)
+        output = retriever.invoke("foo", where_filter=where_filter)
         assert output == [
             Document(page_content="foo", metadata={"page": 0}),
         ]
 
     @pytest.mark.vcr(ignore_localhost=True)
-    def test_get_relevant_documents_with_uuids(self, weaviate_url: str) -> None:
+    def test_invoke_with_uuids(self, weaviate_url: str) -> None:
         """Test end to end construction and MRR search."""
         from weaviate import Client
 
@@ -143,5 +143,5 @@ class TestWeaviateHybridSearchRetriever:
                 [Document(page_content=text, metadata=metadatas[i])], uuids=[uuids[i]]
             )
 
-        output = retriever.get_relevant_documents("foo")
+        output = retriever.invoke("foo")
         assert len(output) == 1

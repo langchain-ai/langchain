@@ -1,5 +1,4 @@
 """Module that contains tests for runnable.astream_events API."""
-
 import sys
 from itertools import cycle
 from typing import Any, AsyncIterator, Dict, List, Sequence, cast

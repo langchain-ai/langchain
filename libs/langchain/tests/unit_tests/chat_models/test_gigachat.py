@@ -23,7 +23,6 @@ from langchain.schema.messages import (
     AIMessage,
     AIMessageChunk,
     ChatMessage,
-    ToolMessage,
     HumanMessage,
     SystemMessage,
 )
@@ -100,12 +99,6 @@ def test__convert_message_to_dict_chat(role: MessagesRole) -> None:
     actual = _convert_message_to_dict(message)
 
     assert actual == expected
-
-
-def test__convert_message_to_dict_type_error() -> None:
-    message = ToolMessage(content="foo", tool_call_id="baz")
-    with pytest.raises(TypeError):
-        _convert_message_to_dict(message)
 
 
 @pytest.fixture

@@ -77,6 +77,8 @@ class O365BaseLoader(BaseLoader, BaseModel):
     """Whether to authenticate with a token or not. Defaults to False."""
     chunk_size: Union[int, str] = CHUNK_SIZE
     """Number of bytes to retrieve from each api call to the server. int or 'auto'."""
+    recursive: bool = False
+    """Should the loader recursively load subfolders?"""
 
     @property
     @abstractmethod
@@ -115,6 +117,9 @@ class O365BaseLoader(BaseLoader, BaseModel):
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
             loader = FileSystemBlobLoader(path=temp_dir)
             yield from loader.yield_blobs()
+        if self.recursive:
+            for subfolder in folder.get_child_folders():
+                yield from self._load_from_folder(subfolder)
 
     def _load_from_object_ids(
         self, drive: Drive, object_ids: List[str]
