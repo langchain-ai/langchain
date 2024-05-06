@@ -15,7 +15,7 @@ def test_initialization() -> None:
 def test_chat_spark_llm() -> None:
     chat = ChatSparkLLM()
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -30,7 +30,7 @@ def test_chat_spark_llm_streaming() -> None:
 def test_chat_spark_llm_with_domain() -> None:
     chat = ChatSparkLLM(spark_llm_domain="generalv3")
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     print(response)  # noqa: T201
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
@@ -39,7 +39,7 @@ def test_chat_spark_llm_with_domain() -> None:
 def test_chat_spark_llm_with_temperature() -> None:
     chat = ChatSparkLLM(temperature=0.9, top_k=2)
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     print(response)  # noqa: T201
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)

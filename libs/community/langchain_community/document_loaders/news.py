@@ -51,7 +51,7 @@ class NewsURLLoader(BaseLoader):
     ) -> None:
         """Initialize with file path."""
         try:
-            import newspaper  # noqa:F401
+            import newspaper
 
             self.__version = newspaper.__version__
         except ImportError:

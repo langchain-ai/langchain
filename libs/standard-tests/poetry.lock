@@ -168,7 +168,7 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "gigachain-core"
-version = "0.1.43"
+version = "0.1.48"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"

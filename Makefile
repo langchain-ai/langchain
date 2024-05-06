@@ -17,16 +17,11 @@ clean: docs_clean api_docs_clean
 
 ## docs_build: Build the documentation.
 docs_build:
-	docs/.local_build.sh
+	cd docs && make build-local
 
 ## docs_clean: Clean the documentation build artifacts.
 docs_clean:
-	@if [ -d _dist ]; then \
-		rm -r _dist; \
-		echo "Directory _dist has been cleaned."; \
-	else \
-		echo "Nothing to clean."; \
-	fi
+	cd docs && make clean
 
 ## docs_linkcheck: Run linkchecker on the documentation.
 docs_linkcheck:
@@ -60,12 +55,12 @@ spell_fix:
 
 ## lint: Run linting on the project.
 lint lint_package lint_tests:
-	poetry run ruff docs templates cookbook
+	poetry run ruff check docs templates cookbook
 	poetry run ruff format docs templates cookbook --diff
-	poetry run ruff --select I docs templates cookbook
+	poetry run ruff check --select I docs templates cookbook
 	git grep 'from langchain import' docs/docs templates cookbook | grep -vE 'from langchain import (hub)' && exit 1 || exit 0
 
 ## format: Format the project files.
 format format_diff:
 	poetry run ruff format docs templates cookbook
-	poetry run ruff --select I --fix docs templates cookbook
+	poetry run ruff check --select I --fix docs templates cookbook

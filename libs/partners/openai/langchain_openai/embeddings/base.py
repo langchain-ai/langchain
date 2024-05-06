@@ -82,8 +82,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
-    allowed_special: Union[Literal["all"], Set[str]] = set()
-    disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
+    allowed_special: Union[Literal["all"], Set[str], None] = None
+    disallowed_special: Union[Literal["all"], Set[str], Sequence[str], None] = None
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 2
@@ -129,6 +129,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
+    check_embedding_ctx_length: bool = True
+    """Whether to check the token length of inputs and automatically split inputs 
+        longer than embedding_ctx_length."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -243,36 +246,17 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             params["dimensions"] = self.dimensions
         return params
 
-    # please refer to
-    # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
-    def _get_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
-    ) -> List[List[float]]:
-        """
-        Generate length-safe embeddings for a list of texts.
-
-        This method handles tokenization and embedding generation, respecting the
-        set embedding context length and chunk size. It supports both tiktoken
-        and HuggingFace tokenizer based on the tiktoken_enabled flag.
-
-        Args:
-            texts (List[str]): A list of texts to embed.
-            engine (str): The engine or model to use for embeddings.
-            chunk_size (Optional[int]): The size of chunks for processing embeddings.
-
-        Returns:
-            List[List[float]]: A list of embeddings for each input text.
-        """
-
+    def _tokenize(
+        self, texts: List[str], chunk_size: int
+    ) -> Tuple[Iterable[int], List[List[float]], List[int]]:
         tokens = []
         indices = []
         model_name = self.tiktoken_model_name or self.model
-        _chunk_size = chunk_size or self.chunk_size
 
         # If tiktoken flag set to False
         if not self.tiktoken_enabled:
             try:
-                from transformers import AutoTokenizer  # noqa: F401
+                from transformers import AutoTokenizer
             except ImportError:
                 raise ValueError(
                     "Could not import transformers python package. "
@@ -300,6 +284,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 encoding = tiktoken.encoding_for_model(model_name)
             except KeyError:
                 encoding = tiktoken.get_encoding("cl100k_base")
+            encoder_kwargs: Dict[str, Any] = {
+                k: v
+                for k, v in {
+                    "allowed_special": self.allowed_special,
+                    "disallowed_special": self.disallowed_special,
+                }.items()
+                if v is not None
+            }
             for i, text in enumerate(texts):
                 if self.model.endswith("001"):
                     # See: https://github.com/openai/openai-python/
@@ -307,11 +299,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     # replace newlines, which can negatively affect performance.
                     text = text.replace("\n", " ")
 
-                token = encoding.encode(
-                    text=text,
-                    allowed_special=self.allowed_special,
-                    disallowed_special=self.disallowed_special,
-                )
+                if encoder_kwargs:
+                    token = encoding.encode(text, **encoder_kwargs)
+                else:
+                    token = encoding.encode_ordinary(text)
 
                 # Split tokens into chunks respecting the embedding_ctx_length
                 for j in range(0, len(token), self.embedding_ctx_length):
@@ -322,12 +313,35 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 from tqdm.auto import tqdm
 
-                _iter: Iterable = tqdm(range(0, len(tokens), _chunk_size))
+                _iter: Iterable = tqdm(range(0, len(tokens), chunk_size))
             except ImportError:
-                _iter = range(0, len(tokens), _chunk_size)
+                _iter = range(0, len(tokens), chunk_size)
         else:
-            _iter = range(0, len(tokens), _chunk_size)
+            _iter = range(0, len(tokens), chunk_size)
+        return _iter, tokens, indices
 
+    # please refer to
+    # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
+    def _get_len_safe_embeddings(
+        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
+    ) -> List[List[float]]:
+        """
+        Generate length-safe embeddings for a list of texts.
+
+        This method handles tokenization and embedding generation, respecting the
+        set embedding context length and chunk size. It supports both tiktoken
+        and HuggingFace tokenizer based on the tiktoken_enabled flag.
+
+        Args:
+            texts (List[str]): A list of texts to embed.
+            engine (str): The engine or model to use for embeddings.
+            chunk_size (Optional[int]): The size of chunks for processing embeddings.
+
+        Returns:
+            List[List[float]]: A list of embeddings for each input text.
+        """
+        _chunk_size = chunk_size or self.chunk_size
+        _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: List[List[float]] = []
         for i in _iter:
             response = self.client.create(
@@ -396,62 +410,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             List[List[float]]: A list of embeddings for each input text.
         """
 
-        tokens = []
-        indices = []
-        model_name = self.tiktoken_model_name or self.model
         _chunk_size = chunk_size or self.chunk_size
-
-        # If tiktoken flag set to False
-        if not self.tiktoken_enabled:
-            try:
-                from transformers import AutoTokenizer
-            except ImportError:
-                raise ValueError(
-                    "Could not import transformers python package. "
-                    "This is needed in order to for OpenAIEmbeddings without "
-                    " `tiktoken`. Please install it with `pip install transformers`."
-                )
-
-            tokenizer = AutoTokenizer.from_pretrained(
-                pretrained_model_name_or_path=model_name
-            )
-            for i, text in enumerate(texts):
-                # Tokenize the text using HuggingFace transformers
-                tokenized = tokenizer.encode(text, add_special_tokens=False)
-
-                # Split tokens into chunks respecting the embedding_ctx_length
-                for j in range(0, len(tokenized), self.embedding_ctx_length):
-                    token_chunk = tokenized[j : j + self.embedding_ctx_length]
-
-                    # Convert token IDs back to a string
-                    chunk_text = tokenizer.decode(token_chunk)
-                    tokens.append(chunk_text)
-                    indices.append(i)
-        else:
-            try:
-                encoding = tiktoken.encoding_for_model(model_name)
-            except KeyError:
-                logger.warning("Warning: model not found. Using cl100k_base encoding.")
-                model = "cl100k_base"
-                encoding = tiktoken.get_encoding(model)
-            for i, text in enumerate(texts):
-                if self.model.endswith("001"):
-                    # See: https://github.com/openai/openai-python/
-                    #      issues/418#issuecomment-1525939500
-                    # replace newlines, which can negatively affect performance.
-                    text = text.replace("\n", " ")
-
-                token = encoding.encode(
-                    text=text,
-                    allowed_special=self.allowed_special,
-                    disallowed_special=self.disallowed_special,
-                )
-
-                # Split tokens into chunks respecting the embedding_ctx_length
-                for j in range(0, len(token), self.embedding_ctx_length):
-                    tokens.append(token[j : j + self.embedding_ctx_length])
-                    indices.append(i)
-
+        _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: List[List[float]] = []
         _chunk_size = chunk_size or self.chunk_size
         for i in range(0, len(tokens), _chunk_size):
@@ -511,6 +471,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        if not self.check_embedding_ctx_length:
+            embeddings: List[List[float]] = []
+            for text in texts:
+                response = self.client.create(
+                    input=text,
+                    **self._invocation_params,
+                )
+                if not isinstance(response, dict):
+                    response = response.dict()
+                embeddings.extend(r["embedding"] for r in response["data"])
+            return embeddings
+
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
@@ -529,6 +501,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        if not self.check_embedding_ctx_length:
+            embeddings: List[List[float]] = []
+            for text in texts:
+                response = await self.async_client.create(
+                    input=text,
+                    **self._invocation_params,
+                )
+                if not isinstance(response, dict):
+                    response = response.dict()
+                embeddings.extend(r["embedding"] for r in response["data"])
+            return embeddings
+
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)

@@ -138,7 +138,7 @@ def test_structured_output() -> None:
 
 
 def test_streaming_structured_output() -> None:
-    llm = ChatMistralAI(model="mistral-large", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
 
     class Person(BaseModel):
         name: str
@@ -156,7 +156,7 @@ def test_streaming_structured_output() -> None:
 
 
 def test_tool_call() -> None:
-    llm = ChatMistralAI(model="mistral-large", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
 
     class Person(BaseModel):
         name: str
@@ -173,7 +173,7 @@ def test_tool_call() -> None:
 
 
 def test_streaming_tool_call() -> None:
-    llm = ChatMistralAI(model="mistral-large", temperature=0)
+    llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
 
     class Person(BaseModel):
         name: str

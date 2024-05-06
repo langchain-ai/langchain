@@ -13,7 +13,7 @@ def test_pai_eas_v1_call() -> None:
         eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),
         version="1.0",
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -23,7 +23,7 @@ def test_pai_eas_v2_call() -> None:
         eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),
         version="2.0",
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 

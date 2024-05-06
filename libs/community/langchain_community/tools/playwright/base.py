@@ -26,8 +26,8 @@ def lazy_import_playwright_browsers() -> Tuple[Type[AsyncBrowser], Type[SyncBrow
             AsyncBrowser and SyncBrowser classes.
     """
     try:
-        from playwright.async_api import Browser as AsyncBrowser  # noqa: F401
-        from playwright.sync_api import Browser as SyncBrowser  # noqa: F401
+        from playwright.async_api import Browser as AsyncBrowser
+        from playwright.sync_api import Browser as SyncBrowser
     except ImportError:
         raise ImportError(
             "The 'playwright' package is required to use the playwright tools."

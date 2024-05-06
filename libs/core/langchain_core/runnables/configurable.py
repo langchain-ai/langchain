@@ -641,7 +641,8 @@ def make_options_spec(
     description: Optional[str],
 ) -> ConfigurableFieldSpec:
     """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or
-    ConfigurableFieldMultiOption."""
+    ConfigurableFieldMultiOption.
+    """
     with _enums_for_spec_lock:
         if enum := _enums_for_spec.get(spec):
             pass
