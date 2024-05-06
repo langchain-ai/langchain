@@ -3,8 +3,8 @@
 import logging
 import warnings
 from typing import Any, Dict, List, Optional
-import requests
 
+import requests
 from aiohttp import ClientSession
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -108,7 +108,7 @@ class Together(LLM):
 
     @staticmethod
     def get_user_agent() -> str:
-        return f"langchain-together/0.3"
+        return "langchain-together/0.3"
 
     @property
     def default_params(self) -> Dict[str, Any]:

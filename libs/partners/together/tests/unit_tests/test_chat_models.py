@@ -1,8 +1,8 @@
 import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
-import pytest
 
+import pytest
 from langchain_core.messages import (
     AIMessage,
     FunctionMessage,
