@@ -1,6 +1,6 @@
 {
   "docs": [
-    "get_started/introduction",
+    "introduction",
     {
       "type": "category",
       "label": "Tutorials",
