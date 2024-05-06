@@ -32,7 +32,7 @@ class SpiderLoader(BaseLoader):
             params: Additional parameters for the Spider API.
         """
         try:
-            from spider import Spider  # noqa: F401
+            from spider import Spider
         except ImportError:
             raise ImportError(
                 "`spider` package not found, please run `pip install spider-client`"

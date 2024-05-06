@@ -242,11 +242,6 @@ def test_aliases_hidden() -> None:
                 "type": "secret",
                 "id": ["MY_FAVORITE_SECRET"],
             },
-            "my_favorite_secret_alias": {
-                "lc": 1,
-                "type": "secret",
-                "id": ["MY_FAVORITE_SECRET"],
-            },
             "my_other_secret": {"lc": 1, "type": "secret", "id": ["MY_OTHER_SECRET"]},
         },
     }
