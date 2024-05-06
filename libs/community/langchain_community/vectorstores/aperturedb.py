@@ -5,11 +5,21 @@ import logging
 from typing import Any, Callable, Iterable, List, Optional, Tuple, Type
 import time
 
+# Python 3.12 feature
+try:
+    from typing import override
+except ImportError:
+    # null decorator
+    def override(f):
+        return f
+
 # Third-party imports
 from aperturedb.Utils import Utils, create_connector
 from aperturedb.Descriptors import Descriptors
 from aperturedb.ParallelLoader import ParallelLoader
+from aperturedb.ParallelQuery import execute_batch
 import numpy as np
+import uuid
 
 # Local imports
 from langchain_core.documents import Document
@@ -18,14 +28,16 @@ from langchain_core.vectorstores import VectorStore
 
 # Configure some defaults
 ENGINE = "HNSW"
-METRIC = "L2"
+METRIC = "CS"
 DESCRIPTOR_SET = "langchain"
-BATCHSIZE = 100
+BATCHSIZE = 1000
 PROPERTY_PREFIX = "lc_"  # Prefix for properties that are in the client metadata
 TEXT_PROPERTY = "text"  # Property name for the text
+UNIQUEID_PROPERTY = "uniqueid"  # Property name for the unique id
 
 
 class ApertureDB(VectorStore):
+    @override
     def __init__(self,
                  embeddings: Embeddings,
                  descriptor_set: str = DESCRIPTOR_SET,
@@ -44,7 +56,7 @@ class ApertureDB(VectorStore):
             embeddings (Embeddings): Embeddings object
             descriptor_set (str, optional): Descriptor set name. Defaults to "lamgchain".
             dimensions (Optional[int], optional): Number of dimensions of the embeddings. Defaults to None.
-            engine (str, optional): Engine to use. Defaults to "HNSW" for new descriptorsets. 
+            engine (str, optional): Engine to use. Defaults to "HNSW" for new descriptorsets.
             metric (str, optional): Metric to use. Defaults to "L2" for new descriptorsets.
             log_level (int, optional): Logging level. Defaults to logging.WARN.
         """
@@ -96,7 +108,7 @@ class ApertureDB(VectorStore):
                          ) if "entities" in r[0]["FindDescriptorSet"] else 0
         assert n_entities <= 1, "Multiple descriptor sets with the same name"
 
-        if n_entities == 1:
+        if n_entities == 1:  # Descriptor set exists already
             e = r[0]["FindDescriptorSet"]["entities"][0]
             self.logger.info(f"Descriptor set {descriptor_set} already exists")
 
@@ -124,10 +136,6 @@ class ApertureDB(VectorStore):
                 self.logger.error(
                     f"Dimensions mismatch: {self.dimensions} != {dimensions}")
 
-            if self.dimensions is None:
-                self.dimensions = len(
-                    self.embedding_function.embed_query(""))
-
         else:
             self.logger.info(
                 f"Descriptor set {descriptor_set} does not exist. Creating it")
@@ -136,6 +144,10 @@ class ApertureDB(VectorStore):
                 self.engine = ENGINE
             if self.metric is None:
                 self.metric = METRIC
+            if self.dimensions is None:
+                self.dimensions = len(
+                    self.embedding_function.embed_query(""))
+
             query = [{
                 "AddDescriptorSet": {
                     "name": descriptor_set,
@@ -151,7 +163,9 @@ class ApertureDB(VectorStore):
             self.utils.create_entity_index("_Descriptor", "_create_txn")
             self.utils.create_entity_index("_DescriptorSet", "_name")
             self.utils.create_entity_index("_Descriptor", "_uniqueid")
+            self.utils.create_entity_index("_Descriptor", UNIQUEID_PROPERTY)
 
+    @override
     def add_texts(self, texts: Iterable[str],
                   metadatas: Optional[List[dict]] = None,
                   ) -> List[str]:
@@ -163,45 +177,31 @@ class ApertureDB(VectorStore):
         embeddings = self.embedding_function.embed_documents(texts)
         if metadatas is None:
             metadatas = repeat({})
-        refs = cycle(range(1, 100000))
-        data = zip(texts, embeddings, metadatas, refs)
+
         unique_ids = []
-
-        for start in range(0, len(texts), BATCHSIZE):
-            end = min(start + BATCHSIZE, len(texts))
-            batch = list(islice(data, start, end))
-
-            commands = []
-            blobs = []
-            for text, embedding, metadata, ref in batch:
-                properties = {PROPERTY_PREFIX +
-                              k: v for k, v in metadata.items()}
-                properties[TEXT_PROPERTY] = text
-                commands.append({
-                    "AddDescriptor": {
-                        "set": self.descriptor_set,
-                        "_ref": ref,
-                        "properties": properties,
-                    }
-                })
-                npem = np.array(embedding, dtype=np.float32)
-                blobs.append(npem.tobytes())
-
-                commands.append({
-                    "FindDescriptor": {
-                        "set": self.descriptor_set,
-                        "ref": ref,
-                        "results": {
-                            "list": ["_uniqueid"]
-                        }
-                    }
-                })
-            response, _ = self.connection.query(commands, blobs=blobs)
-            assert self.connection.last_query_ok(), response
-            unique_ids.extend([r["FindDescriptor"]["entities"]["_uniqueid"]
-                               for r in response[2::2]])
+        data = []
+        for text, embedding, metadata in zip(texts, embeddings, metadatas):
+            properties = {PROPERTY_PREFIX +
+                          k: v for k, v in metadata.items()}
+            properties[TEXT_PROPERTY] = text
+            # Generate a unique id here
+            unique_id = str(uuid.uuid4())
+            properties[UNIQUEID_PROPERTY] = unique_id
+            unique_ids.append(unique_id)
+            command = {
+                "AddDescriptor": {
+                    "set": self.descriptor_set,
+                    "properties": properties,
+                }
+            }
+            query = [command]
+            blobs = [np.array(embedding, dtype=np.float32).tobytes()]
+            data.append((query, blobs))
+        loader = ParallelLoader(self.connection)
+        loader.ingest(data, batchsize=BATCHSIZE)
         return unique_ids
 
+    @override
     def delete(self, ids: List[str]) -> Optional[bool]:
         refs = cycle(range(1, 100000))
         commands = []
@@ -212,7 +212,7 @@ class ApertureDB(VectorStore):
                     "set": self.descriptor_set,
                     "unique": True,
                     "constraints": {
-                        "_uniqueid": ["==", id]
+                        UNIQUEID_PROPERTY: ["==", id]
                     }
                 }
             }, {
@@ -230,6 +230,7 @@ class ApertureDB(VectorStore):
                    ["count"] == 1 for r in responses[1::3]]
         return results
 
+    @override
     def similarity_search(
         self, query: str, k: int = 4, *args: Any, **kwargs: Any
     ) -> List[Document]:
@@ -237,6 +238,7 @@ class ApertureDB(VectorStore):
         embedding = self.embedding_function.embed_query(query)
         return self.similarity_search_by_vector(embedding, k, *args, **kwargs)
 
+    @override
     def similarity_search_with_score(
         self, query: str, *args: Any, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
@@ -248,28 +250,37 @@ class ApertureDB(VectorStore):
         metadata["adb_uniqueid"] = d["_uniqueid"]
         for k, v in d.items():
             if k.startswith(PROPERTY_PREFIX):
-                metadata[k] = v[len(PROPERTY_PREFIX):]
+                metadata[k[len(PROPERTY_PREFIX):]] = v
         text = d[TEXT_PROPERTY]
-        doc = Document(page_content=text, **metadata)
+        metadata['adb_uniqueid'] = d[UNIQUEID_PROPERTY]
+        doc = Document(page_content=text, metadata=metadata)
         return doc
 
     def _similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4, vectors=False
     ) -> List[Tuple[Document, float]]:
         descriptors = Descriptors(self.connection)
+        start_time = time.time()
         descriptors.find_similar(
             set=self.descriptor_set, vector=embedding, k_neighbors=k, distances=True)
-        results = [(self._descriptor_to_document(d), d["_distance"])
-                   for d in descriptors]
+        self.logger.info(
+            f"ApertureDB similarity search took {time.time() - start_time} seconds")
+        return [(self._descriptor_to_document(d), d["_distance"])
+                for d in descriptors]
 
+    @override
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         descriptors = Descriptors(self.connection)
+        start_time = time.time()
         descriptors.find_similar(
             set=self.descriptor_set, vector=embedding, k_neighbors=k)
-        results = [self._descriptor_to_document(d) for d in descriptors]
+        self.logger.info(
+            f"ApertureDB similarity search took {time.time() - start_time} seconds")
+        return [self._descriptor_to_document(d) for d in descriptors]
 
+    @override
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -278,9 +289,11 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
+        self.logger.info(f"Max Marginal Relevance search for query: {query}")
         embedding = self.embedding_function.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k, lambda_mult, **kwargs)
 
+    @override
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
@@ -290,11 +303,15 @@ class ApertureDB(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         descriptors = Descriptors(self.connection)
+        start_time = time.time()
         descriptors.find_similar_mmr(
             set=self.descriptor_set, vector=embedding, k_neighbors=k, fetch_k=fetch_k, lambda_mult=lambda_mult)
-        results = [self._descriptor_to_document(d) for d in descriptors]
+        self.logger.info(
+            f"ApertureDB similarity search mmr took {time.time() - start_time} seconds")
+        return [self._descriptor_to_document(d) for d in descriptors]
 
     @classmethod
+    @override
     def from_texts(
         cls: Type[ApertureDB],
         texts: List[str],
@@ -305,3 +322,33 @@ class ApertureDB(VectorStore):
         store = cls(embeddings=embedding, **kwargs)
         store.add_texts(texts, metadatas)
         return store
+
+    @classmethod
+    def delete_vectorstore(class_, descriptor_set: str):
+        """Deletes a vectorstore and all its data from the database"""
+        db = create_connector()
+
+        query = [{
+            "DeleteDescriptorSet": {
+                "with_name": descriptor_set
+            }
+        }]
+        response, _ = db.query(query)
+        assert db.last_query_ok(), response
+        return response
+
+    @classmethod
+    def list_vectorstores(class_):
+        """Returns a list of all vectorstores in the database"""
+        db = create_connector()
+        query = [{
+            "FindDescriptorSet": {
+                "results": {"all_properties": True},  # Return all properties
+                "engines": True,
+                "metrics": True,
+                "dimensions": True,
+            }
+        }]
+        response, _ = db.query(query)
+        assert db.last_query_ok(), response
+        return response[0]["FindDescriptorSet"]["entities"]
