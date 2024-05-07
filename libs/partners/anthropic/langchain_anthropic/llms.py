@@ -360,6 +360,6 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return self.count_tokens(text)
 
 
-@deprecated(since="0.1.0", removal="0.2.0", alternative="AnthropicLLM")
+@deprecated(since="0.1.0", removal="0.3.0", alternative="AnthropicLLM")
 class Anthropic(AnthropicLLM):
     pass
