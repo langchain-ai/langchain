@@ -7,9 +7,7 @@ from typing import Iterable, Tuple
 
 import nbformat
 from nbconvert.exporters import MarkdownExporter
-
 from nbconvert.preprocessors import Preprocessor
-import nbformat
 
 
 class EscapePreprocessor(Preprocessor):
@@ -19,9 +17,9 @@ class EscapePreprocessor(Preprocessor):
         return cell, resources
 
 
-from base64 import b64decode
-import sys
 import os
+import sys
+from base64 import b64decode
 
 
 class ExtractAttachmentsPreprocessor(Preprocessor):
