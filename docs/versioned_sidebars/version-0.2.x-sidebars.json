@@ -11,9 +11,10 @@
       ]
     },
     {
-      "type": "doc",
-      "id": "tutorials/index",
-      "label": "Tutorials"
+      "type": "category",
+      "label": "Tutorials",
+      "collapsed": false,
+      "link": { "type": "doc", "id": "tutorials/index" }
     },
     {
       "type": "doc",
