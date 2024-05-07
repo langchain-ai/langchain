@@ -94,7 +94,7 @@ class ChatKonko(ChatOpenAI):
             import konko
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import konko python package. "
                 "Please install it with `pip install konko`."
             )

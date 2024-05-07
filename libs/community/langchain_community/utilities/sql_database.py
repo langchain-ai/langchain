@@ -189,7 +189,7 @@ class SQLDatabase:
         try:
             from databricks import sql  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "databricks-sql-connector package not found, please install with"
                 " `pip install databricks-sql-connector`"
             )
@@ -267,7 +267,7 @@ class SQLDatabase:
             uri = make_cnosdb_langchain_uri(url, user, password, tenant, database)
             return cls.from_uri(database_uri=uri)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "cnos-connector package not found, please install with"
                 " `pip install cnos-connector`"
             )
@@ -283,7 +283,7 @@ class SQLDatabase:
             return sorted(self._include_tables)
         return sorted(self._all_tables - self._ignore_tables)
 
-    @deprecated("0.0.1", alternative="get_usable_table_name", removal="0.2.0")
+    @deprecated("0.0.1", alternative="get_usable_table_names", removal="0.3.0")
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
         return self.get_usable_table_names()

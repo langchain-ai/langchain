@@ -1,5 +1,6 @@
+from langchain_core.utils.function_calling import convert_to_openai_function
+
 from langchain.chains.openai_functions.base import (
-    convert_to_openai_function,
     create_openai_fn_chain,
     create_structured_output_chain,
 )

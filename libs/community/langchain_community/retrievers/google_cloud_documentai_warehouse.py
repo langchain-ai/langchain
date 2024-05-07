@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 @deprecated(
     since="0.0.32",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_google_community.DocumentAIWarehouseRetriever",
 )
 class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
@@ -51,7 +51,7 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates the environment."""
-        try:  # noqa: F401
+        try:
             from google.cloud.contentwarehouse_v1 import DocumentServiceClient
         except ImportError as exc:
             raise ImportError(

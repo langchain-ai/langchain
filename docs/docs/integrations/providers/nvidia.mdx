@@ -6,7 +6,7 @@
 
 > [NVIDIA AI Foundation Endpoints](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) give users easy access to NVIDIA hosted API endpoints for 
 > NVIDIA AI Foundation Models like `Mixtral 8x7B`, `Llama 2`, `Stable Diffusion`, etc. These models, 
-> hosted on the [NVIDIA NGC catalog](https://catalog.ngc.nvidia.com/ai-foundation-models), are optimized, tested, and hosted on 
+> hosted on the [NVIDIA API catalog](https://build.nvidia.com/), are optimized, tested, and hosted on 
 > the NVIDIA AI platform, making them fast and easy to evaluate, further customize, 
 > and seamlessly run at peak performance on any accelerated stack.
 > 
@@ -17,16 +17,20 @@
 
 A selection of NVIDIA AI Foundation models is supported directly in LangChain with familiar APIs.
 
-The supported models can be found [in NGC](https://catalog.ngc.nvidia.com/ai-foundation-models).
+The supported models can be found [in build.nvidia.com](https://build.nvidia.com/).
 
 These models can be accessed via the [`langchain-nvidia-ai-endpoints`](https://pypi.org/project/langchain-nvidia-ai-endpoints/) 
 package, as shown below.
 
 ### Setting up
 
-- Create a free [NVIDIA NGC](https://catalog.ngc.nvidia.com/) account.
-- Navigate to `Catalog > AI Foundation Models > (Model with API endpoint)`.
-- Select `API` and generate the key `NVIDIA_API_KEY`.
+1. Create a free account with [NVIDIA](https://build.nvidia.com/), which hosts NVIDIA AI Foundation models
+
+2. Click on your model of choice
+
+3. Under `Input` select the `Python` tab, and click `Get API Key`. Then click `Generate Key`.
+
+4. Copy and save the generated key as `NVIDIA_API_KEY`. From there, you should have access to the endpoints.
 
 ```bash
 export NVIDIA_API_KEY=nvapi-XXXXXXXXXXXXXXXXXXXXXXXXXX
