@@ -531,8 +531,8 @@ class LLMGraphTransformer:
                         source=source_node, target=target_node, type=rel["relation"]
                     )
                 )
-        # Create nodes list
-        nodes = [Node(id=el[0], type=el[1]) for el in list(nodes_set)]
+            # Create nodes list
+            nodes = [Node(id=el[0], type=el[1]) for el in list(nodes_set)]
 
         # Strict mode filtering
         if self.strict_mode and (self.allowed_nodes or self.allowed_relationships):
