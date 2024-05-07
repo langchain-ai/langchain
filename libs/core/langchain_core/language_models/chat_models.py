@@ -9,11 +9,13 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    Callable,
     Dict,
     Iterator,
     List,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
@@ -53,7 +55,9 @@ from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers.log_stream import LogStreamCallbackHandler
 
 if TYPE_CHECKING:
-    from langchain_core.runnables import RunnableConfig
+    from langchain_core.pydantic_v1 import BaseModel
+    from langchain_core.runnables import Runnable, RunnableConfig
+    from langchain_core.tools import BaseTool
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -158,6 +162,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 tags=config.get("tags"),
                 metadata=config.get("metadata"),
                 run_name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
                 **kwargs,
             ).generations[0][0],
         ).message
@@ -178,6 +183,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
             **kwargs,
         )
         return cast(ChatGeneration, llm_result.generations[0][0]).message
@@ -597,16 +603,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # astream_events() or astream_log(). Bail out if _stream not implemented
         if type(self)._stream != BaseChatModel._stream and kwargs.pop(
             "stream",
-            next(
-                (
-                    True
-                    for h in run_manager.handlers
-                    if isinstance(h, LogStreamCallbackHandler)
-                ),
-                False,
-            )
-            if run_manager
-            else False,
+            (
+                next(
+                    (
+                        True
+                        for h in run_manager.handlers
+                        if isinstance(h, LogStreamCallbackHandler)
+                    ),
+                    False,
+                )
+                if run_manager
+                else False
+            ),
         ):
             chunks: List[ChatGenerationChunk] = []
             for chunk in self._stream(messages, stop=stop, **kwargs):
@@ -678,16 +686,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             or type(self)._stream != BaseChatModel._stream
         ) and kwargs.pop(
             "stream",
-            next(
-                (
-                    True
-                    for h in run_manager.handlers
-                    if isinstance(h, LogStreamCallbackHandler)
-                ),
-                False,
-            )
-            if run_manager
-            else False,
+            (
+                next(
+                    (
+                        True
+                        for h in run_manager.handlers
+                        if isinstance(h, LogStreamCallbackHandler)
+                    ),
+                    False,
+                )
+                if run_manager
+                else False
+            ),
         ):
             chunks: List[ChatGenerationChunk] = []
             async for chunk in self._astream(messages, stop=stop, **kwargs):
@@ -787,7 +797,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 break
             yield item  # type: ignore[misc]
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def __call__(
         self,
         messages: List[BaseMessage],
@@ -819,13 +829,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Unexpected generation type")
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def call_as_llm(
         self, message: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:
         return self.predict(message, stop=stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -839,7 +849,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -853,7 +863,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             _stop = list(stop)
         return self(messages, stop=_stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -869,7 +879,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],
@@ -894,9 +904,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         starter_dict["_type"] = self._llm_type
         return starter_dict
 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        raise NotImplementedError()
+
 
 class SimpleChatModel(BaseChatModel):
-    """A simplified implementation for a chat model to inherit from."""
+    """Simplified implementation for a chat model to inherit from."""
 
     def _generate(
         self,

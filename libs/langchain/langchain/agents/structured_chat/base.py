@@ -28,7 +28,7 @@ from langchain.tools.render import ToolsRenderer, render_text_description_and_ar
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
 
-@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="0.3.0")
 class StructuredChatAgent(Agent):
     """Structured Chat Agent."""
 
@@ -273,7 +273,7 @@ def create_structured_chat_agent(
             )
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables
+        prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")

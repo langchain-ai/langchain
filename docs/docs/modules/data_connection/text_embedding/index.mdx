@@ -35,12 +35,12 @@ Accessing the API requires an API key, which you can get by creating an account 
 export OPENAI_API_KEY="..."
 ```
 
-If you'd prefer not to set an environment variable you can pass the key in directly via the `openai_api_key` named parameter when initiating the OpenAI LLM class:
+If you'd prefer not to set an environment variable you can pass the key in directly via the `api_key` named parameter when initiating the OpenAI LLM class:
 
 ```python
 from langchain_openai import OpenAIEmbeddings
 
-embeddings_model = OpenAIEmbeddings(openai_api_key="...")
+embeddings_model = OpenAIEmbeddings(api_key="...")
 ```
 
 Otherwise you can initialize without any params:

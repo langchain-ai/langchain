@@ -10,7 +10,7 @@ EXAMPLE_PROMPT = PromptTemplate(
 )
 
 
-def test_prompttemplate_prefix_suffix() -> None:
+async def test_prompttemplate_prefix_suffix() -> None:
     """Test that few shot works when prefix and suffix are PromptTemplates."""
     prefix = PromptTemplate(
         input_variables=["content"], template="This is a test about {content}."
@@ -32,13 +32,15 @@ def test_prompttemplate_prefix_suffix() -> None:
         example_prompt=EXAMPLE_PROMPT,
         example_separator="\n",
     )
-    output = prompt.format(content="animals", new_content="party")
     expected_output = (
         "This is a test about animals.\n"
         "foo: bar\n"
         "baz: foo\n"
         "Now you try to talk about party."
     )
+    output = prompt.format(content="animals", new_content="party")
+    assert output == expected_output
+    output = await prompt.aformat(content="animals", new_content="party")
     assert output == expected_output
 
 
