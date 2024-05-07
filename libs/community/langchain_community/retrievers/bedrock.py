@@ -120,7 +120,7 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
             if "score" not in result:
                 result["score"] = 0
             if "metadata" in result:
-                result["sourceMetadata"] = result.pop("metadata")
+                result["source_metadata"] = result.pop("metadata")
             documents.append(
                 Document(
                     page_content=content,
