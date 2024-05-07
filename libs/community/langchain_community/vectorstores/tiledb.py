@@ -1,4 +1,5 @@
 """Wrapper around TileDB vector database."""
+
 from __future__ import annotations
 
 import pickle
@@ -110,7 +111,10 @@ class TileDB(VectorStore):
         self.metric = metric
         self.config = config
 
-        tiledb_vs, tiledb = dependable_tiledb_import()
+        tiledb_vs, tiledb = (
+            guard_import("tiledb.vector_search"),
+            guard_import("tiledb"),
+        )
         with tiledb.scope_ctx(ctx_or_config=config):
             index_group = tiledb.Group(self.index_uri, "r")
             self.vector_index_uri = (
@@ -168,7 +172,10 @@ class TileDB(VectorStore):
         Returns:
             List of Documents and scores.
         """
-        tiledb_vs, tiledb = dependable_tiledb_import()
+        tiledb_vs, tiledb = (
+            guard_import("tiledb.vector_search"),
+            guard_import("tiledb"),
+        )
         docs = []
         docs_array = tiledb.open(
             self.docs_array_uri, "r", timestamp=self.timestamp, config=self.config
@@ -472,7 +479,10 @@ class TileDB(VectorStore):
         metadatas: bool = True,
         config: Optional[Mapping[str, Any]] = None,
     ) -> None:
-        tiledb_vs, tiledb = dependable_tiledb_import()
+        tiledb_vs, tiledb = (
+            guard_import("tiledb.vector_search"),
+            guard_import("tiledb"),
+        )
         with tiledb.scope_ctx(ctx_or_config=config):
             try:
                 tiledb.group_create(index_uri)
@@ -545,7 +555,10 @@ class TileDB(VectorStore):
                     f"Expected one of {list(INDEX_METRICS)}"
                 )
             )
-        tiledb_vs, tiledb = dependable_tiledb_import()
+        tiledb_vs, tiledb = (
+            guard_import("tiledb.vector_search"),
+            guard_import("tiledb"),
+        )
         input_vectors = np.array(embeddings).astype(np.float32)
         cls.create(
             index_uri=index_uri,
@@ -641,7 +654,10 @@ class TileDB(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        tiledb_vs, tiledb = dependable_tiledb_import()
+        tiledb_vs, tiledb = (
+            guard_import("tiledb.vector_search"),
+            guard_import("tiledb"),
+        )
         embeddings = self.embedding.embed_documents(list(texts))
         if ids is None:
             ids = [str(random.randint(0, MAX_UINT64 - 1)) for _ in texts]
