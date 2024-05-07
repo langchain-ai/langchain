@@ -60,7 +60,13 @@ from langchain_community.llms.tongyi import (
 )
 
 logger = logging.getLogger(__name__)
-
+dashscope_multimodal_models = [
+    "qwen-vl-v1",
+    "qwen-vl-chat-v1",
+    "qwen-audio-turbo",
+    "qwen-vl-plus",
+    "qwen-vl-max"
+]
 
 def convert_dict_to_message(
     _dict: Mapping[str, Any], is_chunk: bool = False
@@ -177,8 +183,14 @@ class ChatTongyi(BaseChatModel):
 
     client: Any  #: :meta private:
     model_name: str = Field(default="qwen-turbo", alias="model")
-
-    """Model name to use."""
+    """Model name to use.
+    callable multimodal model:
+    - qwen-vl-v1
+    - qwen-vl-chat-v1
+    - qwen-audio-turbo
+    - qwen-vl-plus
+    - qwen-vl-max
+    """
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     top_p: float = 0.8
@@ -216,14 +228,14 @@ class ChatTongyi(BaseChatModel):
                 "Could not import dashscope python package. "
                 "Please install it with `pip install dashscope --upgrade`."
             )
-        if values["model_name"] == "qwen-vl-v1" or values["model_name"] == "qwen-vl-chat-v1" or values["model_name"]=="qwen-audio-turbo":
+        if values["model_name"] in dashscope_multimodal_models:
             try:
                 values["client"] = dashscope.MultiModalConversation
             except AttributeError:
                 raise ValueError(
-                    "`dashscope` has no `MultiModalConversation` attribute, this is likely "
-                    "due to an old version of the dashscope package. Try upgrading it "
-                    "with `pip install --upgrade dashscope`."
+                    "`dashscope` has no `MultiModalConversation` attribute, this is "
+                    "likely due to an old version of the dashscope package. Try "
+                    "upgrading it with `pip install --upgrade dashscope`."
                 )
         else:
             try:
