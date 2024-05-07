@@ -13,13 +13,12 @@ from nbconvert.preprocessors import Preprocessor
 class EscapePreprocessor(Preprocessor):
     def preprocess_cell(self, cell, resources, cell_index):
         if cell.cell_type == "markdown":
-            cell.source = cell.source.replace("<", r"\<").replace(">", r"\>")
+            # find all occurences of ```{=mdx} blocks and remove wrapper
+            if "```{=mdx}\n" in cell.source:
+                cell.source = re.sub(
+                    r"```{=mdx}\n(.*)\n```", "", cell.source, flags=re.DOTALL
+                )
         return cell, resources
-
-
-import os
-import sys
-from base64 import b64decode
 
 
 class ExtractAttachmentsPreprocessor(Preprocessor):
