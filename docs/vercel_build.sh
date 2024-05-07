@@ -4,7 +4,7 @@ set -e
 
 make install-vercel-deps
 
-make build-new
+make build
 
 rm -rf docs
 mv build/output-new/docs ./
