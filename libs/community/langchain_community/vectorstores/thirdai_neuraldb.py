@@ -330,8 +330,11 @@ class NeuralDBClientVectorStore(VectorStore):
             bazaar = ModelBazaar(base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/")
             bazaar.log_in(email="user@thirdai.com", password="1234")
 
-            ndb_client = NeuralDBClient(deployment_identifier="user/model-0:user/
-            deployment-0",base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/", bazaar=bazaar)
+            ndb_client = NeuralDBClient(
+                deployment_identifier="user/model-0:user/deployment-0",
+                base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/", 
+                bazaar=bazaar
+            )
             vectorstore = NeuralDBClientVectorStore(db=ndb_client)
             retriever = vectorstore.as_retriever(search_kwargs={'k':5})
 
@@ -377,12 +380,12 @@ class NeuralDBClientVectorStore(VectorStore):
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
         
-    def insert(self, documents: list[dict[str, Any]]): # type: ignore[no-untyped-def]
+    def insert(self, documents: List[Dict[str, Any]]): # type: ignore[no-untyped-def, no-untyped-def]
         """
         Inserts documents into the VectorStore and return the corresponding Sources.
 
         Args:
-            documents (List[dict[str, Any]]): A list of dictionaries that 
+            documents (List[Dict[str, Any]]): A list of dictionaries that 
             represent documents to be inserted to the VectorStores.
             The document dictionaries must be in the following format:
             {"document_type": "DOCUMENT_TYPE", **kwargs} where "DOCUMENT_TYPE" 
@@ -461,7 +464,7 @@ class NeuralDBClientVectorStore(VectorStore):
         """
         return self.db.insert(documents)
         
-    def delete(self, source_ids: List[str]): # type: ignore[no-untyped-def]
+    def remove_documents(self, source_ids: List[str]): # type: ignore[no-untyped-def]
         """
         Deletes documents from the VectorStore using source ids.
 

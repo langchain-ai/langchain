@@ -92,8 +92,8 @@ _EXPECTED = [
     "AzureCosmosDBVectorSearch",
     "VectorStore",
     "Yellowbrick",
-    "NeuralDBVectorStore",
     "NeuralDBClientVectorStore",
+    "NeuralDBVectorStore",
     "CouchbaseVectorStore",
 ]
 
