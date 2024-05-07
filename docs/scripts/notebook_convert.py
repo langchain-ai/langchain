@@ -16,11 +16,11 @@ class EscapePreprocessor(Preprocessor):
             # find all occurrences of ```{=mdx} blocks and remove wrapper
             if "```{=mdx}\n" in cell.source:
                 cell.source = re.sub(
-                    r"```{=mdx}\n(.*)\n```", r"\1", cell.source, flags=re.DOTALL
+                    r"```{=mdx}\n(.*?)\n```", r"\1", cell.source, flags=re.DOTALL
                 )
             if ":::{.callout" in cell.source:
                 cell.source = re.sub(
-                    r":::{.callout-([^}]*)}(.*):::",
+                    r":::{.callout-([^}]*)}(.*?):::",
                     r":::\1\2:::",
                     cell.source,
                     flags=re.DOTALL,
