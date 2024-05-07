@@ -21,6 +21,19 @@ async def test_inmemory() -> None:
     assert output2[0][1] > output2[1][1]
 
 
+async def test_add_by_ids() -> None:
+    vectorstore = InMemoryVectorStore(embedding=ConsistentFakeEmbeddings())
+
+    # Check sync version
+    ids1 = vectorstore.add_texts(["foo", "bar", "baz"], ids=["1", "2", "3"])
+    assert ids1 == ["1", "2", "3"]
+    assert sorted(vectorstore.store.keys()) == ["1", "2", "3"]
+
+    ids2 = await vectorstore.aadd_texts(["foo", "bar", "baz"], ids=["4", "5", "6"])
+    assert ids2 == ["4", "5", "6"]
+    assert sorted(vectorstore.store.keys()) == ["1", "2", "3", "4", "5", "6"]
+
+
 async def test_inmemory_mmr() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     docsearch = await InMemoryVectorStore.afrom_texts(texts, ConsistentFakeEmbeddings())
