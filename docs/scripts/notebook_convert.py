@@ -7,8 +7,7 @@ from typing import Iterable, Tuple
 
 import nbformat
 from nbconvert.exporters import MarkdownExporter
-from nbconvert.preprocessors import Preprocessor
-from nbconvert.preprocessors import RegexRemovePreprocessor
+from nbconvert.preprocessors import Preprocessor, RegexRemovePreprocessor
 
 
 class EscapePreprocessor(Preprocessor):
