@@ -14,23 +14,13 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
 
             from langchain_community.embeddings import GPT4AllEmbeddings
 
-            embeddings = GPT4AllEmbeddings()
     """
 
+    model_name: str
+    n_threads: int | None = None
+    device: str | None = "cpu"
+    gpt4all_kwargs: dict | None = None
     client: Any  #: :meta private:
-
-    def __init__(
-        self,
-        model_name: str | None = None,
-        *,
-        n_threads: int | None = None,
-        device: str | None = "cpu",
-        **kwargs: Any,
-    ):
-        self._model_name = model_name
-        self._n_threads = n_threads
-        self._device = device
-        self._kwargs = kwargs
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -40,10 +30,10 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
             from gpt4all import Embed4All
 
             values["client"] = Embed4All(
-                model_name=values.get("_model_name"),
-                n_threads=values.get("_n_threads"),
-                device=values.get("_device"),
-                **values.get("_kwargs", {}),
+                model_name=values["model_name"],
+                n_threads=values.get("n_threads"),
+                device=values.get("device"),
+                **values.get("gpt4all_kwargs", {}),
             )
         except ImportError:
             raise ImportError(
