@@ -277,7 +277,7 @@ def create_simple_model(
     Doesn't have any node or relationship properties.
     """
 
-    node_fields: Dict[Tuple[str, Any]] = {
+    node_fields: Dict[str, Tuple[str, Any]] = {
         "id": (
             str,
             Field(..., description="Name or human-readable unique identifier."),
