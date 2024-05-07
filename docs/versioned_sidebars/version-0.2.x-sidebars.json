@@ -11,17 +11,9 @@
       ]
     },
     {
-      "type": "category",
-      "label": "Tutorials",
-      "items": [
-        {
-          "type": "link",
-          "label": "llm_chain",
-          "href": "tutorials/llm_chain",
-          "customProps": { "hidden": true }
-        }
-      ],
-      "link": { "type": "doc", "id": "tutorials/index" }
+      "type": "doc",
+      "id": "tutorials/index",
+      "label": "Tutorials"
     },
     {
       "type": "doc",
