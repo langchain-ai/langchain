@@ -17,3 +17,17 @@
 {{ output.data['text/plain'].rstrip() }}
 ```
 {%- endblock data_text -%}
+
+{%- block data_html scoped -%}
+```html
+{{ output.data['text/html'] | safe }} 
+```
+{%- endblock data_html -%}
+
+{%- block data_jpg scoped -%}
+![](data:image/jpg;base64,{{ output.data['image/jpeg'] }})
+{%- endblock data_jpg -%}
+
+{%- block data_png scoped -%}
+![](data:image/png;base64,{{ output.data['image/png'] }})
+{%- endblock data_png -%}

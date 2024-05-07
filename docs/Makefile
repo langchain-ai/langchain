@@ -90,10 +90,10 @@ render:
 	$(PYTHON) scripts/notebook_convert.py $(INTERMEDIATE_DIR) $(OUTPUT_NEW_DOCS_DIR)
 
 md-sync:
-	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_DOCS_DIR)
+	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_DOCS_DIR)
 
 md-sync-new:
-	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
+	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
 
 build: install-py-deps generate-files copy-infra quarto-render md-sync
 

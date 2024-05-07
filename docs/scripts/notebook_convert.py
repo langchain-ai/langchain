@@ -8,19 +8,77 @@ from typing import Iterable, Tuple
 import nbformat
 from nbconvert.exporters import MarkdownExporter
 
+from nbconvert.preprocessors import Preprocessor
+import nbformat
+
+
+class EscapePreprocessor(Preprocessor):
+    def preprocess_cell(self, cell, resources, cell_index):
+        if cell.cell_type == "markdown":
+            cell.source = cell.source.replace("<", r"\<").replace(">", r"\>")
+        return cell, resources
+
+
+from base64 import b64decode
+import sys
+import os
+
+
+class ExtractAttachmentsPreprocessor(Preprocessor):
+    """
+    Extracts all of the outputs from the notebook file.  The extracted
+    outputs are returned in the 'resources' dictionary.
+    """
+
+    def preprocess_cell(self, cell, resources, cell_index):
+        """
+        Apply a transformation on each cell,
+        Parameters
+        ----------
+        cell : NotebookNode cell
+            Notebook cell being processed
+        resources : dictionary
+            Additional resources used in the conversion process.  Allows
+            preprocessors to pass variables into the Jinja engine.
+        cell_index : int
+            Index of the cell being processed (see base.py)
+        """
+
+        # Get files directory if it has been specified
+        output_files_dir = resources.get("output_files_dir", None)
+
+        # Make sure outputs key exists
+        if not isinstance(resources["outputs"], dict):
+            resources["outputs"] = {}
+
+        # Loop through all of the attachments in the cell
+        for name, attach in cell.get("attachments", {}).items():
+            for mime, data in attach.items():
+                if mime not in {
+                    "image/png",
+                    "image/jpeg",
+                    "image/svg+xml",
+                    "application/pdf",
+                }:
+                    continue
+
+                # attachments are pre-rendered. Only replace markdown-formatted
+                # images with the following logic
+                attach_str = f"({name})"
+                if attach_str in cell.source:
+                    data = f"(data:{mime};base64,{data})"
+                    cell.source = cell.source.replace(attach_str, data)
+
+        return cell, resources
+
+
 exporter = MarkdownExporter(
+    preprocessors=[EscapePreprocessor, ExtractAttachmentsPreprocessor],
     template_name="mdoutput",
     extra_template_basedirs=[
         "/Users/erickfriis/langchain/oss-py/docs/scripts/notebook_convert_templates"
     ],
 )
-# config = exporter.default_config
-# config.TemplateExporter.extra_template_basedirs = [
-#     "/Users/erickfriis/langchain/oss-py/docs/scripts/notebook_convert_templates"
-# ]
-# config.template = "mdoutput"
-# config.template_name = "mdoutput"
-# exporter.config = config
 
 
 def _process_path(tup: Tuple[Path, Path, Path]):
@@ -53,12 +111,9 @@ if __name__ == "__main__":
     source_paths_arg = os.environ.get("SOURCE_PATHS")
     source_paths: Iterable[Path]
     if source_paths_arg:
-        print("Using SOURCE_PATHS")
-
         source_path_strs = re.split(r"\s+", source_paths_arg)
         source_paths_stripped = [p.strip() for p in source_path_strs]
         source_paths = [intermediate_docs_dir / p for p in source_paths_stripped if p]
-        print(source_paths)
     else:
         source_paths = intermediate_docs_dir.glob("**/*.ipynb")
 
