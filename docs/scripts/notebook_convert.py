@@ -99,8 +99,7 @@ def _convert_notebook(notebook_path: Path, output_path: Path):
 
     body, resources = exporter.from_notebook_node(nb)
 
-    if not output_path.parent.exists():
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, "w") as f:
         f.write(body)
