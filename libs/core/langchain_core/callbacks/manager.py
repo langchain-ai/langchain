@@ -41,6 +41,7 @@ from langchain_core.callbacks.base import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
@@ -1994,15 +1995,26 @@ def _configure(
                 callback_manager.add_handler(tracer_v2, True)
             else:
                 try:
-                    handler = LangChainTracer(project_name=tracer_project)
+                    handler = LangChainTracer(
+                        project_name=tracer_project,
+                        client=run_tree.client if run_tree is not None else None,
+                    )
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
                     logger.warning(
                         "Unable to load requested LangChainTracer."
                         " To disable this warning,"
                         " unset the LANGCHAIN_TRACING_V2 environment variables.",
-                        e,
+                        f"{repr(e)}",
                     )
+        if run_tree is not None:
+            for handler in callback_manager.handlers:
+                if isinstance(handler, LangChainTracer):
+                    handler.order_map[run_tree.id] = (
+                        run_tree.trace_id,
+                        run_tree.dotted_order,
+                    )
+                    handler.run_map[str(run_tree.id)] = cast(Run, run_tree)
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None
