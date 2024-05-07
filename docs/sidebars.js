@@ -53,6 +53,7 @@
               label: "More",
               collapsed: true,
               items: [
+                "use_cases/question_answering/hybrid",
                 "use_cases/question_answering/per_user",
                 "use_cases/question_answering/conversational_retrieval_agents",
                 "use_cases/question_answering/local_retrieval_qa",

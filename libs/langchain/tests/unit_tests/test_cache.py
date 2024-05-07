@@ -4,9 +4,8 @@ from typing import Dict, Generator, List, Union
 
 import pytest
 from _pytest.fixtures import FixtureRequest
-from langchain_community.chat_models import FakeListChatModel
-from langchain_community.llms import FakeListLLM
 from langchain_core.caches import InMemoryCache
+from langchain_core.language_models import FakeListChatModel, FakeListLLM
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load import dumps

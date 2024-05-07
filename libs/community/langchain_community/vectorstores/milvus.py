@@ -139,7 +139,7 @@ class Milvus(VectorStore):
         try:
             from pymilvus import Collection, utility
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pymilvus python package. "
                 "Please install it with `pip install pymilvus`."
             )

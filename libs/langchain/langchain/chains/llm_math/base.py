@@ -81,7 +81,7 @@ class LLMMathChain(Chain):
         return [self.output_key]
 
     def _evaluate_expression(self, expression: str) -> str:
-        import numexpr  # noqa: F401
+        import numexpr
 
         try:
             local_dict = {"pi": math.pi, "e": math.e}

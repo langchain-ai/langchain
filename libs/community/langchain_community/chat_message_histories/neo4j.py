@@ -25,7 +25,7 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
         try:
             import neo4j
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import neo4j python package. "
                 "Please install it with `pip install neo4j`."
             )
@@ -76,7 +76,7 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
         ).summary
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from Neo4j"""
         query = (
             f"MATCH (s:`{self._node_label}`)-[:LAST_MESSAGE]->(last_message) "
@@ -91,6 +91,13 @@ class Neo4jChatMessageHistory(BaseChatMessageHistory):
 
         messages = messages_from_dict([el["result"] for el in records])
         return messages
+
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError(
+            "Direct assignment to 'messages' is not allowed."
+            " Use the 'add_messages' instead."
+        )
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Neo4j"""
