@@ -72,9 +72,7 @@ class ExtractAttachmentsPreprocessor(Preprocessor):
 exporter = MarkdownExporter(
     preprocessors=[EscapePreprocessor, ExtractAttachmentsPreprocessor],
     template_name="mdoutput",
-    extra_template_basedirs=[
-        "/Users/erickfriis/langchain/oss-py/docs/scripts/notebook_convert_templates"
-    ],
+    extra_template_basedirs=["./scripts/notebook_convert_templates"],
 )
 
 
