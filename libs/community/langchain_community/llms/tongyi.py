@@ -65,7 +65,7 @@ def check_response(resp: Any) -> Any:
     else:
         raise HTTPError(
             f"HTTP error occurred: status_code: {resp['status_code']} \n "
-            f"code: {resp["code"]} \n message: {resp['message']}",
+            f"code: {resp['code']} \n message: {resp['message']}",
             response=resp,
         )
 
