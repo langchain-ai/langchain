@@ -48,8 +48,10 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
     """Instruction used to embed the query."""
     model_kwargs: Optional[dict] = None
     """Other model keyword args"""
-
     deepinfra_api_token: Optional[str] = None
+    """API token for Deep Infra. If not provided, the token is fetched from the environment variable 'DEEPINFRA"""
+    batch_size: int = MAX_BATCH_SIZE
+    """Batch size for embedding requests."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -118,8 +120,8 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
         instruction_pairs = [f"{self.embed_instruction}{text}" for text in texts]
 
         chunks = [
-            instruction_pairs[i : i + MAX_BATCH_SIZE]
-            for i in range(0, len(instruction_pairs), MAX_BATCH_SIZE)
+            instruction_pairs[i : i + self.batch_size]
+            for i in range(0, len(instruction_pairs), self.batch_size)
         ]
         for chunk in chunks:
             embeddings += self._embed(chunk)
