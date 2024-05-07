@@ -2,12 +2,11 @@ from typing import List, Type, Union
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers.openai_tools import PydanticToolsParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
-
-from langchain.output_parsers import PydanticToolsParser
 
 _EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned \
 in the following passage together with their properties.
@@ -31,7 +30,6 @@ If a property is not present and is not required in the function parameters, do 
         "https://github.com/langchain-ai/langchain/discussions/18154"
     ),
     removal="0.3.0",
-    pending=True,
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field
