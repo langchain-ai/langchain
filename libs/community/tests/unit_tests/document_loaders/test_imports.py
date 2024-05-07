@@ -38,6 +38,7 @@ EXPECTED_ALL = [
     "BlobLoader",
     "BlockchainDocumentLoader",
     "BraveSearchLoader",
+    "BrowserbaseLoader",
     "BrowserlessLoader",
     "CassandraLoader",
     "CSVLoader",

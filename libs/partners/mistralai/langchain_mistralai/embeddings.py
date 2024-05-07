@@ -18,6 +18,10 @@ from tokenizers import Tokenizer  # type: ignore
 logger = logging.getLogger(__name__)
 
 MAX_TOKENS = 16_000
+"""A batching parameter for the Mistral API. This is NOT the maximum number of tokens
+accepted by the embedding model for each document/chunk, but rather the maximum number 
+of tokens that can be sent in a single request to the Mistral API (across multiple
+documents/chunks)"""
 
 
 class DummyTokenizer:

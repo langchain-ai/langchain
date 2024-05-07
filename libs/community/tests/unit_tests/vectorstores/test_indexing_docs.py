@@ -67,6 +67,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "FAISS",
         "HanaDB",
         "InMemoryVectorStore",
+        "LanceDB",
         "Milvus",
         "MomentoVectorIndex",
         "MyScale",
