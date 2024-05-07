@@ -172,10 +172,7 @@ class TileDB(VectorStore):
         Returns:
             List of Documents and scores.
         """
-        tiledb_vs, tiledb = (
-            guard_import("tiledb.vector_search"),
-            guard_import("tiledb"),
-        )
+        tiledb = guard_import("tiledb")
         docs = []
         docs_array = tiledb.open(
             self.docs_array_uri, "r", timestamp=self.timestamp, config=self.config
@@ -654,10 +651,7 @@ class TileDB(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        tiledb_vs, tiledb = (
-            guard_import("tiledb.vector_search"),
-            guard_import("tiledb"),
-        )
+        tiledb = guard_import("tiledb")
         embeddings = self.embedding.embed_documents(list(texts))
         if ids is None:
             ids = [str(random.randint(0, MAX_UINT64 - 1)) for _ in texts]
