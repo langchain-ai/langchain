@@ -27,14 +27,15 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
     """ The IDs of the objects to load data from."""
     folder_id: Optional[str] = None
     """ The ID of the folder to load data from."""
-    load_auth: bool = False
-    """Whether to load authorization identities."""
+    load_auth: Optional[bool] = False
+    """ Whether to load authorization identities."""
     token_path: Path = Path.home() / ".credentials" / "o365_token.txt"
-
+    """ The path to the token to make api calls"""
     file_id: Optional[str] = None
-
+    """ The ID of the file for which we need auth identities"""
     site_id: Optional[str] = None
-    
+    """ The ID of the Sharepoint site of the user where the file is present """
+
     @property
     def _file_types(self) -> Sequence[_FileType]:
         """Return supported file types."""
@@ -63,11 +64,9 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
                 for parsed_blob in blob_parser.lazy_parse(blob):
-                    # Our changes here!!
                     auth_identities = self.authorized_identities(self.document_library_id, self.file_id)
                     parsed_blob.metadata['authorized_identities'] = auth_identities
                     yield parsed_blob
-                # yield from blob_parser.lazy_parse(blob)
         if self.folder_id:
             target_folder = drive.get_item(self.folder_id)
             if not isinstance(target_folder, Folder):
@@ -86,14 +85,14 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
 
     def authorized_identities(self, document_library_id, file_id):
     
-        with open(self.token_path) as f:
-            s = f.read()
-            data = json.loads(s)
+        data = self._fetch_access_token(self.token_path)
         
         access_token = data.get('access_token')
 
-        url = f"https://graph.microsoft.com/v1.0/sites/{self.site_id}/drives/{document_library_id}/items/{file_id}/permissions"
-
+        url = (
+            f"https://graph.microsoft.com/v1.0/sites/{self.site_id}/"
+            f"drives/{document_library_id}/items/{file_id}/permissions"
+        )
         payload={}
 
         headers = {
@@ -118,4 +117,9 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                 
         return group_names
     
-    
+    def _fetch_access_token(token_path):
+
+        with open(token_path) as f:
+            s = f.read()
+            data = json.loads(s)
+            return data
