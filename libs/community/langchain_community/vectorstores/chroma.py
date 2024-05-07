@@ -33,21 +33,35 @@ logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
 
 
-def _results_to_docs(results: Any) -> List[Document]:
-    return [doc for doc, _ in _results_to_docs_and_scores(results)]
+def _results_to_docs(
+    results: Any,
+    include_id: Optional[bool] = False
+) -> List[Document]:
+    return [doc for doc, _ in _results_to_docs_and_scores(results, include_id)]
 
 
-def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
-    return [
-        # TODO: Chroma can do batch querying,
-        # we shouldn't hard code to the 1st result
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2])
-        for result in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
-        )
-    ]
+def _results_to_docs_and_scores(
+    results: Any, include_id: Optional[bool] = False
+) -> List[Tuple[Document, float]]:
+    # TODO: Chroma can do batch querying,
+    # we shouldn't hard code to the 1st result
+    output = []
+
+    for result in zip(
+        results["documents"][0],
+        results["metadatas"][0],
+        results["distances"][0],
+        results["ids"][0],
+    ):
+        metadata = result[1] or {}
+        if include_id:
+            metadata["id"] = result[3]
+
+        doc = Document(page_content=result[0], metadata=metadata)
+
+        output.append((doc, result[2]))
+
+    return output
 
 
 class Chroma(VectorStore):
@@ -357,6 +371,7 @@ class Chroma(VectorStore):
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
+        include_id: Optional[bool] = False,
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to embedding vector.
@@ -364,6 +379,7 @@ class Chroma(VectorStore):
             embedding (List[float]): Embedding to look up documents similar to.
             k (int): Number of Documents to return. Defaults to 4.
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            include_id : Returns id of the vector as metadata if set to True
         Returns:
             List of Documents most similar to the query vector.
         """
@@ -374,7 +390,7 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs(results)
+        return _results_to_docs(results, include_id)
 
     def similarity_search_by_vector_with_relevance_scores(
         self,
@@ -568,6 +584,100 @@ class Chroma(VectorStore):
             where_document=where_document,
         )
         return docs
+
+    def sentence_window_retrieval_search(
+        self, query: str, k: int = 4, window_size: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        """Returns docs selected by sentence window retrieval
+
+        Args:
+            query : Text to look up documents similar to.
+            k : Number of Documents to return. Defaults to 4.
+            window_size : The number of neighboring indices to include
+                    to make up the final document. Defaults to 4.
+
+        Returns:
+            List[Document]: List of Documents selected by sentence window retrieval
+        """
+
+        vector = self._embedding_function.embed_query(query)
+        output = self._collection.query(query_embeddings=vector, n_results=k)
+
+        doc_list = []
+
+        for id, metadata in zip(output["ids"][0], output["metadatas"][0]):
+            doc_list.append(
+                self.get_sentence_window_document(id, metadata, window_size)
+            )
+
+        return doc_list
+
+    def get_sentence_window_document(
+        self, id: str, metadata: Dict[str, Any], window_size: int
+    ) -> Document:
+        """For a given index in the vector database, retrieves the adjacent
+        `window_size` indices to augment the retrieval window.
+        This is a helper function for the Sentence Window Retrieval method.
+        The adjacent pieces of text are retrieved only from the same source
+        as the given index.
+
+        Args:
+            id : Chroma ID of the primary index around which we retrieve
+                the additional text
+            metadata : metadata of the primary index
+            window_size : Defines the number of indices before and after
+                the primary index, to be included in the final output
+
+
+        Returns:
+            Document: A modified document that contains the text from the original index
+                as well as text from its surrounding indices
+        """
+
+        primary_index = metadata.get("chunk_id")
+        source_text = metadata.get("source")
+        start_index = max(0, primary_index - window_size)
+        end_index = primary_index + window_size
+
+        if window_size < 0:
+            raise ValueError("window_size should be an integer greater than 0")
+
+        if source_text:
+            output = self._collection.get(
+                where={
+                    "$and": [
+                        {"source": source_text},
+                        {"chunk_id": {"$gte": start_index}},
+                        {"chunk_id": {"$lte": end_index}},
+                    ]
+                }
+            )
+        else:
+            output = self._collection.get(
+                where={
+                    "$and": [
+                        {"chunk_id": {"$gte": start_index}},
+                        {"chunk_id": {"$lte": end_index}},
+                    ]
+                }
+            )
+
+        page_content = " ".join(output["documents"])
+        pages = [x["page"] for x in output["metadatas"]]
+
+        metadata = {
+            "primary_index": primary_index,
+            "chroma_id": id,
+            "page": list(set(pages)),
+            "type": "sentence_window",
+        }
+
+        if source_text:
+            metadata["source"] = source_text
+
+        output_doc = Document(page_content=page_content, metadata=metadata)
+
+        return output_doc
 
     def delete_collection(self) -> None:
         """Delete the collection."""
@@ -811,3 +921,24 @@ class Chroma(VectorStore):
     def __len__(self) -> int:
         """Count the number of documents in the collection."""
         return self._collection.count()
+
+    def get_documents_by_ids(self, ids: int | str | List[int | str]) -> List[Document]:
+        if isinstance(ids, list):
+            output = self._collection.get(ids=[str(x) for x in ids])
+        else:
+            output = self._collection.get(ids=[str(ids)])
+
+        num_results = len(output["ids"])
+
+        output_docs = []
+
+        if num_results > 0:
+            for i in range(num_results):
+                metadata = output["metadatas"][i]
+                page_content = output["documents"][i]
+
+                output_docs.append(
+                    Document(page_content=page_content, metadata=metadata)
+                )
+
+        return output_docs
