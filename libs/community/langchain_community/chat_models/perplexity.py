@@ -120,7 +120,7 @@ class ChatPerplexity(BaseChatModel):
             values, "pplx_api_key", "PPLX_API_KEY"
         )
         try:
-            import openai  # noqa: F401
+            import openai
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

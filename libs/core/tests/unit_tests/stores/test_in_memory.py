@@ -1,4 +1,4 @@
-from langchain.storage.in_memory import InMemoryStore
+from langchain_core.stores import InMemoryStore
 
 
 def test_mget() -> None:

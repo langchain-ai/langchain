@@ -48,6 +48,8 @@ from langchain_core.output_parsers import (
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
+from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -111,7 +113,19 @@ class FakeTracer(BaseTracer):
 
     def _replace_message_id(self, maybe_message: Any) -> Any:
         if isinstance(maybe_message, BaseMessage):
-            maybe_message.id = AnyStr()
+            maybe_message.id = str(next(self.uuids_generator))
+        if isinstance(maybe_message, ChatGeneration):
+            maybe_message.message.id = str(next(self.uuids_generator))
+        if isinstance(maybe_message, LLMResult):
+            for i, gen_list in enumerate(maybe_message.generations):
+                for j, gen in enumerate(gen_list):
+                    maybe_message.generations[i][j] = self._replace_message_id(gen)
+        if isinstance(maybe_message, dict):
+            for k, v in maybe_message.items():
+                maybe_message[k] = self._replace_message_id(v)
+        if isinstance(maybe_message, list):
+            for i, v in enumerate(maybe_message):
+                maybe_message[i] = self._replace_message_id(v)
 
         return maybe_message
 
@@ -134,20 +148,10 @@ class FakeTracer(BaseTracer):
                     self.uuids_map[run.parent_run_id] if run.parent_run_id else None
                 ),
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
-                "execution_order": None,
-                "child_execution_order": None,
                 "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
                 "dotted_order": new_dotted_order,
-                "inputs": (
-                    {k: self._replace_message_id(v) for k, v in run.inputs.items()}
-                    if isinstance(run.inputs, dict)
-                    else run.inputs
-                ),
-                "outputs": (
-                    {k: self._replace_message_id(v) for k, v in run.outputs.items()}
-                    if isinstance(run.outputs, dict)
-                    else run.outputs
-                ),
+                "inputs": self._replace_message_id(run.inputs),
+                "outputs": self._replace_message_id(run.outputs),
             }
         )
 
@@ -1941,7 +1945,9 @@ async def test_with_listeners_async(mocker: MockerFixture) -> None:
 
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2045,7 +2051,9 @@ def test_prompt_with_chat_model(
 
 @freeze_time("2023-01-01")
 async def test_prompt_with_chat_model_async(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2772,7 +2780,9 @@ async def test_prompt_with_llm_and_async_lambda(
 
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model_and_parser(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2811,7 +2821,9 @@ def test_prompt_with_chat_model_and_parser(
 
 @freeze_time("2023-01-01")
 def test_combining_sequences(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
