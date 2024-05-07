@@ -37,7 +37,7 @@ def push(
     new_repo_description: str = "",
 ) -> str:
     """
-    Pushes an object to the hub and returns the URL it can be viewed at in a browser.
+    Push an object to the hub and returns the URL it can be viewed at in a browser.
 
     :param repo_full_name: The full name of the repo to push to in the format of
         `owner/repo`.
@@ -71,7 +71,7 @@ def pull(
     api_key: Optional[str] = None,
 ) -> Any:
     """
-    Pulls an object from the hub and returns it as a LangChain object.
+    Pull an object from the hub and returns it as a LangChain object.
 
     :param owner_repo_commit: The full name of the repo to pull from in the format of
         `owner/repo:commit_hash`.
