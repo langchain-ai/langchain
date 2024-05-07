@@ -17,5 +17,5 @@ class TestTogethertandard(ChatModelIntegrationTests):
     @pytest.fixture
     def chat_model_params(self) -> dict:
         return {
-            "model": "meta-llama/Llama-3-8b-chat-hf",
+            "model": "mistralai/Mistral-7B-Instruct-v0.1",
         }
