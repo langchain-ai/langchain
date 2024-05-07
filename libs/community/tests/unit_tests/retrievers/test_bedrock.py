@@ -49,11 +49,11 @@ def test_get_relevant_documents(amazon_retriever, mock_client):
     assert len(documents) == 3
     assert isinstance(documents[0], Document)
     assert documents[0].page_content == "result1"
-    assert documents[0].metadata == {"score": 0, "sourceMetadata": {"key": "value1"}}
+    assert documents[0].metadata == {"score": 0, "source_metadata": {"key": "value1"}}
     assert documents[1].page_content == "result2"
     assert documents[1].metadata == {
         "score": 1,
-        "sourceMetadata": {"key": "value2"},
+        "source_metadata": {"key": "value2"},
         "location": "testLocation",
     }
     assert documents[2].page_content == "result3"
