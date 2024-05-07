@@ -60,7 +60,8 @@ def test_extract_html() -> None:
 def test_remove_style() -> None:
     markdownify = MarkdownifyTransformer()
     with_style_html = (
-        "<html><style>my_funky_style</style><p>First paragraph.</p></html>"
+        "<html><style type=\"text/css\">body {color: red;}</style>"
+        "<p>First paragraph.</p></html>"
     )
     documents = [Document(page_content=with_style_html)]
     docs_transformed = markdownify.transform_documents(documents)
