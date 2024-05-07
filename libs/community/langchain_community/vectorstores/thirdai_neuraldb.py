@@ -332,7 +332,7 @@ class NeuralDBClientVectorStore(VectorStore):
 
             ndb_client = NeuralDBClient(
                 deployment_identifier="user/model-0:user/deployment-0",
-                base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/", 
+                base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/",
                 bazaar=bazaar
             )
             vectorstore = NeuralDBClientVectorStore(db=ndb_client)
@@ -351,7 +351,6 @@ class NeuralDBClientVectorStore(VectorStore):
 
         extra = Extra.forbid
         underscore_attrs_are_private = True
-
 
     def similarity_search(
         self, query: str, k: int = 10, **kwargs: Any
@@ -380,17 +379,17 @@ class NeuralDBClientVectorStore(VectorStore):
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
         
-    def insert(self, documents: List[Dict[str, Any]]): # type: ignore[no-untyped-def, no-untyped-def]
+    def insert(self, documents: List[Dict[str, Any]]):  # type: ignore[no-untyped-def, no-untyped-def]
         """
         Inserts documents into the VectorStore and return the corresponding Sources.
 
         Args:
-            documents (List[Dict[str, Any]]): A list of dictionaries that 
+            documents (List[Dict[str, Any]]): A list of dictionaries that
             represent documents to be inserted to the VectorStores.
             The document dictionaries must be in the following format:
-            {"document_type": "DOCUMENT_TYPE", **kwargs} where "DOCUMENT_TYPE" 
+            {"document_type": "DOCUMENT_TYPE", **kwargs} where "DOCUMENT_TYPE"
             is one of the following:
-            "PDF", "CSV", "DOCX", "URL", "SentenceLevelPDF", "SentenceLevelDOCX", 
+            "PDF", "CSV", "DOCX", "URL", "SentenceLevelPDF", "SentenceLevelDOCX",
             "Unstructured", "InMemoryText".
             The kwargs for each document type are shown below:
 
@@ -464,14 +463,14 @@ class NeuralDBClientVectorStore(VectorStore):
         """
         return self.db.insert(documents)
         
-    def remove_documents(self, source_ids: List[str]): # type: ignore[no-untyped-def]
+    def remove_documents(self, source_ids: List[str]):  # type: ignore[no-untyped-def]
         """
         Deletes documents from the VectorStore using source ids.
 
         Args:
             files (List[str]): A list of source ids to delete from the VectorStore.
         """
-        
+
         self.db.delete(source_ids)
 
     def add_texts():
