@@ -85,7 +85,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
 
     def authorized_identities(self, document_library_id, file_id):
     
-        data = self._fetch_access_token(self.token_path)
+        data = self._fetch_access_token()
         
         access_token = data.get('access_token')
 
@@ -117,9 +117,9 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                 
         return group_names
     
-    def _fetch_access_token(token_path):
+    def _fetch_access_token(self):
 
-        with open(token_path) as f:
+        with open(self.token_path) as f:
             s = f.read()
             data = json.loads(s)
             return data
