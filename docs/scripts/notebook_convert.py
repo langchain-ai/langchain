@@ -12,7 +12,6 @@ from nbconvert.preprocessors import Preprocessor, RegexRemovePreprocessor
 
 class EscapePreprocessor(Preprocessor):
     def preprocess_cell(self, cell, resources, cell_index):
-        print(cell.cell_type)
         if cell.cell_type == "markdown":
             # find all occurrences of ```{=mdx} blocks and remove wrapper
             if "```{=mdx}\n" in cell.source:
@@ -50,7 +49,6 @@ class ExtractAttachmentsPreprocessor(Preprocessor):
         """
 
         # Get files directory if it has been specified
-        output_files_dir = resources.get("output_files_dir", None)
 
         # Make sure outputs key exists
         if not isinstance(resources["outputs"], dict):
@@ -86,14 +84,12 @@ exporter = MarkdownExporter(
     template_name="mdoutput",
     extra_template_basedirs=["./scripts/notebook_convert_templates"],
 )
-print(exporter.preprocessors)
 
 
 def _process_path(tup: Tuple[Path, Path, Path]):
     notebook_path, intermediate_docs_dir, output_docs_dir = tup
     relative = notebook_path.relative_to(intermediate_docs_dir)
     output_path = output_docs_dir / relative.parent / (relative.stem + ".md")
-    print(notebook_path)
     _convert_notebook(notebook_path, output_path)
 
 
