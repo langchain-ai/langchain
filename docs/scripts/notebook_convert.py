@@ -25,6 +25,10 @@ class EscapePreprocessor(Preprocessor):
                     cell.source,
                     flags=re.DOTALL,
                 )
+            # rewrite .ipynb links to .md
+            cell.source = re.sub(
+                r"\[([^\]]*)\]\(([^)]*).ipynb\)", r"[\1](\2.md)", cell.source
+            )
         return cell, resources
 
 
