@@ -291,7 +291,7 @@ def create_simple_model(
         if isinstance(node_properties, list) and "id" in node_properties:
             raise ValueError("The node property 'id' is reserved and cannot be used.")
         # Map True to empty array
-        node_properties = [] if node_properties == True else node_properties
+        node_properties = [] if node_properties is True else node_properties
 
         class Property(BaseModel):
             """A single property consisting of key and value"""
