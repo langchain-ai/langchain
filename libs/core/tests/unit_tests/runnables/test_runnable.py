@@ -5506,6 +5506,8 @@ def test_listeners() -> None:
         return {**inputs, "key": "extra"}
 
     shared_state = {}
+    value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
 
     def on_start(run: Run) -> None:
         shared_state[run.id] = {"inputs": run.inputs}
@@ -5521,13 +5523,9 @@ def test_listeners() -> None:
 
     data = [{"name": "one"}, {"name": "two"}]
     chain.invoke(data, config={"max_concurrency": 1})
-    # FYI: This test might be flaky since listeners if listeners
-    # are called in a separate thread
-    # We'll probably want to add a very short sleep here to deal with that
     assert len(shared_state) == 2
-    # More test code to verify that the outputs are as expected
-
-    # Test should also cover the .batch() version
+    assert value1 in shared_state.values(), "Value not found in the dictionary."
+    assert value2 in shared_state.values(), "Value not found in the dictionary."
 
 
 async def test_listeners_async() -> None:
@@ -5538,6 +5536,8 @@ async def test_listeners_async() -> None:
         return {**inputs, "key": "extra"}
 
     shared_state = {}
+    value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
 
     def on_start(run: Run) -> None:
         shared_state[run.id] = {"inputs": run.inputs}
@@ -5553,10 +5553,7 @@ async def test_listeners_async() -> None:
 
     data = [{"name": "one"}, {"name": "two"}]
     await chain.ainvoke(data, config={"max_concurrency": 1})
-    # FYI: This test might be flaky since listeners if listeners
-    # are called in a separate thread
-    # We'll probably want to add a very short sleep here to deal with that
-    assert len(shared_state) == 2
-    # More test code to verify that the outputs are as expected
 
-    # Test should also cover the .batch() version
+    assert len(shared_state) == 2
+    assert value1 in shared_state.values(), "Value not found in the dictionary."
+    assert value2 in shared_state.values(), "Value not found in the dictionary."
