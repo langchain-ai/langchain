@@ -12,10 +12,10 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
 )
-from langchain_openai.chat_models.base import BaseChatModel
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
 
-class ChatUpstage(BaseChatModel):
+class ChatUpstage(BaseChatOpenAI):
     """ChatUpstage chat model.
 
     To use, you should have the environment variable `UPSTAGE_API_KEY`
