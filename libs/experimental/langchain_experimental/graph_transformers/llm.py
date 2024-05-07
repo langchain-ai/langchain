@@ -300,7 +300,9 @@ def create_simple_model(
             """A single property consisting of key and value"""
 
             key: str = optional_enum_field(
-                node_properties_mapped, description="Property key.", input_type="property"
+                node_properties_mapped,
+                description="Property key.",
+                input_type="property",
             )
             value: str = Field(..., description="value")
 
