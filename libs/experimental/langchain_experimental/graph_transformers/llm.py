@@ -313,7 +313,7 @@ def create_simple_model(
             Optional[List[Property]],
             Field(None, description="List of node properties"),
         )
-    SimpleNode = create_model("SimpleNode", **node_fields)
+    SimpleNode = create_model("SimpleNode", **node_fields)  # type: ignore
 
     class SimpleRelationship(BaseModel):
         """Represents a directed relationship between two nodes in a graph."""
@@ -343,7 +343,7 @@ def create_simple_model(
     class DynamicGraph(_Graph):
         """Represents a graph document consisting of nodes and relationships."""
 
-        nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")
+        nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")  # type: ignore
         relationships: Optional[List[SimpleRelationship]] = Field(
             description="List of relationships"
         )
