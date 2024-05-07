@@ -68,24 +68,6 @@ def _stream_response_to_generation_chunk(
 class BaseOpenAI(BaseLLM):
     """Base OpenAI large language model class."""
 
-    @property
-    def lc_secrets(self) -> Dict[str, str]:
-        return {"openai_api_key": "OPENAI_API_KEY"}
-
-    @property
-    def lc_attributes(self) -> Dict[str, Any]:
-        attributes: Dict[str, Any] = {}
-        if self.openai_api_base:
-            attributes["openai_api_base"] = self.openai_api_base
-
-        if self.openai_organization:
-            attributes["openai_organization"] = self.openai_organization
-
-        if self.openai_proxy:
-            attributes["openai_proxy"] = self.openai_proxy
-
-        return attributes
-
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo-instruct", alias="model")
@@ -149,7 +131,12 @@ class BaseOpenAI(BaseLLM):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
-    """Optional httpx.Client."""
+    """Optional httpx.Client. Only used for sync invocations. Must specify 
+        http_async_client as well if you'd like a custom client for async invocations.
+    """
+    http_async_client: Union[Any, None] = None
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
+        http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -209,12 +196,17 @@ class BaseOpenAI(BaseLLM):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
         if not values.get("client"):
-            values["client"] = openai.OpenAI(**client_params).completions
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.OpenAI(
+                **client_params, **sync_specific
+            ).completions
         if not values.get("async_client"):
-            values["async_client"] = openai.AsyncOpenAI(**client_params).completions
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncOpenAI(
+                **client_params, **async_specific
+            ).completions
 
         return values
 
@@ -361,6 +353,13 @@ class BaseOpenAI(BaseLLM):
                     # dict. For the transition period, we deep convert it to dict.
                     response = response.model_dump()
 
+                # Sometimes the AI Model calling will get error, we should raise it.
+                # Otherwise, the next code 'choices.extend(response["choices"])'
+                # will throw a "TypeError: 'NoneType' object is not iterable" error
+                # to mask the true error. Because 'response["choices"]' is None.
+                if response.get("error"):
+                    raise ValueError(response.get("error"))
+
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
                 if not system_fingerprint:
@@ -504,6 +503,8 @@ class BaseOpenAI(BaseLLM):
 
     def get_token_ids(self, text: str) -> List[int]:
         """Get the token IDs using the tiktoken package."""
+        if self.custom_get_token_ids is not None:
+            return self.custom_get_token_ids(text)
         # tiktoken NOT supported for Python < 3.8
         if sys.version_info[1] < 8:
             return super().get_num_tokens(text)
@@ -630,3 +631,21 @@ class OpenAI(BaseOpenAI):
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         return {**{"model": self.model_name}, **super()._invocation_params}
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"openai_api_key": "OPENAI_API_KEY"}
+
+    @property
+    def lc_attributes(self) -> Dict[str, Any]:
+        attributes: Dict[str, Any] = {}
+        if self.openai_api_base:
+            attributes["openai_api_base"] = self.openai_api_base
+
+        if self.openai_organization:
+            attributes["openai_organization"] = self.openai_organization
+
+        if self.openai_proxy:
+            attributes["openai_proxy"] = self.openai_proxy
+
+        return attributes

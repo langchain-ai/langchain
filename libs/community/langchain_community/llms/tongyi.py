@@ -5,13 +5,17 @@ import functools
 import logging
 from typing import (
     Any,
+    AsyncIterable,
     AsyncIterator,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
     Optional,
+    Tuple,
+    TypeVar,
 )
 
 from langchain_core.callbacks import (
@@ -32,6 +36,7 @@ from tenacity import (
 )
 
 logger = logging.getLogger(__name__)
+T = TypeVar("T")
 
 
 def _create_retry_decorator(llm: Tongyi) -> Callable[[Any], Any]:
@@ -120,6 +125,36 @@ async def astream_generate_with_retry(llm: Tongyi, **kwargs: Any) -> Any:
 
     async for chunk in _AioTongyiGenerator(llm, **kwargs):
         yield chunk
+
+
+def generate_with_last_element_mark(iterable: Iterable[T]) -> Iterator[Tuple[T, bool]]:
+    """Generate elements from an iterable,
+    and a boolean indicating if it is the last element."""
+    iterator = iter(iterable)
+    try:
+        item = next(iterator)
+    except StopIteration:
+        return
+    for next_item in iterator:
+        yield item, False
+        item = next_item
+    yield item, True
+
+
+async def agenerate_with_last_element_mark(
+    iterable: AsyncIterable[T],
+) -> AsyncIterator[Tuple[T, bool]]:
+    """Generate elements from an async iterable,
+    and a boolean indicating if it is the last element."""
+    iterator = iterable.__aiter__()
+    try:
+        item = await iterator.__anext__()
+    except StopAsyncIteration:
+        return
+    async for next_item in iterator:
+        yield item, False
+        item = next_item
+    yield item, True
 
 
 class Tongyi(BaseLLM):
@@ -283,8 +318,12 @@ class Tongyi(BaseLLM):
         params: Dict[str, Any] = self._invocation_params(
             stop=stop, stream=True, **kwargs
         )
-        for stream_resp in stream_generate_with_retry(self, prompt=prompt, **params):
-            chunk = GenerationChunk(**self._generation_from_qwen_resp(stream_resp))
+        for stream_resp, is_last_chunk in generate_with_last_element_mark(
+            stream_generate_with_retry(self, prompt=prompt, **params)
+        ):
+            chunk = GenerationChunk(
+                **self._generation_from_qwen_resp(stream_resp, is_last_chunk)
+            )
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
@@ -303,10 +342,12 @@ class Tongyi(BaseLLM):
         params: Dict[str, Any] = self._invocation_params(
             stop=stop, stream=True, **kwargs
         )
-        async for stream_resp in astream_generate_with_retry(
-            self, prompt=prompt, **params
+        async for stream_resp, is_last_chunk in agenerate_with_last_element_mark(
+            astream_generate_with_retry(self, prompt=prompt, **params)
         ):
-            chunk = GenerationChunk(**self._generation_from_qwen_resp(stream_resp))
+            chunk = GenerationChunk(
+                **self._generation_from_qwen_resp(stream_resp, is_last_chunk)
+            )
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
@@ -327,15 +368,27 @@ class Tongyi(BaseLLM):
         return params
 
     @staticmethod
-    def _generation_from_qwen_resp(resp: Any) -> Dict[str, Any]:
-        return dict(
-            text=resp["output"]["text"],
-            generation_info=dict(
-                finish_reason=resp["output"]["finish_reason"],
-                request_id=resp["request_id"],
-                token_usage=dict(resp["usage"]),
-            ),
-        )
+    def _generation_from_qwen_resp(
+        resp: Any, is_last_chunk: bool = True
+    ) -> Dict[str, Any]:
+        # According to the response from dashscope,
+        # each chunk's `generation_info` overwrites the previous one.
+        # Besides, The `merge_dicts` method,
+        # which is used to concatenate `generation_info` in `GenerationChunk`,
+        # does not support merging of int type values.
+        # Therefore, we adopt the `generation_info` of the last chunk
+        # and discard the `generation_info` of the intermediate chunks.
+        if is_last_chunk:
+            return dict(
+                text=resp["output"]["text"],
+                generation_info=dict(
+                    finish_reason=resp["output"]["finish_reason"],
+                    request_id=resp["request_id"],
+                    token_usage=dict(resp["usage"]),
+                ),
+            )
+        else:
+            return dict(text=resp["output"]["text"])
 
     @staticmethod
     def _chunk_to_generation(chunk: GenerationChunk) -> Generation:

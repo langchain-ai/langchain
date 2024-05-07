@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class SparkLLM(LLM):
-    """Wrapper around iFlyTek's Spark large language model.
+    """iFlyTek Spark large language model.
 
     To use, you should pass `app_id`, `api_key`, `api_secret`
     as a named parameter to the constructor OR set environment
@@ -169,9 +169,9 @@ class SparkLLM(LLM):
             if "data" not in content:
                 continue
             delta = content["data"]
-            yield GenerationChunk(text=delta["content"])
             if run_manager:
                 run_manager.on_llm_new_token(delta)
+            yield GenerationChunk(text=delta["content"])
 
 
 class _SparkLLMClient:

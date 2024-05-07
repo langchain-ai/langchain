@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from typing import Dict, Iterator, Optional, Tuple
 
@@ -25,10 +26,17 @@ class OpenAIWhisperParser(BaseBlobParser):
     """
 
     def __init__(
-        self, api_key: Optional[str] = None, *, chunk_duration_threshold: float = 0.1
+        self,
+        api_key: Optional[str] = None,
+        *,
+        chunk_duration_threshold: float = 0.1,
+        base_url: Optional[str] = None,
     ):
         self.api_key = api_key
         self.chunk_duration_threshold = chunk_duration_threshold
+        self.base_url = (
+            base_url if base_url is not None else os.environ.get("OPENAI_API_BASE")
+        )
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         """Lazily parse the blob."""
@@ -51,11 +59,13 @@ class OpenAIWhisperParser(BaseBlobParser):
 
         if is_openai_v1():
             # api_key optional, defaults to `os.environ['OPENAI_API_KEY']`
-            client = openai.OpenAI(api_key=self.api_key)
+            client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
         else:
             # Set the API key if provided
             if self.api_key:
                 openai.api_key = self.api_key
+            if self.base_url:
+                openai.base_url = self.base_url
 
         # Audio file from disk
         audio = AudioSegment.from_file(blob.path)
@@ -318,4 +328,136 @@ class YandexSTTParser(BaseBlobParser):
             yield Document(
                 page_content=res.normalized_text,
                 metadata={"source": blob.source},
+            )
+
+
+class FasterWhisperParser(BaseBlobParser):
+    """Transcribe and parse audio files with faster-whisper.
+
+    faster-whisper is a reimplementation of OpenAI's Whisper model using CTranslate2,
+    which is up to 4 times faster than openai/whisper for the same accuracy while using
+    less memory. The efficiency can be further improved with 8-bit quantization on both
+    CPU and GPU.
+
+    It can automatically detect the following 14 languages and transcribe the text
+    into their respective languages: en, zh, fr, de, ja, ko, ru, es, th, it, pt, vi,
+    ar, tr.
+
+    The gitbub repository for faster-whisper is :
+    https://github.com/SYSTRAN/faster-whisper
+
+    Example: Load a YouTube video and transcribe the video speech into a document.
+        .. code-block:: python
+
+            from langchain.document_loaders.generic import GenericLoader
+            from langchain_community.document_loaders.parsers.audio
+                import FasterWhisperParser
+            from langchain.document_loaders.blob_loaders.youtube_audio
+                import YoutubeAudioLoader
+
+
+            url="https://www.youtube.com/watch?v=your_video"
+            save_dir="your_dir/"
+            loader = GenericLoader(
+                YoutubeAudioLoader([url],save_dir),
+                FasterWhisperParser()
+            )
+            docs = loader.load()
+
+    """
+
+    def __init__(
+        self,
+        *,
+        device: Optional[str] = "cuda",
+        model_size: Optional[str] = None,
+    ):
+        """Initialize the parser.
+
+        Args:
+            device: It can be "cuda" or "cpu" based on the available device.
+            model_size: There are four model sizes to choose from: "base", "small",
+                        "medium", and "large-v3", based on the available GPU memory.
+        """
+        try:
+            import torch
+        except ImportError:
+            raise ImportError(
+                "torch package not found, please install it with `pip install torch`"
+            )
+
+        # Determine the device to use
+        if device == "cpu":
+            self.device = "cpu"
+        else:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Determine the model_size
+        if self.device == "cpu":
+            self.model_size = "base"
+        else:
+            # Set the model_size based on the available memory
+            mem = torch.cuda.get_device_properties(self.device).total_memory / (1024**2)
+            if mem < 1000:
+                self.model_size = "base"
+            elif mem < 3000:
+                self.model_size = "small"
+            elif mem < 5000:
+                self.model_size = "medium"
+            else:
+                self.model_size = "large-v3"
+        # If the user has assigned a model size, then use the assigned size
+        if model_size is not None:
+            if model_size in ["base", "small", "medium", "large-v3"]:
+                self.model_size = model_size
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        """Lazily parse the blob."""
+
+        import io
+
+        try:
+            from pydub import AudioSegment
+        except ImportError:
+            raise ImportError(
+                "pydub package not found, please install it with `pip install pydub`"
+            )
+
+        try:
+            from faster_whisper import WhisperModel
+        except ImportError:
+            raise ImportError(
+                "faster_whisper package not found, please install it with "
+                "`pip install faster-whisper`"
+            )
+
+        # get the audio
+        if isinstance(blob.data, bytes):
+            # blob contains the audio
+            audio = AudioSegment.from_file(io.BytesIO(blob.data))
+        elif blob.data is None and blob.path:
+            # Audio file from disk
+            audio = AudioSegment.from_file(blob.path)
+        else:
+            raise ValueError("Unable to get audio from blob")
+
+        file_obj = io.BytesIO(audio.export(format="mp3").read())
+
+        # Transcribe
+        model = WhisperModel(
+            self.model_size, device=self.device, compute_type="float16"
+        )
+
+        segments, info = model.transcribe(file_obj, beam_size=5)
+
+        for segment in segments:
+            yield Document(
+                page_content=segment.text,
+                metadata={
+                    "source": blob.source,
+                    "timestamps": "[%.2fs -> %.2fs]" % (segment.start, segment.end),
+                    "language": info.language,
+                    "probability": "%d%%" % round(info.language_probability * 100),
+                    **blob.metadata,
+                },
             )

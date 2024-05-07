@@ -25,7 +25,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.chains.llm import LLMChain
 
 
-@deprecated("0.1.0", alternative="create_react_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_react_agent", removal="0.3.0")
 class ChatAgent(Agent):
     """Chat Agent."""
 
@@ -97,7 +97,7 @@ class ChatAgent(Agent):
         ]
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
-        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)  # type: ignore[arg-type]
 
     @classmethod
     def from_llm_and_tools(

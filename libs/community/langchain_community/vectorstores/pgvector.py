@@ -19,7 +19,7 @@ from typing import (
 
 import numpy as np
 import sqlalchemy
-from langchain_core._api import warn_deprecated
+from langchain_core._api import deprecated, warn_deprecated
 from sqlalchemy import SQLColumnExpression, delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
@@ -209,8 +209,37 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
     return [doc for doc, _ in docs_and_scores]
 
 
+@deprecated(
+    since="0.0.31",
+    message=(
+        "This class is pending deprecation and may be removed in a future version. "
+        "You can swap to using the `PGVector`"
+        " implementation in `langchain_postgres`. "
+        "Please read the guidelines in the doc-string of this class "
+        "to follow prior to migrating as there are some differences "
+        "between the implementations. "
+        "See https://github.com/langchain-ai/langchain-postgres for details about"
+        "the new implementation."
+    ),
+    alternative="from langchain_postgres import PGVector;",
+    pending=True,
+)
 class PGVector(VectorStore):
     """`Postgres`/`PGVector` vector store.
+
+    **DEPRECATED**: This class is pending deprecation and will likely receive
+        no updates. An improved version of this class is available in
+        `langchain_postgres` as `PGVector`. Please use that class instead.
+
+        When migrating please keep in mind that:
+            * The new implementation works with psycopg3, not with psycopg2
+              (This implementation does not work with psycopg3).
+            * Filtering syntax has changed to use $ prefixed operators for JSONB
+              metadata fields. (New implementation only uses JSONB field for metadata)
+            * The new implementation made some schema changes to address issues
+              with the existing implementation. So you will need to re-create
+              your tables and re-index your data or else carry out a manual
+              migration.
 
     To use, you should have the ``pgvector`` python package installed.
 
@@ -235,6 +264,8 @@ class PGVector(VectorStore):
             for querying.
             It's provided here for backwards compatibility with older versions,
             and will be removed in the future.
+        create_extension: If True, will create the vector extension if it doesn't exist.
+            disabling creation is useful when using ReadOnly Databases.
 
     Example:
         .. code-block:: python
@@ -269,6 +300,7 @@ class PGVector(VectorStore):
         connection: Optional[sqlalchemy.engine.Connection] = None,
         engine_args: Optional[dict[str, Any]] = None,
         use_jsonb: bool = False,
+        create_extension: bool = True,
     ) -> None:
         """Initialize the PGVector store."""
         self.connection_string = connection_string
@@ -283,6 +315,7 @@ class PGVector(VectorStore):
         self.engine_args = engine_args or {}
         self._bind = connection if connection else self._create_engine()
         self.use_jsonb = use_jsonb
+        self.create_extension = create_extension
 
         if not use_jsonb:
             # Replace with a deprecation warning.
@@ -311,7 +344,8 @@ class PGVector(VectorStore):
         self,
     ) -> None:
         """Initialize the store."""
-        self.create_vector_extension()
+        if self.create_extension:
+            self.create_vector_extension()
 
         EmbeddingStore, CollectionStore = _get_embedding_collection_store(
             self._embedding_length, use_jsonb=self.use_jsonb
@@ -437,7 +471,7 @@ class PGVector(VectorStore):
         **kwargs: Any,
     ) -> PGVector:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -477,7 +511,7 @@ class PGVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -761,13 +795,13 @@ class PGVector(VectorStore):
             )
         elif OR in map(str.lower, value):
             or_clauses = [
-                self._create_filter_clause(key, sub_value)
+                self._create_filter_clause_deprecated(key, sub_value)
                 for sub_value in value_case_insensitive[OR]
             ]
             filter_by_metadata = sqlalchemy.or_(*or_clauses)
         elif AND in map(str.lower, value):
             and_clauses = [
-                self._create_filter_clause(key, sub_value)
+                self._create_filter_clause_deprecated(key, sub_value)
                 for sub_value in value_case_insensitive[AND]
             ]
             filter_by_metadata = sqlalchemy.and_(*and_clauses)

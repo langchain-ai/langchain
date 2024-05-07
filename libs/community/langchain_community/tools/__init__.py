@@ -16,8 +16,444 @@ tool for the job.
 
     CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
 """
+
 import importlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_core.tools import (
+        BaseTool,
+        StructuredTool,
+        Tool,
+        tool,
+    )
+
+    from langchain_community.tools.ainetwork.app import (
+        AINAppOps,
+    )
+    from langchain_community.tools.ainetwork.owner import (
+        AINOwnerOps,
+    )
+    from langchain_community.tools.ainetwork.rule import (
+        AINRuleOps,
+    )
+    from langchain_community.tools.ainetwork.transfer import (
+        AINTransfer,
+    )
+    from langchain_community.tools.ainetwork.value import (
+        AINValueOps,
+    )
+    from langchain_community.tools.arxiv.tool import (
+        ArxivQueryRun,
+    )
+    from langchain_community.tools.azure_ai_services import (
+        AzureAiServicesDocumentIntelligenceTool,
+        AzureAiServicesImageAnalysisTool,
+        AzureAiServicesSpeechToTextTool,
+        AzureAiServicesTextAnalyticsForHealthTool,
+        AzureAiServicesTextToSpeechTool,
+    )
+    from langchain_community.tools.azure_cognitive_services import (
+        AzureCogsFormRecognizerTool,
+        AzureCogsImageAnalysisTool,
+        AzureCogsSpeech2TextTool,
+        AzureCogsText2SpeechTool,
+        AzureCogsTextAnalyticsHealthTool,
+    )
+    from langchain_community.tools.bearly.tool import (
+        BearlyInterpreterTool,
+    )
+    from langchain_community.tools.bing_search.tool import (
+        BingSearchResults,
+        BingSearchRun,
+    )
+    from langchain_community.tools.brave_search.tool import (
+        BraveSearch,
+    )
+    from langchain_community.tools.cassandra_database.tool import (
+        GetSchemaCassandraDatabaseTool,  # noqa: F401
+        GetTableDataCassandraDatabaseTool,  # noqa: F401
+        QueryCassandraDatabaseTool,  # noqa: F401
+    )
+    from langchain_community.tools.cogniswitch.tool import (
+        CogniswitchKnowledgeRequest,
+        CogniswitchKnowledgeSourceFile,
+        CogniswitchKnowledgeSourceURL,
+        CogniswitchKnowledgeStatus,
+    )
+    from langchain_community.tools.connery import (
+        ConneryAction,
+    )
+    from langchain_community.tools.convert_to_openai import (
+        format_tool_to_openai_function,
+    )
+    from langchain_community.tools.ddg_search.tool import (
+        DuckDuckGoSearchResults,
+        DuckDuckGoSearchRun,
+    )
+    from langchain_community.tools.e2b_data_analysis.tool import (
+        E2BDataAnalysisTool,
+    )
+    from langchain_community.tools.edenai import (
+        EdenAiExplicitImageTool,
+        EdenAiObjectDetectionTool,
+        EdenAiParsingIDTool,
+        EdenAiParsingInvoiceTool,
+        EdenAiSpeechToTextTool,
+        EdenAiTextModerationTool,
+        EdenAiTextToSpeechTool,
+        EdenaiTool,
+    )
+    from langchain_community.tools.eleven_labs.text2speech import (
+        ElevenLabsText2SpeechTool,
+    )
+    from langchain_community.tools.file_management import (
+        CopyFileTool,
+        DeleteFileTool,
+        FileSearchTool,
+        ListDirectoryTool,
+        MoveFileTool,
+        ReadFileTool,
+        WriteFileTool,
+    )
+    from langchain_community.tools.gmail import (
+        GmailCreateDraft,
+        GmailGetMessage,
+        GmailGetThread,
+        GmailSearch,
+        GmailSendMessage,
+    )
+    from langchain_community.tools.google_cloud.texttospeech import (
+        GoogleCloudTextToSpeechTool,
+    )
+    from langchain_community.tools.google_places.tool import (
+        GooglePlacesTool,
+    )
+    from langchain_community.tools.google_search.tool import (
+        GoogleSearchResults,
+        GoogleSearchRun,
+    )
+    from langchain_community.tools.google_serper.tool import (
+        GoogleSerperResults,
+        GoogleSerperRun,
+    )
+    from langchain_community.tools.graphql.tool import (
+        BaseGraphQLTool,
+    )
+    from langchain_community.tools.human.tool import (
+        HumanInputRun,
+    )
+    from langchain_community.tools.ifttt import (
+        IFTTTWebhook,
+    )
+    from langchain_community.tools.interaction.tool import (
+        StdInInquireTool,
+    )
+    from langchain_community.tools.jira.tool import (
+        JiraAction,
+    )
+    from langchain_community.tools.json.tool import (
+        JsonGetValueTool,
+        JsonListKeysTool,
+    )
+    from langchain_community.tools.merriam_webster.tool import (
+        MerriamWebsterQueryRun,
+    )
+    from langchain_community.tools.metaphor_search import (
+        MetaphorSearchResults,
+    )
+    from langchain_community.tools.mojeek_search.tool import (
+        MojeekSearch,
+    )
+    from langchain_community.tools.nasa.tool import (
+        NasaAction,
+    )
+    from langchain_community.tools.office365.create_draft_message import (
+        O365CreateDraftMessage,
+    )
+    from langchain_community.tools.office365.events_search import (
+        O365SearchEvents,
+    )
+    from langchain_community.tools.office365.messages_search import (
+        O365SearchEmails,
+    )
+    from langchain_community.tools.office365.send_event import (
+        O365SendEvent,
+    )
+    from langchain_community.tools.office365.send_message import (
+        O365SendMessage,
+    )
+    from langchain_community.tools.office365.utils import (
+        authenticate,
+    )
+    from langchain_community.tools.openapi.utils.api_models import (
+        APIOperation,
+    )
+    from langchain_community.tools.openapi.utils.openapi_utils import (
+        OpenAPISpec,
+    )
+    from langchain_community.tools.openweathermap.tool import (
+        OpenWeatherMapQueryRun,
+    )
+    from langchain_community.tools.playwright import (
+        ClickTool,
+        CurrentWebPageTool,
+        ExtractHyperlinksTool,
+        ExtractTextTool,
+        GetElementsTool,
+        NavigateBackTool,
+        NavigateTool,
+    )
+    from langchain_community.tools.plugin import (
+        AIPluginTool,
+    )
+    from langchain_community.tools.polygon.aggregates import (
+        PolygonAggregates,
+    )
+    from langchain_community.tools.polygon.financials import (
+        PolygonFinancials,
+    )
+    from langchain_community.tools.polygon.last_quote import (
+        PolygonLastQuote,
+    )
+    from langchain_community.tools.polygon.ticker_news import (
+        PolygonTickerNews,
+    )
+    from langchain_community.tools.powerbi.tool import (
+        InfoPowerBITool,
+        ListPowerBITool,
+        QueryPowerBITool,
+    )
+    from langchain_community.tools.pubmed.tool import (
+        PubmedQueryRun,
+    )
+    from langchain_community.tools.reddit_search.tool import (
+        RedditSearchRun,
+        RedditSearchSchema,
+    )
+    from langchain_community.tools.requests.tool import (
+        BaseRequestsTool,
+        RequestsDeleteTool,
+        RequestsGetTool,
+        RequestsPatchTool,
+        RequestsPostTool,
+        RequestsPutTool,
+    )
+    from langchain_community.tools.scenexplain.tool import (
+        SceneXplainTool,
+    )
+    from langchain_community.tools.searchapi.tool import (
+        SearchAPIResults,
+        SearchAPIRun,
+    )
+    from langchain_community.tools.searx_search.tool import (
+        SearxSearchResults,
+        SearxSearchRun,
+    )
+    from langchain_community.tools.shell.tool import (
+        ShellTool,
+    )
+    from langchain_community.tools.slack.get_channel import (
+        SlackGetChannel,
+    )
+    from langchain_community.tools.slack.get_message import (
+        SlackGetMessage,
+    )
+    from langchain_community.tools.slack.schedule_message import (
+        SlackScheduleMessage,
+    )
+    from langchain_community.tools.slack.send_message import (
+        SlackSendMessage,
+    )
+    from langchain_community.tools.sleep.tool import (
+        SleepTool,
+    )
+    from langchain_community.tools.spark_sql.tool import (
+        BaseSparkSQLTool,
+        InfoSparkSQLTool,
+        ListSparkSQLTool,
+        QueryCheckerTool,
+        QuerySparkSQLTool,
+    )
+    from langchain_community.tools.sql_database.tool import (
+        BaseSQLDatabaseTool,
+        InfoSQLDatabaseTool,
+        ListSQLDatabaseTool,
+        QuerySQLCheckerTool,
+        QuerySQLDataBaseTool,
+    )
+    from langchain_community.tools.stackexchange.tool import (
+        StackExchangeTool,
+    )
+    from langchain_community.tools.steam.tool import (
+        SteamWebAPIQueryRun,
+    )
+    from langchain_community.tools.steamship_image_generation import (
+        SteamshipImageGenerationTool,
+    )
+    from langchain_community.tools.vectorstore.tool import (
+        VectorStoreQATool,
+        VectorStoreQAWithSourcesTool,
+    )
+    from langchain_community.tools.wikipedia.tool import (
+        WikipediaQueryRun,
+    )
+    from langchain_community.tools.wolfram_alpha.tool import (
+        WolframAlphaQueryRun,
+    )
+    from langchain_community.tools.yahoo_finance_news import (
+        YahooFinanceNewsTool,
+    )
+    from langchain_community.tools.you.tool import (
+        YouSearchTool,
+    )
+    from langchain_community.tools.youtube.search import (
+        YouTubeSearchTool,
+    )
+    from langchain_community.tools.zapier.tool import (
+        ZapierNLAListActions,
+        ZapierNLARunAction,
+    )
+
+__all__ = [
+    "AINAppOps",
+    "AINOwnerOps",
+    "AINRuleOps",
+    "AINTransfer",
+    "AINValueOps",
+    "AIPluginTool",
+    "APIOperation",
+    "ArxivQueryRun",
+    "AzureAiServicesDocumentIntelligenceTool",
+    "AzureAiServicesImageAnalysisTool",
+    "AzureAiServicesSpeechToTextTool",
+    "AzureAiServicesTextAnalyticsForHealthTool",
+    "AzureAiServicesTextToSpeechTool",
+    "AzureCogsFormRecognizerTool",
+    "AzureCogsImageAnalysisTool",
+    "AzureCogsSpeech2TextTool",
+    "AzureCogsText2SpeechTool",
+    "AzureCogsTextAnalyticsHealthTool",
+    "BaseGraphQLTool",
+    "BaseRequestsTool",
+    "BaseSQLDatabaseTool",
+    "BaseSparkSQLTool",
+    "BaseTool",
+    "BearlyInterpreterTool",
+    "BingSearchResults",
+    "BingSearchRun",
+    "BraveSearch",
+    "ClickTool",
+    "CogniswitchKnowledgeRequest",
+    "CogniswitchKnowledgeSourceFile",
+    "CogniswitchKnowledgeSourceURL",
+    "CogniswitchKnowledgeStatus",
+    "ConneryAction",
+    "CopyFileTool",
+    "CurrentWebPageTool",
+    "DeleteFileTool",
+    "DuckDuckGoSearchResults",
+    "DuckDuckGoSearchRun",
+    "E2BDataAnalysisTool",
+    "EdenAiExplicitImageTool",
+    "EdenAiObjectDetectionTool",
+    "EdenAiParsingIDTool",
+    "EdenAiParsingInvoiceTool",
+    "EdenAiSpeechToTextTool",
+    "EdenAiTextModerationTool",
+    "EdenAiTextToSpeechTool",
+    "EdenaiTool",
+    "ElevenLabsText2SpeechTool",
+    "ExtractHyperlinksTool",
+    "ExtractTextTool",
+    "FileSearchTool",
+    "GetElementsTool",
+    "GmailCreateDraft",
+    "GmailGetMessage",
+    "GmailGetThread",
+    "GmailSearch",
+    "GmailSendMessage",
+    "GoogleCloudTextToSpeechTool",
+    "GooglePlacesTool",
+    "GoogleSearchResults",
+    "GoogleSearchRun",
+    "GoogleSerperResults",
+    "GoogleSerperRun",
+    "HumanInputRun",
+    "IFTTTWebhook",
+    "InfoPowerBITool",
+    "InfoSQLDatabaseTool",
+    "InfoSparkSQLTool",
+    "JiraAction",
+    "JsonGetValueTool",
+    "JsonListKeysTool",
+    "ListDirectoryTool",
+    "ListPowerBITool",
+    "ListSQLDatabaseTool",
+    "ListSparkSQLTool",
+    "MerriamWebsterQueryRun",
+    "MetaphorSearchResults",
+    "MojeekSearch",
+    "MoveFileTool",
+    "NasaAction",
+    "NavigateBackTool",
+    "NavigateTool",
+    "O365CreateDraftMessage",
+    "O365SearchEmails",
+    "O365SearchEvents",
+    "O365SendEvent",
+    "O365SendMessage",
+    "OpenAPISpec",
+    "OpenWeatherMapQueryRun",
+    "PolygonAggregates",
+    "PolygonFinancials",
+    "PolygonLastQuote",
+    "PolygonTickerNews",
+    "PubmedQueryRun",
+    "QueryCheckerTool",
+    "QueryPowerBITool",
+    "QuerySQLCheckerTool",
+    "QuerySQLDataBaseTool",
+    "QuerySparkSQLTool",
+    "ReadFileTool",
+    "RedditSearchRun",
+    "RedditSearchSchema",
+    "RequestsDeleteTool",
+    "RequestsGetTool",
+    "RequestsPatchTool",
+    "RequestsPostTool",
+    "RequestsPutTool",
+    "SceneXplainTool",
+    "SearchAPIResults",
+    "SearchAPIRun",
+    "SearxSearchResults",
+    "SearxSearchRun",
+    "ShellTool",
+    "SlackGetChannel",
+    "SlackGetMessage",
+    "SlackScheduleMessage",
+    "SlackSendMessage",
+    "SleepTool",
+    "StackExchangeTool",
+    "StdInInquireTool",
+    "SteamWebAPIQueryRun",
+    "SteamshipImageGenerationTool",
+    "StructuredTool",
+    "Tool",
+    "VectorStoreQATool",
+    "VectorStoreQAWithSourcesTool",
+    "WikipediaQueryRun",
+    "WolframAlphaQueryRun",
+    "WriteFileTool",
+    "YahooFinanceNewsTool",
+    "YouSearchTool",
+    "YouTubeSearchTool",
+    "ZapierNLAListActions",
+    "ZapierNLARunAction",
+    "authenticate",
+    "format_tool_to_openai_function",
+    "tool",
+]
 
 # Used for internal purposes
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
@@ -31,6 +467,11 @@ _module_lookup = {
     "AIPluginTool": "langchain_community.tools.plugin",
     "APIOperation": "langchain_community.tools.openapi.utils.api_models",
     "ArxivQueryRun": "langchain_community.tools.arxiv.tool",
+    "AzureAiServicesDocumentIntelligenceTool": "langchain_community.tools.azure_ai_services",  # noqa: E501
+    "AzureAiServicesImageAnalysisTool": "langchain_community.tools.azure_ai_services",
+    "AzureAiServicesSpeechToTextTool": "langchain_community.tools.azure_ai_services",
+    "AzureAiServicesTextToSpeechTool": "langchain_community.tools.azure_ai_services",
+    "AzureAiServicesTextAnalyticsForHealthTool": "langchain_community.tools.azure_ai_services",  # noqa: E501
     "AzureCogsFormRecognizerTool": "langchain_community.tools.azure_cognitive_services",
     "AzureCogsImageAnalysisTool": "langchain_community.tools.azure_cognitive_services",
     "AzureCogsSpeech2TextTool": "langchain_community.tools.azure_cognitive_services",
@@ -53,6 +494,7 @@ _module_lookup = {
     "ConneryAction": "langchain_community.tools.connery",
     "CopyFileTool": "langchain_community.tools.file_management",
     "CurrentWebPageTool": "langchain_community.tools.playwright",
+    "DataheraldTextToSQL": "langchain_community.tools.dataherald.tool",
     "DeleteFileTool": "langchain_community.tools.file_management",
     "DuckDuckGoSearchResults": "langchain_community.tools.ddg_search.tool",
     "DuckDuckGoSearchRun": "langchain_community.tools.ddg_search.tool",
@@ -95,6 +537,7 @@ _module_lookup = {
     "ListSparkSQLTool": "langchain_community.tools.spark_sql.tool",
     "MerriamWebsterQueryRun": "langchain_community.tools.merriam_webster.tool",
     "MetaphorSearchResults": "langchain_community.tools.metaphor_search",
+    "MojeekSearch": "langchain_community.tools.mojeek_search.tool",
     "MoveFileTool": "langchain_community.tools.file_management",
     "NasaAction": "langchain_community.tools.nasa.tool",
     "NavigateBackTool": "langchain_community.tools.playwright",

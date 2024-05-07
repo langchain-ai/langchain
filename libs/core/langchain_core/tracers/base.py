@@ -1,4 +1,5 @@
 """Base interfaces for tracing runs."""
+
 from __future__ import annotations
 
 import logging
@@ -15,6 +16,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -67,6 +69,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
         super().__init__(**kwargs)
         self._schema_format = _schema_format  # For internal use only API will change.
         self.run_map: Dict[str, Run] = {}
+        """Map of run ID to run. Cleared on run end."""
+        self.order_map: Dict[UUID, Tuple[UUID, str]] = {}
+        """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
 
     @staticmethod
     def _add_child_run(
@@ -99,29 +104,23 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """Start a trace for a run."""
         current_dotted_order = run.start_time.strftime("%Y%m%dT%H%M%S%fZ") + str(run.id)
         if run.parent_run_id:
-            parent_run = self.run_map.get(str(run.parent_run_id))
-            if parent_run:
-                self._add_child_run(parent_run, run)
-                parent_run.child_execution_order = max(
-                    parent_run.child_execution_order, run.child_execution_order
-                )
-                run.trace_id = parent_run.trace_id
-                if parent_run.dotted_order:
-                    run.dotted_order = (
-                        parent_run.dotted_order + "." + current_dotted_order
-                    )
-                else:
-                    # Something wrong with tracer parent run has no dotted_order
-                    logger.debug(
-                        f"Parent run with UUID {run.parent_run_id} has no dotted_order."
-                    )
+            if parent := self.order_map.get(run.parent_run_id):
+                run.trace_id, run.dotted_order = parent
+                run.dotted_order += "." + current_dotted_order
+                if parent_run := self.run_map.get(str(run.parent_run_id)):
+                    self._add_child_run(parent_run, run)
             else:
-                # Something wrong with tracer, parent run not found
-                # Calculate the trace_id and dotted_order server side
-                logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
+                logger.warning(
+                    f"Parent run {run.parent_run_id} not found for run {run.id}."
+                    " Treating as a root run."
+                )
+                run.parent_run_id = None
+                run.trace_id = run.id
+                run.dotted_order = current_dotted_order
         else:
             run.trace_id = run.id
             run.dotted_order = current_dotted_order
+        self.order_map[run.id] = (run.trace_id, run.dotted_order)
         self.run_map[str(run.id)] = run
         self._on_run_create(run)
 
@@ -129,34 +128,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
         """End a trace for a run."""
         if not run.parent_run_id:
             self._persist_run(run)
-        else:
-            parent_run = self.run_map.get(str(run.parent_run_id))
-            if parent_run is None:
-                logger.debug(f"Parent run with UUID {run.parent_run_id} not found.")
-            elif (
-                run.child_execution_order is not None
-                and parent_run.child_execution_order is not None
-                and run.child_execution_order > parent_run.child_execution_order
-            ):
-                parent_run.child_execution_order = run.child_execution_order
         self.run_map.pop(str(run.id))
         self._on_run_update(run)
-
-    def _get_execution_order(self, parent_run_id: Optional[str] = None) -> int:
-        """Get the execution order for a run."""
-        if parent_run_id is None:
-            return 1
-
-        parent_run = self.run_map.get(parent_run_id)
-        if parent_run is None:
-            logger.debug(f"Parent run with UUID {parent_run_id} not found.")
-            return 1
-        if parent_run.child_execution_order is None:
-            raise TracerException(
-                f"Parent run with UUID {parent_run_id} has no child execution order."
-            )
-
-        return parent_run.child_execution_order + 1
 
     def _get_run(
         self, run_id: UUID, run_type: Union[str, Set[str], None] = None
@@ -202,8 +175,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 f"Chat model tracing is not supported in "
                 f"for {self._schema_format} format."
             )
-        parent_run_id_ = str(parent_run_id) if parent_run_id else None
-        execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -215,8 +186,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
-            execution_order=execution_order,
-            child_execution_order=execution_order,
             # WARNING: This is valid ONLY for streaming_events.
             # run_type="llm" is what's used by virtually all tracers.
             # Changing this to "chat_model" may break triggering on_llm_start
@@ -241,8 +210,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run."""
-        parent_run_id_ = str(parent_run_id) if parent_run_id else None
-        execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -255,8 +222,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
-            execution_order=execution_order,
-            child_execution_order=execution_order,
             run_type="llm",
             tags=tags or [],
             name=name,  # type: ignore[arg-type]
@@ -373,8 +338,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a chain run."""
-        parent_run_id_ = str(parent_run_id) if parent_run_id else None
-        execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -386,8 +349,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
-            execution_order=execution_order,
-            child_execution_order=execution_order,
             child_runs=[],
             run_type=run_type or "chain",
             name=name,  # type: ignore[arg-type]
@@ -471,8 +432,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a tool run."""
-        parent_run_id_ = str(parent_run_id) if parent_run_id else None
-        execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -493,8 +452,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
-            execution_order=execution_order,
-            child_execution_order=execution_order,
             child_runs=[],
             run_type="tool",
             tags=tags or [],
@@ -506,7 +463,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> Run:
         """End a trace for a tool run."""
-        output = str(output)
         tool_run = self._get_run(run_id, run_type="tool")
         tool_run.outputs = {"output": output}
         tool_run.end_time = datetime.now(timezone.utc)
@@ -544,8 +500,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
         **kwargs: Any,
     ) -> Run:
         """Run when Retriever starts running."""
-        parent_run_id_ = str(parent_run_id) if parent_run_id else None
-        execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -558,8 +512,6 @@ class BaseTracer(BaseCallbackHandler, ABC):
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
-            execution_order=execution_order,
-            child_execution_order=execution_order,
             tags=tags,
             child_runs=[],
             run_type="retriever",

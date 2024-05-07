@@ -24,5 +24,5 @@ def test_api_key_masked_when_passed_via_constructor(
 def test_gooseai_call() -> None:
     """Test valid call to gooseai."""
     llm = Petals(max_new_tokens=10)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)

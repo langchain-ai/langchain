@@ -2,7 +2,7 @@
 sidebar_class_name: hidden
 ---
 
-# LangSmith
+# 🦜🛠️ LangSmith
 
 [LangSmith](https://smith.langchain.com) helps you trace and evaluate your language model applications and intelligent agents to help you
 move from prototype to production.

@@ -1,6 +1,5 @@
 """Test ChatAnthropic chat model."""
 
-import json
 from enum import Enum
 from typing import List, Optional
 
@@ -104,33 +103,15 @@ def test_system_invoke() -> None:
 ##################
 
 
-def test_tools() -> None:
-    class Person(BaseModel):
-        name: str
-        age: int
-
-    llm = ChatAnthropicTools(model_name=BIG_MODEL_NAME, temperature=0).bind_tools(
-        [Person]
-    )
-    result = llm.invoke("Erick is 27 years old")
-    assert result.content == "", f"content should be empty, not {result.content}"
-    assert "tool_calls" in result.additional_kwargs
-    tool_calls = result.additional_kwargs["tool_calls"]
-    assert len(tool_calls) == 1
-    tool_call = tool_calls[0]
-    assert tool_call["type"] == "function"
-    function = tool_call["function"]
-    assert function["name"] == "Person"
-    assert json.loads(function["arguments"]) == {"name": "Erick", "age": "27"}
-
-
 def test_with_structured_output() -> None:
     class Person(BaseModel):
         name: str
         age: int
 
     chain = ChatAnthropicTools(
-        model_name=BIG_MODEL_NAME, temperature=0
+        model_name=BIG_MODEL_NAME,
+        temperature=0,
+        default_headers={"anthropic-beta": "tools-2024-04-04"},
     ).with_structured_output(Person)
     result = chain.invoke("Erick is 27 years old")
     assert isinstance(result, Person)
@@ -172,7 +153,11 @@ def test_anthropic_complex_structured_output() -> None:
         ]
     )
 
-    llm = ChatAnthropicTools(temperature=0, model_name=BIG_MODEL_NAME)
+    llm = ChatAnthropicTools(
+        temperature=0,
+        model_name=BIG_MODEL_NAME,
+        default_headers={"anthropic-beta": "tools-2024-04-04"},
+    )
 
     extraction_chain = prompt | llm.with_structured_output(Email)
 

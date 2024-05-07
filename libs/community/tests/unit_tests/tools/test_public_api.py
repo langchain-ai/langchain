@@ -10,6 +10,11 @@ _EXPECTED = [
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
+    "AzureAiServicesDocumentIntelligenceTool",
+    "AzureAiServicesImageAnalysisTool",
+    "AzureAiServicesSpeechToTextTool",
+    "AzureAiServicesTextToSpeechTool",
+    "AzureAiServicesTextAnalyticsForHealthTool",
     "AzureCogsFormRecognizerTool",
     "AzureCogsImageAnalysisTool",
     "AzureCogsSpeech2TextTool",
@@ -32,6 +37,7 @@ _EXPECTED = [
     "ConneryAction",
     "CopyFileTool",
     "CurrentWebPageTool",
+    "DataheraldTextToSQL",
     "DeleteFileTool",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
@@ -133,6 +139,7 @@ _EXPECTED = [
     "authenticate",
     "format_tool_to_openai_function",
     "tool",
+    "MojeekSearch",
 ]
 
 

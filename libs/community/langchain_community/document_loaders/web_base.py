@@ -251,7 +251,7 @@ class WebBaseLoader(BaseLoader):
             metadata = _build_metadata(soup, path)
             yield Document(page_content=text, metadata=metadata)
 
-    def aload(self) -> List[Document]:
+    def aload(self) -> List[Document]:  # type: ignore
         """Load text from the urls in web_path async into Documents."""
 
         results = self.scrape_all(self.web_paths)

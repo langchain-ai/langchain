@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Type
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.llms.openai import OpenAI
-from langchain_community.vectorstores.chroma import Chroma
+from langchain_community.vectorstores.inmemory import InMemoryVectorStore
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
@@ -43,7 +43,22 @@ class VectorStoreIndexWrapper(BaseModel):
         chain = RetrievalQA.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
         )
-        return chain.run(question)
+        return chain.invoke({chain.input_key: question})[chain.output_key]
+
+    async def aquery(
+        self,
+        question: str,
+        llm: Optional[BaseLanguageModel] = None,
+        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Query the vectorstore."""
+        llm = llm or OpenAI(temperature=0)
+        retriever_kwargs = retriever_kwargs or {}
+        chain = RetrievalQA.from_chain_type(
+            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
+        )
+        return (await chain.ainvoke({chain.input_key: question}))[chain.output_key]
 
     def query_with_sources(
         self,
@@ -58,13 +73,28 @@ class VectorStoreIndexWrapper(BaseModel):
         chain = RetrievalQAWithSourcesChain.from_chain_type(
             llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
         )
-        return chain({chain.question_key: question})
+        return chain.invoke({chain.question_key: question})
+
+    async def aquery_with_sources(
+        self,
+        question: str,
+        llm: Optional[BaseLanguageModel] = None,
+        retriever_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Query the vectorstore and get back sources."""
+        llm = llm or OpenAI(temperature=0)
+        retriever_kwargs = retriever_kwargs or {}
+        chain = RetrievalQAWithSourcesChain.from_chain_type(
+            llm, retriever=self.vectorstore.as_retriever(**retriever_kwargs), **kwargs
+        )
+        return await chain.ainvoke({chain.question_key: question})
 
 
 class VectorstoreIndexCreator(BaseModel):
     """Logic for creating indexes."""
 
-    vectorstore_cls: Type[VectorStore] = Chroma
+    vectorstore_cls: Type[VectorStore] = InMemoryVectorStore
     embedding: Embeddings = Field(default_factory=OpenAIEmbeddings)
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
     vectorstore_kwargs: dict = Field(default_factory=dict)
@@ -82,10 +112,28 @@ class VectorstoreIndexCreator(BaseModel):
             docs.extend(loader.load())
         return self.from_documents(docs)
 
+    async def afrom_loaders(self, loaders: List[BaseLoader]) -> VectorStoreIndexWrapper:
+        """Create a vectorstore index from loaders."""
+        docs = []
+        for loader in loaders:
+            async for doc in loader.alazy_load():
+                docs.append(doc)
+        return await self.afrom_documents(docs)
+
     def from_documents(self, documents: List[Document]) -> VectorStoreIndexWrapper:
         """Create a vectorstore index from documents."""
         sub_docs = self.text_splitter.split_documents(documents)
         vectorstore = self.vectorstore_cls.from_documents(
+            sub_docs, self.embedding, **self.vectorstore_kwargs
+        )
+        return VectorStoreIndexWrapper(vectorstore=vectorstore)
+
+    async def afrom_documents(
+        self, documents: List[Document]
+    ) -> VectorStoreIndexWrapper:
+        """Create a vectorstore index from documents."""
+        sub_docs = self.text_splitter.split_documents(documents)
+        vectorstore = await self.vectorstore_cls.afrom_documents(
             sub_docs, self.embedding, **self.vectorstore_kwargs
         )
         return VectorStoreIndexWrapper(vectorstore=vectorstore)

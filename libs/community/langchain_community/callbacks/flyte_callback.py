@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 def import_flytekit() -> Tuple[flytekit, renderer]:
     """Import flytekit and flytekitplugins-deck-standard."""
     try:
-        import flytekit  # noqa: F401
-        from flytekitplugins.deck import renderer  # noqa: F401
+        import flytekit
+        from flytekitplugins.deck import renderer
     except ImportError:
         raise ImportError(
             "To use the flyte callback manager you need"
@@ -91,7 +91,7 @@ def analyze_text(
 
 
 class FlyteCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
-    """This callback handler that is used within a Flyte task."""
+    """Callback handler that is used within a Flyte task."""
 
     def __init__(self) -> None:
         """Initialize callback handler."""

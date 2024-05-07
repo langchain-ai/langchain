@@ -30,7 +30,7 @@ from langchain.agents.output_parsers.openai_functions import (
 )
 
 
-@deprecated("0.1.0", alternative="create_openai_functions_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_openai_functions_agent", removal="0.3.0")
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
     """An Agent driven by OpenAIs function powered API.
 
@@ -201,7 +201,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
-        return ChatPromptTemplate(messages=messages)
+        return ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
 
     @classmethod
     def from_llm_and_tools(
@@ -220,7 +220,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message,
         )
-        return cls(
+        return cls(  # type: ignore[call-arg]
             llm=llm,
             prompt=prompt,
             tools=tools,
@@ -298,7 +298,9 @@ def create_openai_functions_agent(
                 ]
             )
     """
-    if "agent_scratchpad" not in prompt.input_variables:
+    if "agent_scratchpad" not in (
+        prompt.input_variables + list(prompt.partial_variables)
+    ):
         raise ValueError(
             "Prompt must have input variable `agent_scratchpad`, but wasn't found. "
             f"Found {prompt.input_variables} instead."

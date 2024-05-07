@@ -12,6 +12,16 @@
  * bundles Infima by default. Infima is a CSS framework designed to
  * work well for content-centric websites.
  */
+ 
+ @font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/Manrope-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Public Sans';
+  src: url('/fonts/PublicSans-VariableFont_wght.ttf') format('truetype');
+}
 
 /* You can override the default Infima variables here. */
 :root {
@@ -22,7 +32,12 @@
   --ifm-color-primary-light: #33925d;
   --ifm-color-primary-lighter: #359962;
   --ifm-color-primary-lightest: #3cad6e;
+  --ifm-font-weight-bold: 600;
   --ifm-code-font-size: 95%;
+  --ifm-font-family-base: 'Public Sans';
+  --ifm-menu-link-padding-horizontal: 0.5rem;
+  --ifm-menu-link-padding-vertical: 0.375rem;
+  --doc-sidebar-width: 275px !important;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -34,6 +49,10 @@
   --ifm-color-primary-light: #29d5b0;
   --ifm-color-primary-lighter: #32d8b4;
   --ifm-color-primary-lightest: #4fddbf;
+}
+
+nav, h1, h2, h3, h4 {
+  font-family: 'Manrope';
 }
 
 .footer__links {
@@ -83,6 +102,86 @@
   font-size: 0.85rem;
 }
 
+/* .theme-code-block.language-python::before {
+  content: "";
+  padding: 2px 12px;
+  background-color: var(--ifm-color-primary-light);
+  color: #ffffff;
+  font-weight: bold;
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+  display: block;
+  margin-bottom: 12px;
+  font-size: 0.6em;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+} */
+
+.theme-code-block.language-python,
+.theme-code-block.language-javascript,
+.theme-code-block.language-js,
+.theme-code-block.language-typescript,
+.theme-code-block.language-ts {
+  position: relative; /* Ensure this is set so the ::before pseudo-element is positioned relative to this element */
+  padding-left: 4px;
+  border: 1px solid var(--ifm-color-primary-darkest);
+}
+
+.theme-code-block.language-python::before,
+.theme-code-block.language-javascript::before,
+.theme-code-block.language-js::before,
+.theme-code-block.language-typescript::before,
+.theme-code-block.language-ts::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  background-color: var(--ifm-color-primary-light);
+  z-index: 1;
+}
+
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-category:not(:first-of-type),
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-link,
+.theme-doc-sidebar-menu > .theme-doc-sidebar-item-link.theme-doc-sidebar-item-link-level-1 {
+  margin-top: 1rem;
+}
+
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-link,
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-category {
+  margin-top: 0;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-category > ul {
+  margin-top: 0;
+}
+
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-link a,
+.theme-doc-sidebar-menu .theme-doc-sidebar-item-category a {
+  margin-top: 0;
+}
+
+.theme-doc-sidebar-item-category, .theme-doc-sidebar-menu > .theme-doc-sidebar-item-link {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.theme-doc-sidebar-item-category button:before {
+  height: 1rem;
+  width: 1.25rem;
+}
+
+.theme-doc-sidebar-item-link, .theme-doc-sidebar-item-category .theme-doc-sidebar-item-category {
+  font-size: .9rem;
+  font-weight: 500;
+}
+
 .theme-doc-sidebar-item-category > div > a {
   flex: 1 1 0;
   overflow: hidden;
@@ -90,6 +189,11 @@
 }
 
 .theme-doc-sidebar-item-category > div > button {
+  opacity: 0.5;
+}
+
+/* Hack for "More" style caret buttons */
+.theme-doc-sidebar-item-category > div > a::after {
   opacity: 0.5;
 }
 
@@ -119,7 +223,7 @@
 }
 
 .hidden {
-    display: none !important;
+  display: none !important;
 }
 
 .header-github-link:hover {
@@ -139,5 +243,3 @@
   background: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E")
     no-repeat;
 }
-
-

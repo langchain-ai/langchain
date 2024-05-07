@@ -11,7 +11,7 @@ const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "🦜️🔗 Langchain",
+  title: "🦜️🔗 LangChain",
   tagline: "LangChain Python Docs",
   favicon: "img/brand/favicon.png",
   // Set the production url of your site here
@@ -19,7 +19,7 @@ const config = {
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
-
+  trailingSlash: true,
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
 
@@ -149,15 +149,9 @@ const config = {
         logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
           {
-            to: "/docs/get_started/introduction",
-            label: "Docs",
+            to: "/docs/modules",
+            label: "Components",
             position: "left",
-          },
-          {
-            type: "docSidebar",
-            position: "left",
-            sidebarId: "use_cases",
-            label: "Use cases",
           },
           {
             type: "docSidebar",
@@ -166,14 +160,13 @@ const config = {
             label: "Integrations",
           },
           {
-            type: "docSidebar",
-            position: "left",
-            sidebarId: "guides",
+            to: "/docs/guides",
             label: "Guides",
+            position: "left",
           },
           {
             href: "https://api.python.langchain.com",
-            label: "API",
+            label: "API Reference",
             position: "left",
           },
           {
@@ -188,11 +181,6 @@ const config = {
               {
                 to: "/docs/packages",
                 label: "Versioning",
-              },
-              {
-                type: "docSidebar",
-                sidebarId: "changelog",
-                label: "Changelog",
               },
               {
                 to: "/docs/contributing",

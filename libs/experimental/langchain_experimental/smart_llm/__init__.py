@@ -1,13 +1,13 @@
-"""Chain for applying self-critique using the SmartGPT workflow.
+"""**SmartGPT** chain is applying self-critique using the `SmartGPT` workflow.
 
 See details at https://youtu.be/wVzuvf9D9BU
 
 The workflow performs these 3 steps:
-1. **Ideate**: Pass the user prompt to an ideation LLM n_ideas times,
+1. **Ideate**: Pass the user prompt to an `Ideation LLM` n_ideas times,
    each result is an "idea"
-2. **Critique**: Pass the ideas to a critique LLM which looks for flaws in the ideas
+2. **Critique**: Pass the ideas to a `Critique LLM` which looks for flaws in the ideas
    & picks the best one
-3. **Resolve**: Pass the critique to a resolver LLM which improves upon the best idea
+3. **Resolve**: Pass the critique to a `Resolver LLM` which improves upon the best idea
    & outputs only the (improved version of) the best output
 
 In total, the SmartGPT workflow will use n_ideas+2 LLM calls

@@ -17,7 +17,9 @@ class NotSerializable:
 def test_loads_openai_llm() -> None:
     from langchain_openai import OpenAI
 
-    llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    llm = CommunityOpenAI(
+        model="davinci", temperature=0.5, openai_api_key="hello", top_p=0.8
+    )  # type: ignore[call-arg]
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
 
@@ -31,7 +33,9 @@ def test_loads_openai_llm() -> None:
 def test_loads_llmchain() -> None:
     from langchain_openai import OpenAI
 
-    llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    llm = CommunityOpenAI(
+        model="davinci", temperature=0.5, openai_api_key="hello", top_p=0.8
+    )  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
     chain_string = dumps(chain)
@@ -54,7 +58,7 @@ def test_loads_llmchain_env() -> None:
     if not has_env:
         os.environ["OPENAI_API_KEY"] = "env_variable"
 
-    llm = OpenAI(model="davinci", temperature=0.5)
+    llm = OpenAI(model="davinci", temperature=0.5, top_p=0.8)  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
     chain_string = dumps(chain)
@@ -72,7 +76,7 @@ def test_loads_llmchain_env() -> None:
 
 @pytest.mark.requires("openai")
 def test_loads_llmchain_with_non_serializable_arg() -> None:
-    llm = CommunityOpenAI(
+    llm = CommunityOpenAI(  # type: ignore[call-arg]
         model="davinci",
         temperature=0.5,
         openai_api_key="hello",
@@ -89,7 +93,7 @@ def test_loads_llmchain_with_non_serializable_arg() -> None:
 def test_load_openai_llm() -> None:
     from langchain_openai import OpenAI
 
-    llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     llm_obj = dumpd(llm)
     llm2 = load(llm_obj, secrets_map={"OPENAI_API_KEY": "hello"})
 
@@ -102,7 +106,7 @@ def test_load_openai_llm() -> None:
 def test_load_llmchain() -> None:
     from langchain_openai import OpenAI
 
-    llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    llm = CommunityOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
     chain_obj = dumpd(chain)
@@ -125,7 +129,7 @@ def test_load_llmchain_env() -> None:
     if not has_env:
         os.environ["OPENAI_API_KEY"] = "env_variable"
 
-    llm = CommunityOpenAI(model="davinci", temperature=0.5)
+    llm = CommunityOpenAI(model="davinci", temperature=0.5)  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
     chain_obj = dumpd(chain)
@@ -141,13 +145,16 @@ def test_load_llmchain_env() -> None:
         del os.environ["OPENAI_API_KEY"]
 
 
-@pytest.mark.requires("openai")
+@pytest.mark.requires("openai", "langchain_openai")
 def test_load_llmchain_with_non_serializable_arg() -> None:
-    llm = CommunityOpenAI(
+    import httpx
+    from langchain_openai import OpenAI
+
+    llm = OpenAI(  # type: ignore[call-arg]
         model="davinci",
         temperature=0.5,
         openai_api_key="hello",
-        model_kwargs={"a": NotSerializable},
+        http_client=httpx.Client(),
     )
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)

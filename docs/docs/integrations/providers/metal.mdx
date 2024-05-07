@@ -22,5 +22,5 @@ from metal_sdk.metal import Metal
 metal = Metal("API_KEY", "CLIENT_ID", "INDEX_ID");
 retriever = MetalRetriever(metal, params={"limit": 2})
 
-docs = retriever.get_relevant_documents("search term")
+docs = retriever.invoke("search term")
 ```

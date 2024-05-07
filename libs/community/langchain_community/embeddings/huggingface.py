@@ -44,9 +44,14 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Path to store models. 
     Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass to the model."""
+    """Keyword arguments to pass to the Sentence Transformer model, such as `device`,
+    `prompts`, `default_prompt_name`, `revision`, `trust_remote_code`, or `token`.
+    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer"""
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass when calling the `encode` method of the model."""
+    """Keyword arguments to pass when calling the `encode` method of the Sentence
+    Transformer model, such as `prompt_name`, `prompt`, `batch_size`, `precision`,
+    `normalize_embeddings`, and more.
+    See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
     multi_process: bool = False
     """Run encode() on multiple GPUs."""
     show_progress: bool = False

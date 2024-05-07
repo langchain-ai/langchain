@@ -20,7 +20,7 @@ def import_aim() -> Any:
 
 
 class BaseMetadataCallbackHandler:
-    """This class handles the metadata and associated function states for callbacks.
+    """Callback handler for the metadata and associated function states for callbacks.
 
     Attributes:
         step (int): The current step.
