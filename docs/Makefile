@@ -1,5 +1,5 @@
 # we build the docs in these stages:
-# 1. install quarto and python dependencies
+# 1. install vercel and python dependencies
 # 2. copy files from "source dir" to "intermediate dir"
 # 2. generate files like model feat table, etc in "intermediate dir"
 # 3. copy files to their right spots (e.g. langserve readme) in "intermediate dir"
@@ -7,15 +7,11 @@
 
 SOURCE_DIR = docs/
 INTERMEDIATE_DIR = build/intermediate/docs
-OUTPUT_DIR = build/output
-OUTPUT_DOCS_DIR = $(OUTPUT_DIR)/docs
 
 OUTPUT_NEW_DIR = build/output-new
 OUTPUT_NEW_DOCS_DIR = $(OUTPUT_NEW_DIR)/docs
 
 PYTHON = .venv/bin/python
-
-QUARTO_CMD ?= quarto
 
 PARTNER_DEPS_LIST := $(shell ls -1 ../libs/partners | grep -vE "airbyte|ibm" | xargs -I {} echo "../libs/partners/{}" | tr '\n' ' ')
 
@@ -28,15 +24,12 @@ install-vercel-deps:
 	yum -y update
 	yum install gcc bzip2-devel libffi-devel zlib-devel wget tar gzip rsync -y
 
-	wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz
-	tar -xzf quarto-1.3.450-linux-amd64.tar.gz
-
 install-py-deps:
 	python3 -m venv .venv
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install --upgrade uv
 	$(PYTHON) -m uv pip install -r vercel_requirements.txt
-	$(PYTHON) -m uv -v pip install --editable $(PARTNER_DEPS_LIST)
+	$(PYTHON) -m uv pip install --editable $(PARTNER_DEPS_LIST)
 
 generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
@@ -58,18 +51,6 @@ generate-files:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(INTERMEDIATE_DIR)
 
 copy-infra:
-	mkdir -p $(OUTPUT_DIR)
-	cp -r src $(OUTPUT_DIR)
-	cp vercel.json $(OUTPUT_DIR)
-	cp babel.config.js $(OUTPUT_DIR)
-	cp -r data $(OUTPUT_DIR)
-	cp docusaurus.config.js $(OUTPUT_DIR)
-	cp package.json $(OUTPUT_DIR)
-	cp sidebars.js $(OUTPUT_DIR)
-	cp -r static $(OUTPUT_DIR)
-	cp yarn.lock $(OUTPUT_DIR)
-
-copy-infra-new:
 	mkdir -p $(OUTPUT_NEW_DIR)
 	cp -r src $(OUTPUT_NEW_DIR)
 	cp vercel.json $(OUTPUT_NEW_DIR)
@@ -81,29 +62,13 @@ copy-infra-new:
 	cp -r static $(OUTPUT_NEW_DIR)
 	cp yarn.lock $(OUTPUT_NEW_DIR)
 
-quarto-render:
-	$(QUARTO_CMD) render $(INTERMEDIATE_DIR) --output-dir $(OUTPUT_DOCS_DIR) --no-execute
-	mv $(OUTPUT_DOCS_DIR)/$(INTERMEDIATE_DIR)/* $(OUTPUT_DOCS_DIR)
-	rm -rf $(OUTPUT_DOCS_DIR)/build
-
 render:
 	$(PYTHON) scripts/notebook_convert.py $(INTERMEDIATE_DIR) $(OUTPUT_NEW_DOCS_DIR)
 
 md-sync:
-	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_DOCS_DIR)
-
-md-sync-new:
 	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
 
-build: install-py-deps generate-files copy-infra quarto-render md-sync
-
-build-new: install-py-deps generate-files copy-infra-new render md-sync-new
-
-compare:
-	diff -rq $(OUTPUT_DOCS_DIR) $(OUTPUT_NEW_DOCS_DIR)
+build: install-py-deps generate-files copy-infra render md-sync
 
 start:
-	cd $(OUTPUT_DIR) && yarn && yarn start --port=$(PORT)
-
-start-new:
 	cd $(OUTPUT_NEW_DIR) && yarn && yarn start --port=$(PORT)
