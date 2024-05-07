@@ -37,8 +37,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         length_function: Callable[[str], int] = len,
         keep_separator: bool = False,
         add_start_index: bool = False,
-        add_chunk_id: bool = False,
         strip_whitespace: bool = True,
+        add_chunk_id: bool = False,
     ) -> None:
         """Create a new TextSplitter.
 
@@ -48,10 +48,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             length_function: Function that measures the length of given chunks
             keep_separator: Whether to keep the separator in the chunks
             add_start_index: If `True`, includes chunk's start index in metadata
-            add_chunk_id: If `True`, adds a unique sequential ID for each chunk
-                             within a given text
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
+            add_chunk_id: If `True`, adds a unique sequential ID for each chunk
+                             within a given text
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -63,8 +63,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._length_function = length_function
         self._keep_separator = keep_separator
         self._add_start_index = add_start_index
-        self._add_chunk_id = add_chunk_id
         self._strip_whitespace = strip_whitespace
+        self._add_chunk_id = add_chunk_id
 
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
