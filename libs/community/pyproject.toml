@@ -268,6 +268,7 @@ extended_testing = [
  "praw",
  "databricks-vectorsearch",
  "cloudpickle",
+ "cloudpathlib",
  "dgml-utils",
  "cohere",
  "tree-sitter",
