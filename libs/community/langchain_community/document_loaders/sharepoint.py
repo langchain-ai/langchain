@@ -1,7 +1,7 @@
 """Loader that loads data from Sharepoint Document Library"""
 from __future__ import annotations
 from pathlib import Path
-from typing import Iterator, Any, Optional, Sequence, List
+from typing import Iterator, Optional, Sequence, List
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field
@@ -110,8 +110,12 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                     site_data = group_data.get('grantedToV2').get('siteGroup')
                     # print(group_data)
                     group_names.append(site_data.get('displayName'))
-                elif group_data.get('grantedToV2').get('group') or group_data.get('grantedToV2').get('user'):
-                    site_data = group_data.get('grantedToV2').get('group') or group_data.get('grantedToV2').get('user')
+                elif group_data.get('grantedToV2').get('group') or (
+                    group_data.get('grantedToV2').get('user')
+                ):
+                    site_data = group_data.get('grantedToV2').get('group') or (
+                        group_data.get('grantedToV2').get('user')
+                    )
                     # print(group_data)
                     group_names.append(site_data.get('displayName'))
                 
