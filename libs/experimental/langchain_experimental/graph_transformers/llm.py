@@ -12,7 +12,7 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     PromptTemplate,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 
 examples = [
     {
@@ -277,18 +277,21 @@ def create_simple_model(
     Doesn't have any node or relationship properties.
     """
 
-    if not node_properties:
-
-        class SimpleNode(BaseModel):
-            """Represents a node in a graph with associated properties."""
-
-            id: str = Field(description="Name or human-readable unique identifier.")
-            type: str = optional_enum_field(
+    node_fields = {
+        "id": (
+            str,
+            Field(..., description="Name or human-readable unique identifier."),
+        ),
+        "type": (
+            str,
+            optional_enum_field(
                 node_labels,
                 description="The type or label of the node.",
                 input_type="node",
-            )
-    else:
+            ),
+        ),
+    }
+    if node_properties:
         if isinstance(node_properties, list) and "id" in node_properties:
             raise ValueError("The node property 'id' is reserved and cannot be used.")
         # Map True to empty array
@@ -306,18 +309,11 @@ def create_simple_model(
             )
             value: str = Field(..., description="value")
 
-        class SimpleNode(BaseModel):
-            """Represents a node in a graph with associated properties."""
-
-            id: str = Field(description="Name or human-readable unique identifier.")
-            type: str = optional_enum_field(
-                node_labels,
-                description="The type or label of the node.",
-                input_type="node",
-            )
-            properties: Optional[List[Property]] = Field(
-                None, description="List of node properties"
-            )
+        node_fields["properties"] = (
+            Optional[List[Property]],
+            Field(None, description="List of node properties"),
+        )
+    SimpleNode = create_model("SimpleNode", **node_fields)
 
     class SimpleRelationship(BaseModel):
         """Represents a directed relationship between two nodes in a graph."""
