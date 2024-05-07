@@ -13,7 +13,7 @@ from nbconvert.preprocessors import Preprocessor
 class EscapePreprocessor(Preprocessor):
     def preprocess_cell(self, cell, resources, cell_index):
         if cell.cell_type == "markdown":
-            # find all occurences of ```{=mdx} blocks and remove wrapper
+            # find all occurrences of ```{=mdx} blocks and remove wrapper
             if "```{=mdx}\n" in cell.source:
                 cell.source = re.sub(
                     r"```{=mdx}\n(.*)\n```", "", cell.source, flags=re.DOTALL
