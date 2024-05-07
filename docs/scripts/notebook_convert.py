@@ -8,10 +8,12 @@ from typing import Iterable, Tuple
 import nbformat
 from nbconvert.exporters import MarkdownExporter
 from nbconvert.preprocessors import Preprocessor
+from nbconvert.preprocessors import RegexRemovePreprocessor
 
 
 class EscapePreprocessor(Preprocessor):
     def preprocess_cell(self, cell, resources, cell_index):
+        print(cell.cell_type)
         if cell.cell_type == "markdown":
             # find all occurrences of ```{=mdx} blocks and remove wrapper
             if "```{=mdx}\n" in cell.source:
@@ -77,10 +79,15 @@ class ExtractAttachmentsPreprocessor(Preprocessor):
 
 
 exporter = MarkdownExporter(
-    preprocessors=[EscapePreprocessor, ExtractAttachmentsPreprocessor],
+    preprocessors=[
+        EscapePreprocessor,
+        ExtractAttachmentsPreprocessor,
+        RegexRemovePreprocessor(patterns=[r"^\s*$"]),
+    ],
     template_name="mdoutput",
     extra_template_basedirs=["./scripts/notebook_convert_templates"],
 )
+print(exporter.preprocessors)
 
 
 def _process_path(tup: Tuple[Path, Path, Path]):
