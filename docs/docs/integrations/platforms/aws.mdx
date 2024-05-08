@@ -2,28 +2,6 @@
 
 The `LangChain` integrations related to [Amazon AWS](https://aws.amazon.com/) platform.
 
-First-party AWS integrations are available in the `langchain_aws` package.
-
-```bash
-pip install langchain-aws
-```
-
-And there are also some community integrations available in the `langchain_community` package with the `boto3` optional dependency.
-
-```bash
-pip install langchain-community boto3
-```
-
-## Chat models
-
-### Bedrock Chat
-
-See a [usage example](/docs/integrations/chat/bedrock).
-
-```python
-from langchain_aws import ChatBedrock
-```
-
 ## LLMs
 
 ### Bedrock
@@ -42,7 +20,7 @@ from langchain_aws import ChatBedrock
 See a [usage example](/docs/integrations/llms/bedrock).
 
 ```python
-from langchain_aws import BedrockLLM
+from langchain_community.llms.bedrock import Bedrock
 ```
 
 ### Amazon API Gateway
@@ -75,7 +53,18 @@ We use `SageMaker` to host our model and expose it as the `SageMaker Endpoint`.
 See a [usage example](/docs/integrations/llms/sagemaker).
 
 ```python
-from langchain_aws import SagemakerEndpoint
+from langchain_community.llms import SagemakerEndpoint
+from langchain_community.llms.sagemaker_endpoint import LLMContentHandler
+```
+
+## Chat models
+
+### Bedrock Chat
+
+See a [usage example](/docs/integrations/chat/bedrock).
+
+```python
+from langchain_community.chat_models import BedrockChat
 ```
 
 ## Embedding Models
@@ -199,16 +188,16 @@ from langchain.vectorstores import DocumentDBVectorSearch
 > manuals, and websites. It supports multiple languages and can understand complex queries, synonyms, and 
 > contextual meanings to provide highly relevant search results.
 
-We need to install the `langchain-aws` library.
+We need to install the `boto3` library.
 
 ```bash
-pip install langchain-aws
+pip install boto3
 ```
 
 See a [usage example](/docs/integrations/retrievers/amazon_kendra_retriever).
 
 ```python
-from langchain_aws import AmazonKendraRetriever
+from langchain.retrievers import AmazonKendraRetriever
 ```
 
 ### Amazon Bedrock (Knowledge Bases)
@@ -217,16 +206,16 @@ from langchain_aws import AmazonKendraRetriever
 > `Amazon Web Services` (`AWS`) offering which lets you quickly build RAG applications by using your 
 > private data to customize foundation model response.
 
-We need to install the `langchain-aws` library.
+We need to install the `boto3` library.
 
 ```bash
-pip install langchain-aws
+pip install boto3
 ```
 
 See a [usage example](/docs/integrations/retrievers/bedrock).
 
 ```python
-from langchain_aws import AmazonKnowledgeBasesRetriever
+from langchain.retrievers import AmazonKnowledgeBasesRetriever
 ```
 
 ## Tools

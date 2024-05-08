@@ -81,17 +81,6 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          lastVersion: "current",
-          versions: {
-            current: {
-              label: '0.1.x',
-              badge: false,
-            },
-            "0.2.x": {
-              label: "0.2.x",
-              banner: "unreleased",
-            }
-          },
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
@@ -159,13 +148,6 @@ const config = {
       navbar: {
         logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
-          {
-            type: "doc",
-            docId: "modules/index",
-            label: "Components",
-            position: "left",
-            className: "hidden-0\.2\.x",
-          },
           {
             type: "docSidebar",
             position: "left",
