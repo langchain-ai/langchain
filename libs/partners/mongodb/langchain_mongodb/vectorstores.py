@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_INSERT_BATCH_SIZE = 100
 
+
 class MongoDBAtlasVectorSearch(VectorStore):
     """`MongoDB Atlas Vector Search` vector store.
 
@@ -161,7 +162,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 texts_batch = []
                 metadatas_batch = []
         if texts_batch:
-            result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))  # type: ignore
+            result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
         return result_ids
 
     def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
@@ -216,7 +217,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             # Make every ObjectId found JSON-Serializable
             for key, value in res.items():
                 if isinstance(value, ObjectId):
-                    key[value] = {"$oid": str(value)}
+                    res[key] = {"$oid": str(value)}
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
