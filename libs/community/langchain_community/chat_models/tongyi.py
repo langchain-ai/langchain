@@ -60,13 +60,7 @@ from langchain_community.llms.tongyi import (
 )
 
 logger = logging.getLogger(__name__)
-dashscope_multimodal_models = [
-    "qwen-vl-v1",
-    "qwen-vl-chat-v1",
-    "qwen-audio-turbo",
-    "qwen-vl-plus",
-    "qwen-vl-max"
-]
+
 
 def convert_dict_to_message(
     _dict: Mapping[str, Any], is_chunk: bool = False
@@ -228,6 +222,13 @@ class ChatTongyi(BaseChatModel):
                 "Could not import dashscope python package. "
                 "Please install it with `pip install dashscope --upgrade`."
             )
+        dashscope_multimodal_models = [
+            "qwen-vl-v1",
+            "qwen-vl-chat-v1",
+            "qwen-audio-turbo",
+            "qwen-vl-plus",
+            "qwen-vl-max"
+        ]
         if values["model_name"] in dashscope_multimodal_models:
             try:
                 values["client"] = dashscope.MultiModalConversation
