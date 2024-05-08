@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Extra, Field, PrivateAttr, root_validator
+from langchain_core.callbacks.manager import Callbacks
 
-from langchain.callbacks.manager import Callbacks
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 
 if TYPE_CHECKING:

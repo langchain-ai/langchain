@@ -11,13 +11,17 @@ if TYPE_CHECKING:
     from langchain_community.document_compressors.openvino_rerank import (
         OpenVINOReranker,
     )
+    from langchain_community.document_compressors.rankllm_rerank import (
+        RankLLMRerank,
+    )
 
-__all__ = ["LLMLinguaCompressor", "OpenVINOReranker"]
+__all__ = ["LLMLinguaCompressor", "OpenVINOReranker", "RankLLMRerank"]
 
 _module_lookup = {
     "LLMLinguaCompressor": "langchain_community.document_compressors.llmlingua_filter",
     "OpenVINOReranker": "langchain_community.document_compressors.openvino_rerank",
     "JinaRerank": "langchain_community.document_compressors.jina_rerank",
+    "RankLLMRerank": "langchain_community.document_compressor.rankllm_rerank",
 }
 
 
