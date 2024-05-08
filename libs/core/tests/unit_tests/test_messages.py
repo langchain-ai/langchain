@@ -545,8 +545,8 @@ def test_convert_to_messages() -> None:
         [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "Hello!"},
-            {"role": "ai", "content": "Hi!"},
-            {"role": "human", "content": "Hello!", "name": "Jane"},
+            {"role": "ai", "content": "Hi!", "id": "ai1"},
+            {"type": "human", "content": "Hello!", "name": "Jane", "id": "human1"},
             {
                 "role": "assistant",
                 "content": "Hi!",
@@ -554,13 +554,20 @@ def test_convert_to_messages() -> None:
                 "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'},
             },
             {"role": "function", "name": "greet", "content": "Hi!"},
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {"name": "greet", "args": {"name": "Jane"}, "id": "tool_id"}
+                ],
+            },
             {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
         ]
     ) == [
         SystemMessage(content="You are a helpful assistant."),
         HumanMessage(content="Hello!"),
-        AIMessage(content="Hi!"),
-        HumanMessage(content="Hello!", name="Jane"),
+        AIMessage(content="Hi!", id="ai1"),
+        HumanMessage(content="Hello!", name="Jane", id="human1"),
         AIMessage(
             content="Hi!",
             name="JaneBot",
@@ -569,6 +576,10 @@ def test_convert_to_messages() -> None:
             },
         ),
         FunctionMessage(name="greet", content="Hi!"),
+        AIMessage(
+            content="",
+            tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="tool_id")],
+        ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
     ]
 
@@ -579,7 +590,7 @@ def test_convert_to_messages() -> None:
             "hello!",
             ("ai", "Hi!"),
             ("human", "Hello!"),
-            ("assistant", "Hi!"),
+            ["assistant", "Hi!"],
         ]
     ) == [
         SystemMessage(content="You are a helpful assistant."),

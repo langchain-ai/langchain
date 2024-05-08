@@ -1625,7 +1625,7 @@ class Qdrant(VectorStore):
         try:
             import qdrant_client  # noqa
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import qdrant-client python package. "
                 "Please install it with `pip install qdrant-client`."
             )
@@ -1790,7 +1790,7 @@ class Qdrant(VectorStore):
         try:
             import qdrant_client  # noqa
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import qdrant-client python package. "
                 "Please install it with `pip install qdrant-client`."
             )

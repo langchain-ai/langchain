@@ -35,7 +35,7 @@ class FireCrawlLoader(BaseLoader):
         """
 
         try:
-            from firecrawl import FirecrawlApp  # noqa: F401
+            from firecrawl import FirecrawlApp
         except ImportError:
             raise ImportError(
                 "`firecrawl` package not found, please run `pip install firecrawl-py`"
