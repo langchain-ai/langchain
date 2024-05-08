@@ -484,7 +484,7 @@ class QianfanChatEndpoint(BaseChatModel):
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_mistralai import ChatMistralAI
+                from langchain_mistralai import QianfanChatEndpoint
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
@@ -492,7 +492,7 @@ class QianfanChatEndpoint(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                llm = QianfanChatEndpoint(endpoint="ernie-3.5-8k-0329")
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -505,7 +505,7 @@ class QianfanChatEndpoint(BaseChatModel):
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
             .. code-block:: python
 
-                from langchain_mistralai import ChatMistralAI
+                from langchain_mistralai import QianfanChatEndpoint
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
@@ -513,7 +513,7 @@ class QianfanChatEndpoint(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                llm = QianfanChatEndpoint(endpoint="ernie-3.5-8k-0329")
                 structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -526,7 +526,7 @@ class QianfanChatEndpoint(BaseChatModel):
         Example: Function-calling, dict schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_mistralai import ChatMistralAI
+                from langchain_mistralai import QianfanChatEndpoint
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
@@ -536,7 +536,7 @@ class QianfanChatEndpoint(BaseChatModel):
                     justification: str
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                llm = QianfanChatEndpoint(endpoint="ernie-3.5-8k-0329")
                 structured_llm = llm.with_structured_output(dict_schema)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
