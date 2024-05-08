@@ -378,7 +378,7 @@ class NeuralDBClientVectorStore(VectorStore):
             ]
         except Exception as e:
             raise ValueError(f"Error while retrieving documents: {e}") from e
-        
+
     def insert(self, documents: List[Dict[str, Any]]):  # type: ignore[no-untyped-def, no-untyped-def]
         """
         Inserts documents into the VectorStore and return the corresponding Sources.
@@ -458,11 +458,11 @@ class NeuralDBClientVectorStore(VectorStore):
                 global_metadata: Optional[dict[str, Any]] = None
                 on_disk: bool = False
 
-            For Document types with the arg "path", ensure that 
+            For Document types with the arg "path", ensure that
             the path exists on your local machine.
         """
         return self.db.insert(documents)
-        
+
     def remove_documents(self, source_ids: List[str]):  # type: ignore[no-untyped-def]
         """
         Deletes documents from the VectorStore using source ids.
