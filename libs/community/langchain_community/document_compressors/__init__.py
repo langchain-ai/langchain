@@ -15,7 +15,7 @@ if TYPE_CHECKING:
         OpenVINOReranker,
     )
 
-__all__ = ["LLMLinguaCompressor", "OpenVINOReranker", "FlashrankRerank", ""]
+__all__ = ["LLMLinguaCompressor", "OpenVINOReranker", "FlashrankRerank"]
 
 _module_lookup = {
     "LLMLinguaCompressor": "langchain_community.document_compressors.llmlingua_filter",
