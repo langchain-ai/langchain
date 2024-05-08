@@ -252,12 +252,12 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
     from langchain_community.document_loaders.url_selenium import SeleniumURLLoader
     from langchain_community.document_loaders.video_transcript import (
-        AzureWhisperVideoLoader,
         AzureWhisperVideoParagraphLoader,
-        LocalWhisperVideoLoader,
+        AzureWhisperVideoSegmentLoader,
         LocalWhisperVideoParagraphLoader,
-        OpenAIWhisperVideoLoader,
+        LocalWhisperVideoSegmentLoader,
         OpenAIWhisperVideoParagraphLoader,
+        OpenAIWhisperVideoSegmentLoader,
     )
     from langchain_community.document_loaders.vsdx import VsdxLoader
     from langchain_community.document_loaders.weather import WeatherDataLoader
@@ -279,7 +279,7 @@ if TYPE_CHECKING:
 
 
 _module_lookup = {
-    "AzureWhisperVideoLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
+    "AzureWhisperVideoSegmentLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
     "AzureWhisperVideoParagraphLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
     "AZLyricsLoader": "langchain_community.document_loaders.azlyrics",
     "AcreomLoader": "langchain_community.document_loaders.acreom",
@@ -369,7 +369,7 @@ _module_lookup = {
     "KineticaLoader": "langchain_community.document_loaders.kinetica_loader",
     "LakeFSLoader": "langchain_community.document_loaders.lakefs",
     "LarkSuiteDocLoader": "langchain_community.document_loaders.larksuite",
-    "LocalWhisperVideoLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
+    "LocalWhisperVideoSegmentLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
     "LocalWhisperVideoParagraphLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
     "LLMSherpaFileLoader": "langchain_community.document_loaders.llmsherpa",
     "MHTMLLoader": "langchain_community.document_loaders.mhtml",
@@ -390,7 +390,7 @@ _module_lookup = {
     "OneDriveFileLoader": "langchain_community.document_loaders.onedrive_file",
     "OneDriveLoader": "langchain_community.document_loaders.onedrive",
     "OnlinePDFLoader": "langchain_community.document_loaders.pdf",
-    "OpenAIWhisperVideoLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
+    "OpenAIWhisperVideoSegmentLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
     "OpenAIWhisperVideoParagraphLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
     "OpenCityDataLoader": "langchain_community.document_loaders.open_city_data",
     "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
@@ -485,7 +485,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "AzureWhisperVideoLoader",
+    "AzureWhisperVideoSegmentLoader",
     "AzureWhisperVideoParagraphLoader",
     "AZLyricsLoader",
     "AcreomLoader",
@@ -575,7 +575,7 @@ __all__ = [
     "KineticaLoader",
     "LakeFSLoader",
     "LarkSuiteDocLoader",
-    "LocalWhisperVideoLoader",
+    "LocalWhisperVideoSegmentLoader",
     "LocalWhisperVideoParagraphLoader",
     "LLMSherpaFileLoader",
     "MastodonTootsLoader",
@@ -596,7 +596,7 @@ __all__ = [
     "OneDriveFileLoader",
     "OneDriveLoader",
     "OnlinePDFLoader",
-    "OpenAIWhisperVideoLoader",
+    "OpenAIWhisperVideoSegmentLoader",
     "OpenAIWhisperVideoParagraphLoader",
     "OpenCityDataLoader",
     "OracleAutonomousDatabaseLoader",

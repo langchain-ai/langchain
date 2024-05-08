@@ -54,8 +54,8 @@ def _format_start_time(seconds: float) -> str:
     except TypeError:
         logger.exception("invalid number of seconds {seconds}.")
         return ""
-    except: 
-        logger.exception("failed to convert {seconds}.")
+    except Exception as e: 
+        logger.exception(f"failed to convert {seconds}: {str(e)}.")
         return ""
 
     hours = seconds // 3600
@@ -134,7 +134,7 @@ def _convert_video_to_ogg(input_path: str) -> str:
         logger.error(f"Error during conversion of {input_path}: {e}")
         return None
 
-class AzureWhisperVideoLoader(BaseLoader):
+class AzureWhisperVideoSegmentLoader(BaseLoader):
     """A document loader that processes video files, converts them to .ogg,
     and transcribes them using Azure OpenAI's API."""
 
@@ -397,7 +397,7 @@ class AzureWhisperVideoParagraphLoader(BaseLoader):
             )
         return paragraphs
 
-class OpenAIWhisperVideoLoader(BaseLoader):
+class OpenAIWhisperVideoSegmentLoader(BaseLoader):
     """A document loader that processes video files, converts them to .ogg,
     and transcribes them using OpenAI's API."""
 
@@ -642,7 +642,7 @@ class OpenAIWhisperVideoParagraphLoader(BaseLoader):
             )
         return paragraphs
 
-class LocalWhisperVideoLoader(BaseLoader):
+class LocalWhisperVideoSegmentLoader(BaseLoader):
     """
     A document loader that processes video 
     files and transcribes them using 

@@ -1,7 +1,12 @@
 import unittest
 
-from langchain_community.document_loaders import AzureWhisperVideoLoader
-from langchain_community.document_loaders.video_transcript import _format_start_time
+from langchain_community.document_loaders.video_transcript import (
+    AzureWhisperVideoParagraphLoader,
+    AzureWhisperVideoSegmentLoader,
+    OpenAIWhisperVideoParagraphLoader,
+    OpenAIWhisperVideoSegmentLoader,
+    _format_start_time,
+)
 
 
 class TestVideoTranscriptHelpers(unittest.TestCase):
@@ -12,14 +17,47 @@ class TestVideoTranscriptHelpers(unittest.TestCase):
         self.assertEqual(_format_start_time("test"), "")
         self.assertEqual(_format_start_time(3600.5), "01:00:00")
         self.assertEqual(_format_start_time(3600.6), "01:00:01")
-    
-    def test_class_loading(self) -> None:
-        loader = AzureWhisperVideoLoader(
+
+class TestAzureWhisperVideoSegmentLoader(unittest.TestCase):
+    def test_class_loading(self):
+        """Test the initialization of AzureWhisperVideoSegmentLoader."""
+        loader = AzureWhisperVideoSegmentLoader(
             video_path="test",
+            deployment_id="test",
             api_key="test",
             api_version="test",
             azure_endpoint="test",
-            deployment_id="test",
         )
-        self.assertIsInstance(loader, AzureWhisperVideoLoader)
- 
+        self.assertIsInstance(loader, AzureWhisperVideoSegmentLoader)
+
+class TestAzureWhisperVideoParagraphLoader(unittest.TestCase):
+    def test_class_loading(self):
+        """Test the initialization of AzureWhisperVideoSegmentLoader."""
+        loader = AzureWhisperVideoParagraphLoader(
+            video_path="test",
+            deployment_id="test",
+            api_key="test",
+            api_version="test",
+            azure_endpoint="test",
+            paragraph_sentence_size=3
+        )
+        self.assertIsInstance(loader, AzureWhisperVideoParagraphLoader)
+
+class TestOpenAIWhisperVideoSegmentLoader(unittest.TestCase):
+    def test_class_loading(self):
+        """Test the initialization of AzureWhisperVideoSegmentLoader."""
+        loader = OpenAIWhisperVideoSegmentLoader(
+            video_path="test",
+            api_key="test",
+        )
+        self.assertIsInstance(loader, OpenAIWhisperVideoSegmentLoader)
+
+class TestOpenAIWhisperVideoParagraLoader(unittest.TestCase):
+    def test_class_loading(self):
+        """Test the initialization of AzureWhisperVideoSegmentLoader."""
+        loader = OpenAIWhisperVideoParagraphLoader(
+            video_path="test",
+            api_key="test",
+            paragraph_sentence_size=3
+        )
+        self.assertIsInstance(loader, OpenAIWhisperVideoParagraphLoader)
