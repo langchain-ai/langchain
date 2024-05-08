@@ -353,23 +353,25 @@ This page contains `arXiv` papers referenced in the LangChain Documentation and 
 
 ## Summary
 
-| arXiv id| Title | Authors | Published date 🔻 | LangChain Documentation | LangChain API Reference |
-|---------|-------|---------|-------------------|-------------------------|-------------------------|
+| arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation and API Reference|
+|------------------|---------|-------------------|-------------------------|
 """)
         for paper in papers:
-            docs_refs = (
-                ", ".join(_format_doc_link(paper.referencing_docs))
-                if paper.referencing_docs
-                else ""
-            )
-            api_ref_refs = (
-                ", ".join(_format_api_ref_link(paper.referencing_api_refs))
-                if paper.referencing_api_refs
-                else ""
-            )
+            refs = []
+            if paper.referencing_docs:
+                refs += [
+                    "`Docs:` " + ", ".join(_format_doc_link(paper.referencing_docs))
+                ]
+            if paper.referencing_api_refs:
+                refs += [
+                    "`API:` "
+                    + ", ".join(_format_api_ref_link(paper.referencing_api_refs))
+                ]
+            refs_str = ", ".join(refs)
+
             title_link = f"[{paper.title}]({paper.url})"
             f.write(
-                f"| {' | '.join([paper.arxiv_id, title_link, ', '.join(paper.authors), paper.published_date, docs_refs, api_ref_refs])}\n"
+                f"| {' | '.join([f'`{paper.arxiv_id}` {title_link}', ', '.join(paper.authors), paper.published_date, refs_str])}\n"
             )
 
         for paper in papers:
