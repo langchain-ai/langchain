@@ -70,5 +70,14 @@ md-sync:
 
 build: install-py-deps generate-files copy-infra render md-sync
 
+vercel-build: install-vercel-deps build
+	rm -rf docs
+	mv $(OUTPUT_NEW_DOCS_DIR) docs
+	rm -rf build
+	yarn run docusaurus build
+	mv build v0.2
+	mkdir build
+	mv v0.2 build
+
 start:
 	cd $(OUTPUT_NEW_DIR) && yarn && yarn start --port=$(PORT)
