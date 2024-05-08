@@ -36,6 +36,7 @@ RETURN DISTINCT {start: src_label, type: rel_type, end: dst_label} AS output
 
 
 class FalkorDBGraph(GraphStore):
+    from falkordb import Node, Edge
     """FalkorDB wrapper for graph operations.
 
     *Security note*: Make sure that the database connection uses credentials
@@ -160,7 +161,7 @@ class FalkorDBGraph(GraphStore):
             f"Relationships: {relationships}\n"
         )
 
-    def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
+    def query(self, query: str, params: dict = {}) -> List[List[Node | Edge]]:
         """Query FalkorDB database."""
 
         try:

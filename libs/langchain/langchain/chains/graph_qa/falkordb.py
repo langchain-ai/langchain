@@ -1,4 +1,5 @@
 """Question answering over a graph."""
+
 from __future__ import annotations
 
 import re
@@ -97,10 +98,8 @@ class FalkorDBQAChain(Chain):
         """Initialize from LLM."""
 
         if not llm and (not qa_llm or not cypher_llm):
-            raise ValueError(
-                "Either llm or qa_llm and cypher_llm must be provided."
-            )
-            
+            raise ValueError("Either llm or qa_llm and cypher_llm must be provided.")
+
         qa_chain = LLMChain(llm=qa_llm or llm, prompt=qa_prompt)
         cypher_generation_chain = LLMChain(llm=cypher_llm or llm, prompt=cypher_prompt)
 
@@ -136,25 +135,26 @@ class FalkorDBQAChain(Chain):
 
         intermediate_steps.append({"query": generated_cypher})
 
+        context: List = []
         # Retrieve and limit the number of results
         output = self.graph.query(generated_cypher)[: self.top_k]
-        for el in range(len(output)):
-            for node in range(len(output[el])):
-                output[el][node] = str(output[el][node])
-        context =  str(output).strip()
+        for el, row in enumerate(output):
+            for node, value in enumerate(row):
+                context[el][node] = str(value)
+        context_text = str(output).strip()
 
         if self.return_direct:
-            final_result = context
+            final_result = context_text
         else:
             _run_manager.on_text("Full Context:", end="\n", verbose=self.verbose)
             _run_manager.on_text(
-                str(context), color="green", end="\n", verbose=self.verbose
+                context_text, color="green", end="\n", verbose=self.verbose
             )
 
-            intermediate_steps.append({"context": context})
+            intermediate_steps.append({"context": context_text})
 
             result = self.qa_chain(
-                {"question": question, "context": context},
+                {"question": question, "context": context_text},
                 callbacks=callbacks,
             )
             final_result = result[self.qa_chain.output_key]
