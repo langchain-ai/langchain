@@ -110,7 +110,7 @@ class UpstageGroundednessCheck(BaseTool):
 
 @deprecated(
     since="0.1.3",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_upstage.UpstageGroundednessCheck",
 )
 class GroundednessCheck(UpstageGroundednessCheck):

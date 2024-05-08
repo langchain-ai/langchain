@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from langchain_community.llms.fake import FakeListLLM
+from langchain_core.language_models import FakeListLLM
 from langchain_core.tools import Tool
 
 from langchain.agents.agent_types import AgentType

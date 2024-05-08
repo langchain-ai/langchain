@@ -1,7 +1,7 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
-from typing import Any, List
+from typing import Any, List, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -14,6 +14,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
@@ -321,3 +322,45 @@ def test_format_message_content() -> None:
         },
     ]
     assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
+
+
+class GenerateUsername(BaseModel):
+    "Get a username based on someone's name and hair color."
+
+    name: str
+    hair_color: str
+
+
+class MakeASandwich(BaseModel):
+    "Make a sandwich given a list of ingredients."
+
+    bread_type: str
+    cheese_type: str
+    condiments: List[str]
+    vegetables: List[str]
+
+
+@pytest.mark.parametrize(
+    "tool_choice",
+    [
+        "any",
+        "none",
+        "auto",
+        "required",
+        "GenerateUsername",
+        {"type": "function", "function": {"name": "MakeASandwich"}},
+        False,
+        None,
+    ],
+)
+def test_bind_tools_tool_choice(tool_choice: Any) -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm.bind_tools(tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice)
+
+
+@pytest.mark.parametrize("schema", [GenerateUsername, GenerateUsername.schema()])
+def test_with_structured_output(schema: Union[Type[BaseModel], dict]) -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm.with_structured_output(schema)
