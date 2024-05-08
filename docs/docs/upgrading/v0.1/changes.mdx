@@ -1,0 +1,53 @@
+---
+sidebar_position: 0
+sidebar_label: Breaking Changes
+---
+
+# Deprecations and Breaking Changes
+
+This code contains a list of deprecations and removals in the `langchain` and `langchain-core` packages.
+
+## Deprecations
+
+We have two main types of deprecations:
+
+1. Code that was moved from `langchain` into another package (e.g, `langchain-community`). If you try to import it from `langchain`, the import will keep on working, but will raise a deprecation warning. The warning will provide a replacement import statement.
+
+2. Code that has better alternatives available and will eventually be removed, so there’s only a single way to do things. (e.g., `predict_messages` method in ChatModels has been deprecated in favor of `invoke`). Many of these were marked for removal in 0.2.
+
+
+### langchain-core
+
+- `BaseChatModel` methods `__call__`, `call_as_llm`, `predict`, `predict_messages`. Will be removed in 0.3.0. Use `BaseChatModel.invoke` instead.
+- `BaseChatModel` methods `apredict`, `apredict_messages`. Will be removed in 0.3.0. Use `BaseChatModel.ainvoke` instead.
+- `BaseLLM` methods `__call__, `predict`, `predict_messages`. Will be removed in 0.3.0. Use `BaseLLM.invoke` instead.
+- `BaseLLM` methods `apredict`, `apredict_messages`. Will be removed in 0.3.0. Use `BaseLLM.ainvoke` instead.
+
+### langchain
+
+From `langchain` and will be removed in 0.3.0:
+
+| Deprecated                      | Alternative                       | Reason                                         |
+|---------------------------------|-----------------------------------|------------------------------------------------|
+| ChatVectorDBChain               | ConversationalRetrievalChain      | More general to all retrievers                 |
+| create_ernie_fn_chain           | create_ernie_fn_runnable          | Use LCEL under the hood                        |
+| created_structured_output_chain | create_structured_output_runnable | Use LCEL under the hood                        |
+| NatBotChain                     |                                   | Not used                                       |
+| create_openai_fn_chain          | create_openai_fn_runnable         | Use LCEL under the hood                        |
+| create_structured_output_chain  | create_structured_output_runnable | Use LCEL under the hood                        |
+| load_query_constructor_chain    | load_query_constructor_runnable   | Use LCEL under the hood                        |
+| VectorDBQA                      | RetrievalQA                       | More general to all retrievers                 |
+| Sequential Chain                | LCEL                              | Obviated by LCEL                               |
+| SimpleSequentialChain           | LCEL                              | Obviated by LCEL                               |
+| TransformChain                  | LCEL/RunnableLambda               | Obviated by LCEL                               |
+| create_tagging_chain            | create_structured_output_runnable | Use LCEL under the hood                        |
+| ChatAgent                       | create_react_agent                | Use LCEL builder over a class                  |
+| ConversationalAgent             | create_react_agent                | Use LCEL builder over a class                  |
+| ConversationalChatAgent         | create_json_chat_agent            | Use LCEL builder over a class                  |
+| initialize_agent                | Individual create agent methods   | Individual create agent methods are more clear |
+| ZeroShotAgent                   | create_react_agent                | Use LCEL builder over a class                  |
+| OpenAIFunctionsAgent            | create_openai_functions_agent     | Use LCEL builder over a class                  |
+| OpenAIMultiFunctionsAgent       | create_openai_tools_agent         | Use LCEL builder over a class                  |
+| SelfAskWithSearchAgent          | create_self_ask_with_search       | Use LCEL builder over a class                  |
+| StructuredChatAgent             | create_structured_chat_agent      | Use LCEL builder over a class                  |
+| XMLAgent                        | create_xml_agent                  | Use LCEL builder over a class                  |
