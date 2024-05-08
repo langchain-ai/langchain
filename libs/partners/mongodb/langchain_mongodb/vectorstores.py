@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import math
 from importlib.metadata import version
 from typing import (
     Any,
@@ -17,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from bson import ObjectId
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -215,6 +215,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")
+            # Make every ObjectId found JSON-Serializable
+            for key, value in res.items():
+                if isinstance(value, ObjectId):
+                    key[value] = {"$oid": str(value)}
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
