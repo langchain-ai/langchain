@@ -7,17 +7,17 @@ from langchain_community.retrievers import AmazonKnowledgeBasesRetriever
 
 
 @pytest.fixture
-def mock_client():
+def mock_client() -> MagicMock:
     return MagicMock()
 
 
 @pytest.fixture
-def mock_retriever_config():
+def mock_retriever_config() -> dict:
     return {"vectorSearchConfiguration": {"numberOfResults": 4}}
 
 
 @pytest.fixture
-def amazon_retriever(mock_client, mock_retriever_config):
+def amazon_retriever(mock_client: MagicMock, mock_retriever_config: dict) -> AmazonKnowledgeBasesRetriever:
     return AmazonKnowledgeBasesRetriever(
         knowledge_base_id="test_kb_id",
         retrieval_config=mock_retriever_config,
@@ -25,13 +25,13 @@ def amazon_retriever(mock_client, mock_retriever_config):
     )
 
 
-def test_create_client(amazon_retriever):
+def test_create_client(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
     with pytest.raises(ImportError):
         amazon_retriever.create_client({})
 
 
-def test_get_relevant_documents(amazon_retriever, mock_client):
-    query = "test query"
+def test_get_relevant_documents(amazon_retriever: AmazonKnowledgeBasesRetriever, mock_client: MagicMock) -> None:
+    query: str = "test query"
     mock_client.retrieve.return_value = {
         "retrievalResults": [
             {"content": {"text": "result1"}, "metadata": {"key": "value1"}},
@@ -44,7 +44,7 @@ def test_get_relevant_documents(amazon_retriever, mock_client):
             {"content": {"text": "result3"}},
         ]
     }
-    documents = amazon_retriever._get_relevant_documents(query, run_manager=None)
+    documents: list[Document] = amazon_retriever._get_relevant_documents(query, run_manager=None)
 
     assert len(documents) == 3
     assert isinstance(documents[0], Document)
