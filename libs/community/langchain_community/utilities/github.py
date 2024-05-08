@@ -351,20 +351,27 @@ class GitHubAPIWrapper(BaseModel):
         """
         from github import GithubException
 
-        files: List[str] = []
+        def _inner(directory_path: str) -> List[str]:
+            files: List[str] = []
+            try:
+                contents = self.github_repo_instance.get_contents(
+                    directory_path, ref=self.active_branch
+                )
+            except GithubException as e:
+                raise e
+
+            for content in contents:
+                if content.type == "dir":
+                    files.extend(_inner(content.path))
+                else:
+                    files.append(content.path)
+            return files
+
         try:
-            contents = self.github_repo_instance.get_contents(
-                directory_path, ref=self.active_branch
-            )
+            file_list = _inner(directory_path)
+            return str(file_list)
         except GithubException as e:
             return f"Error: status code {e.status}, {e.message}"
-
-        for content in contents:
-            if content.type == "dir":
-                files.extend(self.get_files_from_directory(content.path))
-            else:
-                files.append(content.path)
-        return str(files)
 
     def get_issue(self, issue_number: int) -> Dict[str, Any]:
         """
