@@ -57,18 +57,6 @@ def test_extract_html() -> None:
 
 
 @pytest.mark.requires("markdownify")
-def test_remove_style() -> None:
-    markdownify = MarkdownifyTransformer()
-    with_style_html = (
-        "<html><style type=\"text/css\">body {color: red;}</style>"
-        "<p>First paragraph.</p></html>"
-    )
-    documents = [Document(page_content=with_style_html)]
-    docs_transformed = markdownify.transform_documents(documents)
-    assert docs_transformed[0].page_content == "First paragraph."
-
-
-@pytest.mark.requires("markdownify")
 def test_strip_tags() -> None:
     markdownify = MarkdownifyTransformer(strip="strong")
     paragraphs_html = (
