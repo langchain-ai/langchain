@@ -119,7 +119,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       announcementBar: {
-        content: 'You are viewing the <strong>preview</strong> LangChain v0.2 docs. View the <a href="/v0.1/">stable 0.1 docs here</a>.',
+        content: 'You are viewing the <strong>preview</strong> LangChain v0.2 docs. View the <a href="/v0.1/docs/get_started/introduction/">stable 0.1 docs here</a>.',
         isCloseable: true,
       },
       docs: {
