@@ -3469,7 +3469,7 @@ files = [
 
 [[package]]
 name = "langchain-community"
-version = "0.0.37"
+version = "0.0.38"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3479,7 +3479,7 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = "^0.1.51"
+langchain-core = "^0.1.52"
 langsmith = "^0.1.0"
 numpy = "^1"
 PyYAML = ">=5.3"
@@ -9404,4 +9404,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "c96cce249835459653029fe2af63714b6374ae9d1913c8e3ca0b1e1d127f99a0"
+content-hash = "56e0417edc75e591b9265c6986b87115c27ddd98b87466f698c68df6f3fb60d3"
