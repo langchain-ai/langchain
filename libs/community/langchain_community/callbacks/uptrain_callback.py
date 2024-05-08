@@ -2,12 +2,12 @@
 UpTrain Callback Handler
 
 UpTrain is an open-source platform to evaluate and improve LLM applications. It provides
-grades for 20+ preconfigured checks (covering language, code, embedding use cases), 
-performs root cause analyses on instances of failure cases and provides guidance for 
+grades for 20+ preconfigured checks (covering language, code, embedding use cases),
+performs root cause analyses on instances of failure cases and provides guidance for
 resolving them.
 
-This module contains a callback handler for integrating UpTrain seamlessly into your 
-pipeline and facilitating diverse evaluations. The callback handler automates various 
+This module contains a callback handler for integrating UpTrain seamlessly into your
+pipeline and facilitating diverse evaluations. The callback handler automates various
 evaluations to assess the performance and effectiveness of the components within the
 pipeline.
 
@@ -29,7 +29,7 @@ The evaluations conducted include:
 
 3. Context Compression and Reranking:
    Re-ranking involves reordering nodes based on relevance to the query and selecting
-   top n nodes. 
+   top n nodes.
    Due to the potential reduction in the number of nodes after re-ranking, the following
    evaluations
    are performed in addition to the RAG evaluations:
@@ -65,6 +65,7 @@ from uuid import UUID
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
@@ -75,17 +76,7 @@ logger.addHandler(handler)
 
 def import_uptrain() -> Any:
     """Import the `uptrain` package."""
-    try:
-        import uptrain
-    except ImportError as e:
-        raise ImportError(
-            "To use the UpTrainCallbackHandler, you need the"
-            "`uptrain` package. Please install it with"
-            "`pip install uptrain`.",
-            e,
-        )
-
-    return uptrain
+    return guard_import("uptrain")
 
 
 class UpTrainDataSchema:
