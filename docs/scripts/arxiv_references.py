@@ -6,10 +6,8 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List, Set
-import itertools
+from typing import Dict, Any, List, Set
 
-import arxiv
 from pathlib import Path
 
 from pydantic.v1 import BaseModel, root_validator
@@ -178,13 +176,19 @@ def search_code_for_arxiv_references(code_dir: Path) -> dict[str, set[str]]:
             else:
                 module_name_and_member_reduced.add(module_name_and_member)
         if module_name_and_member_reduced:
-            arxiv_id2module_name_and_members_reduced[arxiv_id] = module_name_and_member_reduced
+            arxiv_id2module_name_and_members_reduced[arxiv_id] = (
+                module_name_and_member_reduced
+            )
         if removed_modules:
-            logger.warning(f"{arxiv_id}: Removed the following modules with 2+ -part namespaces: {removed_modules}.")
+            logger.warning(
+                f"{arxiv_id}: Removed the following modules with 2+ -part namespaces: {removed_modules}."
+            )
     return arxiv_id2module_name_and_members_reduced
 
 
-def convert_module_name_and_members_to_urls(arxiv_id2module_name_and_members: dict[str, set[str]]) -> dict[str, set[str]]:
+def convert_module_name_and_members_to_urls(
+    arxiv_id2module_name_and_members: dict[str, set[str]],
+) -> dict[str, set[str]]:
     arxiv_id2urls = {}
     for arxiv_id, module_name_and_members in arxiv_id2module_name_and_members.items():
         urls = set()
@@ -199,13 +203,17 @@ def convert_module_name_and_members_to_urls(arxiv_id2module_name_and_members: di
             if type == "module":
                 first_namespace_part = _namespace_parts[0]
                 if first_namespace_part.startswith("langchain_"):
-                    first_namespace_part = first_namespace_part.replace("langchain_", "")
+                    first_namespace_part = first_namespace_part.replace(
+                        "langchain_", ""
+                    )
                 url = f"{first_namespace_part}_api_reference.html#module-{module_name}"
             elif type in ["class", "function"]:
                 second_namespace_part = _namespace_parts[1]
                 url = f"{second_namespace_part}/{module_name}.{member}.html#{module_name}.{member}"
             else:
-                raise ValueError(f"Unknown type: {type} in the {module_name_and_member}.")
+                raise ValueError(
+                    f"Unknown type: {type} in the {module_name_and_member}."
+                )
             urls.add(url)
         arxiv_id2urls[arxiv_id] = urls
     return arxiv_id2urls
@@ -222,7 +230,7 @@ def _get_doc_path(file_parts: tuple[str, ...], file_extension) -> str:
         if el == "docs":
             break
     ret = "/".join(reversed(res))
-    return ret[:-len(file_extension)] if ret.endswith(file_extension) else ret
+    return ret[: -len(file_extension)] if ret.endswith(file_extension) else ret
 
 
 def _get_code_path(file_parts: tuple[str, ...]) -> str:
@@ -272,19 +280,22 @@ class ArxivAPIWrapper(BaseModel):
             )
         return values
 
-    def get_papers(self, arxiv_id2urls: dict[str, dict[str, set[str]]]) -> list[ArxivPaper]:
+    def get_papers(
+        self, arxiv_id2urls: dict[str, dict[str, set[str]]]
+    ) -> list[ArxivPaper]:
         """
         Performs an arxiv search and returns information about the papers found.
 
         If an error occurs or no documents found, error text
         is returned instead.
         Args:
-            arxiv_id2urls: Dictionary with arxiv_id as key and dictionary 
+            arxiv_id2urls: Dictionary with arxiv_id as key and dictionary
              with sets of doc file names and API Ref urls.
 
         Returns:
             List of ArxivPaper objects.
         """  # noqa: E501
+
         def cut_authors(authors: list) -> list[str]:
             if len(authors) > 3:
                 return [str(a) for a in authors[:3]] + [" et al."]
@@ -310,7 +321,7 @@ class ArxivAPIWrapper(BaseModel):
                 url=result.entry_id,
                 published_date=str(result.published.date()),
                 referencing_docs=urls["docs"] if "docs" in urls else [],
-                referencing_api_refs=urls["api"] if "api" in urls else []
+                referencing_api_refs=urls["api"] if "api" in urls else [],
             )
             for result, urls in zip(results, arxiv_id2urls.values())
         ]
@@ -390,8 +401,9 @@ This page contains `arXiv` papers referenced in the LangChain Documentation and 
     logger.info(f"Created the {file_name} file with {len(papers)} arXiv references.")
 
 
-def compound_urls(arxiv_id2file_names: dict[str, set[str]], arxiv_id2code_urls: dict[str, set[str]]) -> dict[
-    str, dict[str, set[str]]]:
+def compound_urls(
+    arxiv_id2file_names: dict[str, set[str]], arxiv_id2code_urls: dict[str, set[str]]
+) -> dict[str, dict[str, set[str]]]:
     arxiv_id2urls = dict()
     for arxiv_id, code_urls in arxiv_id2code_urls.items():
         arxiv_id2urls[arxiv_id] = {"api": code_urls}
@@ -414,13 +426,17 @@ def log_results(arxiv_id2urls):
             doc_number += len(urls["docs"])
         if "api" in urls:
             api_number += len(urls["api"])
-    logger.info(f"Found {len(arxiv_ids)} arXiv references in the {doc_number} docs and in {api_number} API Refs.")
+    logger.info(
+        f"Found {len(arxiv_ids)} arXiv references in the {doc_number} docs and in {api_number} API Refs."
+    )
 
 
 def main():
     # search the documentation and the API Reference for arXiv references:
     arxiv_id2module_name_and_members = search_code_for_arxiv_references(CODE_DIR)
-    arxiv_id2code_urls = convert_module_name_and_members_to_urls(arxiv_id2module_name_and_members)
+    arxiv_id2code_urls = convert_module_name_and_members_to_urls(
+        arxiv_id2module_name_and_members
+    )
     arxiv_id2file_names = search_documentation_for_arxiv_references(DOCS_DIR)
     arxiv_id2urls = compound_urls(arxiv_id2file_names, arxiv_id2code_urls)
     log_results(arxiv_id2urls)
