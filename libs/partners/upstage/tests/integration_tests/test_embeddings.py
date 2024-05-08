@@ -1,4 +1,5 @@
 """Test Upstage embeddings."""
+
 from langchain_upstage import UpstageEmbeddings
 
 
