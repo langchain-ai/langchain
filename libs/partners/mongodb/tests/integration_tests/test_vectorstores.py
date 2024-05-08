@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from time import sleep
+from time import sleep, monotonic
 from typing import Any, Dict, List, Optional
 
 import pytest
@@ -33,10 +33,9 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
     def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
         """Patched insert_texts that waits for data to be indexed before returning"""
         ids = super()._insert_texts(texts, metadatas)
-        timeout = TIMEOUT
-        while len(ids) != self.similarity_search("sandwich") and timeout >= 0:
-            sleep(INTERVAL * 3)
-            timeout -= INTERVAL
+        start = monotonic()
+        while len(ids) != self.similarity_search("sandwich") and (monotonic() - start <= TIMEOUT):
+            sleep(INTERVAL)
         return ids
 
     def create_index(
@@ -48,21 +47,20 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
         result = super().create_index(
             dimensions=dimensions, filters=filters, update=update
         )
-        timeout = TIMEOUT * 3
-        while timeout > 0:
+        start = monotonic()
+        while monotonic() - start <= TIMEOUT:
             if indexes := list(
                 self._collection.list_search_indexes(name=self._index_name)
             ):
                 if indexes[0].get("status") == "READY":
                     return result
-            sleep(INTERVAL * 3)
-            timeout -= INTERVAL
+            sleep(INTERVAL)
 
         raise TimeoutError(f"{self._index_name} never reached 'status: READY'")
 
 
 def _await_index_deletion(coll: Collection, index_name: str) -> None:
-    timeout = TIMEOUT * 3
+    start = monotonic()
     try:
         drop_vector_search_index(coll, index_name)
     except OperationFailure:
@@ -70,9 +68,8 @@ def _await_index_deletion(coll: Collection, index_name: str) -> None:
         pass
 
     while list(coll.list_search_indexes(name=index_name)):
-        if timeout < 0:
+        if monotonic() - start > TIMEOUT:
             raise TimeoutError(f"Index Name: {index_name} never dropped")
-        timeout -= INTERVAL
         sleep(INTERVAL)
 
 
