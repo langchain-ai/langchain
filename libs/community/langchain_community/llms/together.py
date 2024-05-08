@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.0.12", removal="0.2", alternative_import="langchain_together.Together"
+    since="0.0.12", removal="0.3", alternative_import="langchain_together.Together"
 )
 class Together(LLM):
     """LLM models from `Together`.
