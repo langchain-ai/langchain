@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
     import chromadb
     import chromadb.config
     from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
-
 
 logger = logging.getLogger()
 DEFAULT_K = 4  # Number of Documents to return.
@@ -81,7 +81,6 @@ class Chroma(VectorStore):
         try:
             import chromadb
             import chromadb.config
-            from chromadb.utils import embedding_functions
         except ImportError:
             raise ImportError(
                 "Could not import chromadb python package. "
@@ -124,12 +123,10 @@ class Chroma(VectorStore):
                 _client_settings.persist_directory or persist_directory
             )
 
-        self._embedding_function = (
-            embedding_function or embedding_functions.DefaultEmbeddingFunction()
-        )
+        self._embedding_function = embedding_function
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=self._embedding_function,
+            embedding_function=None,
             metadata=collection_metadata,
         )
         self.override_relevance_score_fn = relevance_score_fn
@@ -152,7 +149,7 @@ class Chroma(VectorStore):
         try:
             import chromadb  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
@@ -614,11 +611,22 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)
 
+    @deprecated(
+        since="0.1.17",
+        message=(
+            "Since Chroma 0.4.x the manual persistence method is no longer "
+            "supported as docs are automatically persisted."
+        ),
+        removal="0.3.0",
+    )
     def persist(self) -> None:
         """Persist the collection.
 
         This can be used to explicitly persist the data to disk.
         It will also be called automatically when the object is destroyed.
+
+        Since Chroma 0.4.x the manual persistence method is no longer
+        supported as docs are automatically persisted.
         """
         if self._persist_directory is None:
             raise ValueError(

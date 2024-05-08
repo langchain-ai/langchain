@@ -1,11 +1,20 @@
 """Test ChatAnthropic chat model."""
 
+import json
 from typing import List
 
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
@@ -99,7 +108,7 @@ def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     chat = ChatAnthropic(model="test")
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -212,3 +221,111 @@ async def test_astreaming() -> None:
     response = await llm.agenerate([[HumanMessage(content="I'm Pickle Rick")]])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, LLMResult)
+
+
+def test_tool_use() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-opus-20240229",
+    )
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "name": "get_weather",
+                "description": "Get weather report for a city",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"location": {"type": "string"}},
+                },
+            }
+        ]
+    )
+    response = llm_with_tools.invoke("what's the weather in san francisco, ca")
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, list)
+    assert isinstance(response.tool_calls, list)
+    assert len(response.tool_calls) == 1
+    tool_call = response.tool_calls[0]
+    assert tool_call["name"] == "get_weather"
+    assert isinstance(tool_call["args"], dict)
+    assert "location" in tool_call["args"]
+
+    # Test streaming
+    first = True
+    for chunk in llm_with_tools.stream("what's the weather in san francisco, ca"):
+        if first:
+            gathered = chunk
+            first = False
+        else:
+            gathered = gathered + chunk  # type: ignore
+    assert isinstance(gathered, AIMessageChunk)
+    assert isinstance(gathered.tool_call_chunks, list)
+    assert len(gathered.tool_call_chunks) == 1
+    tool_call_chunk = gathered.tool_call_chunks[0]
+    assert tool_call_chunk["name"] == "get_weather"
+    assert isinstance(tool_call_chunk["args"], str)
+    assert "location" in json.loads(tool_call_chunk["args"])
+
+
+def test_anthropic_with_empty_text_block() -> None:
+    """Anthropic SDK can return an empty text block."""
+
+    @tool
+    def type_letter(letter: str) -> str:
+        """Type the given letter."""
+        return "OK"
+
+    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(
+        [type_letter]
+    )
+
+    messages = [
+        SystemMessage(
+            content="Repeat the given string using the provided tools. Do not write "
+            "anything else or provide any explanations. For example, "
+            "if the string is 'abc', you must print the "
+            "letters 'a', 'b', and 'c' one at a time and in that order. "
+        ),
+        HumanMessage(content="dog"),
+        AIMessage(
+            content=[
+                {"text": "", "type": "text"},
+                {
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "input": {"letter": "d"},
+                    "name": "type_letter",
+                    "type": "tool_use",
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "type_letter",
+                    "args": {"letter": "d"},
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                },
+            ],
+        ),
+        ToolMessage(content="OK", tool_call_id="toolu_01V6d6W32QGGSmQm4BT98EKk"),
+    ]
+
+    model.invoke(messages)
+
+
+def test_with_structured_output() -> None:
+    llm = ChatAnthropic(
+        model="claude-3-opus-20240229",
+    )
+
+    structured_llm = llm.with_structured_output(
+        {
+            "name": "get_weather",
+            "description": "Get weather report for a city",
+            "input_schema": {
+                "type": "object",
+                "properties": {"location": {"type": "string"}},
+            },
+        }
+    )
+    response = structured_llm.invoke("what's the weather in san francisco, ca")
+    assert isinstance(response, dict)
+    assert response["location"]

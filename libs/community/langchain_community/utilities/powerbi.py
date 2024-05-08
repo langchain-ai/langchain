@@ -251,7 +251,7 @@ def json_to_md(
     json_contents: List[Dict[str, Union[str, int, float]]],
     table_name: Optional[str] = None,
 ) -> str:
-    """Converts a JSON object to a markdown table."""
+    """Convert a JSON object to a markdown table."""
     if len(json_contents) == 0:
         return ""
     output_md = ""

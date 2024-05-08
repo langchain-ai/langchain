@@ -42,6 +42,7 @@ _EXPECTED = [
     "create_self_ask_with_search_agent",
     "create_json_chat_agent",
     "create_structured_chat_agent",
+    "create_tool_calling_agent",
 ]
 
 

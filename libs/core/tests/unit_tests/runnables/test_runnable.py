@@ -35,17 +35,21 @@ from langchain_core.language_models import (
     FakeStreamingListLLM,
 )
 from langchain_core.load import dumpd, dumps
+from langchain_core.load.load import loads
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.messages.base import BaseMessage
 from langchain_core.output_parsers import (
     BaseOutputParser,
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
+from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -75,7 +79,7 @@ from langchain_core.runnables import (
     add,
     chain,
 )
-from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.base import RunnableMap, RunnableSerializable
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
@@ -86,6 +90,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
+from tests.unit_tests.stubs import AnyStr
 
 
 class FakeTracer(BaseTracer):
@@ -106,6 +111,24 @@ class FakeTracer(BaseTracer):
             self.uuids_map[uuid] = next(self.uuids_generator)
         return self.uuids_map[uuid]
 
+    def _replace_message_id(self, maybe_message: Any) -> Any:
+        if isinstance(maybe_message, BaseMessage):
+            maybe_message.id = str(next(self.uuids_generator))
+        if isinstance(maybe_message, ChatGeneration):
+            maybe_message.message.id = str(next(self.uuids_generator))
+        if isinstance(maybe_message, LLMResult):
+            for i, gen_list in enumerate(maybe_message.generations):
+                for j, gen in enumerate(gen_list):
+                    maybe_message.generations[i][j] = self._replace_message_id(gen)
+        if isinstance(maybe_message, dict):
+            for k, v in maybe_message.items():
+                maybe_message[k] = self._replace_message_id(v)
+        if isinstance(maybe_message, list):
+            for i, v in enumerate(maybe_message):
+                maybe_message[i] = self._replace_message_id(v)
+
+        return maybe_message
+
     def _copy_run(self, run: Run) -> Run:
         if run.dotted_order:
             levels = run.dotted_order.split(".")
@@ -125,10 +148,10 @@ class FakeTracer(BaseTracer):
                     self.uuids_map[run.parent_run_id] if run.parent_run_id else None
                 ),
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
-                "execution_order": None,
-                "child_execution_order": None,
                 "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
                 "dotted_order": new_dotted_order,
+                "inputs": self._replace_message_id(run.inputs),
+                "outputs": self._replace_message_id(run.outputs),
             }
         )
 
@@ -339,6 +362,27 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             }
         },
         "definitions": {
+            "ToolCall": {
+                "title": "ToolCall",
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "args": {"title": "Args", "type": "object"},
+                    "id": {"title": "Id", "type": "string"},
+                },
+                "required": ["name", "args", "id"],
+            },
+            "InvalidToolCall": {
+                "title": "InvalidToolCall",
+                "type": "object",
+                "properties": {
+                    "name": {"title": "Name", "type": "string"},
+                    "args": {"title": "Args", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
+                    "error": {"title": "Error", "type": "string"},
+                },
+                "required": ["name", "args", "id", "error"],
+            },
             "AIMessage": {
                 "title": "AIMessage",
                 "description": "Message from an AI.",
@@ -370,12 +414,24 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["ai"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
                         "type": "boolean",
+                    },
+                    "tool_calls": {
+                        "title": "Tool Calls",
+                        "default": [],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/ToolCall"},
+                    },
+                    "invalid_tool_calls": {
+                        "title": "Invalid Tool Calls",
+                        "default": [],
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/InvalidToolCall"},
                     },
                 },
                 "required": ["content"],
@@ -411,8 +467,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["human"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "example": {
                         "title": "Example",
                         "default": False,
@@ -452,8 +508,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["chat"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "role": {"title": "Role", "type": "string"},
                 },
                 "required": ["content", "role"],
@@ -489,8 +545,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["system"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                 },
                 "required": ["content"],
             },
@@ -525,8 +581,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["function"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                 },
                 "required": ["content", "name"],
             },
@@ -561,8 +617,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "enum": ["tool"],
                         "type": "string",
                     },
-                    "id": {"title": "Id", "type": "string"},
                     "name": {"title": "Name", "type": "string"},
+                    "id": {"title": "Id", "type": "string"},
                     "tool_call_id": {"title": "Tool Call Id", "type": "string"},
                 },
                 "required": ["content", "tool_call_id"],
@@ -1600,11 +1656,14 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
     assert len(spy.call_args_list) == 2
     for i, call in enumerate(spy.call_args_list):
-        assert call.args[0] == ("hello" if i == 0 else "wooorld")
-        if i == 0:
+        call_arg = call.args[0]
+
+        if call_arg == "hello":
+            assert call_arg == "hello"
             assert call.args[1].get("tags") == ["a-tag"]
             assert call.args[1].get("metadata") == {}
         else:
+            assert call_arg == "wooorld"
             assert call.args[1].get("tags") == []
             assert call.args[1].get("metadata") == {"key": "value"}
 
@@ -1612,8 +1671,8 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
     assert fake.batch(["hello", "wooorld"], dict(tags=["a-tag"])) == [5, 7]
     assert len(spy.call_args_list) == 2
+    assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
     for i, call in enumerate(spy.call_args_list):
-        assert call.args[0] == ("hello" if i == 0 else "wooorld")
         assert call.args[1].get("tags") == ["a-tag"]
         assert call.args[1].get("metadata") == {}
     spy.reset_mock()
@@ -1634,28 +1693,15 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
         5,
         7,
     ]
-    assert spy.call_args_list == [
-        mocker.call(
-            "hello",
-            dict(
-                metadata={"key": "value"},
-                tags=[],
-                callbacks=None,
-                recursion_limit=25,
-                run_id=None,
-            ),
-        ),
-        mocker.call(
-            "wooorld",
-            dict(
-                metadata={"key": "value"},
-                tags=[],
-                callbacks=None,
-                recursion_limit=25,
-                run_id=None,
-            ),
-        ),
-    ]
+    assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
+    for call in spy.call_args_list:
+        assert call.args[1] == dict(
+            metadata={"key": "value"},
+            tags=[],
+            callbacks=None,
+            recursion_limit=25,
+            run_id=None,
+        )
 
 
 async def test_prompt() -> None:
@@ -1899,7 +1945,9 @@ async def test_with_listeners_async(mocker: MockerFixture) -> None:
 
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -1922,7 +1970,7 @@ def test_prompt_with_chat_model(
     tracer = FakeTracer()
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo")
+    ) == AIMessage(content="foo", id=AnyStr())
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -1947,8 +1995,8 @@ def test_prompt_with_chat_model(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo"),
-        AIMessage(content="foo"),
+        AIMessage(content="foo", id=AnyStr()),
+        AIMessage(content="foo", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -1988,9 +2036,9 @@ def test_prompt_with_chat_model(
     assert [
         *chain.stream({"question": "What is your name?"}, dict(callbacks=[tracer]))
     ] == [
-        AIMessageChunk(content="f"),
-        AIMessageChunk(content="o"),
-        AIMessageChunk(content="o"),
+        AIMessageChunk(content="f", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2003,7 +2051,9 @@ def test_prompt_with_chat_model(
 
 @freeze_time("2023-01-01")
 async def test_prompt_with_chat_model_async(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2026,7 +2076,7 @@ async def test_prompt_with_chat_model_async(
     tracer = FakeTracer()
     assert await chain.ainvoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
-    ) == AIMessage(content="foo")
+    ) == AIMessage(content="foo", id=AnyStr())
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
@@ -2051,8 +2101,8 @@ async def test_prompt_with_chat_model_async(
         ],
         dict(callbacks=[tracer]),
     ) == [
-        AIMessage(content="foo"),
-        AIMessage(content="foo"),
+        AIMessage(content="foo", id=AnyStr()),
+        AIMessage(content="foo", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == [
         {"question": "What is your name?"},
@@ -2095,9 +2145,9 @@ async def test_prompt_with_chat_model_async(
             {"question": "What is your name?"}, dict(callbacks=[tracer])
         )
     ] == [
-        AIMessageChunk(content="f"),
-        AIMessageChunk(content="o"),
-        AIMessageChunk(content="o"),
+        AIMessageChunk(content="f", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
+        AIMessageChunk(content="o", id=AnyStr()),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -2730,7 +2780,9 @@ async def test_prompt_with_llm_and_async_lambda(
 
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model_and_parser(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2762,14 +2814,16 @@ def test_prompt_with_chat_model_and_parser(
             HumanMessage(content="What is your name?"),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
+    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
 
     assert tracer.runs == snapshot
 
 
 @freeze_time("2023-01-01")
 def test_combining_sequences(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2895,7 +2949,7 @@ What is your name?"""
             ),
         ]
     )
-    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar")
+    assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
     assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 4
@@ -2941,7 +2995,7 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot"),
+        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
         "llm": "i'm a textbot",
     }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
@@ -3151,7 +3205,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert chain.invoke(
         {"question": "What is your name?"}, dict(callbacks=[tracer])
     ) == {
-        "chat": AIMessage(content="i'm a chatbot"),
+        "chat": AIMessage(content="i'm a chatbot", id=AnyStr()),
         "llm": "i'm a textbot",
         "passthrough": ChatPromptValue(
             messages=[
@@ -3360,12 +3414,13 @@ async def test_map_astream() -> None:
     assert streamed_chunks[0] in [
         {"passthrough": prompt.invoke({"question": "What is your name?"})},
         {"llm": "i"},
-        {"chat": AIMessageChunk(content="i")},
+        {"chat": AIMessageChunk(content="i", id=AnyStr())},
     ]
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
     assert final_value.get("chat").content == "i'm a chatbot"
+    final_value["chat"].id = AnyStr()
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == prompt.invoke(
         {"question": "What is your name?"}
@@ -3500,6 +3555,9 @@ async def test_map_astream_iterator_input() -> None:
     assert final_value.get("chat").content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == llm_res
+
+    simple_map = RunnableMap(passthrough=RunnablePassthrough())
+    assert loads(dumps(simple_map)) == simple_map
 
 
 def test_with_config_with_config() -> None:
@@ -5345,11 +5403,21 @@ def test_transform_of_runnable_lambda_with_dicts() -> None:
     runnable = RunnableLambda(lambda x: x)
     chunks = iter(
         [
-            {"foo": "a"},
             {"foo": "n"},
         ]
     )
-    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+    assert list(runnable.transform(chunks)) == [{"foo": "n"}]
+
+    # Test as part of a sequence
+    seq = runnable | runnable
+    chunks = iter(
+        [
+            {"foo": "n"},
+        ]
+    )
+    assert list(seq.transform(chunks)) == [{"foo": "n"}]
+    # Test some other edge cases
+    assert list(seq.stream({"foo": "n"})) == [{"foo": "n"}]
 
 
 async def test_atransform_of_runnable_lambda_with_dicts() -> None:
@@ -5364,7 +5432,11 @@ async def test_atransform_of_runnable_lambda_with_dicts() -> None:
         yield {"foo": "n"}
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
-    assert chunks == [{"foo": "an"}]
+    assert chunks == [{"foo": "n"}]
+
+    seq = runnable | runnable
+    chunks = [chunk async for chunk in seq.atransform(chunk_iterator())]
+    assert chunks == [{"foo": "n"}]
 
 
 def test_default_transform_with_dicts() -> None:
@@ -5384,7 +5456,8 @@ def test_default_transform_with_dicts() -> None:
         ]
     )
 
-    assert list(runnable.transform(chunks)) == [{"foo": "an"}]
+    assert list(runnable.transform(chunks)) == [{"foo": "n"}]
+    assert list(runnable.stream({"foo": "n"})) == [{"foo": "n"}]
 
 
 async def test_default_atransform_with_dicts() -> None:
@@ -5403,6 +5476,17 @@ async def test_default_atransform_with_dicts() -> None:
         yield {"foo": "n"}
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
+
+    assert chunks == [{"foo": "n"}]
+
+    # Test with addable dict
+    async def chunk_iterator_with_addable() -> AsyncIterator[Dict[str, str]]:
+        yield AddableDict({"foo": "a"})
+        yield AddableDict({"foo": "n"})
+
+    chunks = [
+        chunk async for chunk in runnable.atransform(chunk_iterator_with_addable())
+    ]
 
     assert chunks == [{"foo": "an"}]
 

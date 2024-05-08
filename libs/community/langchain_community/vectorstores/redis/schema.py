@@ -285,7 +285,7 @@ class RedisModel(BaseModel):
 def read_schema(
     index_schema: Optional[Union[Dict[str, List[Any]], str, os.PathLike]],
 ) -> Dict[str, Any]:
-    """Reads in the index schema from a dict or yaml file.
+    """Read in the index schema from a dict or yaml file.
 
     Check if it is a dict and return RedisModel otherwise, check if it's a path and
     read in the file assuming it's a yaml file and return a RedisModel
