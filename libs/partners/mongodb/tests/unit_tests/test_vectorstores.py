@@ -1,5 +1,5 @@
-from typing import Any, Optional
 from json import dumps, loads
+from typing import Any, Optional
 
 import pytest
 from langchain_core.documents import Document
@@ -76,6 +76,7 @@ class TestMongoDBAtlasVectorSearch:
         output = vectorstore.similarity_search("", k=1)
         assert output[0].page_content == page_content
         assert output[0].metadata.get("c") == metadata
+        # Validate the ObjectId provided is json serializable
         assert loads(dumps(output[0].page_content)) == output[0].page_content
         assert loads(dumps(output[0].metadata)) == output[0].metadata
 
