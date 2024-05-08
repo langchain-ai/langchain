@@ -81,7 +81,7 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
 
 @deprecated(
     since="0.0.26",
-    removal="0.2",
+    removal="0.3",
     alternative_import="langchain_fireworks.ChatFireworks",
 )
 class ChatFireworks(BaseChatModel):

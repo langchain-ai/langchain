@@ -7,6 +7,7 @@ EXPECTED_ALL = [
     "ChatAnyscale",
     "ChatBaichuan",
     "ChatCohere",
+    "ChatCoze",
     "ChatDatabricks",
     "ChatDeepInfra",
     "ChatEverlyAI",
@@ -48,6 +49,7 @@ EXPECTED_ALL = [
     "SolarChat",
     "QianfanChatEndpoint",
     "VolcEngineMaasChat",
+    "ChatOctoAI",
 ]
 
 

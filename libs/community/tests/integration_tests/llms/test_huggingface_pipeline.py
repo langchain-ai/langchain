@@ -12,7 +12,7 @@ def test_huggingface_pipeline_text_generation() -> None:
     llm = HuggingFacePipeline.from_model_id(
         model_id="gpt2", task="text-generation", pipeline_kwargs={"max_new_tokens": 10}
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -21,7 +21,7 @@ def test_huggingface_pipeline_text2text_generation() -> None:
     llm = HuggingFacePipeline.from_model_id(
         model_id="google/flan-t5-small", task="text2text-generation"
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -33,7 +33,7 @@ def test_huggingface_pipeline_device_map() -> None:
         device_map="auto",
         pipeline_kwargs={"max_new_tokens": 10},
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -42,7 +42,7 @@ def text_huggingface_pipeline_summarization() -> None:
     llm = HuggingFacePipeline.from_model_id(
         model_id="facebook/bart-large-cnn", task="summarization"
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -67,7 +67,7 @@ def test_init_with_pipeline() -> None:
         "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
     )
     llm = HuggingFacePipeline(pipeline=pipe)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -78,7 +78,7 @@ def test_huggingface_pipeline_runtime_kwargs() -> None:
         task="text-generation",
     )
     prompt = "Say foo:"
-    output = llm(prompt, pipeline_kwargs={"max_new_tokens": 2})
+    output = llm.invoke(prompt, pipeline_kwargs={"max_new_tokens": 2})
     assert len(output) < 10
 
 
@@ -94,7 +94,7 @@ def test_huggingface_pipeline_text_generation_ov() -> None:
         model_kwargs={"device": "CPU", "ov_config": ov_config},
         pipeline_kwargs={"max_new_tokens": 64},
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -107,7 +107,7 @@ def test_huggingface_pipeline_text2text_generation_ov() -> None:
         model_kwargs={"device": "CPU", "ov_config": ov_config},
         pipeline_kwargs={"max_new_tokens": 64},
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -120,5 +120,5 @@ def text_huggingface_pipeline_summarization_ov() -> None:
         model_kwargs={"device": "CPU", "ov_config": ov_config},
         pipeline_kwargs={"max_new_tokens": 64},
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)

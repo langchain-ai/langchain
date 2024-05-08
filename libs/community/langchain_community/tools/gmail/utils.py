@@ -1,9 +1,12 @@
 """Gmail tool utils."""
+
 from __future__ import annotations
 
 import logging
 import os
 from typing import TYPE_CHECKING, List, Optional, Tuple
+
+from langchain_core.utils import guard_import
 
 if TYPE_CHECKING:
     from google.auth.transport.requests import Request
@@ -21,16 +24,15 @@ def import_google() -> Tuple[Request, Credentials]:
     Returns:
         Tuple[Request, Credentials]: Request and Credentials classes.
     """
-    # google-auth-httplib2
-    try:
-        from google.auth.transport.requests import Request  # noqa: F401
-        from google.oauth2.credentials import Credentials  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "You need to install google-auth-httplib2 to use this toolkit. "
-            "Try running pip install --upgrade google-auth-httplib2"
-        )
-    return Request, Credentials
+    return (
+        guard_import(
+            module_name="google.auth.transport.requests",
+            pip_name="google-auth-httplib2",
+        ).Request,
+        guard_import(
+            module_name="google.oauth2.credentials", pip_name="google-auth-httplib2"
+        ).Credentials,
+    )
 
 
 def import_installed_app_flow() -> InstalledAppFlow:
@@ -39,14 +41,9 @@ def import_installed_app_flow() -> InstalledAppFlow:
     Returns:
         InstalledAppFlow: InstalledAppFlow class.
     """
-    try:
-        from google_auth_oauthlib.flow import InstalledAppFlow
-    except ImportError:
-        raise ImportError(
-            "You need to install google-auth-oauthlib to use this toolkit. "
-            "Try running pip install --upgrade google-auth-oauthlib"
-        )
-    return InstalledAppFlow
+    return guard_import(
+        module_name="google_auth_oauthlib.flow", pip_name="google-auth-oauthlib"
+    ).InstalledAppFlow
 
 
 def import_googleapiclient_resource_builder() -> build_resource:
@@ -55,14 +52,9 @@ def import_googleapiclient_resource_builder() -> build_resource:
     Returns:
         build_resource: googleapiclient.discovery.build function.
     """
-    try:
-        from googleapiclient.discovery import build
-    except ImportError:
-        raise ImportError(
-            "You need to install googleapiclient to use this toolkit. "
-            "Try running pip install --upgrade google-api-python-client"
-        )
-    return build
+    return guard_import(
+        module_name="googleapiclient.discovery", pip_name="google-api-python-client"
+    ).build
 
 
 DEFAULT_SCOPES = ["https://mail.google.com/"]
@@ -77,8 +69,19 @@ def get_gmail_credentials(
 ) -> Credentials:
     """Get credentials."""
     # From https://developers.google.com/gmail/api/quickstart/python
-    Request, Credentials = import_google()
-    InstalledAppFlow = import_installed_app_flow()
+    Request, Credentials = (
+        guard_import(
+            module_name="google.auth.transport.requests",
+            pip_name="google-auth-httplib2",
+        ).Request,
+        guard_import(
+            module_name="google.oauth2.credentials", pip_name="google-auth-httplib2"
+        ).Credentials,
+    )
+
+    InstalledAppFlow = guard_import(
+        module_name="google_auth_oauthlib.flow", pip_name="google-auth-oauthlib"
+    ).InstalledAppFlow
     creds = None
     scopes = scopes or DEFAULT_SCOPES
     token_file = token_file or DEFAULT_CREDS_TOKEN_FILE
@@ -111,7 +114,9 @@ def build_resource_service(
 ) -> Resource:
     """Build a Gmail service."""
     credentials = credentials or get_gmail_credentials()
-    builder = import_googleapiclient_resource_builder()
+    builder = guard_import(
+        module_name="googleapiclient.discovery", pip_name="google-api-python-client"
+    ).build
     return builder(service_name, service_version, credentials=credentials)
 
 

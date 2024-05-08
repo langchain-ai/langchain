@@ -20,13 +20,13 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_community.docstore.arbitrary_fn import (
-        DocstoreFn,  # noqa: F401
+        DocstoreFn,
     )
     from langchain_community.docstore.in_memory import (
-        InMemoryDocstore,  # noqa: F401
+        InMemoryDocstore,
     )
     from langchain_community.docstore.wikipedia import (
-        Wikipedia,  # noqa: F401
+        Wikipedia,
     )
 
 __all__ = ["DocstoreFn", "InMemoryDocstore", "Wikipedia"]

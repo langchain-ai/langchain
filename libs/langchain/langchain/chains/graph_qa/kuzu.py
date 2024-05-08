@@ -1,6 +1,7 @@
 """Question answering over a graph."""
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional
 
 from langchain_community.graphs.kuzu_graph import KuzuGraph
@@ -12,6 +13,39 @@ from langchain_core.pydantic_v1 import Field
 from langchain.chains.base import Chain
 from langchain.chains.graph_qa.prompts import CYPHER_QA_PROMPT, KUZU_GENERATION_PROMPT
 from langchain.chains.llm import LLMChain
+
+
+def remove_prefix(text: str, prefix: str) -> str:
+    """Remove a prefix from a text.
+
+    Args:
+        text: Text to remove the prefix from.
+        prefix: Prefix to remove from the text.
+
+    Returns:
+        Text with the prefix removed.
+    """
+    if text.startswith(prefix):
+        return text[len(prefix) :]
+    return text
+
+
+def extract_cypher(text: str) -> str:
+    """Extract Cypher code from a text.
+
+    Args:
+        text: Text to extract Cypher code from.
+
+    Returns:
+        Cypher code extracted from the text.
+    """
+    # The pattern to find Cypher code enclosed in triple backticks
+    pattern = r"```(.*?)```"
+
+    # Find all matches in the input text
+    matches = re.findall(pattern, text, re.DOTALL)
+
+    return matches[0] if matches else text
 
 
 class KuzuQAChain(Chain):
@@ -84,6 +118,9 @@ class KuzuQAChain(Chain):
         generated_cypher = self.cypher_generation_chain.run(
             {"question": question, "schema": self.graph.get_schema}, callbacks=callbacks
         )
+        # Extract Cypher code if it is wrapped in triple backticks
+        # with the language marker "cypher"
+        generated_cypher = remove_prefix(extract_cypher(generated_cypher), "cypher")
 
         _run_manager.on_text("Generated Cypher:", end="\n", verbose=self.verbose)
         _run_manager.on_text(

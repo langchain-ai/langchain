@@ -155,7 +155,7 @@ class FlareChain(Chain):
         callbacks = _run_manager.get_child()
         docs = []
         for question in questions:
-            docs.extend(self.retriever.get_relevant_documents(question))
+            docs.extend(self.retriever.invoke(question))
         context = "\n\n".join(d.page_content for d in docs)
         result = self.response_chain.predict(
             user_input=user_input,
