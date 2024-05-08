@@ -142,30 +142,30 @@ We have two main types of deprecations:
 
 1. Code that was moved from `langchain` into another package (e.g, `langchain-community`)
 
-If you try to import it from `langchain`, the import will keep on working, but will raise a deprecation warning. The warning will provide a replacement import statement.
+    If you try to import it from `langchain`, the import will keep on working, but will raise a deprecation warning. The warning will provide a replacement import statement.
 
-```python
-python -c "from langchain.document_loaders.markdown import UnstructuredMarkdownLoader"
+    ```python
+    python -c "from langchain.document_loaders.markdown import UnstructuredMarkdownLoader"
 
-```
+    ```
 
-```python
-LangChainDeprecationWarning: Importing UnstructuredMarkdownLoader from langchain.document_loaders is deprecated. Please replace deprecated imports:
+    ```python
+    LangChainDeprecationWarning: Importing UnstructuredMarkdownLoader from langchain.document_loaders is deprecated. Please replace deprecated imports:
 
->> from langchain.document_loaders import UnstructuredMarkdownLoader
+    >> from langchain.document_loaders import UnstructuredMarkdownLoader
 
-with new imports of:
+    with new imports of:
 
->> from langchain_community.document_loaders import UnstructuredMarkdownLoader
-```
+    >> from langchain_community.document_loaders import UnstructuredMarkdownLoader
+    ```
 
-We will continue supporting the imports in `langchain` until release 0.4 as long as the relevant package where the code lives is installed. (e.g., as long as `langchain_community` is installed.)
+    We will continue supporting the imports in `langchain` until release 0.4 as long as the relevant package where the code lives is installed. (e.g., as long as `langchain_community` is installed.)
 
-However, we advise for users to not rely on these imports and instead migrate to the new imports. To help with this process, we’re releasing a migration script via the LangChain CLI. See further instructions in migration guide.
+    However, we advise for users to not rely on these imports and instead migrate to the new imports. To help with this process, we’re releasing a migration script via the LangChain CLI. See further instructions in migration guide.
 
-1. Code that has better alternatives available and will eventually be removed, so there’s only a single way to do things. (e.g., `predict_messages` method in ChatModels has been deprecated in favor of `invoke`).
+2. Code that has better alternatives available and will eventually be removed, so there’s only a single way to do things. (e.g., `predict_messages` method in ChatModels has been deprecated in favor of `invoke`).
 
-Many of these were marked for removal in 0.2. We have bumped the removal to 0.3.
+    Many of these were marked for removal in 0.2. We have bumped the removal to 0.3.
 
 ## Migration
 

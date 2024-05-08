@@ -175,11 +175,6 @@ const config = {
               },
               {
                 type: "doc",
-                docId: "changes/releases",
-                label: "Releases",
-              },
-              {
-                type: "doc",
                 docId: "contributing/index",
                 label: "Contributing",
               },
