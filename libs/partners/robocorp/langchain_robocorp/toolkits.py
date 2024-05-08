@@ -240,6 +240,5 @@ class ActionServerToolkit(BaseModel):
         url = urljoin(self.url, endpoint)
 
         response = requests.post(url, headers=headers, data=json.dumps(data))
-        output = response.text
 
-        return output
+        return response.text
