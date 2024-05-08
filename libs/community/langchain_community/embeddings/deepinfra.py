@@ -49,7 +49,8 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
     model_kwargs: Optional[dict] = None
     """Other model keyword args"""
     deepinfra_api_token: Optional[str] = None
-    """API token for Deep Infra. If not provided, the token is fetched from the environment variable 'DEEPINFRA"""
+    """API token for Deep Infra. If not provided, the token is 
+    fetched from the environment variable 'DEEPINFRA_API_TOKEN'."""
     batch_size: int = MAX_BATCH_SIZE
     """Batch size for embedding requests."""
 
