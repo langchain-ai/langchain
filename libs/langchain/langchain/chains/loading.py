@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Union
 
 import yaml
-from langchain_community.llms.loading import load_llm, load_llm_from_config
 from langchain_core.prompts.loading import (
     _load_output_parser,
     load_prompt,
@@ -29,6 +28,27 @@ from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
+
+try:
+    from langchain_community.llms.loading import load_llm, load_llm_from_config
+except ImportError:
+
+    def load_llm(*args: Any, **kwargs: Any) -> None:  # type: ignore
+        raise ImportError(
+            "To use this load_llm functionality you must install the "
+            "langchain_community package. "
+            "You can install it with `pip install langchain_community`"
+        )
+
+    def load_llm_from_config(  # type: ignore
+        *args: Any, **kwargs: Any
+    ) -> None:
+        raise ImportError(
+            "To use this load_llm_from_config functionality you must install the "
+            "langchain_community package. "
+            "You can install it with `pip install langchain_community`"
+        )
+
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/chains/"
 
