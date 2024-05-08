@@ -18,7 +18,7 @@ const config = {
   url: "https://python.langchain.com",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
+  baseUrl: "/v0.1/",
   trailingSlash: true,
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
@@ -118,6 +118,11 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      // TODO(erick): enable this when 0.2 docs are ready for banner
+      // announcementBar: {
+      //   content: 'LangChain v0.2 is coming soon! Preview the new docs <a href="/v0.2/docs/introduction/">here</a>.',
+      //   isCloseable: true,
+      // },
       docs: {
         sidebar: {
           hideable: true,
