@@ -14,7 +14,7 @@
       "destination": "/v0.2/docs/introduction"
     },
     {
-      "source": "/docs",
+      "source": "/docs(/?)",
       "destination": "/v0.2/docs/introduction"
     },
     {
