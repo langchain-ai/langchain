@@ -29,6 +29,8 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
+    ToolMessageChunk
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
@@ -101,6 +103,11 @@ def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
         if tool_calls is not None:
             additional_kwargs["tool_calls"] = tool_calls
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
+    if role == "tool":
+        additional_kwargs = {}
+        if "name" in dct:
+            additional_kwargs["name"] = dct["name"]
+        return ToolMessage(content=content, tool_call_id=dct["tool_call_id"], additional_kwargs=additional_kwargs)
     return ChatMessage(role=role, content=content)
 
 
@@ -122,6 +129,17 @@ def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            # If tool calls only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
+        }
     else:
         raise TypeError(f"Got unknown type '{message.__class__.__name__}'.")
     return message_dict
@@ -133,19 +151,22 @@ def _convert_delta_to_message_chunk(
     role = dct.get("role")
     content = dct.get("content", "")
     additional_kwargs = {}
-    tool_calls = dct.get("tool_call", None)
+    tool_calls = dct.get("tool_calls", None)
     if tool_calls is not None:
         additional_kwargs["tool_calls"] = tool_calls
 
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
-    if role == "user" or default_class == HumanMessageChunk:
+    elif role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
-    if role == "assistant" or default_class == AIMessageChunk:
+    elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
-    if role or default_class == ChatMessageChunk:
+    elif role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
+    elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
-    return default_class(content=content)
+    else:
+        return default_class(content=content)
 
 
 def _truncate_params(payload: Dict[str, Any]) -> None:
