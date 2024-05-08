@@ -9,9 +9,7 @@ import time
 try:
     from typing import override
 except ImportError:
-    # null decorator
-    def override(f):
-        return f
+    from typing_extensions import override
 
 # Third-party imports
 from aperturedb.Utils import Utils, create_connector
