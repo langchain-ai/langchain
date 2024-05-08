@@ -6,9 +6,8 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from typing import Dict, Any, List, Set
-
 from pathlib import Path
+from typing import Any, Dict, List, Set
 
 from pydantic.v1 import BaseModel, root_validator
 
