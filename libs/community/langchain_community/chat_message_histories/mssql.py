@@ -81,7 +81,7 @@ class MssqlChatMessageHistory(BaseChatMessageHistory):
         This client provides support for both sync and async via pyodbc and aioodbc.
 
         In order to use, you must have an ODBC driver manager installed.
-        On windows, this is usally built in. On mac, install with brew
+        On windows, this is usually built in. On mac, install with brew
         install unixodbc. On linux / unix, refer to distro guides.
 
         The client can create schema in the database and provides methods to
