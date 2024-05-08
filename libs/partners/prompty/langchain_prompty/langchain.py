@@ -3,7 +3,7 @@ from langchain_core.runnables import RunnableLambda, Runnable
 from typing import Dict
 from .utils import load, prepare
 
-def create_chat_prompt(path: str, input_name_agent_scratchpad = "agent_scratchpad") -> Runnable[Dict[str, ChatPromptTemplate], str]:
+def create_chat_prompt(path: str, input_name_agent_scratchpad = "agent_scratchpad") -> Runnable[Dict[str, any], ChatPromptTemplate]:
     def runnable_chat_lambda(inputs: Dict[str, any]) -> ChatPromptTemplate:
         p = load(path)
         parsed = prepare(p, inputs)
