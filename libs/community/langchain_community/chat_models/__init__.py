@@ -138,6 +138,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.promptlayer_openai import (
         PromptLayerChatOpenAI,
     )
+    from langchain_community.chat_models.snowflake import (
+        ChatSnowflakeCortex,
+    )
     from langchain_community.chat_models.solar import (
         SolarChat,
     )
@@ -193,6 +196,7 @@ __all__ = [
     "ChatPerplexity",
     "ChatPremAI",
     "ChatSparkLLM",
+    "ChatSnowflakeCortex",
     "ChatTongyi",
     "ChatVertexAI",
     "ChatYandexGPT",
@@ -243,6 +247,7 @@ _module_lookup = {
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
+    "ChatSnowflakeCortex": "langchain_community.chat_models.snowflake",
     "ChatSparkLLM": "langchain_community.chat_models.sparkllm",
     "ChatTongyi": "langchain_community.chat_models.tongyi",
     "ChatVertexAI": "langchain_community.chat_models.vertexai",
