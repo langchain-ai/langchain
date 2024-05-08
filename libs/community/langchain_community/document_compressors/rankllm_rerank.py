@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Extra, Field, PrivateAttr, root_validator
 from langchain_core.callbacks.manager import Callbacks
+from langchain_core.utils import get_from_dict_or_env
 
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 
@@ -69,17 +70,14 @@ class RankLLMRerank(BaseDocumentCompressor):
                     from rank_llm.rerank.rank_gpt import SafeOpenai
                     from rank_llm.rerank.reranker import Reranker
 
-                    from langchain.llms.openai import OpenAI
-
-                    llm = OpenAI(
-                        model=values["gpt_model"],
-                        temperature=0.0,
+                    openai_api_key = get_from_dict_or_env(
+                        values, "open_api_key", "OPENAI_API_KEY"
                     )
 
                     agent = SafeOpenai(
                         model=values["gpt_model"],
                         context_size=4096,
-                        keys=llm.openai_api_key,
+                        keys=openai_api_key,
                     )
                     values["client"] = Reranker(agent)
 
