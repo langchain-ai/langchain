@@ -1,11 +1,11 @@
 import os
+import sys
 from pathlib import Path
 
 from langchain_community import chat_models, llms
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.language_models.llms import LLM, BaseLLM
 
-INTEGRATIONS_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "integrations"
 LLM_IGNORE = ("FakeListLLM", "OpenAIChat", "PromptLayerOpenAIChat")
 LLM_FEAT_TABLE_CORRECTION = {
     "TextGen": {"_astream": False, "_agenerate": False},
@@ -15,16 +15,59 @@ LLM_FEAT_TABLE_CORRECTION = {
     "PromptLayerOpenAI": {"batch_generate": False, "batch_agenerate": False},
 }
 CHAT_MODEL_IGNORE = ("FakeListChatModel", "HumanInputChatModel")
+
 CHAT_MODEL_FEAT_TABLE_CORRECTION = {
     "ChatMLflowAIGateway": {"_agenerate": False},
     "PromptLayerChatOpenAI": {"_stream": False, "_astream": False},
     "ChatKonko": {"_astream": False, "_agenerate": False},
+    "ChatAnthropic": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-anthropic",
+    },
+    "ChatMistralAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-mistralai",
+    },
+    "ChatFireworks": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-fireworks",
+    },
+    "AzureChatOpenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-openai",
+    },
+    "ChatOpenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-openai",
+    },
+    "ChatVertexAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-google-vertexai",
+    },
+    "ChatGroq": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-groq",
+    },
+    "ChatCohere": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-cohere",
+    },
 }
+
 
 LLM_TEMPLATE = """\
 ---
 sidebar_position: 1
 sidebar_class_name: hidden
+keywords: [compatibility]
 ---
 
 # LLMs
@@ -45,6 +88,7 @@ CHAT_MODEL_TEMPLATE = """\
 ---
 sidebar_position: 0
 sidebar_class_name: hidden
+keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output]
 ---
 
 # Chat models
@@ -117,7 +161,8 @@ def get_llm_table():
     return "\n".join(["|".join(row) for row in rows])
 
 
-def get_chat_model_table():
+def get_chat_model_table() -> str:
+    """Get the table of chat models."""
     feat_table = {}
     for cm in chat_models.__all__:
         feat_table[cm] = {}
@@ -133,18 +178,57 @@ def get_chat_model_table():
         for k, v in {**feat_table, **CHAT_MODEL_FEAT_TABLE_CORRECTION}.items()
         if k not in CHAT_MODEL_IGNORE
     }
-    header = ["model", "_agenerate", "_stream", "_astream"]
-    title = ["Model", "Invoke", "Async invoke", "Stream", "Async stream"]
+    header = [
+        "model",
+        "_agenerate",
+        "_stream",
+        "_astream",
+        "tool_calling",
+        "structured_output",
+        "package",
+    ]
+    title = [
+        "Model",
+        "Invoke",
+        "Async invoke",
+        "Stream",
+        "Async stream",
+        "[Tool calling](/docs/modules/model_io/chat/function_calling/)",
+        "[Structured output](/docs/modules/model_io/chat/structured_output/)",
+        "Python Package",
+    ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
-        rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
+        # Fields are in the order of the header
+        row = [llm, "✅"]
+        for h in header[1:]:
+            value = feats.get(h)
+            index = header.index(h)
+            if h == "package":
+                row.append(value or "langchain-community")
+            else:
+                if value == "partial":
+                    row.append("🟡")
+                elif value is True:
+                    row.append("✅")
+                else:
+                    row.append("❌")
+        rows.append(row)
     return "\n".join(["|".join(row) for row in rows])
 
 
 if __name__ == "__main__":
+    output_dir = Path(sys.argv[1])
+    output_integrations_dir = output_dir / "integrations"
+    output_integrations_dir_llms = output_integrations_dir / "llms"
+    output_integrations_dir_chat = output_integrations_dir / "chat"
+    output_integrations_dir_llms.mkdir(parents=True, exist_ok=True)
+    output_integrations_dir_chat.mkdir(parents=True, exist_ok=True)
+
     llm_page = LLM_TEMPLATE.format(table=get_llm_table())
-    with open(INTEGRATIONS_DIR / "llms" / "index.mdx", "w") as f:
+
+    with open(output_integrations_dir / "llms" / "index.mdx", "w") as f:
         f.write(llm_page)
     chat_model_page = CHAT_MODEL_TEMPLATE.format(table=get_chat_model_table())
-    with open(INTEGRATIONS_DIR / "chat" / "index.mdx", "w") as f:
+    with open(output_integrations_dir / "chat" / "index.mdx", "w") as f:
         f.write(chat_model_page)

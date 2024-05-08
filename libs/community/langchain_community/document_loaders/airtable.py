@@ -1,4 +1,4 @@
-from typing import Iterator, List
+from typing import Iterator
 
 from langchain_core.documents import Document
 
@@ -34,7 +34,3 @@ class AirtableLoader(BaseLoader):
                     "table_id": self.table_id,
                 },
             )
-
-    def load(self) -> List[Document]:
-        """Load Documents from table."""
-        return list(self.lazy_load())

@@ -1,3 +1,3 @@
-from langchain_community.document_loaders.base import BaseBlobParser, BaseLoader
+from langchain_core.document_loaders import BaseBlobParser, BaseLoader
 
 __all__ = ["BaseLoader", "BaseBlobParser"]

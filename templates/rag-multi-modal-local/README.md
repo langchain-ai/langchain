@@ -1,7 +1,7 @@
 
 # rag-multi-modal-local
 
-Visual search is a famililar application to many with iPhones or Android devices. It allows user to serch photos using natural language. 
+Visual search is a famililar application to many with iPhones or Android devices. It allows user to search photos using natural language.
   
 With the release of open source, multi-modal LLMs it's possible to build this kind of application for yourself for your own private photo collection.
 
@@ -96,7 +96,7 @@ add_routes(app, rag_chroma_multi_modal_chain, path="/rag-chroma-multi-modal")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

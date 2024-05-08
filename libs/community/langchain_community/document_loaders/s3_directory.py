@@ -120,6 +120,9 @@ class S3DirectoryLoader(BaseLoader):
         bucket = s3.Bucket(self.bucket)
         docs = []
         for obj in bucket.objects.filter(Prefix=self.prefix):
+            # Skip directories
+            if obj.size == 0 and obj.key.endswith("/"):
+                continue
             loader = S3FileLoader(
                 self.bucket,
                 obj.key,

@@ -28,7 +28,7 @@ def dependable_tiledb_import() -> Any:
         import tiledb as tiledb
         import tiledb.vector_search as tiledb_vs
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import tiledb-vector-search python package. "
             "Please install it with `conda install -c tiledb tiledb-vector-search` "
             "or `pip install tiledb-vector-search`"
@@ -87,9 +87,28 @@ class TileDB(VectorStore):
         docs_array_uri: str = "",
         config: Optional[Mapping[str, Any]] = None,
         timestamp: Any = None,
+        allow_dangerous_deserialization: bool = False,
         **kwargs: Any,
     ):
-        """Initialize with necessary components."""
+        """Initialize with necessary components.
+
+        Args:
+            allow_dangerous_deserialization: whether to allow deserialization
+                of the data which involves loading data using pickle.
+                data can be modified by malicious actors to deliver a
+                malicious payload that results in execution of
+                arbitrary code on your machine.
+        """
+        if not allow_dangerous_deserialization:
+            raise ValueError(
+                "TileDB relies on pickle for serialization and deserialization. "
+                "This can be dangerous if the data is intercepted and/or modified "
+                "by malicious actors prior to being de-serialized. "
+                "If you are sure that the data is safe from modification, you can "
+                " set allow_dangerous_deserialization=True to proceed. "
+                "Loading of compromised data using pickle can result in execution of "
+                "arbitrary code on your machine."
+            )
         self.embedding = embedding
         self.embedding_function = embedding.embed_query
         self.index_uri = index_uri

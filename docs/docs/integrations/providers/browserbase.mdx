@@ -1,0 +1,28 @@
+# Browserbase
+
+>[Browserbase](https://browserbase.com) is a serverless platform for running headless browsers, it offers advanced debugging, session recordings, stealth mode, integrated proxies and captcha solving.
+
+## Installation and Setup
+
+- Get an API key from [browserbase.com](https://browserbase.com) and set it in environment variables (`BROWSERBASE_API_KEY`).
+- Install the [Browserbase SDK](http://github.com/browserbase/python-sdk):
+
+```python
+pip install browserbase
+```
+
+## Document loader
+
+See a [usage example](/docs/integrations/document_loaders/browserbase).
+
+```python
+from langchain_community.document_loaders import BrowserbaseLoader
+```
+
+## Multi-Modal
+
+See a [usage example](/docs/integrations/document_loaders/browserbase).
+
+```python
+from browserbase.helpers.gpt4 import GPT4VImage, GPT4VImageDetail
+```

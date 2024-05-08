@@ -2,7 +2,7 @@
 """
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, AsyncIterator, Dict, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -57,7 +57,7 @@ class PlaywrightEvaluator(ABC):
 
 
 class UnstructuredHtmlEvaluator(PlaywrightEvaluator):
-    """Evaluates the page HTML content using the `unstructured` library."""
+    """Evaluate the page HTML content using the `unstructured` library."""
 
     def __init__(self, remove_selectors: Optional[List[str]] = None):
         """Initialize UnstructuredHtmlEvaluator."""
@@ -160,15 +160,13 @@ class PlaywrightURLLoader(BaseLoader):
         # Use the provided evaluator, if any, otherwise, use the default.
         self.evaluator = evaluator or UnstructuredHtmlEvaluator(remove_selectors)
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load the specified URLs using Playwright and create Document instances.
 
         Returns:
-            List[Document]: A list of Document instances with loaded content.
+            A list of Document instances with loaded content.
         """
         from playwright.sync_api import sync_playwright
-
-        docs: List[Document] = list()
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless, proxy=self.proxy)
@@ -181,7 +179,7 @@ class PlaywrightURLLoader(BaseLoader):
 
                     text = self.evaluator.evaluate(page, browser, response)
                     metadata = {"source": url}
-                    docs.append(Document(page_content=text, metadata=metadata))
+                    yield Document(page_content=text, metadata=metadata)
                 except Exception as e:
                     if self.continue_on_failure:
                         logger.error(
@@ -190,18 +188,24 @@ class PlaywrightURLLoader(BaseLoader):
                     else:
                         raise e
             browser.close()
-        return docs
 
     async def aload(self) -> List[Document]:
         """Load the specified URLs with Playwright and create Documents asynchronously.
         Use this function when in a jupyter notebook environment.
 
         Returns:
-            List[Document]: A list of Document instances with loaded content.
+            A list of Document instances with loaded content.
+        """
+        return [doc async for doc in self.alazy_load()]
+
+    async def alazy_load(self) -> AsyncIterator[Document]:
+        """Load the specified URLs with Playwright and create Documents asynchronously.
+        Use this function when in a jupyter notebook environment.
+
+        Returns:
+            A list of Document instances with loaded content.
         """
         from playwright.async_api import async_playwright
-
-        docs: List[Document] = list()
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless, proxy=self.proxy)
@@ -214,7 +218,7 @@ class PlaywrightURLLoader(BaseLoader):
 
                     text = await self.evaluator.evaluate_async(page, browser, response)
                     metadata = {"source": url}
-                    docs.append(Document(page_content=text, metadata=metadata))
+                    yield Document(page_content=text, metadata=metadata)
                 except Exception as e:
                     if self.continue_on_failure:
                         logger.error(
@@ -223,4 +227,3 @@ class PlaywrightURLLoader(BaseLoader):
                     else:
                         raise e
             await browser.close()
-        return docs

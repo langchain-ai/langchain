@@ -147,7 +147,7 @@ def test_github_file_content_get_file_paths(mocker: MockerFixture) -> None:
                         "type": "blob",
                         "sha": "789",
                         "size": 37,
-                        "url": "https://github.com/api/v3/repos/shufanhao/langchain/git/blobs/789",
+                        "url": "https://github.com/repos/shufanhao/langchain/git/blobs/789",
                     }
                 ]
             },
@@ -206,7 +206,7 @@ def test_github_file_content_loader(mocker: MockerFixture) -> None:
                     "type": "blob",
                     "sha": "789",
                     "size": 37,
-                    "url": "https://github.com/api/v3/repos/shufanhao/langchain/git/blobs/789",
+                    "url": "https://github.com/repos/shufanhao/langchain/git/blobs/789",
                 }
             ]
         },

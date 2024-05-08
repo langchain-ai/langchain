@@ -36,13 +36,6 @@
       "SpecialPerson"
     ],
     "kwargs": {
-      "another_secret": {
-        "lc": 1,
-        "type": "secret",
-        "id": [
-          "ANOTHER_SECRET"
-        ]
-      },
       "secret": {
         "lc": 1,
         "type": "secret",
@@ -50,8 +43,15 @@
           "SECRET"
         ]
       },
-      "another_visible": "bye",
-      "you_can_see_me": "hello"
+      "you_can_see_me": "hello",
+      "another_secret": {
+        "lc": 1,
+        "type": "secret",
+        "id": [
+          "ANOTHER_SECRET"
+        ]
+      },
+      "another_visible": "bye"
     }
   }
   '''
@@ -71,477 +71,6 @@
       "LLMChain"
     ],
     "kwargs": {
-      "llm": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "llms",
-          "openai",
-          "OpenAI"
-        ],
-        "kwargs": {
-          "model": "davinci",
-          "temperature": 0.5,
-          "openai_api_key": {
-            "lc": 1,
-            "type": "secret",
-            "id": [
-              "OPENAI_API_KEY"
-            ]
-          }
-        },
-        "name": "OpenAI",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": {
-                "title": "OpenAIInput",
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "$ref": "#/definitions/StringPromptValue"
-                  },
-                  {
-                    "$ref": "#/definitions/ChatPromptValueConcrete"
-                  },
-                  {
-                    "type": "array",
-                    "items": {
-                      "anyOf": [
-                        {
-                          "$ref": "#/definitions/AIMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/HumanMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/ChatMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/SystemMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/FunctionMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/ToolMessage"
-                        }
-                      ]
-                    }
-                  }
-                ],
-                "definitions": {
-                  "StringPromptValue": {
-                    "title": "StringPromptValue",
-                    "description": "String prompt value.",
-                    "type": "object",
-                    "properties": {
-                      "text": {
-                        "title": "Text",
-                        "type": "string"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "StringPromptValue",
-                        "enum": [
-                          "StringPromptValue"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "text"
-                    ]
-                  },
-                  "AIMessage": {
-                    "title": "AIMessage",
-                    "description": "Message from an AI.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ai",
-                        "enum": [
-                          "ai"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "HumanMessage": {
-                    "title": "HumanMessage",
-                    "description": "Message from a human.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "human",
-                        "enum": [
-                          "human"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "ChatMessage": {
-                    "title": "ChatMessage",
-                    "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "chat",
-                        "enum": [
-                          "chat"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "role": {
-                        "title": "Role",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "role"
-                    ]
-                  },
-                  "SystemMessage": {
-                    "title": "SystemMessage",
-                    "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "system",
-                        "enum": [
-                          "system"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "FunctionMessage": {
-                    "title": "FunctionMessage",
-                    "description": "Message for passing the result of executing a function back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "function",
-                        "enum": [
-                          "function"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "name"
-                    ]
-                  },
-                  "ToolMessage": {
-                    "title": "ToolMessage",
-                    "description": "Message for passing the result of executing a tool back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "tool",
-                        "enum": [
-                          "tool"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "tool_call_id": {
-                        "title": "Tool Call Id",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "tool_call_id"
-                    ]
-                  },
-                  "ChatPromptValueConcrete": {
-                    "title": "ChatPromptValueConcrete",
-                    "description": "Chat prompt value which explicitly lists out the message types it accepts.\nFor use in external schemas.",
-                    "type": "object",
-                    "properties": {
-                      "messages": {
-                        "title": "Messages",
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "$ref": "#/definitions/AIMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/HumanMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ChatMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/SystemMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/FunctionMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ToolMessage"
-                            }
-                          ]
-                        }
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ChatPromptValueConcrete",
-                        "enum": [
-                          "ChatPromptValueConcrete"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "messages"
-                    ]
-                  }
-                }
-              }
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "llms",
-                  "openai",
-                  "OpenAI"
-                ],
-                "name": "OpenAI"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": {
-                "title": "OpenAIOutput",
-                "type": "string"
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
-      },
       "prompt": {
         "lc": 1,
         "type": "constructor",
@@ -556,8 +85,7 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string",
-          "partial_variables": {}
+          "template_format": "f-string"
         },
         "name": "PromptTemplate",
         "graph": {
@@ -565,16 +93,7 @@
             {
               "id": 0,
               "type": "schema",
-              "data": {
-                "title": "PromptInput",
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  }
-                }
-              }
+              "data": "PromptInput"
             },
             {
               "id": 1,
@@ -592,388 +111,7 @@
             {
               "id": 2,
               "type": "schema",
-              "data": {
-                "title": "PromptTemplateOutput",
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/StringPromptValue"
-                  },
-                  {
-                    "$ref": "#/definitions/ChatPromptValueConcrete"
-                  }
-                ],
-                "definitions": {
-                  "StringPromptValue": {
-                    "title": "StringPromptValue",
-                    "description": "String prompt value.",
-                    "type": "object",
-                    "properties": {
-                      "text": {
-                        "title": "Text",
-                        "type": "string"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "StringPromptValue",
-                        "enum": [
-                          "StringPromptValue"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "text"
-                    ]
-                  },
-                  "AIMessage": {
-                    "title": "AIMessage",
-                    "description": "Message from an AI.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ai",
-                        "enum": [
-                          "ai"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "HumanMessage": {
-                    "title": "HumanMessage",
-                    "description": "Message from a human.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "human",
-                        "enum": [
-                          "human"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "ChatMessage": {
-                    "title": "ChatMessage",
-                    "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "chat",
-                        "enum": [
-                          "chat"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "role": {
-                        "title": "Role",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "role"
-                    ]
-                  },
-                  "SystemMessage": {
-                    "title": "SystemMessage",
-                    "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "system",
-                        "enum": [
-                          "system"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "FunctionMessage": {
-                    "title": "FunctionMessage",
-                    "description": "Message for passing the result of executing a function back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "function",
-                        "enum": [
-                          "function"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "name"
-                    ]
-                  },
-                  "ToolMessage": {
-                    "title": "ToolMessage",
-                    "description": "Message for passing the result of executing a tool back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "tool",
-                        "enum": [
-                          "tool"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "tool_call_id": {
-                        "title": "Tool Call Id",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "tool_call_id"
-                    ]
-                  },
-                  "ChatPromptValueConcrete": {
-                    "title": "ChatPromptValueConcrete",
-                    "description": "Chat prompt value which explicitly lists out the message types it accepts.\nFor use in external schemas.",
-                    "type": "object",
-                    "properties": {
-                      "messages": {
-                        "title": "Messages",
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "$ref": "#/definitions/AIMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/HumanMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ChatMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/SystemMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/FunctionMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ToolMessage"
-                            }
-                          ]
-                        }
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ChatPromptValueConcrete",
-                        "enum": [
-                          "ChatPromptValueConcrete"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "messages"
-                    ]
-                  }
-                }
-              }
+              "data": "PromptTemplateOutput"
             }
           ],
           "edges": [
@@ -987,7 +125,125 @@
             }
           ]
         }
-      }
+      },
+      "llm": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "llms",
+          "openai",
+          "OpenAI"
+        ],
+        "kwargs": {
+          "model_name": "davinci",
+          "temperature": 0.5,
+          "max_tokens": 256,
+          "top_p": 1,
+          "n": 1,
+          "best_of": 1,
+          "openai_api_key": {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+              "OPENAI_API_KEY"
+            ]
+          },
+          "openai_proxy": "",
+          "batch_size": 20,
+          "max_retries": 2,
+          "disallowed_special": "all"
+        },
+        "name": "OpenAI",
+        "graph": {
+          "nodes": [
+            {
+              "id": 0,
+              "type": "schema",
+              "data": "OpenAIInput"
+            },
+            {
+              "id": 1,
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "llms",
+                  "openai",
+                  "OpenAI"
+                ],
+                "name": "OpenAI"
+              }
+            },
+            {
+              "id": 2,
+              "type": "schema",
+              "data": "OpenAIOutput"
+            }
+          ],
+          "edges": [
+            {
+              "source": 0,
+              "target": 1
+            },
+            {
+              "source": 1,
+              "target": 2
+            }
+          ]
+        }
+      },
+      "output_key": "text",
+      "output_parser": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "schema",
+          "output_parser",
+          "StrOutputParser"
+        ],
+        "kwargs": {},
+        "name": "StrOutputParser",
+        "graph": {
+          "nodes": [
+            {
+              "id": 0,
+              "type": "schema",
+              "data": "StrOutputParserInput"
+            },
+            {
+              "id": 1,
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "schema",
+                  "output_parser",
+                  "StrOutputParser"
+                ],
+                "name": "StrOutputParser"
+              }
+            },
+            {
+              "id": 2,
+              "type": "schema",
+              "data": "StrOutputParserOutput"
+            }
+          ],
+          "edges": [
+            {
+              "source": 0,
+              "target": 1
+            },
+            {
+              "source": 1,
+              "target": 2
+            }
+          ]
+        }
+      },
+      "return_final_only": true
     },
     "name": "LLMChain",
     "graph": {
@@ -995,15 +251,7 @@
         {
           "id": 0,
           "type": "schema",
-          "data": {
-            "title": "ChainInput",
-            "type": "object",
-            "properties": {
-              "name": {
-                "title": "Name"
-              }
-            }
-          }
+          "data": "ChainInput"
         },
         {
           "id": 1,
@@ -1021,15 +269,7 @@
         {
           "id": 2,
           "type": "schema",
-          "data": {
-            "title": "ChainOutput",
-            "type": "object",
-            "properties": {
-              "text": {
-                "title": "Text"
-              }
-            }
-          }
+          "data": "ChainOutput"
         }
       ],
       "edges": [
@@ -1058,801 +298,6 @@
       "LLMChain"
     ],
     "kwargs": {
-      "llm": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "chat_models",
-          "openai",
-          "ChatOpenAI"
-        ],
-        "kwargs": {
-          "model": "davinci",
-          "temperature": 0.5,
-          "openai_api_key": {
-            "lc": 1,
-            "type": "secret",
-            "id": [
-              "OPENAI_API_KEY"
-            ]
-          }
-        },
-        "name": "ChatOpenAI",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": {
-                "title": "ChatOpenAIInput",
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "$ref": "#/definitions/StringPromptValue"
-                  },
-                  {
-                    "$ref": "#/definitions/ChatPromptValueConcrete"
-                  },
-                  {
-                    "type": "array",
-                    "items": {
-                      "anyOf": [
-                        {
-                          "$ref": "#/definitions/AIMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/HumanMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/ChatMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/SystemMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/FunctionMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/ToolMessage"
-                        }
-                      ]
-                    }
-                  }
-                ],
-                "definitions": {
-                  "StringPromptValue": {
-                    "title": "StringPromptValue",
-                    "description": "String prompt value.",
-                    "type": "object",
-                    "properties": {
-                      "text": {
-                        "title": "Text",
-                        "type": "string"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "StringPromptValue",
-                        "enum": [
-                          "StringPromptValue"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "text"
-                    ]
-                  },
-                  "AIMessage": {
-                    "title": "AIMessage",
-                    "description": "Message from an AI.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ai",
-                        "enum": [
-                          "ai"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "HumanMessage": {
-                    "title": "HumanMessage",
-                    "description": "Message from a human.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "human",
-                        "enum": [
-                          "human"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "ChatMessage": {
-                    "title": "ChatMessage",
-                    "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "chat",
-                        "enum": [
-                          "chat"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "role": {
-                        "title": "Role",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "role"
-                    ]
-                  },
-                  "SystemMessage": {
-                    "title": "SystemMessage",
-                    "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "system",
-                        "enum": [
-                          "system"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "FunctionMessage": {
-                    "title": "FunctionMessage",
-                    "description": "Message for passing the result of executing a function back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "function",
-                        "enum": [
-                          "function"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "name"
-                    ]
-                  },
-                  "ToolMessage": {
-                    "title": "ToolMessage",
-                    "description": "Message for passing the result of executing a tool back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "tool",
-                        "enum": [
-                          "tool"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "tool_call_id": {
-                        "title": "Tool Call Id",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "tool_call_id"
-                    ]
-                  },
-                  "ChatPromptValueConcrete": {
-                    "title": "ChatPromptValueConcrete",
-                    "description": "Chat prompt value which explicitly lists out the message types it accepts.\nFor use in external schemas.",
-                    "type": "object",
-                    "properties": {
-                      "messages": {
-                        "title": "Messages",
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "$ref": "#/definitions/AIMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/HumanMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ChatMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/SystemMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/FunctionMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ToolMessage"
-                            }
-                          ]
-                        }
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ChatPromptValueConcrete",
-                        "enum": [
-                          "ChatPromptValueConcrete"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "messages"
-                    ]
-                  }
-                }
-              }
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "chat_models",
-                  "openai",
-                  "ChatOpenAI"
-                ],
-                "name": "ChatOpenAI"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": {
-                "title": "ChatOpenAIOutput",
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/AIMessage"
-                  },
-                  {
-                    "$ref": "#/definitions/HumanMessage"
-                  },
-                  {
-                    "$ref": "#/definitions/ChatMessage"
-                  },
-                  {
-                    "$ref": "#/definitions/SystemMessage"
-                  },
-                  {
-                    "$ref": "#/definitions/FunctionMessage"
-                  },
-                  {
-                    "$ref": "#/definitions/ToolMessage"
-                  }
-                ],
-                "definitions": {
-                  "AIMessage": {
-                    "title": "AIMessage",
-                    "description": "Message from an AI.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ai",
-                        "enum": [
-                          "ai"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "HumanMessage": {
-                    "title": "HumanMessage",
-                    "description": "Message from a human.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "human",
-                        "enum": [
-                          "human"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "ChatMessage": {
-                    "title": "ChatMessage",
-                    "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "chat",
-                        "enum": [
-                          "chat"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "role": {
-                        "title": "Role",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "role"
-                    ]
-                  },
-                  "SystemMessage": {
-                    "title": "SystemMessage",
-                    "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "system",
-                        "enum": [
-                          "system"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "FunctionMessage": {
-                    "title": "FunctionMessage",
-                    "description": "Message for passing the result of executing a function back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "function",
-                        "enum": [
-                          "function"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "name"
-                    ]
-                  },
-                  "ToolMessage": {
-                    "title": "ToolMessage",
-                    "description": "Message for passing the result of executing a tool back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "tool",
-                        "enum": [
-                          "tool"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "tool_call_id": {
-                        "title": "Tool Call Id",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "tool_call_id"
-                    ]
-                  }
-                }
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
-      },
       "prompt": {
         "lc": 1,
         "type": "constructor",
@@ -1891,8 +336,7 @@
                       "name"
                     ],
                     "template": "hello {name}!",
-                    "template_format": "f-string",
-                    "partial_variables": {}
+                    "template_format": "f-string"
                   },
                   "name": "PromptTemplate",
                   "graph": {
@@ -1900,16 +344,7 @@
                       {
                         "id": 0,
                         "type": "schema",
-                        "data": {
-                          "title": "PromptInput",
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "title": "Name",
-                              "type": "string"
-                            }
-                          }
-                        }
+                        "data": "PromptInput"
                       },
                       {
                         "id": 1,
@@ -1927,388 +362,7 @@
                       {
                         "id": 2,
                         "type": "schema",
-                        "data": {
-                          "title": "PromptTemplateOutput",
-                          "anyOf": [
-                            {
-                              "$ref": "#/definitions/StringPromptValue"
-                            },
-                            {
-                              "$ref": "#/definitions/ChatPromptValueConcrete"
-                            }
-                          ],
-                          "definitions": {
-                            "StringPromptValue": {
-                              "title": "StringPromptValue",
-                              "description": "String prompt value.",
-                              "type": "object",
-                              "properties": {
-                                "text": {
-                                  "title": "Text",
-                                  "type": "string"
-                                },
-                                "type": {
-                                  "title": "Type",
-                                  "default": "StringPromptValue",
-                                  "enum": [
-                                    "StringPromptValue"
-                                  ],
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "text"
-                              ]
-                            },
-                            "AIMessage": {
-                              "title": "AIMessage",
-                              "description": "Message from an AI.",
-                              "type": "object",
-                              "properties": {
-                                "content": {
-                                  "title": "Content",
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "array",
-                                      "items": {
-                                        "anyOf": [
-                                          {
-                                            "type": "string"
-                                          },
-                                          {
-                                            "type": "object"
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                },
-                                "additional_kwargs": {
-                                  "title": "Additional Kwargs",
-                                  "type": "object"
-                                },
-                                "type": {
-                                  "title": "Type",
-                                  "default": "ai",
-                                  "enum": [
-                                    "ai"
-                                  ],
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "title": "Name",
-                                  "type": "string"
-                                },
-                                "example": {
-                                  "title": "Example",
-                                  "default": false,
-                                  "type": "boolean"
-                                }
-                              },
-                              "required": [
-                                "content"
-                              ]
-                            },
-                            "HumanMessage": {
-                              "title": "HumanMessage",
-                              "description": "Message from a human.",
-                              "type": "object",
-                              "properties": {
-                                "content": {
-                                  "title": "Content",
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "array",
-                                      "items": {
-                                        "anyOf": [
-                                          {
-                                            "type": "string"
-                                          },
-                                          {
-                                            "type": "object"
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                },
-                                "additional_kwargs": {
-                                  "title": "Additional Kwargs",
-                                  "type": "object"
-                                },
-                                "type": {
-                                  "title": "Type",
-                                  "default": "human",
-                                  "enum": [
-                                    "human"
-                                  ],
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "title": "Name",
-                                  "type": "string"
-                                },
-                                "example": {
-                                  "title": "Example",
-                                  "default": false,
-                                  "type": "boolean"
-                                }
-                              },
-                              "required": [
-                                "content"
-                              ]
-                            },
-                            "ChatMessage": {
-                              "title": "ChatMessage",
-                              "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
-                              "type": "object",
-                              "properties": {
-                                "content": {
-                                  "title": "Content",
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "array",
-                                      "items": {
-                                        "anyOf": [
-                                          {
-                                            "type": "string"
-                                          },
-                                          {
-                                            "type": "object"
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                },
-                                "additional_kwargs": {
-                                  "title": "Additional Kwargs",
-                                  "type": "object"
-                                },
-                                "type": {
-                                  "title": "Type",
-                                  "default": "chat",
-                                  "enum": [
-                                    "chat"
-                                  ],
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "title": "Name",
-                                  "type": "string"
-                                },
-                                "role": {
-                                  "title": "Role",
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "content",
-                                "role"
-                              ]
-                            },
-                            "SystemMessage": {
-                              "title": "SystemMessage",
-                              "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
-                              "type": "object",
-                              "properties": {
-                                "content": {
-                                  "title": "Content",
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "array",
-                                      "items": {
-                                        "anyOf": [
-                                          {
-                                            "type": "string"
-                                          },
-                                          {
-                                            "type": "object"
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                },
-                                "additional_kwargs": {
-                                  "title": "Additional Kwargs",
-                                  "type": "object"
-                                },
-                                "type": {
-                                  "title": "Type",
-                                  "default": "system",
-                                  "enum": [
-                                    "system"
-                                  ],
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "title": "Name",
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "content"
-                              ]
-                            },
-                            "FunctionMessage": {
-                              "title": "FunctionMessage",
-                              "description": "Message for passing the result of executing a function back to a model.",
-                              "type": "object",
-                              "properties": {
-                                "content": {
-                                  "title": "Content",
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "array",
-                                      "items": {
-                                        "anyOf": [
-                                          {
-                                            "type": "string"
-                                          },
-                                          {
-                                            "type": "object"
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                },
-                                "additional_kwargs": {
-                                  "title": "Additional Kwargs",
-                                  "type": "object"
-                                },
-                                "type": {
-                                  "title": "Type",
-                                  "default": "function",
-                                  "enum": [
-                                    "function"
-                                  ],
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "title": "Name",
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "content",
-                                "name"
-                              ]
-                            },
-                            "ToolMessage": {
-                              "title": "ToolMessage",
-                              "description": "Message for passing the result of executing a tool back to a model.",
-                              "type": "object",
-                              "properties": {
-                                "content": {
-                                  "title": "Content",
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "array",
-                                      "items": {
-                                        "anyOf": [
-                                          {
-                                            "type": "string"
-                                          },
-                                          {
-                                            "type": "object"
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                },
-                                "additional_kwargs": {
-                                  "title": "Additional Kwargs",
-                                  "type": "object"
-                                },
-                                "type": {
-                                  "title": "Type",
-                                  "default": "tool",
-                                  "enum": [
-                                    "tool"
-                                  ],
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "title": "Name",
-                                  "type": "string"
-                                },
-                                "tool_call_id": {
-                                  "title": "Tool Call Id",
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "content",
-                                "tool_call_id"
-                              ]
-                            },
-                            "ChatPromptValueConcrete": {
-                              "title": "ChatPromptValueConcrete",
-                              "description": "Chat prompt value which explicitly lists out the message types it accepts.\nFor use in external schemas.",
-                              "type": "object",
-                              "properties": {
-                                "messages": {
-                                  "title": "Messages",
-                                  "type": "array",
-                                  "items": {
-                                    "anyOf": [
-                                      {
-                                        "$ref": "#/definitions/AIMessage"
-                                      },
-                                      {
-                                        "$ref": "#/definitions/HumanMessage"
-                                      },
-                                      {
-                                        "$ref": "#/definitions/ChatMessage"
-                                      },
-                                      {
-                                        "$ref": "#/definitions/SystemMessage"
-                                      },
-                                      {
-                                        "$ref": "#/definitions/FunctionMessage"
-                                      },
-                                      {
-                                        "$ref": "#/definitions/ToolMessage"
-                                      }
-                                    ]
-                                  }
-                                },
-                                "type": {
-                                  "title": "Type",
-                                  "default": "ChatPromptValueConcrete",
-                                  "enum": [
-                                    "ChatPromptValueConcrete"
-                                  ],
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "messages"
-                              ]
-                            }
-                          }
-                        }
+                        "data": "PromptTemplateOutput"
                       }
                     ],
                     "edges": [
@@ -2325,8 +379,7 @@
                 }
               }
             }
-          ],
-          "partial_variables": {}
+          ]
         },
         "name": "ChatPromptTemplate",
         "graph": {
@@ -2334,16 +387,7 @@
             {
               "id": 0,
               "type": "schema",
-              "data": {
-                "title": "PromptInput",
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  }
-                }
-              }
+              "data": "PromptInput"
             },
             {
               "id": 1,
@@ -2361,388 +405,7 @@
             {
               "id": 2,
               "type": "schema",
-              "data": {
-                "title": "ChatPromptTemplateOutput",
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/StringPromptValue"
-                  },
-                  {
-                    "$ref": "#/definitions/ChatPromptValueConcrete"
-                  }
-                ],
-                "definitions": {
-                  "StringPromptValue": {
-                    "title": "StringPromptValue",
-                    "description": "String prompt value.",
-                    "type": "object",
-                    "properties": {
-                      "text": {
-                        "title": "Text",
-                        "type": "string"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "StringPromptValue",
-                        "enum": [
-                          "StringPromptValue"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "text"
-                    ]
-                  },
-                  "AIMessage": {
-                    "title": "AIMessage",
-                    "description": "Message from an AI.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ai",
-                        "enum": [
-                          "ai"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "HumanMessage": {
-                    "title": "HumanMessage",
-                    "description": "Message from a human.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "human",
-                        "enum": [
-                          "human"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "ChatMessage": {
-                    "title": "ChatMessage",
-                    "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "chat",
-                        "enum": [
-                          "chat"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "role": {
-                        "title": "Role",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "role"
-                    ]
-                  },
-                  "SystemMessage": {
-                    "title": "SystemMessage",
-                    "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "system",
-                        "enum": [
-                          "system"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "FunctionMessage": {
-                    "title": "FunctionMessage",
-                    "description": "Message for passing the result of executing a function back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "function",
-                        "enum": [
-                          "function"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "name"
-                    ]
-                  },
-                  "ToolMessage": {
-                    "title": "ToolMessage",
-                    "description": "Message for passing the result of executing a tool back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "tool",
-                        "enum": [
-                          "tool"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "tool_call_id": {
-                        "title": "Tool Call Id",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "tool_call_id"
-                    ]
-                  },
-                  "ChatPromptValueConcrete": {
-                    "title": "ChatPromptValueConcrete",
-                    "description": "Chat prompt value which explicitly lists out the message types it accepts.\nFor use in external schemas.",
-                    "type": "object",
-                    "properties": {
-                      "messages": {
-                        "title": "Messages",
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "$ref": "#/definitions/AIMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/HumanMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ChatMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/SystemMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/FunctionMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ToolMessage"
-                            }
-                          ]
-                        }
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ChatPromptValueConcrete",
-                        "enum": [
-                          "ChatPromptValueConcrete"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "messages"
-                    ]
-                  }
-                }
-              }
+              "data": "ChatPromptTemplateOutput"
             }
           ],
           "edges": [
@@ -2756,7 +419,120 @@
             }
           ]
         }
-      }
+      },
+      "llm": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "chat_models",
+          "openai",
+          "ChatOpenAI"
+        ],
+        "kwargs": {
+          "model_name": "davinci",
+          "temperature": 0.5,
+          "openai_api_key": {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+              "OPENAI_API_KEY"
+            ]
+          },
+          "openai_proxy": "",
+          "max_retries": 2,
+          "n": 1
+        },
+        "name": "ChatOpenAI",
+        "graph": {
+          "nodes": [
+            {
+              "id": 0,
+              "type": "schema",
+              "data": "ChatOpenAIInput"
+            },
+            {
+              "id": 1,
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "chat_models",
+                  "openai",
+                  "ChatOpenAI"
+                ],
+                "name": "ChatOpenAI"
+              }
+            },
+            {
+              "id": 2,
+              "type": "schema",
+              "data": "ChatOpenAIOutput"
+            }
+          ],
+          "edges": [
+            {
+              "source": 0,
+              "target": 1
+            },
+            {
+              "source": 1,
+              "target": 2
+            }
+          ]
+        }
+      },
+      "output_key": "text",
+      "output_parser": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "schema",
+          "output_parser",
+          "StrOutputParser"
+        ],
+        "kwargs": {},
+        "name": "StrOutputParser",
+        "graph": {
+          "nodes": [
+            {
+              "id": 0,
+              "type": "schema",
+              "data": "StrOutputParserInput"
+            },
+            {
+              "id": 1,
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "schema",
+                  "output_parser",
+                  "StrOutputParser"
+                ],
+                "name": "StrOutputParser"
+              }
+            },
+            {
+              "id": 2,
+              "type": "schema",
+              "data": "StrOutputParserOutput"
+            }
+          ],
+          "edges": [
+            {
+              "source": 0,
+              "target": 1
+            },
+            {
+              "source": 1,
+              "target": 2
+            }
+          ]
+        }
+      },
+      "return_final_only": true
     },
     "name": "LLMChain",
     "graph": {
@@ -2764,15 +540,7 @@
         {
           "id": 0,
           "type": "schema",
-          "data": {
-            "title": "ChainInput",
-            "type": "object",
-            "properties": {
-              "name": {
-                "title": "Name"
-              }
-            }
-          }
+          "data": "ChainInput"
         },
         {
           "id": 1,
@@ -2790,15 +558,7 @@
         {
           "id": 2,
           "type": "schema",
-          "data": {
-            "title": "ChainOutput",
-            "type": "object",
-            "properties": {
-              "text": {
-                "title": "Text"
-              }
-            }
-          }
+          "data": "ChainOutput"
         }
       ],
       "edges": [
@@ -2827,477 +587,6 @@
       "LLMChain"
     ],
     "kwargs": {
-      "llm": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "llms",
-          "openai",
-          "OpenAI"
-        ],
-        "kwargs": {
-          "model": "davinci",
-          "temperature": 0.5,
-          "openai_api_key": {
-            "lc": 1,
-            "type": "secret",
-            "id": [
-              "OPENAI_API_KEY"
-            ]
-          }
-        },
-        "name": "OpenAI",
-        "graph": {
-          "nodes": [
-            {
-              "id": 0,
-              "type": "schema",
-              "data": {
-                "title": "OpenAIInput",
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "$ref": "#/definitions/StringPromptValue"
-                  },
-                  {
-                    "$ref": "#/definitions/ChatPromptValueConcrete"
-                  },
-                  {
-                    "type": "array",
-                    "items": {
-                      "anyOf": [
-                        {
-                          "$ref": "#/definitions/AIMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/HumanMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/ChatMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/SystemMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/FunctionMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/ToolMessage"
-                        }
-                      ]
-                    }
-                  }
-                ],
-                "definitions": {
-                  "StringPromptValue": {
-                    "title": "StringPromptValue",
-                    "description": "String prompt value.",
-                    "type": "object",
-                    "properties": {
-                      "text": {
-                        "title": "Text",
-                        "type": "string"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "StringPromptValue",
-                        "enum": [
-                          "StringPromptValue"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "text"
-                    ]
-                  },
-                  "AIMessage": {
-                    "title": "AIMessage",
-                    "description": "Message from an AI.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ai",
-                        "enum": [
-                          "ai"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "HumanMessage": {
-                    "title": "HumanMessage",
-                    "description": "Message from a human.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "human",
-                        "enum": [
-                          "human"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "ChatMessage": {
-                    "title": "ChatMessage",
-                    "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "chat",
-                        "enum": [
-                          "chat"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "role": {
-                        "title": "Role",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "role"
-                    ]
-                  },
-                  "SystemMessage": {
-                    "title": "SystemMessage",
-                    "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "system",
-                        "enum": [
-                          "system"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "FunctionMessage": {
-                    "title": "FunctionMessage",
-                    "description": "Message for passing the result of executing a function back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "function",
-                        "enum": [
-                          "function"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "name"
-                    ]
-                  },
-                  "ToolMessage": {
-                    "title": "ToolMessage",
-                    "description": "Message for passing the result of executing a tool back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "tool",
-                        "enum": [
-                          "tool"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "tool_call_id": {
-                        "title": "Tool Call Id",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "tool_call_id"
-                    ]
-                  },
-                  "ChatPromptValueConcrete": {
-                    "title": "ChatPromptValueConcrete",
-                    "description": "Chat prompt value which explicitly lists out the message types it accepts.\nFor use in external schemas.",
-                    "type": "object",
-                    "properties": {
-                      "messages": {
-                        "title": "Messages",
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "$ref": "#/definitions/AIMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/HumanMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ChatMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/SystemMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/FunctionMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ToolMessage"
-                            }
-                          ]
-                        }
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ChatPromptValueConcrete",
-                        "enum": [
-                          "ChatPromptValueConcrete"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "messages"
-                    ]
-                  }
-                }
-              }
-            },
-            {
-              "id": 1,
-              "type": "runnable",
-              "data": {
-                "id": [
-                  "langchain",
-                  "llms",
-                  "openai",
-                  "OpenAI"
-                ],
-                "name": "OpenAI"
-              }
-            },
-            {
-              "id": 2,
-              "type": "schema",
-              "data": {
-                "title": "OpenAIOutput",
-                "type": "string"
-              }
-            }
-          ],
-          "edges": [
-            {
-              "source": 0,
-              "target": 1
-            },
-            {
-              "source": 1,
-              "target": 2
-            }
-          ]
-        }
-      },
       "prompt": {
         "lc": 1,
         "type": "constructor",
@@ -3312,8 +601,7 @@
             "name"
           ],
           "template": "hello {name}!",
-          "template_format": "f-string",
-          "partial_variables": {}
+          "template_format": "f-string"
         },
         "name": "PromptTemplate",
         "graph": {
@@ -3321,16 +609,7 @@
             {
               "id": 0,
               "type": "schema",
-              "data": {
-                "title": "PromptInput",
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  }
-                }
-              }
+              "data": "PromptInput"
             },
             {
               "id": 1,
@@ -3348,388 +627,7 @@
             {
               "id": 2,
               "type": "schema",
-              "data": {
-                "title": "PromptTemplateOutput",
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/StringPromptValue"
-                  },
-                  {
-                    "$ref": "#/definitions/ChatPromptValueConcrete"
-                  }
-                ],
-                "definitions": {
-                  "StringPromptValue": {
-                    "title": "StringPromptValue",
-                    "description": "String prompt value.",
-                    "type": "object",
-                    "properties": {
-                      "text": {
-                        "title": "Text",
-                        "type": "string"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "StringPromptValue",
-                        "enum": [
-                          "StringPromptValue"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "text"
-                    ]
-                  },
-                  "AIMessage": {
-                    "title": "AIMessage",
-                    "description": "Message from an AI.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ai",
-                        "enum": [
-                          "ai"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "HumanMessage": {
-                    "title": "HumanMessage",
-                    "description": "Message from a human.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "human",
-                        "enum": [
-                          "human"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "example": {
-                        "title": "Example",
-                        "default": false,
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "ChatMessage": {
-                    "title": "ChatMessage",
-                    "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "chat",
-                        "enum": [
-                          "chat"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "role": {
-                        "title": "Role",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "role"
-                    ]
-                  },
-                  "SystemMessage": {
-                    "title": "SystemMessage",
-                    "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "system",
-                        "enum": [
-                          "system"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content"
-                    ]
-                  },
-                  "FunctionMessage": {
-                    "title": "FunctionMessage",
-                    "description": "Message for passing the result of executing a function back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "function",
-                        "enum": [
-                          "function"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "name"
-                    ]
-                  },
-                  "ToolMessage": {
-                    "title": "ToolMessage",
-                    "description": "Message for passing the result of executing a tool back to a model.",
-                    "type": "object",
-                    "properties": {
-                      "content": {
-                        "title": "Content",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "array",
-                            "items": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "object"
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      },
-                      "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object"
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "tool",
-                        "enum": [
-                          "tool"
-                        ],
-                        "type": "string"
-                      },
-                      "name": {
-                        "title": "Name",
-                        "type": "string"
-                      },
-                      "tool_call_id": {
-                        "title": "Tool Call Id",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "content",
-                      "tool_call_id"
-                    ]
-                  },
-                  "ChatPromptValueConcrete": {
-                    "title": "ChatPromptValueConcrete",
-                    "description": "Chat prompt value which explicitly lists out the message types it accepts.\nFor use in external schemas.",
-                    "type": "object",
-                    "properties": {
-                      "messages": {
-                        "title": "Messages",
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "$ref": "#/definitions/AIMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/HumanMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ChatMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/SystemMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/FunctionMessage"
-                            },
-                            {
-                              "$ref": "#/definitions/ToolMessage"
-                            }
-                          ]
-                        }
-                      },
-                      "type": {
-                        "title": "Type",
-                        "default": "ChatPromptValueConcrete",
-                        "enum": [
-                          "ChatPromptValueConcrete"
-                        ],
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "messages"
-                    ]
-                  }
-                }
-              }
+              "data": "PromptTemplateOutput"
             }
           ],
           "edges": [
@@ -3743,7 +641,125 @@
             }
           ]
         }
-      }
+      },
+      "llm": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "llms",
+          "openai",
+          "OpenAI"
+        ],
+        "kwargs": {
+          "model_name": "davinci",
+          "temperature": 0.5,
+          "max_tokens": 256,
+          "top_p": 1,
+          "n": 1,
+          "best_of": 1,
+          "openai_api_key": {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+              "OPENAI_API_KEY"
+            ]
+          },
+          "openai_proxy": "",
+          "batch_size": 20,
+          "max_retries": 2,
+          "disallowed_special": "all"
+        },
+        "name": "OpenAI",
+        "graph": {
+          "nodes": [
+            {
+              "id": 0,
+              "type": "schema",
+              "data": "OpenAIInput"
+            },
+            {
+              "id": 1,
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "llms",
+                  "openai",
+                  "OpenAI"
+                ],
+                "name": "OpenAI"
+              }
+            },
+            {
+              "id": 2,
+              "type": "schema",
+              "data": "OpenAIOutput"
+            }
+          ],
+          "edges": [
+            {
+              "source": 0,
+              "target": 1
+            },
+            {
+              "source": 1,
+              "target": 2
+            }
+          ]
+        }
+      },
+      "output_key": "text",
+      "output_parser": {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+          "langchain",
+          "schema",
+          "output_parser",
+          "StrOutputParser"
+        ],
+        "kwargs": {},
+        "name": "StrOutputParser",
+        "graph": {
+          "nodes": [
+            {
+              "id": 0,
+              "type": "schema",
+              "data": "StrOutputParserInput"
+            },
+            {
+              "id": 1,
+              "type": "runnable",
+              "data": {
+                "id": [
+                  "langchain",
+                  "schema",
+                  "output_parser",
+                  "StrOutputParser"
+                ],
+                "name": "StrOutputParser"
+              }
+            },
+            {
+              "id": 2,
+              "type": "schema",
+              "data": "StrOutputParserOutput"
+            }
+          ],
+          "edges": [
+            {
+              "source": 0,
+              "target": 1
+            },
+            {
+              "source": 1,
+              "target": 2
+            }
+          ]
+        }
+      },
+      "return_final_only": true
     },
     "name": "LLMChain",
     "graph": {
@@ -3751,15 +767,7 @@
         {
           "id": 0,
           "type": "schema",
-          "data": {
-            "title": "ChainInput",
-            "type": "object",
-            "properties": {
-              "name": {
-                "title": "Name"
-              }
-            }
-          }
+          "data": "ChainInput"
         },
         {
           "id": 1,
@@ -3777,15 +785,7 @@
         {
           "id": 2,
           "type": "schema",
-          "data": {
-            "title": "ChainOutput",
-            "type": "object",
-            "properties": {
-              "text": {
-                "title": "Text"
-              }
-            }
-          }
+          "data": "ChainOutput"
         }
       ],
       "edges": [
@@ -3814,15 +814,23 @@
       "OpenAI"
     ],
     "kwargs": {
-      "model": "davinci",
+      "model_name": "davinci",
       "temperature": 0.7,
+      "max_tokens": 256,
+      "top_p": 1,
+      "n": 1,
+      "best_of": 1,
       "openai_api_key": {
         "lc": 1,
         "type": "secret",
         "id": [
           "OPENAI_API_KEY"
         ]
-      }
+      },
+      "openai_proxy": "",
+      "batch_size": 20,
+      "max_retries": 2,
+      "disallowed_special": "all"
     },
     "name": "OpenAI",
     "graph": {
@@ -3830,416 +838,7 @@
         {
           "id": 0,
           "type": "schema",
-          "data": {
-            "title": "OpenAIInput",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "$ref": "#/definitions/StringPromptValue"
-              },
-              {
-                "$ref": "#/definitions/ChatPromptValueConcrete"
-              },
-              {
-                "type": "array",
-                "items": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/definitions/AIMessage"
-                    },
-                    {
-                      "$ref": "#/definitions/HumanMessage"
-                    },
-                    {
-                      "$ref": "#/definitions/ChatMessage"
-                    },
-                    {
-                      "$ref": "#/definitions/SystemMessage"
-                    },
-                    {
-                      "$ref": "#/definitions/FunctionMessage"
-                    },
-                    {
-                      "$ref": "#/definitions/ToolMessage"
-                    }
-                  ]
-                }
-              }
-            ],
-            "definitions": {
-              "StringPromptValue": {
-                "title": "StringPromptValue",
-                "description": "String prompt value.",
-                "type": "object",
-                "properties": {
-                  "text": {
-                    "title": "Text",
-                    "type": "string"
-                  },
-                  "type": {
-                    "title": "Type",
-                    "default": "StringPromptValue",
-                    "enum": [
-                      "StringPromptValue"
-                    ],
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "text"
-                ]
-              },
-              "AIMessage": {
-                "title": "AIMessage",
-                "description": "Message from an AI.",
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "title": "Content",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "object"
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  "additional_kwargs": {
-                    "title": "Additional Kwargs",
-                    "type": "object"
-                  },
-                  "type": {
-                    "title": "Type",
-                    "default": "ai",
-                    "enum": [
-                      "ai"
-                    ],
-                    "type": "string"
-                  },
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  },
-                  "example": {
-                    "title": "Example",
-                    "default": false,
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "content"
-                ]
-              },
-              "HumanMessage": {
-                "title": "HumanMessage",
-                "description": "Message from a human.",
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "title": "Content",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "object"
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  "additional_kwargs": {
-                    "title": "Additional Kwargs",
-                    "type": "object"
-                  },
-                  "type": {
-                    "title": "Type",
-                    "default": "human",
-                    "enum": [
-                      "human"
-                    ],
-                    "type": "string"
-                  },
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  },
-                  "example": {
-                    "title": "Example",
-                    "default": false,
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "content"
-                ]
-              },
-              "ChatMessage": {
-                "title": "ChatMessage",
-                "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "title": "Content",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "object"
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  "additional_kwargs": {
-                    "title": "Additional Kwargs",
-                    "type": "object"
-                  },
-                  "type": {
-                    "title": "Type",
-                    "default": "chat",
-                    "enum": [
-                      "chat"
-                    ],
-                    "type": "string"
-                  },
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  },
-                  "role": {
-                    "title": "Role",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "content",
-                  "role"
-                ]
-              },
-              "SystemMessage": {
-                "title": "SystemMessage",
-                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "title": "Content",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "object"
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  "additional_kwargs": {
-                    "title": "Additional Kwargs",
-                    "type": "object"
-                  },
-                  "type": {
-                    "title": "Type",
-                    "default": "system",
-                    "enum": [
-                      "system"
-                    ],
-                    "type": "string"
-                  },
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "content"
-                ]
-              },
-              "FunctionMessage": {
-                "title": "FunctionMessage",
-                "description": "Message for passing the result of executing a function back to a model.",
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "title": "Content",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "object"
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  "additional_kwargs": {
-                    "title": "Additional Kwargs",
-                    "type": "object"
-                  },
-                  "type": {
-                    "title": "Type",
-                    "default": "function",
-                    "enum": [
-                      "function"
-                    ],
-                    "type": "string"
-                  },
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "content",
-                  "name"
-                ]
-              },
-              "ToolMessage": {
-                "title": "ToolMessage",
-                "description": "Message for passing the result of executing a tool back to a model.",
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "title": "Content",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "object"
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  "additional_kwargs": {
-                    "title": "Additional Kwargs",
-                    "type": "object"
-                  },
-                  "type": {
-                    "title": "Type",
-                    "default": "tool",
-                    "enum": [
-                      "tool"
-                    ],
-                    "type": "string"
-                  },
-                  "name": {
-                    "title": "Name",
-                    "type": "string"
-                  },
-                  "tool_call_id": {
-                    "title": "Tool Call Id",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "content",
-                  "tool_call_id"
-                ]
-              },
-              "ChatPromptValueConcrete": {
-                "title": "ChatPromptValueConcrete",
-                "description": "Chat prompt value which explicitly lists out the message types it accepts.\nFor use in external schemas.",
-                "type": "object",
-                "properties": {
-                  "messages": {
-                    "title": "Messages",
-                    "type": "array",
-                    "items": {
-                      "anyOf": [
-                        {
-                          "$ref": "#/definitions/AIMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/HumanMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/ChatMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/SystemMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/FunctionMessage"
-                        },
-                        {
-                          "$ref": "#/definitions/ToolMessage"
-                        }
-                      ]
-                    }
-                  },
-                  "type": {
-                    "title": "Type",
-                    "default": "ChatPromptValueConcrete",
-                    "enum": [
-                      "ChatPromptValueConcrete"
-                    ],
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "messages"
-                ]
-              }
-            }
-          }
+          "data": "OpenAIInput"
         },
         {
           "id": 1,
@@ -4257,10 +856,7 @@
         {
           "id": 2,
           "type": "schema",
-          "data": {
-            "title": "OpenAIOutput",
-            "type": "string"
-          }
+          "data": "OpenAIOutput"
         }
       ],
       "edges": [

@@ -5,6 +5,7 @@ from langchain_core.messages.base import (
     BaseMessageChunk,
     merge_content,
 )
+from langchain_core.utils._merge import merge_dicts
 
 
 class FunctionMessage(BaseMessage):
@@ -47,9 +48,13 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
             return self.__class__(
                 name=self.name,
                 content=merge_content(self.content, other.content),
-                additional_kwargs=self._merge_kwargs_dict(
+                additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
+                response_metadata=merge_dicts(
+                    self.response_metadata, other.response_metadata
+                ),
+                id=self.id,
             )
 
         return super().__add__(other)
