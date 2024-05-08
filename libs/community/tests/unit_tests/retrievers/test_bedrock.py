@@ -17,7 +17,9 @@ def mock_retriever_config() -> dict:
 
 
 @pytest.fixture
-def amazon_retriever(mock_client: MagicMock, mock_retriever_config: dict) -> AmazonKnowledgeBasesRetriever:
+def amazon_retriever(
+    mock_client: MagicMock, mock_retriever_config: dict
+) -> AmazonKnowledgeBasesRetriever:
     return AmazonKnowledgeBasesRetriever(
         knowledge_base_id="test_kb_id",
         retrieval_config=mock_retriever_config,
@@ -30,7 +32,9 @@ def test_create_client(amazon_retriever: AmazonKnowledgeBasesRetriever) -> None:
         amazon_retriever.create_client({})
 
 
-def test_get_relevant_documents(amazon_retriever: AmazonKnowledgeBasesRetriever, mock_client: MagicMock) -> None:
+def test_get_relevant_documents(
+    amazon_retriever: AmazonKnowledgeBasesRetriever, mock_client: MagicMock
+) -> None:
     query: str = "test query"
     mock_client.retrieve.return_value = {
         "retrievalResults": [
@@ -44,7 +48,9 @@ def test_get_relevant_documents(amazon_retriever: AmazonKnowledgeBasesRetriever,
             {"content": {"text": "result3"}},
         ]
     }
-    documents: list[Document] = amazon_retriever._get_relevant_documents(query, run_manager=None)
+    documents: list[Document] = amazon_retriever._get_relevant_documents(
+        query, run_manager=None
+    )
 
     assert len(documents) == 3
     assert isinstance(documents[0], Document)
