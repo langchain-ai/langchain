@@ -26,11 +26,23 @@ if TYPE_CHECKING:
 
 
 class LabelsDict(TypedDict):
+    """Dictionary of labels for nodes and edges in a graph."""
+
     nodes: dict[str, str]
+    """Labels for nodes."""
     edges: dict[str, str]
+    """Labels for edges."""
 
 
 def is_uuid(value: str) -> bool:
+    """Check if a string is a valid UUID.
+
+    Args:
+        value: The string to check.
+
+    Returns:
+        True if the string is a valid UUID, False otherwise.
+    """
     try:
         UUID(value)
         return True
@@ -95,6 +107,14 @@ class MermaidDrawMethod(Enum):
 
 
 def node_data_str(node: Node) -> str:
+    """Convert the data of a node to a string.
+
+    Args:
+        node: The node to convert.
+
+    Returns:
+        A string representation of the data.
+    """
     from langchain_core.runnables.base import Runnable
 
     if not is_uuid(node.id):
@@ -120,6 +140,16 @@ def node_data_str(node: Node) -> str:
 def node_data_json(
     node: Node, *, with_schemas: bool = False
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
+    """Convert the data of a node to a JSON-serializable format.
+
+    Args:
+        node: The node to convert.
+        with_schemas: Whether to include the schema of the data if
+            it is a Pydantic model.
+
+    Returns:
+        A dictionary with the type of the data and the data itself.
+    """
     from langchain_core.load.serializable import to_json_not_implemented
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 

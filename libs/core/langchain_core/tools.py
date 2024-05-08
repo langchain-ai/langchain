@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import textwrap
 import uuid
 import warnings
 from abc import ABC, abstractmethod
@@ -29,6 +30,7 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForToolRun,
@@ -559,6 +561,7 @@ class ChildTool(BaseTool):
             )
             return observation
 
+    @deprecated("0.1.47", alternative="invoke", removal="0.3.0")
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
         """Make tool callable."""
         return self.run(tool_input, callbacks=callbacks)
@@ -823,16 +826,19 @@ class StructuredTool(BaseTool):
         else:
             raise ValueError("Function and/or coroutine must be provided")
         name = name or source_function.__name__
-        description = description or source_function.__doc__
-        if description is None:
+        description_ = description or source_function.__doc__
+        if description_ is None:
             raise ValueError(
                 "Function must have a docstring if description not provided."
             )
+        if description is None:
+            # Only apply if using the function's docstring
+            description_ = textwrap.dedent(description_).strip()
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
         sig = signature(source_function)
-        description = f"{name}{sig} - {description.strip()}"
+        description_ = f"{name}{sig} - {description_.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
             # schema name is appended within function
@@ -842,7 +848,7 @@ class StructuredTool(BaseTool):
             func=func,
             coroutine=coroutine,
             args_schema=_args_schema,  # type: ignore[arg-type]
-            description=description,
+            description=description_,
             return_direct=return_direct,
             **kwargs,
         )
