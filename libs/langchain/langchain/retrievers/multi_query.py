@@ -178,7 +178,7 @@ class MultiQueryRetriever(BaseRetriever):
         response = self.llm_chain(
             {"question": question}, callbacks=run_manager.get_child()
         )
-        lines = response["text"]
+        lines = getattr(response["text"], self.parser_key, [])
         if self.verbose:
             logger.info(f"Generated queries: {lines}")
         return lines
