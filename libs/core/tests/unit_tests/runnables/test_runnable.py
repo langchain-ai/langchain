@@ -5508,3 +5508,34 @@ async def test_passthrough_atransform_with_dicts() -> None:
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
     assert chunks == [{"foo": "a"}, {"foo": "n"}]
+
+
+def test_runnable_lambda_no_collect() -> None:
+    """
+    Test that a runnable lambda does not collect input before processing,
+    instead processes each individual chunk when no_collect=True is passed.
+    When no_collect=False (default) the behavior should be as per default RunnableLambda
+    collecting all input then processing it.
+    """
+
+    def generate_values(input: Iterator[Any]) -> Iterator[int]:
+        yield 1
+        yield 2
+        yield 3
+        yield 4
+
+    def square(input: Input) -> int:
+        n = cast(int, input)
+        return n * n
+
+    expected_values = [1, 4, 9, 16]
+    runnable = RunnableGenerator(generate_values) | RunnableLambda(
+        square, no_collect=True
+    )
+    for i, value in enumerate(runnable.stream({"input": "some_input"})):
+        assert value == expected_values[i]
+
+    expected_values = [100]
+    runnable = RunnableGenerator(generate_values) | RunnableLambda(square)
+    for i, value in enumerate(runnable.stream({"input": "some_input"})):
+        assert value == expected_values[i]

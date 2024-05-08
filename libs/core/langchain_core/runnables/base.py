@@ -640,8 +640,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Output]]:
-        ...
+    ) -> Iterator[Tuple[int, Output]]: ...
 
     @overload
     def batch_as_completed(
@@ -651,8 +650,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
-        ...
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]: ...
 
     def batch_as_completed(
         self,
@@ -744,8 +742,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Output]]:
-        ...
+    ) -> AsyncIterator[Tuple[int, Output]]: ...
 
     @overload
     def abatch_as_completed(
@@ -755,8 +752,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
-        ...
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]: ...
 
     async def abatch_as_completed(
         self,
@@ -833,8 +829,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[RunLogPatch]:
-        ...
+    ) -> AsyncIterator[RunLogPatch]: ...
 
     @overload
     def astream_log(
@@ -851,8 +846,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[RunLog]:
-        ...
+    ) -> AsyncIterator[RunLog]: ...
 
     async def astream_log(
         self,
@@ -3632,6 +3626,7 @@ class RunnableLambda(Runnable[Input, Output]):
             ]
         ] = None,
         name: Optional[str] = None,
+        no_collect: bool = False,
     ) -> None:
         """Create a RunnableLambda from a callable, and async callable or both.
 
@@ -3641,6 +3636,9 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             func: Either sync or async callable
             afunc: An async callable that takes an input and returns an output.
+            no_collect: allow calling func for each chunk received from the
+                input instead of collecting all chunks and then processing the
+                whole content. This allows for streaming chunks as they change.
         """
         if afunc is not None:
             self.afunc = afunc
@@ -3663,6 +3661,9 @@ class RunnableLambda(Runnable[Input, Output]):
                 "Expected a callable type for `func`."
                 f"Instead got an unsupported type: {type(func)}"
             )
+
+        if no_collect is not None:
+            self.no_collect = no_collect
 
         try:
             if name is not None:
@@ -3996,58 +3997,68 @@ class RunnableLambda(Runnable[Input, Output]):
     ) -> Iterator[Output]:
         final: Input
         got_first_val = False
+
+        def apply_transform(input):
+            if inspect.isgeneratorfunction(self.func):
+                output: Optional[Output] = None
+                for chunk in call_func_with_variable_args(
+                    self.func, input, config, run_manager, **kwargs
+                ):
+                    yield chunk
+                    if output is None:
+                        output = chunk
+                    else:
+                        try:
+                            output = output + chunk
+                        except TypeError:
+                            output = chunk
+            else:
+                output = call_func_with_variable_args(
+                    self.func, input, config, run_manager, **kwargs
+                )
+
+            # If the output is a runnable, use its stream output
+            if isinstance(output, Runnable):
+                recursion_limit = config["recursion_limit"]
+                if recursion_limit <= 0:
+                    raise RecursionError(
+                        f"Recursion limit reached when invoking "
+                        f"{self} with input {input}."
+                    )
+                for chunk in output.stream(
+                    input,
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(),
+                        recursion_limit=recursion_limit - 1,
+                    ),
+                ):
+                    yield chunk
+            elif not inspect.isgeneratorfunction(self.func):
+                # Otherwise, just yield it
+                yield cast(Output, output)
+
         for ichunk in input:
             # By definitions, RunnableLambdas consume all input before emitting output.
             # If the input is not addable, then we'll assume that we can
             # only operate on the last chunk.
             # So we'll iterate until we get to the last chunk!
-            if not got_first_val:
-                final = ichunk
-                got_first_val = True
+            # If no_collect is set to True, we apply the
+            # transform and yield the result for each input chunk.
+            if self.no_collect:
+                yield from apply_transform(cast(Input, ichunk))
             else:
-                try:
-                    final = final + ichunk  # type: ignore[operator]
-                except TypeError:
+                if not got_first_val:
                     final = ichunk
-
-        if inspect.isgeneratorfunction(self.func):
-            output: Optional[Output] = None
-            for chunk in call_func_with_variable_args(
-                self.func, cast(Input, final), config, run_manager, **kwargs
-            ):
-                yield chunk
-                if output is None:
-                    output = chunk
+                    got_first_val = True
                 else:
                     try:
-                        output = output + chunk
+                        final = final + ichunk  # type: ignore[operator]
                     except TypeError:
-                        output = chunk
-        else:
-            output = call_func_with_variable_args(
-                self.func, cast(Input, final), config, run_manager, **kwargs
-            )
+                        final = ichunk
 
-        # If the output is a runnable, use its stream output
-        if isinstance(output, Runnable):
-            recursion_limit = config["recursion_limit"]
-            if recursion_limit <= 0:
-                raise RecursionError(
-                    f"Recursion limit reached when invoking "
-                    f"{self} with input {final}."
-                )
-            for chunk in output.stream(
-                final,
-                patch_config(
-                    config,
-                    callbacks=run_manager.get_child(),
-                    recursion_limit=recursion_limit - 1,
-                ),
-            ):
-                yield chunk
-        elif not inspect.isgeneratorfunction(self.func):
-            # Otherwise, just yield it
-            yield cast(Output, output)
+        if not self.no_collect:
+            yield from apply_transform(cast(Input, final))
 
     def transform(
         self,
@@ -4086,90 +4097,102 @@ class RunnableLambda(Runnable[Input, Output]):
     ) -> AsyncIterator[Output]:
         final: Input
         got_first_val = False
+
+        async def apply_transform(input):
+            if hasattr(self, "afunc"):
+                afunc = self.afunc
+            else:
+                if inspect.isgeneratorfunction(self.func):
+                    raise TypeError(
+                        "Cannot stream from a generator function asynchronously."
+                        "Use .stream() instead."
+                    )
+
+                def func(
+                    input: Input,
+                    run_manager: AsyncCallbackManagerForChainRun,
+                    config: RunnableConfig,
+                    **kwargs: Any,
+                ) -> Output:
+                    return call_func_with_variable_args(
+                        self.func, input, config, run_manager.get_sync(), **kwargs
+                    )
+
+                @wraps(func)
+                async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
+                    return await run_in_executor(config, func, *args, **kwargs)
+
+                afunc = f
+
+            if inspect.isasyncgenfunction(afunc):
+                output: Optional[Output] = None
+                async for chunk in cast(
+                    AsyncIterator[Output],
+                    acall_func_with_variable_args(
+                        cast(Callable, afunc),
+                        input,
+                        config,
+                        run_manager,
+                        **kwargs,
+                    ),
+                ):
+                    yield chunk
+                    if output is None:
+                        output = chunk
+                    else:
+                        try:
+                            output = output + chunk  # type: ignore[operator]
+                        except TypeError:
+                            output = chunk
+            else:
+                output = await acall_func_with_variable_args(
+                    cast(Callable, afunc), input, config, run_manager, **kwargs
+                )
+
+            # If the output is a runnable, use its astream output
+            if isinstance(output, Runnable):
+                recursion_limit = config["recursion_limit"]
+                if recursion_limit <= 0:
+                    raise RecursionError(
+                        f"Recursion limit reached when invoking "
+                        f"{self} with input {input}."
+                    )
+                async for chunk in output.astream(
+                    input,
+                    patch_config(
+                        config,
+                        callbacks=run_manager.get_child(),
+                        recursion_limit=recursion_limit - 1,
+                    ),
+                ):
+                    yield chunk
+            elif not inspect.isasyncgenfunction(afunc):
+                # Otherwise, just yield it
+                yield cast(Output, output)
+
         async for ichunk in input:
             # By definitions, RunnableLambdas consume all input before emitting output.
             # If the input is not addable, then we'll assume that we can
             # only operate on the last chunk.
             # So we'll iterate until we get to the last chunk!
-            if not got_first_val:
-                final = ichunk
-                got_first_val = True
+            # If no_collect is set to True, we apply
+            # the transform and yield the result for each input chunk.
+            if self.no_collect:
+                async for chunk in apply_transform(cast(Input, ichunk)):
+                    yield chunk
             else:
-                try:
-                    final = final + ichunk  # type: ignore[operator]
-                except TypeError:
+                if not got_first_val:
                     final = ichunk
-
-        if hasattr(self, "afunc"):
-            afunc = self.afunc
-        else:
-            if inspect.isgeneratorfunction(self.func):
-                raise TypeError(
-                    "Cannot stream from a generator function asynchronously."
-                    "Use .stream() instead."
-                )
-
-            def func(
-                input: Input,
-                run_manager: AsyncCallbackManagerForChainRun,
-                config: RunnableConfig,
-                **kwargs: Any,
-            ) -> Output:
-                return call_func_with_variable_args(
-                    self.func, input, config, run_manager.get_sync(), **kwargs
-                )
-
-            @wraps(func)
-            async def f(*args, **kwargs):  # type: ignore[no-untyped-def]
-                return await run_in_executor(config, func, *args, **kwargs)
-
-            afunc = f
-
-        if inspect.isasyncgenfunction(afunc):
-            output: Optional[Output] = None
-            async for chunk in cast(
-                AsyncIterator[Output],
-                acall_func_with_variable_args(
-                    cast(Callable, afunc),
-                    cast(Input, final),
-                    config,
-                    run_manager,
-                    **kwargs,
-                ),
-            ):
-                yield chunk
-                if output is None:
-                    output = chunk
+                    got_first_val = True
                 else:
                     try:
-                        output = output + chunk  # type: ignore[operator]
+                        final = final + ichunk  # type: ignore[operator]
                     except TypeError:
-                        output = chunk
-        else:
-            output = await acall_func_with_variable_args(
-                cast(Callable, afunc), cast(Input, final), config, run_manager, **kwargs
-            )
+                        final = ichunk
 
-        # If the output is a runnable, use its astream output
-        if isinstance(output, Runnable):
-            recursion_limit = config["recursion_limit"]
-            if recursion_limit <= 0:
-                raise RecursionError(
-                    f"Recursion limit reached when invoking "
-                    f"{self} with input {final}."
-                )
-            async for chunk in output.astream(
-                final,
-                patch_config(
-                    config,
-                    callbacks=run_manager.get_child(),
-                    recursion_limit=recursion_limit - 1,
-                ),
-            ):
+        if not self.no_collect:
+            async for chunk in apply_transform(cast(Input, final)):
                 yield chunk
-        elif not inspect.isasyncgenfunction(afunc):
-            # Otherwise, just yield it
-            yield cast(Output, output)
 
     async def atransform(
         self,
@@ -4592,8 +4615,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Output]]:
-        ...
+    ) -> Iterator[Tuple[int, Output]]: ...
 
     @overload
     def batch_as_completed(
@@ -4603,8 +4625,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
-        ...
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]: ...
 
     def batch_as_completed(
         self,
@@ -4645,8 +4666,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Output]]:
-        ...
+    ) -> AsyncIterator[Tuple[int, Output]]: ...
 
     @overload
     def abatch_as_completed(
@@ -4656,8 +4676,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
-        ...
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]: ...
 
     async def abatch_as_completed(
         self,
@@ -4983,29 +5002,25 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
 @overload
 def chain(
     func: Callable[[Input], Coroutine[Any, Any, Output]],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 @overload
 def chain(
     func: Callable[[Input], Iterator[Output]],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 @overload
 def chain(
     func: Callable[[Input], AsyncIterator[Output]],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 @overload
 def chain(
     func: Callable[[Input], Output],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 def chain(
