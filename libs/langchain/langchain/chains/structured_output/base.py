@@ -41,7 +41,6 @@ from langchain_core.utils.function_calling import (
         "https://github.com/langchain-ai/langchain/discussions/18154"
     ),
     removal="0.3.0",
-    pending=True,
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field
@@ -160,7 +159,6 @@ def create_openai_fn_runnable(
         "https://github.com/langchain-ai/langchain/discussions/18154"
     ),
     removal="0.3.0",
-    pending=True,
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field

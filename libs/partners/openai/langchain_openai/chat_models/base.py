@@ -763,7 +763,9 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "none"], bool]] = None,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -776,40 +778,55 @@ class BaseChatOpenAI(BaseChatModel):
                 models, callables, and BaseTools will be automatically converted to
                 their schema dictionary representation.
             tool_choice: Which tool to require the model to call.
-                Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
-                (if any), or a dict of the form:
+                Options are:
+                name of the tool (str): calls corresponding tool;
+                "auto": automatically selects a tool (including no tool);
+                "none": does not call a tool;
+                "any" or "required": force at least one tool to be called;
+                True: forces tool call (requires `tools` be length 1);
+                False: no effect;
+
+                or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        if tool_choice is not None and tool_choice:
-            if len(formatted_tools) != 1:
-                raise ValueError(
-                    "When specifying `tool_choice`, you must provide exactly one "
-                    f"tool. Received {len(formatted_tools)} tools."
-                )
+        if tool_choice:
             if isinstance(tool_choice, str):
-                if tool_choice not in ("auto", "none"):
+                # tool_choice is a tool/function name
+                if tool_choice not in ("auto", "none", "any", "required"):
                     tool_choice = {
                         "type": "function",
                         "function": {"name": tool_choice},
                     }
+                # 'any' is not natively supported by OpenAI API.
+                # We support 'any' since other models use this instead of 'required'.
+                if tool_choice == "any":
+                    tool_choice = "required"
             elif isinstance(tool_choice, bool):
+                if len(tools) > 1:
+                    raise ValueError(
+                        "tool_choice=True can only be used when a single tool is "
+                        f"passed in, received {len(tools)} tools."
+                    )
                 tool_choice = {
                     "type": "function",
                     "function": {"name": formatted_tools[0]["function"]["name"]},
                 }
             elif isinstance(tool_choice, dict):
-                if (
-                    formatted_tools[0]["function"]["name"]
-                    != tool_choice["function"]["name"]
+                tool_names = [
+                    formatted_tool["function"]["name"]
+                    for formatted_tool in formatted_tools
+                ]
+                if not any(
+                    tool_name == tool_choice["function"]["name"]
+                    for tool_name in tool_names
                 ):
                     raise ValueError(
                         f"Tool choice {tool_choice} was specified, but the only "
-                        f"provided tool was {formatted_tools[0]['function']['name']}."
+                        f"provided tools were {tool_names}."
                     )
             else:
                 raise ValueError(
