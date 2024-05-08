@@ -175,8 +175,8 @@ const config = {
               },
               {
                 type: "doc",
-                docId: "packages",
-                label: "Versioning",
+                docId: "changes/releases",
+                label: "Releases",
               },
               {
                 type: "doc",
