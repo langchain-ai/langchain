@@ -340,7 +340,7 @@ class NeuralDBClientVectorStore(VectorStore):
 
     """
 
-    def __init__(self, db):
+    def __init__(self, db: Any) -> None:
         self.db = db
 
     db: Any = None  #: :meta private:
@@ -472,9 +472,3 @@ class NeuralDBClientVectorStore(VectorStore):
         """
 
         self.db.delete(source_ids)
-
-    def add_texts():
-        raise NotImplementedError()
-
-    def from_texts():
-        raise NotImplementedError()
