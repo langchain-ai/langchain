@@ -1,4 +1,6 @@
 {
+  "buildCommand": "yarn build",
+  "outputDirectory": "build",
   "trailingSlash": true,
   "rewrites": [
     {
@@ -8,11 +10,11 @@
   ],
   "redirects": [
     {
-      "source": "/docs",
+      "source": "/",
       "destination": "/v0.2/docs/introduction"
     },
     {
-      "source": "/",
+      "source": "/docs",
       "destination": "/v0.2/docs/introduction"
     },
     {
