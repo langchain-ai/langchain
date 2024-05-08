@@ -2835,8 +2835,8 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -5556,4 +5556,4 @@ extended-testing = ["faker", "jinja2", "pandas", "presidio-analyzer", "presidio-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "3d2b1d1482a06e1697bc5f61796b81f43b485a391b838b612eaa8b19e53a2bee"
+content-hash = "4321a2d1943c27b7c85292796a45a4eb89e19e1c736201c80a67fc51a8ce1eb0"
