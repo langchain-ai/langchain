@@ -2,9 +2,14 @@
   "trailingSlash": true,
   "rewrites": [
     {
-      "source": "/docs/v0.1/:path*(/?)",
+      "source": "/v0.1/docs/:path*(/?)",
       "destination": "https://langchain-v01.vercel.app/docs/:path*"
     }
   ],
-  "redirects": []
+  "redirects": [
+    {
+      "source": "/docs/:path*(/?)",
+      "destination": "/v0.1/docs/:path*"
+    }
+  ]
 }
