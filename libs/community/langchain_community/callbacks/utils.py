@@ -2,41 +2,22 @@ import hashlib
 from pathlib import Path
 from typing import Any, Dict, Iterable, Tuple, Union
 
+from langchain_core.utils import guard_import
+
 
 def import_spacy() -> Any:
     """Import the spacy python package and raise an error if it is not installed."""
-    try:
-        import spacy
-    except ImportError:
-        raise ImportError(
-            "This callback manager requires the `spacy` python "
-            "package installed. Please install it with `pip install spacy`"
-        )
-    return spacy
+    return guard_import("spacy")
 
 
 def import_pandas() -> Any:
     """Import the pandas python package and raise an error if it is not installed."""
-    try:
-        import pandas
-    except ImportError:
-        raise ImportError(
-            "This callback manager requires the `pandas` python "
-            "package installed. Please install it with `pip install pandas`"
-        )
-    return pandas
+    return guard_import("pandas")
 
 
 def import_textstat() -> Any:
     """Import the textstat python package and raise an error if it is not installed."""
-    try:
-        import textstat
-    except ImportError:
-        raise ImportError(
-            "This callback manager requires the `textstat` python "
-            "package installed. Please install it with `pip install textstat`"
-        )
-    return textstat
+    return guard_import("textstat")
 
 
 def _flatten_dict(

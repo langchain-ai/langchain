@@ -117,6 +117,21 @@ class ChatModelIntegrationTests(ABC):
             assert isinstance(result.content, str)
             assert len(result.content) > 0
 
+    def test_conversation(
+        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
+    ) -> None:
+        model = chat_model_class(**chat_model_params)
+        messages = [
+            HumanMessage(content="hello"),
+            AIMessage(content="hello"),
+            HumanMessage(content="how are you"),
+        ]
+        result = model.invoke(messages)
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert isinstance(result.content, str)
+        assert len(result.content) > 0
+
     def test_tool_message_histories_string_content(
         self,
         chat_model_class: Type[BaseChatModel],

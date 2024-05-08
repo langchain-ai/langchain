@@ -1,6 +1,7 @@
 """Tools for interacting with an Apache Cassandra database."""
 from __future__ import annotations
 
+import traceback
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -43,7 +44,11 @@ class QueryCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[str, Sequence[Dict[str, Any]], ResultSet]:
         """Execute the query, return the results or an error message."""
-        return self.db.run_no_throw(query)
+        try:
+            return self.db.run(query)
+        except Exception as e:
+            """Format the error message"""
+            return f"Error: {e}\n{traceback.format_exc()}"
 
 
 class _GetSchemaCassandraDatabaseToolInput(BaseModel):
@@ -73,7 +78,12 @@ class GetSchemaCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get the schema for a keyspace."""
-        return self.db.get_keyspace_tables_str_no_throw(keyspace)
+        try:
+            tables = self.db.get_keyspace_tables(keyspace)
+            return "".join([table.as_markdown() + "\n\n" for table in tables])
+        except Exception as e:
+            """Format the error message"""
+            return f"Error: {e}\n{traceback.format_exc()}"
 
 
 class _GetTableDataCassandraDatabaseToolInput(BaseModel):
@@ -123,4 +133,8 @@ class GetTableDataCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Get data from a table in a keyspace."""
-        return self.db.get_table_data_no_throw(keyspace, table, predicate, limit)
+        try:
+            return self.db.get_table_data(keyspace, table, predicate, limit)
+        except Exception as e:
+            """Format the error message"""
+            return f"Error: {e}\n{traceback.format_exc()}"
