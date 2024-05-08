@@ -344,6 +344,10 @@ class AmazonKendraRetriever(BaseRetriever):
         attribute_filter: Additional filtering of results based on metadata
             See: https://docs.aws.amazon.com/kendra/latest/APIReference
 
+        document_relevance_override_configurations: Overrides relevance tuning
+            configurations of fields/attributes set at the index level
+            See: https://docs.aws.amazon.com/kendra/latest/APIReference
+
         page_content_formatter: generates the Document page_content
             allowing access to all result item attributes. By default, it uses
             the item's title and excerpt.
@@ -367,6 +371,7 @@ class AmazonKendraRetriever(BaseRetriever):
     credentials_profile_name: Optional[str] = None
     top_k: int = 3
     attribute_filter: Optional[Dict] = None
+    document_relevance_override_configurations: Optional[List[Dict]] = None
     page_content_formatter: Callable[[ResultItem], str] = combined_text
     client: Any
     user_context: Optional[Dict] = None
@@ -421,6 +426,10 @@ class AmazonKendraRetriever(BaseRetriever):
         }
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
+        if self.document_relevance_override_configurations is not None:
+            kendra_kwargs[
+                "DocumentRelevanceOverrideConfigurations"
+            ] = self.document_relevance_override_configurations
         if self.user_context is not None:
             kendra_kwargs["UserContext"] = self.user_context
 
