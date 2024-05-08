@@ -200,7 +200,7 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
-playwright = "^1.43.0"
+playwright = "^1.28.0"
 setuptools = "^67.6.1"
 langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
