@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
@@ -23,9 +23,9 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
     """
 
     model_name: str
-    n_threads: int | None = None
-    device: str | None = "cpu"
-    gpt4all_kwargs: dict | None = None
+    n_threads: Optional[int] = None
+    device: Optional[str] = "cpu"
+    gpt4all_kwargs: Optional[dict] = {}
     client: Any  #: :meta private:
 
     @root_validator()
@@ -39,7 +39,7 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
                 model_name=values["model_name"],
                 n_threads=values.get("n_threads"),
                 device=values.get("device"),
-                **values.get("gpt4all_kwargs", {}),
+                **values.get("gpt4all_kwargs"),
             )
         except ImportError:
             raise ImportError(
