@@ -64,7 +64,10 @@ class LLMChainExtractor(BaseDocumentCompressor):
         compressed_docs = []
         for doc in documents:
             _input = self.get_input(query, doc)
-            output = self.llm_chain.predict_and_parse(**_input, callbacks=callbacks)
+            output_dict = self.llm_chain.invoke(_input, config={"callbacks": callbacks})
+            output = output_dict[self.llm_chain.output_key]
+            if self.llm_chain.prompt.output_parser is not None:
+                output = self.llm_chain.prompt.output_parser.parse(output)
             if len(output) == 0:
                 continue
             compressed_docs.append(

@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 from typing import Iterator, List, Literal, Optional, Union
 
@@ -73,7 +74,7 @@ def get_from_param_or_env(
 class UpstageLayoutAnalysisLoader(BaseLoader):
     """Upstage Layout Analysis.
 
-    To use, you should have the environment variable `UPSTAGE_DOCUMENT_AI_API_KEY`
+    To use, you should have the environment variable `UPSTAGE_API_KEY`
     set with your API key or pass it as a named parameter to the constructor.
 
     Example:
@@ -110,7 +111,7 @@ class UpstageLayoutAnalysisLoader(BaseLoader):
             api_key (str, optional): The API key for accessing the Upstage API.
                                      Defaults to None, in which case it will be
                                      fetched from the environment variable
-                                     `UPSTAGE_DOCUMENT_AI_API_KEY`.
+                                     `UPSTAGE_API_KEY`.
             use_ocr (bool, optional): Extract text from images in the document.
                                       Defaults to False. (Use text info in PDF file)
             exclude (list, optional): Exclude specific elements from
@@ -120,8 +121,14 @@ class UpstageLayoutAnalysisLoader(BaseLoader):
         self.file_path = file_path
         self.output_type = output_type
         self.split = split
+        if deprecated_key := os.environ.get("UPSTAGE_DOCUMENT_AI_API_KEY"):
+            warnings.warn(
+                "UPSTAGE_DOCUMENT_AI_API_KEY is deprecated."
+                "Please use UPSTAGE_API_KEY instead."
+            )
+
         self.api_key = get_from_param_or_env(
-            "UPSTAGE_DOCUMENT_AI_API_KEY", api_key, "UPSTAGE_DOCUMENT_AI_API_KEY"
+            "UPSTAGE_API_KEY", api_key, "UPSTAGE_API_KEY", deprecated_key
         )
         self.use_ocr = use_ocr
         self.exclude = exclude
