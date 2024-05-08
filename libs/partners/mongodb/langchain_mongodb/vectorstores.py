@@ -32,6 +32,7 @@ VST = TypeVar("VST", bound=VectorStore)
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_INSERT_BATCH_SIZE = 100
 
 class MongoDBAtlasVectorSearch(VectorStore):
     """`MongoDB Atlas Vector Search` vector store.
@@ -147,21 +148,18 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        batch_size = kwargs.get("batch_size")
+        batch_size = kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE)
         _metadatas: Union[List, Generator] = metadatas or ({} for _ in texts)
-        texts_batch = texts
-        metadatas_batch = _metadatas
+        texts_batch = []
+        metadatas_batch = []
         result_ids = []
-        if batch_size:
-            texts_batch = []
-            metadatas_batch = []
-            for i, (text, metadata) in enumerate(zip(texts, _metadatas)):
-                texts_batch.append(text)
-                metadatas_batch.append(metadata)
-                if (i + 1) % batch_size == 0:
-                    result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
-                    texts_batch = []
-                    metadatas_batch = []
+        for i, (text, metadata) in enumerate(zip(texts, _metadatas)):
+            texts_batch.append(text)
+            metadatas_batch.append(metadata)
+            if (i + 1) % batch_size == 0:
+                result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
+                texts_batch = []
+                metadatas_batch = []
         if texts_batch:
             result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))  # type: ignore
         return result_ids
