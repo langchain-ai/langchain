@@ -1,4 +1,4 @@
-## How to migrate
+# Migration Guide
 
 To migrate to version 0.2.x of LangChain, we first recommend you take the following steps:
 
@@ -8,79 +8,37 @@ To migrate to version 0.2.x of LangChain, we first recommend you take the follow
 4. Manually resolve any remaining deprecation warnings
 5. Re-run unit tests
 
-### langchain-cli migrate
+## Upgrade to new imports
 
-To make it easier to migrate user code off deprecated imports to the new import paths, we’ve provided a migration script.
+We created a tool to help migrate your code. This tool is still in **beta** and may not cover all cases, but
+we hope that it will help you migrate your code more quickly.
 
-The migration script is not perfect and has the following known limitations:
+The migration script has the following limitations:
 
 1. It’s limited to helping users move from old imports to new imports. It doesn’t help address other deprecations.
 2. It can’t handle imports that involve `as` .
 3. New imports are always placed in global scope, even if the old import that was replaced was located inside some local scope (e..g, function body).
 4. It will likely miss some deprecated imports.
 
-The migration script is designed to help apply the following import changes:
+Here is an example of the import changes that the migration script can help apply automatically:
 
-1. `langchain` to `langchain-community`
 
-```python
-from langchain.vectorstores import Chroma
+| From Pacakge        | To Package               | Deprecated Import                                                  | New Import                                                          |
+|---------------------|--------------------------|--------------------------------------------------------------------|---------------------------------------------------------------------|
+| langchain           | langchain-community      | from langchain.vectorstores import Chroma                          | from langchain_community.vectorstores import Chroma                 |
+| langchain-community | langchain_openai         | from langchain_community.chat_models import ChatOpenAI             | from langchain_openai import ChatOpenAI                             |
+| langchain-community | langchain-core           | from langchain_community.document_loaders import Blob              | from langchain_core.document_loaders import Blob                    |
+| langchain           | langchain-core           | from langchain.schema.document import Document                     | from langchain_core.documents import Document                       |
+| langchain           | langchain-text-splitters | from langchain.text_splitter import RecursiveCharacterTextSplitter | from langchain_text_splitters import RecursiveCharacterTextSplitter |
 
-# Will change to
-
-from langchain_community.vectorstores import Chroma
-```
-
-1. `langchain-community` to appropriate partner package
-
-```python
-from langchain_community.chat_models import ChatOpenAI
-
-# Will change to
-
-from langchain_openai import ChatOpenAI
-```
-
-1. `langchain-community` to `langchain-core`
-
-```python
-from langchain_community.document_loaders import Blob
-
-# Will change to
-
-from langchain_core.document_loaders import Blob
-
-```
-
-1. `langchain` to `langchain-core`
-
-```python
-from langchain.schema.document import Document
-
-# Will change to
-
-from langchain_core.documents import Document
-```
-
-1. `langchain` to `langchain-text-splitters`
-
-```python
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-# Will change to
-
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-```
-
-## Install
+### Installation
 
 ```bash
 pip install langchain-cli
 langchain-cli --version # <-- Make sure the version is at least 0.0.22
 ```
 
-## Usage
+### Usage
 
 Given that the migration script is not perfect, you should make sure you have a backup of your code first (e.g., using version control like `git`).
 
@@ -102,7 +60,7 @@ langchain-cli migrate [path to code] --diff # Preview
 langchain-cli migrate [path to code] # Apply
 ```
 
-## Other Options
+### Other Options
 
 ```bash
 # See help menu
