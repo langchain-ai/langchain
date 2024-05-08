@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -7,18 +7,42 @@ from langchain_core.retrievers import BaseRetriever
 from pymilvus import AnnSearchRequest, Collection
 from pymilvus.client.abstract import BaseRanker, SearchResult  # type: ignore
 
+from langchain_milvus.utils.sparse import BaseSparseEmbedding
+
 
 class MilvusCollectionHybridSearchRetriever(BaseRetriever):
+    """This is a hybrid search retriever
+    that uses Milvus Collection to retrieve documents based on multiple fields.
+    For more information, please refer to:
+    https://milvus.io/docs/release_notes.md#Multi-Embedding---Hybrid-Search
+    """
+
     collection: Collection
+    """Milvus Collection object."""
     rerank: BaseRanker
+    """Milvus ranker object. Such as WeightedRanker or RRFRanker."""
     anns_fields: List[str]
-    field_embeddings: List[Embeddings]
+    """The names of vector fields that are used for ANNS search."""
+    field_embeddings: List[Union[Embeddings, BaseSparseEmbedding]]
+    """The embedding functions of each vector fields, 
+    which can be either Embeddings or BaseSparseEmbedding."""
     field_search_params: Optional[List[Dict]] = None
+    """The search parameters of each vector fields. 
+    If not specified, the default search parameters will be used."""
     field_limits: Optional[List[int]] = None
+    """Limit number of results for each ANNS field. 
+    If not specified, the default top_k will be used."""
     field_exprs: Optional[List[Optional[str]]] = None
+    """The boolean expression for filtering the search results."""
     top_k: int = 4
+    """Final top-K number of documents to retrieve."""
     text_field: str = "text"
+    """The text field name, 
+    which will be used as the `page_content` of a `Document` object."""
     output_fields: Optional[List[str]] = None
+    """Final output fields of the documents. 
+    If not specified, all fields except the vector fields will be used as output fields,
+    which will be the `metadata` of a `Document` object."""
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)

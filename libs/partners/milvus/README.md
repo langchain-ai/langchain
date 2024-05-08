@@ -16,6 +16,15 @@ See a [usage example](https://python.langchain.com/docs/integrations/vectorstore
 from langchain_milvus import Milvus
 ```
 
+## Milvus hybrid search
+
+See a [usage example](https://python.langchain.com/docs/integrations/retrievers/milvus_hybrid_search/).
+
+```python
+from langchain_milvus import MilvusCollectionHybridSearchRetriever
+```
+
+
 ## Zilliz Cloud vector database
 
 See a [usage example](https://python.langchain.com/docs/integrations/vectorstores/zilliz/).
