@@ -27,7 +27,6 @@ from langchain_robocorp._prompts import (
     API_CONTROLLER_PROMPT,
 )
 
-MAX_RESPONSE_LENGTH = 5000
 LLM_TRACE_HEADER = "X-action-trace"
 
 
@@ -241,6 +240,5 @@ class ActionServerToolkit(BaseModel):
         url = urljoin(self.url, endpoint)
 
         response = requests.post(url, headers=headers, data=json.dumps(data))
-        output = response.text[:MAX_RESPONSE_LENGTH]
 
-        return output
+        return response.text
