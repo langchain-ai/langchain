@@ -8,7 +8,7 @@ from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
 
 dotenv.load_dotenv()
 
-POOL_MANAGEMENT_ENDPOINT = os.getenv("POOL_MANAGEMENT_ENDPOINT")
+POOL_MANAGEMENT_ENDPOINT = os.getenv("AZURE_DYNAMIC_SESSIONS_POOL_MANAGEMENT_ENDPOINT")
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "testdata.txt")
 TEST_DATA_CONTENT = open(TEST_DATA_PATH, "rb").read()
 
