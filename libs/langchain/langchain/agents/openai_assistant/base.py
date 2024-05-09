@@ -98,6 +98,22 @@ def _is_assistants_builtin_tool(
         and (tool["type"] in assistants_builtin_tools)
     )
 
+def _convert_file_ids_into_attachments(file_ids: list) -> list:
+    """
+    Convert file_ids into attachments
+    
+    File search and Code interpreter will be turned on by default
+    """
+    attachments = []
+    for id in file_ids:
+        attachments.append({
+            'file_id': id,
+            'tools': [
+                {'type': 'file_search'},
+                {'type': 'code_interpreter'}
+            ]
+        })
+    return attachments
 
 def _get_assistants_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
@@ -243,13 +259,17 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         Returns:
             OpenAIAssistantRunnable configured to run using the created assistant.
         """
+    
+        files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
+        attachments = kwargs.get("attachments", []) + files
+
         client = client or _get_openai_client()
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
             model=model,
-            file_ids=kwargs.get("file_ids"),
+            attachments=kwargs.get("attachments"),
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
@@ -264,7 +284,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 thread_id: Existing thread to use.
                 run_id: Existing run to use. Should only be supplied when providing
                     the tool output for a required action after an initial invocation.
-                file_ids: File ids to include in new run. Used for retrieval.
+                file_ids: (deprecated) File ids to include in new run. Use 'attachments' instead
+                attachments: Assistant files to include in new run. (v2 API).
                 message_metadata: Metadata to associate with new message.
                 thread_metadata: Metadata to associate with new thread. Only relevant
                     when new thread being created.
@@ -290,6 +311,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         run_manager = callback_manager.on_chain_start(
             dumpd(self), input, name=config.get("run_name")
         )
+
+        files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
+        attachments = kwargs.get("attachments", []) + files
+        
         try:
             # Being run within AgentExecutor and there are tool outputs to submit.
             if self.as_agent and input.get("intermediate_steps"):
@@ -304,7 +329,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                         {
                             "role": "user",
                             "content": input["content"],
-                            "file_ids": input.get("file_ids", []),
+                            "attachments": attachments,
                             "metadata": input.get("message_metadata"),
                         }
                     ],
@@ -317,7 +342,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     input["thread_id"],
                     content=input["content"],
                     role="user",
-                    file_ids=input.get("file_ids", []),
+                    attachments=attachments,
                     metadata=input.get("message_metadata"),
                 )
                 run = self._create_run(input)
@@ -366,12 +391,16 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         """
         async_client = async_client or _get_openai_async_client()
         openai_tools = [_get_assistants_tool(tool) for tool in tools]
+
+        files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
+        attachments = kwargs.get("attachments", []) + files
+
         assistant = await async_client.beta.assistants.create(
             name=name,
             instructions=instructions,
             tools=openai_tools,  # type: ignore
             model=model,
-            file_ids=kwargs.get("file_ids"),
+            attachments=attachments,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
 
@@ -386,7 +415,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 thread_id: Existing thread to use.
                 run_id: Existing run to use. Should only be supplied when providing
                     the tool output for a required action after an initial invocation.
-                file_ids: File ids to include in new run. Used for retrieval.
+                file_ids: (deprecated) File ids to include in new run. Use 'attachments' instead
+                attachments: Assistant files to include in new run. (v2 API).
                 message_metadata: Metadata to associate with new message.
                 thread_metadata: Metadata to associate with new thread. Only relevant
                     when new thread being created.
@@ -412,6 +442,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         run_manager = callback_manager.on_chain_start(
             dumpd(self), input, name=config.get("run_name")
         )
+
+        files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
+        attachments = kwargs.get("attachments", []) + files
+
         try:
             # Being run within AgentExecutor and there are tool outputs to submit.
             if self.as_agent and input.get("intermediate_steps"):
@@ -428,7 +462,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                         {
                             "role": "user",
                             "content": input["content"],
-                            "file_ids": input.get("file_ids", []),
+                            "attachments": attachments,
                             "metadata": input.get("message_metadata"),
                         }
                     ],
@@ -441,7 +475,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                     input["thread_id"],
                     content=input["content"],
                     role="user",
-                    file_ids=input.get("file_ids", []),
+                    attachments=attachments,
                     metadata=input.get("message_metadata"),
                 )
                 run = await self._acreate_run(input)
