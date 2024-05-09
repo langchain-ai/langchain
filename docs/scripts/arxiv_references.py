@@ -76,6 +76,39 @@ def search_documentation_for_arxiv_references(docs_dir: Path) -> dict[str, set[s
     return arxiv_id2file_names
 
 
+def convert_module_name_and_members_to_urls(
+    arxiv_id2module_name_and_members: dict[str, set[str]],
+) -> dict[str, set[str]]:
+    arxiv_id2urls = {}
+    for arxiv_id, module_name_and_members in arxiv_id2module_name_and_members.items():
+        urls = set()
+        for module_name_and_member in module_name_and_members:
+            module_name, type_and_member = module_name_and_member.split(":")
+            if "$" in type_and_member:
+                type, member = type_and_member.split("$")
+            else:
+                type = type_and_member
+                member = ""
+            _namespace_parts = module_name.split(".")
+            if type == "module":
+                first_namespace_part = _namespace_parts[0]
+                if first_namespace_part.startswith("langchain_"):
+                    first_namespace_part = first_namespace_part.replace(
+                        "langchain_", ""
+                    )
+                url = f"{first_namespace_part}_api_reference.html#module-{module_name}"
+            elif type in ["class", "function"]:
+                second_namespace_part = _namespace_parts[1]
+                url = f"{second_namespace_part}/{module_name}.{member}.html#{module_name}.{member}"
+            else:
+                raise ValueError(
+                    f"Unknown type: {type} in the {module_name_and_member}."
+                )
+            urls.add(url)
+        arxiv_id2urls[arxiv_id] = urls
+    return arxiv_id2urls
+
+
 def search_code_for_arxiv_references(code_dir: Path) -> dict[str, set[str]]:
     """Search the code for arXiv references.
 
@@ -185,39 +218,6 @@ def search_code_for_arxiv_references(code_dir: Path) -> dict[str, set[str]]:
     return arxiv_id2module_name_and_members_reduced
 
 
-def convert_module_name_and_members_to_urls(
-    arxiv_id2module_name_and_members: dict[str, set[str]],
-) -> dict[str, set[str]]:
-    arxiv_id2urls = {}
-    for arxiv_id, module_name_and_members in arxiv_id2module_name_and_members.items():
-        urls = set()
-        for module_name_and_member in module_name_and_members:
-            module_name, type_and_member = module_name_and_member.split(":")
-            if "$" in type_and_member:
-                type, member = type_and_member.split("$")
-            else:
-                type = type_and_member
-                member = ""
-            _namespace_parts = module_name.split(".")
-            if type == "module":
-                first_namespace_part = _namespace_parts[0]
-                if first_namespace_part.startswith("langchain_"):
-                    first_namespace_part = first_namespace_part.replace(
-                        "langchain_", ""
-                    )
-                url = f"{first_namespace_part}_api_reference.html#module-{module_name}"
-            elif type in ["class", "function"]:
-                second_namespace_part = _namespace_parts[1]
-                url = f"{second_namespace_part}/{module_name}.{member}.html#{module_name}.{member}"
-            else:
-                raise ValueError(
-                    f"Unknown type: {type} in the {module_name_and_member}."
-                )
-            urls.add(url)
-        arxiv_id2urls[arxiv_id] = urls
-    return arxiv_id2urls
-
-
 def _get_doc_path(file_parts: tuple[str, ...], file_extension) -> str:
     """Get the relative path to the documentation page
     from the absolute path of the file.
@@ -254,6 +254,61 @@ def _get_module_name(file_parts: tuple[str, ...]) -> str:
         if el.startswith("langchain"):
             break
     return ".".join(ns_parts)
+
+
+def compound_urls(
+    arxiv_id2file_names: dict[str, set[str]], arxiv_id2code_urls: dict[str, set[str]]
+) -> dict[str, dict[str, set[str]]]:
+    arxiv_id2urls = dict()
+    for arxiv_id, code_urls in arxiv_id2code_urls.items():
+        arxiv_id2urls[arxiv_id] = {"api": code_urls}
+        # intersection of the two sets
+        if arxiv_id in arxiv_id2file_names:
+            arxiv_id2urls[arxiv_id]["docs"] = arxiv_id2file_names[arxiv_id]
+    for arxiv_id, file_names in arxiv_id2file_names.items():
+        if arxiv_id not in arxiv_id2code_urls:
+            arxiv_id2urls[arxiv_id] = {"docs": file_names}
+    # reverse sort by the arxiv_id (the newest papers first)
+    ret = dict(sorted(arxiv_id2urls.items(), key=lambda item: item[0], reverse=True))
+    return ret
+
+
+def _format_doc_link(doc_paths: list[str]) -> list[str]:
+    return [
+        f"[{doc_path}](https://python.langchain.com/{doc_path})"
+        for doc_path in doc_paths
+    ]
+
+
+def _format_api_ref_link(
+    doc_paths: list[str], compact: bool = False
+) -> list[str]:  # TODO
+    # agents/langchain_core.agents.AgentAction.html#langchain_core.agents.AgentAction
+    ret = []
+    for doc_path in doc_paths:
+        module = doc_path.split("#")[1].replace("module-", "")
+        if compact and module.count(".") > 2:
+            # langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI
+            # -> langchain_community.llms...OCIModelDeploymentTGI
+            module_parts = module.split(".")
+            module = f"{module_parts[0]}.{module_parts[1]}...{module_parts[-1]}"
+        ret.append(
+            f"[{module}](https://api.python.langchain.com/en/latest/{doc_path.split('langchain.com/')[-1]})"
+        )
+    return ret
+
+
+def log_results(arxiv_id2urls):
+    arxiv_ids = arxiv_id2urls.keys()
+    doc_number, api_number = 0, 0
+    for urls in arxiv_id2urls.values():
+        if "docs" in urls:
+            doc_number += len(urls["docs"])
+        if "api" in urls:
+            api_number += len(urls["api"])
+    logger.info(
+        f"Found {len(arxiv_ids)} arXiv references in the {doc_number} docs and in {api_number} API Refs."
+    )
 
 
 class ArxivAPIWrapper(BaseModel):
@@ -327,21 +382,6 @@ class ArxivAPIWrapper(BaseModel):
         return papers
 
 
-def _format_doc_link(doc_paths: list[str]) -> list[str]:
-    return [
-        f"[{doc_path}](https://python.langchain.com/{doc_path})"
-        for doc_path in doc_paths
-    ]
-
-
-def _format_api_ref_link(doc_paths: list[str]) -> list[str]:  # TODO
-    # agents/langchain_core.agents.AgentAction.html#langchain_core.agents.AgentAction
-    return [
-        f"[{doc_path.split('#')[1].replace('module-', '')}](https://api.python.langchain.com/en/latest/{doc_path.split('langchain.com/')[-1]})"
-        for doc_path in doc_paths
-    ]
-
-
 def generate_arxiv_references_page(file_name: str, papers: list[ArxivPaper]) -> None:
     with open(file_name, "w") as f:
         # Write the table headers
@@ -353,7 +393,7 @@ This page contains `arXiv` papers referenced in the LangChain Documentation and 
 
 ## Summary
 
-| arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation and API Reference|
+| arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation and API Reference |
 |------------------|---------|-------------------|-------------------------|
 """)
         for paper in papers:
@@ -365,7 +405,9 @@ This page contains `arXiv` papers referenced in the LangChain Documentation and 
             if paper.referencing_api_refs:
                 refs += [
                     "`API:` "
-                    + ", ".join(_format_api_ref_link(paper.referencing_api_refs))
+                    + ", ".join(
+                        _format_api_ref_link(paper.referencing_api_refs, compact=True)
+                    )
                 ]
             refs_str = ", ".join(refs)
 
@@ -400,36 +442,6 @@ This page contains `arXiv` papers referenced in the LangChain Documentation and 
                 """)
 
     logger.info(f"Created the {file_name} file with {len(papers)} arXiv references.")
-
-
-def compound_urls(
-    arxiv_id2file_names: dict[str, set[str]], arxiv_id2code_urls: dict[str, set[str]]
-) -> dict[str, dict[str, set[str]]]:
-    arxiv_id2urls = dict()
-    for arxiv_id, code_urls in arxiv_id2code_urls.items():
-        arxiv_id2urls[arxiv_id] = {"api": code_urls}
-        # intersection of the two sets
-        if arxiv_id in arxiv_id2file_names:
-            arxiv_id2urls[arxiv_id]["docs"] = arxiv_id2file_names[arxiv_id]
-    for arxiv_id, file_names in arxiv_id2file_names.items():
-        if arxiv_id not in arxiv_id2code_urls:
-            arxiv_id2urls[arxiv_id] = {"docs": file_names}
-    # reverse sort by the arxiv_id (the newest papers first)
-    ret = dict(sorted(arxiv_id2urls.items(), key=lambda item: item[0], reverse=True))
-    return ret
-
-
-def log_results(arxiv_id2urls):
-    arxiv_ids = arxiv_id2urls.keys()
-    doc_number, api_number = 0, 0
-    for urls in arxiv_id2urls.values():
-        if "docs" in urls:
-            doc_number += len(urls["docs"])
-        if "api" in urls:
-            api_number += len(urls["api"])
-    logger.info(
-        f"Found {len(arxiv_ids)} arXiv references in the {doc_number} docs and in {api_number} API Refs."
-    )
 
 
 def main():
