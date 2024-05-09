@@ -33,6 +33,7 @@ from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
 from langchain.retrievers.web_research import WebResearchRetriever
+from langchain.retrievers.sentence_window_retriever import SentenceWindowRetriever
 
 if TYPE_CHECKING:
     from langchain_community.retrievers import (
@@ -66,6 +67,7 @@ if TYPE_CHECKING:
         PubMedRetriever,
         RemoteLangChainRetriever,
         SVMRetriever,
+        SentenceWindowRetriever,
         TavilySearchAPIRetriever,
         TFIDFRetriever,
         VespaRetriever,
@@ -116,6 +118,7 @@ DEPRECATED_LOOKUP = {
     "ZepRetriever": "langchain_community.retrievers",
     "ZillizRetriever": "langchain_community.retrievers",
     "DocArrayRetriever": "langchain_community.retrievers",
+    "SentenceWindowRetriever": "langchain_community.retrievers",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -163,6 +166,7 @@ __all__ = [
     "RemoteLangChainRetriever",
     "RePhraseQueryRetriever",
     "SelfQueryRetriever",
+    "SentenceWindowRetriever",
     "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
