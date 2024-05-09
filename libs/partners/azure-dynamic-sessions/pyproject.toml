@@ -62,7 +62,6 @@ optional = true
 langchain-core = {path = "../../core", develop = true}
 ipykernel = "^6.29.4"
 langchain-openai = {path = "../openai", develop = true}
-langchain = {path = "../../langchain", develop = true}
 langchainhub = "^0.1.15"
 
 [tool.ruff]
