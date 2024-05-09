@@ -9,8 +9,8 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.51"
-langchain = "^0.2.0rc1"
+langchain-core = "^0.1.52"
+langchain = "^0.2.0rc2"
 SQLAlchemy = ">=1.4,<2.0.29"
 requests = "^2"
 PyYAML = ">=5.3"
