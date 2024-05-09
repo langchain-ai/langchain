@@ -106,7 +106,7 @@ def test_code_execution_calls_api(
 
     called_headers = mock_post.call_args.kwargs["headers"]
     assert re.match(
-        r"^langchain-azure-dynamic-sessions/\d+\.\d+\.\d+ \(Language=Python\)",
+        r"^langchain-azure-dynamic-sessions/\d+\.\d+\.\d+.* \(Language=Python\)",
         called_headers["User-Agent"],
     )
 
