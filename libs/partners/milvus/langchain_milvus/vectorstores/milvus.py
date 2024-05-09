@@ -314,8 +314,7 @@ class Milvus(VectorStore):
             elif uri.startswith("http://"):
                 given_address = uri.split("http://")[1]
             else:
-                logger.error("Invalid Milvus URI: %s", uri)
-                raise ValueError("Invalid Milvus URI: %s", uri)
+                given_address = uri  # Milvus lite
         elif address is not None:
             given_address = address
         else:
