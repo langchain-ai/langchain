@@ -1,10 +1,14 @@
 """Test EdenAI Chat API wrapper."""
-from typing import List
+from typing import List, cast
 
 import pytest
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.pydantic_v1 import SecretStr
 
-from langchain_community.chat_models.dappier import _format_dappier_messages
+from langchain_community.chat_models.dappier import (
+    ChatDappierAI,
+    _format_dappier_messages,
+)
 
 
 @pytest.mark.parametrize(
@@ -32,3 +36,12 @@ def test_dappier_messages_formatting(
 ) -> None:
     result = _format_dappier_messages(messages)
     assert result == expected
+
+
+def test_dappierai_initialization():
+    for model in [
+        ChatDappierAI(dappier_model="dappier-ai-model", dappier_api_key="xyz"),
+        ChatDappierAI(model_name="dappier-ai-model", api_key="xyz"),
+    ]:
+        assert model.dappier_model == "dappier-ai-model"
+        assert cast(SecretStr, model.dappier_api_key).get_secret_value() == "xyz"

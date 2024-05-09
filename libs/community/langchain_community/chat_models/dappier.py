@@ -66,21 +66,29 @@ class ChatDappierAI(BaseChatModel):
 
     dappier_endpoint: str = "https://api.dappier.com/app/datamodelconversation"
 
-    dappier_model: str = "dm_01hpsxyfm2fwdt2zet9cg6fdxt"
+    dappier_model: str = Field("dm_01hpsxyfm2fwdt2zet9cg6fdxt", alias="model_name")
 
-    dappier_api_key: Optional[SecretStr] = Field(None, description="Dappier API Token")
+    dappier_api_key: Optional[SecretStr] = Field(
+        None, description="Dappier API Token", alias="api_key"
+    )
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
-        values["dappier_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "dappier_api_key", "DAPPIER_API_KEY")
-        )
+        api_key = values.get("dappier_api_key") or values.get("api_key")
+
+        if not api_key:
+            api_key = convert_to_secret_str(
+                get_from_dict_or_env(values, "dappier_api_key", "DAPPIER_API_KEY")
+            )
+        values["dappier_api_key"] = api_key
         return values
 
     @staticmethod
