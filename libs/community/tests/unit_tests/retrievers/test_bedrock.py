@@ -49,7 +49,8 @@ def test_get_relevant_documents(
         ]
     }
     documents: list[Document] = amazon_retriever._get_relevant_documents(
-        query, run_manager=None
+        query,
+        run_manager=None,  # type: ignore
     )
 
     assert len(documents) == 3
