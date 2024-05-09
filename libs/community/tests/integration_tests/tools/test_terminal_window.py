@@ -1,7 +1,6 @@
 import time
 
 import libtmux
-import pytest
 
 from langchain_community.tools.terminal_window import (
     TerminalBottomCaptureTool,
@@ -10,15 +9,25 @@ from langchain_community.tools.terminal_window import (
     TerminalTopCaptureTool,
 )
 
+
 def test_terminal_bottom_input_capture(monkeypatch, server):
     monkeypatch.setattr(libtmux, "Server", lambda: server)
     TerminalLiteralInputTool().run("echo hello world")
     assert "hello world" in TerminalBottomCaptureTool().run("2")
 
+
 def test_terminal_special_input_capture(monkeypatch, server):
     monkeypatch.setattr(libtmux, "Server", lambda: server)
     TerminalSpecialInputTool().run("C-c")
     assert "^C" in TerminalBottomCaptureTool().run("2")
+
+
+def test_terminal_top_capture(monkeypatch, server):
+    monkeypatch.setattr(libtmux, "Server", lambda: server)
+    TerminalLiteralInputTool().run("for ((i=1;i<=99;i++)); do echo $i; done")
+    time.sleep(0.5)
+    assert TerminalTopCaptureTool().run("10")[0] == "1"
+
 
 def test_terminal_interrupt(monkeypatch, server):
     monkeypatch.setattr(libtmux, "Server", lambda: server)

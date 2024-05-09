@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
+
 class TmuxPane(BaseModel):
     window_width: int = 120
     window_height: int = 40
@@ -28,13 +29,16 @@ class TmuxPane(BaseModel):
         else:
             session = values["server"].new_session(session_name=values["session_name"])
         window = session.active_window
-        if window.width != values["window_width"] or window.height != values["window_height"]:
+        if (
+            window.width != values["window_width"]
+            or window.height != values["window_height"]
+        ):
             window.resize(width=values["window_width"], height=values["window_height"])
         values["pane"] = window.panes[0]
         return values
 
     def send_keys(self, *args, **kwargs) -> None:
         self.pane.send_keys(*args, **kwargs)
-    
+
     def capture(self, *args, **kwargs) -> list[str]:
         return self.pane.capture_pane(*args, **kwargs)
