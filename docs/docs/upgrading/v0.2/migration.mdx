@@ -34,7 +34,7 @@ Here is an example of the import changes that the migration script can help appl
 
 | From Package        | To Package               | Deprecated Import                                                  | New Import                                                          |
 |---------------------|--------------------------|--------------------------------------------------------------------|---------------------------------------------------------------------|
-| langchain           | langchain-community      | from langchain.vectorstores import Chroma                          | from langchain_community.vectorstores import Chroma                 |
+| langchain           | langchain-community      | from langchain.vectorstores import InMemoryVectorStore             | from langchain_community.vectorstores import InMemoryVectorStore    |
 | langchain-community | langchain_openai         | from langchain_community.chat_models import ChatOpenAI             | from langchain_openai import ChatOpenAI                             |
 | langchain-community | langchain-core           | from langchain_community.document_loaders import Blob              | from langchain_core.document_loaders import Blob                    |
 | langchain           | langchain-core           | from langchain.schema.document import Document                     | from langchain_core.documents import Document                       |
