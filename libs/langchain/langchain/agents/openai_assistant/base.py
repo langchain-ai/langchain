@@ -269,7 +269,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             instructions=instructions,
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
             model=model,
-            attachments=kwargs.get("attachments"),
+            attachments=attachments,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
