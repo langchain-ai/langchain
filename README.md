@@ -109,7 +109,7 @@ Agents allow an LLM autonomy over how a task is accomplished. Agents make decisi
 
 ## 📖 Documentation
 
-Please see [here](https://python.langchain.com) for full documentation, which includes:
+Please see [here](https://python.langchain.com/v0.1/docs/) for full documentation, which includes:
 
 - [Getting started](https://python.langchain.com/docs/get_started/introduction): installation, setting up the environment, simple examples
 - [Use case](https://python.langchain.com/docs/use_cases/) walkthroughs and best practice [guides](https://python.langchain.com/docs/guides/)
