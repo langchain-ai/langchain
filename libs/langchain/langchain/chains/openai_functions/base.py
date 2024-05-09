@@ -42,7 +42,7 @@ __all__ = [
 ]
 
 
-@deprecated(since="0.1.1", removal="0.2.0", alternative="create_openai_fn_runnable")
+@deprecated(since="0.1.1", removal="0.3.0", alternative="create_openai_fn_runnable")
 def create_openai_fn_chain(
     functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
     llm: BaseLanguageModel,
@@ -144,7 +144,7 @@ def create_openai_fn_chain(
 
 
 @deprecated(
-    since="0.1.1", removal="0.2.0", alternative="ChatOpenAI.with_structured_output"
+    since="0.1.1", removal="0.3.0", alternative="ChatOpenAI.with_structured_output"
 )
 def create_structured_output_chain(
     output_schema: Union[Dict[str, Any], Type[BaseModel]],
