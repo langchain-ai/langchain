@@ -14,7 +14,7 @@
       "destination": "/v0.1/docs/:path*/"
     },
     {
-      "source": "(/?)|(/v0.1/?)",
+      "source": "(/?)",
       "destination": "/v0.1/docs/get_started/introduction/"
     },
     {
