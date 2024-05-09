@@ -1,3 +1,4 @@
+from typing import List
 from unittest.mock import MagicMock
 
 import pytest
@@ -48,7 +49,7 @@ def test_get_relevant_documents(
             {"content": {"text": "result3"}},
         ]
     }
-    documents: list[Document] = amazon_retriever._get_relevant_documents(
+    documents: List[Document] = amazon_retriever._get_relevant_documents(
         query,
         run_manager=None,  # type: ignore
     )
