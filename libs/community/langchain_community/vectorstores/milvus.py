@@ -756,7 +756,7 @@ class Milvus(VectorStore):
             expr (str, optional): Filtering expression. Defaults to None.
             timeout (float, optional): How long to wait before timeout error.
                 Defaults to None.
-            include_id (bool, optional): Returns id of the vector as metadata 
+            include_id (bool, optional): Returns id of the vector as metadata
                 if set to True
             kwargs: Collection.search() keyword arguments.
 
@@ -1105,7 +1105,7 @@ class Milvus(VectorStore):
             set(self.fields).intersection(["source", "text", "pk", "page", "chunk_id"])
         )
 
-        results = self.col.query(expr=expr, output_fields=output_fields)
+        results = self.col.query(expr=expr, output_fields=output_fields)  # type: ignore[union-attr]
 
         output_docs = []
 

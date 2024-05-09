@@ -5,8 +5,8 @@ from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
-from langchain_pinecone import PineconeVectorStore
 
+# from langchain_pinecone import PineconeVectorStore
 from langchain_community.vectorstores import Chroma, Milvus
 
 
@@ -37,7 +37,8 @@ class SentenceWindowRetriever(BaseRetriever):
         store = values.get("store")
         window_size = values.get("window_size", -1)
 
-        if type(store) not in [Chroma, Milvus, PineconeVectorStore]:
+        # to add PineconeVectorStore when the import issue is resolved
+        if type(store) not in [Chroma, Milvus]:
             raise ValueError(
                 """Current SWR implementation only supports the following 
             datastores : Milvus, Pinecone, Chroma"""
@@ -62,7 +63,7 @@ class SentenceWindowRetriever(BaseRetriever):
                 embedding=vector, k=4, include_id=True
             )
         except NotImplementedError:
-            results = self.store.similarity_search_by_vector_with_score(
+            results = self.store.similarity_search_by_vector_with_score(  # type: ignore[attr-defined]
                 embedding=vector, k=4, include_id=True
             )
 
@@ -81,12 +82,20 @@ class SentenceWindowRetriever(BaseRetriever):
             doc (Document):
         """
 
-        doc_id = int(doc.metadata.get("id"))
+        doc_id = doc.metadata.get("id", "")
+
+        if doc_id.isdigit():
+            doc_id = int(doc_id)
+        else:
+            raise ValueError(
+                """Vector ID should not be empty and
+            should be convertible to integer"""
+            )
 
         start_index = max(0, doc_id - self.window_size)
         end_index = doc_id + self.window_size
 
-        window_docs = self.store.get_documents_by_ids(
+        window_docs = self.store.get_documents_by_ids(  # type: ignore[attr-defined]
             list(range(start_index, end_index + 1))
         )
 
@@ -108,6 +117,7 @@ class SentenceWindowRetriever(BaseRetriever):
             "type": "sentence_window",
             "primary_id": doc.metadata.get("id"),
         }
-        page_content = " ".join(page_content)
+        page_content = " ".join(page_content)  # type: ignore[assignment]
 
+        assert isinstance(page_content, str)
         return Document(page_content=page_content, metadata=metadata)

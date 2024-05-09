@@ -218,8 +218,8 @@ class PineconeVectorStore(VectorStore):
             metadata = res["metadata"]
 
             if include_id:
-                metadata['id'] = res['id']
-                
+                metadata["id"] = res["id"]
+
             if self._text_key in metadata:
                 text = metadata.pop(self._text_key)
                 score = res["score"]
@@ -498,10 +498,7 @@ class PineconeVectorStore(VectorStore):
 
         return None
 
-    def get_documents_by_ids(
-        self,
-        ids : int | str | List[int|str]
-    ) -> List[Document]:
+    def get_documents_by_ids(self, ids: int | str | List[int | str]) -> List[Document]:
         """Fetches vectors based on their IDs
 
         Args:
@@ -509,26 +506,22 @@ class PineconeVectorStore(VectorStore):
         """
 
         if isinstance(ids, list):
-            results = self._index.fetch(ids = [str(x) for x in ids])
+            results = self._index.fetch(ids=[str(x) for x in ids])
         else:
-            results = self._index.fetch(ids = [str(ids)])
+            results = self._index.fetch(ids=[str(ids)])
 
         output_docs = []
 
-        if len(results.vectors)>0:
-        
+        if len(results.vectors) > 0:
             for id_value in results.vectors.keys():
-        
-                metadata = results.vectors[id_value].get('metadata')
-                page_content = metadata.get('text')
-                _ = metadata.pop('text')
-        
-                metadata['id'] = id_value 
-        
-                output_docs.append(Document(
-                    page_content = page_content,
-                    metadata = metadata)
-                    )
+                metadata = results.vectors[id_value].get("metadata")
+                page_content = metadata.pop("text")
+
+                metadata["id"] = id_value
+
+                output_docs.append(
+                    Document(page_content=page_content, metadata=metadata)
+                )
 
         return output_docs
 
