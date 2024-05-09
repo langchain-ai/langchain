@@ -1,10 +1,10 @@
 import pytest
 from langchain_core.documents import Document
+from langchain_core.embeddings import FakeEmbeddings
 
-from langchain.embeddings import FakeEmbeddings
-from langchain.retrievers import KNNRetriever, TFIDFRetriever
-from langchain.retrievers.bm25 import BM25Retriever
 from langchain.retrievers.ensemble import EnsembleRetriever
+
+pytest.importorskip("langchain_community")
 
 
 @pytest.mark.requires("rank_bm25")
@@ -14,6 +14,8 @@ def test_ensemble_retriever_get_relevant_docs() -> None:
         "I like oranges",
         "Apples and oranges are fruits",
     ]
+
+    from langchain_community.retrievers import BM25Retriever
 
     dummy_retriever = BM25Retriever.from_texts(doc_list)
     dummy_retriever.k = 1
@@ -29,6 +31,8 @@ def test_ensemble_retriever_get_relevant_docs() -> None:
 def test_weighted_reciprocal_rank() -> None:
     doc1 = Document(page_content="1")
     doc2 = Document(page_content="2")
+
+    from langchain_community.retrievers import BM25Retriever
 
     dummy_retriever = BM25Retriever.from_texts(["1", "2"])
     ensemble_retriever = EnsembleRetriever(
@@ -61,6 +65,12 @@ def test_ensemble_retriever_get_relevant_docs_with_multiple_retrievers() -> None
         "I like strawberries",
         "Avocados and strawberries are fruits",
     ]
+
+    from langchain_community.retrievers import (
+        BM25Retriever,
+        KNNRetriever,
+        TFIDFRetriever,
+    )
 
     dummy_retriever = BM25Retriever.from_texts(doc_list_a)
     dummy_retriever.k = 1

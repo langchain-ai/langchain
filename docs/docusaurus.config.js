@@ -101,6 +101,9 @@ const config = {
                 // eslint-disable-next-line no-param-reassign
                 subItem.label = subItem.label.replace(/\//g, "/\u200B");
               }
+              if (args.item.className) {
+                subItem.className = args.item.className;
+              }
             });
             return sidebarItems;
           },
@@ -172,6 +175,11 @@ const config = {
                 type: "doc",
                 docId: "people",
                 label: "People",
+              },
+              {
+                type: "doc",
+                docId: "packages",
+                label: "Versioning",
               },
               {
                 type: "doc",

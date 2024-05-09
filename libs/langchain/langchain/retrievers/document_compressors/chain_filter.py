@@ -47,9 +47,10 @@ class LLMChainFilter(BaseDocumentCompressor):
         filtered_docs = []
         for doc in documents:
             _input = self.get_input(query, doc)
-            include_doc = self.llm_chain.predict_and_parse(
-                **_input, callbacks=callbacks
-            )
+            output_dict = self.llm_chain.invoke(_input, config={"callbacks": callbacks})
+            output = output_dict[self.llm_chain.output_key]
+            if self.llm_chain.prompt.output_parser is not None:
+                include_doc = self.llm_chain.prompt.output_parser.parse(output)
             if include_doc:
                 filtered_docs.append(doc)
         return filtered_docs
