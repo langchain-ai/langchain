@@ -1,6 +1,6 @@
 """Test rankllm reranker."""
 
-from langchain.retrievers.document_compressors import RankLLMRerank
+from langchain_community.document_compressors.rankllm_rerank import RankLLMRerank
 
 
 def test_rankllm_reranker_init() -> None:
