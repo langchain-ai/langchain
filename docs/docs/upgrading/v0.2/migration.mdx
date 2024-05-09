@@ -32,7 +32,7 @@ The migration script has the following limitations:
 Here is an example of the import changes that the migration script can help apply automatically:
 
 
-| From Pacakge        | To Package               | Deprecated Import                                                  | New Import                                                          |
+| From Package        | To Package               | Deprecated Import                                                  | New Import                                                          |
 |---------------------|--------------------------|--------------------------------------------------------------------|---------------------------------------------------------------------|
 | langchain           | langchain-community      | from langchain.vectorstores import Chroma                          | from langchain_community.vectorstores import Chroma                 |
 | langchain-community | langchain_openai         | from langchain_community.chat_models import ChatOpenAI             | from langchain_openai import ChatOpenAI                             |
