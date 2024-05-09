@@ -1835,17 +1835,18 @@ files = [
 
 [[package]]
 name = "duckdb-engine"
-version = "0.9.5"
+version = "0.11.5"
 description = "SQLAlchemy driver for duckdb"
 optional = false
-python-versions = ">=3.7"
+python-versions = "<4,>=3.8"
 files = [
-    {file = "duckdb_engine-0.9.5-py3-none-any.whl", hash = "sha256:bdaf9cc6b7e95bff8081921a9a2bdfa1c72b5ee60c1403c5c671de620dfebd9e"},
-    {file = "duckdb_engine-0.9.5.tar.gz", hash = "sha256:17fdc13068540315b64c7d174d5a260e918b1ce4b5346897caca026401afb280"},
+    {file = "duckdb_engine-0.11.5-py3-none-any.whl", hash = "sha256:b227fcb1380a9f5b1f4878af82fd862e8aafd68e6e93179025ac48c7f3aa64f7"},
+    {file = "duckdb_engine-0.11.5.tar.gz", hash = "sha256:a9419647b0cf480b4ad73add05d30cc6762c7d542ec14a0d4b477f8a96a58892"},
 ]
 
 [package.dependencies]
-duckdb = ">=0.4.0"
+duckdb = ">=0.5.0"
+packaging = ">=21"
 sqlalchemy = ">=1.3.22"
 
 [[package]]
@@ -10091,4 +10092,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5ccaf74b84c7ea44bb6a726e8fad100ec0b149394f05f28ede9a81208d12fca0"
+content-hash = "6cf13d1309750e43931f8ade08b2e5a4d1aa89752c9ab0239d41068219c33985"
