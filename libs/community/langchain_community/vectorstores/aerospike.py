@@ -3,7 +3,18 @@ from __future__ import annotations
 import logging
 import uuid
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 from langchain_core.documents import Document
@@ -31,6 +42,9 @@ def _import_aerospike() -> Any:  # TODO: Replace this with Any
             "Please install it with `pip install aerospike_vector`."
         ) from e
     return Client
+
+
+AVST = TypeVar("AVST", bound="Aerospike")
 
 
 class Aerospike(VectorStore):
@@ -166,6 +180,7 @@ class Aerospike(VectorStore):
             chunk_ids = ids[i : i + embedding_chunk_size]
             chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
+            
             for metadata, embedding, text in zip(
                 chunk_metadatas, embeddings, chunk_texts
             ):
@@ -485,14 +500,15 @@ class Aerospike(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        client: Client,
         texts: List[str],
         embedding: Embeddings,
+        client: Client,
         namespace: str,
         index_name: Optional[str] = None,
         ids: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
         embeddings_chunk_size: int = 1000,
+        client_kwargs: Optional[dict] = None,
         **kwargs,
     ) -> Aerospike:
         """
@@ -526,6 +542,66 @@ class Aerospike(VectorStore):
             ids=ids,
             index_name=index_name,
             embedding_chunk_size=embeddings_chunk_size,
-            **kwargs,
+            **(client_kwargs or {}),
         )
         return aerospike
+
+    @classmethod
+    def from_documents(
+        cls: Type[AVST],
+        documents: List[Document],
+        embedding: Embeddings,
+        client: Client,
+        namespace: str,
+        index_name: Optional[str] = None,
+        ids: Optional[List[str]] = None,
+        metadatas: Optional[List[dict]] = None,
+        embeddings_chunk_size: int = 1000,
+        client_kwargs: Optional[dict] = None,
+        **kwargs,
+    ) -> Aerospike:
+        """Return VectorStore initialized from documents and embeddings."""
+        texts = [d.page_content for d in documents]
+        metadatas = [d.metadata for d in documents]
+        return cls.from_texts(
+            texts,
+            embedding,
+            client,
+            namespace=namespace,
+            index_name=index_name,
+            ids=ids,
+            metadatas=metadatas,
+            embeddings_chunk_size=embeddings_chunk_size,
+            client_kwargs=client_kwargs,
+            **kwargs,
+        )
+
+    @classmethod
+    async def afrom_documents(
+        cls: Type[AVST],
+        documents: List[Document],
+        embedding: Embeddings,
+        client: Client,
+        namespace: str,
+        index_name: Optional[str] = None,
+        ids: Optional[List[str]] = None,
+        metadatas: Optional[List[dict]] = None,
+        embeddings_chunk_size: int = 1000,
+        client_kwargs: Optional[dict] = None,
+        **kwargs,
+    ) -> Aerospike:
+        """Return VectorStore initialized from documents and embeddings."""
+        texts = [d.page_content for d in documents]
+        metadatas = [d.metadata for d in documents]
+        return await cls.afrom_texts(
+            texts,
+            embedding,
+            client,
+            namespace=namespace,
+            index_name=index_name,
+            ids=ids,
+            metadatas=metadatas,
+            embeddings_chunk_size=embeddings_chunk_size,
+            client_kwargs=client_kwargs,
+            **kwargs,
+        )

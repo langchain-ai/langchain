@@ -138,9 +138,9 @@ class TestAerospike:
             dimensions=10,
         )
         aerospike = Aerospike.from_texts(
-            client,
             ["foo", "bar", "baz", "bay", "bax", "baw", "bav"],
             embedder,
+            client,
             TEST_NAMESPACE,
             index_name=index_name,
             ids=["1", "2", "3", "4", "5", "6", "7"],
@@ -390,9 +390,9 @@ class TestAerospike:
             dimensions=10,
         )
         aerospike = Aerospike.from_texts(
-            client,
             ["foo", "bar", "baz", "bay", "bax", "baw", "bav"],
             embedder,
+            client,
             TEST_NAMESPACE,
             index_name=index_name,
             ids=["1", "2", "3", "4", "5", "6", "7"],
