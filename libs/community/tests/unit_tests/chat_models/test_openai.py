@@ -1,4 +1,5 @@
 """Test OpenAI Chat API wrapper."""
+
 import json
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -14,13 +15,21 @@ from langchain_core.messages import (
 from langchain_community.adapters.openai import convert_dict_to_message
 from langchain_community.chat_models.openai import ChatOpenAI
 
-
 @pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
-    llm = ChatOpenAI(model="foo", openai_api_key="foo")  # type: ignore[call-arg]
-    assert llm.model_name == "foo"
-    llm = ChatOpenAI(model_name="foo", openai_api_key="foo")  # type: ignore[call-arg]
-    assert llm.model_name == "foo"
+    test_cases = [
+        {"model_name": "foo", "openai_api_key": "foo"},
+        {"model": "foo", "openai_api_key": "foo"},
+        {"model_name": "foo", "api_key": "foo"},
+        {"model_name": "foo", "openai_api_key": "foo", "max_retries": 2}
+    ]
+    
+    for case in test_cases:
+        llm = ChatOpenAI(**case)
+        assert llm.model_name == "foo", "Model name should be 'foo'"
+        assert llm.openai_api_key == "foo", "API key should be 'foo'"
+        assert hasattr(llm, 'max_retries'), "max_retries attribute should exist"
+        assert llm.max_retries == 2, "max_retries default should be set to 2"
 
 
 def test_function_message_dict_to_function_message() -> None:
