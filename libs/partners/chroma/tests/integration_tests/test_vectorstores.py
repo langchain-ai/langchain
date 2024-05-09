@@ -480,12 +480,11 @@ def test_create_collection_if_not_exist_true_non_existing(
     client: chromadb.ClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=True and collection non-existing. ."""
-    client.create_collection("test_collection")
     vectorstore = Chroma(
         client=client,
         collection_name="test_collection",
         embedding_function=FakeEmbeddings(),
-        create_collection_if_not_exists=False,
+        create_collection_if_not_exists=True,
     )
 
     assert vectorstore._client.get_collection("test_collection") is not None
