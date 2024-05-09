@@ -623,11 +623,11 @@ class OracleVS(VectorStore):
           {_get_distance_function(self.distance_strategy)}) as distance
         FROM {self.table_name}
         ORDER BY distance
-        FETCH APPROX FIRST :k ROWS ONLY
+        FETCH APPROX FIRST {k} ROWS ONLY
         """
         # Execute the query
         with self.client.cursor() as cursor:
-            cursor.execute(query, embedding=embedding_arr, k=k)
+            cursor.execute(query, embedding=embedding_arr)
             results = cursor.fetchall()
 
             # Filter results if filter is provided
@@ -683,12 +683,12 @@ class OracleVS(VectorStore):
           embedding
         FROM {self.table_name}
         ORDER BY distance
-        FETCH APPROX FIRST :k ROWS ONLY
+        FETCH APPROX FIRST {k} ROWS ONLY
         """
 
         # Execute the query
         with self.client.cursor() as cursor:
-            cursor.execute(query, embedding=embedding_arr, k=k)
+            cursor.execute(query, embedding=embedding_arr)
             results = cursor.fetchall()
 
             for result in results:

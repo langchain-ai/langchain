@@ -236,6 +236,27 @@ def get_loader_full_path(loader: BaseLoader) -> str:
             location = "in-memory"
         elif isinstance(loader, NotionDBLoader):
             location = f"notiondb://{loader.database_id}"
+        elif loader.__class__.__name__ == "GoogleDriveLoader":
+            if loader_dict.get("folder_id"):
+                folder_id = loader_dict.get("folder_id")
+                location = f"https://drive.google.com/drive/u/2/folders/{folder_id}"
+            elif loader_dict.get("file_ids"):
+                file_ids = loader_dict.get("file_ids", [])
+                location = ", ".join(
+                    [
+                        f"https://drive.google.com/file/d/{file_id}/view"
+                        for file_id in file_ids
+                    ]
+                )
+            elif loader_dict.get("document_ids"):
+                document_ids = loader_dict.get("document_ids", [])
+                location = ", ".join(
+                    [
+                        f"https://docs.google.com/document/d/{doc_id}/edit"
+                        for doc_id in document_ids
+                    ]
+                )
+
     except Exception:
         pass
     return get_full_path(str(location))

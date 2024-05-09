@@ -25,9 +25,7 @@ def test_initialization() -> None:
     """Test chat model initialization."""
 
     for model in [
-        ChatBaichuan(
-            model="Baichuan2-Turbo-192K", baichuan_api_key="test-api-key", timeout=40
-        ),
+        ChatBaichuan(model="Baichuan2-Turbo-192K", api_key="test-api-key", timeout=40),
         ChatBaichuan(
             model="Baichuan2-Turbo-192K",
             baichuan_api_key="test-api-key",
@@ -35,7 +33,9 @@ def test_initialization() -> None:
         ),
     ]:
         assert model.model == "Baichuan2-Turbo-192K"
+        assert isinstance(model.baichuan_api_key, SecretStr)
         assert model.request_timeout == 40
+        assert model.temperature == 0.3
 
 
 def test__convert_message_to_dict_human() -> None:

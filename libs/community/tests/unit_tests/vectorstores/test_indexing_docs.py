@@ -95,6 +95,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "VespaStore",
         "VLite",
         "Weaviate",
+        "Yellowbrick",
         "ZepVectorStore",
         "Zilliz",
         "Lantern",
