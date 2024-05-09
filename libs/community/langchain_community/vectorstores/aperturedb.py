@@ -146,16 +146,8 @@ class ApertureDB(VectorStore):
                 self.dimensions = len(
                     self.embedding_function.embed_query(""))
 
-            query = [{
-                "AddDescriptorSet": {
-                    "name": descriptor_set,
-                    "dimensions": self.dimensions,
-                    "engine": self.engine,
-                    "metric": self.metric,
-                }
-            }]
-            response, blobs_out = self.connection.query(query)
-            assert self.connection.last_query_ok(), self.connection.get_last_response_str()
+            self.utils.add_descriptorset(
+                name=descriptor_set, dim=self.dimensions, engine=self.engine, metric=self.metric)
 
             # Create indexes
             self.utils.create_entity_index("_Descriptor", "_create_txn")
@@ -325,15 +317,8 @@ class ApertureDB(VectorStore):
     def delete_vectorstore(class_, descriptor_set: str):
         """Deletes a vectorstore and all its data from the database"""
         db = create_connector()
-
-        query = [{
-            "DeleteDescriptorSet": {
-                "with_name": descriptor_set
-            }
-        }]
-        response, _ = db.query(query)
-        assert db.last_query_ok(), response
-        return response
+        utils = Utils(db)
+        utils.remove_descriptorset(descriptor_set)
 
     @classmethod
     def list_vectorstores(class_):
