@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.0.58"
+version = "0.2.0rc1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -11,7 +11,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.52"
-langchain-community = "^0.0.38rc1"
+langchain-community = ">=0.0.38rc1,<0.3"
 presidio-anonymizer = {version = "^2.2.352", optional = true}
 presidio-analyzer = {version = "^2.2.352", optional = true}
 faker = {version = "^19.3.1", optional = true}
