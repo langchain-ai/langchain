@@ -56,4 +56,7 @@ def test_premai_initialization() -> None:
         ChatPremAI(model_name="prem-ai-model", api_key="xyz", project_id=8),
     ]:
         assert model.model == "prem-ai-model"
+        assert model.temperature == None
+        assert model.max_tokens == None
+        assert model.max_retries == None
         assert cast(SecretStr, model.premai_api_key).get_secret_value() == "xyz"

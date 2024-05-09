@@ -188,7 +188,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
     session_id: Optional[str] = None
     """The ID of the session to use. It helps to track the chat history."""
 
-    temperature: Optional[float] = None
+    temperature: Optional[float] = Field(default=None)
     """Model temperature. Value should be >= 0 and <= 1.0"""
 
     top_p: Optional[float] = None
@@ -196,10 +196,10 @@ class ChatPremAI(BaseChatModel, BaseModel):
         cumulative probabilities. Value should be ranging between 0.0 and 1.0. 
     """
 
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = Field(default=None)
     """The maximum number of tokens to generate"""
 
-    max_retries: int = 1
+    max_retries: Optional[int] = Field(default=None)
     """Max number of retries to call the API"""
 
     system_prompt: Optional[str] = ""
