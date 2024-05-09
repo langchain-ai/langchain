@@ -79,7 +79,7 @@ def test_model() -> None:
 
 def test_vision_model() -> None:
     """Test model kwarg works."""
-    chat = ChatTongyi(model="qwen-vl-max")
+    chat = ChatTongyi(model="qwen-vl-max")  # type: ignore[call-arg]
     response = chat.invoke(
         [
             HumanMessage(
