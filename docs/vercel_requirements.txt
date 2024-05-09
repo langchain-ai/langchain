@@ -9,3 +9,4 @@ langchain-nvidia-ai-endpoints
 langchain-elasticsearch
 langchain-postgres
 urllib3==1.26.18
+nbconvert==7.16.4
