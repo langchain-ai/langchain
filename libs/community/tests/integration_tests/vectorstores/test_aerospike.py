@@ -180,6 +180,90 @@ class TestAerospike:
 
         assert actual == expected
 
+    def test_from_documents(
+        self, client, admin_client, embedder: ConsistentFakeEmbeddings
+    ):
+        admin_client: AdminClient = admin_client
+        index_name = set_name = get_func_name()
+        admin_client.index_create(
+            namespace=TEST_NAMESPACE,
+            sets=set_name,
+            name=index_name,
+            vector_field=VECTOR_KEY,
+            dimensions=10,
+        )
+        documents = [
+            Document(
+                page_content="foo",
+                metadata={
+                    ID_KEY: "1",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+                },
+            ),
+            Document(
+                page_content="bar",
+                metadata={
+                    ID_KEY: "2",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                },
+            ),
+            Document(
+                page_content="baz",
+                metadata={
+                    ID_KEY: "3",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0],
+                },
+            ),
+            Document(
+                page_content="bay",
+                metadata={
+                    ID_KEY: "4",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 3.0],
+                },
+            ),
+            Document(
+                page_content="bax",
+                metadata={
+                    ID_KEY: "5",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 4.0],
+                },
+            ),
+            Document(
+                page_content="baw",
+                metadata={
+                    ID_KEY: "6",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 5.0],
+                },
+            ),
+            Document(
+                page_content="bav",
+                metadata={
+                    ID_KEY: "7",
+                    "_vector": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 6.0],
+                },
+            ),
+        ]
+        aerospike = Aerospike.from_documents(
+            documents,
+            embedder,
+            client,
+            TEST_NAMESPACE,
+            index_name=index_name,
+            ids=["1", "2", "3", "4", "5", "6", "7"],
+            set_name=set_name,
+        )
+
+        actual = aerospike.search(
+            "foo", k=3, index_name=index_name, search_type="similarity"
+        )
+
+        expected = documents[:3]
+        actual = sorted(
+            actual, key=lambda x: x.metadata[ID_KEY]
+        )  # TODO: Remove this line after next release
+
+        assert actual == expected
+
     def test_search_blocking(self, aerospike: Aerospike, admin_client):
         """Test end to end construction and search."""
         admin_client: AdminClient = admin_client

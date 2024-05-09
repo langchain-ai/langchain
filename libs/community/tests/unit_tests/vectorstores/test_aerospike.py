@@ -64,6 +64,24 @@ def test_aerospike(client) -> None:
         store.similarity_search_by_vector(embedding.embed_query(query_string))
 
 
+def test_init_aerospike_distance(client):
+    from aerospike_vector_search.types import VectorDistanceMetric
+
+    embedding = FakeEmbeddings()
+    aerospike = Aerospike(
+        client=client,
+        embedding=embedding,
+        text_key="text",
+        vector_key="vector",
+        index_name="dummy_index",
+        namespace="test",
+        set_name="testset",
+        distance_strategy=VectorDistanceMetric.COSINE,
+    )
+
+    assert aerospike._distance_strategy == DistanceStrategy.COSINE
+
+
 def test_init_bad_embedding(client):
     def bad_embedding():
         return None
@@ -102,6 +120,39 @@ def test_init_bad_client(client):
             set_name="testset",
             distance_strategy=DistanceStrategy.COSINE,
         )
+
+
+def test_convert_distance_strategy(client):
+    from aerospike_vector_search.types import VectorDistanceMetric
+
+    aerospike = Aerospike(
+        client=client,
+        embedding=FakeEmbeddings(),
+        text_key="text",
+        vector_key="vector",
+        index_name="dummy_index",
+        namespace="test",
+        set_name="testset",
+        distance_strategy=DistanceStrategy.COSINE,
+    )
+
+    converted_strategy = aerospike._convert_distance_strategy(
+        VectorDistanceMetric.COSINE
+    )
+    assert converted_strategy == DistanceStrategy.COSINE
+
+    converted_strategy = aerospike._convert_distance_strategy(
+        VectorDistanceMetric.DOT_PRODUCT
+    )
+    assert converted_strategy == DistanceStrategy.DOT_PRODUCT
+
+    converted_strategy = aerospike._convert_distance_strategy(
+        VectorDistanceMetric.SQUARED_EUCLIDEAN
+    )
+    assert converted_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE
+
+    with pytest.raises(ValueError):
+        aerospike._convert_distance_strategy(VectorDistanceMetric.JACCARD)
 
 
 def test_add_texts_wait_for_index_error(client):
