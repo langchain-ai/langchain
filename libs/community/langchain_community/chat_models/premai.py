@@ -199,7 +199,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
     max_tokens: Optional[int] = Field(default=None)
     """The maximum number of tokens to generate"""
 
-    max_retries: Optional[int] = Field(default=None)
+    max_retries: int = Field(default=1)
     """Max number of retries to call the API"""
 
     system_prompt: Optional[str] = ""
