@@ -10,6 +10,7 @@ from langchain_community.graphs.graph_store import GraphStore
 
 class GremlinGraph(GraphStore):
     """Gremlin wrapper for graph operations.
+
     Parameters:
     url (Optional[str]): The URL of the Gremlin database server or env GREMLIN_URI
     username (Optional[str]): The collection-identifier like '/dbs/database/colls/graph'

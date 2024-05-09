@@ -57,15 +57,15 @@ def draw_mermaid(
         # Add nodes to the graph
         for node in nodes.values():
             node_label = format_dict.get(node, format_dict[default_class_label]).format(
-                _escape_node_label(node), _escape_node_label(node.split(":", 1)[-1])
+                _escape_node_label(node), node.split(":", 1)[-1]
             )
             mermaid_graph += f"\t{node_label};\n"
 
     subgraph = ""
     # Add edges to the graph
     for edge in edges:
-        src_prefix = edge.source.split(":")[0]
-        tgt_prefix = edge.target.split(":")[0]
+        src_prefix = edge.source.split(":")[0] if ":" in edge.source else None
+        tgt_prefix = edge.target.split(":")[0] if ":" in edge.target else None
         # exit subgraph if source or target is not in the same subgraph
         if subgraph and (subgraph != src_prefix or subgraph != tgt_prefix):
             mermaid_graph += "\tend\n"
