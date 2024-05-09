@@ -187,13 +187,13 @@ def test_manually_specify_rid() -> None:
     chain = FakeChain()
     run_id = uuid.uuid4()
     with collect_runs() as cb:
-        chain.invoke("bar", {"run_id": run_id})
+        chain.invoke({"foo": "bar"}, {"run_id": run_id})
         run = cb.traced_runs[0]
         assert run.id == run_id
 
     run_id2 = uuid.uuid4()
     with collect_runs() as cb:
-        list(chain.stream("bar", {"run_id": run_id2}))
+        list(chain.stream({"foo": "bar"}, {"run_id": run_id2}))
         run = cb.traced_runs[0]
         assert run.id == run_id2
 
@@ -202,12 +202,12 @@ async def test_manually_specify_rid_async() -> None:
     chain = FakeChain()
     run_id = uuid.uuid4()
     with collect_runs() as cb:
-        await chain.ainvoke("bar", {"run_id": run_id})
+        await chain.ainvoke({"foo": "bar"}, {"run_id": run_id})
         run = cb.traced_runs[0]
         assert run.id == run_id
     run_id2 = uuid.uuid4()
     with collect_runs() as cb:
-        res = chain.astream("bar", {"run_id": run_id2})
+        res = chain.astream({"foo": "bar"}, {"run_id": run_id2})
         async for _ in res:
             pass
         run = cb.traced_runs[0]
