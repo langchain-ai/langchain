@@ -107,7 +107,10 @@ def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
         additional_kwargs = {}
         if "name" in dct:
             additional_kwargs["name"] = dct["name"]
-        return ToolMessage(content=content, tool_call_id=dct["tool_call_id"], additional_kwargs=additional_kwargs)
+        return ToolMessage(
+            content=content,
+            tool_call_id=dct["tool_call_id"],
+            additional_kwargs=additional_kwargs)
     return ChatMessage(role=role, content=content)
 
 
