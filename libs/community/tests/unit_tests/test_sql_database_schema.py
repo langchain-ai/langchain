@@ -47,7 +47,7 @@ def test_table_info() -> None:
     engine = create_engine("duckdb:///:memory:")
     metadata_obj.create_all(engine)
 
-    db = SQLDatabase(engine, schema="schema_a", metadata=metadata_obj)
+    db = SQLDatabase(engine, schema="schema_a", metadata=metadata_obj)  #
     output = db.table_info
     expected_output = """
     CREATE TABLE schema_a."user" (
