@@ -350,6 +350,14 @@ def test_stream() -> None:
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
 
+    # test token usage
+    for chunk in llm.stream("Hello", stream_options={"include_usage": True}):
+        assert isinstance(chunk.content, str)
+        full = chunk if full is None else full + chunk
+    assert "token_usage" in full.response_metadata
+    for key in ["completion_tokens", "prompt_tokens", "total_tokens"]:
+        assert isinstance(full.response_metadata["token_usage"][key], int)
+
 
 async def test_astream() -> None:
     """Test streaming tokens from OpenAI."""
@@ -359,6 +367,14 @@ async def test_astream() -> None:
     async for chunk in llm.astream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+
+    # test token usage
+    for chunk in llm.stream("Hello", stream_options={"include_usage": True}):
+        assert isinstance(chunk.content, str)
+        full = chunk if full is None else full + chunk
+    assert "token_usage" in full.response_metadata
+    for key in ["completion_tokens", "prompt_tokens", "total_tokens"]:
+        assert isinstance(full.response_metadata["token_usage"][key], int)
 
 
 async def test_abatch() -> None:
