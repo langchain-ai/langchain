@@ -9,6 +9,8 @@ require("dotenv").config();
 const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
 const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 
+const baseUrl = "/v0.2/";
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "🦜️🔗 LangChain",
@@ -18,10 +20,10 @@ const config = {
   url: "https://python.langchain.com",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/v0.2/",
+  baseUrl: baseUrl,
   trailingSlash: true,
-  onBrokenLinks: "warn",
-  onBrokenMarkdownLinks: "warn",
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "throw",
 
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
@@ -315,7 +317,7 @@ const config = {
     }),
 
   scripts: [
-    "/js/google_analytics.js",
+    baseUrl + "js/google_analytics.js",
     {
       src: "https://www.googletagmanager.com/gtag/js?id=G-9B66JQQH2F",
       async: true,
