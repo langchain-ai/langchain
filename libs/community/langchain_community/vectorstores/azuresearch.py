@@ -584,6 +584,29 @@ class AzureSearch(VectorStore):
         )
         return [(doc, score) for doc, score, _ in docs_and_scores]
 
+    def semantic_hybrid_search_with_rerank(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """
+        Returns the most similar indexed documents to the query text.
+
+        Args:
+            query (str): The query text for which to find similar documents.
+            k (int): The number of documents to return. Default is 4.
+
+        Returns:
+            List[Document]: A list of documents that are most similar to the query text.
+        """
+        score_threshold = kwargs.pop("score_threshold", None)
+        docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
+            query, k=k, filters=kwargs.get("filters", None)
+        )
+        return [
+            (doc, score)
+            for doc, _, score in docs_and_scores
+            if score_threshold is None or score >= score_threshold
+        ]
+
     def semantic_hybrid_search_with_score_and_rerank(
         self, query: str, k: int = 4, filters: Optional[str] = None
     ) -> List[Tuple[Document, float, float]]:
@@ -716,7 +739,8 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     """Azure Search instance used to find similar documents."""
     search_type: str = "hybrid"
     """Type of search to perform. Options are "similarity", "hybrid",
-    "semantic_hybrid", "similarity_score_threshold", "hybrid_score_threshold"."""
+    "semantic_hybrid", "similarity_score_threshold", "hybrid_score_threshold", 
+    or "semantic_hybrid_score_threshold"."""
     k: int = 4
     """Number of documents to return."""
     allowed_search_types: ClassVar[Collection[str]] = (
@@ -725,6 +749,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         "hybrid",
         "hybrid_score_threshold",
         "semantic_hybrid",
+        "semantic_hybrid_score_threshold",
     )
 
     class Config:
@@ -770,6 +795,13 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
             ]
         elif self.search_type == "semantic_hybrid":
             docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
+        elif self.search_type == "semantic_hybrid_score_threshold":
+            docs = [
+                doc
+                for doc, _ in self.vectorstore.semantic_hybrid_search_with_rerank(
+                    query, k=self.k, **kwargs
+                )
+            ]
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
