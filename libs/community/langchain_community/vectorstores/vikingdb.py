@@ -59,7 +59,7 @@ class VikingDB(VectorStore):
         try:
             from volcengine.viking_db import Collection, VikingDBService
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import volcengine python package. "
                 "Please install it with `pip install --upgrade volcengine`."
             )
@@ -104,7 +104,7 @@ class VikingDB(VectorStore):
         try:
             from volcengine.viking_db import Field, FieldType
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import volcengine python package. "
                 "Please install it with `pip install --upgrade volcengine`."
             )
@@ -115,19 +115,27 @@ class VikingDB(VectorStore):
                 # print(key, value)
                 if isinstance(value, str):
                     fields.append(Field(key, FieldType.String))
-                if isinstance(value, int):
+                elif isinstance(value, int):
                     fields.append(Field(key, FieldType.Int64))
-                if isinstance(value, bool):
+                elif isinstance(value, bool):
                     fields.append(Field(key, FieldType.Bool))
-                if isinstance(value, list) and all(
+                elif isinstance(value, list) and all(
                     isinstance(item, str) for item in value
                 ):
                     fields.append(Field(key, FieldType.List_String))
-                if isinstance(value, list) and all(
+                elif isinstance(value, list) and all(
                     isinstance(item, int) for item in value
                 ):
                     fields.append(Field(key, FieldType.List_Int64))
-        fields.append(Field("text", FieldType.String))
+                elif isinstance(value, bytes):
+                    fields.append(Field(key, FieldType.Text))
+                else:
+                    raise ValueError(
+                        "metadatas value is invalid"
+                        "please change the type of metadatas."
+                    )
+        # fields.append(Field("text", FieldType.String))
+        fields.append(Field("text", FieldType.Text))
 
         fields.append(Field("primary_key", FieldType.String, is_primary_key=True))
 
@@ -139,7 +147,7 @@ class VikingDB(VectorStore):
         try:
             from volcengine.viking_db import VectorIndexParams
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import volcengine python package. "
                 "Please install it with `pip install --upgrade volcengine`."
             )
@@ -177,7 +185,7 @@ class VikingDB(VectorStore):
         try:
             from volcengine.viking_db import Data
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import volcengine python package. "
                 "Please install it with `pip install --upgrade volcengine`."
             )
