@@ -24,7 +24,7 @@ class MLXPipeline(LLM):
             from langchain_community.llms import MLXPipeline
             pipe = MLXPipeline.from_model_id(
                 model_id="mlx-community/quantized-gemma-2b",
-                pipeline_kwargs={"max_tokens": 10},
+                pipeline_kwargs={"max_tokens": 10, "temp": 0.7},
             )
     Example passing model and tokenizer in directly:
         .. code-block:: python
@@ -59,7 +59,17 @@ class MLXPipeline(LLM):
         when needed. Default: ``False``
     """
     pipeline_kwargs: Optional[dict] = None
-    """Keyword arguments passed to the pipeline."""
+    """
+    Keyword arguments passed to the pipeline. Defaults include:
+        - temp (float): Temperature for generation, default is 0.0.
+        - max_tokens (int): Maximum tokens to generate, default is 100.
+        - verbose (bool): Whether to output verbose logging, default is False.
+        - formatter (Optional[Callable]): A callable to format the output, default is None.
+        - repetition_penalty (Optional[float]): The penalty factor for repeated sequences, default is None.
+        - repetition_context_size (Optional[int]): Size of the context for applying repetition penalty, default is None.
+        - top_p (float): The cumulative probability threshold for top-p filtering, default is 1.0.
+
+    """
 
     class Config:
         """Configuration for this pydantic object."""
