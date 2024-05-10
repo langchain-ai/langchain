@@ -3964,7 +3964,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.2.0rc1"
+version = "0.2.0rc2"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3975,14 +3975,14 @@ develop = true
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
 dataclasses-json = ">= 0.5.7, < 0.7"
-langchain-core = "^0.1.48"
+langchain-core = "^0.1.52"
 langchain-text-splitters = ">=0.0.1,<0.1"
 langsmith = "^0.1.17"
 numpy = "^1"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
 requests = "^2"
-SQLAlchemy = ">=1.4,<3"
+SQLAlchemy = ">=1.4,<2.0.29"
 tenacity = "^8.1.0"
 
 [package.extras]
@@ -10086,4 +10086,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5ccaf74b84c7ea44bb6a726e8fad100ec0b149394f05f28ede9a81208d12fca0"
+content-hash = "9d392f76704b4b9f9cb7a19a0f0dcaf25b7108025a9513d8b63308c0dd273e13"
