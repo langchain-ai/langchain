@@ -157,6 +157,16 @@ class PubMedAPIWrapper(BaseModel):
         xml_text = result.read().decode("utf-8")
         text_dict = self.parse(xml_text)
         return self._parse_article(uid, text_dict)
+    
+    def extract_pmc_id(self, text_dict):
+        """Extracts the PMC ID from the article data."""
+        try:
+            article_ids = text_dict['PubmedArticleSet']['PubmedArticle']['PubmedData']['ArticleIdList']['ArticleId']
+            pmc_id = next((id['#text'] for id in article_ids if id['@IdType'] == 'pmc'), None)
+            return pmc_id
+        except KeyError as e:
+            logger.error(f"Failed to extract PMC ID due to missing keys: {e}")
+            return None
 
     def _parse_article(self, uid: str, text_dict: dict) -> dict:
         try:
@@ -165,6 +175,7 @@ class PubMedAPIWrapper(BaseModel):
             ]
         except KeyError:
             ar = text_dict["PubmedArticleSet"]["PubmedBookArticle"]["BookDocument"]
+        pmc_id = self.extract_pmc_id(text_dict)
         abstract_text = ar.get("Abstract", {}).get("AbstractText", [])
         summaries = [
             f"{txt['@Label']}: {txt['#text']}"
@@ -192,9 +203,11 @@ class PubMedAPIWrapper(BaseModel):
         return {
             "uid": uid,
             "Title": ar.get("ArticleTitle", ""),
+            "PMCID": pmc_id,
             "Published": pub_date,
             "Copyright Information": ar.get("Abstract", {}).get(
                 "CopyrightInformation", ""
             ),
             "Summary": summary,
         }
+        
