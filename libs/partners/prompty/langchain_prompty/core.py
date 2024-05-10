@@ -72,7 +72,7 @@ class Prompty(BaseModel):
     def to_safe_dict(self) -> Dict[str, any]:
         d = {}
         for k, v in self:
-            if v != "" and v != {} and v != [] and v != None:
+            if v != "" and v != {} and v != [] and v is not None:
                 if k == "model":
                     d[k] = v.model_dump_safe()
                 elif k == "template":

@@ -30,7 +30,8 @@ class PromptyChatParser(Invoker):
                 return f"data:image/jpeg;base64,{base64_image}"
             else:
                 raise ValueError(
-                    f"Invalid image format {image_path.suffix} - currently only .png and .jpg / .jpeg are supported."
+                    f"Invalid image format {image_path.suffix} - currently only .png "
+                    "and .jpg / .jpeg are supported."
                 )
 
     def parse_content(self, content: str):
