@@ -10,8 +10,7 @@ from .core import (
     TemplateSettings,
     param_hoisting,
 )
-from .parsers import *
-from .renderers import *
+from .parsers import InvokerFactory, SimpleModel
 
 
 def load(prompty_file: str, configuration: str = "default") -> Prompty:
@@ -202,8 +201,6 @@ def execute(
             caller = Path(traceback.extract_stack()[-3].filename)
             path = Path(caller.parent / path).resolve().absolute()
         prompt = load(path, connection)
-
-    invoker = InvokerFactory()
 
     # prepare content
     content = prepare(prompt, inputs)

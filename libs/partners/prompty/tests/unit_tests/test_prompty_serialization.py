@@ -91,11 +91,11 @@ def test_prompty_used_in_agent():
             "lastName": lambda x: x["lastName"],
             "input": lambda x: x["input"],
             "chat_history": lambda x: x["chat_history"],
-            "agent_scratchpad": lambda x: format_to_openai_function_messages(
-                x["intermediate_steps"]
-            )
-            if "intermediate_steps" in x
-            else [],
+            "agent_scratchpad": lambda x: (
+                format_to_openai_function_messages(x["intermediate_steps"])
+                if "intermediate_steps" in x
+                else []
+            ),
         }
         | prompt
         | llm_with_tools
@@ -115,7 +115,7 @@ def test_prompty_used_in_agent():
         input_type=AgentInput
     )
 
-    resp = agent_executor.invoke(
+    agent_executor.invoke(
         {
             "firstName": "fakeFirstName",
             "lastName": "fakeLastName",
