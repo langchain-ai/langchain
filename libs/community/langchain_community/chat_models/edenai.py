@@ -119,7 +119,7 @@ class ChatEdenAI(BaseChatModel):
     provider: str = "openai"
     """chat provider to use (eg: openai,google etc.)"""
 
-    model: Optional[str] = None
+    model: Optional[str] = Field(default=None)
     """
     model name for above provider (eg: 'gpt-4' for openai)
     available models are shown on https://docs.edenai.co/ under 'available providers'
