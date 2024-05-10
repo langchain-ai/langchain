@@ -96,7 +96,7 @@ class BasePDFLoader(BaseLoader, ABC):
         """
         if file_path is None and file_obj is None:
             raise ValueError("Either file_path or file_obj must be provided.")
-            
+
         if file_obj is not None:
             self.file_path = None
             self.web_path = None
