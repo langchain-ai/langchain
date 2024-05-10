@@ -474,12 +474,9 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            **params,
-            **kwargs,
-            "stream": True,
-            "stream_options": {"include_usage": True},
-        }
+        params = {**params, **kwargs, "stream": True}
+        if stream_options := kwargs.get("stream_options"):
+            params["stream_options"] = stream_options
 
         default_chunk_class = AIMessageChunk
         with self.client.create(messages=message_dicts, **params) as response:
