@@ -19,7 +19,10 @@ def test_edenai_initialization() -> None:
         temperature=0.5,
         max_tokens=100,
     )
-    assert chat.edenai_api_key.get_secret_value() == "dummy_api_key"
+    if chat.edenai_api_key is not None:
+        assert chat.edenai_api_key.get_secret_value() == "dummy_api_key"
+    else:
+        raise AssertionError("edenai_api_key is None")
     assert chat.model == "gpt-4"
     assert chat.temperature == 0.5
     assert chat.max_tokens == 100
