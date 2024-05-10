@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from langchain_core.vectorstores import (
         VectorStore,
     )
-    
+
     from langchain_community.vectorstores.aerospike import (
         Aerospike,  # noqa: F401
     )
@@ -295,8 +295,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
-    "Aerospike"
-    "AlibabaCloudOpenSearch",
+    "Aerospike" "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
     "Annoy",

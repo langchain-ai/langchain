@@ -28,7 +28,7 @@ from langchain_community.vectorstores.utils import (
 
 if TYPE_CHECKING:
     from aerospike_vector_search import Client
-    from aerospike_vector_search.types import Neighbor
+    from aerospike_vector_search.types import Neighbor, VectorDistanceMetric
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class Aerospike(VectorStore):
         id_key: str = "_id",
         set_name: Optional[str] = None,
         distance_strategy: Optional[
-            DistanceStrategy
+            Union[DistanceStrategy, VectorDistanceMetric]
         ] = DistanceStrategy.EUCLIDEAN_DISTANCE,
     ):
         """Initialize with Aerospike client.
@@ -107,7 +107,7 @@ class Aerospike(VectorStore):
         self._index_name = index_name
         self._namespace = namespace
         self._set_name = set_name
-        self._distance_strategy = distance_strategy
+        self._distance_strategy = self.convert_distance_strategy(distance_strategy)
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -127,6 +127,33 @@ class Aerospike(VectorStore):
         if isinstance(self._embedding, Embeddings):
             return self._embedding.embed_query(text)
         return self._embedding(text)
+
+    @staticmethod
+    def convert_distance_strategy(
+        distance_strategy: Union[VectorDistanceMetric, DistanceStrategy]
+    ) -> DistanceStrategy:
+        """
+        Convert Aerospikes distance strategy to langchains DistanceStrategy
+        enum. This is a convenience method to allow users to pass in the same
+        distance metric used to create the index.
+        """
+        from aerospike_vector_search.types import VectorDistanceMetric
+
+        if isinstance(distance_strategy, DistanceStrategy):
+            return distance_strategy
+
+        if distance_strategy == VectorDistanceMetric.COSINE:
+            return DistanceStrategy.COSINE
+
+        if distance_strategy == VectorDistanceMetric.DOT_PRODUCT:
+            return DistanceStrategy.DOT_PRODUCT
+
+        if distance_strategy == VectorDistanceMetric.SQUARED_EUCLIDEAN:
+            return DistanceStrategy.EUCLIDEAN_DISTANCE
+
+        raise ValueError(
+            "Unknown distance strategy, must be cosine, dot_product" ", or euclidean"
+        )
 
     def add_texts(
         self,
@@ -169,18 +196,21 @@ class Aerospike(VectorStore):
         if wait_for_index and index_name is None:
             raise ValueError("if wait_for_index is True, index_name must be provided")
 
-        # TODO: Should we check that the index already exists before inserting?
-
         texts = list(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
-        metadatas = metadatas or [{} for _ in texts]
+
+        # We need to shallow copy so that we can add the vector and text keys
+        if metadatas:
+            metadatas = [m.copy() for m in metadatas]
+        else:
+            metadatas = metadatas or [{} for _ in texts]
 
         for i in range(0, len(texts), embedding_chunk_size):
             chunk_texts = texts[i : i + embedding_chunk_size]
             chunk_ids = ids[i : i + embedding_chunk_size]
             chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embed_documents(chunk_texts)
-            
+
             for metadata, embedding, text in zip(
                 chunk_metadatas, embeddings, chunk_texts
             ):

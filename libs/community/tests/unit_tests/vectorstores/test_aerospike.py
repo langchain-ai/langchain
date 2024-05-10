@@ -136,23 +136,23 @@ def test_convert_distance_strategy(client):
         distance_strategy=DistanceStrategy.COSINE,
     )
 
-    converted_strategy = aerospike._convert_distance_strategy(
+    converted_strategy = aerospike.convert_distance_strategy(
         VectorDistanceMetric.COSINE
     )
     assert converted_strategy == DistanceStrategy.COSINE
 
-    converted_strategy = aerospike._convert_distance_strategy(
+    converted_strategy = aerospike.convert_distance_strategy(
         VectorDistanceMetric.DOT_PRODUCT
     )
     assert converted_strategy == DistanceStrategy.DOT_PRODUCT
 
-    converted_strategy = aerospike._convert_distance_strategy(
+    converted_strategy = aerospike.convert_distance_strategy(
         VectorDistanceMetric.SQUARED_EUCLIDEAN
     )
     assert converted_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE
 
     with pytest.raises(ValueError):
-        aerospike._convert_distance_strategy(VectorDistanceMetric.JACCARD)
+        aerospike.convert_distance_strategy(VectorDistanceMetric.HAMMING)
 
 
 def test_add_texts_wait_for_index_error(client):
