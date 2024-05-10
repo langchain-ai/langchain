@@ -28,7 +28,8 @@ class TestYandexSearchAPIWrapper(unittest.TestCase):
                             <sortby order="descending" priority="no">tm</sortby>
                             <maxpassages>2</maxpassages>
                             <groupings>
-                                <groupby attr="d" mode="deep" groups-on-page="10" docs-in-group="3" curcateg="-1"/>
+                                <groupby attr="d" mode="deep" groups-on-page="10" 
+                                    docs-in-group="3" curcateg="-1"/>
                             </groupings>
                         </request>
                         <response>
@@ -75,7 +76,8 @@ class TestYandexSearchAPIWrapper(unittest.TestCase):
                             <sortby order="descending" priority="no">tm</sortby>
                             <maxpassages>2</maxpassages>
                             <groupings>
-                                <groupby attr="d" mode="deep" groups-on-page="10" docs-in-group="3" curcateg="-1"/>
+                                <groupby attr="d" mode="deep" groups-on-page="10" 
+                                    docs-in-group="3" curcateg="-1"/>
                             </groupings>
                         </request>
                         <response>
@@ -103,12 +105,16 @@ class TestYandexSearchAPIWrapper(unittest.TestCase):
                             <sortby order="descending" priority="no">rlv</sortby>
                             <maxpassages>1</maxpassages>
                             <groupings>
-                                <groupby attr="d" mode="deep" groups-on-page="10" docs-in-group="3" curcateg="-1"/>
+                                <groupby attr="d" mode="deep" groups-on-page="10" 
+                                    docs-in-group="3" curcateg="-1"/>
                             </groupings>
                         </request>
                         <response date="20240502T061612">
                             <error code="2">Empty request</error>
-                            <reqid>1714630572494676-9557161538559543159-balancer-l7leveler-kubr-yp-sas-144-BAL</reqid>
+                            <reqid>
+                                1714630572494676-9557161538559543159-
+                                balancer-l7leveler-kubr-yp-sas-144-BAL
+                            </reqid>
                         </response>
                     </yandexsearch>""",
             status=400,

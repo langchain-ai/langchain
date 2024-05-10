@@ -32,7 +32,8 @@ class YandexSearchAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def _get_yandex_domain(self, language: str) -> str:
-        """Determine the appropriate Yandex domain based on the notification language."""
+        """Determine the appropriate Yandex domain based on 
+        the notification language."""
         if language == "tr":
             return "https://yandex.com.tr/search/xml"
         elif language == "en":
@@ -54,14 +55,20 @@ class YandexSearchAPIWrapper(BaseModel):
 
         Args:
             search_term (str): The search query string.
-            page (int, optional): The page number of the search results. Defaults to 1.
-            num_results (int, optional): The number of search results per page. Defaults to 10.
-            filter (str, optional): The filter setting ('none', 'moderate', 'strict'). If None, the default filter setting is used.
-            lr (int, optional): The region identifier for localized search. If None, the default region is used.
-            l10n (str, optional): The localization language setting (e.g., 'ru', 'en', 'tr'). If None, the default language is used.
+            page (int, optional): The page number of the search results.
+                Defaults to 1.
+            num_results (int, optional): The number of search results per page.
+                Defaults to 10.
+            filter (str, optional): The filter setting ('none', 'moderate', 'strict').
+                If None, the default filter setting is used.
+            lr (int, optional): The region identifier for localized search.
+                If None, the default region is used.
+            l10n (str, optional): The localization language setting
+                (e.g., 'ru', 'en', 'tr'). If None, the default language is used.
 
         Returns:
-            List[dict]: A list of dictionaries, each containing data about a single search result.
+            List[dict]: A list of dictionaries, each containing data about a
+            single search result.
 
         Each dictionary in the returned list contains:
             - 'url': URL of the document.
@@ -69,6 +76,7 @@ class YandexSearchAPIWrapper(BaseModel):
             - 'domain': Domain name of the URL.
             - 'snippet': Text snippet from the document.
         """
+
         domain_url = self._get_yandex_domain(l10n if l10n is not None else self.l10n)
         headers = {}
         params = {
@@ -83,7 +91,8 @@ class YandexSearchAPIWrapper(BaseModel):
                     <query>{search_term}</query>
                     <page>{page}</page>
                     <groupings>
-                        <groupby attr="d" mode="deep" groups-on-page="{num_results}" docs-in-group="1" />
+                        <groupby attr="d" mode="deep" 
+                            groups-on-page="{num_results}" docs-in-group="1" />
                     </groupings>
                     </request>""".encode("utf-8")
 
@@ -99,7 +108,9 @@ class YandexSearchAPIWrapper(BaseModel):
 
             if ya_respoonse.findall("./error"):
                 warnings.warn(
-                    f"API Error: {ya_respoonse.findall('./error')[0].attrib}\nPlease check: https://yandex.cloud/en/docs/search-api/reference/error-codes",
+                    f"API Error: {ya_respoonse.findall('./error')[0].attrib}\n"
+                    "Please check: "
+                    "https://yandex.cloud/en/docs/search-api/reference/error-codes",
                     Warning,
                     stacklevel=3,
                 )
@@ -128,7 +139,8 @@ class YandexSearchAPIWrapper(BaseModel):
             return items
         else:
             warnings.warn(
-                f"HTTP Error: {response.status_code}\nPlease check: https://yandex.cloud/en/docs/search-api/",
+                f"HTTP Error: {response.status_code}\n"
+                "Please check: https://yandex.cloud/en/docs/search-api/",
                 Warning,
                 stacklevel=5,
             )
@@ -151,17 +163,21 @@ class YandexSearchAPIWrapper(BaseModel):
     def run(
         self, query: str, filter: str = None, lr: int = None, l10n: str = None
     ) -> str:
-        """Run query through Yandex Search and parse result.
+        """
+        Run query through Yandex Search and parse result.
 
         Args:
             query (str): The search query string.
             filter (str, optional): The filter setting ('none', 'moderate', 'strict').
             lr (int, optional): The region identifier for localized search.
-            l10n (str, optional): The language for notifications (e.g., 'ru', 'en', 'tr').
+            l10n (str, optional): The language for notifications 
+                (e.g., 'ru', 'en', 'tr').
 
         Returns:
-            str: Concatenated string of snippets if any results are found, otherwise a not found message.
+            str: Concatenated string of snippets if any results are found, 
+            otherwise a not found message.
         """
+
         snippets = []
         results = self._yandex_search_results(
             search_term=query, num_results=self.k, filter=filter, lr=lr, l10n=l10n
@@ -186,7 +202,8 @@ class YandexSearchAPIWrapper(BaseModel):
             search_params: Parameters to be passed on search
 
         Returns:
-            A list of dictionaries with keys depending on the Yandex Search API response structure.
+            A list of dictionaries with keys depending on 
+            the Yandex Search API response structure.
         """
         metadata_results = []
         results = self._yandex_search_results(
