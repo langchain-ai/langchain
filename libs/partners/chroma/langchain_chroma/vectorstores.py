@@ -60,7 +60,8 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
     Y = np.array(Y)
     if X.shape[1] != Y.shape[1]:
         raise ValueError(
-            f"Number of columns in X and Y must be the same. X has shape {X.shape} "
+            "Number of columns in X and Y must be the same. X has shape"
+            f"{X.shape} "
             f"and Y has shape {Y.shape}."
         )
 
@@ -133,6 +134,7 @@ class Chroma(VectorStore):
         collection_metadata: Optional[Dict] = None,
         client: Optional[chromadb.ClientAPI] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        create_collection_if_not_exists: Optional[bool] = True,
     ) -> None:
         """Initialize with a Chroma client."""
 
@@ -161,11 +163,14 @@ class Chroma(VectorStore):
             )
 
         self._embedding_function = embedding_function
-        self._collection = self._client.get_or_create_collection(
-            name=collection_name,
-            embedding_function=None,
-            metadata=collection_metadata,
-        )
+        if create_collection_if_not_exists:
+            self._collection = self._client.get_or_create_collection(
+                name=collection_name,
+                embedding_function=None,
+                metadata=collection_metadata,
+            )
+        else:
+            self._collection = self._client.get_collection(name=collection_name)
         self.override_relevance_score_fn = relevance_score_fn
 
     @property
@@ -650,7 +655,8 @@ class Chroma(VectorStore):
         """
         return self.update_documents([document_id], [document])
 
-    def update_documents(self, ids: List[str], documents: List[Document]) -> None:  # type: ignore
+    # type: ignore
+    def update_documents(self, ids: List[str], documents: List[Document]) -> None:
         """Update a document in the collection.
 
         Args:
