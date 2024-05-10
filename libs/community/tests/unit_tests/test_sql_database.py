@@ -45,6 +45,12 @@ def db(engine: sa.Engine) -> SQLDatabase:
     return SQLDatabase(engine)
 
 
+@pytest.fixture
+def db_lazy_reflection(engine: sa.Engine) -> SQLDatabase:
+    metadata_obj.create_all(engine)
+    return SQLDatabase(engine, lazy_table_reflection=True)
+
+
 def test_table_info(db: SQLDatabase) -> None:
     """Test that table info is constructed properly."""
     output = db.table_info
@@ -73,6 +79,32 @@ def test_table_info(db: SQLDatabase) -> None:
     """
 
     assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
+
+
+def test_table_info_lazy_reflection(db_lazy_reflection: SQLDatabase) -> None:
+    """Test that table info with lazy reflection"""
+    assert len(db_lazy_reflection._metadata.sorted_tables) == 0
+    output = db_lazy_reflection.get_table_info(["user"])
+    assert len(db_lazy_reflection._metadata.sorted_tables) == 1
+    expected_output = """
+    CREATE TABLE user (
+            user_id INTEGER NOT NULL,
+            user_name VARCHAR(16) NOT NULL,
+            user_bio TEXT,
+            PRIMARY KEY (user_id)
+    )
+    /*
+    3 rows from user table:
+    user_id user_name user_bio
+    /*
+    """
+
+    assert sorted(" ".join(output.split())) == sorted(" ".join(expected_output.split()))
+
+    db_lazy_reflection.get_table_info(["company"])
+    assert len(db_lazy_reflection._metadata.sorted_tables) == 2
+    assert db_lazy_reflection._metadata.sorted_tables[0].name == "company"
+    assert db_lazy_reflection._metadata.sorted_tables[1].name == "user"
 
 
 def test_table_info_w_sample_rows(db: SQLDatabase) -> None:

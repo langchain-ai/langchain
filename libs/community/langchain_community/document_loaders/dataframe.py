@@ -1,4 +1,4 @@
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
 from langchain_core.documents import Document
 
@@ -30,7 +30,12 @@ class BaseDataFrameLoader(BaseLoader):
 class DataFrameLoader(BaseDataFrameLoader):
     """Load `Pandas` DataFrame."""
 
-    def __init__(self, data_frame: Any, page_content_column: str = "text"):
+    def __init__(
+        self,
+        data_frame: Any,
+        page_content_column: str = "text",
+        engine: Literal["pandas", "modin"] = "pandas",
+    ):
         """Initialize with dataframe object.
 
         Args:
@@ -39,7 +44,14 @@ class DataFrameLoader(BaseDataFrameLoader):
               Defaults to "text".
         """
         try:
-            import pandas as pd
+            if engine == "pandas":
+                import pandas as pd
+            elif engine == "modin":
+                import modin.pandas as pd
+            else:
+                raise ValueError(
+                    f"Unsupported engine {engine}. Must be one of 'pandas', or 'modin'."
+                )
         except ImportError as e:
             raise ImportError(
                 "Unable to import pandas, please install with `pip install pandas`."

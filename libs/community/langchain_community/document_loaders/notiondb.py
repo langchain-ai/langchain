@@ -207,11 +207,14 @@ class NotionDBLoader(BaseLoader):
         *,
         filter_object: Optional[Dict[str, Any]] = None,
     ) -> Any:
+        json_payload = query_dict.copy()
+        if filter_object:
+            json_payload["filter"] = filter_object
         res = requests.request(
             method,
             url,
             headers=self.headers,
-            json={**query_dict, "filter": filter_object or {}},
+            json=json_payload,
             timeout=self.request_timeout_sec,
         )
         res.raise_for_status()

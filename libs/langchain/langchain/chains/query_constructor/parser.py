@@ -17,7 +17,7 @@ except ImportError:
     Transformer = object  # type: ignore
     Lark = object  # type: ignore
 
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     FilterDirective,
@@ -63,7 +63,7 @@ class ISO8601Date(TypedDict):
 
 @v_args(inline=True)
 class QueryTransformer(Transformer):
-    """Transforms a query string into an intermediate representation."""
+    """Transform a query string into an intermediate representation."""
 
     def __init__(
         self,
@@ -159,8 +159,7 @@ def get_parser(
     allowed_operators: Optional[Sequence[Operator]] = None,
     allowed_attributes: Optional[Sequence[str]] = None,
 ) -> Lark:
-    """
-    Returns a parser for the query language.
+    """Return a parser for the query language.
 
     Args:
         allowed_comparators: Optional[Sequence[Comparator]]

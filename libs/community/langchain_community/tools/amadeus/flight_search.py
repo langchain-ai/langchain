@@ -31,7 +31,7 @@ class FlightSearchSchema(BaseModel):
         description=(
             " The earliest departure datetime from the origin airport "
             " for the flight search in the following format: "
-            ' "YYYY-MM-DDTHH:MM", where "T" separates the date and time '
+            ' "YYYY-MM-DDTHH:MM:SS", where "T" separates the date and time '
             ' components. For example: "2023-06-09T10:30:00" represents '
             " June 9th, 2023, at 10:30 AM. "
         )
@@ -40,7 +40,7 @@ class FlightSearchSchema(BaseModel):
         description=(
             " The latest departure datetime from the origin airport "
             " for the flight search in the following format: "
-            ' "YYYY-MM-DDTHH:MM", where "T" separates the date and time '
+            ' "YYYY-MM-DDTHH:MM:SS", where "T" separates the date and time '
             ' components. For example: "2023-06-09T10:30:00" represents '
             " June 9th, 2023, at 10:30 AM. "
         )
@@ -97,6 +97,7 @@ class AmadeusFlightSearch(AmadeusBaseTool):
             return [None]
 
         # Collect all results from the Amadeus Flight Offers Search API
+        response = None
         try:
             response = client.shopping.flight_offers_search.get(
                 originLocationCode=originLocationCode,
@@ -109,32 +110,32 @@ class AmadeusFlightSearch(AmadeusBaseTool):
 
         # Generate output dictionary
         output = []
+        if response is not None:
+            for offer in response.data:
+                itinerary: Dict = {}
+                itinerary["price"] = {}
+                itinerary["price"]["total"] = offer["price"]["total"]
+                currency = offer["price"]["currency"]
+                currency = response.result["dictionaries"]["currencies"][currency]
+                itinerary["price"]["currency"] = {}
+                itinerary["price"]["currency"] = currency
 
-        for offer in response.data:
-            itinerary: Dict = {}
-            itinerary["price"] = {}
-            itinerary["price"]["total"] = offer["price"]["total"]
-            currency = offer["price"]["currency"]
-            currency = response.result["dictionaries"]["currencies"][currency]
-            itinerary["price"]["currency"] = {}
-            itinerary["price"]["currency"] = currency
+                segments = []
+                for segment in offer["itineraries"][0]["segments"]:
+                    flight = {}
+                    flight["departure"] = segment["departure"]
+                    flight["arrival"] = segment["arrival"]
+                    flight["flightNumber"] = segment["number"]
+                    carrier = segment["carrierCode"]
+                    carrier = response.result["dictionaries"]["carriers"][carrier]
+                    flight["carrier"] = carrier
 
-            segments = []
-            for segment in offer["itineraries"][0]["segments"]:
-                flight = {}
-                flight["departure"] = segment["departure"]
-                flight["arrival"] = segment["arrival"]
-                flight["flightNumber"] = segment["number"]
-                carrier = segment["carrierCode"]
-                carrier = response.result["dictionaries"]["carriers"][carrier]
-                flight["carrier"] = carrier
+                    segments.append(flight)
 
-                segments.append(flight)
+                itinerary["segments"] = []
+                itinerary["segments"] = segments
 
-            itinerary["segments"] = []
-            itinerary["segments"] = segments
-
-            output.append(itinerary)
+                output.append(itinerary)
 
         # Filter out flights after latest departure time
         for index, offer in enumerate(output):

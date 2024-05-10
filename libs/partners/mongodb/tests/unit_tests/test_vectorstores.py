@@ -1,55 +1,16 @@
-import uuid
-from copy import deepcopy
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from pymongo.collection import Collection
-from pymongo.results import DeleteResult, InsertManyResult
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
-from tests.utils import ConsistentFakeEmbeddings
+from tests.utils import ConsistentFakeEmbeddings, MockCollection
 
 INDEX_NAME = "langchain-test-index"
 NAMESPACE = "langchain_test_db.langchain_test_collection"
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
-
-
-class MockCollection(Collection):
-    """Mocked Mongo Collection"""
-
-    _aggregate_result: List[Any]
-    _insert_result: Optional[InsertManyResult]
-    _data: List[Any]
-
-    def __init__(self) -> None:
-        self._data = []
-        self._aggregate_result = []
-        self._insert_result = None
-
-    def delete_many(self, *args, **kwargs) -> DeleteResult:  # type: ignore
-        old_len = len(self._data)
-        self._data = []
-        return DeleteResult({"n": old_len}, acknowledged=True)
-
-    def insert_many(self, to_insert: List[Any], *args, **kwargs) -> InsertManyResult:  # type: ignore
-        mongodb_inserts = [
-            {"_id": str(uuid.uuid4()), "score": 1, **insert} for insert in to_insert
-        ]
-        self._data.extend(mongodb_inserts)
-        return self._insert_result or InsertManyResult(
-            [k["_id"] for k in mongodb_inserts], acknowledged=True
-        )
-
-    def aggregate(self, *args, **kwargs) -> List[Any]:  # type: ignore
-        return deepcopy(self._aggregate_result)
-
-    def count_documents(self, *args, **kwargs) -> int:  # type: ignore
-        return len(self._data)
-
-    def __repr__(self) -> str:
-        return "FakeCollection"
 
 
 def get_collection() -> MockCollection:
@@ -61,7 +22,7 @@ def collection() -> MockCollection:
     return get_collection()
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def embedding_openai() -> Embeddings:
     return ConsistentFakeEmbeddings()
 

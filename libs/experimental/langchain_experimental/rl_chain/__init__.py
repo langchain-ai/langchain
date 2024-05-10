@@ -1,3 +1,12 @@
+"""
+**RL (Reinforcement Learning) Chain** leverages the `Vowpal Wabbit (VW)` models
+for reinforcement learning with a context, with the goal of modifying
+the prompt before the LLM call.
+
+[Vowpal Wabbit](https://vowpalwabbit.org/) provides fast, efficient,
+and flexible online machine learning techniques for reinforcement learning,
+supervised learning, and more.
+"""
 import logging
 
 from langchain_experimental.rl_chain.base import (

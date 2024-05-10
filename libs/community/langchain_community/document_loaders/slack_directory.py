@@ -1,7 +1,7 @@
 import json
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Iterator, List, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -11,7 +11,7 @@ from langchain_community.document_loaders.base import BaseLoader
 class SlackDirectoryLoader(BaseLoader):
     """Load from a `Slack` directory dump."""
 
-    def __init__(self, zip_path: str, workspace_url: Optional[str] = None):
+    def __init__(self, zip_path: Union[str, Path], workspace_url: Optional[str] = None):
         """Initialize the SlackDirectoryLoader.
 
         Args:
@@ -35,9 +35,8 @@ class SlackDirectoryLoader(BaseLoader):
             except KeyError:
                 return {}
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load and return documents from the Slack directory dump."""
-        docs = []
         with zipfile.ZipFile(self.zip_path, "r") as zip_file:
             for channel_path in zip_file.namelist():
                 channel_name = Path(channel_path).parent.name
@@ -46,11 +45,7 @@ class SlackDirectoryLoader(BaseLoader):
                 if channel_path.endswith(".json"):
                     messages = self._read_json(zip_file, channel_path)
                     for message in messages:
-                        document = self._convert_message_to_document(
-                            message, channel_name
-                        )
-                        docs.append(document)
-        return docs
+                        yield self._convert_message_to_document(message, channel_name)
 
     def _read_json(self, zip_file: zipfile.ZipFile, file_path: str) -> List[dict]:
         """Read JSON data from a zip subfile."""

@@ -105,6 +105,12 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     show_progress: bool = False
     """Whether to show a tqdm progress bar. Must have `tqdm` installed."""
 
+    headers: Optional[dict] = None
+    """Additional headers to pass to endpoint (e.g. Authorization, Referer).
+    This is useful when Ollama is hosted on cloud services that require
+    tokens for authentication.
+    """
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Ollama."""
@@ -151,6 +157,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """
         headers = {
             "Content-Type": "application/json",
+            **(self.headers or {}),
         }
 
         try:

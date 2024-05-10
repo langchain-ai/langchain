@@ -54,8 +54,21 @@ class PipelinePromptTemplate(BasePromptTemplate):
         _inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
         return self.final_prompt.format_prompt(**_inputs)
 
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        for k, prompt in self.pipeline_prompts:
+            _inputs = _get_inputs(kwargs, prompt.input_variables)
+            if isinstance(prompt, BaseChatPromptTemplate):
+                kwargs[k] = await prompt.aformat_messages(**_inputs)
+            else:
+                kwargs[k] = await prompt.aformat(**_inputs)
+        _inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
+        return await self.final_prompt.aformat_prompt(**_inputs)
+
     def format(self, **kwargs: Any) -> str:
         return self.format_prompt(**kwargs).to_string()
+
+    async def aformat(self, **kwargs: Any) -> str:
+        return (await self.aformat_prompt(**kwargs)).to_string()
 
     @property
     def _prompt_type(self) -> str:
