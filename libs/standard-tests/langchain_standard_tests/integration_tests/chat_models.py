@@ -117,6 +117,27 @@ class ChatModelIntegrationTests(ABC):
             assert isinstance(result.content, str)
             assert len(result.content) > 0
 
+    def test_standard_params(
+        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
+    ) -> None:
+        model = chat_model_class(**chat_model_params)
+
+        # invocation params
+        invocation_params = model._get_invocation_params()
+        assert isinstance(invocation_params["model_name"], str)
+        assert isinstance(invocation_params["temperature"], float)
+        assert isinstance(invocation_params["_type"], str)
+        assert "stop" in invocation_params
+
+        # invoke output
+        output = model.invoke("Hello")
+        assert isinstance(output["model_name"], str)
+        if token_usage := output.get("token_usage"):
+            assert isinstance(token_usage, dict)
+            assert isinstance(token_usage["completion_tokens"], int)
+            assert isinstance(token_usage["prompt_tokens"], int)
+            assert isinstance(token_usage["total_tokens"], int)
+
     def test_conversation(
         self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
     ) -> None:
