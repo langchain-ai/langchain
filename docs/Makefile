@@ -13,7 +13,7 @@ OUTPUT_NEW_DOCS_DIR = $(OUTPUT_NEW_DIR)/docs
 
 PYTHON = .venv/bin/python
 
-PARTNER_DEPS_LIST := $(shell ls -1 ../libs/partners | grep -vE "airbyte|ibm" | xargs -I {} echo "../libs/partners/{}" | tr '\n' ' ')
+PARTNER_DEPS_LIST := $(shell find ../libs/partners -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/pyproject.toml" \; -print | grep -vE "airbyte|ibm" | tr '\n' ' ')
 
 PORT ?= 3001
 
@@ -80,4 +80,4 @@ vercel-build: install-vercel-deps build
 	mv v0.2 build
 
 start:
-	cd $(OUTPUT_NEW_DIR) && yarn && yarn start --port=$(PORT)
+	cd $(OUTPUT_NEW_DIR) && yarn start --port=$(PORT)
