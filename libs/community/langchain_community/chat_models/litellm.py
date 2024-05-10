@@ -191,7 +191,7 @@ class ChatLiteLLM(BaseChatModel):
     n: int = 1
     """Number of chat completions to generate for each prompt. Note that the API may
        not return the full n completions if duplicates are generated."""
-    max_tokens: int = 256
+    max_tokens: Optional[int] = None
 
     max_retries: int = 6
 
