@@ -125,7 +125,7 @@ class ChatEdenAI(BaseChatModel):
     available models are shown on https://docs.edenai.co/ under 'available providers'
     """
 
-    max_tokens: int = 256
+    max_tokens: int = Field(default=256)
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = 0
