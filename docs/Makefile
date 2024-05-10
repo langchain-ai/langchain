@@ -78,6 +78,7 @@ vercel-build: install-vercel-deps build
 	mv build v0.1
 	mkdir build
 	mv v0.1 build
+	mv build/v0.1/404.html build
 
 start:
 	cd $(OUTPUT_NEW_DIR) && yarn && yarn start --port=$(PORT)
