@@ -5,11 +5,11 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain_core.document_stores import DocumentStore
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore, ByteStore
-from langchain_core.vectorstores import VectorStore
 
 from langchain.storage._lc_store import create_kv_docstore
 
@@ -26,9 +26,8 @@ class SearchType(str, Enum):
 class MultiVectorRetriever(BaseRetriever):
     """Retrieve from a set of multiple embeddings for the same document."""
 
-    vectorstore: VectorStore
-    """The underlying vectorstore to use to store small chunks
-    and their embedding vectors"""
+    vectorstore: DocumentStore
+    """The underlying store to use to store small chunks"""
     byte_store: Optional[ByteStore] = None
     """The lower-level backing storage layer for the parent documents"""
     docstore: BaseStore[str, Document]

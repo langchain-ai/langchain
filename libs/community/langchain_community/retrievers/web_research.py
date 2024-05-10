@@ -8,13 +8,13 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain_core.document_stores import DocumentStore
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLLM
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 
 from langchain_community.document_loaders import AsyncHtmlLoader
@@ -62,7 +62,7 @@ class WebResearchRetriever(BaseRetriever):
     """`Google Search API` retriever."""
 
     # Inputs
-    vectorstore: VectorStore = Field(
+    vectorstore: DocumentStore = Field(
         ..., description="Vector store for storing web pages"
     )
     llm_chain: LLMChain
@@ -79,7 +79,7 @@ class WebResearchRetriever(BaseRetriever):
     @classmethod
     def from_llm(
         cls,
-        vectorstore: VectorStore,
+        vectorstore: DocumentStore,
         llm: BaseLLM,
         search: GoogleSearchAPIWrapper,
         prompt: Optional[BasePromptTemplate] = None,
@@ -91,7 +91,7 @@ class WebResearchRetriever(BaseRetriever):
         """Initialize from llm using default template.
 
         Args:
-            vectorstore: Vector store for storing web pages
+            vectorstore: Store for storing web pages
             llm: llm for search question generation
             search: GoogleSearchAPIWrapper
             prompt: prompt to generating search questions
@@ -189,7 +189,7 @@ class WebResearchRetriever(BaseRetriever):
         new_urls = list(urls.difference(self.url_database))
 
         logger.info(f"New URLs to load: {new_urls}")
-        # Load, split, and add new urls to vectorstore
+        # Load, split, and add new urls to the store
         if new_urls:
             loader = AsyncHtmlLoader(new_urls, ignore_load_errors=True)
             html2text = Html2TextTransformer()

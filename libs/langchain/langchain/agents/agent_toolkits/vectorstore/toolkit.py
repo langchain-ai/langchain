@@ -1,16 +1,16 @@
 """Toolkit for interacting with a vector store."""
 from typing import List
 
+from langchain_core.document_stores import DocumentStore
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool, BaseToolkit
-from langchain_core.vectorstores import VectorStore
 
 
 class VectorStoreInfo(BaseModel):
-    """Information about a VectorStore."""
+    """Information about a DocumentStore."""
 
-    vectorstore: VectorStore = Field(exclude=True)
+    vectorstore: DocumentStore = Field(exclude=True)
     name: str
     description: str
 
@@ -21,7 +21,7 @@ class VectorStoreInfo(BaseModel):
 
 
 class VectorStoreToolkit(BaseToolkit):
-    """Toolkit for interacting with a Vector Store."""
+    """Toolkit for interacting with a DocumentStore."""
 
     vectorstore_info: VectorStoreInfo = Field(exclude=True)
     llm: BaseLanguageModel

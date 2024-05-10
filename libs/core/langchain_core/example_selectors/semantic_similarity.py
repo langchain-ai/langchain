@@ -4,6 +4,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
+from langchain_core.document_stores import DocumentStore
 from langchain_core.documents import Document
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.pydantic_v1 import BaseModel, Extra
@@ -21,7 +22,7 @@ def sorted_values(values: Dict[str, str]) -> List[Any]:
 class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     """Example selector that selects examples based on SemanticSimilarity."""
 
-    vectorstore: VectorStore
+    vectorstore: DocumentStore
     """VectorStore than contains information about examples."""
     k: int = 4
     """Number of examples to select."""
@@ -31,7 +32,7 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     """Optional keys to filter input to. If provided, the search is based on
     the input variables instead of all variables."""
     vectorstore_kwargs: Optional[Dict[str, Any]] = None
-    """Extra arguments passed to similarity_search function of the vectorstore."""
+    """Extra arguments passed to similarity_search function of the store."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -58,14 +59,14 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
         return examples
 
     def add_example(self, example: Dict[str, str]) -> str:
-        """Add new example to vectorstore."""
+        """Add new example to the store."""
         ids = self.vectorstore.add_texts(
             [self._example_to_text(example, self.input_keys)], metadatas=[example]
         )
         return ids[0]
 
     async def aadd_example(self, example: Dict[str, str]) -> str:
-        """Add new example to vectorstore."""
+        """Add new example to the store."""
         ids = await self.vectorstore.aadd_texts(
             [self._example_to_text(example, self.input_keys)], metadatas=[example]
         )

@@ -7,9 +7,9 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain_core.document_stores import DocumentStore
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.vectorstores import VectorStore
 
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
@@ -18,7 +18,7 @@ from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
 class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
     """Question-answering with sources over a vector database."""
 
-    vectorstore: VectorStore = Field(exclude=True)
+    vectorstore: DocumentStore = Field(exclude=True)
     """Vector Database to connect to."""
     k: int = 4
     """Number of results to return from store"""

@@ -7,13 +7,13 @@ from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain_core.document_stores import DocumentStore
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_core.structured_query import StructuredQuery, Visitor
-from langchain_core.vectorstores import VectorStore
 
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 QUERY_CONSTRUCTOR_RUN_NAME = "query_constructor"
 
 
-def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
+def _get_builtin_translator(vectorstore: DocumentStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     try:
         import langchain_community  # noqa: F401
@@ -89,7 +89,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Pinecone as CommunityPinecone,
     )
 
-    BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
+    BUILTIN_TRANSLATORS: Dict[Type[DocumentStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,
         PGVector: PGVectorTranslator,
         CommunityPinecone: PineconeTranslator,
@@ -158,8 +158,8 @@ class SelfQueryRetriever(BaseRetriever):
     """Retriever that uses a vector store and an LLM to generate
     the vector store queries."""
 
-    vectorstore: VectorStore
-    """The underlying vector store from which documents will be retrieved."""
+    vectorstore: DocumentStore
+    """The underlying store from which documents will be retrieved."""
     query_constructor: Runnable[dict, StructuredQuery] = Field(alias="llm_chain")
     """The query constructor chain for generating the vector store queries.
     
@@ -169,7 +169,7 @@ class SelfQueryRetriever(BaseRetriever):
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass in to the vector store search."""
     structured_query_translator: Visitor
-    """Translator for turning internal query language into vectorstore search params."""
+    """Translator for turning internal query language into store search params."""
     verbose: bool = False
 
     use_original_query: bool = False
@@ -264,7 +264,7 @@ class SelfQueryRetriever(BaseRetriever):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        vectorstore: VectorStore,
+        vectorstore: DocumentStore,
         document_contents: str,
         metadata_field_info: Sequence[Union[AttributeInfo, dict]],
         structured_query_translator: Optional[Visitor] = None,

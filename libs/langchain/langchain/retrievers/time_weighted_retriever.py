@@ -6,10 +6,10 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
+from langchain_core.document_stores import DocumentStore
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.vectorstores import VectorStore
 
 
 def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> float:
@@ -21,11 +21,11 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     """Retriever that combines embedding similarity with
     recency in retrieving values."""
 
-    vectorstore: VectorStore
-    """The vectorstore to store documents and determine salience."""
+    vectorstore: DocumentStore
+    """The store to store documents and determine salience."""
 
     search_kwargs: dict = Field(default_factory=lambda: dict(k=100))
-    """Keyword arguments to pass to the vectorstore similarity search."""
+    """Keyword arguments to pass to the store similarity search."""
 
     # TODO: abstract as a queue
     memory_stream: List[Document] = Field(default_factory=list)
@@ -149,7 +149,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         return self._get_rescored_docs(docs_and_scores)
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
-        """Add documents to vectorstore."""
+        """Add documents to store."""
         current_time = kwargs.get("current_time")
         if current_time is None:
             current_time = datetime.datetime.now()
@@ -167,7 +167,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     async def aadd_documents(
         self, documents: List[Document], **kwargs: Any
     ) -> List[str]:
-        """Add documents to vectorstore."""
+        """Add documents to store."""
         current_time = kwargs.get("current_time")
         if current_time is None:
             current_time = datetime.datetime.now()

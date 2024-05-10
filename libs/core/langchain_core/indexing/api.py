@@ -25,10 +25,10 @@ from typing import (
 )
 
 from langchain_core.document_loaders.base import BaseLoader
+from langchain_core.document_stores import DocumentStore
 from langchain_core.documents import Document
 from langchain_core.indexing.base import RecordManager
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.vectorstores import VectorStore
 
 # Magic UUID to use as a namespace for hashing.
 # Used to try and generate a unique UUID for each document
@@ -194,7 +194,7 @@ class IndexingResult(TypedDict):
 def index(
     docs_source: Union[BaseLoader, Iterable[Document]],
     record_manager: RecordManager,
-    vector_store: VectorStore,
+    vector_store: DocumentStore,
     *,
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
@@ -223,7 +223,7 @@ def index(
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
                          updated.
-        vector_store: Vector store to index the documents into.
+        vector_store: Store to index the documents into.
         batch_size: Batch size to use when indexing.
         cleanup: How to handle clean up of documents.
             - Incremental: Cleans up all documents that haven't been updated AND
@@ -265,7 +265,7 @@ def index(
                 f"Vectorstore {vector_store} does not have required method {method}"
             )
 
-    if type(vector_store).delete == VectorStore.delete:
+    if type(vector_store).delete == DocumentStore.delete:
         # Checking if the vectorstore has overridden the default delete method
         # implementation which just raises a NotImplementedError
         raise ValueError("Vectorstore has not implemented the delete method")
@@ -399,7 +399,7 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
 async def aindex(
     docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
-    vector_store: VectorStore,
+    vector_store: DocumentStore,
     *,
     batch_size: int = 100,
     cleanup: Literal["incremental", "full", None] = None,
@@ -428,7 +428,7 @@ async def aindex(
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
                          updated.
-        vector_store: Vector store to index the documents into.
+        vector_store: Store to index the documents into.
         batch_size: Batch size to use when indexing.
         cleanup: How to handle clean up of documents.
             - Incremental: Cleans up all documents that haven't been updated AND
@@ -470,7 +470,7 @@ async def aindex(
                 f"Vectorstore {vector_store} does not have required method {method}"
             )
 
-    if type(vector_store).adelete == VectorStore.adelete:
+    if type(vector_store).adelete == DocumentStore.adelete:
         # Checking if the vectorstore has overridden the default delete method
         # implementation which just raises a NotImplementedError
         raise ValueError("Vectorstore has not implemented the delete method")
