@@ -38,7 +38,7 @@ class OpenAIModerationChain(Chain):
     output_key: str = "output"  #: :meta private:
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
-    openai_version: Optional[str] = None
+    openai_version: str = Field(default=None)
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
