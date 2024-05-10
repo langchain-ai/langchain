@@ -1,4 +1,5 @@
 """Test EdenAI Chat API wrapper."""
+
 from typing import List
 
 import pytest
@@ -8,6 +9,21 @@ from langchain_community.chat_models.edenai import (
     _format_edenai_messages,
     _message_role,
 )
+
+from langchain_community.chat_models.edenai import ChatEdenAI
+
+
+def test_edenai_initialization() -> None:
+    chat = ChatEdenAI(
+        api_key="dummy_api_key",
+        model="gpt-4",
+        temperature=0.5,
+        max_tokens=100,
+    )
+    assert chat.edenai_api_key.get_secret_value() == "dummy_api_key"
+    assert chat.model == "gpt-4"
+    assert chat.temperature == 0.5
+    assert chat.max_tokens == 100
 
 
 @pytest.mark.parametrize(
