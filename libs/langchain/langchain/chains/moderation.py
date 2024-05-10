@@ -124,7 +124,7 @@ class OpenAIModerationChain(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         if self._openai_pre_1_0:
-            return await super()._acall(inputs, run_manager)
+            return await super()._acall(inputs, run_manager=run_manager)
         text = inputs[self.input_key]
         results = await self.async_client.moderations.create(input=text)
         output = self._moderate(text, results.results[0])
