@@ -14,7 +14,6 @@ from typing import (
     Tuple,
 )
 
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -130,7 +129,10 @@ class LLMInputOutputAdapter:
                 input_body["prompt"] = _human_assistant_format(prompt)
                 if "max_tokens_to_sample" not in input_body:
                     input_body["max_tokens_to_sample"] = 1024
-        elif provider in ("ai21", "cohere", "meta", "mistral"):
+        elif provider in ("ai21", "cohere", "mistral"):
+            input_body["prompt"] = prompt
+        elif provider == "meta":
+            input_body = dict()
             input_body["prompt"] = prompt
         elif provider == "amazon":
             input_body = dict()
@@ -337,9 +339,10 @@ class BedrockBase(BaseModel, ABC):
     provider_stop_sequence_key_name_map: Mapping[str, str] = {
         "anthropic": "stop_sequences",
         "amazon": "stopSequences",
+        "meta": "stop_sequences",
         "ai21": "stop_sequences",
         "cohere": "stop_sequences",
-        "mistral": "stop",
+        "mistral": "stop_sequences",
     }
 
     guardrails: Optional[Mapping[str, Any]] = {
@@ -424,7 +427,7 @@ class BedrockBase(BaseModel, ABC):
             values["client"] = session.client("bedrock-runtime", **client_params)
 
         except ImportError:
-            raise ImportError(
+            raise ModuleNotFoundError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
@@ -712,9 +715,6 @@ class BedrockBase(BaseModel, ABC):
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)  # type: ignore[unused-coroutine]
 
 
-@deprecated(
-    since="0.0.34", removal="0.3", alternative_import="langchain_aws.BedrockLLM"
-)
 class Bedrock(LLM, BedrockBase):
     """Bedrock models.
 
@@ -829,7 +829,7 @@ class Bedrock(LLM, BedrockBase):
         Example:
             .. code-block:: python
 
-                response = llm.invoke("Tell me a joke.")
+                response = llm("Tell me a joke.")
         """
 
         if self.streaming:
