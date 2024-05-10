@@ -128,7 +128,7 @@ class ChatEdenAI(BaseChatModel):
     max_tokens: int = Field(default=256)
     """Denotes the number of tokens to predict per generation."""
 
-    temperature: Optional[float] = 0
+    temperature: Optional[float] = Field(default=0)
     """A non-negative float that tunes the degree of randomness in generation."""
 
     streaming: bool = False
