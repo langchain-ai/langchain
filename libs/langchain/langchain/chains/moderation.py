@@ -6,7 +6,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain.chains.base import Chain
@@ -89,8 +89,6 @@ class OpenAIModerationChain(Chain):
         return [self.output_key]
 
     def _moderate(self, text: str, results: Any) -> str:
-        if self.openai_version is None:
-            raise AssertionError("Got None version type.")
         if self.openai_version < "1.0.0":
             condition = results["flagged"]
         else:
@@ -109,8 +107,6 @@ class OpenAIModerationChain(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         text = inputs[self.input_key]
-        if self.openai_version is None:
-            raise AssertionError("Got None version type.")
         if self.openai_version < "1.0.0":
             results = self.client.create(text)
             output = self._moderate(text, results["results"][0])
@@ -124,8 +120,6 @@ class OpenAIModerationChain(Chain):
         inputs: Dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
-        if self.openai_version is None:
-            raise AssertionError("Got None version type.")
         if self.openai_version < "1.0.0":
             return await super()._acall(inputs, run_manager)
         text = inputs[self.input_key]
