@@ -11,7 +11,6 @@ integration_test integration_tests: TEST_FILE=tests/integration_tests/
 test tests integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
 
-
 ######################
 # LINTING AND FORMATTING
 ######################
