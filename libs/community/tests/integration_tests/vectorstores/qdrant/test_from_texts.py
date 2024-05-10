@@ -66,6 +66,39 @@ def test_qdrant_from_texts_stores_ids(
         assert set(ids) == set(stored_ids)
 
 
+@pytest.mark.parametrize("batch_size", [1, 64])
+@pytest.mark.parametrize("vector_name", [None, "my-vector"])
+def test_qdrant_from_texts_stores_int_ids(
+    batch_size: int, vector_name: Optional[str]
+) -> None:
+    """Test end to end Qdrant.from_texts stores provided ids (of type 'int')"""
+    from qdrant_client import QdrantClient
+
+    collection_name = uuid.uuid4().hex
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ids = [
+            1,
+            2,
+        ]
+        vec_store = Qdrant.from_texts(
+            ["abc", "def"],
+            ConsistentFakeEmbeddings(),
+            ids=ids,
+            collection_name=collection_name,
+            path=str(tmpdir),
+            batch_size=batch_size,
+            vector_name=vector_name,
+        )
+        del vec_store
+
+        client = QdrantClient(path=str(tmpdir))
+        assert 2 == client.count(collection_name).count
+        stored_ids = [point.id for point in client.scroll(collection_name)[0]]
+        for id in stored_ids:
+            assert isinstance(id, int)
+        assert set(ids) == set(stored_ids)
+
+
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
 def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str) -> None:
     """Test end to end Qdrant.from_texts stores named vectors if name is provided."""

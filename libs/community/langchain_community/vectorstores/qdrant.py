@@ -164,7 +164,7 @@ class Qdrant(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         batch_size: int = 64,
         **kwargs: Any,
     ) -> List[str]:
@@ -199,7 +199,7 @@ class Qdrant(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         batch_size: int = 64,
         **kwargs: Any,
     ) -> List[str]:
@@ -1198,7 +1198,7 @@ class Qdrant(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -1419,7 +1419,7 @@ class Qdrant(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -2146,7 +2146,7 @@ class Qdrant(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         batch_size: int = 64,
     ) -> Generator[Tuple[List[str], List[rest.PointStruct]], None, None]:
         from qdrant_client.http import models as rest
@@ -2188,7 +2188,7 @@ class Qdrant(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         batch_size: int = 64,
     ) -> AsyncGenerator[Tuple[List[str], List[rest.PointStruct]], None]:
         from qdrant_client.http import models as rest
