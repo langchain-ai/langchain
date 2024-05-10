@@ -1,10 +1,12 @@
 import io
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, mock_open
 
 from langchain_community.document_loaders.pdf import (
     BasePDFLoader,
 )
+
 
 @pytest.fixture
 def pdf_data():
