@@ -1,6 +1,8 @@
-from pydantic import BaseModel
-from .core import Invoker, InvokerFactory, Prompty, SimpleModel
 from langchain_core.utils import mustache
+from pydantic import BaseModel
+
+from .core import Invoker, InvokerFactory, Prompty, SimpleModel
+
 
 class MustacheRenderer(Invoker):
     def __init__(self, prompty: Prompty) -> None:

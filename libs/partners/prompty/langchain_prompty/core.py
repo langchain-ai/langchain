@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import abc
+import json
 import os
 import re
-import yaml
-import json
-import abc
 from pathlib import Path
+from typing import Dict, Generic, List, Literal, TypeVar, Union
+
+import yaml
 from pydantic import BaseModel, ConfigDict, Field, FilePath
-from typing import List, Literal, Dict, Union, Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -174,7 +175,7 @@ class NoOpParser(Invoker):
 
 
 class InvokerFactory(object):
-    _instance = None 
+    _instance = None
     _renderers: Dict[str, Invoker] = {}
     _parsers: Dict[str, Invoker] = {}
     _executors: Dict[str, Invoker] = {}

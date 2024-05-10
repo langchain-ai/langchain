@@ -1,7 +1,10 @@
-import re
 import base64
+import re
+
 from pydantic import BaseModel
-from .core import Invoker, InvokerFactory, Prompty, SimpleModel, NoOpParser
+
+from .core import Invoker, InvokerFactory, NoOpParser, Prompty, SimpleModel
+
 
 class PromptyChatParser(Invoker):
     def __init__(self, prompty: Prompty) -> None:

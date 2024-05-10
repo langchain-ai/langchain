@@ -1,8 +1,9 @@
-import os
 import json
+import os
 import traceback
 from pathlib import Path
 from typing import Dict, List, Union
+
 from .core import (
     Frontmatter,
     ModelSettings,
@@ -11,9 +12,9 @@ from .core import (
     TemplateSettings,
     param_hoisting,
 )
-
-from .renderers import *
 from .parsers import *
+from .renderers import *
+
 
 def load(prompty_file: str, configuration: str = "default") -> Prompty:
     p = Path(prompty_file)
@@ -33,7 +34,7 @@ def load(prompty_file: str, configuration: str = "default") -> Prompty:
     # load global configuration
     if "model" not in attributes:
         attributes["model"] = {}
-        
+
     # pull model settings out of attributes
     try:
         model = ModelSettings(**attributes.pop("model"))
@@ -196,7 +197,6 @@ def execute(
     raw: bool = False,
     connection: str = "default",
 ):
-
     if isinstance(prompt, str):
         path = Path(prompt)
         if not path.is_absolute():

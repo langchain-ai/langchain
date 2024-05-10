@@ -3,10 +3,9 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
+from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import BaseModel
-
-from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -42,6 +41,7 @@ class BaseFakeCallbackHandler(BaseModel):
     retries: int = 0
 
     input_prompts: List[str] = []
+
 
 class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
     """Base fake callback handler mixin for testing."""
@@ -115,10 +115,11 @@ class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
 
 class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     """Fake callback handler for testing."""
+
     def __init__(self) -> None:
         super().__init__()
         self.input_prompts = None
-    
+
     @property
     def ignore_llm(self) -> bool:
         """Whether to ignore LLM callbacks."""
@@ -140,9 +141,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
         return self.ignore_retriever_
 
     def on_llm_start(
-        self, 
-        serialized: Dict[str, Any], 
-        prompts: List[str], **kwargs: Any
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> Any:
         self.input_prompts = prompts
         self.on_llm_start_common()
@@ -303,9 +302,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
         self.on_retry_common()
 
     async def on_llm_start(
-        self, 
-        serialized: Dict[str, Any], 
-        prompts: List[str], **kwargs: Any
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         self.on_llm_start_common()
 
