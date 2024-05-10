@@ -125,17 +125,6 @@ files = [
 ]
 
 [[package]]
-name = "chevron"
-version = "0.14.0"
-description = "Mustache templating language renderer"
-optional = false
-python-versions = "*"
-files = [
-    {file = "chevron-0.14.0-py3-none-any.whl", hash = "sha256:fbf996a709f8da2e745ef763f482ce2d311aa817d287593a5b990d6d6e4f0443"},
-    {file = "chevron-0.14.0.tar.gz", hash = "sha256:87613aafdf6d77b6a90ff073165a61ae5086e21ad49057aa0e53681601800ebf"},
-]
-
-[[package]]
 name = "codespell"
 version = "2.2.6"
 description = "Codespell"
@@ -845,4 +834,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "91b647738cde55703d091ce52126d635af019a487f937e60b70f550201311b66"
+content-hash = "a6b32737d0d7de0024a8a8a01a746cd103b6a9cfbcd4a1333fd2d96e2937c50a"
