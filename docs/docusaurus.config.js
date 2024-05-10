@@ -18,10 +18,10 @@ const config = {
   url: "https://python.langchain.com",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
+  baseUrl: "/v0.2/",
   trailingSlash: true,
-  onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "throw",
+  onBrokenLinks: "warn",
+  onBrokenMarkdownLinks: "warn",
 
   themes: ["@docusaurus/theme-mermaid"],
   markdown: {
@@ -101,6 +101,9 @@ const config = {
                 // eslint-disable-next-line no-param-reassign
                 subItem.label = subItem.label.replace(/\//g, "/\u200B");
               }
+              if (args.item.className) {
+                subItem.className = args.item.className;
+              }
             });
             return sidebarItems;
           },
@@ -118,6 +121,10 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      announcementBar: {
+        content: 'You are viewing the <strong>preview</strong> LangChain v0.2 docs. View the <a href="/v0.1/docs/get_started/introduction/">stable 0.1 docs here</a>.',
+        isCloseable: true,
+      },
       docs: {
         sidebar: {
           hideable: true,
@@ -149,20 +156,10 @@ const config = {
         logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
           {
-            to: "/docs/modules",
-            label: "Components",
-            position: "left",
-          },
-          {
             type: "docSidebar",
             position: "left",
             sidebarId: "integrations",
             label: "Integrations",
-          },
-          {
-            to: "/docs/guides",
-            label: "Guides",
-            position: "left",
           },
           {
             href: "https://api.python.langchain.com",
@@ -175,15 +172,13 @@ const config = {
             position: "left",
             items: [
               {
-                to: "/docs/people/",
+                type: "doc",
+                docId: "people",
                 label: "People",
               },
               {
-                to: "/docs/packages",
-                label: "Versioning",
-              },
-              {
-                to: "/docs/contributing",
+                type: "doc",
+                docId: "contributing/index",
                 label: "Contributing",
               },
               {
@@ -196,11 +191,13 @@ const config = {
                 href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
-                to: "/docs/additional_resources/tutorials",
+                type: "doc",
+                docId: "additional_resources/tutorials",
                 label: "Tutorials"
               },
               {
-                to: "/docs/additional_resources/youtube",
+                type: "doc",
+                docId: "additional_resources/youtube",
                 label: "YouTube"
               },
             ]
