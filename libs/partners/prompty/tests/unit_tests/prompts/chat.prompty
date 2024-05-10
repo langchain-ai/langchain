@@ -23,10 +23,10 @@ and in a personable manner using markdown and even add some personal flair with 
 You are helping {{firstName}} {{lastName}} to find answers to their questions.
 Use their name to address them in your responses.
 
-{% for item in chat_history %}
-{{item.role}}:
-{{item.content}}
-{% endfor %}
+{{#chat_history}}
+{{type}}:
+{{content}}
+{{/chat_history}}
 
 user:
 {{input}}

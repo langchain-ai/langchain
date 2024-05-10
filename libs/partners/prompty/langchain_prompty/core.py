@@ -39,7 +39,7 @@ class ModelSettings(BaseModel):
 
 
 class TemplateSettings(BaseModel):
-    type: str = Field(default="jinja2")
+    type: str = Field(default="mustache")
     parser: str = Field(default="")
 
 

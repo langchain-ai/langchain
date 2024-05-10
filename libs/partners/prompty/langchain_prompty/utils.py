@@ -50,7 +50,7 @@ def load(prompty_file: str, configuration: str = "default") -> Prompty:
             else:
                 template = TemplateSettings(type=t, parser="prompty")
         else:
-            template = TemplateSettings(type="jinja2", parser="prompty")
+            template = TemplateSettings(type="mustache", parser="prompty")
     except Exception as e:
         raise ValueError(f"Error in template loader: {e}")
 
