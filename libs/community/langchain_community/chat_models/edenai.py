@@ -139,7 +139,9 @@ class ChatEdenAI(BaseChatModel):
 
     edenai_api_url: str = "https://api.edenai.run/v2"
 
-    edenai_api_key: Optional[SecretStr] = Field(None, description="EdenAI API Token")
+    edenai_api_key: Optional[SecretStr] = Field(
+        None, description="EdenAI API Token", alias="api_key"
+    )
 
     class Config:
         """Configuration for this pydantic object."""
