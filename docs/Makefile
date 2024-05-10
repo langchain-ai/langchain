@@ -80,4 +80,4 @@ vercel-build: install-vercel-deps build
 	mv v0.2 build
 
 start:
-	cd $(OUTPUT_NEW_DIR) && yarn start --port=$(PORT)
+	cd $(OUTPUT_NEW_DIR) && yarn && yarn start --port=$(PORT)
