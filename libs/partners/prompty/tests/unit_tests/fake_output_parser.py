@@ -1,8 +1,7 @@
-from typing import Sequence, Union
+from typing import Union
 
 from langchain.agents.agent import AgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.exceptions import OutputParserException
 
 
 def extract_action_details(text):

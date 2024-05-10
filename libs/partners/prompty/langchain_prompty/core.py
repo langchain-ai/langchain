@@ -5,7 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Dict, Generic, List, Literal, TypeVar, Union
+from typing import Dict, Generic, List, Literal, TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, FilePath
@@ -152,7 +152,7 @@ def param_hoisting(
     else:
         new_dict = {**top}
     for key, value in bottom.items():
-        if not key in new_dict:
+        if key not in new_dict:
             new_dict[key] = value
     return new_dict
 

@@ -1,8 +1,6 @@
-import json
-import os
 import traceback
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, Union
 
 from .core import (
     Frontmatter,
