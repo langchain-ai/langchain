@@ -474,7 +474,12 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
+        params = {
+            **params,
+            **kwargs,
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
 
         default_chunk_class = AIMessageChunk
         with self.client.create(messages=message_dicts, **params) as response:
@@ -482,23 +487,31 @@ class BaseChatOpenAI(BaseChatModel):
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
                 if len(chunk["choices"]) == 0:
-                    continue
-                choice = chunk["choices"][0]
-                if choice["delta"] is None:
-                    continue
-                chunk = _convert_delta_to_message_chunk(
-                    choice["delta"], default_chunk_class
-                )
-                generation_info = {}
-                if finish_reason := choice.get("finish_reason"):
-                    generation_info["finish_reason"] = finish_reason
-                logprobs = choice.get("logprobs")
-                if logprobs:
-                    generation_info["logprobs"] = logprobs
-                default_chunk_class = chunk.__class__
-                chunk = ChatGenerationChunk(
-                    message=chunk, generation_info=generation_info or None
-                )
+                    if token_usage := chunk.get("usage"):
+                        generation_info = {"token_usage": token_usage}
+                        chunk = ChatGenerationChunk(
+                            message=default_chunk_class(content=""),
+                            generation_info=generation_info,
+                        )
+                    else:
+                        continue
+                else:
+                    choice = chunk["choices"][0]
+                    if choice["delta"] is None:
+                        continue
+                    chunk = _convert_delta_to_message_chunk(
+                        choice["delta"], default_chunk_class
+                    )
+                    generation_info = {}
+                    if finish_reason := choice.get("finish_reason"):
+                        generation_info["finish_reason"] = finish_reason
+                    logprobs = choice.get("logprobs")
+                    if logprobs:
+                        generation_info["logprobs"] = logprobs
+                    default_chunk_class = chunk.__class__
+                    chunk = ChatGenerationChunk(
+                        message=chunk, generation_info=generation_info or None
+                    )
                 if run_manager:
                     run_manager.on_llm_new_token(
                         chunk.text, chunk=chunk, logprobs=logprobs
@@ -582,23 +595,31 @@ class BaseChatOpenAI(BaseChatModel):
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
                 if len(chunk["choices"]) == 0:
-                    continue
-                choice = chunk["choices"][0]
-                if choice["delta"] is None:
-                    continue
-                chunk = _convert_delta_to_message_chunk(
-                    choice["delta"], default_chunk_class
-                )
-                generation_info = {}
-                if finish_reason := choice.get("finish_reason"):
-                    generation_info["finish_reason"] = finish_reason
-                logprobs = choice.get("logprobs")
-                if logprobs:
-                    generation_info["logprobs"] = logprobs
-                default_chunk_class = chunk.__class__
-                chunk = ChatGenerationChunk(
-                    message=chunk, generation_info=generation_info or None
-                )
+                    if token_usage := chunk.get("usage"):
+                        generation_info = {"token_usage": token_usage}
+                        chunk = ChatGenerationChunk(
+                            message=default_chunk_class(content=""),
+                            generation_info=generation_info,
+                        )
+                    else:
+                        continue
+                else:
+                    choice = chunk["choices"][0]
+                    if choice["delta"] is None:
+                        continue
+                    chunk = _convert_delta_to_message_chunk(
+                        choice["delta"], default_chunk_class
+                    )
+                    generation_info = {}
+                    if finish_reason := choice.get("finish_reason"):
+                        generation_info["finish_reason"] = finish_reason
+                    logprobs = choice.get("logprobs")
+                    if logprobs:
+                        generation_info["logprobs"] = logprobs
+                    default_chunk_class = chunk.__class__
+                    chunk = ChatGenerationChunk(
+                        message=chunk, generation_info=generation_info or None
+                    )
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         token=chunk.text, chunk=chunk, logprobs=logprobs
