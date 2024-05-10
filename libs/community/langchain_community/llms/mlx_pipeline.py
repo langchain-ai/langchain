@@ -64,10 +64,14 @@ class MLXPipeline(LLM):
         - temp (float): Temperature for generation, default is 0.0.
         - max_tokens (int): Maximum tokens to generate, default is 100.
         - verbose (bool): Whether to output verbose logging, default is False.
-        - formatter (Optional[Callable]): A callable to format the output, default is None.
-        - repetition_penalty (Optional[float]): The penalty factor for repeated sequences, default is None.
-        - repetition_context_size (Optional[int]): Size of the context for applying repetition penalty, default is None.
-        - top_p (float): The cumulative probability threshold for top-p filtering, default is 1.0.
+        - formatter (Optional[Callable]): A callable to format the output.
+          Default is None.
+        - repetition_penalty (Optional[float]): The penalty factor for
+          repeated sequences, default is None.
+        - repetition_context_size (Optional[int]): Size of the context
+          for applying repetition penalty, default is None.
+        - top_p (float): The cumulative probability threshold for
+          top-p filtering, default is 1.0.
 
     """
 
