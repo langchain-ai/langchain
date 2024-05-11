@@ -5,7 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Literal, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Literal, Optional, Type, TypeVar, Union
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, FilePath
@@ -52,7 +52,7 @@ class Prompty(BaseModel):
     tags: List[str] = Field(default=[])
     version: str = Field(default="")
     base: str = Field(default="")
-    basePrompty: Prompty | None = Field(default=None)
+    basePrompty: Optional[Prompty] = Field(default=None)
     # model
     model: ModelSettings = Field(default_factory=ModelSettings)
 
