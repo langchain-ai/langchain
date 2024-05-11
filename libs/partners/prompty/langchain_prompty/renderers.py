@@ -1,7 +1,7 @@
 from langchain_core.utils import mustache
 from pydantic import BaseModel
 
-from .core import Invoker, InvokerFactory, Prompty, SimpleModel
+from .core import Invoker, Prompty, SimpleModel
 
 
 class MustacheRenderer(Invoker):

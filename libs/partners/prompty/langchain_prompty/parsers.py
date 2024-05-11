@@ -4,7 +4,7 @@ from typing import List, Union
 
 from pydantic import BaseModel
 
-from .core import Invoker, InvokerFactory, NoOpParser, Prompty, SimpleModel
+from .core import Invoker, Prompty, SimpleModel
 
 
 class PromptyChatParser(Invoker):
@@ -106,4 +106,3 @@ class PromptyChatParser(Invoker):
             messages.append({"role": role, "content": self.parse_content(content)})
 
         return SimpleModel[list](item=messages)
-

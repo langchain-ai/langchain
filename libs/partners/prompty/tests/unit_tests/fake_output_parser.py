@@ -1,10 +1,10 @@
-from typing import Union
+from typing import Tuple, Union
 
 from langchain.agents.agent import AgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
 
 
-def extract_action_details(text):
+def extract_action_details(text: str) -> Tuple[str | None, str | None]:
     # Split the text into lines and strip whitespace
     lines = [line.strip() for line in text.strip().split("\n")]
 
@@ -30,7 +30,7 @@ class FakeOutputParser(AgentOutputParser):
         if action:
             log = f"\nInvoking: `{action}` with `{input}"
 
-            return AgentAction(tool=action, tool_input=input, log=log)
+            return AgentAction(tool=action, tool_input=(input or ""), log=log)
         elif "Final Answer" in text:
             return AgentFinish({"output": text}, text)
 
