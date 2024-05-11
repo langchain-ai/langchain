@@ -138,7 +138,9 @@ def load_prompt(
     return _load_prompt_from_file(path, encoding)
 
 
-def _load_prompt_from_file(file: Union[str, Path], encoding: str) -> BasePromptTemplate:
+def _load_prompt_from_file(
+    file: Union[str, Path], encoding: Optional[str] = None
+) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.
     if isinstance(file, str):
