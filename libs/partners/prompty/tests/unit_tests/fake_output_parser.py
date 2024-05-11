@@ -1,10 +1,10 @@
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 from langchain.agents import AgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
 
 
-def extract_action_details(text: str) -> Tuple[str | None, str | None]:
+def extract_action_details(text: str) -> Tuple[Optional[str], Optional[str]]:
     # Split the text into lines and strip whitespace
     lines = [line.strip() for line in text.strip().split("\n")]
 
