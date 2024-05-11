@@ -1,9 +1,10 @@
 """A fake callback handler for testing purposes."""
+
 from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
+from langchain_core.callbacks import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import BaseModel
 

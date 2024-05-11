@@ -1,6 +1,6 @@
 from typing import Tuple, Union
 
-from langchain.agents.agent import AgentOutputParser
+from langchain.agents import AgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
 
 
