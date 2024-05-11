@@ -1,6 +1,6 @@
 import traceback
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 from .core import (
     Frontmatter,
@@ -148,7 +148,7 @@ def prepare(
 
 def run(
     prompt: Prompty,
-    content: dict | list | str,
+    content: Union[Dict, List, str],
     configuration: Dict[str, Any] = {},
     parameters: Dict[str, Any] = {},
     raw: bool = False,

@@ -5,7 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Literal, Type, TypeVar
+from typing import Any, Dict, Generic, List, Literal, Type, TypeVar, Union
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, FilePath
@@ -20,7 +20,7 @@ class SimpleModel(BaseModel, Generic[T]):
 class PropertySettings(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     type: Literal["string", "number", "array", "object", "boolean"]
-    default: str | int | float | List | dict | bool = Field(default=None)
+    default: Union[str, int, float, List, Dict, bool] = Field(default=None)
     description: str = Field(default="")
 
 
