@@ -17,8 +17,9 @@ The Chain interface makes it easy to create apps that are:
     Chain --> <name>Chain  # Examples: LLMChain, MapReduceChain, RouterChain
 """
 
-import importlib
 from typing import Any
+
+from langchain._api import create_importer
 
 _module_lookup = {
     "APIChain": "langchain.chains.api.base",
@@ -84,12 +85,11 @@ _module_lookup = {
     "TransformChain": "langchain.chains.transform",
 }
 
+importer = create_importer(__package__, module_lookup=_module_lookup)
+
 
 def __getattr__(name: str) -> Any:
-    if name in _module_lookup:
-        module = importlib.import_module(_module_lookup[name])
-        return getattr(module, name)
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    return importer(name)
 
 
 __all__ = list(_module_lookup.keys())

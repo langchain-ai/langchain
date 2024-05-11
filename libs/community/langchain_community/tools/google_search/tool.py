@@ -18,7 +18,7 @@ class GoogleSearchRunInput(BaseModel):
 
 @deprecated(
     since="0.0.33",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_google_community.GoogleSearchRun",
 )
 class GoogleSearchRun(BaseTool):
@@ -44,7 +44,7 @@ class GoogleSearchRun(BaseTool):
 
 @deprecated(
     since="0.0.33",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_google_community.GoogleSearchResults",
 )
 class GoogleSearchResults(BaseTool):
