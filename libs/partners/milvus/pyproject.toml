@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.0.12"
-pymilvus = "^2.4.0"
+pymilvus = "^2.4.2"
 scipy = "^1.7"
 
 [tool.poetry.group.test]
@@ -27,7 +27,6 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = {path = "../../core", develop = true}
-pymilvus = { git = "https://github.com/milvus-io/pymilvus.git" }
 
 [tool.poetry.group.codespell]
 optional = true
