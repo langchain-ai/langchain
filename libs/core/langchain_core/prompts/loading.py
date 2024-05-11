@@ -1,6 +1,7 @@
 """Load prompts."""
 
 import json
+import locale
 import logging
 from pathlib import Path
 from typing import Callable, Dict, Union
@@ -125,7 +126,9 @@ def _load_prompt(config: dict) -> PromptTemplate:
     return PromptTemplate(**config)
 
 
-def load_prompt(path: Union[str, Path], encoding: str) -> BasePromptTemplate:
+def load_prompt(
+    path: Union[str, Path], encoding: str = locale.getencoding()
+) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs."""
     if isinstance(path, str) and path.startswith("lc://"):
         raise RuntimeError(
