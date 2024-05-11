@@ -52,6 +52,7 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = { path = "../../core", develop = true }
+types-pyyaml = "^6.0.12.20240311"
 
 [tool.ruff]
 select = [

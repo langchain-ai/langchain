@@ -5,7 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Dict, Generic, List, Literal, TypeVar
+from typing import Any, Dict, Generic, List, Literal, TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, FilePath
@@ -69,7 +69,7 @@ class Prompty(BaseModel):
     file: FilePath = Field(default="")
     content: str | List[str] | dict = Field(default="")
 
-    def to_safe_dict(self) -> Dict[str, any]:
+    def to_safe_dict(self) -> Dict[str, Any]:
         d = {}
         for k, v in self:
             if v != "" and v != {} and v != [] and v is not None:
@@ -99,7 +99,7 @@ class Prompty(BaseModel):
         return json.dumps(d)
 
     @staticmethod
-    def normalize(attribute: any, parent: Path, env_error=True) -> any:
+    def normalize(attribute: Any, parent: Path, env_error=True) -> Any:
         if isinstance(attribute, str):
             attribute = attribute.strip()
             if attribute.startswith("${") and attribute.endswith("}"):
@@ -145,8 +145,8 @@ class Prompty(BaseModel):
 
 
 def param_hoisting(
-    top: Dict[str, any], bottom: Dict[str, any], top_key: str = None
-) -> Dict[str, any]:
+    top: Dict[str, Any], bottom: Dict[str, Any], top_key: str = None
+) -> Dict[str, Any]:
     if top_key:
         new_dict = {**top[top_key]} if top_key in top else {}
     else:
@@ -238,7 +238,7 @@ class InvokerFactory(object):
         else:
             raise ValueError(f"Invalid type {type}")
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "renderers": {
                 k: f"{v.__module__}.{v.__name__}" for k, v in self._renderers.items()
