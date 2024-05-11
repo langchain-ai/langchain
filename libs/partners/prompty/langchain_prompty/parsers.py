@@ -1,5 +1,6 @@
 import base64
 import re
+from typing import List, Union
 
 from pydantic import BaseModel
 
@@ -34,7 +35,7 @@ class PromptyChatParser(Invoker):
                     "and .jpg / .jpeg are supported."
                 )
 
-    def parse_content(self, content: str):
+    def parse_content(self, content: str) -> Union[str, List]:
         """for parsing inline images"""
         # regular expression to parse markdown images
         image = r"(?P<alt>!\[[^\]]*\])\((?P<filename>.*?)(?=\"|\))\)"
@@ -106,9 +107,3 @@ class PromptyChatParser(Invoker):
 
         return SimpleModel[list](item=messages)
 
-
-InvokerFactory().register_parser("prompty.chat", PromptyChatParser)
-# just in case someone makes a full prompty for embedding, completion, or image...
-InvokerFactory().register_parser("prompty.embedding", NoOpParser)
-InvokerFactory().register_parser("prompty.image", NoOpParser)
-InvokerFactory().register_parser("prompty.completion", NoOpParser)

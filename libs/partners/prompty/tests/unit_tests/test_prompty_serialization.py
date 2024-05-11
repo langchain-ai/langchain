@@ -25,7 +25,7 @@ prompty_folder = os.path.abspath(
 )
 
 
-def test_prompty_basic_chain():
+def test_prompty_basic_chain() -> None:
     prompt = langchain_prompty.create_chat_prompt(f"{prompty_folder}/chat.prompty")
     model = FakeEchoPromptChatModel()
     chain = prompt | model
@@ -37,7 +37,12 @@ def test_prompty_basic_chain():
             "input": "fakeQuestion",
         }
     )
-    msgs = json.loads(parsed_prompts.content)
+
+    if isinstance(parsed_prompts.content, str):
+        msgs = json.loads(str(parsed_prompts.content))
+    else:
+        msgs = parsed_prompts.content
+
     print(msgs)
 
     assert len(msgs) == 2
@@ -67,7 +72,7 @@ def test_prompty_basic_chain():
     ), "The string 'fakeQuestion' should be in the user message content."
 
 
-def test_prompty_used_in_agent():
+def test_prompty_used_in_agent() -> None:
     prompt = langchain_prompty.create_chat_prompt(f"{prompty_folder}/chat.prompty")
     tool_name = "search"
     responses = [
@@ -86,7 +91,7 @@ def test_prompty_used_in_agent():
     llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
 
     agent = (
-        {
+        {  # type: ignore[var-annotated]
             "firstName": lambda x: x["firstName"],
             "lastName": lambda x: x["lastName"],
             "input": lambda x: x["input"],
@@ -112,7 +117,7 @@ def test_prompty_used_in_agent():
         )
 
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True).with_types(
-        input_type=AgentInput
+        input_type=AgentInput  # type: ignore[arg-type]
     )
 
     agent_executor.invoke(
@@ -138,7 +143,7 @@ def test_prompty_used_in_agent():
     assert "fakeSearch" in input_prompt
 
 
-def test_all_prompty_can_run():
+def test_all_prompty_can_run() -> None:
     exclusions = ["embedding.prompty", "groundedness.prompty"]
 
     prompty_files = [

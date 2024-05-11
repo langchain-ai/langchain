@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable, RunnableLambda
@@ -7,9 +7,9 @@ from .utils import load, prepare
 
 
 def create_chat_prompt(
-    path: str, input_name_agent_scratchpad="agent_scratchpad"
-) -> Runnable[Dict[str, any], ChatPromptTemplate]:
-    def runnable_chat_lambda(inputs: Dict[str, any]) -> ChatPromptTemplate:
+    path: str, input_name_agent_scratchpad: str = "agent_scratchpad"
+) -> Runnable[Dict[str, Any], ChatPromptTemplate]:
+    def runnable_chat_lambda(inputs: Dict[str, Any]) -> ChatPromptTemplate:
         p = load(path)
         parsed = prepare(p, inputs)
         lc_messages = []
@@ -19,7 +19,7 @@ def create_chat_prompt(
         lc_messages.append(
             MessagesPlaceholder(
                 variable_name=input_name_agent_scratchpad, optional=True
-            )
+            )  # type: ignore[arg-type]
         )
         lc_p = ChatPromptTemplate.from_messages(lc_messages)
         lc_p = lc_p.partial(**p.inputs)

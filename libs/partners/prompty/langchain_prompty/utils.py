@@ -1,6 +1,6 @@
 import traceback
 from pathlib import Path
-from typing import Dict, Union
+from typing import Any, Dict, Union
 
 from .core import (
     Frontmatter,
@@ -13,20 +13,20 @@ from .core import (
 from .parsers import InvokerFactory, SimpleModel
 
 
-def load(prompty_file: str, configuration: str = "default") -> Prompty:
-    p = Path(prompty_file)
-    if not p.is_absolute():
+def load(prompt_path: str, configuration: str = "default") -> Prompty:
+    file_path = Path(prompt_path)
+    if not file_path.is_absolute():
         # get caller's path (take into account trace frame)
         caller = Path(traceback.extract_stack()[-3].filename)
-        p = Path(caller.parent / p).resolve().absolute()
+        file_path = Path(caller.parent / file_path).resolve().absolute()
 
     # load dictionary from prompty file
-    matter = Frontmatter.read_file(p)
+    matter = Frontmatter.read_file(file_path.__fspath__())
     attributes = matter["attributes"]
     content = matter["body"]
 
     # normalize attribute dictionary resolve keys and files
-    attributes = Prompty.normalize(attributes, p.parent)
+    attributes = Prompty.normalize(attributes, file_path.parent)
 
     # load global configuration
     if "model" not in attributes:
@@ -75,7 +75,7 @@ def load(prompty_file: str, configuration: str = "default") -> Prompty:
     # recursive loading of base prompty
     if "base" in attributes:
         # load the base prompty from the same directory as the current prompty
-        base = load(p.parent / attributes["base"])
+        base = load(file_path.parent / attributes["base"])
         # hoist the base prompty's attributes to the current prompty
         model.api = base.model.api if model.api == "" else model.api
         model.configuration = param_hoisting(
@@ -92,7 +92,7 @@ def load(prompty_file: str, configuration: str = "default") -> Prompty:
             outputs=outputs,
             template=template,
             content=content,
-            file=p,
+            file=file_path,
             basePrompty=base,
         )
     else:
@@ -103,15 +103,15 @@ def load(prompty_file: str, configuration: str = "default") -> Prompty:
             outputs=outputs,
             template=template,
             content=content,
-            file=p,
+            file=file_path,
         )
     return p
 
 
 def prepare(
     prompt: Prompty,
-    inputs: Dict[str, any] = {},
-):
+    inputs: Dict[str, Any] = {},
+) -> Any:
     invoker = InvokerFactory()
 
     inputs = param_hoisting(inputs, prompt.sample)
@@ -148,10 +148,10 @@ def prepare(
 def run(
     prompt: Prompty,
     content: dict | list | str,
-    configuration: Dict[str, any] = {},
-    parameters: Dict[str, any] = {},
+    configuration: Dict[str, Any] = {},
+    parameters: Dict[str, Any] = {},
     raw: bool = False,
-):
+) -> Any:
     invoker = InvokerFactory()
 
     if configuration != {}:
@@ -188,19 +188,14 @@ def run(
 
 def execute(
     prompt: Union[str, Prompty],
-    configuration: Dict[str, any] = {},
-    parameters: Dict[str, any] = {},
-    inputs: Dict[str, any] = {},
+    configuration: Dict[str, Any] = {},
+    parameters: Dict[str, Any] = {},
+    inputs: Dict[str, Any] = {},
     raw: bool = False,
     connection: str = "default",
-):
+) -> Any:
     if isinstance(prompt, str):
-        path = Path(prompt)
-        if not path.is_absolute():
-            # get caller's path (take into account trace frame)
-            caller = Path(traceback.extract_stack()[-3].filename)
-            path = Path(caller.parent / path).resolve().absolute()
-        prompt = load(path, connection)
+        prompt = load(prompt, connection)
 
     # prepare content
     content = prepare(prompt, inputs)

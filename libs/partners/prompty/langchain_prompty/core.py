@@ -67,7 +67,7 @@ class Prompty(BaseModel):
     template: TemplateSettings
 
     file: FilePath = Field(default="")
-    content: str | List[str] | dict = Field(default="")
+    content: str = Field(default="")
 
     def to_safe_dict(self) -> Dict[str, Any]:
         d = {}
@@ -226,7 +226,7 @@ class InvokerFactory(object):
         name: str,
         prompty: Prompty,
         data: BaseModel,
-    ) -> BaseModel:
+    ) -> Any:
         if type == "renderer":
             return self._renderers[name](prompty)(data)
         elif type == "parser":

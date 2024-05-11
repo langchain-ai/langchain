@@ -118,7 +118,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
 
     def __init__(self) -> None:
         super().__init__()
-        self.input_prompts = None
+        self.input_prompts = []
 
     @property
     def ignore_llm(self) -> bool:

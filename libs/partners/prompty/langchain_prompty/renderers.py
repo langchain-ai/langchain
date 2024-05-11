@@ -12,6 +12,3 @@ class MustacheRenderer(Invoker):
         assert isinstance(data, SimpleModel)
         generated = mustache.render(self.prompty.content, data.item)
         return SimpleModel[str](item=generated)
-
-
-InvokerFactory().register_renderer("mustache", MustacheRenderer)
