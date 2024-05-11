@@ -193,8 +193,8 @@ def get_chat_model_table() -> str:
         "Async invoke",
         "Stream",
         "Async stream",
-        "[Tool calling](/docs/modules/model_io/chat/function_calling/)",
-        "[Structured output](/docs/modules/model_io/chat/structured_output/)",
+        "[Tool calling](/docs/how_to/tool_calling/)",
+        "[Structured output](/docs/how_to/structured_output/)",
         "Python Package",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
