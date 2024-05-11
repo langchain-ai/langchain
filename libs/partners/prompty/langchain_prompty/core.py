@@ -5,7 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Literal, TypeVar
+from typing import Any, Dict, Generic, List, Literal, Type, TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, FilePath
@@ -99,7 +99,7 @@ class Prompty(BaseModel):
         return json.dumps(d)
 
     @staticmethod
-    def normalize(attribute: Any, parent: Path, env_error=True) -> Any:
+    def normalize(attribute: Any, parent: Path, env_error: bool = True) -> Any:
         if isinstance(attribute, str):
             attribute = attribute.strip()
             if attribute.startswith("${") and attribute.endswith("}"):
@@ -145,7 +145,7 @@ class Prompty(BaseModel):
 
 
 def param_hoisting(
-    top: Dict[str, Any], bottom: Dict[str, Any], top_key: str = None
+    top: Dict[str, Any], bottom: Dict[str, Any], top_key: Any = None
 ) -> Dict[str, Any]:
     if top_key:
         new_dict = {**top[top_key]} if top_key in top else {}
@@ -176,12 +176,12 @@ class NoOpParser(Invoker):
 
 class InvokerFactory(object):
     _instance = None
-    _renderers: Dict[str, Invoker] = {}
-    _parsers: Dict[str, Invoker] = {}
-    _executors: Dict[str, Invoker] = {}
-    _processors: Dict[str, Invoker] = {}
+    _renderers: Dict[str, Type[Invoker]] = {}
+    _parsers: Dict[str, Type[Invoker]] = {}
+    _executors: Dict[str, Type[Invoker]] = {}
+    _processors: Dict[str, Type[Invoker]] = {}
 
-    def __new__(cls):
+    def __new__(cls) -> InvokerFactory:
         if cls._instance is None:
             cls._instance = super(InvokerFactory, cls).__new__(cls)
             # Add NOOP invokers
@@ -195,8 +195,8 @@ class InvokerFactory(object):
         self,
         type: Literal["renderer", "parser", "executor", "processor"],
         name: str,
-        invoker: Invoker,
-    ):
+        invoker: Type[Invoker],
+    ) -> None:
         if type == "renderer":
             self._renderers[name] = invoker
         elif type == "parser":
@@ -208,16 +208,16 @@ class InvokerFactory(object):
         else:
             raise ValueError(f"Invalid type {type}")
 
-    def register_renderer(self, name, renderer_class):
+    def register_renderer(self, name: str, renderer_class: Any) -> None:
         self.register("renderer", name, renderer_class)
 
-    def register_parser(self, name, parser_class):
+    def register_parser(self, name: str, parser_class: Any) -> None:
         self.register("parser", name, parser_class)
 
-    def register_executor(self, name, executor_class):
+    def register_executor(self, name: str, executor_class: Any) -> None:
         self.register("executor", name, executor_class)
 
-    def register_processor(self, name, processor_class):
+    def register_processor(self, name: str, processor_class: Any) -> None:
         self.register("processor", name, processor_class)
 
     def __call__(
@@ -266,7 +266,7 @@ class Frontmatter:
     _regex = re.compile(_re_pattern, re.S | re.M)
 
     @classmethod
-    def read_file(cls, path):
+    def read_file(cls, path: str) -> dict[str, Any]:
         """Reads file at path and returns dict with separated frontmatter.
         See read() for more info on dict return value.
         """
@@ -275,7 +275,7 @@ class Frontmatter:
             return cls.read(file_contents)
 
     @classmethod
-    def read(cls, string):
+    def read(cls, string: str) -> dict[str, Any]:
         """Returns dict with separated frontmatter from string.
 
         Returned dict keys:
