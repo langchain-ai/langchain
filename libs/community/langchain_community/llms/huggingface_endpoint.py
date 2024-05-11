@@ -1,9 +1,7 @@
 import json
 import logging
-import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -11,7 +9,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_pydantic_field_names
+from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +21,6 @@ VALID_TASKS = (
 )
 
 
-@deprecated(
-    since="0.0.37",
-    removal="0.3",
-    alternative_import="from langchain_huggingface.llms import HuggingFaceEndpoint",
-)
 class HuggingFaceEndpoint(LLM):
     """
     HuggingFace Endpoint.
@@ -77,6 +70,9 @@ class HuggingFaceEndpoint(LLM):
     repo_id: Optional[str] = None
     """Repo to use."""
     huggingfacehub_api_token: Optional[str] = None
+    huggingfacehub_skip_login: bool = False
+    """Whether to skip the login to huggingfacehub. Defaults to False.
+    Set this to True when using custom endpoint not on HuggingFaceHub."""
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
     top_k: Optional[int] = None
@@ -174,11 +170,13 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        huggingfacehub_api_token = values["huggingfacehub_api_token"] or os.getenv(
-            "HUGGINGFACEHUB_API_TOKEN"
-        )
-        if huggingfacehub_api_token is not None:
+        if values.get("huggingfacehub_skip_login"):
+            huggingfacehub_api_token="not_needed"
+        else:
             try:
+                huggingfacehub_api_token = get_from_dict_or_env(
+                    values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
+                )
                 login(token=huggingfacehub_api_token)
             except Exception as e:
                 raise ValueError(
