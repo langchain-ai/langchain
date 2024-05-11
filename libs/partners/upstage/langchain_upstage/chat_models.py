@@ -12,10 +12,10 @@ from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
 )
-from langchain_openai import ChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
 
-class ChatUpstage(ChatOpenAI):
+class ChatUpstage(BaseChatOpenAI):
     """ChatUpstage chat model.
 
     To use, you should have the environment variable `UPSTAGE_API_KEY`
@@ -59,6 +59,16 @@ class ChatUpstage(ChatOpenAI):
     upstage_api_base: Optional[str] = Field(
         default="https://api.upstage.ai/v1/solar", alias="base_url"
     )
+    """Base URL path for API requests, leave blank if not using a proxy or service 
+    emulator."""
+    openai_api_key: Optional[SecretStr] = Field(default=None)
+    """openai api key is not supported for upstage. use `upstage_api_key` instead."""
+    openai_api_base: Optional[str] = Field(default=None)
+    """openai api base is not supported for upstage. use `upstage_api_base` instead."""
+    openai_organization: Optional[str] = Field(default=None)
+    """openai organization is not supported for upstage."""
+    tiktoken_model_name: Optional[str] = None
+    """tiktoken is not supported for upstage."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

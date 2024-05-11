@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from pathlib import Path
 from typing import Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -42,6 +43,7 @@ class LocalFileStore(ByteStore):
         *,
         chmod_file: Optional[int] = None,
         chmod_dir: Optional[int] = None,
+        update_atime: bool = False,
     ) -> None:
         """Implement the BaseStore interface for the local file system.
 
@@ -52,10 +54,15 @@ class LocalFileStore(ByteStore):
                 for newly created files, overriding the current `umask` if needed.
             chmod_dir: (optional, defaults to `None`) If specified, sets permissions
                 for newly created dirs, overriding the current `umask` if needed.
+            update_atime: (optional, defaults to `False`) If `True`, updates the
+                filesystem access time (but not the modified time) when a file is read.
+                This allows MRU/LRU cache policies to be implemented for filesystems
+                where access time updates are disabled.
         """
         self.root_path = Path(root_path).absolute()
         self.chmod_file = chmod_file
         self.chmod_dir = chmod_dir
+        self.update_atime = update_atime
 
     def _get_full_path(self, key: str) -> Path:
         """Get the full path for a given key relative to the root path.
@@ -112,6 +119,9 @@ class LocalFileStore(ByteStore):
             if full_path.exists():
                 value = full_path.read_bytes()
                 values.append(value)
+                if self.update_atime:
+                    # update access time only; preserve modified time
+                    os.utime(full_path, (time.time(), os.stat(full_path).st_mtime))
             else:
                 values.append(None)
         return values
