@@ -1,7 +1,6 @@
 """Load prompts."""
 
 import json
-import locale
 import logging
 from pathlib import Path
 from typing import Callable, Dict, Union, Optional
