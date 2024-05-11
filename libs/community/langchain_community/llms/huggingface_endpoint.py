@@ -76,6 +76,9 @@ class HuggingFaceEndpoint(LLM):
     repo_id: Optional[str] = None
     """Repo to use."""
     huggingfacehub_api_token: Optional[str] = None
+    huggingfacehub_skip_login: bool = False
+    """Whether to skip the login to huggingfacehub. Defaults to False.
+    Set this to True when using custom endpoint not on HuggingFaceHub."""
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
     top_k: Optional[int] = None
@@ -173,16 +176,19 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        try:
-            huggingfacehub_api_token = get_from_dict_or_env(
-                values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
-            )
-            login(token=huggingfacehub_api_token)
-        except Exception as e:
-            raise ValueError(
-                "Could not authenticate with huggingface_hub. "
-                "Please check your API token."
-            ) from e
+        if values.get("huggingfacehub_skip_login"):
+            huggingfacehub_api_token="not_needed"
+        else:
+            try:
+                huggingfacehub_api_token = get_from_dict_or_env(
+                    values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
+                )
+                login(token=huggingfacehub_api_token)
+            except Exception as e:
+                raise ValueError(
+                    "Could not authenticate with huggingface_hub. "
+                    "Please check your API token."
+                ) from e
 
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
