@@ -177,7 +177,7 @@ class HuggingFaceEndpoint(LLM):
                 "Please install it with `pip install huggingface_hub`."
             )
         if values.get("huggingfacehub_skip_login"):
-            huggingfacehub_api_token="not_needed"
+            huggingfacehub_api_token = "not_needed"
         else:
             try:
                 huggingfacehub_api_token = get_from_dict_or_env(
