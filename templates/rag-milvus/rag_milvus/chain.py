@@ -36,11 +36,7 @@ vectorstore = Milvus.from_texts(
     embedding=OpenAIEmbeddings(),
     drop_old=True,
     connection_args={
-        "host": "localhost",
-        "port": "19530",
-        "user": "",
-        "password": "",
-        "secure": False,
+        "uri": "http://127.0.0.1:19530",
     },
 )
 retriever = vectorstore.as_retriever()

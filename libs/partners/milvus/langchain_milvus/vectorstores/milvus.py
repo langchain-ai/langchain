@@ -12,11 +12,7 @@ from langchain_core.vectorstores import VectorStore
 logger = logging.getLogger(__name__)
 
 DEFAULT_MILVUS_CONNECTION = {
-    "host": "localhost",
-    "port": "19530",
-    "user": "",
-    "password": "",
-    "secure": False,
+    "uri": "http://localhost:19530",
 }
 
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
@@ -143,7 +139,7 @@ class Milvus(VectorStore):
             "http://randomwebsite:19530",
             "tcp:foobarsite:19530",
             "https://ok.s3.south.com:19530".
-            or "path/to/local/directory" for local Milvus.
+            or "path/to/local/directory/milvus_demo.db" for Milvus Lite.
         host (str): The host of Milvus instance. Default at "localhost",
             PyMilvus will fill in the default host if only port is provided.
         port (str/int): The port of Milvus instance. Default at 19530, PyMilvus
