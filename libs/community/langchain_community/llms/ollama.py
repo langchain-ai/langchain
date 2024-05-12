@@ -405,7 +405,7 @@ class Ollama(BaseLLM, _OllamaCommon):
         """Public method to preload the model into memory."""
         start_time = time.time()
         if self.verbose:
-            logger.info(f"Preloading Ollama model '{self.model}' into memory...")
+            logger.info(f"Preloading Ollama model '{self.model}' into memory.")
         self._generate([""])
         if self.verbose:
             elapsed_time = time.time() - start_time
