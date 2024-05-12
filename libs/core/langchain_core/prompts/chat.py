@@ -439,9 +439,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]  # noqa: E501
                     prompt.append(
                         PromptTemplate.from_template(
-                            text,
-                            template_format=template_format,
-                            partial_variables=partial_variables,
+                            text, template_format=template_format
                         )
                     )
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:
