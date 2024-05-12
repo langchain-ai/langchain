@@ -22,14 +22,14 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         connection_string: str = DEFAULT_CONNECTION_STRING,
         table_name: str = "message_store",
-        pg_connection = None,
+        pg_connection=None,
     ):
         import psycopg
         from psycopg.rows import dict_row
-        
+
         self.session_id = session_id
         self.table_name = table_name
-        
+
         if not pg_connection:
             try:
                 self.connection = psycopg.connect(connection_string)
