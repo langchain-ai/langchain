@@ -2,6 +2,7 @@ from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING, Any, Callable, Dict
 
 from langchain_core.tracers import BaseTracer
+from langchain_core.utils import guard_import
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -23,29 +24,15 @@ def _get_run_type(run: "Run") -> str:
 
 def import_comet_llm_api() -> SimpleNamespace:
     """Import comet_llm api and raise an error if it is not installed."""
-    try:
-        from comet_llm import (
-            experiment_info,
-            flush,
-        )
-        from comet_llm.chains import api as chain_api
-        from comet_llm.chains import (
-            chain,
-            span,
-        )
+    comet_llm = guard_import("comet_llm")
+    comet_llm_chains = guard_import("comet_llm.chains")
 
-    except ImportError:
-        raise ImportError(
-            "To use the CometTracer you need to have the "
-            "`comet_llm>=2.0.0` python package installed. Please install it with"
-            " `pip install -U comet_llm`"
-        )
     return SimpleNamespace(
-        chain=chain,
-        span=span,
-        chain_api=chain_api,
-        experiment_info=experiment_info,
-        flush=flush,
+        chain=comet_llm_chains.chain,
+        span=comet_llm_chains.span,
+        chain_api=comet_llm_chains.api,
+        experiment_info=comet_llm.experiment_info,
+        flush=comet_llm.flush,
     )
 
 
