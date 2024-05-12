@@ -54,7 +54,7 @@ def test_03_generate_embed_documents_with_param() -> None:
 
 def test_10_generate_embed_query_with_client_initialization() -> None:
     watsonx_client = APIClient(
-        wml_credentials={
+        credentials={
             "url": URL,
             "apikey": WX_APIKEY,
         }
