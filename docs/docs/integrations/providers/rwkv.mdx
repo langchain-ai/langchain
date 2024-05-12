@@ -44,7 +44,7 @@ def generate_prompt(instruction, input=None):
 
 
 model = RWKV(model="./models/RWKV-4-Raven-3B-v7-Eng-20230404-ctx4096.pth", strategy="cpu fp32", tokens_path="./rwkv/20B_tokenizer.json")
-response = model(generate_prompt("Once upon a time, "))
+response = model.invoke(generate_prompt("Once upon a time, "))
 ```
 ## Model File
 

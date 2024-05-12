@@ -19,14 +19,18 @@ tool for the job.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
+import textwrap
 import uuid
 import warnings
-from abc import abstractmethod
+from abc import ABC, abstractmethod
+from contextvars import copy_context
 from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForToolRun,
@@ -60,7 +64,12 @@ from langchain_core.runnables import (
     RunnableSerializable,
     ensure_config,
 )
-from langchain_core.runnables.config import run_in_executor
+from langchain_core.runnables.config import (
+    patch_config,
+    run_in_executor,
+    var_child_runnable_config,
+)
+from langchain_core.runnables.utils import accepts_context
 
 
 class SchemaAnnotationError(TypeError):
@@ -255,6 +264,7 @@ class ChildTool(BaseTool):
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
             run_id=config.pop("run_id", None),
+            config=config,
             **kwargs,
         )
 
@@ -272,6 +282,7 @@ class ChildTool(BaseTool):
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
             run_id=config.pop("run_id", None),
+            config=config,
             **kwargs,
         )
 
@@ -353,6 +364,7 @@ class ChildTool(BaseTool):
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -385,12 +397,20 @@ class ChildTool(BaseTool):
             **kwargs,
         )
         try:
+            child_config = patch_config(
+                config,
+                callbacks=run_manager.get_child(),
+            )
+            context = copy_context()
+            context.run(var_child_runnable_config.set, child_config)
             parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
-                self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
+                context.run(
+                    self._run, *tool_args, run_manager=run_manager, **tool_kwargs
+                )
                 if new_arg_supported
-                else self._run(*tool_args, **tool_kwargs)
+                else context.run(self._run, *tool_args, **tool_kwargs)
             )
         except ValidationError as e:
             if not self.handle_validation_error:
@@ -446,6 +466,7 @@ class ChildTool(BaseTool):
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -476,11 +497,24 @@ class ChildTool(BaseTool):
             parsed_input = self._parse_input(tool_input)
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
-            observation = (
-                await self._arun(*tool_args, run_manager=run_manager, **tool_kwargs)
-                if new_arg_supported
-                else await self._arun(*tool_args, **tool_kwargs)
+            child_config = patch_config(
+                config,
+                callbacks=run_manager.get_child(),
             )
+            context = copy_context()
+            context.run(var_child_runnable_config.set, child_config)
+            coro = (
+                context.run(
+                    self._arun, *tool_args, run_manager=run_manager, **tool_kwargs
+                )
+                if new_arg_supported
+                else context.run(self._arun, *tool_args, **tool_kwargs)
+            )
+            if accepts_context(asyncio.create_task):
+                observation = await asyncio.create_task(coro, context=context)  # type: ignore
+            else:
+                observation = await coro
+
         except ValidationError as e:
             if not self.handle_validation_error:
                 raise e
@@ -527,6 +561,7 @@ class ChildTool(BaseTool):
             )
             return observation
 
+    @deprecated("0.1.47", alternative="invoke", removal="0.3.0")
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
         """Make tool callable."""
         return self.run(tool_input, callbacks=callbacks)
@@ -791,16 +826,19 @@ class StructuredTool(BaseTool):
         else:
             raise ValueError("Function and/or coroutine must be provided")
         name = name or source_function.__name__
-        description = description or source_function.__doc__
-        if description is None:
+        description_ = description or source_function.__doc__
+        if description_ is None:
             raise ValueError(
                 "Function must have a docstring if description not provided."
             )
+        if description is None:
+            # Only apply if using the function's docstring
+            description_ = textwrap.dedent(description_).strip()
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
         sig = signature(source_function)
-        description = f"{name}{sig} - {description.strip()}"
+        description_ = f"{name}{sig} - {description_.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
             # schema name is appended within function
@@ -810,7 +848,7 @@ class StructuredTool(BaseTool):
             func=func,
             coroutine=coroutine,
             args_schema=_args_schema,  # type: ignore[arg-type]
-            description=description,
+            description=description_,
             return_direct=return_direct,
             **kwargs,
         )
@@ -945,7 +983,7 @@ def _get_relevant_documents(
     document_separator: str,
     callbacks: Callbacks = None,
 ) -> str:
-    docs = retriever.get_relevant_documents(query, callbacks=callbacks)
+    docs = retriever.invoke(query, config={"callbacks": callbacks})
     return document_separator.join(
         format_document(doc, document_prompt) for doc in docs
     )
@@ -958,7 +996,7 @@ async def _aget_relevant_documents(
     document_separator: str,
     callbacks: Callbacks = None,
 ) -> str:
-    docs = await retriever.aget_relevant_documents(query, callbacks=callbacks)
+    docs = await retriever.ainvoke(query, config={"callbacks": callbacks})
     return document_separator.join(
         [await aformat_document(doc, document_prompt) for doc in docs]
     )
@@ -1038,3 +1076,11 @@ args: {"expression": {"type": "string"}}
         args_schema = str(tool.args)
         tool_strings.append(f"{tool.name}: {tool.description}, args: {args_schema}")
     return "\n".join(tool_strings)
+
+
+class BaseToolkit(BaseModel, ABC):
+    """Base Toolkit representing a collection of related tools."""
+
+    @abstractmethod
+    def get_tools(self) -> List[BaseTool]:
+        """Get the tools in the toolkit."""

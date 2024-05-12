@@ -17,7 +17,7 @@ class AnySdkAction(BaseTool):
     description: str = ""
 
     def _run(
-        self, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs
+        self, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs: dict
     ) -> str:
         """Use the  AnySdk API to run an operation."""
         try:
