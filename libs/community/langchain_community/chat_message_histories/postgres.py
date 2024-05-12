@@ -22,18 +22,25 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         connection_string: str = DEFAULT_CONNECTION_STRING,
         table_name: str = "message_store",
+        pg_connection = None,
     ):
         import psycopg
         from psycopg.rows import dict_row
-
-        try:
-            self.connection = psycopg.connect(connection_string)
-            self.cursor = self.connection.cursor(row_factory=dict_row)
-        except psycopg.OperationalError as error:
-            logger.error(error)
-
+        
         self.session_id = session_id
         self.table_name = table_name
+        
+        if not pg_connection:
+            try:
+                self.connection = psycopg.connect(connection_string)
+                self.cursor = self.connection.cursor(row_factory=dict_row)
+                self.close_connection = True
+            except psycopg.OperationalError as error:
+                logger.error(error)
+        else:
+            self.connection = pg_connection
+            self.cursor = self.connection.cursor(row_factory=dict_row)
+            self.close_connection = False
 
         self._create_table_if_not_exists()
 
@@ -78,5 +85,5 @@ class PostgresChatMessageHistory(BaseChatMessageHistory):
     def __del__(self) -> None:
         if self.cursor:
             self.cursor.close()
-        if self.connection:
+        if self.connection and self.close_connection:
             self.connection.close()
