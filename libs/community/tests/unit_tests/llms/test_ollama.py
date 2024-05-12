@@ -205,7 +205,7 @@ def test_handle_kwargs_with_options(monkeypatch: MonkeyPatch) -> None:
 
 def test_preload_true_initializes_model(monkeypatch: MonkeyPatch) -> None:
     # Create a mock function to replace the preload_model method
-    def mock_preload():
+    def mock_preload():  # type: ignore[no-untyped-def]
         pass
 
     monkeypatch.setattr(
@@ -215,7 +215,7 @@ def test_preload_true_initializes_model(monkeypatch: MonkeyPatch) -> None:
     # Use a counter to track calls to the mock function
     call_count = 0
 
-    def count_calls(*args, **kwargs):
+    def count_calls(*args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         nonlocal call_count
         call_count += 1
 
@@ -228,7 +228,7 @@ def test_preload_true_initializes_model(monkeypatch: MonkeyPatch) -> None:
 
 def test_preload_false_does_not_initialize_model(monkeypatch: MonkeyPatch) -> None:
     # Create a mock function to replace the preload_model method
-    def mock_preload():
+    def mock_preload():  # type: ignore[no-untyped-def]
         pass
 
     monkeypatch.setattr(
@@ -238,7 +238,7 @@ def test_preload_false_does_not_initialize_model(monkeypatch: MonkeyPatch) -> No
     # Use a counter to track calls to the mock function
     call_count = 0
 
-    def count_calls(*args, **kwargs):
+    def count_calls(*args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         nonlocal call_count
         call_count += 1
 
@@ -251,7 +251,7 @@ def test_preload_false_does_not_initialize_model(monkeypatch: MonkeyPatch) -> No
 
 def test_preload_not_set_does_not_initialize_model(monkeypatch: MonkeyPatch) -> None:
     # Create a mock function to replace the preload_model method
-    def mock_preload():
+    def mock_preload():  # type: ignore[no-untyped-def]
         pass
 
     monkeypatch.setattr(
@@ -261,7 +261,7 @@ def test_preload_not_set_does_not_initialize_model(monkeypatch: MonkeyPatch) -> 
     # Use a counter to track calls to the mock function
     call_count = 0
 
-    def count_calls(*args, **kwargs):
+    def count_calls(*args, **kwargs):  # type: ignore[no-untyped-def]
         nonlocal call_count
         call_count += 1
 
@@ -272,14 +272,14 @@ def test_preload_not_set_does_not_initialize_model(monkeypatch: MonkeyPatch) -> 
     assert call_count == 0
 
 
-def test_preload_true_effectiveness(monkeypatch):
+def test_preload_true_effectiveness(monkeypatch: MonkeyPatch) -> None:
     """
     Test that initializing Ollama with `preload=True` actually preloads the model,
     potentially reducing the time for the first invocation.
     """
 
     # Mock the actual API call to simulate model loading and invocation
-    def mock_generate(*args, **kwargs):
+    def mock_generate(*args, **kwargs) -> LLMResult:  # type: ignore[no-untyped-def]
         # Simulate a delay that would be seen in model loading
         import time
 
@@ -317,14 +317,14 @@ def test_preload_true_effectiveness(monkeypatch):
     assert elapsed_time_preload > elapsed_time_no_preload_param
 
 
-def test_preload_false_effectiveness(monkeypatch):
+def test_preload_false_effectiveness(monkeypatch: MonkeyPatch) -> None:
     """
     Test that initializing Ollama with `preload=False` does not preload the model,
     and the first invocation takes longer due to model loading.
     """
 
     # Similar setup as the previous test but reversed logic for assertions
-    def mock_generate(*args, **kwargs):
+    def mock_generate(*args, **kwargs) -> LLMResult:  # type: ignore[no-untyped-def]
         import time
 
         time.sleep(0.1)

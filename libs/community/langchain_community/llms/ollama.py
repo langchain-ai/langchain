@@ -141,7 +141,9 @@ class _OllamaCommon(BaseLanguageModel):
 
     See the [Ollama documents](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-pre-load-a-model-to-get-faster-response-times)"""
 
-    def __init__(self, model: str = "llama2", preload: bool = False, *args, **kwargs):
+    def __init__(
+        self, model: str = "llama2", preload: bool = False, *args: Any, **kwargs: Any
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.model = model
         self.preload = preload
@@ -181,7 +183,7 @@ class _OllamaCommon(BaseLanguageModel):
         """Get the identifying parameters."""
         return {**{"model": self.model, "format": self.format}, **self._default_params}
 
-    def preload_model(self):
+    def preload_model(self) -> None:
         """Public method to preload the model into memory."""
         start_time = time.time()
         if self.verbose:
