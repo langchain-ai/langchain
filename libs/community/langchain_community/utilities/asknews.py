@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from datetime import datetime, timedelta
 
 
 class AskNewsAPIWrapper(BaseModel):
@@ -65,15 +66,27 @@ class AskNewsAPIWrapper(BaseModel):
         self,
         query: str,
         max_results: int = 10,
-        method: Literal["nl", "kw"] = "nl",
-        historical: bool = False,
+        hours_back: int = 0
     ) -> str:
         """Search news in AskNews API synchronously."""
+        if hours_back > 48:
+            method = "kw"
+            historical = True
+            start = int((datetime.now() - timedelta(hours=hours_back)).timestamp())
+            stop = int(datetime.now().timestamp())
+        else:
+            historical = False
+            method = "nl"
+            start = None
+            stop = None
+
         response = self.asknews_sync.news.search_news(
             query=query,
             n_articles=max_results,
             method=method,
             historical=historical,
+            start_timestamp=start,
+            end_timestamp=stop,
             return_type="string",
         )
         return response.as_string
@@ -82,15 +95,27 @@ class AskNewsAPIWrapper(BaseModel):
         self,
         query: str,
         max_results: int = 10,
-        method: Literal["nl", "kw"] = "nl",
-        historical: bool = False,
+        hours_back: int = 0
     ) -> str:
         """Search news in AskNews API asynchronously."""
+        if hours_back > 48:
+            method = "kw"
+            historical = True
+            start = int((datetime.now() - timedelta(hours=hours_back)).timestamp())
+            stop = int(datetime.now().timestamp())
+        else:
+            historical = False
+            method = "nl"
+            start = None
+            stop = None
+
         response = await self.asknews_async.news.search_news(
             query=query,
             n_articles=max_results,
             method=method,
             historical=historical,
+            start_timestamp=start,
+            end_timestamp=stop,
             return_type="string",
         )
         return response.as_string
