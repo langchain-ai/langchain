@@ -11,7 +11,8 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.1.28"
-lxml = {version = "^5.1.0", optional = true}
+lxml = {version = ">=4.9.3,<6.0", optional = true}
+beautifulsoup4 = {version = "^4.12.3", optional = true}
 
 [tool.poetry.group.lint]
 optional = true
@@ -59,7 +60,7 @@ dependencies = {}
 
 [tool.poetry.extras]
 extended_testing = [
-  "lxml",
+  "lxml", "beautifulsoup4"
 ]
 
 [tool.ruff.lint]
@@ -74,7 +75,7 @@ select = [
 disallow_untyped_defs = "True"
 
 [[tool.mypy.overrides]]
-module = ["transformers", "sentence_transformers", "nltk.tokenize", "konlpy.tag"]
+module = ["transformers", "sentence_transformers", "nltk.tokenize", "konlpy.tag", "bs4"]
 ignore_missing_imports = "True"
 
 [tool.coverage.run]

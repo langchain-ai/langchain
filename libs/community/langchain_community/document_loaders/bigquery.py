@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -11,6 +12,11 @@ if TYPE_CHECKING:
     from google.auth.credentials import Credentials
 
 
+@deprecated(
+    since="0.0.32",
+    removal="0.3.0",
+    alternative_import="langchain_google_community.BigQueryLoader",
+)
 class BigQueryLoader(BaseLoader):
     """Load from the Google Cloud Platform `BigQuery`.
 

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class PaiEasChatEndpoint(BaseChatModel):
-    """Eas LLM Service chat model API.
+    """Alibaba Cloud PAI-EAS LLM Service chat model API.
 
         To use, must have a deployed eas chat llm service on AliCloud. One can set the
     environment variable ``eas_service_url`` and ``eas_service_token`` set with your eas

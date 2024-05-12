@@ -2,15 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.streamlit.streamlit_callback_handler import (
-    LLMThoughtLabeler as LLMThoughtLabeler,
-)
-from langchain.callbacks.streamlit.streamlit_callback_handler import (
-    StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
-)
+from langchain_core.callbacks.base import BaseCallbackHandler
 
 if TYPE_CHECKING:
+    from langchain_community.callbacks import LLMThoughtLabeler
     from streamlit.delta_generator import DeltaGenerator
 
 
@@ -60,11 +55,10 @@ def StreamlitCallbackHandler(
     # delegate to it instead of using our built-in handler. The official handler is
     # guaranteed to support the same set of kwargs.
     try:
-        from streamlit.external.langchain import (
-            StreamlitCallbackHandler as OfficialStreamlitCallbackHandler,  # type: ignore # noqa: 501
-        )
+        from streamlit.external.langchain import StreamlitCallbackHandler
 
-        return OfficialStreamlitCallbackHandler(
+        # This is the official handler, so we can just return it.
+        return StreamlitCallbackHandler(
             parent_container,
             max_thought_containers=max_thought_containers,
             expand_new_thoughts=expand_new_thoughts,
@@ -72,6 +66,16 @@ def StreamlitCallbackHandler(
             thought_labeler=thought_labeler,
         )
     except ImportError:
+        try:
+            from langchain_community.callbacks.streamlit.streamlit_callback_handler import (  # noqa: E501
+                StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
+            )
+        except ImportError:
+            raise ImportError(
+                "To use the StreamlitCallbackHandler, please install "
+                "langchain-community with `pip install langchain-community`."
+            )
+
         return _InternalStreamlitCallbackHandler(
             parent_container,
             max_thought_containers=max_thought_containers,

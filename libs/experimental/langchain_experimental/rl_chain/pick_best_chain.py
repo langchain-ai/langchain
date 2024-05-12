@@ -4,9 +4,9 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.llm import LLMChain
-from langchain.prompts import BasePromptTemplate
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.prompts import BasePromptTemplate
 
 import langchain_experimental.rl_chain.base as base
 

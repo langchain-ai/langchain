@@ -6,8 +6,6 @@ from typing import Any, Dict, List
 from unittest.mock import patch
 
 import pytest
-from langchain_community.chat_models.openai import ChatOpenAI
-from langchain_community.llms.openai import OpenAI
 from langchain_core.load.dump import dumps
 from langchain_core.load.serializable import Serializable
 from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
@@ -76,10 +74,13 @@ def test_typeerror() -> None:
     )
 
 
+@pytest.mark.community
 @pytest.mark.requires("openai")
 def test_serialize_openai_llm(snapshot: Any) -> None:
+    from langchain_community.llms.openai import OpenAI
+
     with patch.dict(os.environ, {"LANGCHAIN_API_KEY": "test-api-key"}):
-        llm = OpenAI(
+        llm = OpenAI(  # type: ignore[call-arg]
             model="davinci",
             temperature=0.5,
             openai_api_key="hello",
@@ -90,17 +91,23 @@ def test_serialize_openai_llm(snapshot: Any) -> None:
         assert dumps(llm, pretty=True) == snapshot
 
 
+@pytest.mark.community
 @pytest.mark.requires("openai")
 def test_serialize_llmchain(snapshot: Any) -> None:
-    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    from langchain_community.llms.openai import OpenAI
+
+    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
     assert dumps(chain, pretty=True) == snapshot
 
 
+@pytest.mark.community
 @pytest.mark.requires("openai")
 def test_serialize_llmchain_env() -> None:
-    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    from langchain_community.llms.openai import OpenAI
+
+    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)
 
@@ -110,7 +117,7 @@ def test_serialize_llmchain_env() -> None:
     if not has_env:
         os.environ["OPENAI_API_KEY"] = "env_variable"
 
-    llm_2 = OpenAI(model="davinci", temperature=0.5)
+    llm_2 = OpenAI(model="davinci", temperature=0.5)  # type: ignore[call-arg]
     prompt_2 = PromptTemplate.from_template("hello {name}!")
     chain_2 = LLMChain(llm=llm_2, prompt=prompt_2)
 
@@ -120,9 +127,12 @@ def test_serialize_llmchain_env() -> None:
         del os.environ["OPENAI_API_KEY"]
 
 
+@pytest.mark.community
 @pytest.mark.requires("openai")
 def test_serialize_llmchain_chat(snapshot: Any) -> None:
-    llm = ChatOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    from langchain_community.chat_models.openai import ChatOpenAI
+
+    llm = ChatOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
     prompt = ChatPromptTemplate.from_messages(
         [HumanMessagePromptTemplate.from_template("hello {name}!")]
     )
@@ -135,7 +145,7 @@ def test_serialize_llmchain_chat(snapshot: Any) -> None:
     if not has_env:
         os.environ["OPENAI_API_KEY"] = "env_variable"
 
-    llm_2 = ChatOpenAI(model="davinci", temperature=0.5)
+    llm_2 = ChatOpenAI(model="davinci", temperature=0.5)  # type: ignore[call-arg]
     prompt_2 = ChatPromptTemplate.from_messages(
         [HumanMessagePromptTemplate.from_template("hello {name}!")]
     )
@@ -147,9 +157,12 @@ def test_serialize_llmchain_chat(snapshot: Any) -> None:
         del os.environ["OPENAI_API_KEY"]
 
 
+@pytest.mark.community
 @pytest.mark.requires("openai")
 def test_serialize_llmchain_with_non_serializable_arg(snapshot: Any) -> None:
-    llm = OpenAI(
+    from langchain_community.llms.openai import OpenAI
+
+    llm = OpenAI(  # type: ignore[call-arg]
         model="davinci",
         temperature=0.5,
         openai_api_key="hello",
@@ -206,7 +219,7 @@ class TestClass(Serializable):
 
 
 def test_aliases_hidden() -> None:
-    test_class = TestClass(my_favorite_secret="hello", my_other_secret="world")
+    test_class = TestClass(my_favorite_secret="hello", my_other_secret="world")  # type: ignore[call-arg]
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
         "lc": 1,
@@ -226,11 +239,11 @@ def test_aliases_hidden() -> None:
     with patch.dict(
         os.environ, {"MY_FAVORITE_SECRET": "hello", "MY_OTHER_SECRET": "world"}
     ):
-        test_class = TestClass()
+        test_class = TestClass()  # type: ignore[call-arg]
         dumped = json.loads(dumps(test_class, pretty=True))
 
     # Check by alias
-    test_class = TestClass(my_favorite_secret_alias="hello", my_other_secret="world")
+    test_class = TestClass(my_favorite_secret_alias="hello", my_other_secret="world")  # type: ignore[call-arg]
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
         "lc": 1,
@@ -238,11 +251,6 @@ def test_aliases_hidden() -> None:
         "id": ["my", "special", "namespace", "TestClass"],
         "kwargs": {
             "my_favorite_secret": {
-                "lc": 1,
-                "type": "secret",
-                "id": ["MY_FAVORITE_SECRET"],
-            },
-            "my_favorite_secret_alias": {
                 "lc": 1,
                 "type": "secret",
                 "id": ["MY_FAVORITE_SECRET"],

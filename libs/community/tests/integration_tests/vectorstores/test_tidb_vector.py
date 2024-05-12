@@ -320,7 +320,7 @@ def test_relevance_score() -> None:
     except ValueError:
         pass
 
-    docsearch_l2.drop_vectorstore()
+    docsearch_l2.drop_vectorstore()  # type: ignore[attr-defined]
 
 
 def test_retriever_search_threshold() -> None:
@@ -340,7 +340,7 @@ def test_retriever_search_threshold() -> None:
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.997},
     )
-    output = retriever.get_relevant_documents("foo")
+    output = retriever.invoke("foo")
     assert output == [
         Document(page_content="foo", metadata={"page": "0"}),
         Document(page_content="bar", metadata={"page": "1"}),

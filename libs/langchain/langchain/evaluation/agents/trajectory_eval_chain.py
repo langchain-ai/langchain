@@ -19,6 +19,11 @@ from typing import (
 )
 
 from langchain_core.agents import AgentAction
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+    Callbacks,
+)
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -26,11 +31,6 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.tools import BaseTool
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForChainRun,
-    CallbackManagerForChainRun,
-    Callbacks,
-)
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
@@ -255,7 +255,7 @@ The following is the expected answer. Use this to measure correctness:
             prompt = TOOL_FREE_EVAL_CHAT_PROMPT
         eval_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
-            agent_tools=agent_tools,
+            agent_tools=agent_tools,  # type: ignore[arg-type]
             eval_chain=eval_chain,
             output_parser=output_parser or TrajectoryOutputParser(),
             **kwargs,

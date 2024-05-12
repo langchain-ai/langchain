@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-import importlib.util
+import json
 import logging
+import uuid
 from operator import itemgetter
 from typing import (
     Any,
+    AsyncContextManager,
     AsyncIterator,
     Callable,
     Dict,
@@ -18,7 +20,8 @@ from typing import (
     cast,
 )
 
-from langchain_core._api import beta
+import httpx
+from httpx_sse import EventSource, aconnect_sse, connect_sse
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -39,14 +42,18 @@ from langchain_core.messages import (
     ChatMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    InvalidToolCall,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -54,19 +61,6 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from mistralai.async_client import MistralAsyncClient
-from mistralai.client import MistralClient
-from mistralai.constants import ENDPOINT as DEFAULT_MISTRAL_ENDPOINT
-from mistralai.exceptions import (
-    MistralAPIException,
-    MistralConnectionException,
-    MistralException,
-)
-from mistralai.models.chat_completion import (
-    ChatCompletionResponse as MistralChatCompletionResponse,
-)
-from mistralai.models.chat_completion import ChatMessage as MistralChatMessage
-from mistralai.models.chat_completion import DeltaMessage as MistralDeltaMessage
 
 logger = logging.getLogger(__name__)
 
@@ -79,36 +73,85 @@ def _create_retry_decorator(
 ) -> Callable[[Any], Any]:
     """Returns a tenacity retry decorator, preconfigured to handle exceptions"""
 
-    errors = [
-        MistralException,
-        MistralAPIException,
-        MistralConnectionException,
-    ]
+    errors = [httpx.RequestError, httpx.StreamError]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
 
 
 def _convert_mistral_chat_message_to_message(
-    _message: MistralChatMessage,
+    _message: Dict,
 ) -> BaseMessage:
-    role = _message.role
-    content = cast(Union[str, List], _message.content)
-    if role == "user":
-        return HumanMessage(content=content)
-    elif role == "assistant":
-        additional_kwargs: Dict = {}
-        if hasattr(_message, "tool_calls") and getattr(_message, "tool_calls"):
-            additional_kwargs["tool_calls"] = [
-                tc.model_dump() for tc in getattr(_message, "tool_calls")
-            ]
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
-    elif role == "system":
-        return SystemMessage(content=content)
-    elif role == "tool":
-        return ToolMessage(content=content, name=_message.name)  # type: ignore[attr-defined]
-    else:
-        return ChatMessage(content=content, role=role)
+    role = _message["role"]
+    assert role == "assistant", f"Expected role to be 'assistant', got {role}"
+    content = cast(str, _message["content"])
+
+    additional_kwargs: Dict = {}
+    tool_calls = []
+    invalid_tool_calls = []
+    if raw_tool_calls := _message.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        for raw_tool_call in raw_tool_calls:
+            try:
+                parsed: dict = cast(
+                    dict, parse_tool_call(raw_tool_call, return_id=True)
+                )
+                if not parsed["id"]:
+                    tool_call_id = uuid.uuid4().hex[:]
+                    tool_calls.append(
+                        {
+                            **parsed,
+                            **{"id": tool_call_id},
+                        },
+                    )
+                else:
+                    tool_calls.append(parsed)
+            except Exception as e:
+                invalid_tool_calls.append(
+                    dict(make_invalid_tool_call(raw_tool_call, str(e)))
+                )
+    return AIMessage(
+        content=content,
+        additional_kwargs=additional_kwargs,
+        tool_calls=tool_calls,
+        invalid_tool_calls=invalid_tool_calls,
+    )
+
+
+def _raise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = response.read().decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
+
+
+async def _araise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = (await response.aread()).decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
+
+
+async def _aiter_sse(
+    event_source_mgr: AsyncContextManager[EventSource],
+) -> AsyncIterator[Dict]:
+    """Iterate over the server-sent events."""
+    async with event_source_mgr as event_source:
+        await _araise_on_error(event_source.response)
+        async for event in event_source.aiter_sse():
+            if event.data == "[DONE]":
+                return
+            yield event.json()
 
 
 async def acompletion_with_retry(
@@ -121,29 +164,57 @@ async def acompletion_with_retry(
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        stream = kwargs.pop("stream", False)
+        if "stream" not in kwargs:
+            kwargs["stream"] = False
+        stream = kwargs["stream"]
         if stream:
-            return llm.async_client.chat_stream(**kwargs)
+            event_source = aconnect_sse(
+                llm.async_client, "POST", "/chat/completions", json=kwargs
+            )
+            return _aiter_sse(event_source)
         else:
-            return await llm.async_client.chat(**kwargs)
+            response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+            await _araise_on_error(response)
+            return response.json()
 
     return await _completion_with_retry(**kwargs)
 
 
 def _convert_delta_to_message_chunk(
-    _delta: MistralDeltaMessage, default_class: Type[BaseMessageChunk]
+    _delta: Dict, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    role = getattr(_delta, "role")
-    content = getattr(_delta, "content", "")
+    role = _delta.get("role")
+    content = _delta.get("content") or ""
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: Dict = {}
-        if hasattr(_delta, "tool_calls") and getattr(_delta, "tool_calls"):
-            additional_kwargs["tool_calls"] = [
-                tc.model_dump() for tc in getattr(_delta, "tool_calls")
-            ]
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        if raw_tool_calls := _delta.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            try:
+                tool_call_chunks = []
+                for raw_tool_call in raw_tool_calls:
+                    if not raw_tool_call.get("index") and not raw_tool_call.get("id"):
+                        tool_call_id = uuid.uuid4().hex[:]
+                    else:
+                        tool_call_id = raw_tool_call.get("id")
+                    tool_call_chunks.append(
+                        {
+                            "name": raw_tool_call["function"].get("name"),
+                            "args": raw_tool_call["function"].get("arguments"),
+                            "id": tool_call_id,
+                            "index": raw_tool_call.get("index"),
+                        }
+                    )
+            except KeyError:
+                pass
+        else:
+            tool_call_chunks = []
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
@@ -152,51 +223,97 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
+def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
+    """Format Langchain ToolCall to dict expected by Mistral."""
+    result: Dict[str, Any] = {
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        }
+    }
+    if _id := tool_call.get("id"):
+        result["id"] = _id
+
+    return result
+
+
+def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) -> dict:
+    """Format Langchain InvalidToolCall to dict expected by Mistral."""
+    result: Dict[str, Any] = {
+        "function": {
+            "name": invalid_tool_call["name"],
+            "arguments": invalid_tool_call["args"],
+        }
+    }
+    if _id := invalid_tool_call.get("id"):
+        result["id"] = _id
+
+    return result
+
+
 def _convert_message_to_mistral_chat_message(
     message: BaseMessage,
-) -> MistralChatMessage:
+) -> Dict:
     if isinstance(message, ChatMessage):
-        mistral_message = MistralChatMessage(role=message.role, content=message.content)
+        return dict(role=message.role, content=message.content)
     elif isinstance(message, HumanMessage):
-        mistral_message = MistralChatMessage(role="user", content=message.content)
+        return dict(role="user", content=message.content)
     elif isinstance(message, AIMessage):
-        if "tool_calls" in message.additional_kwargs:
-            from mistralai.models.chat_completion import (  # type: ignore[attr-defined]
-                ToolCall as MistralToolCall,
-            )
-
-            tool_calls = [
-                MistralToolCall.model_validate(tc)
-                for tc in message.additional_kwargs["tool_calls"]
-            ]
+        message_dict: Dict[str, Any] = {"role": "assistant"}
+        tool_calls = []
+        if message.tool_calls or message.invalid_tool_calls:
+            for tool_call in message.tool_calls:
+                tool_calls.append(_format_tool_call_for_mistral(tool_call))
+            for invalid_tool_call in message.invalid_tool_calls:
+                tool_calls.append(
+                    _format_invalid_tool_call_for_mistral(invalid_tool_call)
+                )
+        elif "tool_calls" in message.additional_kwargs:
+            for tc in message.additional_kwargs["tool_calls"]:
+                chunk = {
+                    "function": {
+                        "name": tc["function"]["name"],
+                        "arguments": tc["function"]["arguments"],
+                    }
+                }
+                if _id := tc.get("id"):
+                    chunk["id"] = _id
+                tool_calls.append(chunk)
         else:
-            tool_calls = None
-        mistral_message = MistralChatMessage(
-            role="assistant", content=message.content, tool_calls=tool_calls
-        )
+            pass
+        if tool_calls:  # do not populate empty list tool_calls
+            message_dict["tool_calls"] = tool_calls
+        if tool_calls and message.content:
+            # Assistant message must have either content or tool_calls, but not both.
+            # Some providers may not support tool_calls in the same message as content.
+            # This is done to ensure compatibility with messages from other providers.
+            message_dict["content"] = ""
+        else:
+            message_dict["content"] = message.content
+        return message_dict
     elif isinstance(message, SystemMessage):
-        mistral_message = MistralChatMessage(role="system", content=message.content)
+        return dict(role="system", content=message.content)
     elif isinstance(message, ToolMessage):
-        mistral_message = MistralChatMessage(
-            role="tool", content=message.content, name=message.name
-        )
+        return {
+            "role": "tool",
+            "content": message.content,
+            "name": message.name,
+        }
     else:
         raise ValueError(f"Got unknown type {message}")
-    return mistral_message
 
 
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the MistralAI API."""
 
-    client: MistralClient = Field(default=None)  #: :meta private:
-    async_client: MistralAsyncClient = Field(default=None)  #: :meta private:
-    mistral_api_key: Optional[SecretStr] = None
-    endpoint: str = DEFAULT_MISTRAL_ENDPOINT
+    client: httpx.Client = Field(default=None)  #: :meta private:
+    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+    mistral_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    endpoint: str = "https://api.mistral.ai/v1"
     max_retries: int = 5
     timeout: int = 120
     max_concurrent_requests: int = 64
-
-    model: str = "mistral-small"
+    model: str = Field(default="mistral-small", alias="model_name")
     temperature: float = 0.7
     max_tokens: Optional[int] = None
     top_p: float = 1
@@ -204,6 +321,13 @@ class ChatMistralAI(BaseChatModel):
        probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
     random_seed: Optional[int] = None
     safe_mode: bool = False
+    streaming: bool = False
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -214,7 +338,7 @@ class ChatMistralAI(BaseChatModel):
             "max_tokens": self.max_tokens,
             "top_p": self.top_p,
             "random_seed": self.random_seed,
-            "safe_mode": self.safe_mode,
+            "safe_prompt": self.safe_mode,
         }
         filtered = {k: v for k, v in defaults.items() if v is not None}
         return filtered
@@ -228,46 +352,82 @@ class ChatMistralAI(BaseChatModel):
         self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the completion call."""
-        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+        # retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
 
-        @retry_decorator
+        # @retry_decorator
         def _completion_with_retry(**kwargs: Any) -> Any:
-            stream = kwargs.pop("stream", False)
+            if "stream" not in kwargs:
+                kwargs["stream"] = False
+            stream = kwargs["stream"]
             if stream:
-                return self.client.chat_stream(**kwargs)
-            else:
-                return self.client.chat(**kwargs)
 
-        return _completion_with_retry(**kwargs)
+                def iter_sse() -> Iterator[Dict]:
+                    with connect_sse(
+                        self.client, "POST", "/chat/completions", json=kwargs
+                    ) as event_source:
+                        _raise_on_error(event_source.response)
+                        for event in event_source.iter_sse():
+                            if event.data == "[DONE]":
+                                return
+                            yield event.json()
+
+                return iter_sse()
+            else:
+                response = self.client.post(url="/chat/completions", json=kwargs)
+                _raise_on_error(response)
+                return response.json()
+
+        rtn = _completion_with_retry(**kwargs)
+        return rtn
+
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        overall_token_usage: dict = {}
+        for output in llm_outputs:
+            if output is None:
+                # Happens in streaming
+                continue
+            token_usage = output["token_usage"]
+            if token_usage is not None:
+                for k, v in token_usage.items():
+                    if k in overall_token_usage:
+                        overall_token_usage[k] += v
+                    else:
+                        overall_token_usage[k] = v
+        combined = {"token_usage": overall_token_usage, "model_name": self.model}
+        return combined
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, and top_p."""
-        mistralai_spec = importlib.util.find_spec("mistralai")
-        if mistralai_spec is None:
-            raise MistralException(
-                "Could not find mistralai python package. "
-                "Please install it with `pip install mistralai`"
-            )
 
         values["mistral_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values, "mistral_api_key", "MISTRAL_API_KEY", default=""
             )
         )
-        values["client"] = MistralClient(
-            api_key=values["mistral_api_key"].get_secret_value(),
-            endpoint=values["endpoint"],
-            max_retries=values["max_retries"],
-            timeout=values["timeout"],
-        )
-        values["async_client"] = MistralAsyncClient(
-            api_key=values["mistral_api_key"].get_secret_value(),
-            endpoint=values["endpoint"],
-            max_retries=values["max_retries"],
-            timeout=values["timeout"],
-            max_concurrent_requests=values["max_concurrent_requests"],
-        )
+        api_key_str = values["mistral_api_key"].get_secret_value()
+        # todo: handle retries
+        if not values.get("client"):
+            values["client"] = httpx.Client(
+                base_url=values["endpoint"],
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {api_key_str}",
+                },
+                timeout=values["timeout"],
+            )
+        # todo: handle retries and max_concurrency
+        if not values.get("async_client"):
+            values["async_client"] = httpx.AsyncClient(
+                base_url=values["endpoint"],
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {api_key_str}",
+                },
+                timeout=values["timeout"],
+            )
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
@@ -285,7 +445,7 @@ class ChatMistralAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else False
+        should_stream = stream if stream is not None else self.streaming
         if should_stream:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
@@ -299,27 +459,23 @@ class ChatMistralAI(BaseChatModel):
         )
         return self._create_chat_result(response)
 
-    def _create_chat_result(
-        self, response: MistralChatCompletionResponse
-    ) -> ChatResult:
+    def _create_chat_result(self, response: Dict) -> ChatResult:
         generations = []
-        for res in response.choices:
-            finish_reason = getattr(res, "finish_reason")
-            if finish_reason:
-                finish_reason = finish_reason.value
+        for res in response["choices"]:
+            finish_reason = res.get("finish_reason")
             gen = ChatGeneration(
-                message=_convert_mistral_chat_message_to_message(res.message),
+                message=_convert_mistral_chat_message_to_message(res["message"]),
                 generation_info={"finish_reason": finish_reason},
             )
             generations.append(gen)
-        token_usage = getattr(response, "usage")
-        token_usage = vars(token_usage) if token_usage else {}
+        token_usage = response.get("usage", {})
+
         llm_output = {"token_usage": token_usage, "model": self.model}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
-    ) -> Tuple[List[MistralChatMessage], Dict[str, Any]]:
+    ) -> Tuple[List[Dict], Dict[str, Any]]:
         params = self._client_params
         if stop is not None or "stop" in params:
             if "stop" in params:
@@ -340,20 +496,22 @@ class ChatMistralAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk.choices) == 0:
+            if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk.choices[0].delta
-            if not delta.content:
-                continue
-            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            default_chunk_class = chunk.__class__
+            delta = chunk["choices"][0]["delta"]
+            new_chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            # make future chunks same type as first chunk
+            default_chunk_class = new_chunk.__class__
+            gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
-                run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
-            yield ChatGenerationChunk(message=chunk)
+                run_manager.on_llm_new_token(
+                    token=cast(str, new_chunk.content), chunk=gen_chunk
+                )
+            yield gen_chunk
 
     async def _astream(
         self,
@@ -365,20 +523,22 @@ class ChatMistralAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
-            if len(chunk.choices) == 0:
+            if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk.choices[0].delta
-            if not delta.content:
-                continue
-            chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            default_chunk_class = chunk.__class__
+            delta = chunk["choices"][0]["delta"]
+            new_chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            # make future chunks same type as first chunk
+            default_chunk_class = new_chunk.__class__
+            gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
-                await run_manager.on_llm_new_token(token=chunk.content, chunk=chunk)
-            yield ChatGenerationChunk(message=chunk)
+                await run_manager.on_llm_new_token(
+                    token=cast(str, new_chunk.content), chunk=gen_chunk
+                )
+            yield gen_chunk
 
     async def _agenerate(
         self,
@@ -428,7 +588,6 @@ class ChatMistralAI(BaseChatModel):
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
 
-    @beta()
     def with_structured_output(
         self,
         schema: Union[Dict, Type[BaseModel]],

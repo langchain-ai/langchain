@@ -12,7 +12,12 @@ from langchain_core.load.mapping import (
 )
 from langchain_core.load.serializable import Serializable
 
-DEFAULT_NAMESPACES = ["langchain", "langchain_core", "langchain_community"]
+DEFAULT_NAMESPACES = [
+    "langchain",
+    "langchain_core",
+    "langchain_community",
+    "langchain_anthropic",
+]
 
 ALL_SERIALIZABLE_MAPPINGS = {
     **SERIALIZABLE_MAPPING,
@@ -29,7 +34,9 @@ class Reviver:
         self,
         secrets_map: Optional[Dict[str, str]] = None,
         valid_namespaces: Optional[List[str]] = None,
+        secrets_from_env: bool = True,
     ) -> None:
+        self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or dict()
         # By default only support langchain, but user can pass in additional namespaces
         self.valid_namespaces = (
@@ -48,7 +55,7 @@ class Reviver:
             if key in self.secrets_map:
                 return self.secrets_map[key]
             else:
-                if key in os.environ and os.environ[key]:
+                if self.secrets_from_env and key in os.environ and os.environ[key]:
                     return os.environ[key]
                 raise KeyError(f'Missing key "{key}" in load(secrets_map)')
 
@@ -116,6 +123,7 @@ def loads(
     *,
     secrets_map: Optional[Dict[str, str]] = None,
     valid_namespaces: Optional[List[str]] = None,
+    secrets_from_env: bool = True,
 ) -> Any:
     """Revive a LangChain class from a JSON string.
     Equivalent to `load(json.loads(text))`.
@@ -129,7 +137,9 @@ def loads(
     Returns:
         Revived LangChain objects.
     """
-    return json.loads(text, object_hook=Reviver(secrets_map, valid_namespaces))
+    return json.loads(
+        text, object_hook=Reviver(secrets_map, valid_namespaces, secrets_from_env)
+    )
 
 
 @beta()
@@ -138,6 +148,7 @@ def load(
     *,
     secrets_map: Optional[Dict[str, str]] = None,
     valid_namespaces: Optional[List[str]] = None,
+    secrets_from_env: bool = True,
 ) -> Any:
     """Revive a LangChain class from a JSON object. Use this if you already
     have a parsed JSON object, eg. from `json.load` or `orjson.loads`.
@@ -151,7 +162,7 @@ def load(
     Returns:
         Revived LangChain objects.
     """
-    reviver = Reviver(secrets_map, valid_namespaces)
+    reviver = Reviver(secrets_map, valid_namespaces, secrets_from_env)
 
     def _load(obj: Any) -> Any:
         if isinstance(obj, dict):

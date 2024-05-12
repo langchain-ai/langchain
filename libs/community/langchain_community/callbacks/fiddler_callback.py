@@ -1,8 +1,10 @@
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 from langchain_community.callbacks.utils import import_pandas
 
@@ -15,20 +17,33 @@ PROMPT_TOKENS = "prompt_tokens"
 COMPLETION_TOKENS = "completion_tokens"
 RUN_ID = "run_id"
 MODEL_NAME = "model_name"
+GOOD = "good"
+BAD = "bad"
+NEUTRAL = "neutral"
+SUCCESS = "success"
+FAILURE = "failure"
 
 # Default values
 DEFAULT_MAX_TOKEN = 65536
-DEFAULT_MAX_DURATION = 120
+DEFAULT_MAX_DURATION = 120000
 
 # Fiddler specific constants
 PROMPT = "prompt"
 RESPONSE = "response"
+CONTEXT = "context"
 DURATION = "duration"
+FEEDBACK = "feedback"
+LLM_STATUS = "llm_status"
+
+FEEDBACK_POSSIBLE_VALUES = [GOOD, BAD, NEUTRAL]
 
 # Define a dataset dictionary
 _dataset_dict = {
     PROMPT: ["fiddler"] * 10,
     RESPONSE: ["fiddler"] * 10,
+    CONTEXT: ["fiddler"] * 10,
+    FEEDBACK: ["good"] * 10,
+    LLM_STATUS: ["success"] * 10,
     MODEL_NAME: ["fiddler"] * 10,
     RUN_ID: ["123e4567-e89b-12d3-a456-426614174000"] * 10,
     TOTAL_TOKENS: [0, DEFAULT_MAX_TOKEN] * 5,
@@ -40,14 +55,7 @@ _dataset_dict = {
 
 def import_fiddler() -> Any:
     """Import the fiddler python package and raise an error if it is not installed."""
-    try:
-        import fiddler  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use fiddler callback handler you need to have `fiddler-client`"
-            "package installed. Please install it with `pip install fiddler-client`"
-        )
-    return fiddler
+    return guard_import("fiddler", pip_name="fiddler-client")
 
 
 # First, define custom callback handler implementations
@@ -83,8 +91,9 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
         self.api_key = api_key
         self._df = self.pd.DataFrame(_dataset_dict)
 
-        self.run_id_prompts: Dict[str, List[str]] = {}
-        self.run_id_starttime: Dict[str, int] = {}
+        self.run_id_prompts: Dict[UUID, List[str]] = {}
+        self.run_id_response: Dict[UUID, List[str]] = {}
+        self.run_id_starttime: Dict[UUID, int] = {}
 
         # Initialize Fiddler client here
         self.fiddler_client = self.fdl.FiddlerApi(url, org_id=org, auth_token=api_key)
@@ -105,44 +114,56 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
         dataset_info = self.fdl.DatasetInfo.from_dataframe(
             self._df, max_inferred_cardinality=0
         )
-        if self.model not in self.fiddler_client.get_dataset_names(self.project):
-            print(  # noqa: T201
-                f"adding dataset {self.model} to project {self.project}."
-                "This only has to be done once."
-            )
-            try:
-                self.fiddler_client.upload_dataset(
-                    project_id=self.project,
-                    dataset_id=self.model,
-                    dataset={"train": self._df},
-                    info=dataset_info,
-                )
-            except Exception as e:
-                print(  # noqa: T201
-                    f"Error adding dataset {self.model}: {e}."
-                    "Fiddler integration will not work."
-                )
-                raise e
 
-        model_info = self.fdl.ModelInfo.from_dataset_info(
-            dataset_info=dataset_info,
-            dataset_id="train",
-            model_task=self.fdl.ModelTask.LLM,
-            features=[PROMPT, RESPONSE],
-            metadata_cols=[
-                RUN_ID,
-                TOTAL_TOKENS,
-                PROMPT_TOKENS,
-                COMPLETION_TOKENS,
-                MODEL_NAME,
-            ],
-            custom_features=self.custom_features,
-        )
+        # Set feedback column to categorical
+        for i in range(len(dataset_info.columns)):
+            if dataset_info.columns[i].name == FEEDBACK:
+                dataset_info.columns[i].data_type = self.fdl.DataType.CATEGORY
+                dataset_info.columns[i].possible_values = FEEDBACK_POSSIBLE_VALUES
+
+            elif dataset_info.columns[i].name == LLM_STATUS:
+                dataset_info.columns[i].data_type = self.fdl.DataType.CATEGORY
+                dataset_info.columns[i].possible_values = [SUCCESS, FAILURE]
 
         if self.model not in self.fiddler_client.get_model_names(self.project):
+            if self.model not in self.fiddler_client.get_dataset_names(self.project):
+                print(  # noqa: T201
+                    f"adding dataset {self.model} to project {self.project}."
+                    "This only has to be done once."
+                )
+                try:
+                    self.fiddler_client.upload_dataset(
+                        project_id=self.project,
+                        dataset_id=self.model,
+                        dataset={"train": self._df},
+                        info=dataset_info,
+                    )
+                except Exception as e:
+                    print(  # noqa: T201
+                        f"Error adding dataset {self.model}: {e}."
+                        "Fiddler integration will not work."
+                    )
+                    raise e
+
+            model_info = self.fdl.ModelInfo.from_dataset_info(
+                dataset_info=dataset_info,
+                dataset_id="train",
+                model_task=self.fdl.ModelTask.LLM,
+                features=[PROMPT, CONTEXT, RESPONSE],
+                target=FEEDBACK,
+                metadata_cols=[
+                    RUN_ID,
+                    TOTAL_TOKENS,
+                    PROMPT_TOKENS,
+                    COMPLETION_TOKENS,
+                    MODEL_NAME,
+                    DURATION,
+                ],
+                custom_features=self.custom_features,
+            )
             print(  # noqa: T201
                 f"adding model {self.model} to project {self.project}."
-                "This only has to be done once."  # noqa: T201
+                "This only has to be done once."
             )
             try:
                 self.fiddler_client.add_model(
@@ -154,7 +175,7 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
             except Exception as e:
                 print(  # noqa: T201
                     f"Error adding model {self.model}: {e}."
-                    "Fiddler integration will not work."  # noqa: T201
+                    "Fiddler integration will not work."
                 )
                 raise e
 
@@ -228,51 +249,87 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
             ),
         ]
 
+    def _publish_events(
+        self,
+        run_id: UUID,
+        prompt_responses: List[str],
+        duration: int,
+        llm_status: str,
+        model_name: Optional[str] = "",
+        token_usage_dict: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        Publish events to fiddler
+        """
+
+        prompt_count = len(self.run_id_prompts[run_id])
+        df = self.pd.DataFrame(
+            {
+                PROMPT: self.run_id_prompts[run_id],
+                RESPONSE: prompt_responses,
+                RUN_ID: [str(run_id)] * prompt_count,
+                DURATION: [duration] * prompt_count,
+                LLM_STATUS: [llm_status] * prompt_count,
+                MODEL_NAME: [model_name] * prompt_count,
+            }
+        )
+
+        if token_usage_dict:
+            for key, value in token_usage_dict.items():
+                df[key] = [value] * prompt_count if isinstance(value, int) else value
+
+        try:
+            if df.shape[0] > 1:
+                self.fiddler_client.publish_events_batch(self.project, self.model, df)
+            else:
+                df_dict = df.to_dict(orient="records")
+                self.fiddler_client.publish_event(
+                    self.project, self.model, event=df_dict[0]
+                )
+        except Exception as e:
+            print(  # noqa: T201
+                f"Error publishing events to fiddler: {e}. continuing..."
+            )
+
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> Any:
         run_id = kwargs[RUN_ID]
         self.run_id_prompts[run_id] = prompts
-        self.run_id_starttime[run_id] = int(time.time())
+        self.run_id_starttime[run_id] = int(time.time() * 1000)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         flattened_llmresult = response.flatten()
-        token_usage_dict = {}
         run_id = kwargs[RUN_ID]
-        run_duration = self.run_id_starttime[run_id] - int(time.time())
-        prompt_responses = []
+        run_duration = int(time.time() * 1000) - self.run_id_starttime[run_id]
         model_name = ""
+        token_usage_dict = {}
 
         if isinstance(response.llm_output, dict):
-            if TOKEN_USAGE in response.llm_output:
-                token_usage_dict = response.llm_output[TOKEN_USAGE]
-            if MODEL_NAME in response.llm_output:
-                model_name = response.llm_output[MODEL_NAME]
-
-        for llmresult in flattened_llmresult:
-            prompt_responses.append(llmresult.generations[0][0].text)
-
-        df = self.pd.DataFrame(
-            {
-                PROMPT: self.run_id_prompts[run_id],
-                RESPONSE: prompt_responses,
+            token_usage_dict = {
+                k: v
+                for k, v in response.llm_output.items()
+                if k in [TOTAL_TOKENS, PROMPT_TOKENS, COMPLETION_TOKENS]
             }
+            model_name = response.llm_output.get(MODEL_NAME, "")
+
+        prompt_responses = [
+            llmresult.generations[0][0].text for llmresult in flattened_llmresult
+        ]
+
+        self._publish_events(
+            run_id,
+            prompt_responses,
+            run_duration,
+            SUCCESS,
+            model_name,
+            token_usage_dict,
         )
 
-        if TOTAL_TOKENS in token_usage_dict:
-            df[PROMPT_TOKENS] = int(token_usage_dict[TOTAL_TOKENS])
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
+        run_id = kwargs[RUN_ID]
+        duration = int(time.time() * 1000) - self.run_id_starttime[run_id]
 
-        if PROMPT_TOKENS in token_usage_dict:
-            df[TOTAL_TOKENS] = int(token_usage_dict[PROMPT_TOKENS])
-
-        if COMPLETION_TOKENS in token_usage_dict:
-            df[COMPLETION_TOKENS] = token_usage_dict[COMPLETION_TOKENS]
-
-        df[MODEL_NAME] = model_name
-        df[RUN_ID] = str(run_id)
-        df[DURATION] = run_duration
-
-        try:
-            self.fiddler_client.publish_events_batch(self.project, self.model, df)
-        except Exception as e:
-            print(f"Error publishing events to fiddler: {e}. continuing...")  # noqa: T201
+        self._publish_events(
+            run_id, [""] * len(self.run_id_prompts[run_id]), duration, FAILURE
+        )

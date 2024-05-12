@@ -37,13 +37,14 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
     def on_tool_end(
         self,
-        output: str,
+        output: Any,
         color: Optional[str] = None,
         observation_prefix: Optional[str] = None,
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation."""
+        output = str(output)
         if observation_prefix is not None:
             print_text(f"\n{observation_prefix}")
         print_text(output, color=color or self.color)

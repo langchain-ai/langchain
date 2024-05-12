@@ -17,7 +17,6 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
-from langchain_core.runnables.config import run_in_executor
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
@@ -26,6 +25,7 @@ from langchain_core.runnables.utils import (
 )
 
 if TYPE_CHECKING:
+    from langchain_core.language_models import LanguageModelLike
     from langchain_core.messages import BaseMessage
     from langchain_core.runnables.config import RunnableConfig
     from langchain_core.tracers.schemas import Run
@@ -229,9 +229,12 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     def __init__(
         self,
-        runnable: Runnable[
-            MessagesOrDictWithMessages,
-            Union[str, BaseMessage, MessagesOrDictWithMessages],
+        runnable: Union[
+            Runnable[
+                Union[MessagesOrDictWithMessages],
+                Union[str, BaseMessage, MessagesOrDictWithMessages],
+            ],
+            LanguageModelLike,
         ],
         get_session_history: GetSessionHistoryCallable,
         *,
@@ -365,9 +368,18 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             return super_schema
 
     def _get_input_messages(
-        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage]]
+        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
+
+        if isinstance(input_val, dict):
+            if self.input_messages_key:
+                key = self.input_messages_key
+            elif len(input_val) == 1:
+                key = list(input_val.keys())[0]
+            else:
+                key = "input"
+            input_val = input_val[key]
 
         if isinstance(input_val, str):
             from langchain_core.messages import HumanMessage
@@ -389,7 +401,18 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         from langchain_core.messages import BaseMessage
 
         if isinstance(output_val, dict):
-            output_val = output_val[self.output_messages_key or "output"]
+            if self.output_messages_key:
+                key = self.output_messages_key
+            elif len(output_val) == 1:
+                key = list(output_val.keys())[0]
+            else:
+                key = "output"
+            # If you are wrapping a chat model directly
+            # The output is actually this weird generations object
+            if key not in output_val and "generations" in output_val:
+                output_val = output_val["generations"][0][0]["message"]
+            else:
+                output_val = output_val[key]
 
         if isinstance(output_val, str):
             from langchain_core.messages import AIMessage
@@ -403,29 +426,34 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             raise ValueError()
 
     def _enter_history(self, input: Any, config: RunnableConfig) -> List[BaseMessage]:
-        hist = config["configurable"]["message_history"]
-        # return only historic messages
-        if self.history_messages_key:
-            return hist.messages.copy()
-        # return all messages
-        else:
-            input_val = (
-                input if not self.input_messages_key else input[self.input_messages_key]
-            )
-            return hist.messages.copy() + self._get_input_messages(input_val)
+        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+        messages = hist.messages.copy()
+
+        if not self.history_messages_key:
+            # return all messages
+            messages += self._get_input_messages(input)
+        return messages
 
     async def _aenter_history(
         self, input: Dict[str, Any], config: RunnableConfig
     ) -> List[BaseMessage]:
-        return await run_in_executor(config, self._enter_history, input, config)
+        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+        messages = (await hist.aget_messages()).copy()
+
+        if not self.history_messages_key:
+            # return all messages
+            input_val = (
+                input if not self.input_messages_key else input[self.input_messages_key]
+            )
+            messages += self._get_input_messages(input_val)
+        return messages
 
     def _exit_history(self, run: Run, config: RunnableConfig) -> None:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
         # Get the input messages
         inputs = load(run.inputs)
-        input_val = inputs[self.input_messages_key or "input"]
-        input_messages = self._get_input_messages(input_val)
+        input_messages = self._get_input_messages(inputs)
 
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
