@@ -26,7 +26,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils import get_from_env
 from langchain_core.vectorstores import VectorStore
@@ -693,7 +693,6 @@ class AzureSearch(VectorStore):
                     "semantic_hybrid".
             search_kwargs (Optional[Dict]): Keyword arguments to pass to the
                 search function. Can include things like:
-                    k: Amount of documents to return (Default: 4)
                     score_threshold: Minimum relevance threshold
                         for similarity_score_threshold
                     fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
@@ -719,6 +718,18 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     "semantic_hybrid", "similarity_score_threshold", "hybrid_score_threshold"."""
     k: int = 4
     """Number of documents to return."""
+    search_kwargs: dict = Field(
+        default_factory=lambda: {"fetch_k": 20, "lambda_mult": 0.5}
+    )
+    """Search params.
+        score_threshold: Minimum relevance threshold
+            for similarity_score_threshold
+        fetch_k: Amount of documents to pass to MMR algorithm (Default: 20)
+        lambda_mult: Diversity of results returned by MMR;
+            1 for minimum diversity and 0 for maximum. (Default: 0.5)
+        filter: Filter by document metadata
+    """
+
     allowed_search_types: ClassVar[Collection[str]] = (
         "similarity",
         "similarity_score_threshold",
@@ -751,25 +762,31 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         if self.search_type == "similarity":
-            docs = self.vectorstore.vector_search(query, k=self.k, **kwargs)
+            docs = self.vectorstore.vector_search(
+                query, k=self.k, **self.search_kwargs, **kwargs
+            )
         elif self.search_type == "similarity_score_threshold":
             docs = [
                 doc
                 for doc, _ in self.vectorstore.similarity_search_with_relevance_scores(
-                    query, k=self.k, **kwargs
+                    query, k=self.k, **self.search_kwargs, **kwargs
                 )
             ]
         elif self.search_type == "hybrid":
-            docs = self.vectorstore.hybrid_search(query, k=self.k, **kwargs)
+            docs = self.vectorstore.hybrid_search(
+                query, k=self.k, **self.search_kwargs, **kwargs
+            )
         elif self.search_type == "hybrid_score_threshold":
             docs = [
                 doc
                 for doc, _ in self.vectorstore.hybrid_search_with_relevance_scores(
-                    query, k=self.k, **kwargs
+                    query, k=self.k, **self.search_kwargs, **kwargs
                 )
             ]
         elif self.search_type == "semantic_hybrid":
-            docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
+            docs = self.vectorstore.semantic_hybrid_search(
+                query, k=self.k, **self.search_kwargs, **kwargs
+            )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
