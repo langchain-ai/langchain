@@ -338,7 +338,7 @@ prompt_template = ChatPromptTemplate.from_messages([
 ])
 ```
 
-### Example Selectors
+### Example selectors
 One common prompting technique for achieving better performance is to include examples as part of the prompt.
 This gives the language model concrete examples of how it should behave.
 Sometimes these examples are hardcoded into the prompt, but for more advanced situations it may be nice to dynamically select them.
@@ -389,7 +389,7 @@ LangChain has lots of different types of output parsers. This is a list of outpu
 | [Datetime](https://api.python.langchain.com/en/latest/output_parsers/langchain.output_parsers.datetime.DatetimeOutputParser.html#langchain.output_parsers.datetime.DatetimeOutputParser)        |                    | ✅                             |           | `str` \| `Message`                 | `datetime.datetime`  | Parses response into a datetime string.                                                                                                                                                                                                                  |
 | [Structured](https://api.python.langchain.com/en/latest/output_parsers/langchain.output_parsers.structured.StructuredOutputParser.html#langchain.output_parsers.structured.StructuredOutputParser)      |                    | ✅                             |           | `str` \| `Message`                 | `Dict[str, str]`     | An output parser that returns structured information. It is less powerful than other output parsers since it only allows for fields to be strings. This can be useful when you are working with smaller LLMs.                                            |
 
-### Chat History
+### Chat history
 Most LLM applications have a conversational interface.
 An essential component of a conversation is being able to refer to information introduced earlier in the conversation.
 At bare minimum, a conversational system should be able to access some window of past messages directly.
@@ -445,12 +445,12 @@ Embeddings create a vector representation of a piece of text. This is useful bec
 
 The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former takes as input multiple texts, while the latter takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
 
-### Vectorstores
+### Vector stores
 One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
 and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
 A vector store takes care of storing embedded data and performing vector search for you.
 
-Vectorstores can be converted to the retriever interface by doing:
+Vector stores can be converted to the retriever interface by doing:
 
 ```python
 vectorstore = MyVectorStore()
