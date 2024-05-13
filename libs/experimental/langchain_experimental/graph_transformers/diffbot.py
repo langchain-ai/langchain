@@ -149,6 +149,7 @@ class DiffbotGraphTransformer:
         include_evidence: bool = True,
         simplified_schema: bool = True,
         extract_types: List[TypeOption] = [TypeOption.FACTS],
+        *,
         include_confidence: bool = False,
     ) -> None:
         """
