@@ -4,7 +4,6 @@ import unittest
 
 from langchain_core.messages import AIMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
-
 from langchain_experimental.llms.ollama_functions import (
     OllamaFunctions,
     convert_to_ollama_tool,
@@ -52,13 +51,13 @@ class TestOllamaFunctions(unittest.TestCase):
 
         res = model.invoke("What's the weather in San Francisco?")
 
-        tool_calls = res.additional_kwargs.get("tool_calls")
+        self.assertEqual(AIMessage, type(res))
+        tool_calls = res.tool_calls
         assert tool_calls
-        function_call = tool_calls[0]
-        assert function_call
-        func = function_call.get("function")
-        assert func
-        self.assertEqual("get_current_weather", func.get("name"))
+        assert len(tool_calls) > 0
+        tool_call = tool_calls[0]
+        assert tool_call
+        self.assertEqual("get_current_weather", tool_call.get("name"))
 
     def test_ollama_structured_output(self) -> None:
         model = OllamaFunctions(model="phi3")

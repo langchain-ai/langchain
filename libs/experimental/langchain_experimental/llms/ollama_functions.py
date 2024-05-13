@@ -19,7 +19,7 @@ from typing import (
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, ToolCall
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
@@ -343,18 +343,13 @@ class OllamaFunctions(ChatOllama):
 
         response_message_with_functions = AIMessage(
             content="",
-            additional_kwargs={
-                "tool_calls": [
-                    {
-                        "id": f"call_{str(uuid.uuid4()).replace('-','')}",
-                        "type": "function",
-                        "function": {
-                            "name": called_tool_name,
-                            "arguments": json.dumps(called_tool_arguments) if called_tool_arguments else "",
-                        },
-                    }
-                ]
-            },
+            tool_calls=[
+                ToolCall(
+                    name=called_tool_name,
+                    args=called_tool_arguments if called_tool_arguments else "",
+                    id=f"call_{str(uuid.uuid4()).replace('-', '')}",
+                )
+            ]
         )
 
         return ChatResult(
