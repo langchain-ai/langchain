@@ -360,7 +360,6 @@ def main(dirs: Optional[list] = None) -> None:
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
             if dir_ not in ("cli", "partners", "standard-tests")
-            and dir_ in ("text-splitters",)
         ]
         dirs += [
             dir_
