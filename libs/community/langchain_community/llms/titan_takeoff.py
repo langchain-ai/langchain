@@ -137,7 +137,7 @@ class TitanTakeoff(LLM):
             ImportError: If you haven't installed takeoff-client, you will
             get an ImportError. To remedy run `pip install 'takeoff-client==0.4.0'`
         """
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             base_url=base_url, port=port, mgmt_port=mgmt_port, streaming=streaming
         )
         try:

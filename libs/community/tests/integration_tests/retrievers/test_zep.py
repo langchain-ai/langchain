@@ -67,7 +67,7 @@ def zep_retriever(
     mock_zep_client.memory.asearch_memory.return_value = copy.deepcopy(  # type: ignore
         search_results
     )
-    zep = ZepRetriever(session_id="123", url="http://localhost:8000")
+    zep = ZepRetriever(session_id="123", url="http://localhost:8000")  # type: ignore[call-arg]
     zep.zep_client = mock_zep_client
     return zep
 
