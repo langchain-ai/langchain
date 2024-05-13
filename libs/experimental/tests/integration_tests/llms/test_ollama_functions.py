@@ -52,9 +52,13 @@ class TestOllamaFunctions(unittest.TestCase):
 
         res = model.invoke("What's the weather in San Francisco?")
 
-        function_call = res.additional_kwargs.get("function_call")
+        tool_calls = res.additional_kwargs.get("tool_calls")
+        assert tool_calls
+        function_call = tool_calls[0]
         assert function_call
-        self.assertEqual(function_call.get("name"), "get_current_weather")
+        func = function_call.get("function")
+        assert func
+        self.assertEqual("get_current_weather", func.get("name"))
 
     def test_ollama_structured_output(self) -> None:
         model = OllamaFunctions(model="phi3")

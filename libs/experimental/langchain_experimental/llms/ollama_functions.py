@@ -1,4 +1,5 @@
 import json
+import uuid
 from operator import itemgetter
 from typing import (
     Any,
@@ -66,7 +67,7 @@ _DictOrPydantic = Union[Dict, _BM]
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and (
-        issubclass(obj, BaseModel) or BaseModel in obj.__bases__
+            issubclass(obj, BaseModel) or BaseModel in obj.__bases__
     )
 
 
@@ -94,16 +95,18 @@ def parse_response(message: BaseMessage) -> str:
     """Extract `function_call` from `AIMessage`."""
     if isinstance(message, AIMessage):
         kwargs = message.additional_kwargs
-        if "function_call" in kwargs:
-            if "arguments" in kwargs["function_call"]:
-                return kwargs["function_call"]["arguments"]
+        if "tool_calls" in kwargs:
+            tool_call = kwargs["tool_calls"][-1]
+            if "function" in tool_call:
+                if "arguments" in tool_call["function"]:
+                    return tool_call["function"]["arguments"]
+                raise ValueError(
+                    f"`arguments` missing from `function` within AIMessage: {message}"
+                )
             raise ValueError(
-                f"`arguments` missing from `function_call` within AIMessage: {message}"
+                "`function` missing from `additional_kwargs` "
+                f"within AIMessage: {message}"
             )
-        raise ValueError(
-            "`function_call` missing from `additional_kwargs` "
-            f"within AIMessage: {message}"
-        )
     raise ValueError(f"`message` is not an instance of `AIMessage`: {message}")
 
 
@@ -116,38 +119,38 @@ class OllamaFunctions(ChatOllama):
         super().__init__(**kwargs)
 
     def bind_tools(
-        self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        **kwargs: Any,
+            self,
+            tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+            **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(functions=tools, **kwargs)
 
     @overload
     def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        include_raw: Literal[True] = True,
-        **kwargs: Any,
+            self,
+            schema: Optional[_DictOrPydanticClass] = None,
+            *,
+            include_raw: Literal[True] = True,
+            **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _AllReturnType]:
         ...
 
     @overload
     def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        include_raw: Literal[False] = False,
-        **kwargs: Any,
+            self,
+            schema: Optional[_DictOrPydanticClass] = None,
+            *,
+            include_raw: Literal[False] = False,
+            **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
     def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        include_raw: bool = False,
-        **kwargs: Any,
+            self,
+            schema: Optional[_DictOrPydanticClass] = None,
+            *,
+            include_raw: bool = False,
+            **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
@@ -274,11 +277,11 @@ class OllamaFunctions(ChatOllama):
             return llm | parser_chain
 
     def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         functions = kwargs.get("functions", [])
         if "functions" in kwargs:
@@ -341,12 +344,16 @@ class OllamaFunctions(ChatOllama):
         response_message_with_functions = AIMessage(
             content="",
             additional_kwargs={
-                "function_call": {
-                    "name": called_tool_name,
-                    "arguments": json.dumps(called_tool_arguments)
-                    if called_tool_arguments
-                    else "",
-                },
+                "tool_calls": [
+                    {
+                        "id": f"call_{str(uuid.uuid4()).replace('-','')}",
+                        "type": "function",
+                        "function": {
+                            "name": called_tool_name,
+                            "arguments": json.dumps(called_tool_arguments) if called_tool_arguments else "",
+                        },
+                    }
+                ]
             },
         )
 
