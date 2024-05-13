@@ -6,6 +6,7 @@ embeddings for the same text.
 
 The text is hashed and the hash is used as the key in the cache.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -98,6 +99,8 @@ class CacheBackedEmbeddings(Embeddings):
             underlying_embeddings: the embedder to use for computing embeddings.
             document_embedding_store: The store to use for caching document embeddings.
             batch_size: The number of documents to embed between store updates.
+            query_embedding_store: The store to use for caching query embeddings.
+                If None, query embeddings are not cached.
         """
         super().__init__()
         self.document_embedding_store = document_embedding_store
@@ -229,7 +232,7 @@ class CacheBackedEmbeddings(Embeddings):
         *,
         namespace: str = "",
         batch_size: Optional[int] = None,
-        query_embedding_cache: Union[bool, ByteStore, None] = None,
+        query_embedding_cache: Union[bool, ByteStore] = False,
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
 
@@ -242,8 +245,8 @@ class CacheBackedEmbeddings(Embeddings):
                        For example, set it to the name of the embedding model used.
             batch_size: The number of documents to embed between store updates.
             query_embedding_cache: The cache to use for storing query embeddings.
-                                   "True" to use the same cache as document embeddings.
-
+                True to use the same cache as document embeddings.
+                False to not cache query embeddings.
         """
         namespace = namespace
         key_encoder = _create_key_encoder(namespace)
@@ -255,15 +258,15 @@ class CacheBackedEmbeddings(Embeddings):
         )
         if query_embedding_cache is True:
             query_embedding_store = document_embedding_store
-        elif query_embedding_cache:
+        elif query_embedding_cache is False:
+            query_embedding_store = None
+        else:
             query_embedding_store = EncoderBackedStore[str, List[float]](
                 query_embedding_cache,
                 key_encoder,
                 _value_serializer,
                 _value_deserializer,
             )
-        else:
-            query_embedding_store = None
 
         return cls(
             underlying_embeddings,
