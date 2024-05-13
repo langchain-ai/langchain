@@ -1,13 +1,21 @@
 import json
-from typing import Any, Dict, List, Optional
+from json import JSONDecodeError
+import inspect
+from typing import Any, Dict, List, Optional, Union
+
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
-ANYSDK_CRUD_CONTROLS_CREATE = "False"
-ANYSDK_CRUD_CONTROLS_READ = "True"
-ANYSDK_CRUD_CONTROLS_UPDATE = "False"
-ANYSDK_CRUD_CONTROLS_DELETE = "False"
+ANYSDK_CRUD_CONTROLS_CREATE = False
+ANYSDK_CRUD_CONTROLS_READ = True
+ANYSDK_CRUD_CONTROLS_UPDATE = False
+ANYSDK_CRUD_CONTROLS_DELETE = False
 
 ANYSDK_CRUD_CONTROLS_CREATE_LIST = "create"
 ANYSDK_CRUD_CONTROLS_READ_LIST = "get,read,list"
@@ -16,13 +24,13 @@ ANYSDK_CRUD_CONTROLS_DELETE_LIST = "delete,destroy,remove"
 
 
 class CrudControls(BaseModel):
-    create: Optional[str] = None
+    create: Optional[str] = ANYSDK_CRUD_CONTROLS_CREATE
     create_list: Optional[str] = None
-    read: Optional[str] = None
+    read: Optional[str] = ANYSDK_CRUD_CONTROLS_READ
     read_list: Optional[str] = None
-    update: Optional[str] = None
+    update: Optional[str] = ANYSDK_CRUD_CONTROLS_UPDATE
     update_list: Optional[str] = None
-    delete: Optional[str] = None
+    delete: Optional[str] = ANYSDK_CRUD_CONTROLS_DELETE
     delete_list: Optional[str] = None
 
     @root_validator
@@ -41,10 +49,7 @@ class CrudControls(BaseModel):
             "ANYSDK_CRUD_CONTROLS_CREATE_LIST",
             default=ANYSDK_CRUD_CONTROLS_CREATE_LIST,
         )
-        if create_list:
-            values["create_list"] = create_list.split(",")
-        else:
-            values["create_list"] = []
+        values["create_list"] = create_list.split(",")
 
         read = get_from_dict_or_env(
             values,
@@ -97,10 +102,51 @@ class CrudControls(BaseModel):
         return values
 
 
+class AnySDKTool(BaseTool):
+    """Tool for whatever function is passed into AnySDK."""
+
+    client: Any
+    name: str
+    description: str
+
+    def _run(
+        self,
+        tool_input: Union[str, dict, None],
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
+        try:
+            if isinstance(tool_input, dict):
+                params = tool_input
+            elif isinstance(tool_input, str):
+                try:
+                    params = json.loads(tool_input)
+                except JSONDecodeError:
+                    params = {}
+            else:
+                params = {}
+
+            func = getattr(self.client["client"], self.name)
+            result = func(**params)
+            return json.dumps(result, default=str)
+        except AttributeError:
+            return f"Invalid function name: {self.name}"
+
+    async def _arun(
+        self,
+        tool_input: str,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs,
+    ) -> str:
+        return self._run(
+            tool_input,
+            **kwargs,
+        )
+
+
 class AnySdkWrapper(BaseModel):
     client: Any
     operations: List[Dict] = []
-    crud_controls: Optional[CrudControls] = None
+    crud_controls: CrudControls = None
 
     class Config:
         extra = Extra.forbid
@@ -122,11 +168,9 @@ class AnySdkWrapper(BaseModel):
 
         for func_name in sdk_functions:
             func = getattr(self.client["client"], func_name)
-            operation = {
-                "mode": func_name,
-                "name": func.__name__.replace("_", " ").title(),
-                "description": func.__doc__,
-            }
+            operation = AnySDKTool(
+                client=self.client, name=func_name, description=func.__doc__
+            )
             if self.crud_controls:
                 if self.crud_controls.create:
                     if self.crud_controls.create_list is not None and any(
@@ -158,11 +202,6 @@ class AnySdkWrapper(BaseModel):
 
         return operations
 
-    def run(self, mode: str, query: str) -> str:
-        try:
-            params = json.loads(query)
-            func = getattr(self.client["client"], mode)
-            result = func(**params)
-            return json.dumps(result)
-        except AttributeError:
-            return f"Invalid mode: {mode}"
+    def get_tools(self) -> List[BaseTool]:
+        """Get the tools in the toolkit."""
+        return self.operations
