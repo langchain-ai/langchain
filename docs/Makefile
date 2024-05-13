@@ -48,8 +48,6 @@ generate-files:
 	wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O $(INTERMEDIATE_DIR)/langgraph.md
 	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
-	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(INTERMEDIATE_DIR)
-
 copy-infra:
 	mkdir -p $(OUTPUT_NEW_DIR)
 	cp -r src $(OUTPUT_NEW_DIR)
@@ -68,7 +66,10 @@ render:
 md-sync:
 	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
 
-build: install-py-deps generate-files copy-infra render md-sync
+generate-references:
+	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(OUTPUT_NEW_DOCS_DIR)
+
+build: install-py-deps generate-files copy-infra render md-sync generate-references
 
 vercel-build: install-vercel-deps build
 	rm -rf docs
