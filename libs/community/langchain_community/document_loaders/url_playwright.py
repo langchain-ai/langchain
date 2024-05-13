@@ -137,6 +137,7 @@ class PlaywrightURLLoader(BaseLoader):
         remove_selectors: Optional[List[str]] = None,
         evaluator: Optional[PlaywrightEvaluator] = None,
         proxy: Optional[Dict[str, str]] = None,
+        header: Optional[str] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
     ):
         """Load a list of URLs using Playwright."""
         try:
@@ -151,6 +152,7 @@ class PlaywrightURLLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.headless = headless
         self.proxy = proxy
+        self.header = header
 
         if remove_selectors and evaluator:
             raise ValueError(
@@ -172,7 +174,7 @@ class PlaywrightURLLoader(BaseLoader):
             browser = p.chromium.launch(headless=self.headless, proxy=self.proxy)
             for url in self.urls:
                 try:
-                    context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36') #Added to bypass human verification websites (e.g Cloudfare)
+                    context = browser.new_context(user_agent=self.header)
                     page = context.new_page()
                     response = page.goto(url)
                     if response is None:
@@ -212,7 +214,7 @@ class PlaywrightURLLoader(BaseLoader):
             browser = await p.chromium.launch(headless=self.headless, proxy=self.proxy)
             for url in self.urls:
                 try:
-                    context = await browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36') #Added to bypass human verification websites (e.g Cloudfare)
+                    context = await browser.new_context(user_agent=self.header)
                     page = await context.new_page()
                     response = await page.goto(url)
                     if response is None:
