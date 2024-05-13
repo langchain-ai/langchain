@@ -17,7 +17,7 @@ clean: docs_clean api_docs_clean
 
 ## docs_build: Build the documentation.
 docs_build:
-	cd docs && make build-local
+	cd docs && make build
 
 ## docs_clean: Clean the documentation build artifacts.
 docs_clean:
