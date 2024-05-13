@@ -370,7 +370,7 @@ async def test_astream() -> None:
         full = chunk if full is None else full + chunk
 
     # test token usage
-    for chunk in llm.stream("Hello", stream_options={"include_usage": True}):
+    async for chunk in llm.astream("Hello", stream_options={"include_usage": True}):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
