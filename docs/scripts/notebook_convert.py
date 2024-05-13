@@ -83,7 +83,7 @@ exporter = MarkdownExporter(
     preprocessors=[
         EscapePreprocessor,
         ExtractAttachmentsPreprocessor,
-        RegexRemovePreprocessor(patterns=[r"^\s*$"]),
+        RegexRemovePreprocessor(patterns=[r"^\s*$", r"#\s*|\s*echo:\s*false"]),
     ],
     template_name="mdoutput",
     extra_template_basedirs=["./scripts/notebook_convert_templates"],
