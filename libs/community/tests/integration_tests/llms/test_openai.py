@@ -33,7 +33,7 @@ def test_openai_llm_output_contains_model_name() -> None:
 def test_openai_stop_valid() -> None:
     """Test openai stop logic on valid configuration."""
     query = "write an ordered list of five items"
-    first_llm = OpenAI(stop="3", temperature=0)
+    first_llm = OpenAI(stop="3", temperature=0)  # type: ignore[call-arg]
     first_output = first_llm.invoke(query)
     second_llm = OpenAI(temperature=0)
     second_output = second_llm.invoke(query, stop=["3"])
@@ -43,7 +43,7 @@ def test_openai_stop_valid() -> None:
 
 def test_openai_stop_error() -> None:
     """Test openai stop logic on bad configuration."""
-    llm = OpenAI(stop="3", temperature=0)
+    llm = OpenAI(stop="3", temperature=0)  # type: ignore[call-arg]
     with pytest.raises(ValueError):
         llm.invoke("write an ordered list of five items", stop=["\n"])
 
