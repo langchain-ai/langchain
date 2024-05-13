@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Union
 from langchain.pydantic_v1 import Field, root_validator
 from langchain.tools.base import BaseTool
 
-if TYPE_CHECKING:
-    from transformers import Pipeline
+# This import needs to be toplevel to avoid error for refs on HuggingFaceInjectionIdentifier.model 
+from transformers import Pipeline
 
 
 class PromptInjectionException(ValueError):
@@ -98,3 +98,5 @@ class HuggingFaceInjectionIdentifier(BaseTool):
             raise PromptInjectionException("Prompt injection attack detected", score)
 
         return query
+
+HuggingFaceInjectionIdentifier.update_forward_refs()
