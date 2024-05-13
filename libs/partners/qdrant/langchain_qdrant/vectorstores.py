@@ -1365,6 +1365,10 @@ class Qdrant(VectorStore):
         prefix: Optional[str] = None,
         timeout: Optional[int] = None,
         host: Optional[str] = None,
+        content_payload_key: str = CONTENT_KEY,
+        metadata_payload_key: str = METADATA_KEY,
+        distance_strategy: str = "COSINE",
+        vector_name: Optional[str] = VECTOR_NAME,
         **kwargs: Any,
     ) -> Qdrant:
         """
@@ -1391,7 +1395,10 @@ class Qdrant(VectorStore):
             async_client=async_client,
             collection_name=collection_name,
             embeddings=embedding,
-            **kwargs,
+            content_payload_key=content_payload_key,
+            metadata_payload_key=metadata_payload_key,
+            distance_strategy=distance_strategy,
+            vector_name=vector_name,
         )
 
     @classmethod
