@@ -204,10 +204,11 @@ class Sambaverse(LLM):
         from langchain_community.llms.sambanova  import Sambaverse
         Sambaverse(
             sambaverse_url="https://sambaverse.sambanova.ai",
-            sambaverse_api_key: "your sambaverse api key",
-            sambaverse_model_name: "Meta/llama-2-7b-chat-hf",
+            sambaverse_api_key="your-sambaverse-api-key",
+            sambaverse_model_name="Meta/llama-2-7b-chat-hf",
             streaming: = False
             model_kwargs={
+                "select_expert": "llama-2-7b-chat-hf",
                 "do_sample": False,
                 "max_tokens_to_generate": 100,
                 "temperature": 0.7,
@@ -618,11 +619,11 @@ class SambaStudio(LLM):
 
         from langchain_community.llms.sambanova  import Sambaverse
         SambaStudio(
-            sambastudio_base_url="your SambaStudio environment URL",
-            sambastudio_project_id=set with your SambaStudio project ID.,
-            sambastudio_endpoint_id=set with your SambaStudio endpoint ID.,
-            sambastudio_api_key= set with your SambaStudio endpoint API key.,
-            streaming=false
+            sambastudio_base_url="your-SambaStudio-environment-URL",
+            sambastudio_project_id="your-SambaStudio-project-ID",
+            sambastudio_endpoint_id="your-SambaStudio-endpoint-ID",
+            sambastudio_api_key="your-SambaStudio-endpoint-API-key,
+            streaming=False
             model_kwargs={
                 "do_sample": False,
                 "max_tokens_to_generate": 1000,
