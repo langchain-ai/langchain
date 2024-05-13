@@ -29,7 +29,11 @@ from langchain_core.outputs import (
     LLMResult,
 )
 from langchain_core.runnables.schema import StreamEvent
-from langchain_core.runnables.utils import Input, Output
+from langchain_core.runnables.utils import (
+    Input,
+    Output,
+    _RootEventFilter,
+)
 from langchain_core.tracers.memory_stream import _MemoryStream
 
 if TYPE_CHECKING:
@@ -48,12 +52,29 @@ class RunInfo(TypedDict):
     run_type: str
 
 
+def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> Optional[str]:
+    """Assign a name to a run."""
+    if name is not None:
+        return name
+    if "name" in serialized:
+        return serialized["name"]
+    elif "id" in serialized:
+        return serialized["id"][-1]
+    return None
+
+
 class _AstreamEventHandler(AsyncCallbackHandler):
     """An implementation of an async callback handler for astream events."""
 
     def __init__(
         self,
         *args: Any,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the tracer."""
@@ -61,11 +82,25 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         self.run_map: Dict[UUID, RunInfo] = {}
         """Map of run ID to run. Cleared on run end."""
 
+        self.root_event_filter = _RootEventFilter(
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_names=exclude_names,
+            exclude_types=exclude_types,
+            exclude_tags=exclude_tags,
+        )
+
         loop = asyncio.get_event_loop()
         memory_stream = _MemoryStream[StreamEvent](loop)
         self.lock = threading.Lock()
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
+
+    async def _send(self, event: StreamEvent, event_type: str) -> None:
+        """Send an event to the stream."""
+        if self.root_event_filter.include_event(event, "chain"):
+            await self.send_stream.send(event)
 
     def __aiter__(self) -> AsyncIterator[Any]:
         """Iterate over the receive stream."""
@@ -79,15 +114,16 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             run_info = self.run_map.get(run_id)
             if run_info is None:
                 raise AssertionError(f"Run ID {run_id} not found in run map.")
-            await self.send_stream.send(
+            await self._send(
                 {
                     "event": f"on_{run_info['run_type']}_stream",
                     "data": {"chunk": chunk},
-                    "run_id": run_id,
+                    "run_id": str(run_id),
                     "name": run_info["name"],
                     "tags": run_info["tags"],
                     "metadata": run_info["metadata"],
-                }
+                },
+                run_info["run_type"],
             )
             yield chunk
 
@@ -104,24 +140,26 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
+        name_ = _assign_name(name, serialized)
         self.run_map[run_id] = {
             "tags": tags or [],
             "metadata": metadata or {},
-            "name": name,
+            "name": name_,
             "run_type": "chat_model",
         }
 
-        await self.send_stream.send(
+        await self._send(
             {
                 "event": "on_chat_model_start",
                 "data": {
-                    "messages": messages,
+                    "input": {"messages": messages},
                 },
-                "name": name,
+                "name": name_,
                 "tags": tags or [],
-                "run_id": run_id,
+                "run_id": str(run_id),
                 "metadata": metadata or {},
-            }
+            },
+            "chat_model",
         )
 
     async def on_llm_start(
@@ -137,24 +175,28 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Start a trace for an LLM run."""
+        name_ = _assign_name(name, serialized)
         self.run_map[run_id] = {
             "tags": tags or [],
             "metadata": metadata or {},
-            "name": name,
+            "name": name_,
             "run_type": "llm",
         }
 
-        await self.send_stream.send(
+        await self._send(
             {
                 "event": "on_llm_start",
                 "data": {
-                    "prompts": prompts,
+                    "input": {
+                        "prompts": prompts,
+                    }
                 },
-                "name": name,
+                "name": name_,
                 "tags": tags or [],
-                "run_id": run_id,
+                "run_id": str(run_id),
                 "metadata": metadata or {},
-            }
+            },
+            "llm",
         )
 
     async def on_llm_new_token(
@@ -168,18 +210,26 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         run_info = self.run_map.get(run_id)
-        await self.send_stream.send(
+        if run_info["run_type"] == "chat_model":
+            event = "on_chat_model_stream"
+        elif run_info["run_type"] == "llm":
+            event = "on_llm_stream"
+        else:
+            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
+
+        await self._send(
             {
-                "event": "on_llm_new_token",
+                "event": event,
                 "data": {
                     "token": token,
                     "chunk": chunk,
                 },
-                "run_id": run_id,
+                "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-            }
+            },
+            run_info["run_type"],
         )
 
     async def on_retry(
@@ -229,17 +279,16 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         else:
             raise ValueError(f"Unexpected run type: {run_info['run_type']}")
 
-        await self.send_stream.send(
+        await self._send(
             {
                 "event": event,
-                "data": {
-                    "response": response.dict(),
-                },
-                "run_id": run_id,
+                "data": {"output": response.dict()},
+                "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-            }
+            },
+            "llm",
         )
 
     async def on_chain_start(
@@ -256,10 +305,11 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Start a trace for a chain run."""
+        name_ = _assign_name(name, serialized)
         self.run_map[run_id] = {
             "tags": tags or [],
             "metadata": metadata or {},
-            "name": name,
+            "name": name_,
             "run_type": "chain",
         }
 
@@ -270,15 +320,16 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         if inputs != {"input": ""}:
             data["input"] = inputs
 
-        await self.send_stream.send(
+        await self._send(
             {
                 "event": "on_chain_start",
                 "data": data,
-                "name": name,
+                "name": name_,
                 "tags": tags or [],
-                "run_id": run_id,
+                "run_id": str(run_id),
                 "metadata": metadata or {},
-            }
+            },
+            "chain",
         )
 
     async def on_chain_end(
@@ -292,18 +343,19 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         """End a trace for a chain run."""
         run_info = self.run_map.pop(run_id)
 
-        await self.send_stream.send(
+        await self._send(
             {
                 "event": "on_chain_end",
                 "data": {
                     "input": inputs or {},
                     "output": outputs,
                 },
-                "run_id": run_id,
+                "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-            }
+            },
+            "chain",
         )
 
     async def on_tool_start(
@@ -320,40 +372,43 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Start a trace for a tool run."""
+        name_ = _assign_name(name, serialized)
         self.run_map[run_id] = {
             "tags": tags or [],
             "metadata": metadata or {},
-            "name": name,
+            "name": name_,
             "run_type": "tool",
         }
 
-        await self.send_stream.send(
+        await self._send(
             {
                 "event": "on_tool_start",
                 "data": {
                     "input": inputs or {},
                 },
-                "name": name,
+                "name": name_,
                 "tags": tags or [],
-                "run_id": run_id,
+                "run_id": str(run_id),
                 "metadata": metadata or {},
-            }
+            },
+            "tool",
         )
 
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for a tool run."""
         run_info = self.run_map.pop(run_id)
-        await self.send_stream.send(
+        await self._send(
             {
                 "event": "on_tool_end",
                 "data": {
                     "output": output,
                 },
-                "run_id": run_id,
+                "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-            }
+            },
+            "tool",
         )
 
     async def on_retriever_start(
@@ -376,7 +431,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             "run_type": "tool",
         }
 
-        await self.send_stream.send(
+        await self._send(
             {
                 "event": "on_retriever_start",
                 "data": {
@@ -384,9 +439,10 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 },
                 "name": name,
                 "tags": tags or [],
-                "run_id": run_id,
+                "run_id": str(run_id),
                 "metadata": metadata or {},
-            }
+            },
+            "retriever",
         )
 
     async def on_retriever_end(
@@ -395,17 +451,18 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         """Run when Retriever ends running."""
         run_info = self.run_map.pop(run_id)
 
-        await self.send_stream.send(
+        await self._send(
             {
                 "event": "on_retriever_end",
                 "data": {
                     "documents": documents,
                 },
-                "run_id": run_id,
+                "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-            }
+            },
+            "retriever",
         )
 
     def __deepcopy__(self, memo: dict) -> _AstreamEventHandler:
