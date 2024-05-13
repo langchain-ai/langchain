@@ -240,7 +240,7 @@ export default function Feedback() {
           </div>
         </>
       )}
-      <h4>You can leave detailed feedback <a href="https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CPlease+write+a+comprehensive+title+after+the+%27DOC%3A+%27+prefix%3E">on GitHub</a>.</h4>
+      <h4>You can leave detailed feedback <a href="https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CIssue+related+to+${window.location.pathname}%3E">on GitHub</a>.</h4>
     </div>
   );
 }
