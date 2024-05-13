@@ -357,8 +357,6 @@ class BaseChatOpenAI(BaseChatModel):
         values["model_kwargs"] = build_extra_kwargs(
             extra, values, all_required_field_names
         )
-        if "stream_options_include_usage" in values:
-            values["model_kwargs"]["stream_options"] = {**values["model_kwargs"].get("stream_options", {}), **{"include_usage": values["stream_options_include_usage"]}}
         return values
 
     @root_validator()
