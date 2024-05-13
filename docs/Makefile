@@ -76,9 +76,10 @@ vercel-build: install-vercel-deps build
 	mv $(OUTPUT_NEW_DOCS_DIR) docs
 	rm -rf build
 	yarn run docusaurus build
-	mv build v0.2
+	mv build v0.1
 	mkdir build
-	mv v0.2 build
+	mv v0.1 build
+	mv build/v0.1/404.html build
 
 start:
 	cd $(OUTPUT_NEW_DIR) && yarn && yarn start --port=$(PORT)
