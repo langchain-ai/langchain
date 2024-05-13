@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.0.12"
+langchain-core = ">=0.1.52,<0.3"
 qdrant-client = "^1.9.0"
 
 [tool.poetry.group.test]
