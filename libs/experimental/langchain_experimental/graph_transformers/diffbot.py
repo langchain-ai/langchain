@@ -167,13 +167,13 @@ class DiffbotGraphTransformer:
                 Whether to include evidence for the relationships.
             simplified_schema (bool):
                 Whether to use a simplified schema for relationships.
-            include_confidence (bool):
-                Whether to include confidence scores on nodes and rels
             extract_types (List[TypeOption]):
                 A list of data types to extract. Facts, entities, and
                 sentiment are supported. By default, the option is
                 set to facts. A fact represents a combination of
                 source and target nodes with a relationship type.
+            include_confidence (bool):
+                Whether to include confidence scores on nodes and rels
         """
         self.diffbot_api_key = diffbot_api_key or get_from_env(
             "diffbot_api_key", "DIFFBOT_API_KEY"
