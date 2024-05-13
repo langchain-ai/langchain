@@ -12,7 +12,9 @@ pytest.importorskip(
 )
 
 
-from langchain_community.llms.openai import OpenAI as CommunityOpenAI  # noqa: E402
+from langchain_community.llms.openai import (  # ignore: community-import, # noqa: E402,
+    OpenAI as CommunityOpenAI,
+)
 
 
 class NotSerializable:
