@@ -174,7 +174,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             self.uptrain_client = uptrain.APIClient(settings=settings)
         elif key_type == "openai":
             settings = uptrain.Settings(
-                openai_api_key=api_key, evaluate_locally=False, model=model
+                openai_api_key=api_key, evaluate_locally=True, model=model
             )
             self.uptrain_client = uptrain.EvalLLM(settings=settings)
         else:
