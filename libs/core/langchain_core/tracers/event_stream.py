@@ -46,7 +46,6 @@ class RunInfo(TypedDict):
     tags: List[str]
     metadata: Dict[str, Any]
     run_type: str
-    parent_run_id: Optional[UUID]
 
 
 class _AstreamEventHandler(AsyncCallbackHandler):
@@ -106,7 +105,6 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Start a trace for an LLM run."""
         self.run_map[run_id] = {
-            "parent_run_id": parent_run_id,
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name,
@@ -140,7 +138,6 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Start a trace for an LLM run."""
         self.run_map[run_id] = {
-            "parent_run_id": parent_run_id,
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name,
@@ -170,6 +167,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
+        run_info = self.run_map.get(run_id)
         await self.send_stream.send(
             {
                 "event": "on_llm_new_token",
@@ -178,6 +176,9 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                     "chunk": chunk,
                 },
                 "run_id": run_id,
+                "name": run_info["name"],
+                "tags": run_info["tags"],
+                "metadata": run_info["metadata"],
             }
         )
 
@@ -221,9 +222,16 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         # This change should not affect any existing tracers.
         run_info = self.run_map.pop(run_id)
 
+        if run_info["run_type"] == "chat_model":
+            event = "on_chat_model_end"
+        elif run_info["run_type"] == "llm":
+            event = "on_llm_end"
+        else:
+            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
+
         await self.send_stream.send(
             {
-                "event": "on_llm_end",
+                "event": event,
                 "data": {
                     "response": response.dict(),
                 },
@@ -231,7 +239,6 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-                "parent_run_id": run_info["parent_run_id"],
             }
         )
 
@@ -250,22 +257,27 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Start a trace for a chain run."""
         self.run_map[run_id] = {
-            "parent_run_id": parent_run_id,
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name,
             "run_type": "chain",
         }
 
+        data = {}
+
+        # Work-around Runnable core code not sending input in some
+        # cases.
+        if inputs != {"input": ""}:
+            data["input"] = inputs
+
         await self.send_stream.send(
             {
                 "event": "on_chain_start",
-                "data": {
-                    "input": inputs,
-                },
+                "data": data,
                 "name": name,
                 "tags": tags or [],
                 "run_id": run_id,
+                "metadata": metadata or {},
             }
         )
 
@@ -284,14 +296,13 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             {
                 "event": "on_chain_end",
                 "data": {
-                    "inputs": inputs or {},
+                    "input": inputs or {},
                     "output": outputs,
                 },
                 "run_id": run_id,
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-                "parent_run_id": run_info["parent_run_id"],
             }
         )
 
@@ -310,7 +321,6 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Start a trace for a tool run."""
         self.run_map[run_id] = {
-            "parent_run_id": parent_run_id,
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name,
@@ -343,7 +353,6 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-                "parent_run_id": run_info["parent_run_id"],
             }
         )
 
@@ -361,7 +370,6 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Run when Retriever starts running."""
         self.run_map[run_id] = {
-            "parent_run_id": parent_run_id,
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name,
@@ -397,7 +405,6 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-                "parent_run_id": run_info["parent_run_id"],
             }
         )
 
