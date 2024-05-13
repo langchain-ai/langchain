@@ -172,7 +172,8 @@ class PlaywrightURLLoader(BaseLoader):
             browser = p.chromium.launch(headless=self.headless, proxy=self.proxy)
             for url in self.urls:
                 try:
-                    page = browser.new_page()
+                    context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36') #Added to bypass human verification websites (e.g Cloudfare)
+                    page = context.new_page()
                     response = page.goto(url)
                     if response is None:
                         raise ValueError(f"page.goto() returned None for url {url}")
@@ -211,7 +212,8 @@ class PlaywrightURLLoader(BaseLoader):
             browser = await p.chromium.launch(headless=self.headless, proxy=self.proxy)
             for url in self.urls:
                 try:
-                    page = await browser.new_page()
+                    context = await browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36') #Added to bypass human verification websites (e.g Cloudfare)
+                    page = await context.new_page()
                     response = await page.goto(url)
                     if response is None:
                         raise ValueError(f"page.goto() returned None for url {url}")
