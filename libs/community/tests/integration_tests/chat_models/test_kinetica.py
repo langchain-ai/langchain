@@ -74,7 +74,7 @@ class TestChatKinetica:
         """Create an LLM instance."""
         import gpudb
 
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica()  # type: ignore[call-arg]
         LOG.info(kinetica_llm._identifying_params)
 
         assert isinstance(kinetica_llm.kdbc, gpudb.GPUdb)
@@ -83,7 +83,7 @@ class TestChatKinetica:
     @pytest.mark.vcr()
     def test_load_context(self) -> None:
         """Load the LLM context from the DB."""
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica()  # type: ignore[call-arg]
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)
 
         system_message = ctx_messages[0]
@@ -96,7 +96,7 @@ class TestChatKinetica:
     @pytest.mark.vcr()
     def test_generate(self) -> None:
         """Generate SQL from a chain."""
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica()  # type: ignore[call-arg]
 
         # create chain
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)
@@ -113,7 +113,7 @@ class TestChatKinetica:
     @pytest.mark.vcr()
     def test_full_chain(self) -> None:
         """Generate SQL from a chain and execute the query."""
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica()  # type: ignore[call-arg]
 
         # create chain
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)

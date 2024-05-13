@@ -25,7 +25,6 @@ _IMPORT_RE = re.compile(
 _CURRENT_PATH = Path(__file__).parent.absolute()
 # Directory where generated markdown files are stored
 _DOCS_DIR = _CURRENT_PATH / "docs"
-_JSON_PATH = _CURRENT_PATH / "api_reference" / "guide_imports.json"
 
 
 def find_files(path):
@@ -55,6 +54,12 @@ def get_args():
         default=_DOCS_DIR,
         help="Directory where generated markdown files are stored",
     )
+    parser.add_argument(
+        "--json_path",
+        type=str,
+        default=None,
+        help="Path to store the generated JSON file",
+    )
     return parser.parse_args()
 
 
@@ -83,9 +88,11 @@ def main():
                 global_imports[class_name][doc_title] = doc_url
 
     # Write the global imports information to a JSON file
-    _JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with _JSON_PATH.open("w") as f:
-        json.dump(global_imports, f)
+    if args.json_path:
+        json_path = Path(args.json_path)
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        with json_path.open("w") as f:
+            json.dump(global_imports, f)
 
 
 def _get_doc_title(data: str, file_name: str) -> str:
@@ -178,8 +185,8 @@ def replace_imports(file):
     # Use re.sub to replace each Python code block
     data = code_block_re.sub(replacer, data)
 
-    if all_imports:
-        print(f"Adding {len(all_imports)} links for imports in {file}")  # noqa: T201
+    # if all_imports:
+    #     print(f"Adding {len(all_imports)} links for imports in {file}")  # noqa: T201
     with open(file, "w") as f:
         f.write(data)
     return all_imports

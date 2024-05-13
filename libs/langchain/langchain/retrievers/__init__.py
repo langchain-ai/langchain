@@ -17,7 +17,7 @@ the backbone of a retriever, but there are other types of retrievers as well.
     Document, Serializable, Callbacks,
     CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
 """
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain._api.module_import import create_importer
 from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
@@ -25,23 +25,105 @@ from langchain.retrievers.ensemble import EnsembleRetriever
 from langchain.retrievers.merger_retriever import MergerRetriever
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.retrievers.outline import OutlineRetriever
 from langchain.retrievers.parent_document_retriever import ParentDocumentRetriever
 from langchain.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
-from langchain.retrievers.web_research import WebResearchRetriever
 
-import_lookup = create_importer(
-    __package__, fallback_module="langchain_community.retrievers"
-)
+if TYPE_CHECKING:
+    from langchain_community.retrievers import (
+        AmazonKendraRetriever,
+        AmazonKnowledgeBasesRetriever,
+        ArceeRetriever,
+        ArxivRetriever,
+        AzureAISearchRetriever,
+        AzureCognitiveSearchRetriever,
+        BM25Retriever,
+        ChaindeskRetriever,
+        ChatGPTPluginRetriever,
+        CohereRagRetriever,
+        DocArrayRetriever,
+        DriaRetriever,
+        ElasticSearchBM25Retriever,
+        EmbedchainRetriever,
+        GoogleCloudEnterpriseSearchRetriever,
+        GoogleDocumentAIWarehouseRetriever,
+        GoogleVertexAIMultiTurnSearchRetriever,
+        GoogleVertexAISearchRetriever,
+        KayAiRetriever,
+        KNNRetriever,
+        LlamaIndexGraphRetriever,
+        LlamaIndexRetriever,
+        MetalRetriever,
+        MilvusRetriever,
+        NeuralDBRetriever,
+        OutlineRetriever,
+        PineconeHybridSearchRetriever,
+        PubMedRetriever,
+        RemoteLangChainRetriever,
+        SVMRetriever,
+        TavilySearchAPIRetriever,
+        TFIDFRetriever,
+        VespaRetriever,
+        WeaviateHybridSearchRetriever,
+        WebResearchRetriever,
+        WikipediaRetriever,
+        ZepRetriever,
+        ZillizRetriever,
+    )
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "AmazonKendraRetriever": "langchain_community.retrievers",
+    "AmazonKnowledgeBasesRetriever": "langchain_community.retrievers",
+    "ArceeRetriever": "langchain_community.retrievers",
+    "ArxivRetriever": "langchain_community.retrievers",
+    "AzureAISearchRetriever": "langchain_community.retrievers",
+    "AzureCognitiveSearchRetriever": "langchain_community.retrievers",
+    "ChatGPTPluginRetriever": "langchain_community.retrievers",
+    "ChaindeskRetriever": "langchain_community.retrievers",
+    "CohereRagRetriever": "langchain_community.retrievers",
+    "ElasticSearchBM25Retriever": "langchain_community.retrievers",
+    "EmbedchainRetriever": "langchain_community.retrievers",
+    "GoogleDocumentAIWarehouseRetriever": "langchain_community.retrievers",
+    "GoogleCloudEnterpriseSearchRetriever": "langchain_community.retrievers",
+    "GoogleVertexAIMultiTurnSearchRetriever": "langchain_community.retrievers",
+    "GoogleVertexAISearchRetriever": "langchain_community.retrievers",
+    "KayAiRetriever": "langchain_community.retrievers",
+    "KNNRetriever": "langchain_community.retrievers",
+    "LlamaIndexGraphRetriever": "langchain_community.retrievers",
+    "LlamaIndexRetriever": "langchain_community.retrievers",
+    "MetalRetriever": "langchain_community.retrievers",
+    "MilvusRetriever": "langchain_community.retrievers",
+    "OutlineRetriever": "langchain_community.retrievers",
+    "PineconeHybridSearchRetriever": "langchain_community.retrievers",
+    "PubMedRetriever": "langchain_community.retrievers",
+    "RemoteLangChainRetriever": "langchain_community.retrievers",
+    "SVMRetriever": "langchain_community.retrievers",
+    "TavilySearchAPIRetriever": "langchain_community.retrievers",
+    "BM25Retriever": "langchain_community.retrievers",
+    "DriaRetriever": "langchain_community.retrievers",
+    "NeuralDBRetriever": "langchain_community.retrievers",
+    "TFIDFRetriever": "langchain_community.retrievers",
+    "VespaRetriever": "langchain_community.retrievers",
+    "WeaviateHybridSearchRetriever": "langchain_community.retrievers",
+    "WebResearchRetriever": "langchain_community.retrievers",
+    "WikipediaRetriever": "langchain_community.retrievers",
+    "ZepRetriever": "langchain_community.retrievers",
+    "ZillizRetriever": "langchain_community.retrievers",
+    "DocArrayRetriever": "langchain_community.retrievers",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
-    """Import retrievers from langchain_community."""
-    return import_lookup(name)
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
 
 __all__ = [
@@ -51,14 +133,18 @@ __all__ = [
     "ArxivRetriever",
     "AzureAISearchRetriever",
     "AzureCognitiveSearchRetriever",
-    "ChatGPTPluginRetriever",
-    "ContextualCompressionRetriever",
+    "BM25Retriever",
     "ChaindeskRetriever",
+    "ChatGPTPluginRetriever",
     "CohereRagRetriever",
+    "ContextualCompressionRetriever",
+    "DocArrayRetriever",
+    "DriaRetriever",
     "ElasticSearchBM25Retriever",
     "EmbedchainRetriever",
-    "GoogleDocumentAIWarehouseRetriever",
+    "EnsembleRetriever",
     "GoogleCloudEnterpriseSearchRetriever",
+    "GoogleDocumentAIWarehouseRetriever",
     "GoogleVertexAIMultiTurnSearchRetriever",
     "GoogleVertexAISearchRetriever",
     "KayAiRetriever",
@@ -69,25 +155,23 @@ __all__ = [
     "MetalRetriever",
     "MilvusRetriever",
     "MultiQueryRetriever",
+    "MultiVectorRetriever",
     "OutlineRetriever",
+    "ParentDocumentRetriever",
     "PineconeHybridSearchRetriever",
     "PubMedRetriever",
     "RemoteLangChainRetriever",
-    "SVMRetriever",
+    "RePhraseQueryRetriever",
     "SelfQueryRetriever",
+    "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
-    "BM25Retriever",
     "TimeWeightedVectorStoreRetriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
+    "WebResearchRetriever",
     "WikipediaRetriever",
     "ZepRetriever",
+    "NeuralDBRetriever",
     "ZillizRetriever",
-    "DocArrayRetriever",
-    "RePhraseQueryRetriever",
-    "WebResearchRetriever",
-    "EnsembleRetriever",
-    "ParentDocumentRetriever",
-    "MultiVectorRetriever",
 ]

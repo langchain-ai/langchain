@@ -420,7 +420,7 @@ class _RedisCacheBase(BaseCache, ABC):
                     )
                     # In a previous life we stored the raw text directly
                     # in the table, so assume it's in that format.
-                    generations.append(Generation(text=text))
+                    generations.append(Generation(text=text))  # type: ignore[arg-type]
         return generations if generations else None
 
     @staticmethod
@@ -1526,7 +1526,7 @@ ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_cache"
 
 @deprecated(
     since="0.0.28",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_astradb.AstraDBCache",
 )
 class AstraDBCache(BaseCache):
@@ -1731,7 +1731,7 @@ def _async_lru_cache(maxsize: int = 128, typed: bool = False) -> Callable:
 
 @deprecated(
     since="0.0.28",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_astradb.AstraDBSemanticCache",
 )
 class AstraDBSemanticCache(BaseCache):
