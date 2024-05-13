@@ -33,14 +33,14 @@ Key partner packages are separated out (see below).
 This contains all integrations for various components (LLMs, vectorstores, retrievers).
 All dependencies in this package are optional to keep the package as lightweight as possible.
 
-### `[langgraph](/docs/langgraph)`
+### [`langgraph`](/docs/langgraph)
 
 `langgraph` is an extension of `langchain` aimed at
 building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
 LangGraph exposes high level interfaces for creating common types of agents, as well as a low-level API for constructing more contr
 
-### `[langserve](/docs/langserve)`
+### [`langserve`](/docs/langserve)
 
 A package to deploy LangChain chains as REST APIs. Makes it easy to get a production ready API up and running.
 
@@ -526,7 +526,7 @@ LangChain provides several advanced retrieval types. A full list is below, along
 | [Ensemble](/docs/how_to/ensemble_retriever/)                  | Any                          | No                        | If you have multiple retrieval methods and want to try combining them.                                                                        | This fetches documents from multiple retrievers and then combines them.                                                                                                                                                                                                                          |
 
 
-## Text splitting
+### Text splitting
 
 LangChain offers many different types of `text splitters`.
 These all live in the `langchain-text-splitters` package.
