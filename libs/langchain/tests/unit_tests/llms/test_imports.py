@@ -1,5 +1,7 @@
+import pytest
+from langchain_core.language_models import BaseLLM
+
 from langchain import llms
-from langchain.llms.base import BaseLLM
 
 EXPECT_ALL = [
     "AI21",
@@ -88,6 +90,11 @@ EXPECT_ALL = [
 
 def test_all_imports() -> None:
     """Simple test to make sure all things can be imported."""
+    assert set(llms.__all__) == set(EXPECT_ALL)
+
+
+@pytest.mark.community
+def test_all_subclasses() -> None:
+    """Simple test to make sure all things are subclasses of BaseLLM."""
     for cls in llms.__all__:
         assert issubclass(getattr(llms, cls), BaseLLM)
-    assert set(llms.__all__) == set(EXPECT_ALL)
