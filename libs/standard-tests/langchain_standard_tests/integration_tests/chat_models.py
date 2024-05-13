@@ -252,7 +252,7 @@ class ChatModelIntegrationTests(ABC):
                 content=function_result,
                 tool_call_id="abc123",
             ),
-            # AIMessage(content=function_result),
+            AIMessage(content=function_result),
             HumanMessage(content="What is 3 + 4"),
         ]
         result_string_content = model_with_tools.invoke(messages_string_content)
