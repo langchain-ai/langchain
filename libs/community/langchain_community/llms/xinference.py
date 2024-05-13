@@ -100,7 +100,7 @@ class Xinference(LLM):
         model_kwargs = model_kwargs or {}
 
         super().__init__(
-            **{
+            **{  # type: ignore[arg-type]
                 "server_url": server_url,
                 "model_uid": model_uid,
                 "model_kwargs": model_kwargs,
