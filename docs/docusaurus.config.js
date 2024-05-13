@@ -124,7 +124,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       announcementBar: {
-        content: 'You are viewing the <strong>preview</strong> v0.2 docs. View the <a href="/v0.1/docs/get_started/introduction/">stable v0.1 docs here</a>. Leave feedback on the new docs <a href="https://github.com/langchain-ai/langchain/discussions/21437">here</a>.',
+        content: 'You are viewing the <strong>preview</strong> v0.2 docs. View the <strong>stable</strong> v0.1 docs <a href="/v0.1/docs/get_started/introduction/">here</a>. Leave feedback on the v0.2 docs <a href="https://github.com/langchain-ai/langchain/discussions/21437">here</a>.',
         isCloseable: true,
       },
       docs: {
