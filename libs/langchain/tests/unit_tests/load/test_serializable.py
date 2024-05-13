@@ -3,6 +3,7 @@ import inspect
 import pkgutil
 from types import ModuleType
 
+import pytest
 from langchain_core.load.mapping import SERIALIZABLE_MAPPING
 
 
@@ -54,6 +55,7 @@ def import_all_modules(package_name: str) -> dict:
     return classes
 
 
+@pytest.mark.community
 def test_import_all_modules() -> None:
     """Test import all modules works as expected"""
     all_modules = import_all_modules("langchain")
@@ -77,6 +79,7 @@ def test_import_all_modules() -> None:
     )
 
 
+@pytest.mark.community
 def test_serializable_mapping() -> None:
     to_skip = {
         # This should have had a different namespace, as it was never

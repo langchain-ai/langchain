@@ -58,6 +58,7 @@ EXPECTED_ALL = [
     "MyScale",
     "MyScaleSettings",
     "Neo4jVector",
+    "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
     "OpenSearchVectorSearch",
     "OracleVS",

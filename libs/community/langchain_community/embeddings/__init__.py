@@ -178,6 +178,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.sagemaker_endpoint import (
         SagemakerEndpointEmbeddings,
     )
+    from langchain_community.embeddings.sambanova import (
+        SambaStudioEmbeddings,
+    )
     from langchain_community.embeddings.self_hosted import (
         SelfHostedEmbeddings,
     )
@@ -276,6 +279,7 @@ __all__ = [
     "QuantizedBgeEmbeddings",
     "QuantizedBiEncoderEmbeddings",
     "SagemakerEndpointEmbeddings",
+    "SambaStudioEmbeddings",
     "SelfHostedEmbeddings",
     "SelfHostedHuggingFaceEmbeddings",
     "SelfHostedHuggingFaceInstructEmbeddings",
@@ -350,6 +354,7 @@ _module_lookup = {
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "OracleEmbeddings": "langchain_community.embeddings.oracleai",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
+    "SambaStudioEmbeddings": "langchain_community.embeddings.sambanova",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
     "SelfHostedHuggingFaceEmbeddings": "langchain_community.embeddings.self_hosted_hugging_face",  # noqa: E501
     "SelfHostedHuggingFaceInstructEmbeddings": "langchain_community.embeddings.self_hosted_hugging_face",  # noqa: E501
