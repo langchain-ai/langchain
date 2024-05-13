@@ -1,5 +1,7 @@
 """Test PremChat model"""
 
+from typing import cast
+
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import SecretStr
@@ -45,3 +47,13 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
 
     assert system_message == "System Prompt"
     assert result == expected
+
+
+@pytest.mark.requires("premai")
+def test_premai_initialization() -> None:
+    for model in [
+        ChatPremAI(model="prem-ai-model", premai_api_key="xyz", project_id=8),
+        ChatPremAI(model_name="prem-ai-model", api_key="xyz", project_id=8),
+    ]:
+        assert model.model == "prem-ai-model"
+        assert cast(SecretStr, model.premai_api_key).get_secret_value() == "xyz"
