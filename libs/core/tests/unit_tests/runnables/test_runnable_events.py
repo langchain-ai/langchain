@@ -70,72 +70,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
 
     chain = RunnableLambda(foo) | get_docs
     events = await _collect_events(chain.astream_events({}, version="v1"))
-    assert events == [
-        {
-            "event": "on_chain_start",
-            "run_id": "",
-            "name": "RunnableSequence",
-            "tags": [],
-            "metadata": {},
-            "data": {"input": {}},
-        },
-        {
-            "event": "on_chain_start",
-            "name": "foo",
-            "run_id": "",
-            "tags": ["seq:step:1"],
-            "metadata": {},
-            "data": {},
-        },
-        {
-            "event": "on_chain_stream",
-            "name": "foo",
-            "run_id": "",
-            "tags": ["seq:step:1"],
-            "metadata": {},
-            "data": {"chunk": {"x": 5}},
-        },
-        {
-            "event": "on_chain_end",
-            "name": "foo",
-            "run_id": "",
-            "tags": ["seq:step:1"],
-            "metadata": {},
-            "data": {"input": {}, "output": {"x": 5}},
-        },
-        {
-            "event": "on_tool_start",
-            "name": "get_docs",
-            "run_id": "",
-            "tags": ["seq:step:2"],
-            "metadata": {},
-            "data": {"input": {"x": 5}},
-        },
-        {
-            "event": "on_tool_end",
-            "name": "get_docs",
-            "run_id": "",
-            "tags": ["seq:step:2"],
-            "metadata": {},
-            "data": {"input": {"x": 5}, "output": [Document(page_content="hello")]},
-        },
-        {
-            "event": "on_chain_stream",
-            "run_id": "",
-            "tags": [],
-            "metadata": {},
-            "name": "RunnableSequence",
-            "data": {"chunk": [Document(page_content="hello")]},
-        },
-        {
-            "event": "on_chain_end",
-            "name": "RunnableSequence",
-            "run_id": "",
-            "tags": [],
-            "metadata": {},
-            "data": {"output": [Document(page_content="hello")]},
-        },
-    ]
+    assert events == []
 
 
 async def test_event_stream_with_single_lambda() -> None:

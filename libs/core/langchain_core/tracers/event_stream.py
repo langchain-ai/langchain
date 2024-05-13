@@ -72,6 +72,26 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         """Iterate over the receive stream."""
         return self.receive_stream.__aiter__()
 
+    async def tap_output_aiter(
+        self, run_id: UUID, output: AsyncIterator
+    ) -> AsyncIterator:
+        """Tap the output aiter."""
+        async for chunk in output:
+            run_info = self.run_map.get(run_id)
+            if run_info is None:
+                raise AssertionError(f"Run ID {run_id} not found in run map.")
+            await self.send_stream.send(
+                {
+                    "event": f"on_{run_info['run_type']}_stream",
+                    "data": {"chunk": chunk},
+                    "run_id": run_id,
+                    "name": run_info["name"],
+                    "tags": run_info["tags"],
+                    "metadata": run_info["metadata"],
+                }
+            )
+            yield chunk
+
     async def on_chat_model_start(
         self,
         serialized: Dict[str, Any],
