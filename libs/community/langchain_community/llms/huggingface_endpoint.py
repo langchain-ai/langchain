@@ -1,8 +1,8 @@
 import json
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
-from langchain_core._api.deprecation import deprecated
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -21,7 +21,12 @@ VALID_TASKS = (
     "conversational",
 )
 
-@deprecated(since="0.0.37", removal="0.3", alternative_import="from langchain_huggingface.llms import HuggingFaceEndpoint")
+
+@deprecated(
+    since="0.0.37",
+    removal="0.3",
+    alternative_import="from langchain_huggingface.llms import HuggingFaceEndpoint",
+)
 class HuggingFaceEndpoint(LLM):
     """
     HuggingFace Endpoint.

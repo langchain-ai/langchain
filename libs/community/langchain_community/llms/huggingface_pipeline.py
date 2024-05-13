@@ -3,8 +3,8 @@ from __future__ import annotations
 import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
-from langchain_core._api.deprecation import deprecated
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
@@ -22,8 +22,12 @@ DEFAULT_BATCH_SIZE = 4
 
 logger = logging.getLogger(__name__)
 
-@deprecated(since="0.0.37", removal="0.3", alternative_import="from rom langchain_huggingface.llms import HuggingFacePipeline")
 
+@deprecated(
+    since="0.0.37",
+    removal="0.3",
+    alternative_import="from rom langchain_huggingface.llms import HuggingFacePipeline",
+)
 class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
 
