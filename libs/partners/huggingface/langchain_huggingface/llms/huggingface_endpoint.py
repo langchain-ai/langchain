@@ -2,7 +2,6 @@ import json
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -22,11 +21,6 @@ VALID_TASKS = (
 )
 
 
-@deprecated(
-    since="0.0.37",
-    removal="0.3",
-    alternative_import="from langchain_huggingface.llms import HuggingFaceEndpoint",
-)
 class HuggingFaceEndpoint(LLM):
     """
     HuggingFace Endpoint.
@@ -166,7 +160,7 @@ class HuggingFaceEndpoint(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that package is installed and that the API token is valid."""
         try:
-            from huggingface_hub import login
+            from huggingface_hub import login  # type: ignore[import]
 
         except ImportError:
             raise ImportError(
@@ -264,10 +258,7 @@ class HuggingFaceEndpoint(LLM):
                 stream=False,
                 task=self.task,
             )
-            try:
-                response_text = json.loads(response.decode())[0]["generated_text"]
-            except KeyError:
-                response_text = json.loads(response.decode())["generated_text"]
+            response_text = json.loads(response.decode())[0]["generated_text"]
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then we remove this stop sequence from the end of the generated text
@@ -298,10 +289,7 @@ class HuggingFaceEndpoint(LLM):
                 stream=False,
                 task=self.task,
             )
-            try:
-                response_text = json.loads(response.decode())[0]["generated_text"]
-            except KeyError:
-                response_text = json.loads(response.decode())["generated_text"]
+            response_text = json.loads(response.decode())[0]["generated_text"]
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then remove this stop sequence from the end of the generated text
