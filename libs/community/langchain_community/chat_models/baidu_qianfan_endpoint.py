@@ -552,7 +552,8 @@ class QianfanChatEndpoint(BaseChatModel):
         llm = self.bind_tools([schema])
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[schema], first_tool_only=True  # type: ignore[list-item]
+                tools=[schema],
+                first_tool_only=True,  # type: ignore[list-item]
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]

@@ -10,7 +10,9 @@ from langchain_community.embeddings import PremAIEmbeddings
 @pytest.mark.requires("premai")
 def test_api_key_is_string() -> None:
     llm = PremAIEmbeddings(  # type: ignore[call-arg]
-        premai_api_key="secret-api-key", project_id=8, model="fake-model"  # type: ignore[arg-type]
+        premai_api_key="secret-api-key",
+        project_id=8,
+        model="fake-model",  # type: ignore[arg-type]
     )
     assert isinstance(llm.premai_api_key, SecretStr)
 
@@ -20,7 +22,9 @@ def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     llm = PremAIEmbeddings(  # type: ignore[call-arg]
-        premai_api_key="secret-api-key", project_id=8, model="fake-model"  # type: ignore[arg-type]
+        premai_api_key="secret-api-key",
+        project_id=8,
+        model="fake-model",  # type: ignore[arg-type]
     )
     print(llm.premai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
