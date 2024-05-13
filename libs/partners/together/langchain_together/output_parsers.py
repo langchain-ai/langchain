@@ -1,9 +1,7 @@
-
 import json
 from typing import Any, List, Optional
 
 import jsonpatch  # type: ignore[import]
-
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseCumulativeTransformOutputParser
 from langchain_core.output_parsers.json import parse_partial_json
@@ -43,7 +41,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             )
         message = generation.message
         try:
-            function_call = message.additional_kwargs["tool_calls"][0]['function']
+            function_call = message.additional_kwargs["tool_calls"][0]["function"]
         except KeyError as exc:
             if partial:
                 return None
