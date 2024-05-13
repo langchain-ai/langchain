@@ -14,7 +14,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings import HuggingFaceEmbeddings
+            from langchain_huggingface import HuggingFaceEmbeddings
 
             model_name = "sentence-transformers/all-mpnet-base-v2"
             model_kwargs = {'device': 'cpu'}
