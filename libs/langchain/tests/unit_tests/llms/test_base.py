@@ -1,4 +1,7 @@
 """Test base LLM functionality."""
+import importlib
+
+import pytest
 from sqlalchemy import Column, Integer, Sequence, String, create_engine
 
 try:
@@ -9,7 +12,6 @@ except ImportError:
 from langchain_core.caches import InMemoryCache
 from langchain_core.outputs import Generation, LLMResult
 
-from langchain.cache import SQLAlchemyCache
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain.llms.base import __all__
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -50,6 +52,10 @@ def test_caching() -> None:
     assert output == expected_output
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("langchain_community") is None,
+    reason="langchain_community not installed",
+)
 def test_custom_caching() -> None:
     """Test custom_caching behavior."""
     Base = declarative_base()
@@ -65,6 +71,9 @@ def test_custom_caching() -> None:
         response = Column(String)
 
     engine = create_engine("sqlite://")
+
+    from langchain_community.cache import SQLAlchemyCache
+
     set_llm_cache(SQLAlchemyCache(engine, FulltextLLMCache))
     llm = FakeLLM()
     params = llm.dict()

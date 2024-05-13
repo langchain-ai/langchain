@@ -22,7 +22,7 @@ _MIN_BATCH_SIZE = 5
 
 @deprecated(
     since="0.0.12",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_google_vertexai.VertexAIEmbeddings",
 )
 class VertexAIEmbeddings(_VertexAICommon, Embeddings):

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-robocorp"
-version = "0.0.5"
+version = "0.0.6"
 description = "An integration package connecting Robocorp Action Server and LangChain"
 authors = []
 readme = "README.md"

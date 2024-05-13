@@ -22,7 +22,7 @@ from typing import Any
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 
-from langchain.utils.interactive_env import is_interactive_env
+from langchain._api.interactive_env import is_interactive_env
 
 # Used for internal purposes
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
