@@ -24,18 +24,3 @@ table.longtable code {
 table.longtable td {
   max-width: 600px;
 }
-
-.sk-sidebar-toc-wrapper {
-  width: unset;
-  overflow-x: auto;
-}
-
-.sk-sidebar-toc-wrapper > [aria-label="rellinks"] {
-  position: sticky;
-  left: 0;
-}
-
-.navbar-nav .dropdown-menu {
-  max-height: 80vh;
-  overflow-y: auto;
-}
