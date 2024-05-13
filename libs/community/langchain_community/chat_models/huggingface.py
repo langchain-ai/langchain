@@ -1,4 +1,5 @@
 """Hugging Face Chat Wrapper."""
+
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
 from langchain_core._api.deprecation import deprecated
@@ -38,7 +39,9 @@ DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."
 @deprecated(
     since="0.0.37",
     removal="0.3",
-    alternative_import="from langchain_huggingface.chat_models.huggingface import ChatHuggingFace",
+    alternative_import=(
+        "from langchain_huggingface.chat_models.huggingface import ChatHuggingFace"
+    ),
 )
 class ChatHuggingFace(BaseChatModel):
     """
