@@ -125,7 +125,8 @@ class OllamaFunctions(ChatOllama):
         *,
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]:
+        ...
 
     @overload
     def with_structured_output(
@@ -134,7 +135,8 @@ class OllamaFunctions(ChatOllama):
         *,
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
+        ...
 
     def with_structured_output(
         self,
