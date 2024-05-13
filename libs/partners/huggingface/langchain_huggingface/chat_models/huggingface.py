@@ -109,7 +109,9 @@ def _convert_TGI_message_to_LC_message(
 
 def _is_huggingface_hub(llm: Any) -> bool:
     try:
-        from langchain_community.llms.huggingface_hub import HuggingFaceHub
+        from langchain_community.llms.huggingface_hub import (  # type: ignore[import-not-found]
+            HuggingFaceHub,
+        )
 
         return isinstance(llm, HuggingFaceHub)
     except ImportError:
@@ -119,7 +121,7 @@ def _is_huggingface_hub(llm: Any) -> bool:
 
 def _is_huggingface_textgen_inference(llm: Any) -> bool:
     try:
-        from langchain_community.llms.huggingface_text_gen_inference import (
+        from langchain_community.llms.huggingface_text_gen_inference import (  # type: ignore[import-not-found]
             HuggingFaceTextGenInference,
         )
 
