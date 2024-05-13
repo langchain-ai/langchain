@@ -248,7 +248,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.ignore
+        extra = Extra.forbid
         arbitrary_types_allowed = True
         underscore_attrs_are_private = True
 
@@ -262,7 +262,11 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
                 "Please install it with pip install google-cloud-discoveryengine"
             ) from exc
 
-        super().__init__(**kwargs)
+        try:
+            super().__init__(**kwargs)
+        except ValueError as e:
+            print(f"Error initializing GoogleVertexAISearchRetriever: {str(e)}")
+            raise
 
         #  For more information, refer to:
         # https://cloud.google.com/generative-ai-app-builder/docs/locations#specify_a_multi-region_for_your_data_store
