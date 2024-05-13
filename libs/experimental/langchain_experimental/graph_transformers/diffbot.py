@@ -147,9 +147,9 @@ class DiffbotGraphTransformer:
         fact_confidence_threshold: float = 0.7,
         include_qualifiers: bool = True,
         include_evidence: bool = True,
-        include_confidence: bool = False,
         simplified_schema: bool = True,
         extract_types: List[TypeOption] = [TypeOption.FACTS],
+        include_confidence: bool = False,
     ) -> None:
         """
         Initialize the graph transformer with various options.
