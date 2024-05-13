@@ -238,9 +238,9 @@ export default function Feedback() {
               <SvgThumbsDown />
             </div>
           </div>
-          <h4>We appreciate your feedback! You can leave detailed comments <a href="https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CPlease+write+a+comprehensive+title+after+the+%27DOC%3A+%27+prefix%3E">on GitHub</a>.</h4>
         </>
       )}
+      <h4>You can leave detailed feedback <a href="https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CPlease+write+a+comprehensive+title+after+the+%27DOC%3A+%27+prefix%3E">on GitHub</a>.</h4>
     </div>
   );
 }
