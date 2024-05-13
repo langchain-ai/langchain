@@ -199,7 +199,7 @@ export default function Feedback() {
         <h4>Thanks for your feedback!</h4>
       ) : (
         <>
-          <h4>Help us out by providing feedback on this documentation page:</h4>
+          <h4>Was this page helpful?</h4>
           <div style={{ display: "flex", gap: "5px" }}>
             <div
               {...defaultFields}
@@ -238,6 +238,7 @@ export default function Feedback() {
               <SvgThumbsDown />
             </div>
           </div>
+          <h4>We appreciate your feedback! You can leave detailed comments <a href="https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CPlease+write+a+comprehensive+title+after+the+%27DOC%3A+%27+prefix%3E">on GitHub</a>.</h4>
         </>
       )}
     </div>
