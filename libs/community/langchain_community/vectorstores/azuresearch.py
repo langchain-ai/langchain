@@ -762,11 +762,9 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> List[Document]:
         params = {**self.search_kwargs, **kwargs}
-            
+
         if self.search_type == "similarity":
-            docs = self.vectorstore.vector_search(
-                query, k=self.k, **params
-            )
+            docs = self.vectorstore.vector_search(query, k=self.k, **params)
         elif self.search_type == "similarity_score_threshold":
             docs = [
                 doc
