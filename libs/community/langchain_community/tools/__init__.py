@@ -292,9 +292,9 @@ if TYPE_CHECKING:
         SteamshipImageGenerationTool,
     )
     from langchain_community.tools.terminal import (
+        TerminalBottomCaptureTool,
         TerminalLiteralInputTool,
         TerminalSpecialInputTool,
-        TerminalBottomCaptureTool,
         TerminalTopCaptureTool,
     )
     from langchain_community.tools.vectorstore.tool import (

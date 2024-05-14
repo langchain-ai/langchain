@@ -3,7 +3,9 @@ from typing import Optional
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+
 from langchain_community.utilities.tmux import TmuxPane
+
 
 class TerminalLiteralInputTool(BaseTool):
     """Tool to send literal keys to a terminal window"""
@@ -46,9 +48,7 @@ class TerminalBottomCaptureTool(BaseTool):
     """Tool to capture the output of the bottom N rows of a terminal window"""
 
     name: str = "terminal_bottom_capture"
-    description: str = (
-        "Use this tool to see the bottom N rows of the terminal window."
-    )
+    description: str = "Use this tool to see the bottom N rows of the terminal window."
     pane: TmuxPane = Field(default_factory=TmuxPane)
 
     def _run(
@@ -81,6 +81,8 @@ class TerminalTopCaptureTool(BaseTool):
         # Grab the pane contents
         pane_contents = self.pane.capture()
         # Pad with leading empty strings if necessary
-        pane_contents = [""] * (self.pane.window_height - len(pane_contents)) + pane_contents
+        pane_contents = [""] * (
+            self.pane.window_height - len(pane_contents)
+        ) + pane_contents
         # Return the first n_top
         return "\n".join(pane_contents[0:n_top])
