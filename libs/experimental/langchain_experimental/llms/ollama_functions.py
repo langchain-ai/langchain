@@ -354,7 +354,6 @@ class OllamaFunctions(ChatOllama):
             generations=[ChatGeneration(message=response_message_with_functions)]
         )
 
-
     async def _agenerate(
         self,
         messages: List[BaseMessage],
@@ -431,7 +430,6 @@ class OllamaFunctions(ChatOllama):
                 },
             },
         )
-
 
     @property
     def _llm_type(self) -> str:
