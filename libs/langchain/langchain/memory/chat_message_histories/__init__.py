@@ -23,7 +23,6 @@ if TYPE_CHECKING:
         StreamlitChatMessageHistory,
         UpstashRedisChatMessageHistory,
         XataChatMessageHistory,
-        ZepChatMessageHistory,
     )
 
 # Create a way to dynamically look up deprecated imports.
@@ -49,7 +48,6 @@ DEPRECATED_LOOKUP = {
     "StreamlitChatMessageHistory": "langchain_community.chat_message_histories",
     "UpstashRedisChatMessageHistory": "langchain_community.chat_message_histories",
     "XataChatMessageHistory": "langchain_community.chat_message_histories",
-    "ZepChatMessageHistory": "langchain_community.chat_message_histories",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -80,5 +78,4 @@ __all__ = [
     "StreamlitChatMessageHistory",
     "UpstashRedisChatMessageHistory",
     "XataChatMessageHistory",
-    "ZepChatMessageHistory",
 ]
