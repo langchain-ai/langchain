@@ -31,12 +31,12 @@ def condense_zep_memory_into_human_message(zep_memory: Memory) -> BaseMessage:
         prompt = "\n".join(zep_memory.facts)
     if zep_memory.summary and zep_memory.summary.content:
         prompt += "\n" + zep_memory.summary.content
-    for msg in zep_memory.messages:
+    for msg in zep_memory.messages or []:
         prompt += f"\n{msg.role or msg.role_type}: {msg.content}"
     return HumanMessage(content=prompt)
 
 
-def get_zep_message_role_type(role) -> RoleType:
+def get_zep_message_role_type(role: str) -> RoleType:
     if role == "human":
         return "user"
     elif role == "ai":
@@ -131,7 +131,7 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
         if not zep_memory:
             return []
 
-        return zep_memory.messages
+        return zep_memory.messages or []
 
     @property
     def zep_summary(self) -> Optional[str]:
@@ -200,7 +200,7 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
             self.session_id,
             messages=[
                 Message(
-                    content=message.content,
+                    content=str(message.content),
                     role=message.type,
                     role_type=get_zep_message_role_type(message.type),
                     metadata=metadata,
@@ -214,7 +214,7 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
 
         zep_messages = [
             Message(
-                content=message.content,
+                content=str(message.content),
                 role=message.type,
                 role_type=get_zep_message_role_type(message.type),
                 metadata=message.additional_kwargs.get("metadata", None),
@@ -230,7 +230,7 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
 
         zep_messages = [
             Message(
-                content=message.content,
+                content=str(message.content),
                 role=message.type,
                 role_type=get_zep_message_role_type(message.type),
                 metadata=message.additional_kwargs.get("metadata", None),

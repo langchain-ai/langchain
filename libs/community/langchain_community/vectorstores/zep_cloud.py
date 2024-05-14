@@ -76,7 +76,8 @@ class ZepCloudVectorStore(VectorStore):
         """
         Create a new collection in the Zep backend.
         """
-        collection = self._client.document.add_collection(self.collection_name)
+        self._client.document.add_collection(self.collection_name)
+        collection = self._client.document.get_collection(self.collection_name)
         return collection
 
     def _generate_documents_to_add(
@@ -247,12 +248,12 @@ class ZepCloudVectorStore(VectorStore):
         return [
             (
                 Document(
-                    page_content=doc.content,
+                    page_content=str(doc.content),
                     metadata=doc.metadata,
                 ),
                 doc.score or 0.0,
             )
-            for doc in results.results
+            for doc in results.results or []
         ]
 
     async def asimilarity_search_with_relevance_scores(
@@ -275,12 +276,12 @@ class ZepCloudVectorStore(VectorStore):
         return [
             (
                 Document(
-                    page_content=doc.content,
+                    page_content=str(doc.content),
                     metadata=doc.metadata,
                 ),
                 doc.score or 0.0,
             )
-            for doc in results.results
+            for doc in results.results or []
         ]
 
     async def asimilarity_search(
@@ -360,8 +361,8 @@ class ZepCloudVectorStore(VectorStore):
         )
 
         return [
-            Document(page_content=d.content, metadata=d.metadata)
-            for d in results.results
+            Document(page_content=str(d.content), metadata=d.metadata)
+            for d in results.results or []
         ]
 
     async def amax_marginal_relevance_search(
@@ -386,8 +387,8 @@ class ZepCloudVectorStore(VectorStore):
         )
 
         return [
-            Document(page_content=d.content, metadata=d.metadata)
-            for d in results.results
+            Document(page_content=str(d.content), metadata=d.metadata)
+            for d in results.results or []
         ]
 
     def max_marginal_relevance_search_by_vector(
@@ -446,6 +447,8 @@ class ZepCloudVectorStore(VectorStore):
         Returns:
             ZepVectorStore: An instance of ZepVectorStore.
         """
+        if not api_key:
+            raise ValueError("api_key must be specified when using ZepVectorStore.")
         vecstore = cls(
             collection_name=collection_name,
             api_key=api_key,

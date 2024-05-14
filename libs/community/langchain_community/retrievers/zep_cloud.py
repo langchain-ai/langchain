@@ -80,7 +80,7 @@ try:
         ) -> List[Document]:
             return [
                 Document(
-                    page_content=r.message.content,
+                    page_content=str(r.message.content),
                     metadata={
                         "score": r.score,
                         "uuid": r.message.uuid_,
@@ -89,7 +89,7 @@ try:
                         "role": r.message.role or r.message.role_type,
                     },
                 )
-                for r in results
+                for r in results or []
                 if r.message
             ]
 
@@ -98,7 +98,7 @@ try:
         ) -> List[Document]:
             return [
                 Document(
-                    page_content=r.summary.content,
+                    page_content=str(r.summary.content),
                     metadata={
                         "score": r.score,
                         "uuid": r.summary.uuid_,
