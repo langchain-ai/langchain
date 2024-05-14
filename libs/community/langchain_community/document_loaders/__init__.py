@@ -279,8 +279,8 @@ if TYPE_CHECKING:
 
 
 _module_lookup = {
-    "AzureWhisperVideoSegmentLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
-    "AzureWhisperVideoParagraphLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
+    "AzureWhisperVideoSegmentLoader": "langchain_community.document_loaders.video_transcript",  # noqa: E501
+    "AzureWhisperVideoParagraphLoader": "langchain_community.document_loaders.video_transcript",  # noqa: E501
     "AZLyricsLoader": "langchain_community.document_loaders.azlyrics",
     "AcreomLoader": "langchain_community.document_loaders.acreom",
     "AirbyteCDKLoader": "langchain_community.document_loaders.airbyte",
@@ -369,8 +369,8 @@ _module_lookup = {
     "KineticaLoader": "langchain_community.document_loaders.kinetica_loader",
     "LakeFSLoader": "langchain_community.document_loaders.lakefs",
     "LarkSuiteDocLoader": "langchain_community.document_loaders.larksuite",
-    "LocalWhisperVideoSegmentLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
-    "LocalWhisperVideoParagraphLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
+    "LocalWhisperVideoSegmentLoader": "langchain_community.document_loaders.video_transcript",  # noqa: E501
+    "LocalWhisperVideoParagraphLoader": "langchain_community.document_loaders.video_transcript",  # noqa: E501
     "LLMSherpaFileLoader": "langchain_community.document_loaders.llmsherpa",
     "MHTMLLoader": "langchain_community.document_loaders.mhtml",
     "MWDumpLoader": "langchain_community.document_loaders.mediawikidump",
@@ -390,8 +390,8 @@ _module_lookup = {
     "OneDriveFileLoader": "langchain_community.document_loaders.onedrive_file",
     "OneDriveLoader": "langchain_community.document_loaders.onedrive",
     "OnlinePDFLoader": "langchain_community.document_loaders.pdf",
-    "OpenAIWhisperVideoSegmentLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
-    "OpenAIWhisperVideoParagraphLoader": "langchain_community.document_loaders.video_transcript", # noqa: E501
+    "OpenAIWhisperVideoSegmentLoader": "langchain_community.document_loaders.video_transcript",  # noqa: E501
+    "OpenAIWhisperVideoParagraphLoader": "langchain_community.document_loaders.video_transcript",  # noqa: E501
     "OpenCityDataLoader": "langchain_community.document_loaders.open_city_data",
     "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
     "OracleDocLoader": "langchain_community.document_loaders.oracleai",

@@ -35,18 +35,19 @@ from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
 
+
 def _format_start_time(seconds: float) -> str:
     """
-    Formats the given number of seconds 
+    Formats the given number of seconds
     into a human-readable time string.
 
     Parameters:
         seconds (float): The number of seconds to format.
 
     Returns:
-        str: The formatted time string in the format "HH:MM:SS" 
-        if the number of hours is greater than 0, or "MM:SS" 
-        if the number of minutes is greater than 0, or "0:SS" 
+        str: The formatted time string in the format "HH:MM:SS"
+        if the number of hours is greater than 0, or "MM:SS"
+        if the number of minutes is greater than 0, or "0:SS"
         if neither hours nor minutes are present.
     """
     try:
@@ -54,7 +55,7 @@ def _format_start_time(seconds: float) -> str:
     except TypeError:
         logger.exception("invalid number of seconds {seconds}.")
         return ""
-    except Exception as e: 
+    except Exception as e:
         logger.exception(f"failed to convert {seconds}: {str(e)}.")
         return ""
 
@@ -68,7 +69,8 @@ def _format_start_time(seconds: float) -> str:
     else:
         return f"0:{remaining_seconds:02}"
 
-def _convert_video_to_ogg(input_path: str) -> str:
+
+def _convert_video_to_ogg(input_path: str) -> str | None:
     """
     Converts the input video file to an OGG format using FFmpeg.
 
@@ -101,11 +103,11 @@ def _convert_video_to_ogg(input_path: str) -> str:
     installed on the system and is available in the system's PATH.
     """
 
-    ffmpeg_path = shutil.which("ffmpeg") 
+    ffmpeg_path = shutil.which("ffmpeg")
 
     if ffmpeg_path is None:
         raise ImportError("ffmpeg is not found in the system's PATH.")
-    
+
     logger.info(f"Starting video conversion for: {input_path}")
 
     output_path = input_path.rsplit(".", 1)[0] + ".ogg"
@@ -133,6 +135,7 @@ def _convert_video_to_ogg(input_path: str) -> str:
     except subprocess.CalledProcessError as e:
         logger.error(f"Error during conversion of {input_path}: {e}")
         return None
+
 
 class AzureWhisperVideoSegmentLoader(BaseLoader):
     """A document loader that processes video files, converts them to .ogg,
@@ -180,9 +183,7 @@ class AzureWhisperVideoSegmentLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """A lazy loader that processes video segments and yields Document objects."""
-        logger.info(
-            f"Started processing {self.video_path} through AzureOpenAI"
-        )
+        logger.info(f"Started processing {self.video_path} through AzureOpenAI")
 
         converted_path = _convert_video_to_ogg(self.video_path)
         if not converted_path:
@@ -214,9 +215,7 @@ class AzureWhisperVideoSegmentLoader(BaseLoader):
 
         logger.info(f"Completed processing all segments for video: {self.video_path}")
 
-
-
-    def transcribe_video(self, video_file: str):
+    def transcribe_video(self, video_file: str) -> dict:
         """
         A function that transcribes a video file using Azure OpenAI's API.
 
@@ -224,7 +223,7 @@ class AzureWhisperVideoSegmentLoader(BaseLoader):
             video_file (str): The path to the video file to transcribe.
 
         Returns:
-            dict: The transcription result in verbose JSON 
+            dict: The transcription result in verbose JSON
             format or an empty dictionary if there is an error.
         """
         logger.info(f"Starting transcription for video file: {video_file}")
@@ -251,9 +250,9 @@ class AzureWhisperVideoSegmentLoader(BaseLoader):
 
 class AzureWhisperVideoParagraphLoader(BaseLoader):
     """
-    A document loader that processes video files, 
-    converts them to .ogg, and transcribes them 
-    into paragraphs with predefined sentence 
+    A document loader that processes video files,
+    converts them to .ogg, and transcribes them
+    into paragraphs with predefined sentence
     size using Azure OpenAI's API.
     """
 
@@ -279,18 +278,16 @@ class AzureWhisperVideoParagraphLoader(BaseLoader):
         self.deployment_id = deployment_id
         self.paragraph_sentence_size = paragraph_sentence_size
         logger.info(
-            f"Using Azure OpenAI Whisper model with '{deployment_id}' " 
+            f"Using Azure OpenAI Whisper model with '{deployment_id}' "
             f"for video path: {video_path}"
         )
 
     def lazy_load(self) -> Iterator[Document]:
         """
-        A lazy loader that processes video segments 
+        A lazy loader that processes video segments
         and yields Document objects.
         """
-        logger.info(
-            f"Started processing {self.video_path} through AzureOpenAI"
-        )
+        logger.info(f"Started processing {self.video_path} through AzureOpenAI")
 
         converted_path = _convert_video_to_ogg(self.video_path)
         if not converted_path:
@@ -327,16 +324,16 @@ class AzureWhisperVideoParagraphLoader(BaseLoader):
                 },
             )
 
-    def transcribe_video(self, video_file: str):
+    def transcribe_video(self, video_file: str) -> dict:
         """
-        A function that transcribes a video file 
+        A function that transcribes a video file
         using Azure OpenAI's API.
 
         Parameters:
             video_file (str): The path to the video file to transcribe.
 
         Returns:
-            dict: The transcription result in verbose JSON 
+            dict: The transcription result in verbose JSON
             format or an empty dictionary if there is an error.
         """
         logger.info(f"Starting transcription for video file: {video_file}")
@@ -360,7 +357,7 @@ class AzureWhisperVideoParagraphLoader(BaseLoader):
             logger.exception("unexpected error during transcription of video file")
             return {}
 
-    def build_paragraphs(self, data):
+    def build_paragraphs(self, data) -> list:
         """
         Build paragraphs from transcribed data.
         """
@@ -396,6 +393,7 @@ class AzureWhisperVideoParagraphLoader(BaseLoader):
                 }
             )
         return paragraphs
+
 
 class OpenAIWhisperVideoSegmentLoader(BaseLoader):
     """A document loader that processes video files, converts them to .ogg,
@@ -463,18 +461,18 @@ class OpenAIWhisperVideoSegmentLoader(BaseLoader):
 
         logger.info(f"Completed processing all segments for video: {self.video_path}")
 
-    def transcribe_video(self, video_file: str):
+    def transcribe_video(self, video_file: str) -> dict:
         """
-        A function that transcribes a video 
+        A function that transcribes a video
         file using Azure OpenAI's API.
 
         Parameters:
-            video_file (str): The path to the 
+            video_file (str): The path to the
             video file to transcribe.
 
         Returns:
-            dict: The transcription result in verbose 
-            JSON format or an empty dictionary if 
+            dict: The transcription result in verbose
+            JSON format or an empty dictionary if
             there is an error.
         """
         logger.info(f"Starting transcription for video file {video_file}")
@@ -498,11 +496,12 @@ class OpenAIWhisperVideoSegmentLoader(BaseLoader):
             logger.exception("unexpected error during transcription of video file")
             return {}
 
+
 class OpenAIWhisperVideoParagraphLoader(BaseLoader):
     """
-    A document loader that processes video files, 
-    converts them to .ogg, and transcribes them 
-    into paragraphs with predefined sentence size 
+    A document loader that processes video files,
+    converts them to .ogg, and transcribes them
+    into paragraphs with predefined sentence size
     using OpenAI's API.
     """
 
@@ -534,7 +533,7 @@ class OpenAIWhisperVideoParagraphLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """
-        A lazy loader that processes video segments 
+        A lazy loader that processes video segments
         and yields Document objects.
         """
         logger.info(f"Started processing {self.video_path} through AzureOpenAI")
@@ -574,17 +573,17 @@ class OpenAIWhisperVideoParagraphLoader(BaseLoader):
                 },
             )
 
-    def transcribe_video(self, video_file: str):
+    def transcribe_video(self, video_file: str) -> dict:
         """
-        A function that transcribes a video 
+        A function that transcribes a video
         file using Azure OpenAI's API.
 
         Parameters:
-            video_file (str): The path to the 
+            video_file (str): The path to the
             video file to transcribe.
 
         Returns:
-            dict: The transcription result in verbose 
+            dict: The transcription result in verbose
             JSON format or an empty dictionary if there is an error.
         """
         logger.info(f"Starting transcription for video file: {video_file}")
@@ -608,7 +607,7 @@ class OpenAIWhisperVideoParagraphLoader(BaseLoader):
             logger.exception("unexpected error during transcription of video file")
             return {}
 
-    def build_paragraphs(self, data):
+    def build_paragraphs(self, data) -> list:
         paragraphs = []
         i = 0
         while i < len(data):
@@ -642,21 +641,22 @@ class OpenAIWhisperVideoParagraphLoader(BaseLoader):
             )
         return paragraphs
 
+
 class LocalWhisperVideoSegmentLoader(BaseLoader):
     """
-    A document loader that processes video 
-    files and transcribes them using 
+    A document loader that processes video
+    files and transcribes them using
     Whisper locally.
     """
 
     def __init__(self, video_path: str, model_name="small") -> None:
         """
-        Initialize the loader with a video 
+        Initialize the loader with a video
         path and a Whisper model.
 
         Args:
             video_path: The path to the video file to load.
-            model_name: The Whisper model name to use 
+            model_name: The Whisper model name to use
             for transcription.Defaults to "small".
 
         Raises:
@@ -676,11 +676,11 @@ class LocalWhisperVideoSegmentLoader(BaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """
-        A lazy loader that processes video 
+        A lazy loader that processes video
         segments and yields Document objects.
 
-        This method transcribes a video and 
-        yields each segment as a Document, including 
+        This method transcribes a video and
+        yields each segment as a Document, including
         start time and source file as metadata.
         """
         if not os.path.exists(self.video_path):
@@ -719,10 +719,11 @@ class LocalWhisperVideoSegmentLoader(BaseLoader):
         except Exception as e:
             raise Exception(f"An error occurred during transcription: {e}")
 
+
 class LocalWhisperVideoParagraphLoader(BaseLoader):
     """
-    A document loader that processes video files 
-    and transcribes them into paragraphs with 
+    A document loader that processes video files
+    and transcribes them into paragraphs with
     predefined sentence size using Whisper.
     """
 
@@ -730,15 +731,15 @@ class LocalWhisperVideoParagraphLoader(BaseLoader):
         self, video_path: str, paragraph_sentence_size: int, model_name="small"
     ) -> None:
         """
-        Initialize the loader with a video path, 
+        Initialize the loader with a video path,
         a Whisper model, and paragraph sentence size.
 
         Args:
             video_path (str): The path to the video file to load.
-            paragraph_sentence_size (int): The number of sentences 
+            paragraph_sentence_size (int): The number of sentences
             to typically include in a paragraph.
 
-            model_name (str): The Whisper model name to use for 
+            model_name (str): The Whisper model name to use for
             transcription. Defaults to "small".
 
         Raises:
@@ -757,7 +758,7 @@ class LocalWhisperVideoParagraphLoader(BaseLoader):
             f"Loaded Whisper model '{model_name}' locally for video path: {video_path}"
         )
 
-    def build_paragraphs(self, data):
+    def build_paragraphs(self, data) -> list:
         """Build paragraphs from transcribed data."""
         paragraphs = []
         i = 0

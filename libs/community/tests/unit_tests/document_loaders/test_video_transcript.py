@@ -1,5 +1,6 @@
 import unittest
 
+import pytest
 from langchain_community.document_loaders.video_transcript import (
     AzureWhisperVideoParagraphLoader,
     AzureWhisperVideoSegmentLoader,
@@ -18,6 +19,7 @@ class TestVideoTranscriptHelpers(unittest.TestCase):
         self.assertEqual(_format_start_time(3600.5), "01:00:00")
         self.assertEqual(_format_start_time(3600.6), "01:00:01")
 
+@pytest.mark.requires("openai", "openai-whisper")
 class TestAzureWhisperVideoSegmentLoader(unittest.TestCase):
     def test_class_loading(self):
         """Test the initialization of AzureWhisperVideoSegmentLoader."""
@@ -30,6 +32,7 @@ class TestAzureWhisperVideoSegmentLoader(unittest.TestCase):
         )
         self.assertIsInstance(loader, AzureWhisperVideoSegmentLoader)
 
+@pytest.mark.requires("openai", "openai-whisper")
 class TestAzureWhisperVideoParagraphLoader(unittest.TestCase):
     def test_class_loading(self):
         """Test the initialization of AzureWhisperVideoSegmentLoader."""
@@ -39,10 +42,11 @@ class TestAzureWhisperVideoParagraphLoader(unittest.TestCase):
             api_key="test",
             api_version="test",
             azure_endpoint="test",
-            paragraph_sentence_size=3
+            paragraph_sentence_size=3,
         )
         self.assertIsInstance(loader, AzureWhisperVideoParagraphLoader)
 
+@pytest.mark.requires("openai", "openai-whisper")
 class TestOpenAIWhisperVideoSegmentLoader(unittest.TestCase):
     def test_class_loading(self):
         """Test the initialization of AzureWhisperVideoSegmentLoader."""
@@ -52,12 +56,12 @@ class TestOpenAIWhisperVideoSegmentLoader(unittest.TestCase):
         )
         self.assertIsInstance(loader, OpenAIWhisperVideoSegmentLoader)
 
+
+@pytest.mark.requires("openai", "openai-whisper")
 class TestOpenAIWhisperVideoParagraLoader(unittest.TestCase):
     def test_class_loading(self):
         """Test the initialization of AzureWhisperVideoSegmentLoader."""
         loader = OpenAIWhisperVideoParagraphLoader(
-            video_path="test",
-            api_key="test",
-            paragraph_sentence_size=3
+            video_path="test", api_key="test", paragraph_sentence_size=3
         )
         self.assertIsInstance(loader, OpenAIWhisperVideoParagraphLoader)
