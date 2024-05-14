@@ -22,14 +22,15 @@ class SearchInput(BaseModel):
     """Input for the AskNews Search tool."""
 
     query: str = Field(
-        description="Search query to be used for finding real-time or historical news information."
+        description="Search query to be used for finding real-time or historical news "
+        "information."
     )
     hours_back: Optional[int] = Field(
         0,
-        description="If the Assistant deems that the event may have occurred more than 48 hours ago, "
-        "it estimates the number of hours back to search. For example, if the event was one month ago, "
-        "the Assistant may set this to 720. One week would be 168. The Assistant can estimate up to "
-        "on year back (8760)."
+        description="If the Assistant deems that the event may have occurred more "
+        "than 48 hours ago, it estimates the number of hours back to search. For "
+        "example, if the event was one month ago, the Assistant may set this to 720. "
+        "One week would be 168. The Assistant can estimate up to on year back (8760).",
     )
 
 
@@ -38,8 +39,8 @@ class AskNewsSearch(BaseTool):
 
     name: str = "asknews_search"
     description: str = (
-        "This tool allows you to perform a search on up-to-date news and historical news. "
-        "If you needs news from more than 48 hours ago, you can estimate the "
+        "This tool allows you to perform a search on up-to-date news and historical "
+        "news. If you needs news from more than 48 hours ago, you can estimate the "
         "number of hours back to search."
     )
     api_wrapper: AskNewsAPIWrapper = Field(default_factory=AskNewsAPIWrapper)
