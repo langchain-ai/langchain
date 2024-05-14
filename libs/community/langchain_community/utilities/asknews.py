@@ -63,10 +63,7 @@ class AskNewsAPIWrapper(BaseModel):
         return values
 
     def search_news(
-        self,
-        query: str,
-        max_results: int = 10,
-        hours_back: int = 0
+        self, query: str, max_results: int = 10, hours_back: int = 0
     ) -> str:
         """Search news in AskNews API synchronously."""
         if hours_back > 48:
@@ -92,10 +89,7 @@ class AskNewsAPIWrapper(BaseModel):
         return response.as_string
 
     async def asearch_news(
-        self,
-        query: str,
-        max_results: int = 10,
-        hours_back: int = 0
+        self, query: str, max_results: int = 10, hours_back: int = 0
     ) -> str:
         """Search news in AskNews API asynchronously."""
         if hours_back > 48:
