@@ -4,28 +4,32 @@ from langchain_community.utilities.anysdk import AnySdkWrapper, CrudControls
 
 
 class FakeSdk:
+    def get_things(self) -> dict:
+        """Gets Thing"""
+        return self._dummy_return(123)
+
     def get_thing(self, thing_id: int) -> dict:
-        """Gets Things"""
+        """Gets Thing"""
         return self._dummy_return(thing_id)
 
     def create_thing(self, thing_id: int) -> dict:
-        """Creates Things"""
+        """Creates Thing"""
         return self._dummy_return(thing_id)
 
     def post_thing(self, thing_id: int) -> dict:
-        """Posts Things"""
+        """Posts Thing"""
         return self._dummy_return(thing_id)
 
     def put_thing(self, thing_id: int) -> dict:
-        """Puts Things"""
+        """Puts Thing"""
         return self._dummy_return(thing_id)
 
     def delete_thing(self, thing_id: int) -> dict:
-        """Deletes Things"""
+        """Deletes Thing"""
         return self._dummy_return(thing_id)
 
     def confabulate_thing(self, thing_id: int) -> dict:
-        """Confabulates Things -- example of custom verbs"""
+        """Confabulates Thing -- example of custom verbs"""
         return self._dummy_return(thing_id)
 
     def _dummy_return(self, thing_id: int) -> dict:
@@ -34,14 +38,12 @@ class FakeSdk:
 
 
 client = {"client": FakeSdk()}
-crud_controls = {
-    "crud_controls": CrudControls(
-        read=True,
-        create=True,
-        update=True,
-        delete=True,
-    )
-}
+crud_controls = CrudControls(
+    read=True,
+    create=True,
+    update=True,
+    delete=True,
+)
 
 anysdk = AnySdkWrapper(
     client=client,
@@ -53,74 +55,88 @@ def test_operations_is_populated() -> None:
     assert len(anysdk.operations) != 0
 
 
+def test_get_things_no_input() -> None:
+    matching_tool = next(
+        (tool for tool in anysdk.operations if tool.name == "get_things"), None
+    )
+    assert json.loads(matching_tool._run())["response"]["id"] == 123
+
+
 def test_get_thing() -> None:
+    matching_tool = next(
+        (tool for tool in anysdk.operations if tool.name == "get_thing"), None
+    )
     assert (
-        json.loads(anysdk.run("get_thing", json.dumps({"thing_id": 123})))["response"][
-            "id"
-        ]
+        json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"]["id"]
         == 123
     )
 
 
-def test_create_thing() -> None:
+def test_create_thing_string_input() -> None:
+    matching_tool = next(
+        (tool for tool in anysdk.operations if tool.name == "create_thing"), None
+    )
     assert (
-        json.loads(anysdk.run("create_thing", json.dumps({"thing_id": 123})))[
-            "response"
-        ]["id"]
+        json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"]["id"]
         == 123
     )
+
+
+def test_create_thing_kwarg_input() -> None:
+    matching_tool = next(
+        (tool for tool in anysdk.operations if tool.name == "create_thing"), None
+    )
+    assert json.loads(matching_tool._run(thing_id=123))["response"]["id"] == 123
 
 
 def test_post_thing() -> None:
+    matching_tool = next(
+        (tool for tool in anysdk.operations if tool.name == "post_thing"), None
+    )
     assert (
-        json.loads(anysdk.run("post_thing", json.dumps({"thing_id": 123})))["response"][
-            "id"
-        ]
+        json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"]["id"]
         == 123
     )
 
 
 def test_put_thing() -> None:
+    matching_tool = next(
+        (tool for tool in anysdk.operations if tool.name == "put_thing"), None
+    )
     assert (
-        json.loads(anysdk.run("put_thing", json.dumps({"thing_id": 123})))["response"][
-            "id"
-        ]
+        json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"]["id"]
         == 123
     )
 
 
 def test_delete_thing() -> None:
+    matching_tool = next(
+        (tool for tool in anysdk.operations if tool.name == "delete_thing"), None
+    )
     assert (
-        json.loads(anysdk.run("delete_thing", json.dumps({"thing_id": 123})))[
-            "response"
-        ]["id"]
+        json.loads(matching_tool.run(json.dumps({"thing_id": 123})))["response"]["id"]
         == 123
     )
 
 
 def test_confabulate_thing() -> None:
     """tests example sdk customization"""
-    crud_controls = {
-        "crud_controls": CrudControls(
-            read=True,
-            read_list="confabulate",
-            create=True,
-            update=True,
-            delete=True,
-        )
-    }
+    crud_controls = CrudControls(
+        read_list="confabulate",
+    )
 
     anysdk = AnySdkWrapper(
         client=client,
         crud_controls=crud_controls,
     )
+    matching_tool = next(
+        (tool for tool in anysdk.operations if tool.name == "confabulate_thing"), None
+    )
     assert (
-        json.loads(anysdk.run("confabulate_thing", json.dumps({"thing_id": 123})))[
-            "response"
-        ]["id"]
+        json.loads(matching_tool.run(json.dumps({"thing_id": 123})))["response"]["id"]
         == 123
     )
 
 
 def test_no_hidden_methods() -> None:
-    assert not any(op["mode"].startswith("_") for op in anysdk.operations)
+    assert not any(op.name.startswith("_") for op in anysdk.operations)

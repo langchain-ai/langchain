@@ -8,7 +8,6 @@ from langchain_core.callbacks import (
 )
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.tools import BaseTool
-from langchain_core.utils import get_from_dict_or_env
 
 ANYSDK_CRUD_CONTROLS_CREATE = False
 ANYSDK_CRUD_CONTROLS_READ = True
@@ -22,79 +21,39 @@ ANYSDK_CRUD_CONTROLS_DELETE_LIST = "delete,destroy,remove"
 
 
 class CrudControls(BaseModel):
-    create: Optional[str] = ANYSDK_CRUD_CONTROLS_CREATE
-    create_list: Optional[str] = None
-    read: Optional[str] = ANYSDK_CRUD_CONTROLS_READ
-    read_list: Optional[str] = None
-    update: Optional[str] = ANYSDK_CRUD_CONTROLS_UPDATE
-    update_list: Optional[str] = None
-    delete: Optional[str] = ANYSDK_CRUD_CONTROLS_DELETE
-    delete_list: Optional[str] = None
+    create: Optional[bool] = ANYSDK_CRUD_CONTROLS_CREATE
+    create_list: Optional[str] = ANYSDK_CRUD_CONTROLS_CREATE_LIST
+    read: Optional[bool] = ANYSDK_CRUD_CONTROLS_READ
+    read_list: Optional[str] = ANYSDK_CRUD_CONTROLS_READ_LIST
+    update: Optional[bool] = ANYSDK_CRUD_CONTROLS_UPDATE
+    update_list: Optional[str] = ANYSDK_CRUD_CONTROLS_UPDATE_LIST
+    delete: Optional[bool] = ANYSDK_CRUD_CONTROLS_DELETE
+    delete_list: Optional[str] = ANYSDK_CRUD_CONTROLS_DELETE_LIST
 
     @root_validator
     def validate_environment(cls, values: dict) -> dict:
-        create = get_from_dict_or_env(
-            values,
-            "create",
-            "ANYSDK_CRUD_CONTROLS_CREATE",
-            default=ANYSDK_CRUD_CONTROLS_CREATE,
-        )
-        values["create"] = bool(create)
+        create = values.get("create", ANYSDK_CRUD_CONTROLS_CREATE)
+        values["create"] = create
 
-        create_list: str = get_from_dict_or_env(
-            values,
-            "create_list",
-            "ANYSDK_CRUD_CONTROLS_CREATE_LIST",
-            default=ANYSDK_CRUD_CONTROLS_CREATE_LIST,
-        )
+        create_list = values.get("create_list", ANYSDK_CRUD_CONTROLS_CREATE_LIST)
         values["create_list"] = create_list.split(",")
 
-        read = get_from_dict_or_env(
-            values,
-            "read",
-            "ANYSDK_CRUD_CONTROLS_READ",
-            default=ANYSDK_CRUD_CONTROLS_READ,
-        )
-        values["read"] = bool(read)
+        read = values.get("read", ANYSDK_CRUD_CONTROLS_READ)
+        values["read"] = read
 
-        read_list = get_from_dict_or_env(
-            values,
-            "read_list",
-            "ANYSDK_CRUD_CONTROLS_READ_LIST",
-            default=ANYSDK_CRUD_CONTROLS_READ_LIST,
-        )
+        read_list = values.get("read_list", ANYSDK_CRUD_CONTROLS_READ_LIST)
         values["read_list"] = read_list.split(",")
 
-        update = get_from_dict_or_env(
-            values,
-            "update",
-            "ANYSDK_CRUD_CONTROLS_UPDATE",
-            default=ANYSDK_CRUD_CONTROLS_UPDATE,
-        )
-        values["update"] = bool(update)
+        update = values.get("update", ANYSDK_CRUD_CONTROLS_UPDATE)
+        values["update"] = update
 
-        update_list = get_from_dict_or_env(
-            values,
-            "update_list",
-            "ANYSDK_CRUD_CONTROLS_UPDATE_LIST",
-            default=ANYSDK_CRUD_CONTROLS_UPDATE_LIST,
-        )
+        update_list = values.get("update_list", ANYSDK_CRUD_CONTROLS_UPDATE_LIST)
         values["update_list"] = update_list.split(",")
 
-        delete = get_from_dict_or_env(
-            values,
-            "delete",
-            "ANYSDK_CRUD_CONTROLS_DELETE",
-            default=ANYSDK_CRUD_CONTROLS_DELETE,
-        )
-        values["delete"] = bool(delete)
+        delete = values.get("delete", ANYSDK_CRUD_CONTROLS_DELETE)
+        values["delete"] = delete
 
-        delete_list = get_from_dict_or_env(
-            values,
-            "delete_list",
-            "ANYSDK_CRUD_CONTROLS_DELETE_LIST",
-            default=ANYSDK_CRUD_CONTROLS_DELETE_LIST,
-        )
+        delete_list = values.get("delete_list", ANYSDK_CRUD_CONTROLS_DELETE_LIST)
         values["delete_list"] = delete_list.split(",")
 
         return values
@@ -109,8 +68,10 @@ class AnySDKTool(BaseTool):
 
     def _run(
         self,
-        tool_input: Union[str, dict, None],
+        tool_input: Union[str, dict, None] = None,
+        *args,
         run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs,
     ) -> str:
         try:
             if isinstance(tool_input, dict):
@@ -124,19 +85,22 @@ class AnySDKTool(BaseTool):
                 params = {}
 
             func = getattr(self.client["client"], self.name)
-            result = func(**params)
+            result = func(*args, **params, **kwargs)
             return json.dumps(result, default=str)
         except AttributeError:
             return f"Invalid function name: {self.name}"
 
     async def _arun(
         self,
-        tool_input: str,
+        tool_input: Union[str, dict, None] = None,
+        *args,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
         **kwargs,
     ) -> str:
         return self._run(
             tool_input,
+            *args,
+            run_manager=run_manager,
             **kwargs,
         )
 
