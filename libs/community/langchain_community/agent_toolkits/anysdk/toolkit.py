@@ -2,7 +2,7 @@ from typing import List
 
 from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools import BaseTool
-from langchain_community.tools.anysdk.tool import AnySdkAction
+from langchain_community.tools.anysdk.tool import AnySDKTool
 from langchain_community.utilities.anysdk import AnySdkWrapper
 
 
@@ -23,7 +23,7 @@ class AnySdkToolkit(BaseToolkit):
         cls, anysdk_api_wrapper: AnySdkWrapper
     ) -> "AnySdkToolkit":
         tools = [
-            AnySdkAction(
+            AnySDKTool(
                 name=action["name"],
                 description=action["description"] or "",
                 mode=action["mode"],

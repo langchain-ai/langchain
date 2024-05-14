@@ -1,29 +1,56 @@
 import json
-from typing import Optional
+from json import JSONDecodeError
+from typing import Any, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
 
-from langchain_community.utilities.anysdk import AnySdkWrapper
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 
+class AnySDKTool(BaseTool):
+    """Tool for whatever function is passed into AnySDK."""
 
-class AnySdkAction(BaseTool):
-    """Tool that queries the  AnySdk API."""
-
-    api_wrapper: AnySdkWrapper = Field(default_factory=AnySdkWrapper)
-    mode: str
-    name: str = ""
-    description: str = ""
+    client: Any
+    name: str
+    description: str
 
     def _run(
-        self, run_manager: Optional[CallbackManagerForToolRun] = None, **kwargs: dict
+        self,
+        tool_input: Union[str, dict, None] = None,
+        *args: tuple,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs: dict,
     ) -> str:
-        """Use the  AnySdk API to run an operation."""
         try:
-            instruction_args = {**kwargs}
-            params = json.dumps(instruction_args)
-            return self.api_wrapper.run(self.mode, params)
-        except (ValueError, KeyError):
-            return "Invalid instructions format. \
-                Expected a JSON object with 'action_input' field."
+            if isinstance(tool_input, dict):
+                params = tool_input
+            elif isinstance(tool_input, str):
+                try:
+                    params = json.loads(tool_input)
+                except JSONDecodeError:
+                    params = {}
+            else:
+                params = {}
+
+            func = getattr(self.client["client"], self.name)
+            result = func(*args, **params, **kwargs)
+            return json.dumps(result, default=str)
+        except AttributeError:
+            return f"Invalid function name: {self.name}"
+
+    async def _arun(
+        self,
+        tool_input: Union[str, dict, None] = None,
+        *args: tuple,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        **kwargs: dict,
+    ) -> str:
+        return self._run(
+            tool_input,
+            *args,
+            run_manager=run_manager,
+            **kwargs,
+        )

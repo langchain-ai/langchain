@@ -1,13 +1,8 @@
-import json
-from json import JSONDecodeError
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.tools import BaseTool
+from langchain_community.tools.anysdk.tool import AnySDKTool
 
 ANYSDK_CRUD_CONTROLS_CREATE = False
 ANYSDK_CRUD_CONTROLS_READ = True
@@ -57,52 +52,6 @@ class CrudControls(BaseModel):
         values["delete_list"] = delete_list.split(",")
 
         return values
-
-
-class AnySDKTool(BaseTool):
-    """Tool for whatever function is passed into AnySDK."""
-
-    client: Any
-    name: str
-    description: str
-
-    def _run(
-        self,
-        tool_input: Union[str, dict, None] = None,
-        *args,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs,
-    ) -> str:
-        try:
-            if isinstance(tool_input, dict):
-                params = tool_input
-            elif isinstance(tool_input, str):
-                try:
-                    params = json.loads(tool_input)
-                except JSONDecodeError:
-                    params = {}
-            else:
-                params = {}
-
-            func = getattr(self.client["client"], self.name)
-            result = func(*args, **params, **kwargs)
-            return json.dumps(result, default=str)
-        except AttributeError:
-            return f"Invalid function name: {self.name}"
-
-    async def _arun(
-        self,
-        tool_input: Union[str, dict, None] = None,
-        *args,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
-        **kwargs,
-    ) -> str:
-        return self._run(
-            tool_input,
-            *args,
-            run_manager=run_manager,
-            **kwargs,
-        )
 
 
 class AnySdkWrapper(BaseModel):
