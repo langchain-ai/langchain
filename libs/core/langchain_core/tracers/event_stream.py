@@ -35,11 +35,12 @@ from langchain_core.runnables.utils import (
     _RootEventFilter,
 )
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
+from langchain_core.tracers.log_stream import LogEntry
 from langchain_core.tracers.memory_stream import _MemoryStream
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
-    from langchain_core.runnables import Runnable, RunnableConfig
+    from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 
 logger = logging.getLogger(__name__)
 
@@ -517,6 +518,191 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     def __copy__(self) -> _AstreamEventsCallbackHandler:
         """Copy the tracer."""
         return self
+
+
+async def _astream_events_implementation_v1(
+    runnable: Runnable[Input, Output],
+    input: Any,
+    config: Optional[RunnableConfig] = None,
+    *,
+    include_names: Optional[Sequence[str]] = None,
+    include_types: Optional[Sequence[str]] = None,
+    include_tags: Optional[Sequence[str]] = None,
+    exclude_names: Optional[Sequence[str]] = None,
+    exclude_types: Optional[Sequence[str]] = None,
+    exclude_tags: Optional[Sequence[str]] = None,
+    **kwargs: Any,
+) -> AsyncIterator[StreamEvent]:
+    from langchain_core.runnables.utils import (
+        _RootEventFilter,
+    )
+    from langchain_core.tracers.log_stream import (
+        LogStreamCallbackHandler,
+        RunLog,
+        _astream_log_implementation,
+    )
+
+    stream = LogStreamCallbackHandler(
+        auto_close=False,
+        include_names=include_names,
+        include_types=include_types,
+        include_tags=include_tags,
+        exclude_names=exclude_names,
+        exclude_types=exclude_types,
+        exclude_tags=exclude_tags,
+        _schema_format="streaming_events",
+    )
+
+    run_log = RunLog(state=None)  # type: ignore[arg-type]
+    encountered_start_event = False
+
+    _root_event_filter = _RootEventFilter(
+        include_names=include_names,
+        include_types=include_types,
+        include_tags=include_tags,
+        exclude_names=exclude_names,
+        exclude_types=exclude_types,
+        exclude_tags=exclude_tags,
+    )
+
+    config = ensure_config(config)
+    root_tags = config.get("tags", [])
+    root_metadata = config.get("metadata", {})
+    root_name = config.get("run_name", runnable.get_name())
+
+    # Ignoring mypy complaint about too many different union combinations
+    # This arises because many of the argument types are unions
+    async for log in _astream_log_implementation(  # type: ignore[misc]
+        runnable,
+        input,
+        config=config,
+        stream=stream,
+        diff=True,
+        with_streamed_output_list=True,
+        **kwargs,
+    ):
+        run_log = run_log + log
+
+        if not encountered_start_event:
+            # Yield the start event for the root runnable.
+            encountered_start_event = True
+            state = run_log.state.copy()
+
+            event = StreamEvent(
+                event=f"on_{state['type']}_start",
+                run_id=state["id"],
+                name=root_name,
+                tags=root_tags,
+                metadata=root_metadata,
+                data={
+                    "input": input,
+                },
+            )
+
+            if _root_event_filter.include_event(event, state["type"]):
+                yield event
+
+        paths = {
+            op["path"].split("/")[2]
+            for op in log.ops
+            if op["path"].startswith("/logs/")
+        }
+        # Elements in a set should be iterated in the same order
+        # as they were inserted in modern python versions.
+        for path in paths:
+            data: EventData = {}
+            log_entry: LogEntry = run_log.state["logs"][path]
+            if log_entry["end_time"] is None:
+                if log_entry["streamed_output"]:
+                    event_type = "stream"
+                else:
+                    event_type = "start"
+            else:
+                event_type = "end"
+
+            if event_type == "start":
+                # Include the inputs with the start event if they are available.
+                # Usually they will NOT be available for components that operate
+                # on streams, since those components stream the input and
+                # don't know its final value until the end of the stream.
+                inputs = log_entry["inputs"]
+                if inputs is not None:
+                    data["input"] = inputs
+                pass
+
+            if event_type == "end":
+                inputs = log_entry["inputs"]
+                if inputs is not None:
+                    data["input"] = inputs
+
+                # None is a VALID output for an end event
+                data["output"] = log_entry["final_output"]
+
+            if event_type == "stream":
+                num_chunks = len(log_entry["streamed_output"])
+                if num_chunks != 1:
+                    raise AssertionError(
+                        f"Expected exactly one chunk of streamed output, "
+                        f"got {num_chunks} instead. This is impossible. "
+                        f"Encountered in: {log_entry['name']}"
+                    )
+
+                data = {"chunk": log_entry["streamed_output"][0]}
+                # Clean up the stream, we don't need it anymore.
+                # And this avoids duplicates as well!
+                log_entry["streamed_output"] = []
+
+            yield StreamEvent(
+                event=f"on_{log_entry['type']}_{event_type}",
+                name=log_entry["name"],
+                run_id=log_entry["id"],
+                tags=log_entry["tags"],
+                metadata=log_entry["metadata"],
+                data=data,
+            )
+
+        # Finally, we take care of the streaming output from the root chain
+        # if there is any.
+        state = run_log.state
+        if state["streamed_output"]:
+            num_chunks = len(state["streamed_output"])
+            if num_chunks != 1:
+                raise AssertionError(
+                    f"Expected exactly one chunk of streamed output, "
+                    f"got {num_chunks} instead. This is impossible. "
+                    f"Encountered in: {state['name']}"
+                )
+
+            data = {"chunk": state["streamed_output"][0]}
+            # Clean up the stream, we don't need it anymore.
+            state["streamed_output"] = []
+
+            event = StreamEvent(
+                event=f"on_{state['type']}_stream",
+                run_id=state["id"],
+                tags=root_tags,
+                metadata=root_metadata,
+                name=root_name,
+                data=data,
+            )
+            if _root_event_filter.include_event(event, state["type"]):
+                yield event
+
+    state = run_log.state
+
+    # Finally yield the end event for the root runnable.
+    event = StreamEvent(
+        event=f"on_{state['type']}_end",
+        name=root_name,
+        run_id=state["id"],
+        tags=root_tags,
+        metadata=root_metadata,
+        data={
+            "output": state["final_output"],
+        },
+    )
+    if _root_event_filter.include_event(event, state["type"]):
+        yield event
 
 
 async def _astream_events_implementation_v2(

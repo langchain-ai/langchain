@@ -304,7 +304,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
     )
     assert events == [
         {
-            "data": {"input": "hello"},
+            "data": {},
             "event": "on_chain_start",
             "metadata": {},
             "name": "1",
@@ -320,7 +320,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "tags": ["seq:step:1"],
         },
         {
-            "data": {"output": "olleh"},
+            "data": {"input": "hello", "output": "olleh"},
             "event": "on_chain_end",
             "metadata": {},
             "name": "1",
@@ -336,7 +336,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
     )
     assert events == [
         {
-            "data": {"input": "hello"},
+            "data": {},
             "event": "on_chain_start",
             "metadata": {},
             "name": "3",
@@ -352,7 +352,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "tags": ["my_tag", "seq:step:3"],
         },
         {
-            "data": {"output": "olleh"},
+            "data": {"input": "hello", "output": "olleh"},
             "event": "on_chain_end",
             "metadata": {},
             "name": "3",
@@ -447,9 +447,7 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {
-                "output": AIMessageChunk(content="hello world!", id=AnyStr()),
-            },
+            "data": {"output": AIMessageChunk(content="hello world!", id=AnyStr())},
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
             "name": "my_model",
@@ -457,23 +455,6 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
     ]
-
-
-async def test_astream_with_model_in_chain() -> None:
-    """Scenarios with model when it is not the only runnable in the chain."""
-    infinite_cycle = cycle([AIMessage(content="hello world!")])
-    # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
-    model = (
-        GenericFakeChatModel(messages=infinite_cycle)
-        .with_config(
-            {
-                "metadata": {"a": "b"},
-                "tags": ["my_model"],
-                "run_name": "my_model",
-            }
-        )
-        .bind(stop="<stop_token>")
-    )
 
     @RunnableLambda
     def i_dont_stream(input: Any, config: RunnableConfig) -> Any:
@@ -527,7 +508,22 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {
                 "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": AIMessage(content="hello world!", id=AnyStr()),
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessage(
+                                    content="hello world!", id=AnyStr()
+                                ),
+                                "text": "hello world!",
+                                "type": "ChatGeneration",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
@@ -605,7 +601,22 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {
                 "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": AIMessage(content="hello world!", id=AnyStr()),
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessage(
+                                    content="hello world!", id=AnyStr()
+                                ),
+                                "text": "hello world!",
+                                "type": "ChatGeneration",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
@@ -776,7 +787,22 @@ async def test_event_stream_with_simple_chain() -> None:
                         ]
                     ]
                 },
-                "output": AIMessageChunk(content="hello world!", id="ai1"),
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessageChunk(
+                                    content="hello world!", id="ai1"
+                                ),
+                                "text": "hello world!",
+                                "type": "ChatGenerationChunk",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                    "run": None,
+                },
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b", "foo": "bar"},
@@ -831,6 +857,14 @@ async def test_event_streaming_with_tools() -> None:
             "tags": [],
         },
         {
+            "data": {"chunk": "hello"},
+            "event": "on_tool_stream",
+            "metadata": {},
+            "name": "parameterless",
+            "run_id": "",
+            "tags": [],
+        },
+        {
             "data": {"output": "hello"},
             "event": "on_tool_end",
             "metadata": {},
@@ -839,11 +873,20 @@ async def test_event_streaming_with_tools() -> None:
             "tags": [],
         },
     ]
+
     events = await _collect_events(with_callbacks.astream_events({}, version="v1"))  # type: ignore
     assert events == [
         {
             "data": {"input": {}},
             "event": "on_tool_start",
+            "metadata": {},
+            "name": "with_callbacks",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "world"},
+            "event": "on_tool_stream",
             "metadata": {},
             "name": "with_callbacks",
             "run_id": "",
@@ -871,6 +914,14 @@ async def test_event_streaming_with_tools() -> None:
             "tags": [],
         },
         {
+            "data": {"chunk": {"x": 1, "y": "2"}},
+            "event": "on_tool_stream",
+            "metadata": {},
+            "name": "with_parameters",
+            "run_id": "",
+            "tags": [],
+        },
+        {
             "data": {"output": {"x": 1, "y": "2"}},
             "event": "on_tool_end",
             "metadata": {},
@@ -887,6 +938,14 @@ async def test_event_streaming_with_tools() -> None:
         {
             "data": {"input": {"x": 1, "y": "2"}},
             "event": "on_tool_start",
+            "metadata": {},
+            "name": "with_parameters_and_callbacks",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": {"x": 1, "y": "2"}},
+            "event": "on_tool_stream",
             "metadata": {},
             "name": "with_parameters_and_callbacks",
             "run_id": "",
@@ -942,14 +1001,23 @@ async def test_event_stream_with_retriever() -> None:
         },
         {
             "data": {
-                "output": {
-                    "documents": [
-                        Document(page_content="hello world!", metadata={"foo": "bar"}),
-                        Document(
-                            page_content="goodbye world!", metadata={"food": "spare"}
-                        ),
-                    ]
-                },
+                "chunk": [
+                    Document(page_content="hello world!", metadata={"foo": "bar"}),
+                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
+                ]
+            },
+            "event": "on_retriever_stream",
+            "metadata": {},
+            "name": "HardCodedRetriever",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {
+                "output": [
+                    Document(page_content="hello world!", metadata={"foo": "bar"}),
+                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
+                ],
             },
             "event": "on_retriever_end",
             "metadata": {},
@@ -994,7 +1062,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "data": {"input": {"query": "hello"}},
             "event": "on_retriever_start",
             "metadata": {},
-            "name": "HardCodedRetriever",
+            "name": "Retriever",
             "run_id": "",
             "tags": ["seq:step:1"],
         },
@@ -1012,7 +1080,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             },
             "event": "on_retriever_end",
             "metadata": {},
-            "name": "HardCodedRetriever",
+            "name": "Retriever",
             "run_id": "",
             "tags": ["seq:step:1"],
         },
@@ -1323,6 +1391,14 @@ async def test_event_stream_with_retry() -> None:
             "run_id": "",
             "tags": ["seq:step:1"],
         },
+        {
+            "data": {"input": "success", "output": None},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "fail",
+            "run_id": "",
+            "tags": ["seq:step:2"],
+        },
     ]
 
 
@@ -1390,6 +1466,7 @@ async def test_with_llm() -> None:
                         [{"generation_info": None, "text": "abc", "type": "Generation"}]
                     ],
                     "llm_output": None,
+                    "run": None,
                 },
             },
             "event": "on_llm_end",
@@ -1468,7 +1545,7 @@ async def test_events_astream_config() -> None:
             "data": {"input": "hello"},
             "event": "on_chat_model_start",
             "metadata": {},
-            "name": "GenericFakeChatModel",
+            "name": "RunnableConfigurableFields",
             "run_id": "",
             "tags": [],
         },
@@ -1476,7 +1553,7 @@ async def test_events_astream_config() -> None:
             "data": {"chunk": AIMessageChunk(content="Goodbye", id="ai2")},
             "event": "on_chat_model_stream",
             "metadata": {},
-            "name": "GenericFakeChatModel",
+            "name": "RunnableConfigurableFields",
             "run_id": "",
             "tags": [],
         },
@@ -1484,7 +1561,7 @@ async def test_events_astream_config() -> None:
             "data": {"chunk": AIMessageChunk(content=" ", id="ai2")},
             "event": "on_chat_model_stream",
             "metadata": {},
-            "name": "GenericFakeChatModel",
+            "name": "RunnableConfigurableFields",
             "run_id": "",
             "tags": [],
         },
@@ -1492,17 +1569,15 @@ async def test_events_astream_config() -> None:
             "data": {"chunk": AIMessageChunk(content="world", id="ai2")},
             "event": "on_chat_model_stream",
             "metadata": {},
-            "name": "GenericFakeChatModel",
+            "name": "RunnableConfigurableFields",
             "run_id": "",
             "tags": [],
         },
         {
-            "data": {
-                "output": AIMessageChunk(content="Goodbye world", id="ai2"),
-            },
+            "data": {"output": AIMessageChunk(content="Goodbye world", id="ai2")},
             "event": "on_chat_model_end",
             "metadata": {},
-            "name": "GenericFakeChatModel",
+            "name": "RunnableConfigurableFields",
             "run_id": "",
             "tags": [],
         },
