@@ -7,8 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.48"
-langchain-text-splitters = "^0.0.1"
+langchain-core = ">=0.1.48,<0.3"
+langchain-text-splitters = ">=0.0.1,<0.2"
 ai21 = "^2.2.1"
 
 [tool.poetry.group.test]
@@ -23,6 +23,7 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
 langchain-standard-tests = { path = "../../standard-tests", develop = true }
+langchain-text-splitters = {path = "../../text-splitters", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
