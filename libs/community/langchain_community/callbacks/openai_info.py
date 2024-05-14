@@ -7,6 +7,8 @@ from langchain_core.outputs import LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
     # GPT-4 input
+    "gpt-4o": 0.005,
+    "gpt-4o-2024-05-13": 0.005,
     "gpt-4": 0.03,
     "gpt-4-0314": 0.03,
     "gpt-4-0613": 0.03,
@@ -20,6 +22,8 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-turbo": 0.01,
     "gpt-4-turbo-2024-04-09": 0.01,
     # GPT-4 output
+    "gpt-4o-completion": 0.015,
+    "gpt-4o-2024-05-13-completion": 0.015,
     "gpt-4-completion": 0.06,
     "gpt-4-0314-completion": 0.06,
     "gpt-4-0613-completion": 0.06,

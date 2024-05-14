@@ -537,6 +537,8 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
         """
         model_token_mapping = {
+            "gpt-4o": 128_000,
+            "gpt-4o-2024-05-13": 128_000,
             "gpt-4": 8192,
             "gpt-4-0314": 8192,
             "gpt-4-0613": 8192,
