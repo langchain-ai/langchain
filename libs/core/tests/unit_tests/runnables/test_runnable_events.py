@@ -1649,7 +1649,7 @@ async def test_async_in_async_stream_lambdas() -> None:
     assert events == EXPECTED_EVENTS
 
 
-@pytest.xfail(
+@pytest.mark.xfail(
     reason="This test is failing due to missing functionality."
     "Need to implement logic in _transform_stream_with_config that mimicks the async "
     "variant that uses tap_output_iter"
