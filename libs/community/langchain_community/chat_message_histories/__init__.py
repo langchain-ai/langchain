@@ -108,7 +108,7 @@ __all__ = [
     "UpstashRedisChatMessageHistory",
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
-    "ZepCloudChatMessageHistory"
+    "ZepCloudChatMessageHistory",
 ]
 
 _module_lookup = {
@@ -133,7 +133,7 @@ _module_lookup = {
     "UpstashRedisChatMessageHistory": "langchain_community.chat_message_histories.upstash_redis",  # noqa: E501
     "XataChatMessageHistory": "langchain_community.chat_message_histories.xata",
     "ZepChatMessageHistory": "langchain_community.chat_message_histories.zep",
-    "ZepCloudChatMessageHistory": "langchain_community.chat_message_histories.zep_cloud",
+    "ZepCloudChatMessageHistory": "langchain_community.chat_message_histories.zep_cloud", # noqa: E501
 }
 
 

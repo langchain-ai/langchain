@@ -13,13 +13,13 @@ from langchain_core.messages import (
 if TYPE_CHECKING:
     from zep_cloud import (
         Memory,
+        MemoryGetRequestMemoryType,
         MemorySearchResult,
         Message,
         NotFoundError,
-        MemoryGetRequestMemoryType,
         RoleType,
         SearchScope,
-        SearchType
+        SearchType,
     )
 
 logger = logging.getLogger(__name__)
@@ -67,10 +67,13 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
             memory_key="chat_history", chat_memory=zep_chat_history
         )
 
-    Zep - Recall, understand, and extract data from chat histories. Power personalized AI experiences.
+    Zep - Recall, understand, and extract data from chat histories.
+    Power personalized AI experiences.
 
     Zep is a long-term memory service for AI Assistant apps.
-    With Zep, you can provide AI assistants with the ability to recall past conversations, no matter how distant,
+    With Zep, you can provide AI assistants with the
+    ability to recall past conversations,
+    no matter how distant,
     while also reducing hallucinations, latency, and cost.
 
     see Zep Cloud Docs: https://help.getzep.com
@@ -84,18 +87,18 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
     """
 
     def __init__(
-            self,
-            session_id: str,
-            api_key: str,
-            *,
-            memory_type: Optional[MemoryGetRequestMemoryType] = None,
-            lastn: Optional[int] = None,
-            ai_prefix: Optional[str] = None,
-            human_prefix: Optional[str] = None,
-            summary_instruction: Optional[str] = None,
+        self,
+        session_id: str,
+        api_key: str,
+        *,
+        memory_type: Optional[MemoryGetRequestMemoryType] = None,
+        lastn: Optional[int] = None,
+        ai_prefix: Optional[str] = None,
+        human_prefix: Optional[str] = None,
+        summary_instruction: Optional[str] = None,
     ) -> None:
         try:
-            from zep_cloud.client import Zep, AsyncZep
+            from zep_cloud.client import AsyncZep, Zep
         except ImportError:
             raise ImportError(
                 "Could not import zep-cloud package. "
@@ -155,7 +158,9 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
         from zep_cloud import NotFoundError
 
         try:
-            zep_memory: Memory = self.zep_client.memory.get(self.session_id, memory_type=self.memory_type, lastn=self.lastn)
+            zep_memory: Memory = self.zep_client.memory.get(
+                self.session_id, memory_type=self.memory_type, lastn=self.lastn
+            )
         except NotFoundError:
             logger.warning(
                 f"Session {self.session_id} not found in Zep. Returning None"
@@ -164,7 +169,7 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
         return zep_memory
 
     def add_user_message(  # type: ignore[override]
-            self, message: str, metadata: Optional[Dict[str, Any]] = None
+        self, message: str, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Convenience method for adding a human message string to the store.
 
@@ -175,7 +180,7 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
         self.add_message(HumanMessage(content=message), metadata=metadata)
 
     def add_ai_message(  # type: ignore[override]
-            self, message: str, metadata: Optional[Dict[str, Any]] = None
+        self, message: str, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Convenience method for adding an AI message string to the store.
 
@@ -186,9 +191,7 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
         self.add_message(AIMessage(content=message), metadata=metadata)
 
     def add_message(
-            self,
-            message: BaseMessage,
-            metadata: Optional[Dict[str, Any]] = None
+        self, message: BaseMessage, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Append the message to the Zep memory history"""
         from zep_cloud import Message
@@ -200,9 +203,9 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
                     content=message.content,
                     role=message.type,
                     role_type=get_zep_message_role_type(message.type),
-                    metadata=metadata
+                    metadata=metadata,
                 )
-            ]
+            ],
         )
 
     def add_messages(self, messages: Sequence[BaseMessage]) -> None:
@@ -238,13 +241,13 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
         await self.zep_client_async.memory.add(self.session_id, messages=zep_messages)
 
     def search(
-            self,
-            query: str,
-            metadata: Optional[Dict] = None,
-            search_scope: SearchScope = "messages",
-            search_type: SearchType = "similarity",
-            mmr_lambda: Optional[float] = None,
-            limit: Optional[int] = None,
+        self,
+        query: str,
+        metadata: Optional[Dict] = None,
+        search_scope: SearchScope = "messages",
+        search_type: SearchType = "similarity",
+        mmr_lambda: Optional[float] = None,
+        limit: Optional[int] = None,
     ) -> List[MemorySearchResult]:
         """Search Zep memory for messages matching the query"""
 
@@ -255,7 +258,7 @@ class ZepCloudChatMessageHistory(BaseChatMessageHistory):
             search_scope=search_scope,
             search_type=search_type,
             mmr_lambda=mmr_lambda,
-            limit=limit
+            limit=limit,
         )
 
     def clear(self) -> None:

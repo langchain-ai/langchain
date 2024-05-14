@@ -36,7 +36,7 @@ try:
 
         Zep - Recall, understand, and extract data from chat histories. Power personalized AI experiences.
         =========
-        Zep is a long-term memory service for AI Assistant apps. With Zep, you can provide AI assistants with the ability to recall past conversations, 
+        Zep is a long-term memory service for AI Assistant apps. With Zep, you can provide AI assistants with the ability to recall past conversations,
         no matter how distant, while also reducing hallucinations, latency, and cost.
 
         For more information on the zep-python package, see:
@@ -47,17 +47,17 @@ try:
         chat_memory: ZepCloudChatMessageHistory
 
         def __init__(
-                self,
-                session_id: str,
-                api_key: str,
-                memory_type: Optional[MemoryGetRequestMemoryType] = None,
-                lastn: Optional[int] = None,
-                output_key: Optional[str] = None,
-                input_key: Optional[str] = None,
-                return_messages: bool = False,
-                human_prefix: str = "Human",
-                ai_prefix: str = "AI",
-                memory_key: str = "history",
+            self,
+            session_id: str,
+            api_key: str,
+            memory_type: Optional[MemoryGetRequestMemoryType] = None,
+            lastn: Optional[int] = None,
+            output_key: Optional[str] = None,
+            input_key: Optional[str] = None,
+            return_messages: bool = False,
+            human_prefix: str = "Human",
+            ai_prefix: str = "AI",
+            memory_key: str = "history",
         ):
             """Initialize ZepMemory.
 
@@ -99,10 +99,10 @@ try:
             )
 
         def save_context(
-                self,
-                inputs: Dict[str, Any],
-                outputs: Dict[str, str],
-                metadata: Optional[Dict[str, Any]] = None,
+            self,
+            inputs: Dict[str, Any],
+            outputs: Dict[str, str],
+            metadata: Optional[Dict[str, Any]] = None,
         ) -> None:
             """Save context from this conversation to buffer.
 

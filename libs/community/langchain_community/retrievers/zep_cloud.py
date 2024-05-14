@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -10,9 +9,8 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
-from zep_cloud import SearchScope, SearchType, MemorySearchResult
-from zep_cloud.client import Zep, AsyncZep
-
+from zep_cloud import MemorySearchResult, SearchScope, SearchType
+from zep_cloud.client import AsyncZep, Zep
 
 
 class ZepCloudRetriever(BaseRetriever):
@@ -29,13 +27,16 @@ class ZepCloudRetriever(BaseRetriever):
         api_key: Your Zep API key
         session_id: Identifies your user or a user's session (required)
         top_k: Number of documents to return (default: 3, optional)
-        search_type: Type of search to perform (similarity / mmr) (default: similarity, optional)
+        search_type: Type of search to perform (similarity / mmr)
+            (default: similarity, optional)
         mmr_lambda: Lambda value for MMR search. Defaults to 0.5 (optional)
 
-    Zep - Recall, understand, and extract data from chat histories. Power personalized AI experiences.
+    Zep - Recall, understand, and extract data from chat histories.
+    Power personalized AI experiences.
     =========
     Zep is a long-term memory service for AI Assistant apps.
-    With Zep, you can provide AI assistants with the ability to recall past conversations,
+    With Zep, you can provide AI assistants with the ability
+    to recall past conversations,
     no matter how distant, while also reducing hallucinations, latency, and cost.
 
     see Zep Cloud Docs: https://help.getzep.com
@@ -61,7 +62,7 @@ class ZepCloudRetriever(BaseRetriever):
     @root_validator(pre=True)
     def create_client(cls, values: dict) -> dict:
         try:
-            from zep_cloud.client import Zep, AsyncZep
+            from zep_cloud.client import AsyncZep, Zep
         except ImportError:
             raise ImportError(
                 "Could not import zep-cloud package. "
@@ -85,7 +86,7 @@ class ZepCloudRetriever(BaseRetriever):
                     "created_at": r.message.created_at,
                     "token_count": r.message.token_count,
                     "role": r.message.role or r.message.role_type,
-                }
+                },
             )
             for r in results
             if r.message
@@ -125,7 +126,7 @@ class ZepCloudRetriever(BaseRetriever):
             search_scope=self.search_scope,
             search_type=self.search_type,
             mmr_lambda=self.mmr_lambda,
-            limit=self.top_k
+            limit=self.top_k,
         )
 
         if self.search_scope == "summary":
@@ -150,7 +151,7 @@ class ZepCloudRetriever(BaseRetriever):
             search_scope=self.search_scope,
             search_type=self.search_type,
             mmr_lambda=self.mmr_lambda,
-            limit=self.top_k
+            limit=self.top_k,
         )
 
         if self.search_scope == "summary":

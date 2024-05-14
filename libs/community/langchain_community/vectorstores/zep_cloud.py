@@ -9,7 +9,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
-    from zep_cloud import DocumentCollectionResponse, CreateDocumentRequest, SearchType
+    from zep_cloud import CreateDocumentRequest, DocumentCollectionResponse, SearchType
 
 logger = logging.getLogger()
 
@@ -28,9 +28,9 @@ class ZepCloudVectorStore(VectorStore):
     """
 
     def __init__(
-            self,
-            collection_name: str,
-            api_key: str,
+        self,
+        collection_name: str,
+        api_key: str,
     ) -> None:
         super().__init__()
         if not collection_name:
@@ -38,7 +38,7 @@ class ZepCloudVectorStore(VectorStore):
                 "collection_name must be specified when using ZepVectorStore."
             )
         try:
-            from zep_cloud.client import Zep, AsyncZep
+            from zep_cloud.client import AsyncZep, Zep
         except ImportError:
             raise ImportError(
                 "Could not import zep-python python package. "
@@ -76,16 +76,14 @@ class ZepCloudVectorStore(VectorStore):
         """
         Create a new collection in the Zep backend.
         """
-        collection = self._client.document.add_collection(
-            self.collection_name
-        )
+        collection = self._client.document.add_collection(self.collection_name)
         return collection
 
     def _generate_documents_to_add(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[Dict[Any, Any]]] = None,
-            document_ids: Optional[List[str]] = None,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        document_ids: Optional[List[str]] = None,
     ) -> List[CreateDocumentRequest]:
         from zep_cloud import CreateDocumentRequest as ZepDocument
 
@@ -101,11 +99,11 @@ class ZepCloudVectorStore(VectorStore):
         return documents
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[Dict[str, Any]]] = None,
-            document_ids: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[Dict[str, Any]]] = None,
+        document_ids: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -120,30 +118,34 @@ class ZepCloudVectorStore(VectorStore):
         """
 
         documents = self._generate_documents_to_add(texts, metadatas, document_ids)
-        uuids = self._client.document.add_documents(self.collection_name, request=documents)
+        uuids = self._client.document.add_documents(
+            self.collection_name, request=documents
+        )
 
         return uuids
 
     async def aadd_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[Dict[str, Any]]] = None,
-            document_ids: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[Dict[str, Any]]] = None,
+        document_ids: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore."""
         documents = self._generate_documents_to_add(texts, metadatas, document_ids)
-        uuids = await self._client_async.document.add_documents(self.collection_name, request=documents)
+        uuids = await self._client_async.document.add_documents(
+            self.collection_name, request=documents
+        )
 
         return uuids
 
     def search(
-            self,
-            query: str,
-            search_type: SearchType,
-            metadata: Optional[Dict[str, Any]] = None,
-            k: int = 3,
-            **kwargs: Any,
+        self,
+        query: str,
+        search_type: SearchType,
+        metadata: Optional[Dict[str, Any]] = None,
+        k: int = 3,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query using specified search type."""
         if search_type == "similarity":
@@ -159,12 +161,12 @@ class ZepCloudVectorStore(VectorStore):
             )
 
     async def asearch(
-            self,
-            query: str,
-            search_type: str,
-            metadata: Optional[Dict[str, Any]] = None,
-            k: int = 3,
-            **kwargs: Any,
+        self,
+        query: str,
+        search_type: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        k: int = 3,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query using specified search type."""
         if search_type == "similarity":
@@ -182,11 +184,11 @@ class ZepCloudVectorStore(VectorStore):
             )
 
     def similarity_search(
-            self,
-            query: str,
-            k: int = 4,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query."""
 
@@ -196,11 +198,11 @@ class ZepCloudVectorStore(VectorStore):
         return [doc for doc, _ in results]
 
     def similarity_search_with_score(
-            self,
-            query: str,
-            k: int = 4,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with distance."""
 
@@ -209,11 +211,11 @@ class ZepCloudVectorStore(VectorStore):
         )
 
     def _similarity_search_with_relevance_scores(
-            self,
-            query: str,
-            k: int = 4,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
         Default similarity search with relevance scores. Modify if necessary
@@ -239,7 +241,7 @@ class ZepCloudVectorStore(VectorStore):
             text=query,
             limit=k,
             metadata=metadata,
-            **kwargs
+            **kwargs,
         )
 
         return [
@@ -254,11 +256,11 @@ class ZepCloudVectorStore(VectorStore):
         ]
 
     async def asimilarity_search_with_relevance_scores(
-            self,
-            query: str,
-            k: int = 4,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query."""
 
@@ -267,7 +269,7 @@ class ZepCloudVectorStore(VectorStore):
             text=query,
             limit=k,
             metadata=metadata,
-            **kwargs
+            **kwargs,
         )
 
         return [
@@ -282,11 +284,11 @@ class ZepCloudVectorStore(VectorStore):
         ]
 
     async def asimilarity_search(
-            self,
-            query: str,
-            k: int = 4,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs most similar to query."""
 
@@ -297,35 +299,35 @@ class ZepCloudVectorStore(VectorStore):
         return [doc for doc, _ in results]
 
     def similarity_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Unsupported in Zep Cloud"""
         warnings.warn("similarity_search_by_vector is not supported in Zep Cloud")
         return []
 
     async def asimilarity_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Unsupported in Zep Cloud"""
         warnings.warn("asimilarity_search_by_vector is not supported in Zep Cloud")
         return []
 
     def max_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
 
@@ -357,16 +359,19 @@ class ZepCloudVectorStore(VectorStore):
             **kwargs,
         )
 
-        return [Document(page_content=d.content, metadata=d.metadata) for d in results.results]
+        return [
+            Document(page_content=d.content, metadata=d.metadata)
+            for d in results.results
+        ]
 
     async def amax_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
 
@@ -380,43 +385,50 @@ class ZepCloudVectorStore(VectorStore):
             **kwargs,
         )
 
-        return [Document(page_content=d.content, metadata=d.metadata) for d in results.results]
+        return [
+            Document(page_content=d.content, metadata=d.metadata)
+            for d in results.results
+        ]
 
     def max_marginal_relevance_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Unsupported in Zep Cloud"""
-        warnings.warn("max_marginal_relevance_search_by_vector is not supported in Zep Cloud")
+        warnings.warn(
+            "max_marginal_relevance_search_by_vector is not supported in Zep Cloud"
+        )
         return []
 
     async def amax_marginal_relevance_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Unsupported in Zep Cloud"""
-        warnings.warn("amax_marginal_relevance_search_by_vector is not supported in Zep Cloud")
+        warnings.warn(
+            "amax_marginal_relevance_search_by_vector is not supported in Zep Cloud"
+        )
         return []
 
     @classmethod
     def from_texts(
-            cls,
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[dict]] = None,
-            collection_name: str = "",
-            api_key: Optional[str] = None,
-            **kwargs: Any,
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        collection_name: str = "",
+        api_key: Optional[str] = None,
+        **kwargs: Any,
     ) -> ZepCloudVectorStore:
         """
         Class method that returns a ZepVectorStore instance initialized from texts.
