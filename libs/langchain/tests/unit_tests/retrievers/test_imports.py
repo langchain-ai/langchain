@@ -47,6 +47,7 @@ EXPECTED_ALL = [
     "WebResearchRetriever",
     "WikipediaRetriever",
     "ZepRetriever",
+    "ZepCloudRetriever",
     "ZillizRetriever",
 ]
 

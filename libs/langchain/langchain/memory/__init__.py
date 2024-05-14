@@ -68,10 +68,12 @@ if TYPE_CHECKING:
         UpstashRedisChatMessageHistory,
         XataChatMessageHistory,
         ZepChatMessageHistory,
+        ZepCloudChatMessageHistory
     )
     from langchain_community.memory.kg import ConversationKGMemory
     from langchain_community.memory.motorhead_memory import MotorheadMemory
     from langchain_community.memory.zep_memory import ZepMemory
+    from langchain_community.memory.zep_cloud_memory import ZepCloudMemory
 
 
 # Create a way to dynamically look up deprecated imports.
@@ -81,6 +83,7 @@ DEPRECATED_LOOKUP = {
     "MotorheadMemory": "langchain_community.memory.motorhead_memory",
     "ConversationKGMemory": "langchain_community.memory.kg",
     "ZepMemory": "langchain_community.memory.zep_memory",
+    "ZepCloudMemory": "langchain_community.memory.zep_cloud_memory",
     "AstraDBChatMessageHistory": "langchain_community.chat_message_histories",
     "CassandraChatMessageHistory": "langchain_community.chat_message_histories",
     "ChatMessageHistory": "langchain_community.chat_message_histories",
@@ -98,6 +101,7 @@ DEPRECATED_LOOKUP = {
     "UpstashRedisChatMessageHistory": "langchain_community.chat_message_histories",
     "XataChatMessageHistory": "langchain_community.chat_message_histories",
     "ZepChatMessageHistory": "langchain_community.chat_message_histories",
+    "ZepCloudChatMessageHistory": "langchain_community.chat_message_histories",
 }
 
 
@@ -143,6 +147,8 @@ __all__ = [
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "ZepMemory",
+    "ZepCloudChatMessageHistory",
+    "ZepCloudMemory",
     "UpstashRedisEntityStore",
     "UpstashRedisChatMessageHistory",
 ]

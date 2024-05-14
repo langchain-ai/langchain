@@ -133,6 +133,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.zep import (
         ZepRetriever,
     )
+    from langchain_community.retrievers.zep_cloud import (
+        ZepCloudRetriever,
+    )
     from langchain_community.retrievers.zilliz import (
         ZillizRetriever,
     )
@@ -179,6 +182,7 @@ _module_lookup = {
     "WikipediaRetriever": "langchain_community.retrievers.wikipedia",
     "YouRetriever": "langchain_community.retrievers.you",
     "ZepRetriever": "langchain_community.retrievers.zep",
+    "ZepCloudRetriever": "langchain_community.retrievers.zep_cloud",
     "ZillizRetriever": "langchain_community.retrievers.zilliz",
     "NeuralDBRetriever": "langchain_community.retrievers.thirdai_neuraldb",
 }
@@ -233,5 +237,6 @@ __all__ = [
     "WikipediaRetriever",
     "YouRetriever",
     "ZepRetriever",
+    "ZepCloudRetriever",
     "ZillizRetriever",
 ]

@@ -71,6 +71,7 @@ if TYPE_CHECKING:
         WebResearchRetriever,
         WikipediaRetriever,
         ZepRetriever,
+        ZepCloudRetriever,
         ZillizRetriever,
     )
 
@@ -114,6 +115,7 @@ DEPRECATED_LOOKUP = {
     "WebResearchRetriever": "langchain_community.retrievers",
     "WikipediaRetriever": "langchain_community.retrievers",
     "ZepRetriever": "langchain_community.retrievers",
+    "ZepCloudRetriever": "langchain_community.retrievers",
     "ZillizRetriever": "langchain_community.retrievers",
     "DocArrayRetriever": "langchain_community.retrievers",
 }
@@ -172,6 +174,7 @@ __all__ = [
     "WebResearchRetriever",
     "WikipediaRetriever",
     "ZepRetriever",
+    "ZepCloudRetriever",
     "NeuralDBRetriever",
     "ZillizRetriever",
 ]
