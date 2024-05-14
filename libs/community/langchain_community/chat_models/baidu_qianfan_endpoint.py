@@ -383,7 +383,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 additional_kwargs = msg.additional_kwargs.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
-                    message=AIMessageChunk(
+                    message=AIMessageChunk(  # type: ignore[call-arg]
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
@@ -410,7 +410,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 additional_kwargs = msg.additional_kwargs.get("function_call", {})
                 chunk = ChatGenerationChunk(
                     text=res["result"],
-                    message=AIMessageChunk(
+                    message=AIMessageChunk(  # type: ignore[call-arg]
                         content=msg.content,
                         role="assistant",
                         additional_kwargs=additional_kwargs,
@@ -552,7 +552,8 @@ class QianfanChatEndpoint(BaseChatModel):
         llm = self.bind_tools([schema])
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[schema], first_tool_only=True
+                tools=[schema],  # type: ignore[list-item]
+                first_tool_only=True,  # type: ignore[list-item]
             )
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]
