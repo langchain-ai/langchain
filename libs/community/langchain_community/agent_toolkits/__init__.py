@@ -7,91 +7,94 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.ainetwork.toolkit import (
-        AINetworkToolkit,  # noqa: F401
+        AINetworkToolkit,
     )
     from langchain_community.agent_toolkits.amadeus.toolkit import (
-        AmadeusToolkit,  # noqa: F401
+        AmadeusToolkit,
     )
     from langchain_community.agent_toolkits.azure_ai_services import (
-        AzureAiServicesToolkit,  # noqa: F401
+        AzureAiServicesToolkit,
     )
     from langchain_community.agent_toolkits.azure_cognitive_services import (
-        AzureCognitiveServicesToolkit,  # noqa: F401
+        AzureCognitiveServicesToolkit,
+    )
+    from langchain_community.agent_toolkits.cassandra_database.toolkit import (
+        CassandraDatabaseToolkit,  # noqa: F401
     )
     from langchain_community.agent_toolkits.cogniswitch.toolkit import (
-        CogniswitchToolkit,  # noqa: F401
+        CogniswitchToolkit,
     )
     from langchain_community.agent_toolkits.connery import (
-        ConneryToolkit,  # noqa: F401
+        ConneryToolkit,
     )
     from langchain_community.agent_toolkits.file_management.toolkit import (
-        FileManagementToolkit,  # noqa: F401
+        FileManagementToolkit,
     )
     from langchain_community.agent_toolkits.gmail.toolkit import (
-        GmailToolkit,  # noqa: F401
+        GmailToolkit,
     )
     from langchain_community.agent_toolkits.jira.toolkit import (
-        JiraToolkit,  # noqa: F401
+        JiraToolkit,
     )
     from langchain_community.agent_toolkits.json.base import (
-        create_json_agent,  # noqa: F401
+        create_json_agent,
     )
     from langchain_community.agent_toolkits.json.toolkit import (
-        JsonToolkit,  # noqa: F401
+        JsonToolkit,
     )
     from langchain_community.agent_toolkits.multion.toolkit import (
-        MultionToolkit,  # noqa: F401
+        MultionToolkit,
     )
     from langchain_community.agent_toolkits.nasa.toolkit import (
-        NasaToolkit,  # noqa: F401
+        NasaToolkit,
     )
     from langchain_community.agent_toolkits.nla.toolkit import (
-        NLAToolkit,  # noqa: F401
+        NLAToolkit,
     )
     from langchain_community.agent_toolkits.office365.toolkit import (
-        O365Toolkit,  # noqa: F401
+        O365Toolkit,
     )
     from langchain_community.agent_toolkits.openapi.base import (
-        create_openapi_agent,  # noqa: F401
+        create_openapi_agent,
     )
     from langchain_community.agent_toolkits.openapi.toolkit import (
-        OpenAPIToolkit,  # noqa: F401
+        OpenAPIToolkit,
     )
     from langchain_community.agent_toolkits.playwright.toolkit import (
-        PlayWrightBrowserToolkit,  # noqa: F401
+        PlayWrightBrowserToolkit,
     )
     from langchain_community.agent_toolkits.polygon.toolkit import (
-        PolygonToolkit,  # noqa: F401
+        PolygonToolkit,
     )
     from langchain_community.agent_toolkits.powerbi.base import (
-        create_pbi_agent,  # noqa: F401
+        create_pbi_agent,
     )
     from langchain_community.agent_toolkits.powerbi.chat_base import (
-        create_pbi_chat_agent,  # noqa: F401
+        create_pbi_chat_agent,
     )
     from langchain_community.agent_toolkits.powerbi.toolkit import (
-        PowerBIToolkit,  # noqa: F401
+        PowerBIToolkit,
     )
     from langchain_community.agent_toolkits.slack.toolkit import (
-        SlackToolkit,  # noqa: F401
+        SlackToolkit,
     )
     from langchain_community.agent_toolkits.spark_sql.base import (
-        create_spark_sql_agent,  # noqa: F401
+        create_spark_sql_agent,
     )
     from langchain_community.agent_toolkits.spark_sql.toolkit import (
-        SparkSQLToolkit,  # noqa: F401
+        SparkSQLToolkit,
     )
     from langchain_community.agent_toolkits.sql.base import (
-        create_sql_agent,  # noqa: F401
+        create_sql_agent,
     )
     from langchain_community.agent_toolkits.sql.toolkit import (
-        SQLDatabaseToolkit,  # noqa: F401
+        SQLDatabaseToolkit,
     )
     from langchain_community.agent_toolkits.steam.toolkit import (
-        SteamToolkit,  # noqa: F401
+        SteamToolkit,
     )
     from langchain_community.agent_toolkits.zapier.toolkit import (
-        ZapierToolkit,  # noqa: F401
+        ZapierToolkit,
     )
 
 __all__ = [

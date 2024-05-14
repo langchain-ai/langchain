@@ -15,11 +15,11 @@ from langchain_community.tools.edenai import EdenAiTextToSpeechTool
 
 def test_edenai_call() -> None:
     """Test simple call to edenai's text to speech endpoint."""
-    text2speech = EdenAiTextToSpeechTool(
+    text2speech = EdenAiTextToSpeechTool(  # type: ignore[call-arg]
         providers=["amazon"], language="en", voice="MALE"
     )
 
-    output = text2speech("hello")
+    output = text2speech.invoke("hello")
     parsed_url = urlparse(output)
 
     assert text2speech.name == "edenai_text_to_speech"

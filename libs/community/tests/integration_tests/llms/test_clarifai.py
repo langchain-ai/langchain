@@ -16,7 +16,7 @@ def test_clarifai_call() -> None:
         app_id="summarization",
         model_id="text-summarization-english-pegasus",
     )
-    output = llm(
+    output = llm.invoke(
         "A chain is a serial assembly of connected pieces, called links, \
         typically made of metal, with an overall character similar to that\
         of a rope in that it is flexible and curved in compression but \

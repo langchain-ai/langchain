@@ -13,9 +13,9 @@ from langchain_community.tools.edenai import EdenAiSpeechToTextTool
 
 def test_edenai_call() -> None:
     """Test simple call to edenai's speech to text endpoint."""
-    speech2text = EdenAiSpeechToTextTool(providers=["amazon"])
+    speech2text = EdenAiSpeechToTextTool(providers=["amazon"])  # type: ignore[call-arg]
 
-    output = speech2text(
+    output = speech2text.invoke(
         "https://audio-samples.github.io/samples/mp3/blizzard_unconditional/sample-0.mp3"
     )
 

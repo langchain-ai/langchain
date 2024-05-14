@@ -1,0 +1,33 @@
+{% extends 'markdown/index.md.j2' %}
+
+{%- block traceback_line -%}
+```output
+{{ line.rstrip() | strip_ansi }}
+```
+{%- endblock traceback_line -%}
+
+{%- block stream -%}
+```output
+{{ output.text.rstrip() }}
+```
+{%- endblock stream -%}
+
+{%- block data_text scoped -%}
+```output
+{{ output.data['text/plain'].rstrip() }}
+```
+{%- endblock data_text -%}
+
+{%- block data_html scoped -%}
+```html
+{{ output.data['text/html'] | safe }} 
+```
+{%- endblock data_html -%}
+
+{%- block data_jpg scoped -%}
+![](data:image/jpg;base64,{{ output.data['image/jpeg'] }})
+{%- endblock data_jpg -%}
+
+{%- block data_png scoped -%}
+![](data:image/png;base64,{{ output.data['image/png'] }})
+{%- endblock data_png -%}

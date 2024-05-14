@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -21,6 +22,11 @@ VALID_TASKS = (
 )
 
 
+@deprecated(
+    since="0.0.37",
+    removal="0.3",
+    alternative_import="from langchain_huggingface.llms import HuggingFaceEndpoint",
+)
 class HuggingFaceEndpoint(LLM):
     """
     HuggingFace Endpoint.
@@ -43,7 +49,7 @@ class HuggingFaceEndpoint(LLM):
                 repetition_penalty=1.03,
                 huggingfacehub_api_token="my-api-key"
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))
 
             # Streaming response example
             from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -61,7 +67,7 @@ class HuggingFaceEndpoint(LLM):
                 streaming=True,
                 huggingfacehub_api_token="my-api-key"
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))
 
     """  # noqa: E501
 
@@ -258,7 +264,10 @@ class HuggingFaceEndpoint(LLM):
                 stream=False,
                 task=self.task,
             )
-            response_text = json.loads(response.decode())[0]["generated_text"]
+            try:
+                response_text = json.loads(response.decode())[0]["generated_text"]
+            except KeyError:
+                response_text = json.loads(response.decode())["generated_text"]
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then we remove this stop sequence from the end of the generated text
@@ -289,7 +298,10 @@ class HuggingFaceEndpoint(LLM):
                 stream=False,
                 task=self.task,
             )
-            response_text = json.loads(response.decode())[0]["generated_text"]
+            try:
+                response_text = json.loads(response.decode())[0]["generated_text"]
+            except KeyError:
+                response_text = json.loads(response.decode())["generated_text"]
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then remove this stop sequence from the end of the generated text

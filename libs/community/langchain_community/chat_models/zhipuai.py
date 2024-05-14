@@ -42,7 +42,6 @@ ZHIPUAI_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
 @contextmanager
 def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
-    """Connect to a server-sent event stream."""
     from httpx_sse import EventSource
 
     with client.stream(method, url, **kwargs) as response:
@@ -53,7 +52,6 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
 async def aconnect_sse(
     client: Any, method: str, url: str, **kwargs: Any
 ) -> AsyncIterator:
-    """Async connect to a server-sent event stream."""
     from httpx_sse import EventSource
 
     async with client.stream(method, url, **kwargs) as response:
@@ -103,7 +101,7 @@ def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
         if tool_calls is not None:
             additional_kwargs["tool_calls"] = tool_calls
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
-    return ChatMessage(role=role, content=content)
+    return ChatMessage(role=role, content=content)  # type: ignore[arg-type]
 
 
 def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
@@ -146,8 +144,22 @@ def _convert_delta_to_message_chunk(
     if role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
     if role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
-    return default_class(content=content)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
+    return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _truncate_params(payload: Dict[str, Any]) -> None:
+    """Truncate temperature and top_p parameters between [0.01, 0.99].
+
+    ZhipuAI only support temperature / top_p between (0, 1) open interval,
+    so we truncate them to [0.01, 0.99].
+    """
+    temperature = payload.get("temperature")
+    top_p = payload.get("top_p")
+    if temperature is not None:
+        payload["temperature"] = max(0.01, min(0.99, temperature))
+    if top_p is not None:
+        payload["top_p"] = max(0.01, min(0.99, top_p))
 
 
 class ChatZhipuAI(BaseChatModel):
@@ -215,7 +227,7 @@ class ChatZhipuAI(BaseChatModel):
     model_name: Optional[str] = Field(default="glm-4", alias="model")
     """
     Model name to use, see 'https://open.bigmodel.cn/dev/api#language'.
-    or you can use any finetune model of glm series.
+    Alternatively, you can use any fine-tuned model from the GLM series.
     """
 
     temperature: float = 0.95
@@ -311,13 +323,14 @@ class ChatZhipuAI(BaseChatModel):
             "messages": message_dicts,
             "stream": False,
         }
+        _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
         }
         import httpx
 
-        with httpx.Client(headers=headers) as client:
+        with httpx.Client(headers=headers, timeout=60) as client:
             response = client.post(self.zhipuai_api_base, json=payload)
             response.raise_for_status()
         return self._create_chat_result(response.json())
@@ -336,6 +349,7 @@ class ChatZhipuAI(BaseChatModel):
             raise ValueError("Did not find zhipu_api_base.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {**params, **kwargs, "messages": message_dicts, "stream": True}
+        _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
@@ -344,7 +358,7 @@ class ChatZhipuAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         import httpx
 
-        with httpx.Client(headers=headers) as client:
+        with httpx.Client(headers=headers, timeout=60) as client:
             with connect_sse(
                 client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:
@@ -396,13 +410,14 @@ class ChatZhipuAI(BaseChatModel):
             "messages": message_dicts,
             "stream": False,
         }
+        _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
         }
         import httpx
 
-        async with httpx.AsyncClient(headers=headers) as client:
+        async with httpx.AsyncClient(headers=headers, timeout=60) as client:
             response = await client.post(self.zhipuai_api_base, json=payload)
             response.raise_for_status()
         return self._create_chat_result(response.json())
@@ -420,6 +435,7 @@ class ChatZhipuAI(BaseChatModel):
             raise ValueError("Did not find zhipu_api_base.")
         message_dicts, params = self._create_message_dicts(messages, stop)
         payload = {**params, **kwargs, "messages": message_dicts, "stream": True}
+        _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
             "Accept": "application/json",
@@ -428,7 +444,7 @@ class ChatZhipuAI(BaseChatModel):
         default_chunk_class = AIMessageChunk
         import httpx
 
-        async with httpx.AsyncClient(headers=headers) as client:
+        async with httpx.AsyncClient(headers=headers, timeout=60) as client:
             async with aconnect_sse(
                 client, "POST", self.zhipuai_api_base, json=payload
             ) as event_source:

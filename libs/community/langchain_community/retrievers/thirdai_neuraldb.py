@@ -36,7 +36,7 @@ class NeuralDBRetriever(BaseRetriever):
 
             licensing.activate(thirdai_key or os.getenv("THIRDAI_KEY"))
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import thirdai python package and neuraldb dependencies. "
                 "Please install it with `pip install thirdai[neural_db]`."
             )
@@ -68,12 +68,12 @@ class NeuralDBRetriever(BaseRetriever):
                     "/path/to/doc.csv",
                 ])
 
-                documents = retriever.get_relevant_documents("AI-driven music therapy")
+                documents = retriever.invoke("AI-driven music therapy")
         """
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB(**model_kwargs))
+        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB(**model_kwargs))  # type: ignore[arg-type]
 
     @classmethod
     def from_checkpoint(
@@ -103,12 +103,12 @@ class NeuralDBRetriever(BaseRetriever):
                     "/path/to/doc.csv",
                 ])
 
-                documents = retriever.get_relevant_documents("AI-driven music therapy")
+                documents = retriever.invoke("AI-driven music therapy")
         """
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB.from_checkpoint(checkpoint))
+        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB.from_checkpoint(checkpoint))  # type: ignore[arg-type]
 
     @root_validator()
     def validate_environments(cls, values: Dict) -> Dict:

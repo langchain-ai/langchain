@@ -9,6 +9,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.tools import BaseTool
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import (
@@ -163,6 +164,25 @@ def test__merge_messages() -> None:
     ]
     actual = _merge_messages(messages)
     assert expected == actual
+
+
+def test__merge_messages_mutation() -> None:
+    original_messages = [
+        HumanMessage([{"type": "text", "text": "bar"}]),
+        HumanMessage("next thing"),
+    ]
+    messages = [
+        HumanMessage([{"type": "text", "text": "bar"}]),
+        HumanMessage("next thing"),
+    ]
+    expected = [
+        HumanMessage(
+            [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}]
+        ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+    assert messages == original_messages
 
 
 @pytest.fixture()
@@ -400,3 +420,52 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
     )
     actual = _format_messages(messages)
     assert expected == actual
+
+
+def test_anthropic_api_key_is_secret_string() -> None:
+    """Test that the API key is stored as a SecretStr."""
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+        anthropic_api_key="secret-api-key",
+    )
+    assert isinstance(chat_model.anthropic_api_key, SecretStr)
+
+
+def test_anthropic_api_key_masked_when_passed_from_env(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    """Test that the API key is masked when passed from an environment variable."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY ", "secret-api-key")
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+    )
+    print(chat_model.anthropic_api_key, end="")  # noqa: T201
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_anthropic_api_key_masked_when_passed_via_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    """Test that the API key is masked when passed via the constructor."""
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+        anthropic_api_key="secret-api-key",
+    )
+    print(chat_model.anthropic_api_key, end="")  # noqa: T201
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
+    """Test that the actual secret value is correctly retrieved."""
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+        anthropic_api_key="secret-api-key",
+    )
+    assert (
+        cast(SecretStr, chat_model.anthropic_api_key).get_secret_value()
+        == "secret-api-key"
+    )
