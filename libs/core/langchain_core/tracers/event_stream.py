@@ -23,11 +23,13 @@ from tenacity import RetryCallState
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
+from langchain_core.load import dumpd
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import (
     ChatGenerationChunk,
     GenerationChunk,
     LLMResult,
+    ChatGeneration,
 )
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import (
@@ -140,11 +142,12 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Start a trace for an LLM run."""
         name_ = _assign_name(name, serialized)
+        run_type = "chat_model"
         self.run_map[run_id] = {
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name_,
-            "run_type": "chat_model",
+            "run_type": run_type,
         }
 
         await self._send(
@@ -158,7 +161,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 "run_id": str(run_id),
                 "metadata": metadata or {},
             },
-            "chat_model",
+            run_type,
         )
 
     async def on_llm_start(
@@ -175,11 +178,12 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Start a trace for an LLM run."""
         name_ = _assign_name(name, serialized)
+        run_type = "llm"
         self.run_map[run_id] = {
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name_,
-            "run_type": "llm",
+            "run_type": run_type,
         }
 
         await self._send(
@@ -195,7 +199,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 "run_id": str(run_id),
                 "metadata": metadata or {},
             },
-            "llm",
+            run_type,
         )
 
     async def on_llm_new_token(
@@ -242,47 +246,40 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         # This change should not affect any existing tracers.
         run_info = self.run_map.pop(run_id)
 
+        outputs = response.dict()
+
         if run_info["run_type"] == "chat_model":
-            event = "on_chat_model_end"
-            if len(response.generations) != 1:
+            generations = cast(List[List[ChatGeneration]], response.generations)
+
+            if len(generations) != 1:
                 raise AssertionError(
-                    f"Expected exactly one generation got {len(response.generations)}."
-                    "Verify that the underlying model is implemented correctly."
-                    "It should generate exactly one completion."
+                    "Expected a single generation, but got multiple generations."
                 )
 
-            first_generation = response.generations[0]
+            first_generation = generations[0]
+
             if len(first_generation) != 1:
                 raise AssertionError(
-                    f"Expected exactly one generation got {len(first_generation)}."
-                    "Verify that the underlying model is implemented correctly."
-                    "It should generate exactly one completion."
+                    "Expected a single generation, but got multiple generations."
                 )
-
-            actual_generation = first_generation[0]
-
-            if not isinstance(actual_generation, ChatGenerationChunk):
-                raise AssertionError(
-                    f"Expected ChatGenerationChunk, got {type(first_generation[0])}"
-                )
-
-            output = actual_generation.message
+            gen = first_generation[0]
+            outputs = gen.message
+            event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
             event = "on_llm_end"
-            output = response
         else:
             raise ValueError(f"Unexpected run type: {run_info['run_type']}")
 
         await self._send(
             {
                 "event": event,
-                "data": {"output": output},
+                "data": {"output": outputs},
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
             },
-            "llm",
+            run_info["run_type"],
         )
 
     async def on_retry(
@@ -333,11 +330,12 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Start a trace for a chain run."""
         name_ = _assign_name(name, serialized)
+        run_type_ = run_type or "chain"
         self.run_map[run_id] = {
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name_,
-            "run_type": "chain",
+            "run_type": run_type_,
         }
 
         data = {}
@@ -349,14 +347,14 @@ class _AstreamEventHandler(AsyncCallbackHandler):
 
         await self._send(
             {
-                "event": "on_chain_start",
+                "event": f"on_{run_type_}_start",
                 "data": data,
                 "name": name_,
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
             },
-            "chain",
+            run_type_,
         )
 
     async def on_chain_end(
@@ -369,10 +367,12 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """End a trace for a chain run."""
         run_info = self.run_map.pop(run_id)
+        run_type = run_info["run_type"]
+        event = f"on_{run_type}_end"
 
         await self._send(
             {
-                "event": "on_chain_end",
+                "event": event,
                 "data": {
                     "input": inputs or {},
                     "output": outputs,
@@ -382,7 +382,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
             },
-            "chain",
+            run_type,
         )
 
     async def on_tool_start(
