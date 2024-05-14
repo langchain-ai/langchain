@@ -43,7 +43,7 @@ class AskNewsSearch(BaseTool):
         "news. If you needs news from more than 48 hours ago, you can estimate the "
         "number of hours back to search."
     )
-    api_wrapper: AskNewsAPIWrapper = Field(default_factory=AskNewsAPIWrapper)
+    api_wrapper: AskNewsAPIWrapper = Field(default_factory=AskNewsAPIWrapper)  # type: ignore[arg-type]
     max_results: int = 10
     args_schema: Type[BaseModel] = SearchInput
 
