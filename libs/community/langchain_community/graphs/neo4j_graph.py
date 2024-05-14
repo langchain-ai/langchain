@@ -573,9 +573,9 @@ class Neo4jGraph(GraphStore):
         is_relationship: bool = False,
     ) -> str:
         if is_relationship:
-            match_clause = f"MATCH ()-[n:{label_or_type}]->()"
+            match_clause = f"MATCH ()-[n:`{label_or_type}`]->()"
         else:
-            match_clause = f"MATCH (n:{label_or_type})"
+            match_clause = f"MATCH (n:`{label_or_type}`)"
 
         with_clauses = []
         return_clauses = []

@@ -23,7 +23,7 @@ def test_chat_baichuan_default_non_streaming() -> None:
 
 
 def test_chat_baichuan_turbo() -> None:
-    chat = ChatBaichuan(model="Baichuan2-Turbo", streaming=True)
+    chat = ChatBaichuan(model="Baichuan2-Turbo", streaming=True)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
@@ -31,7 +31,7 @@ def test_chat_baichuan_turbo() -> None:
 
 
 def test_chat_baichuan_turbo_non_streaming() -> None:
-    chat = ChatBaichuan(model="Baichuan2-Turbo")
+    chat = ChatBaichuan(model="Baichuan2-Turbo")  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)

@@ -8,7 +8,7 @@ def test_beam_call() -> None:
     llm = Beam(
         model_name="gpt2",
         name="langchain-gpt2",
-        cpu=8,
+        cpu=8,  # type: ignore[arg-type]
         memory="32Gi",
         gpu="A10G",
         python_version="python3.8",
