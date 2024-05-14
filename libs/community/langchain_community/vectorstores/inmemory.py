@@ -38,21 +38,23 @@ class InMemoryVectorStore(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        ids = []
+        """Add texts to the store."""
         vectors = self.embedding.embed_documents(list(texts))
+        ids_ = []
 
         for i, text in enumerate(texts):
-            doc_id = str(uuid.uuid4())
-            ids.append(doc_id)
+            doc_id = ids[i] if ids else str(uuid.uuid4())
+            ids_.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
                 "vector": vectors[i],
                 "text": text,
                 "metadata": metadatas[i] if metadatas else {},
             }
-        return ids
+        return ids_
 
     async def aadd_texts(
         self,
@@ -185,7 +187,7 @@ class InMemoryVectorStore(VectorStore):
         store = cls(
             embedding=embedding,
         )
-        store.add_texts(texts=texts, metadatas=metadatas)
+        store.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return store
 
     @classmethod

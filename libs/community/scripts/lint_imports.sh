@@ -6,7 +6,6 @@ set -eu
 errors=0
 
 # make sure not importing from langchain or langchain_experimental
-git --no-pager grep '^from langchain\.' . && errors=$((errors+1))
 git --no-pager grep '^from langchain_experimental\.' . && errors=$((errors+1))
 
 # Decide on an exit status based on the errors

@@ -3,9 +3,9 @@ name: CI / cd . / make spell_check
 
 on:
   push:
-    branches: [master]
+    branches: [master, v0.1]
   pull_request:
-    branches: [master]
+    branches: [master, v0.1]
 
 permissions:
   contents: read
