@@ -67,7 +67,7 @@ def _import_tiktoken() -> Any:
     try:
         import tiktoken
     except ImportError:
-        raise ValueError(
+        raise ImportError(
             "Could not import tiktoken python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install tiktoken`."
@@ -139,13 +139,13 @@ def _convert_delta_to_message_chunk(
     elif role == "tool" or default_class == ToolMessageChunk:
         return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 @deprecated(
-    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.ChatOpenAI"
+    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.ChatOpenAI"
 )
 class ChatOpenAI(BaseChatModel):
     """`OpenAI` Chat large language models API.

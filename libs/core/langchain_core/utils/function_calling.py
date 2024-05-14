@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import uuid
+from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -77,7 +78,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def convert_pydantic_to_openai_function(
     model: Type[BaseModel],
@@ -101,7 +102,7 @@ def convert_pydantic_to_openai_function(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def convert_pydantic_to_openai_tool(
     model: Type[BaseModel],
@@ -200,8 +201,11 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     required = spec.args[: -len(spec.defaults)] if spec.defaults else spec.args
     required += [k for k in spec.kwonlyargs if k not in (spec.kwonlydefaults or {})]
 
-    is_class = type(function) is type
-    if is_class and required[0] == "self":
+    is_function_type = isinstance(function, FunctionType)
+    is_method_type = isinstance(function, MethodType)
+    if is_function_type and required[0] == "self":
+        required = required[1:]
+    elif is_method_type and required[0] == "cls":
         required = required[1:]
     return required
 
@@ -209,7 +213,7 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def convert_python_function_to_openai_function(
     function: Callable,
@@ -235,7 +239,7 @@ def convert_python_function_to_openai_function(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API."""
@@ -265,7 +269,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
     """Format tool into the OpenAI function API."""

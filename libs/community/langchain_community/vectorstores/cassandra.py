@@ -31,39 +31,8 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 CVST = TypeVar("CVST", bound="Cassandra")
 
-_NOT_SET = object()
-
 
 class Cassandra(VectorStore):
-    """Wrapper around Apache Cassandra(R) for vector-store workloads.
-
-    To use it, you need a recent installation of the `cassio` library
-    and a Cassandra cluster / Astra DB instance supporting vector capabilities.
-
-    Visit the cassio.org website for extensive quickstarts and code examples.
-
-    Example:
-        .. code-block:: python
-
-                from langchain_community.vectorstores import Cassandra
-                from langchain_community.embeddings.openai import OpenAIEmbeddings
-
-                embeddings = OpenAIEmbeddings()
-                session = ...             # create your Cassandra session object
-                keyspace = 'my_keyspace'  # the keyspace should exist already
-                table_name = 'my_vector_store'
-                vectorstore = Cassandra(embeddings, session, keyspace, table_name)
-
-    Args:
-        embedding: Embedding function to use.
-        session: Cassandra driver session.
-        keyspace: Cassandra key space.
-        table_name: Cassandra table.
-        ttl_seconds: Optional time-to-live for the added texts.
-        body_index_options: Optional options used to create the body index.
-            Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
-    """
-
     _embedding_dimension: Union[int, None]
 
     def _get_embedding_dimension(self) -> int:
@@ -83,14 +52,45 @@ class Cassandra(VectorStore):
     def __init__(
         self,
         embedding: Embeddings,
-        session: Session,
-        keyspace: str,
-        table_name: str,
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
+        table_name: str = "",
         ttl_seconds: Optional[int] = None,
         *,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
         setup_mode: SetupMode = SetupMode.SYNC,
     ) -> None:
+        """Apache Cassandra(R) for vector-store workloads.
+
+        To use it, you need a recent installation of the `cassio` library
+        and a Cassandra cluster / Astra DB instance supporting vector capabilities.
+
+        Visit the cassio.org website for extensive quickstarts and code examples.
+
+        Example:
+            .. code-block:: python
+
+                    from langchain_community.vectorstores import Cassandra
+                    from langchain_openai import OpenAIEmbeddings
+
+                    embeddings = OpenAIEmbeddings()
+                    session = ...             # create your Cassandra session object
+                    keyspace = 'my_keyspace'  # the keyspace should exist already
+                    table_name = 'my_vector_store'
+                    vectorstore = Cassandra(embeddings, session, keyspace, table_name)
+
+        Args:
+            embedding: Embedding function to use.
+            session: Cassandra driver session. If not provided, it is resolved from
+                cassio.
+            keyspace: Cassandra key space. If not provided, it is resolved from cassio.
+            table_name: Cassandra table (required).
+            ttl_seconds: Optional time-to-live for the added texts.
+            body_index_options: Optional options used to create the body index.
+                Eg. body_index_options = [cassio.table.cql.STANDARD_ANALYZER]
+            setup_mode: mode used to create the Cassandra table (SYNC,
+                ASYNC or OFF).
+        """
         try:
             from cassio.table import MetadataVectorCassandraTable
         except (ImportError, ModuleNotFoundError):
@@ -98,7 +98,8 @@ class Cassandra(VectorStore):
                 "Could not import cassio python package. "
                 "Please install it with `pip install cassio`."
             )
-        """Create a vector table."""
+        if not table_name:
+            raise ValueError("Missing required parameter 'table_name'.")
         self.embedding = embedding
         self.session = session
         self.keyspace = keyspace
@@ -165,9 +166,19 @@ class Cassandra(VectorStore):
         await self.table.aclear()
 
     def delete_by_document_id(self, document_id: str) -> None:
+        """Delete by document ID.
+
+        Args:
+            document_id: the document ID to delete.
+        """
         return self.table.delete(row_id=document_id)
 
     async def adelete_by_document_id(self, document_id: str) -> None:
+        """Delete by document ID.
+
+        Args:
+            document_id: the document ID to delete.
+        """
         return await self.table.adelete(row_id=document_id)
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
@@ -371,8 +382,8 @@ class Cassandra(VectorStore):
         """Return docs most similar to embedding vector.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
             filter: Filter on the metadata to apply.
             body_search: Document textual search terms to apply.
                 Only supported by Astra DB at the moment.
@@ -400,6 +411,17 @@ class Cassandra(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float, str]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, score, id), the most similar to the query vector.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_id_by_vector(
             embedding=embedding_vector,
@@ -415,6 +437,17 @@ class Cassandra(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float, str]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, score, id), the most similar to the query vector.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_id_by_vector(
             embedding=embedding_vector,
@@ -462,8 +495,8 @@ class Cassandra(VectorStore):
         """Return docs most similar to embedding vector.
 
         Args:
-            embedding (str): Embedding to look up documents similar to.
-            k (int): Number of Documents to return. Defaults to 4.
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
             filter: Filter on the metadata to apply.
             body_search: Document textual search terms to apply.
                 Only supported by Astra DB at the moment.
@@ -492,6 +525,17 @@ class Cassandra(VectorStore):
         body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of Document, the most similar to the query vector.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_by_vector(
             embedding_vector,
@@ -508,6 +552,17 @@ class Cassandra(VectorStore):
         body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of Document, the most similar to the query vector.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_by_vector(
             embedding_vector,
@@ -524,6 +579,17 @@ class Cassandra(VectorStore):
         body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of Document, the most similar to the query vector.
+        """
         return [
             doc
             for doc, _ in self.similarity_search_with_score_by_vector(
@@ -542,6 +608,17 @@ class Cassandra(VectorStore):
         body_search: Optional[Union[str, List[str]]] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Return docs most similar to embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of Document, the most similar to the query vector.
+        """
         return [
             doc
             for doc, _ in await self.asimilarity_search_with_score_by_vector(
@@ -559,6 +636,17 @@ class Cassandra(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, score), the most similar to the query vector.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding_vector,
@@ -574,6 +662,17 @@ class Cassandra(VectorStore):
         filter: Optional[Dict[str, str]] = None,
         body_search: Optional[Union[str, List[str]]] = None,
     ) -> List[Tuple[Document, float]]:
+        """Return docs most similar to query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            filter: Filter on the metadata to apply.
+            body_search: Document textual search terms to apply.
+                Only supported by Astra DB at the moment.
+        Returns:
+            List of (Document, score), the most similar to the query vector.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
             embedding_vector,
@@ -779,8 +878,8 @@ class Cassandra(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         *,
-        session: Session = _NOT_SET,
-        keyspace: str = "",
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
         batch_size: int = 16,
@@ -794,8 +893,10 @@ class Cassandra(VectorStore):
             texts: Texts to add to the vectorstore.
             embedding: Embedding function to use.
             metadatas: Optional list of metadatas associated with the texts.
-            session: Cassandra driver session (required).
-            keyspace: Cassandra key space (required).
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the texts.
             batch_size: Number of concurrent requests to send to the server.
@@ -807,12 +908,6 @@ class Cassandra(VectorStore):
         Returns:
             a Cassandra vectorstore.
         """
-        if session is _NOT_SET:
-            raise ValueError("session parameter is required")
-        if not keyspace:
-            raise ValueError("keyspace parameter is required")
-        if not table_name:
-            raise ValueError("table_name parameter is required")
         store = cls(
             embedding=embedding,
             session=session,
@@ -833,8 +928,8 @@ class Cassandra(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         *,
-        session: Session = _NOT_SET,
-        keyspace: str = "",
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
         concurrency: int = 16,
@@ -848,8 +943,10 @@ class Cassandra(VectorStore):
             texts: Texts to add to the vectorstore.
             embedding: Embedding function to use.
             metadatas: Optional list of metadatas associated with the texts.
-            session: Cassandra driver session (required).
-            keyspace: Cassandra key space (required).
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the texts.
             concurrency: Number of concurrent queries to send to the database.
@@ -861,12 +958,6 @@ class Cassandra(VectorStore):
         Returns:
             a Cassandra vectorstore.
         """
-        if session is _NOT_SET:
-            raise ValueError("session parameter is required")
-        if not keyspace:
-            raise ValueError("keyspace parameter is required")
-        if not table_name:
-            raise ValueError("table_name parameter is required")
         store = cls(
             embedding=embedding,
             session=session,
@@ -887,8 +978,8 @@ class Cassandra(VectorStore):
         documents: List[Document],
         embedding: Embeddings,
         *,
-        session: Session = _NOT_SET,
-        keyspace: str = "",
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
         batch_size: int = 16,
@@ -901,8 +992,10 @@ class Cassandra(VectorStore):
         Args:
             documents: Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            session: Cassandra driver session (required).
-            keyspace: Cassandra key space (required).
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the documents.
             batch_size: Number of concurrent requests to send to the server.
@@ -936,8 +1029,8 @@ class Cassandra(VectorStore):
         documents: List[Document],
         embedding: Embeddings,
         *,
-        session: Session = _NOT_SET,
-        keyspace: str = "",
+        session: Optional[Session] = None,
+        keyspace: Optional[str] = None,
         table_name: str = "",
         ids: Optional[List[str]] = None,
         concurrency: int = 16,
@@ -950,8 +1043,10 @@ class Cassandra(VectorStore):
         Args:
             documents: Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            session: Cassandra driver session (required).
-            keyspace: Cassandra key space (required).
+            session: Cassandra driver session.
+                If not provided, it is resolved from cassio.
+            keyspace: Cassandra key space.
+                If not provided, it is resolved from cassio.
             table_name: Cassandra table (required).
             ids: Optional list of IDs associated with the documents.
             concurrency: Number of concurrent queries to send to the database.

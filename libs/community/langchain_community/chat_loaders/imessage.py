@@ -4,10 +4,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
+from langchain_core.chat_loaders import BaseChatLoader
 from langchain_core.chat_sessions import ChatSession
 from langchain_core.messages import HumanMessage
-
-from langchain_community.chat_loaders.base import BaseChatLoader
 
 if TYPE_CHECKING:
     import sqlite3
@@ -149,7 +148,7 @@ class IMessageChatLoader(BaseChatLoader):
                 continue
 
             results.append(
-                HumanMessage(
+                HumanMessage(  # type: ignore[call-arg]
                     role=sender,
                     content=content,
                     additional_kwargs={

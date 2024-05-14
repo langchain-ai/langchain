@@ -48,7 +48,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         try:
             import unstructured  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )

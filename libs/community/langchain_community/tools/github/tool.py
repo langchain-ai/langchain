@@ -19,7 +19,7 @@ from langchain_community.utilities.github import GitHubAPIWrapper
 class GitHubAction(BaseTool):
     """Tool for interacting with the GitHub API."""
 
-    api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)
+    api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)  # type: ignore[arg-type]
     mode: str
     name: str = ""
     description: str = ""
