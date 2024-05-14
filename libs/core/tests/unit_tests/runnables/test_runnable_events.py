@@ -878,19 +878,10 @@ async def test_event_streaming_with_tools() -> None:
     # type ignores below because the tools don't appear to be runnables to type checkers
     # we can remove as soon as that's fixed
     events = await _collect_events(parameterless.astream_events({}, version="v1"))  # type: ignore
-    assert events == []
     assert events == [
         {
             "data": {"input": {}},
             "event": "on_tool_start",
-            "metadata": {},
-            "name": "parameterless",
-            "run_id": "",
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "hello"},
-            "event": "on_tool_stream",
             "metadata": {},
             "name": "parameterless",
             "run_id": "",
@@ -905,21 +896,11 @@ async def test_event_streaming_with_tools() -> None:
             "tags": [],
         },
     ]
-    return
-
     events = await _collect_events(with_callbacks.astream_events({}, version="v1"))  # type: ignore
     assert events == [
         {
             "data": {"input": {}},
             "event": "on_tool_start",
-            "metadata": {},
-            "name": "with_callbacks",
-            "run_id": "",
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "world"},
-            "event": "on_tool_stream",
             "metadata": {},
             "name": "with_callbacks",
             "run_id": "",
@@ -941,14 +922,6 @@ async def test_event_streaming_with_tools() -> None:
         {
             "data": {"input": {"x": 1, "y": "2"}},
             "event": "on_tool_start",
-            "metadata": {},
-            "name": "with_parameters",
-            "run_id": "",
-            "tags": [],
-        },
-        {
-            "data": {"chunk": {"x": 1, "y": "2"}},
-            "event": "on_tool_stream",
             "metadata": {},
             "name": "with_parameters",
             "run_id": "",
@@ -977,14 +950,6 @@ async def test_event_streaming_with_tools() -> None:
             "tags": [],
         },
         {
-            "data": {"chunk": {"x": 1, "y": "2"}},
-            "event": "on_tool_stream",
-            "metadata": {},
-            "name": "with_parameters_and_callbacks",
-            "run_id": "",
-            "tags": [],
-        },
-        {
             "data": {"output": {"x": 1, "y": "2"}},
             "event": "on_tool_end",
             "metadata": {},
@@ -999,6 +964,11 @@ class HardCodedRetriever(BaseRetriever):
     documents: List[Document]
 
     def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        return self.documents
+
+    async def _aget_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         return self.documents
@@ -1027,19 +997,6 @@ async def test_event_stream_with_retriever() -> None:
                 "input": {"query": "hello"},
             },
             "event": "on_retriever_start",
-            "metadata": {},
-            "name": "HardCodedRetriever",
-            "run_id": "",
-            "tags": [],
-        },
-        {
-            "data": {
-                "chunk": [
-                    Document(page_content="hello world!", metadata={"foo": "bar"}),
-                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
-                ]
-            },
-            "event": "on_retriever_stream",
             "metadata": {},
             "name": "HardCodedRetriever",
             "run_id": "",
