@@ -9,7 +9,7 @@ from langchain_community.chat_models.coze import ChatCoze
 def test_chat_coze_default() -> None:
     chat = ChatCoze(
         coze_api_base="https://api.coze.com",
-        coze_api_key="pat_...",
+        coze_api_key="pat_...",  # type: ignore[arg-type]
         bot_id="7....",
         user="123",
         conversation_id="",
@@ -24,7 +24,7 @@ def test_chat_coze_default() -> None:
 def test_chat_coze_default_non_streaming() -> None:
     chat = ChatCoze(
         coze_api_base="https://api.coze.com",
-        coze_api_key="pat_...",
+        coze_api_key="pat_...",  # type: ignore[arg-type]
         bot_id="7....",
         user="123",
         conversation_id="",

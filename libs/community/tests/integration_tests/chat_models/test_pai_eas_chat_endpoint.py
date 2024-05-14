@@ -11,8 +11,8 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_pai_eas_call() -> None:
     chat = PaiEasChatEndpoint(
-        eas_service_url=os.getenv("EAS_SERVICE_URL"),
-        eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),
+        eas_service_url=os.getenv("EAS_SERVICE_URL"),  # type: ignore[arg-type]
+        eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),  # type: ignore[arg-type]
     )
     response = chat.invoke([HumanMessage(content="Say foo:")])
     assert isinstance(response, BaseMessage)
@@ -22,8 +22,8 @@ def test_pai_eas_call() -> None:
 def test_multiple_history() -> None:
     """Tests multiple history works."""
     chat = PaiEasChatEndpoint(
-        eas_service_url=os.getenv("EAS_SERVICE_URL"),
-        eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),
+        eas_service_url=os.getenv("EAS_SERVICE_URL"),  # type: ignore[arg-type]
+        eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),  # type: ignore[arg-type]
     )
 
     response = chat.invoke(
@@ -40,8 +40,8 @@ def test_multiple_history() -> None:
 def test_stream() -> None:
     """Test that stream works."""
     chat = PaiEasChatEndpoint(
-        eas_service_url=os.getenv("EAS_SERVICE_URL"),
-        eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),
+        eas_service_url=os.getenv("EAS_SERVICE_URL"),  # type: ignore[arg-type]
+        eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),  # type: ignore[arg-type]
         streaming=True,
     )
     callback_handler = FakeCallbackHandler()
@@ -62,8 +62,8 @@ def test_stream() -> None:
 def test_multiple_messages() -> None:
     """Tests multiple messages works."""
     chat = PaiEasChatEndpoint(
-        eas_service_url=os.getenv("EAS_SERVICE_URL"),
-        eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),
+        eas_service_url=os.getenv("EAS_SERVICE_URL"),  # type: ignore[arg-type]
+        eas_service_token=os.getenv("EAS_SERVICE_TOKEN"),  # type: ignore[arg-type]
     )
     message = HumanMessage(content="Hi, how are you.")
     response = chat.generate([[message], [message]])
