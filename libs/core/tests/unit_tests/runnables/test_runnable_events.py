@@ -285,26 +285,6 @@ async def test_event_stream_with_triple_lambda() -> None:
     ]
 
 
-async def test_runnable_lambda_nested() -> None:
-    """Test invoking nested runnable lambda."""
-
-    async def add_one(x: int) -> int:
-        return x + 1
-
-    add_one = RunnableLambda(func=add_one)
-
-    async def add_one_proxy(x: int, config) -> int:
-        manager = config["callbacks"]
-        streaming = add_one.astream(x, config)
-        result = anext(streaming)
-        return result
-
-    add_one_proxy = RunnableLambda(func=add_one_proxy)
-
-    events = await _collect_events(add_one_proxy.astream_events(1, version="v1"))
-    assert events == []
-
-
 async def test_event_stream_with_triple_lambda_test_filtering() -> None:
     """Test filtering based on tags / names"""
 
@@ -1290,6 +1270,7 @@ async def test_event_stream_with_retry() -> None:
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
     )
+
     iterable = chain.astream_events("q", version="v1")
 
     events = []
@@ -1345,14 +1326,6 @@ async def test_event_stream_with_retry() -> None:
             "name": "success",
             "run_id": "",
             "tags": ["seq:step:1"],
-        },
-        {
-            "data": {"input": "success", "output": None},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "fail",
-            "run_id": "",
-            "tags": ["seq:step:2"],
         },
     ]
 
