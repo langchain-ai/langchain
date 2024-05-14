@@ -939,7 +939,7 @@ def test_create_schema_from_function_with_descriptions() -> None:
         Args:
             bar: int
         """
-        raise bar
+        raise NotImplementedError()
 
     schema = create_schema_from_function("foo_annotated", foo_annotated)
     assert schema.schema() == {
