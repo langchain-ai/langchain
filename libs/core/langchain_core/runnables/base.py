@@ -1800,7 +1800,7 @@ class Runnable(Generic[Input, Output], ABC):
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
         Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
-        # Mixing that is used by both astream log and astream events implementation
+        # Mixin that is used by both astream log and astream events implementation
         from langchain_core.tracers._streaming import _StreamingCallbackHandler
 
         # tee the input so we can iterate over it twice
