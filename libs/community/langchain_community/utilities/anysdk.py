@@ -68,7 +68,7 @@ class AnySdkWrapper(BaseModel):
         self.operations = self._build_operations()
 
     def _build_operations(self) -> list:
-        operations = List[BaseTool]
+        operations: List[BaseTool] = []
         sdk_functions = [
             func
             for func in dir(self.client["client"])
@@ -116,4 +116,4 @@ class AnySdkWrapper(BaseModel):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return self.operations
+        return [AnySDKTool(**op) for op in self.operations]
