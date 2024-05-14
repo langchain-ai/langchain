@@ -124,7 +124,7 @@ class Serializable(BaseModel, ABC):
             k: getattr(self, k, v)
             for k, v in self
             if not (self.__exclude_fields__ or {}).get(k, False)  # type: ignore
-            and _is_field_useful(self, k, v)
+            and _should_use_field(self, k, v)
         }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
@@ -181,7 +181,7 @@ class Serializable(BaseModel, ABC):
         return to_json_not_implemented(self)
 
 
-def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
+def _should_use_field(inst: Serializable, key: str, value: Any) -> bool:
     """Check if a field is useful as a constructor argument.
 
     Args:
@@ -194,6 +194,10 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     """
     field = inst.__fields__.get(key)
     if not field:
+        return False
+    if isinstance(value, BaseModel) and not isinstance(value, Serializable):
+        return False
+    if isinstance(value, Serializable) and not value.is_lc_serializable():
         return False
     return field.required is True or value or field.get_default() != value
 
