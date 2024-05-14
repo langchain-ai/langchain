@@ -9,7 +9,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.52"
+langchain-core = ">=0.1.52,<0.3"
 langchain = "^0.2.0rc2"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
@@ -174,7 +174,7 @@ optional = true
 ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-toml = "^0.10.8.1"
