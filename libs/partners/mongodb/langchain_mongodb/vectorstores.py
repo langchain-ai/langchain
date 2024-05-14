@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from bson import ObjectId, json_util
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -210,9 +211,23 @@ class MongoDBAtlasVectorSearch(VectorStore):
             pipeline.extend(post_filter_pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
         docs = []
+
+        def _make_serializable(obj: Dict[str, Any]) -> None:
+            for k, v in obj.items():
+                if isinstance(v, dict):
+                    _make_serializable(v)
+                elif isinstance(v, list) and v and isinstance(v[0], ObjectId):
+                    obj[k] = [json_util.default(item) for item in v]
+                elif isinstance(v, ObjectId):
+                    obj[k] = json_util.default(v)
+
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")
+            # Make every ObjectId found JSON-Serializable
+            # following format used in bson.json_util.loads
+            # e.g. loads('{"_id": {"$oid": "664..."}}') == {'_id': ObjectId('664..')} # noqa: E501
+            _make_serializable(res)
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
