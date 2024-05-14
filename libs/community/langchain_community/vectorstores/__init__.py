@@ -49,6 +49,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.awadb import (
         AwaDB,
     )
+    from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
+        AzureCosmosDBNoSqlVectorSearch,
+    )
     from langchain_community.vectorstores.azure_cosmos_db import (
         AzureCosmosDBVectorSearch,
     )
@@ -300,6 +303,7 @@ __all__ = [
     "AstraDB",
     "AtlasDB",
     "AwaDB",
+    "AzureCosmosDBNoSqlVectorSearch",
     "AzureCosmosDBVectorSearch",
     "AzureSearch",
     "BESVectorStore",
@@ -397,6 +401,7 @@ _module_lookup = {
     "AstraDB": "langchain_community.vectorstores.astradb",
     "AtlasDB": "langchain_community.vectorstores.atlas",
     "AwaDB": "langchain_community.vectorstores.awadb",
+    "AzureCosmosDBNoSqlVectorSearch": "langchain_community.vectorstores.azure_cosmos_db",
     "AzureCosmosDBVectorSearch": "langchain_community.vectorstores.azure_cosmos_db",
     "AzureSearch": "langchain_community.vectorstores.azuresearch",
     "BaiduVectorDB": "langchain_community.vectorstores.baiduvectordb",

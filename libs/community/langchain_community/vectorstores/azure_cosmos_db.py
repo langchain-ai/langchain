@@ -82,6 +82,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         index_name: str = "vectorSearchIndex",
         text_key: str = "textContent",
         embedding_key: str = "vectorContent",
+        application_name: str = "LANGCHAIN_PYTHON",
     ):
         """Constructor for AzureCosmosDBVectorSearch
 
@@ -99,6 +100,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         self._index_name = index_name
         self._text_key = text_key
         self._embedding_key = embedding_key
+        self._application_name = application_name
 
     @property
     def embeddings(self) -> Embeddings:
