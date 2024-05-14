@@ -967,11 +967,6 @@ class HardCodedRetriever(BaseRetriever):
     ) -> List[Document]:
         return self.documents
 
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        return self.documents
-
 
 async def test_event_stream_with_retriever() -> None:
     """Test the event stream with a retriever."""
@@ -1328,7 +1323,6 @@ async def test_event_stream_with_retry() -> None:
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
     )
-
     iterable = chain.astream_events("q", version="v1")
 
     events = []
