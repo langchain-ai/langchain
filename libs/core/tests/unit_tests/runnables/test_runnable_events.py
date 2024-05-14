@@ -31,7 +31,6 @@ from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import tool
 from langchain_core.tracers.event_stream import (
     _AstreamEventHandler,
-    _event_stream_implementation,
 )
 from tests.unit_tests.stubs import AnyStr
 
