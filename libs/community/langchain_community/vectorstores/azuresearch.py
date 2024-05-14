@@ -774,18 +774,18 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
             ]
         elif self.search_type == "hybrid":
             docs = self.vectorstore.hybrid_search(
-                query, k=self.k, **self.search_kwargs, **kwargs
+                query, k=self.k, **params
             )
         elif self.search_type == "hybrid_score_threshold":
             docs = [
                 doc
                 for doc, _ in self.vectorstore.hybrid_search_with_relevance_scores(
-                    query, k=self.k, **self.search_kwargs, **kwargs
+                    query, k=self.k, **params
                 )
             ]
         elif self.search_type == "semantic_hybrid":
             docs = self.vectorstore.semantic_hybrid_search(
-                query, k=self.k, **self.search_kwargs, **kwargs
+                query, k=self.k, **params
             )
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
