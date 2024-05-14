@@ -1107,6 +1107,8 @@ class Runnable(Generic[Input, Output], ABC):
                 **kwargs,
             )
         elif version == "v1":
+            # First implementation, built on top of astream_log API
+            # This implementation will be deprecated as of 0.2.0
             event_stream = _astream_events_implementation_v1(
                 self,
                 input,

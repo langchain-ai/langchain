@@ -23,7 +23,6 @@ from typing_extensions import NotRequired, TypedDict
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import (
-    ChatGeneration,
     ChatGenerationChunk,
     GenerationChunk,
     LLMResult,
@@ -40,7 +39,7 @@ from langchain_core.tracers.memory_stream import _MemoryStream
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
-    from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
+    from langchain_core.runnables import Runnable, RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -265,7 +264,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         run_info = self.run_map.pop(run_id)
         inputs_ = run_info["inputs"]
 
-        generations: Union[List[List[GenerationChunk]], List[List[ChatGeneration]]]
+        generations: Union[List[List[GenerationChunk]], List[List[ChatGenerationChunk]]]
         output: Union[dict, BaseMessage] = {}
 
         if run_info["run_type"] == "chat_model":
@@ -533,9 +532,8 @@ async def _astream_events_implementation_v1(
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> AsyncIterator[StreamEvent]:
-    from langchain_core.runnables.utils import (
-        _RootEventFilter,
-    )
+    from langchain_core.runnables import ensure_config
+    from langchain_core.runnables.utils import _RootEventFilter
     from langchain_core.tracers.log_stream import (
         LogStreamCallbackHandler,
         RunLog,
