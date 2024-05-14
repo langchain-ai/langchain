@@ -1,14 +1,14 @@
 """Test for Serializable base class"""
 
 import pytest
-
 from langchain.chains.llm import LLMChain
-from langchain_community.llms.openai import (  # noqa: E402, # ignore: community-import
-    OpenAI as CommunityOpenAI,
-)
 from langchain_core.load.dump import dumpd, dumps
 from langchain_core.load.load import load, loads
 from langchain_core.prompts.prompt import PromptTemplate
+
+from langchain_community.llms.openai import (  # noqa: E402
+    OpenAI as CommunityOpenAI,
+)
 
 
 class NotSerializable:

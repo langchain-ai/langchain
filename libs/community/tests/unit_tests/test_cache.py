@@ -4,9 +4,6 @@ from typing import Dict, Generator, List, Union
 
 import pytest
 from _pytest.fixtures import FixtureRequest
-from sqlalchemy import Column, Integer, Sequence, String, create_engine
-from sqlalchemy.orm import Session
-
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import FakeListChatModel, FakeListLLM
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -14,19 +11,19 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load import dumps
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration
+from sqlalchemy import Column, Integer, Sequence, String, create_engine
+from sqlalchemy.orm import Session
 
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
+from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation, LLMResult
 
-from langchain.globals import get_llm_cache, set_llm_cache
-from tests.unit_tests.llms.fake_llm import FakeLLM
-
-
 from langchain_community.cache import SQLAlchemyCache  # noqa: E402
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 def get_sqlite_cache() -> SQLAlchemyCache:
