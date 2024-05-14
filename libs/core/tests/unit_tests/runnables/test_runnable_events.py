@@ -1608,7 +1608,7 @@ EXPECTED_EVENTS = [
 
 @pytest.mark.xfail(
     reason="This test is failing due to missing functionality."
-    "Need to implement logic in _transform_stream_with_config that mimicks the async "
+    "Need to implement logic in _transform_stream_with_config that mimics the async "
     "variant that uses tap_output_iter"
 )
 async def test_sync_in_async_stream_lambdas() -> None:
@@ -1651,7 +1651,7 @@ async def test_async_in_async_stream_lambdas() -> None:
 
 @pytest.mark.xfail(
     reason="This test is failing due to missing functionality."
-    "Need to implement logic in _transform_stream_with_config that mimicks the async "
+    "Need to implement logic in _transform_stream_with_config that mimics the async "
     "variant that uses tap_output_iter"
 )
 async def test_sync_in_sync_lambdas() -> None:
