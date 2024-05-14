@@ -22,6 +22,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
@@ -65,6 +66,9 @@ def sync_call_fallback(method: Callable) -> Callable:
     return wrapper
 
 
+@deprecated(
+    since="0.0.37", removal="0.3.0", alternative_import="langchain_qdrant.Qdrant"
+)
 class Qdrant(VectorStore):
     """`Qdrant` vector store.
 

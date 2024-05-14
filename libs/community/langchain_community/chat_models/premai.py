@@ -136,7 +136,7 @@ def _convert_delta_response_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role), finish_reasons
     else:
-        return default_class(content=content), finish_reasons
+        return default_class(content=content), finish_reasons  # type: ignore[call-arg]
 
 
 def _messages_to_prompt_dict(
