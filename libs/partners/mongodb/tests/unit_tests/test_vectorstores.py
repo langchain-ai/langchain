@@ -2,6 +2,7 @@ from json import dumps, loads
 from typing import Any, Optional
 
 import pytest
+from bson import ObjectId, json_util
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from pymongo.collection import Collection
@@ -79,6 +80,8 @@ class TestMongoDBAtlasVectorSearch:
         # Validate the ObjectId provided is json serializable
         assert loads(dumps(output[0].page_content)) == output[0].page_content
         assert loads(dumps(output[0].metadata)) == output[0].metadata
+        json_metadata = dumps(output[0].metadata)  # normal json.dumps
+        assert isinstance(json_util.loads(json_metadata)["_id"], ObjectId)
 
     def test_from_documents(
         self, embedding_openai: Embeddings, collection: MockCollection
