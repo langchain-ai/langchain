@@ -761,8 +761,9 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> List[Document]:
+        params = {**self.search_kwargs, **kwargs}
+            
         if self.search_type == "similarity":
-            params = {**self.search_kwargs, **kwargs}
             docs = self.vectorstore.vector_search(
                 query, k=self.k, **params
             )
@@ -770,7 +771,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
             docs = [
                 doc
                 for doc, _ in self.vectorstore.similarity_search_with_relevance_scores(
-                    query, k=self.k, **self.search_kwargs, **kwargs
+                    query, k=self.k, **params
                 )
             ]
         elif self.search_type == "hybrid":
