@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
-from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,11 +18,9 @@ from typing import (
 )
 from uuid import UUID
 
-from tenacity import RetryCallState
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
-from langchain_core.load import dumpd
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import (
     ChatGeneration,
@@ -35,6 +32,7 @@ from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import (
     _RootEventFilter,
 )
+from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.memory_stream import _MemoryStream
 
 if TYPE_CHECKING:
@@ -64,7 +62,7 @@ def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> str:
     return "Unnamed"
 
 
-class _AstreamEventHandler(AsyncCallbackHandler):
+class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHandler):
     """An implementation of an async callback handler for astream events."""
 
     def __init__(
@@ -258,7 +256,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                             "message": chunk.message,
                             "generation_info": chunk.generation_info,
                             "text": chunk.text,
-                            "type": "ChatGenerationChunk",
+                            "type": chunk.type,
                         }
                         for chunk in gen
                     ]
@@ -276,7 +274,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                         {
                             "text": chunk.text,
                             "generation_info": chunk.generation_info,
-                            "type": "Generation",
+                            "type": chunk.type,
                         }
                         for chunk in gen
                     ]
@@ -299,39 +297,6 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             },
             run_info["run_type"],
         )
-
-    async def on_retry(
-        self,
-        retry_state: RetryCallState,
-        *,
-        run_id: UUID,
-        **kwargs: Any,
-    ) -> None:
-        """Run on retry."""
-        raise NotImplementedError()
-        llm_run = self._get_run(run_id)
-        retry_d: Dict[str, Any] = {
-            "slept": retry_state.idle_for,
-            "attempt": retry_state.attempt_number,
-        }
-        if retry_state.outcome is None:
-            retry_d["outcome"] = "N/A"
-        elif retry_state.outcome.failed:
-            retry_d["outcome"] = "failed"
-            exception = retry_state.outcome.exception()
-            retry_d["exception"] = str(exception)
-            retry_d["exception_type"] = exception.__class__.__name__
-        else:
-            retry_d["outcome"] = "success"
-            retry_d["result"] = str(retry_state.outcome.result())
-        llm_run.events.append(
-            {
-                "name": "retry",
-                "time": datetime.now(timezone.utc),
-                "kwargs": retry_d,
-            },
-        )
-        return llm_run
 
     async def on_chain_start(
         self,
@@ -534,10 +499,10 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             run_info["run_type"],
         )
 
-    def __deepcopy__(self, memo: dict) -> _AstreamEventHandler:
+    def __deepcopy__(self, memo: dict) -> _AstreamEventsCallbackHandler:
         """Deepcopy the tracer."""
         return self
 
-    def __copy__(self) -> _AstreamEventHandler:
+    def __copy__(self) -> _AstreamEventsCallbackHandler:
         """Copy the tracer."""
         return self

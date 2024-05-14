@@ -647,7 +647,6 @@ async def test_astream_with_model_in_chain() -> None:
                         ]
                     ],
                     "llm_output": None,
-                    "run": None,
                 },
             },
             "event": "on_chat_model_end",

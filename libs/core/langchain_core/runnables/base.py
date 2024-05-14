@@ -1096,10 +1096,10 @@ class Runnable(Generic[Input, Output], ABC):
         from langchain_core.callbacks.base import BaseCallbackManager
         from langchain_core.runnables import ensure_config
         from langchain_core.tracers.event_stream import (
-            _AstreamEventHandler,
+            _AstreamEventsCallbackHandler,
         )
 
-        event_streamer = _AstreamEventHandler(
+        event_streamer = _AstreamEventsCallbackHandler(
             include_names=include_names,
             include_types=include_types,
             include_tags=include_tags,
@@ -1842,8 +1842,8 @@ class Runnable(Generic[Input, Output], ABC):
         """Helper method to transform an Async Iterator of Input values into an Async
         Iterator of Output values, with callbacks.
         Use this to implement `astream()` or `atransform()` in Runnable subclasses."""
-        from langchain_core.tracers.event_stream import _AstreamEventHandler
-        from langchain_core.tracers.log_stream import LogStreamCallbackHandler
+        # Mixing that is used by both astream log and astream events implementation
+        from langchain_core.tracers._streaming import _StreamingCallbackHandler
 
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(input, 2)
@@ -1876,7 +1876,7 @@ class Runnable(Generic[Input, Output], ABC):
                 (
                     h
                     for h in run_manager.handlers
-                    if isinstance(h, (LogStreamCallbackHandler, _AstreamEventHandler))
+                    if isinstance(h, _StreamingCallbackHandler)
                 ),
                 None,
             ):
