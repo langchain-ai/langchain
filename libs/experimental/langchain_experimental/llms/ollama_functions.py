@@ -16,7 +16,10 @@ from typing import (
 )
 
 from langchain_community.chat_models.ollama import ChatOllama
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.output_parsers.base import OutputParserLike
@@ -358,7 +361,7 @@ class OllamaFunctions(ChatOllama):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
         functions = kwargs.get("functions", [])
