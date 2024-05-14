@@ -26,7 +26,9 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
     import openai
+    from openai._types import NotGiven, NOT_GIVEN
     from openai.types.beta.threads import ThreadMessage
+    from openai.types.beta.assistant import ToolResources as AssistantToolResources
     from openai.types.beta.threads.required_action_function_tool_call import (
         RequiredActionFunctionToolCall,
     )
@@ -241,6 +243,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         name: str,
         instructions: str,
         tools: Sequence[Union[BaseTool, dict]],
+        tool_resources: Optional[Union[AssistantToolResources, dict]] | NotGiven = NOT_GIVEN,
         model: str,
         *,
         client: Optional[Union[openai.OpenAI, openai.AzureOpenAI]] = None,
@@ -252,6 +255,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             name: Assistant name.
             instructions: Assistant instructions.
             tools: Assistant tools. Can be passed in OpenAI format or as BaseTools.
+            tool_resources: Assistant tool resources. Can be passed in OpenAI format
             model: Assistant model to use.
             client: OpenAI or AzureOpenAI client.
                 Will create default OpenAI client if not specified.
@@ -268,6 +272,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             name=name,
             instructions=instructions,
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
+            tool_resources=tool_resources,
             model=model,
             attachments=attachments,
         )
@@ -369,6 +374,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         name: str,
         instructions: str,
         tools: Sequence[Union[BaseTool, dict]],
+        tool_resources: Optional[Union[AssistantToolResources, dict]] | NotGiven = NOT_GIVEN,
         model: str,
         *,
         async_client: Optional[
@@ -382,6 +388,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             name: Assistant name.
             instructions: Assistant instructions.
             tools: Assistant tools. Can be passed in OpenAI format or as BaseTools.
+            tool_resources: Assistant tool resources. Can be passed in OpenAI format
             model: Assistant model to use.
             async_client: AsyncOpenAI client.
             Will create default async_client if not specified.
@@ -399,6 +406,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             name=name,
             instructions=instructions,
             tools=openai_tools,  # type: ignore
+            tool_resources=tool_resources,
             model=model,
             attachments=attachments,
         )
