@@ -81,7 +81,8 @@ disallow_untyped_defs = "True"
 exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
 
 [[tool.mypy.overrides]]
-module = "numpy"
+# conditional dependencies introduced by langsmith-sdk
+module = ["numpy", "pytest"]
 ignore_missing_imports = true
 
 [tool.coverage.run]
