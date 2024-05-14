@@ -385,10 +385,9 @@ class ArxivAPIWrapper(BaseModel):
 def generate_arxiv_references_page(file_name: str, papers: list[ArxivPaper]) -> None:
     with open(file_name, "w") as f:
         # Write the table headers
-        f.write("""
-# arXiv references
+        f.write("""# arXiv
             
-LangChain uses the latest research in the field of Natural Language Processing.
+LangChain implements the latest research in the field of Natural Language Processing.
 This page contains `arXiv` papers referenced in the LangChain Documentation and API Reference.
 
 ## Summary
