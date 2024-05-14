@@ -44,14 +44,12 @@ ruff = "^0.1.5"
 [tool.poetry.group.typing.dependencies]
 mypy = "^1"
 langchain-core = { path = "../../core", develop = true }
-langchain-community = { path = "../../community", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
 langchain-core = { path = "../../core", develop = true }
-langchain-community = { path = "../../community", develop = true }
 ipykernel = "^6.29.2"
 
 [tool.poetry.group.test_integration]

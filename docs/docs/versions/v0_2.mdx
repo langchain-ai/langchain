@@ -41,7 +41,7 @@ Here is an example of the import changes that the migration script can help appl
 | langchain           | langchain-text-splitters | from langchain.text_splitter import RecursiveCharacterTextSplitter | from langchain_text_splitters import RecursiveCharacterTextSplitter |
 
 
-#### Deprecation Timeline
+#### Deprecation timeline
 
 We have two main types of deprecations:
 
@@ -102,7 +102,7 @@ langchain-cli migrate [path to code] --diff # Preview
 langchain-cli migrate [path to code] # Apply
 ```
 
-#### Other Options
+#### Other options
 
 ```bash
 # See help menu
@@ -114,11 +114,11 @@ langchain-cli migrate --diff [path to code]
 langchain-cli migrate --disable langchain_to_core --include-ipynb [path to code]
 ```
 
-## Deprecations and Breaking Changes
+## Deprecations and breaking changes
 
 This code contains a list of deprecations and removals in the `langchain` and `langchain-core` packages.
 
-### Breaking Changes in 0.2.0
+### Breaking changes in 0.2.0
 
 As of release 0.2.0, `langchain` is required to be integration-agnostic. This means that code in `langchain`  should not by default instantiate any specific chat models, llms, embedding models, vectorstores etc; instead, the user will be required to specify those explicitly.
 
