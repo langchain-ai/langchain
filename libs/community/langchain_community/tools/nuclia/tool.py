@@ -75,7 +75,7 @@ class NucliaUnderstandingAPI(BaseTool):
         else:
             self._config["NUA_KEY"] = key
         self._config["enable_ml"] = enable_ml
-        super().__init__()
+        super().__init__()  # type: ignore[call-arg]
 
     def _run(
         self,
