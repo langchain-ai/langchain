@@ -32,8 +32,6 @@ from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
 )
-from langchain.retrievers.web_research import WebResearchRetriever
-from langchain.retrievers.sentence_window_retriever import SentenceWindowRetriever
 
 if TYPE_CHECKING:
     from langchain_community.retrievers import (
