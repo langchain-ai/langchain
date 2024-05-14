@@ -430,6 +430,9 @@ class OllamaFunctions(ChatOllama):
                 },
             },
         )
+        return ChatResult(
+            generations=[ChatGeneration(message=response_message_with_functions)]
+        )
 
     @property
     def _llm_type(self) -> str:
