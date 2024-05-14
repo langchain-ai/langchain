@@ -499,7 +499,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             {
                 "event": "on_retriever_end",
                 "data": {
-                    "output": {"documents": documents},
+                    "output": documents,
                     "input": run_info["inputs"],
                 },
                 "run_id": str(run_id),

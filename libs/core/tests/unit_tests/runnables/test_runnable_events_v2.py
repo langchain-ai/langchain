@@ -942,14 +942,10 @@ async def test_event_stream_with_retriever() -> None:
         },
         {
             "data": {
-                "output": {
-                    "documents": [
-                        Document(page_content="hello world!", metadata={"foo": "bar"}),
-                        Document(
-                            page_content="goodbye world!", metadata={"food": "spare"}
-                        ),
-                    ]
-                },
+                "output": [
+                    Document(page_content="hello world!", metadata={"foo": "bar"}),
+                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
+                ]
             },
             "event": "on_retriever_end",
             "metadata": {},
@@ -1001,14 +997,10 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
         {
             "data": {
                 "input": {"query": "hello"},
-                "output": {
-                    "documents": [
-                        Document(page_content="hello world!", metadata={"foo": "bar"}),
-                        Document(
-                            page_content="goodbye world!", metadata={"food": "spare"}
-                        ),
-                    ]
-                },
+                "output": [
+                    Document(page_content="hello world!", metadata={"foo": "bar"}),
+                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
+                ],
             },
             "event": "on_retriever_end",
             "metadata": {},

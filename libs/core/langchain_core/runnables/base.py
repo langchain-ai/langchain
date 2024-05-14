@@ -961,6 +961,8 @@ class Runnable(Generic[Input, Output], ABC):
         chains. Metadata fields have been omitted from the table for brevity.
         Chain definitions have been included after the table.
 
+        **ATTENTION** This reference table is for the V2 version of the schema.
+
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | event                | name             | chunk                           | input                                         | output                                          |
         +======================+==================+=================================+===============================================+=================================================+
@@ -968,7 +970,7 @@ class Runnable(Generic[Input, Output], ABC):
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_chat_model_stream | [model name]     | AIMessageChunk(content="hello") |                                               |                                                 |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
-        | on_chat_model_end    | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} | {"generations": [...], "llm_output": None, ...} |
+        | on_chat_model_end    | [model name]     |                                 | {"messages": [[SystemMessage, HumanMessage]]} | AIMessageChunk(content="hello world")           |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_llm_start         | [model name]     |                                 | {'input': 'hello'}                            |                                                 |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
@@ -984,15 +986,11 @@ class Runnable(Generic[Input, Output], ABC):
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_tool_start        | some_tool        |                                 | {"x": 1, "y": "2"}                            |                                                 |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
-        | on_tool_stream       | some_tool        | {"x": 1, "y": "2"}              |                                               |                                                 |
-        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_tool_end          | some_tool        |                                 |                                               | {"x": 1, "y": "2"}                              |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_retriever_start   | [retriever name] |                                 | {"query": "hello"}                            |                                                 |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
-        | on_retriever_chunk   | [retriever name] | {documents: [...]}              |                                               |                                                 |
-        +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
-        | on_retriever_end     | [retriever name] |                                 | {"query": "hello"}                            | {documents: [...]}                              |
+        | on_retriever_end     | [retriever name] |                                 | {"query": "hello"}                            | [Document(...), ..]                             |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
         | on_prompt_start      | [template_name]  |                                 | {"question": "hello"}                         |                                                 |
         +----------------------+------------------+---------------------------------+-----------------------------------------------+-------------------------------------------------+
@@ -1041,7 +1039,7 @@ class Runnable(Generic[Input, Output], ABC):
             chain = RunnableLambda(func=reverse)
 
             events = [
-                event async for event in chain.astream_events("hello", version="v1")
+                event async for event in chain.astream_events("hello", version="v2")
             ]
 
             # will produce the following events (run_id has been omitted for brevity):
@@ -1072,8 +1070,10 @@ class Runnable(Generic[Input, Output], ABC):
         Args:
             input: The input to the runnable.
             config: The config to use for the runnable.
-            version: The version of the schema to use.
-                     Currently only version 1 is available.
+            version: The version of the schema to use either `v2` or `v1`.
+                     Users should use `v2`.
+                     `v1` is for backwards compatibility and will be deprecated
+                     in 0.4.0.
                      No default will be assigned until the API is stabilized.
             include_names: Only include events from runnables with matching names.
             include_types: Only include events from runnables with matching types.
