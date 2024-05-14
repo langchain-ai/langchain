@@ -21,11 +21,11 @@ class AzureAiServicesToolkit(BaseToolkit):
         """Get the tools in the toolkit."""
 
         tools: List[BaseTool] = [
-            AzureAiServicesDocumentIntelligenceTool(),
-            AzureAiServicesImageAnalysisTool(),
-            AzureAiServicesSpeechToTextTool(),
-            AzureAiServicesTextToSpeechTool(),
-            AzureAiServicesTextAnalyticsForHealthTool(),
+            AzureAiServicesDocumentIntelligenceTool(),  # type: ignore[call-arg]
+            AzureAiServicesImageAnalysisTool(),  # type: ignore[call-arg]
+            AzureAiServicesSpeechToTextTool(),  # type: ignore[call-arg]
+            AzureAiServicesTextToSpeechTool(),  # type: ignore[call-arg]
+            AzureAiServicesTextAnalyticsForHealthTool(),  # type: ignore[call-arg]
         ]
 
         return tools
