@@ -406,8 +406,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     def from_template(
         cls: Type[_StringImageMessagePromptTemplateT],
         template: Union[str, List[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
-        *,
         template_format: str = "f-string",
+        *,
         partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _StringImageMessagePromptTemplateT:
