@@ -3469,7 +3469,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.52"
+version = "0.2.0rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3493,19 +3493,21 @@ url = "../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.0.8"
+version = "0.1.6"
 description = "An integration package connecting OpenAI and LangChain"
 optional = true
 python-versions = ">=3.8.1,<4.0"
-files = [
-    {file = "langchain_openai-0.0.8-py3-none-any.whl", hash = "sha256:4862fc72cecbee0240aaa6df0234d5893dd30cd33ca23ac5cfdd86c11d2c44df"},
-    {file = "langchain_openai-0.0.8.tar.gz", hash = "sha256:b7aba7fcc52305e78b08197ebc54fc45cc06dbc40ba5b913bc48a22b30a4f5c9"},
-]
+files = []
+develop = true
 
 [package.dependencies]
-langchain-core = ">=0.1.27,<0.2.0"
-openai = ">=1.10.0,<2.0.0"
+langchain-core = ">=0.1.46,<0.3"
+openai = "^1.24.0"
 tiktoken = ">=0.5.2,<1"
+
+[package.source]
+type = "directory"
+url = "../partners/openai"
 
 [[package]]
 name = "langchain-text-splitters"
@@ -3517,7 +3519,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.1.28"
+langchain-core = ">=0.1.28,<0.3"
 
 [package.extras]
 extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
@@ -4774,13 +4776,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.13.3"
+version = "1.29.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.13.3-py3-none-any.whl", hash = "sha256:5769b62abd02f350a8dd1a3a242d8972c947860654466171d60fb0972ae0a41c"},
-    {file = "openai-1.13.3.tar.gz", hash = "sha256:ff6c6b3bc7327e715e4b3592a923a5a1c7519ff5dd764a83d69f633d49e77a7b"},
+    {file = "openai-1.29.0-py3-none-any.whl", hash = "sha256:c61cd12376c84362d406341f9e2f9a9d6b81c082b133b44484dc0f43954496b1"},
+    {file = "openai-1.29.0.tar.gz", hash = "sha256:d5a769f485610cff8bae14343fa45a8b1d346be3d541fa5b28ccd040dbc8baf8"},
 ]
 
 [package.dependencies]
@@ -9376,4 +9378,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5c582a63448911a8db317ead65a5a87b6c3fc6df52731892300189521c7de3f3"
+content-hash = "b4c5e3b49f33d39457850835ae6cf7095067f7851ff8506a220b81f5d16340b9"
