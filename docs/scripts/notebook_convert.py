@@ -84,12 +84,8 @@ class CustomRegexRemovePreprocessor(Preprocessor):
         pattern = re.compile(r"(?s)(?:\s*\Z)|(?:.*#\s*\|\s*output:\s*false.*)")
         rtn = not pattern.match(cell.source)
         if not rtn:
-            print("--remove--")
-            print(cell.source)
             return False
         else:
-            print("--keep--")
-            print(cell.source)
             return True
 
     def preprocess(self, nb, resources):
