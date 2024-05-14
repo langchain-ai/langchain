@@ -262,13 +262,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         inputs_ = run_info["inputs"]
 
         generations: Union[List[List[GenerationChunk]], List[List[ChatGeneration]]]
-        output: Union[dict, BaseMessage]
+        output: Union[dict, BaseMessage] = {}
 
         if run_info["run_type"] == "chat_model":
-            generations = cast(List[List[ChatGeneration]], response.generations)
-
-            output = {}
-
+            generations = cast(List[List[ChatGenerationChunk]], response.generations)
             for gen in generations:
                 if output != {}:
                     break

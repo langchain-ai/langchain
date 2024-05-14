@@ -448,21 +448,7 @@ async def test_astream_events_from_model() -> None:
         },
         {
             "data": {
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "generation_info": None,
-                                "message": AIMessageChunk(
-                                    content="hello world!", id=AnyStr()
-                                ),
-                                "text": "hello world!",
-                                "type": "ChatGenerationChunk",
-                            }
-                        ]
-                    ],
-                    "llm_output": None,
-                }
+                "output": AIMessageChunk(content="hello world!", id=AnyStr()),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
@@ -541,21 +527,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {
                 "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "generation_info": None,
-                                "message": AIMessage(
-                                    content="hello world!", id=AnyStr()
-                                ),
-                                "text": "hello world!",
-                                "type": "ChatGeneration",
-                            }
-                        ]
-                    ],
-                    "llm_output": None,
-                },
+                "output": AIMessage(content="hello world!", id=AnyStr()),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
@@ -633,21 +605,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {
                 "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "generation_info": None,
-                                "message": AIMessage(
-                                    content="hello world!", id=AnyStr()
-                                ),
-                                "text": "hello world!",
-                                "type": "ChatGeneration",
-                            }
-                        ]
-                    ],
-                    "llm_output": None,
-                },
+                "output": AIMessage(content="hello world!", id=AnyStr()),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
@@ -818,21 +776,7 @@ async def test_event_stream_with_simple_chain() -> None:
                         ]
                     ]
                 },
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "generation_info": None,
-                                "message": AIMessageChunk(
-                                    content="hello world!", id="ai1"
-                                ),
-                                "text": "hello world!",
-                                "type": "ChatGenerationChunk",
-                            }
-                        ]
-                    ],
-                    "llm_output": None,
-                },
+                "output": AIMessageChunk(content="hello world!", id="ai1"),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b", "foo": "bar"},
@@ -1554,21 +1498,7 @@ async def test_events_astream_config() -> None:
         },
         {
             "data": {
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "generation_info": None,
-                                "message": AIMessageChunk(
-                                    content="Goodbye world", id="ai2"
-                                ),
-                                "text": "Goodbye world",
-                                "type": "ChatGenerationChunk",
-                            }
-                        ]
-                    ],
-                    "llm_output": None,
-                }
+                "output": AIMessageChunk(content="Goodbye world", id="ai2"),
             },
             "event": "on_chat_model_end",
             "metadata": {},
