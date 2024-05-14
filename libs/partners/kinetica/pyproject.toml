@@ -11,9 +11,9 @@ license = "MIT"
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/kinetica"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = ">=0.0.12"
-pandas = "^2.2.1"
+python = ">=3.8.1,<4.0"
+langchain-core = "^0.1.40"
+pandas = "^2.0.3"
 gpudb = "^7.2.0.1"
 typeguard = "^4.1.5"
 
@@ -68,7 +68,7 @@ select = [
 ]
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [tool.coverage.run]
 omit = [
