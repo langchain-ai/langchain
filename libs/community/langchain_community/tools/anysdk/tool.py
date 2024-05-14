@@ -4,7 +4,6 @@ from typing import Any, Optional, Union
 
 # ruff: ignore F811
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.tools import BaseTool
@@ -45,7 +44,7 @@ class AnySDKTool(BaseTool):
         self,
         tool_input: Union[str, dict, None] = None,
         *args: tuple,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs: dict,
     ) -> str:
         return self._run(

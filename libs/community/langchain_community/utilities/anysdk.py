@@ -58,7 +58,7 @@ class CrudControls(BaseModel):
 class AnySdkWrapper(BaseModel):
     client: Any
     operations: List[Dict] = []
-    crud_controls: CrudControls = None
+    crud_controls: CrudControls = CrudControls()
 
     class Config:
         extra = Extra.forbid
@@ -68,7 +68,7 @@ class AnySdkWrapper(BaseModel):
         self.operations = self._build_operations()
 
     def _build_operations(self) -> list:
-        operations = []
+        operations = List[BaseTool]
         sdk_functions = [
             func
             for func in dir(self.client["client"])
