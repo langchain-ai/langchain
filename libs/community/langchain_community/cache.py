@@ -420,7 +420,7 @@ class _RedisCacheBase(BaseCache, ABC):
                     )
                     # In a previous life we stored the raw text directly
                     # in the table, so assume it's in that format.
-                    generations.append(Generation(text=text))
+                    generations.append(Generation(text=text))  # type: ignore[arg-type]
         return generations if generations else None
 
     @staticmethod
