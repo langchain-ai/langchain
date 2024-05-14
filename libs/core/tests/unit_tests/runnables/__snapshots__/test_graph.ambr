@@ -122,7 +122,7 @@
   	PromptInput[PromptInput]:::startclass;
   	PromptTemplate([PromptTemplate]):::otherclass;
   	FakeListLLM([FakeListLLM]):::otherclass;
-  	Parallel_as_list_as_str_Input([Parallel_as_list_as_str_Input]):::otherclass;
+  	Parallel_as_list_as_str_Input([Parallel<as_list,as_str>Input]):::otherclass;
   	Parallel_as_list_as_str_Output[Parallel_as_list_as_str_Output]:::endclass;
   	CommaSeparatedListOutputParser([CommaSeparatedListOutputParser]):::otherclass;
   	conditional_str_parser_input([conditional_str_parser_input]):::otherclass;

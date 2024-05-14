@@ -36,22 +36,22 @@ _FUNCTIONS: Any = [
 def test_initialization() -> None:
     """Test chat model initialization."""
     for model in [
-        ChatTongyi(model_name="qwen-turbo", api_key="xyz"),
-        ChatTongyi(model="qwen-turbo", dashscope_api_key="xyz"),
+        ChatTongyi(model_name="qwen-turbo", api_key="xyz"),  # type: ignore[arg-type, call-arg]
+        ChatTongyi(model="qwen-turbo", dashscope_api_key="xyz"),  # type: ignore[call-arg]
     ]:
         assert model.model_name == "qwen-turbo"
         assert cast(SecretStr, model.dashscope_api_key).get_secret_value() == "xyz"
 
 
 def test_api_key_is_string() -> None:
-    llm = ChatTongyi(dashscope_api_key="secret-api-key")
+    llm = ChatTongyi(dashscope_api_key="secret-api-key")  # type: ignore[call-arg]
     assert isinstance(llm.dashscope_api_key, SecretStr)
 
 
 def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
-    llm = ChatTongyi(dashscope_api_key="secret-api-key")
+    llm = ChatTongyi(dashscope_api_key="secret-api-key")  # type: ignore[call-arg]
     print(llm.dashscope_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
@@ -60,28 +60,28 @@ def test_api_key_masked_when_passed_via_constructor(
 
 def test_default_call() -> None:
     """Test default model call."""
-    chat = ChatTongyi()
-    response = chat(messages=[HumanMessage(content="Hello")])
+    chat = ChatTongyi()  # type: ignore[call-arg]
+    response = chat.invoke([HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
 
 def test_model() -> None:
     """Test model kwarg works."""
-    chat = ChatTongyi(model="qwen-plus")
-    response = chat(messages=[HumanMessage(content="Hello")])
+    chat = ChatTongyi(model="qwen-plus")  # type: ignore[call-arg]
+    response = chat.invoke([HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
 
 def test_functions_call_thoughts() -> None:
-    chat = ChatTongyi(model="qwen-plus")
+    chat = ChatTongyi(model="qwen-plus")  # type: ignore[call-arg]
 
     prompt_tmpl = "Use the given functions to answer following question: {input}"
     prompt_msgs = [
         HumanMessagePromptTemplate.from_template(prompt_tmpl),
     ]
-    prompt = ChatPromptTemplate(messages=prompt_msgs)
+    prompt = ChatPromptTemplate(messages=prompt_msgs)  # type: ignore[arg-type, call-arg]
 
     chain = prompt | chat.bind(functions=_FUNCTIONS)
 
@@ -93,10 +93,10 @@ def test_functions_call_thoughts() -> None:
 
 def test_multiple_history() -> None:
     """Tests multiple history works."""
-    chat = ChatTongyi()
+    chat = ChatTongyi()  # type: ignore[call-arg]
 
-    response = chat(
-        messages=[
+    response = chat.invoke(
+        [
             HumanMessage(content="Hello."),
             AIMessage(content="Hello!"),
             HumanMessage(content="How are you doing?"),
@@ -108,17 +108,17 @@ def test_multiple_history() -> None:
 
 def test_stream() -> None:
     """Test that stream works."""
-    chat = ChatTongyi(streaming=True)
+    chat = ChatTongyi(streaming=True)  # type: ignore[call-arg]
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    response = chat(
-        messages=[
+    response = chat.invoke(
+        [
             HumanMessage(content="Hello."),
             AIMessage(content="Hello!"),
             HumanMessage(content="Who are you?"),
         ],
         stream=True,
-        callbacks=callback_manager,
+        config={"callbacks": callback_manager},
     )
     assert callback_handler.llm_streams > 0
     assert isinstance(response.content, str)
@@ -126,7 +126,7 @@ def test_stream() -> None:
 
 def test_multiple_messages() -> None:
     """Tests multiple messages works."""
-    chat = ChatTongyi()
+    chat = ChatTongyi()  # type: ignore[call-arg]
     message = HumanMessage(content="Hi, how are you.")
     response = chat.generate([[message], [message]])
 

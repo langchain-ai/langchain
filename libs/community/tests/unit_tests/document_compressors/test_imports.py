@@ -1,6 +1,6 @@
 from langchain_community.document_compressors import __all__, _module_lookup
 
-EXPECTED_ALL = ["LLMLinguaCompressor", "OpenVINOReranker"]
+EXPECTED_ALL = ["LLMLinguaCompressor", "OpenVINOReranker", "JinaRerank"]
 
 
 def test_all_imports() -> None:
