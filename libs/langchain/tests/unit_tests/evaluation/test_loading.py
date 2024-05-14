@@ -26,6 +26,7 @@ def test_load_evaluators(evaluator_type: EvaluatorType) -> None:
     )
 
 
+@pytest.mark.community
 @pytest.mark.parametrize(
     "evaluator_types",
     [
