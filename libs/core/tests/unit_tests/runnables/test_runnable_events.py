@@ -1421,7 +1421,6 @@ async def test_with_llm() -> None:
                         [{"generation_info": None, "text": "abc", "type": "Generation"}]
                     ],
                     "llm_output": None,
-                    "run": None,
                 },
             },
             "event": "on_llm_end",

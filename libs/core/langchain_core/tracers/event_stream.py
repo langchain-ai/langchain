@@ -269,6 +269,21 @@ class _AstreamEventHandler(AsyncCallbackHandler):
 
             event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
+            generations = cast(List[List[GenerationChunk]], response.generations)
+            output = {
+                "generations": [
+                    [
+                        {
+                            "text": chunk.text,
+                            "generation_info": chunk.generation_info,
+                            "type": "Generation",
+                        }
+                        for chunk in gen
+                    ]
+                    for gen in generations
+                ],
+                "llm_output": response.llm_output,
+            }
             event = "on_llm_end"
         else:
             raise ValueError(f"Unexpected run type: {run_info['run_type']}")
