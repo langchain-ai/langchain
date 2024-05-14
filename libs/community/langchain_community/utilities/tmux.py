@@ -4,8 +4,8 @@ from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 class TmuxPane(BaseModel):
-    window_width: int = 120
-    window_height: int = 40
+    window_width: int = 140
+    window_height: int = 24
     server: Any
     session_name: Optional[str]
     pane: Any

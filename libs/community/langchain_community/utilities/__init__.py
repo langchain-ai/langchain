@@ -152,6 +152,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.tensorflow_datasets import (
         TensorflowDatasets,
     )
+    from langchain_community.utilities.tmux import (
+        TmuxPane,
+    )
     from langchain_community.utilities.twilio import (
         TwilioAPIWrapper,
     )
@@ -222,6 +225,7 @@ __all__ = [
     "SteamWebAPIWrapper",
     "TensorflowDatasets",
     "TextRequestsWrapper",
+    "TmuxPane",
     "TwilioAPIWrapper",
     "WikipediaAPIWrapper",
     "WolframAlphaAPIWrapper",
@@ -285,6 +289,7 @@ _module_lookup = {
     "SteamWebAPIWrapper": "langchain_community.utilities.steam",
     "TensorflowDatasets": "langchain_community.utilities.tensorflow_datasets",
     "TextRequestsWrapper": "langchain_community.utilities.requests",
+    "TmuxPane": "langchain_community.utilities.tmux",
     "TwilioAPIWrapper": "langchain_community.utilities.twilio",
     "WikipediaAPIWrapper": "langchain_community.utilities.wikipedia",
     "WolframAlphaAPIWrapper": "langchain_community.utilities.wolfram_alpha",
