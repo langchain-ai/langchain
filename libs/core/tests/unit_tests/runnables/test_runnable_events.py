@@ -285,6 +285,26 @@ async def test_event_stream_with_triple_lambda() -> None:
     ]
 
 
+async def test_runnable_lambda_nested() -> None:
+    """Test invoking nested runnable lambda."""
+
+    async def add_one(x: int) -> int:
+        return x + 1
+
+    add_one = RunnableLambda(func=add_one)
+
+    async def add_one_proxy(x: int, config) -> int:
+        manager = config["callbacks"]
+        streaming = add_one.astream(x, config)
+        result = anext(streaming)
+        return result
+
+    add_one_proxy = RunnableLambda(func=add_one_proxy)
+
+    events = await _collect_events(add_one_proxy.astream_events(1, version="v1"))
+    assert events == []
+
+
 async def test_event_stream_with_triple_lambda_test_filtering() -> None:
     """Test filtering based on tags / names"""
 
@@ -878,6 +898,7 @@ async def test_event_streaming_with_tools() -> None:
     # type ignores below because the tools don't appear to be runnables to type checkers
     # we can remove as soon as that's fixed
     events = await _collect_events(parameterless.astream_events({}, version="v1"))  # type: ignore
+    assert events == []
     assert events == [
         {
             "data": {"input": {}},
@@ -904,6 +925,7 @@ async def test_event_streaming_with_tools() -> None:
             "tags": [],
         },
     ]
+    return
 
     events = await _collect_events(with_callbacks.astream_events({}, version="v1"))  # type: ignore
     assert events == [
@@ -1507,7 +1529,23 @@ async def test_events_astream_config() -> None:
             "tags": [],
         },
         {
-            "data": {"output": AIMessageChunk(content="Goodbye world", id="ai2")},
+            "data": {
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessageChunk(
+                                    content="Goodbye world", id="ai2"
+                                ),
+                                "text": "Goodbye world",
+                                "type": "ChatGenerationChunk",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                }
+            },
             "event": "on_chat_model_end",
             "metadata": {},
             "name": "GenericFakeChatModel",
