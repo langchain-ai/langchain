@@ -87,7 +87,7 @@ class MinimaxCommon(BaseModel):
             "MINIMAX_API_HOST",
             default="https://api.minimax.chat",
         )
-        values["_client"] = _MinimaxEndpointClient(
+        values["_client"] = _MinimaxEndpointClient(  # type: ignore[call-arg]
             host=values["minimax_api_host"],
             api_key=values["minimax_api_key"],
             group_id=values["minimax_group_id"],

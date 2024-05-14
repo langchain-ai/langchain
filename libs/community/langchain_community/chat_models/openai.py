@@ -139,9 +139,9 @@ def _convert_delta_to_message_chunk(
     elif role == "tool" or default_class == ToolMessageChunk:
         return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 @deprecated(
