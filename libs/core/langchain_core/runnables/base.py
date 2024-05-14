@@ -926,7 +926,7 @@ class Runnable(Generic[Input, Output], ABC):
         input: Any,
         config: Optional[RunnableConfig] = None,
         *,
-        version: Literal["v1"],
+        version: Literal["v1", "v2"],
         include_names: Optional[Sequence[str]] = None,
         include_types: Optional[Sequence[str]] = None,
         include_tags: Optional[Sequence[str]] = None,
@@ -1088,88 +1088,31 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             An async stream of StreamEvents.
         """  # noqa: E501
-        if version != "v1":
-            raise NotImplementedError(
-                'Only version "v1" of the schema is currently supported.'
+        if version == "v2":
+            from langchain_core.tracers.event_stream import (
+                _astream_events_implementation_v2,
             )
 
-        from langchain_core.callbacks.base import BaseCallbackManager
-        from langchain_core.runnables import ensure_config
-        from langchain_core.tracers.event_stream import (
-            _AstreamEventsCallbackHandler,
-        )
-
-        event_streamer = _AstreamEventsCallbackHandler(
-            include_names=include_names,
-            include_types=include_types,
-            include_tags=include_tags,
-            exclude_names=exclude_names,
-            exclude_types=exclude_types,
-            exclude_tags=exclude_tags,
-        )
-
-        # Assign the stream handler to the config
-        config = ensure_config(config)
-        callbacks = config.get("callbacks")
-        if callbacks is None:
-            config["callbacks"] = [event_streamer]
-        elif isinstance(callbacks, list):
-            config["callbacks"] = callbacks + [event_streamer]
-        elif isinstance(callbacks, BaseCallbackManager):
-            callbacks = callbacks.copy()
-            callbacks.add_handler(event_streamer, inherit=True)
-            config["callbacks"] = callbacks
-        else:
-            raise ValueError(
-                f"Unexpected type for callbacks: {callbacks}."
-                "Expected None, list or AsyncCallbackManager."
+            stream = _astream_events_implementation_v2(
+                self,
+                input,
+                config=config,
+                include_names=include_names,
+                include_types=include_types,
+                include_tags=include_tags,
+                exclude_names=exclude_names,
+                exclude_types=exclude_types,
+                exclude_tags=exclude_tags,
+                **kwargs,
             )
-
-        # Call the runnable in streaming mode,
-        # add each chunk to the output stream
-        async def consume_astream() -> None:
-            try:
-                async for _ in self.astream(input, config, **kwargs):
-                    # All the content will be picked up
-                    pass
-            finally:
-                await event_streamer.send_stream.aclose()
-
-        # Start the runnable in a task, so we can start consuming output
-        task = asyncio.create_task(consume_astream())
-
-        first_event_sent = False
-        first_event_run_id = None
-
-        try:
-            async for event in event_streamer:
-                if not first_event_sent:
-                    first_event_sent = True
-                    # This is a work-around an issue where the inputs into the
-                    # chain are not available until the entire input is consumed.
-                    # As a temporary solution, we'll modify the input to be the input
-                    # that was passed into the chain.
-                    event["data"]["input"] = input
-                    first_event_run_id = event["run_id"]
-                    yield event
-                    continue
-
-                if event["run_id"] == first_event_run_id and event["event"].endswith(
-                    "_end"
-                ):
-                    # If it's the end event corresponding to the root runnable
-                    # we want to include the input in the event since it's guaranteed
-                    # to be included in the first event.
-                    if "input" in event["data"]:
-                        del event["data"]["input"]
-
+            async for event in stream:
                 yield event
-        finally:
-            # Wait for the runnable to finish, if not cancelled (eg. by break)
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+        elif version == "v1":
+            raise NotImplementedError()
+        else:
+            raise NotImplementedError(
+                'Only versions "v1" and "v2" of the schema is currently supported.'
+            )
 
     def transform(
         self,
