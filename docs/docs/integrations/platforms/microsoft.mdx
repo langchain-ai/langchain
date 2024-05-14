@@ -317,6 +317,24 @@ from langchain_community.agent_toolkits import PowerBIToolkit
 from langchain_community.utilities.powerbi import PowerBIDataset
 ```
 
+
+## Graphs
+
+### Azure Cosmos DB for Apache Gremlin
+
+We need to install a python package.
+
+```bash
+pip install gremlinpython
+```
+
+See a [usage example](/docs/integrations/graphs/azure_cosmosdb_gremlin).
+
+```python
+from langchain_community.graphs import GremlinGraph
+from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
+```
+
 ## Utilities
 
 ### Bing Search API

@@ -70,7 +70,7 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
 class O365BaseLoader(BaseLoader, BaseModel):
     """Base class for all loaders that uses O365 Package"""
 
-    settings: _O365Settings = Field(default_factory=_O365Settings)
+    settings: _O365Settings = Field(default_factory=_O365Settings)  # type: ignore[arg-type]
     """Settings for the Office365 API client."""
     auth_with_token: bool = False
     """Whether to authenticate with a token or not. Defaults to False."""

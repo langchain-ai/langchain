@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.utils import guard_import
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.docstore.base import AddableMixin, Docstore
@@ -26,14 +27,7 @@ def dependable_scann_import() -> Any:
     """
     Import `scann` if available, otherwise raise error.
     """
-    try:
-        import scann
-    except ImportError:
-        raise ImportError(
-            "Could not import scann python package. "
-            "Please install it with `pip install scann` "
-        )
-    return scann
+    return guard_import("scann")
 
 
 class ScaNN(VectorStore):
@@ -312,7 +306,7 @@ class ScaNN(VectorStore):
         normalize_L2: bool = False,
         **kwargs: Any,
     ) -> ScaNN:
-        scann = dependable_scann_import()
+        scann = guard_import("scann")
         distance_strategy = kwargs.get(
             "distance_strategy", DistanceStrategy.EUCLIDEAN_DISTANCE
         )
@@ -494,7 +488,7 @@ class ScaNN(VectorStore):
         scann_path = path / "{index_name}.scann".format(index_name=index_name)
         scann_path.mkdir(exist_ok=True, parents=True)
         # load index separately since it is not picklable
-        scann = dependable_scann_import()
+        scann = guard_import("scann")
         index = scann.scann_ops_pybind.load_searcher(str(scann_path))
 
         # load docstore and index_to_docstore_id
