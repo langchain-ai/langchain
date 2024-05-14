@@ -17,7 +17,7 @@ pip install transformers
 See a [usage example](/docs/integrations/chat/huggingface).
 
 ```python
-from langchain_community.chat_models.huggingface import ChatHuggingFace
+from langchain_huggingface import ChatHuggingFace
 ```
 
 ## LLMs
@@ -35,7 +35,7 @@ pip install transformers
 See a [usage example](/docs/integrations/llms/huggingface_pipelines).
 
 ```python
-from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain_huggingface import HuggingFacePipeline
 ```
 
 To use the OpenVINO backend in local pipeline wrapper, please install the optimum library and set HuggingFacePipeline's backend as `openvino`:
@@ -77,7 +77,7 @@ pip install sentence_transformers
 See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
 
 ```python
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 ```
 #### HuggingFaceInstructEmbeddings
 
