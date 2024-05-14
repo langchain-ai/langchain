@@ -80,6 +80,10 @@ select = [
 disallow_untyped_defs = "True"
 exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
 
+[[tool.mypy.overrides]]
+module = "numpy"
+ignore_missing_imports = true
+
 [tool.coverage.run]
 omit = ["tests/*"]
 
