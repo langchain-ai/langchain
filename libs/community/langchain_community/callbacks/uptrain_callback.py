@@ -83,10 +83,10 @@ class UpTrainDataSchema:
     """The UpTrain data schema for tracking evaluation results.
 
     Args:
-        project_name (str): Prefix for the project name.
+        project_name (str): The project name to be shown in UpTrain dashboard.
 
     Attributes:
-        project_name (str): Prefix for the project name.
+        project_name (str): The project name to be shown in UpTrain dashboard.
         uptrain_results (DefaultDict[str, Any]): Dictionary to store evaluation results.
         eval_types (Set[str]): Set to store the types of evaluations.
         query (str): Query for the RAG evaluation.
