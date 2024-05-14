@@ -26,10 +26,10 @@ from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.load import dumpd
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import (
+    ChatGeneration,
     ChatGenerationChunk,
     GenerationChunk,
     LLMResult,
-    ChatGeneration,
 )
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.runnables.utils import (
@@ -148,6 +148,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             "metadata": metadata or {},
             "name": name_,
             "run_type": run_type,
+            "inputs": {"messages": messages},
         }
 
         await self._send(
@@ -184,6 +185,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             "metadata": metadata or {},
             "name": name_,
             "run_type": run_type,
+            "inputs": {"prompts": prompts},
         }
 
         await self._send(
@@ -245,25 +247,26 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         # "chat_model" is only used for the experimental new streaming_events format.
         # This change should not affect any existing tracers.
         run_info = self.run_map.pop(run_id)
-
-        outputs = response.dict()
+        inputs_ = run_info["inputs"]
 
         if run_info["run_type"] == "chat_model":
             generations = cast(List[List[ChatGeneration]], response.generations)
+            output = {
+                "generations": [
+                    [
+                        {
+                            "message": chunk.message,
+                            "generation_info": chunk.generation_info,
+                            "text": chunk.text,
+                            "type": "ChatGenerationChunk",
+                        }
+                        for chunk in gen
+                    ]
+                    for gen in generations
+                ],
+                "llm_output": response.llm_output,
+            }
 
-            if len(generations) != 1:
-                raise AssertionError(
-                    "Expected a single generation, but got multiple generations."
-                )
-
-            first_generation = generations[0]
-
-            if len(first_generation) != 1:
-                raise AssertionError(
-                    "Expected a single generation, but got multiple generations."
-                )
-            gen = first_generation[0]
-            outputs = gen.message
             event = "on_chat_model_end"
         elif run_info["run_type"] == "llm":
             event = "on_llm_end"
@@ -273,7 +276,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         await self._send(
             {
                 "event": event,
-                "data": {"output": outputs},
+                "data": {"output": output, "input": inputs_},
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
@@ -331,7 +334,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         """Start a trace for a chain run."""
         name_ = _assign_name(name, serialized)
         run_type_ = run_type or "chain"
-        self.run_map[run_id] = {
+        run_info = {
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name_,
@@ -340,10 +343,14 @@ class _AstreamEventHandler(AsyncCallbackHandler):
 
         data = {}
 
-        # Work-around Runnable core code not sending input in some
-        # cases.
         if inputs != {"input": ""}:
             data["input"] = inputs
+            run_info["inputs"] = inputs
+
+        self.run_map[run_id] = run_info
+
+        # Work-around Runnable core code not sending input in some
+        # cases.
 
         await self._send(
             {
@@ -368,15 +375,20 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         """End a trace for a chain run."""
         run_info = self.run_map.pop(run_id)
         run_type = run_info["run_type"]
+
         event = f"on_{run_type}_end"
+
+        inputs = inputs or run_info.get("inputs") or {}
+
+        data = {
+            "output": outputs,
+            "input": inputs,
+        }
 
         await self._send(
             {
                 "event": event,
-                "data": {
-                    "input": inputs or {},
-                    "output": outputs,
-                },
+                "data": data,
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
@@ -461,11 +473,12 @@ class _AstreamEventHandler(AsyncCallbackHandler):
     ) -> None:
         """Run when Retriever starts running."""
         name_ = _assign_name(name, serialized)
+        run_type = "retriever"
         self.run_map[run_id] = {
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name_,
-            "run_type": "tool",
+            "run_type": run_type,
             "inputs": {"query": query},
         }
 
@@ -482,7 +495,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 "run_id": str(run_id),
                 "metadata": metadata or {},
             },
-            "retriever",
+            run_type,
         )
 
     async def on_retriever_end(
@@ -495,7 +508,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             {
                 "event": "on_retriever_end",
                 "data": {
-                    "output": documents,
+                    "output": {"documents": documents},
                     "input": run_info["inputs"],
                 },
                 "run_id": str(run_id),
@@ -503,7 +516,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
             },
-            "retriever",
+            run_info["run_type"],
         )
 
     def __deepcopy__(self, memo: dict) -> _AstreamEventHandler:

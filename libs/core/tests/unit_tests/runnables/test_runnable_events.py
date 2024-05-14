@@ -447,7 +447,23 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"output": AIMessageChunk(content="hello world!", id=AnyStr())},
+            "data": {
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "generation_info": None,
+                                "message": AIMessageChunk(
+                                    content="hello world!", id=AnyStr()
+                                ),
+                                "text": "hello world!",
+                                "type": "ChatGenerationChunk",
+                            }
+                        ]
+                    ],
+                    "llm_output": None,
+                }
+            },
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
             "name": "my_model",
@@ -455,6 +471,23 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
     ]
+
+
+async def test_astream_with_model_in_chain() -> None:
+    """Scenarios with model when it is not the only runnable in the chain."""
+    infinite_cycle = cycle([AIMessage(content="hello world!")])
+    # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
+    model = (
+        GenericFakeChatModel(messages=infinite_cycle)
+        .with_config(
+            {
+                "metadata": {"a": "b"},
+                "tags": ["my_model"],
+                "run_name": "my_model",
+            }
+        )
+        .bind(stop="<stop_token>")
+    )
 
     @RunnableLambda
     def i_dont_stream(input: Any, config: RunnableConfig) -> Any:
@@ -522,7 +555,6 @@ async def test_astream_events_from_model() -> None:
                         ]
                     ],
                     "llm_output": None,
-                    "run": None,
                 },
             },
             "event": "on_chat_model_end",
@@ -801,7 +833,6 @@ async def test_event_stream_with_simple_chain() -> None:
                         ]
                     ],
                     "llm_output": None,
-                    "run": None,
                 },
             },
             "event": "on_chat_model_end",
@@ -1014,10 +1045,14 @@ async def test_event_stream_with_retriever() -> None:
         },
         {
             "data": {
-                "output": [
-                    Document(page_content="hello world!", metadata={"foo": "bar"}),
-                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
-                ],
+                "output": {
+                    "documents": [
+                        Document(page_content="hello world!", metadata={"foo": "bar"}),
+                        Document(
+                            page_content="goodbye world!", metadata={"food": "spare"}
+                        ),
+                    ]
+                },
             },
             "event": "on_retriever_end",
             "metadata": {},
@@ -1062,7 +1097,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "data": {"input": {"query": "hello"}},
             "event": "on_retriever_start",
             "metadata": {},
-            "name": "Retriever",
+            "name": "HardCodedRetriever",
             "run_id": "",
             "tags": ["seq:step:1"],
         },
@@ -1080,7 +1115,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             },
             "event": "on_retriever_end",
             "metadata": {},
-            "name": "Retriever",
+            "name": "HardCodedRetriever",
             "run_id": "",
             "tags": ["seq:step:1"],
         },
@@ -1443,7 +1478,7 @@ async def test_events_astream_config() -> None:
             "data": {"input": "hello"},
             "event": "on_chat_model_start",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
@@ -1451,7 +1486,7 @@ async def test_events_astream_config() -> None:
             "data": {"chunk": AIMessageChunk(content="Goodbye", id="ai2")},
             "event": "on_chat_model_stream",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
@@ -1459,7 +1494,7 @@ async def test_events_astream_config() -> None:
             "data": {"chunk": AIMessageChunk(content=" ", id="ai2")},
             "event": "on_chat_model_stream",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
@@ -1467,7 +1502,7 @@ async def test_events_astream_config() -> None:
             "data": {"chunk": AIMessageChunk(content="world", id="ai2")},
             "event": "on_chat_model_stream",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
@@ -1475,7 +1510,7 @@ async def test_events_astream_config() -> None:
             "data": {"output": AIMessageChunk(content="Goodbye world", id="ai2")},
             "event": "on_chat_model_end",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
