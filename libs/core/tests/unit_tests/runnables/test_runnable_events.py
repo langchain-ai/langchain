@@ -1619,12 +1619,12 @@ async def test_sync_in_async_stream_lambdas() -> None:
 
     add_one = RunnableLambda(add_one_)
 
-    def add_one_proxy_(x: int, config: RunnableConfig) -> int:
+    async def add_one_proxy_(x: int, config: RunnableConfig) -> int:
         streaming = add_one.stream(x, config)
         results = [result for result in streaming]
         return results[0]
 
-    add_one_proxy = RunnableLambda(add_one_proxy_)
+    add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore
 
     events = await _collect_events(add_one_proxy.astream_events(1, version="v1"))
     assert events == EXPECTED_EVENTS
@@ -1633,19 +1633,20 @@ async def test_sync_in_async_stream_lambdas() -> None:
 async def test_async_in_async_stream_lambdas() -> None:
     """Test invoking nested runnable lambda."""
 
-    async def add_one_(x: int) -> int:
+    async def add_one(x: int) -> int:
         return x + 1
 
-    add_one = RunnableLambda(func=add_one_, afunc=add_one_)
+    add_one_ = RunnableLambda(add_one)  # type: ignore
 
-    async def add_one_proxy_(x: int, config: RunnableConfig) -> int:
-        streaming = add_one.astream(x, config)
+    async def add_one_proxy(x: int, config: RunnableConfig) -> int:
+        # Use sync streaming
+        streaming = add_one_.astream(x, config)
         results = [result async for result in streaming]
         return results[0]
 
-    add_one_proxy = RunnableLambda(func=add_one_proxy_, afunc=add_one_proxy_)
+    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
 
-    events = await _collect_events(add_one_proxy.astream_events(1, version="v1"))
+    events = await _collect_events(add_one_proxy_.astream_events(1, version="v1"))
     assert events == EXPECTED_EVENTS
 
 
@@ -1657,18 +1658,18 @@ async def test_async_in_async_stream_lambdas() -> None:
 async def test_sync_in_sync_lambdas() -> None:
     """Test invoking nested runnable lambda."""
 
-    def add_one_(x: int) -> int:
+    def add_one(x: int) -> int:
         return x + 1
 
-    add_one = RunnableLambda(add_one_)
+    add_one_ = RunnableLambda(add_one)
 
-    def add_one_proxy_(x: int, config: RunnableConfig) -> int:
+    def add_one_proxy(x: int, config: RunnableConfig) -> int:
         # Use sync streaming
-        streaming = add_one.stream(x, config)
+        streaming = add_one_.stream(x, config)
         results = [result for result in streaming]
         return results[0]
 
-    add_one_proxy = RunnableLambda(add_one_proxy_)
+    add_one_proxy_ = RunnableLambda(add_one_proxy)
 
-    events = await _collect_events(add_one_proxy.astream_events(1, version="v1"))
+    events = await _collect_events(add_one_proxy_.astream_events(1, version="v1"))
     assert events == EXPECTED_EVENTS
