@@ -24,7 +24,7 @@ from uuid import UUID
 
 from tenacity import RetryCallState
 
-from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
+from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
 from langchain_core.messages import BaseMessage
