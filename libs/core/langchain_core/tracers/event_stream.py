@@ -15,6 +15,7 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    cast,
 )
 from uuid import UUID
 
@@ -97,7 +98,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
 
     async def _send(self, event: StreamEvent, event_type: str) -> None:
         """Send an event to the stream."""
-        if self.root_event_filter.include_event(event, "chain"):
+        if self.root_event_filter.include_event(event, event_type):
             await self.send_stream.send(event)
 
     def __aiter__(self) -> AsyncIterator[Any]:
@@ -210,8 +211,12 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         run_info = self.run_map.get(run_id)
         if run_info["run_type"] == "chat_model":
             event = "on_chat_model_stream"
+            chunk = cast(ChatGenerationChunk, chunk)
+            chunk_ = chunk.message
         elif run_info["run_type"] == "llm":
             event = "on_llm_stream"
+            chunk = cast(GenerationChunk, chunk)
+            chunk_ = chunk
         else:
             raise ValueError(f"Unexpected run type: {run_info['run_type']}")
 
@@ -219,8 +224,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             {
                 "event": event,
                 "data": {
-                    "token": token,
-                    "chunk": chunk,
+                    "chunk": chunk_,
                 },
                 "run_id": str(run_id),
                 "name": run_info["name"],
@@ -228,6 +232,57 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                 "metadata": run_info["metadata"],
             },
             run_info["run_type"],
+        )
+
+    async def on_llm_end(
+        self, response: LLMResult, *, run_id: UUID, **kwargs: Any
+    ) -> None:
+        """End a trace for an LLM run."""
+        # "chat_model" is only used for the experimental new streaming_events format.
+        # This change should not affect any existing tracers.
+        run_info = self.run_map.pop(run_id)
+
+        if run_info["run_type"] == "chat_model":
+            event = "on_chat_model_end"
+            if len(response.generations) != 1:
+                raise AssertionError(
+                    f"Expected exactly one generation got {len(response.generations)}."
+                    "Verify that the underlying model is implemented correctly."
+                    "It should generate exactly one completion."
+                )
+
+            first_generation = response.generations[0]
+            if len(first_generation) != 1:
+                raise AssertionError(
+                    f"Expected exactly one generation got {len(first_generation)}."
+                    "Verify that the underlying model is implemented correctly."
+                    "It should generate exactly one completion."
+                )
+
+            actual_generation = first_generation[0]
+
+            if not isinstance(actual_generation, ChatGenerationChunk):
+                raise AssertionError(
+                    f"Expected ChatGenerationChunk, got {type(first_generation[0])}"
+                )
+
+            output = actual_generation.message
+        elif run_info["run_type"] == "llm":
+            event = "on_llm_end"
+            output = response
+        else:
+            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
+
+        await self._send(
+            {
+                "event": event,
+                "data": {"output": output},
+                "run_id": str(run_id),
+                "name": run_info["name"],
+                "tags": run_info["tags"],
+                "metadata": run_info["metadata"],
+            },
+            "llm",
         )
 
     async def on_retry(
@@ -262,33 +317,6 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             },
         )
         return llm_run
-
-    async def on_llm_end(
-        self, response: LLMResult, *, run_id: UUID, **kwargs: Any
-    ) -> None:
-        """End a trace for an LLM run."""
-        # "chat_model" is only used for the experimental new streaming_events format.
-        # This change should not affect any existing tracers.
-        run_info = self.run_map.pop(run_id)
-
-        if run_info["run_type"] == "chat_model":
-            event = "on_chat_model_end"
-        elif run_info["run_type"] == "llm":
-            event = "on_llm_end"
-        else:
-            raise ValueError(f"Unexpected run type: {run_info['run_type']}")
-
-        await self._send(
-            {
-                "event": event,
-                "data": {"output": response.dict()},
-                "run_id": str(run_id),
-                "name": run_info["name"],
-                "tags": run_info["tags"],
-                "metadata": run_info["metadata"],
-            },
-            "llm",
-        )
 
     async def on_chain_start(
         self,

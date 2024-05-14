@@ -29,9 +29,6 @@ from langchain_core.runnables import (
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import tool
-from langchain_core.tracers.event_stream import (
-    _AstreamEventHandler,
-)
 from tests.unit_tests.stubs import AnyStr
 
 
@@ -69,7 +66,72 @@ async def test_event_stream_with_simple_function_tool() -> None:
 
     chain = RunnableLambda(foo) | get_docs
     events = await _collect_events(chain.astream_events({}, version="v1"))
-    assert events == []
+    assert events == [
+        {
+            "event": "on_chain_start",
+            "run_id": "",
+            "name": "RunnableSequence",
+            "tags": [],
+            "metadata": {},
+            "data": {"input": {}},
+        },
+        {
+            "event": "on_chain_start",
+            "name": "foo",
+            "run_id": "",
+            "tags": ["seq:step:1"],
+            "metadata": {},
+            "data": {},
+        },
+        {
+            "event": "on_chain_stream",
+            "name": "foo",
+            "run_id": "",
+            "tags": ["seq:step:1"],
+            "metadata": {},
+            "data": {"chunk": {"x": 5}},
+        },
+        {
+            "event": "on_chain_end",
+            "name": "foo",
+            "run_id": "",
+            "tags": ["seq:step:1"],
+            "metadata": {},
+            "data": {"input": {}, "output": {"x": 5}},
+        },
+        {
+            "event": "on_tool_start",
+            "name": "get_docs",
+            "run_id": "",
+            "tags": ["seq:step:2"],
+            "metadata": {},
+            "data": {"input": {"x": 5}},
+        },
+        {
+            "event": "on_tool_end",
+            "name": "get_docs",
+            "run_id": "",
+            "tags": ["seq:step:2"],
+            "metadata": {},
+            "data": {"input": {"x": 5}, "output": [Document(page_content="hello")]},
+        },
+        {
+            "event": "on_chain_stream",
+            "run_id": "",
+            "tags": [],
+            "metadata": {},
+            "name": "RunnableSequence",
+            "data": {"chunk": [Document(page_content="hello")]},
+        },
+        {
+            "event": "on_chain_end",
+            "name": "RunnableSequence",
+            "run_id": "",
+            "tags": [],
+            "metadata": {},
+            "data": {"output": [Document(page_content="hello")]},
+        },
+    ]
 
 
 async def test_event_stream_with_single_lambda() -> None:
@@ -242,7 +304,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
     )
     assert events == [
         {
-            "data": {},
+            "data": {"input": "hello"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "1",
@@ -258,7 +320,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "tags": ["seq:step:1"],
         },
         {
-            "data": {"input": "hello", "output": "olleh"},
+            "data": {"output": "olleh"},
             "event": "on_chain_end",
             "metadata": {},
             "name": "1",
@@ -274,7 +336,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
     )
     assert events == [
         {
-            "data": {},
+            "data": {"input": "hello"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "3",
@@ -290,7 +352,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "tags": ["my_tag", "seq:step:3"],
         },
         {
-            "data": {"input": "hello", "output": "olleh"},
+            "data": {"output": "olleh"},
             "event": "on_chain_end",
             "metadata": {},
             "name": "3",
