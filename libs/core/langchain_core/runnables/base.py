@@ -1108,11 +1108,6 @@ class Runnable(Generic[Input, Output], ABC):
             exclude_tags=exclude_tags,
         )
 
-        config = ensure_config(config)
-
-        first_event_sent = False
-        first_event_run_id = None
-
         # Assign the stream handler to the config
         config = ensure_config(config)
         callbacks = config.get("callbacks")
@@ -1142,6 +1137,10 @@ class Runnable(Generic[Input, Output], ABC):
 
         # Start the runnable in a task, so we can start consuming output
         task = asyncio.create_task(consume_astream())
+
+        first_event_sent = False
+        first_event_run_id = None
+
         try:
             async for event in event_streamer:
                 if not first_event_sent:

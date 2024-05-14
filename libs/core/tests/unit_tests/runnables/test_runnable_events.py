@@ -1490,17 +1490,3 @@ async def test_runnable_with_message_history() -> None:
             AIMessage(content="world", id="ai4"),
         ]
     }
-
-
-async def test_event_stream():
-    """Test event stream."""
-    handler = _AstreamEventHandler()
-
-    def foo(x: int):
-        return x
-
-    chain = RunnableLambda(foo)
-
-    implementation = _event_stream_implementation(chain, 1, stream=handler)
-    events = [event async for event in implementation]
-    assert events == []

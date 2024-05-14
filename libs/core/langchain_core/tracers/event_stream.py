@@ -436,13 +436,16 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             "metadata": metadata or {},
             "name": name,
             "run_type": "tool",
+            "inputs": {"query": query},
         }
 
         await self._send(
             {
                 "event": "on_retriever_start",
                 "data": {
-                    "query": query,
+                    "input": {
+                        "query": query,
+                    }
                 },
                 "name": name,
                 "tags": tags or [],
@@ -462,7 +465,10 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             {
                 "event": "on_retriever_end",
                 "data": {
-                    "output": documents,
+                    "output": {
+                        "documents": documents,
+                    },
+                    "input": run_info["inputs"],
                 },
                 "run_id": str(run_id),
                 "name": run_info["name"],
