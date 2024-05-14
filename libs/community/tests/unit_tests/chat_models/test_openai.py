@@ -17,9 +17,9 @@ from langchain_community.chat_models.openai import ChatOpenAI
 
 @pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
-    llm = ChatOpenAI(model="foo", openai_api_key="foo")
+    llm = ChatOpenAI(model="foo", openai_api_key="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
-    llm = ChatOpenAI(model_name="foo", openai_api_key="foo")
+    llm = ChatOpenAI(model_name="foo", openai_api_key="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
 
 
@@ -81,7 +81,7 @@ def mock_completion() -> dict:
 
 @pytest.mark.requires("openai")
 def test_openai_predict(mock_completion: dict) -> None:
-    llm = ChatOpenAI(openai_api_key="foo")
+    llm = ChatOpenAI(openai_api_key="foo")  # type: ignore[call-arg]
     mock_client = MagicMock()
     completed = False
 
@@ -103,7 +103,7 @@ def test_openai_predict(mock_completion: dict) -> None:
 
 @pytest.mark.requires("openai")
 async def test_openai_apredict(mock_completion: dict) -> None:
-    llm = ChatOpenAI(openai_api_key="foo")
+    llm = ChatOpenAI(openai_api_key="foo")  # type: ignore[call-arg]
     mock_client = MagicMock()
     completed = False
 

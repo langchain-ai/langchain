@@ -10,7 +10,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.52"
+langchain-core = ">=0.1.52,<0.3"
 langchain-community = ">=0.0.38rc1,<0.3"
 presidio-anonymizer = {version = "^2.2.352", optional = true}
 presidio-analyzer = {version = "^2.2.352", optional = true}
@@ -60,6 +60,7 @@ pytest-asyncio = "^0.20.3"
 langchain = {path = "../langchain", develop = true}
 langchain-core = {path = "../core", develop = true}
 langchain-community = {path = "../community", develop = true}
+langchain-text-splitters = {path = "../text-splitters", develop = true}
 
 
 [tool.poetry.group.test_integration]

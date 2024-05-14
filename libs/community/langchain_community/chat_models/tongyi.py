@@ -94,7 +94,7 @@ def convert_dict_to_message(
             else AIMessage(
                 content=content,
                 additional_kwargs=additional_kwargs,
-                tool_calls=tool_calls,
+                tool_calls=tool_calls,  # type: ignore[arg-type]
                 invalid_tool_calls=invalid_tool_calls,
             )
         )
