@@ -37,8 +37,8 @@ class TmuxPane(BaseModel):
         values["pane"] = window.panes[0]
         return values
 
-    def send_keys(self, *args, **kwargs) -> None:
+    def send_keys(self, *args: Any, **kwargs: Any) -> None:
         self.pane.send_keys(*args, **kwargs)
 
-    def capture(self, *args, **kwargs) -> list[str]:
+    def capture(self, *args: Any, **kwargs: Any) -> list[str]:
         return self.pane.capture_pane(*args, **kwargs)

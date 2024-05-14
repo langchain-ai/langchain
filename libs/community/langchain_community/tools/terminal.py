@@ -53,7 +53,7 @@ class TerminalBottomCaptureTool(BaseTool):
 
     def _run(
         self, n_bottom_str: str, run_manager: Optional[CallbackManagerForToolRun] = None
-    ) -> list[str]:
+    ) -> str:
         # Ensure we can't exceed the window height
         n_bottom = min(int(n_bottom_str), self.pane.window_height)
         # Grab the last n_bottom rows of the pane contents
@@ -75,7 +75,7 @@ class TerminalTopCaptureTool(BaseTool):
 
     def _run(
         self, n_top_str: str, run_manager: Optional[CallbackManagerForToolRun] = None
-    ) -> list[str]:
+    ) -> str:
         # Ensure we can't exceed the window height
         n_top = min(int(n_top_str), self.pane.window_height)
         # Grab the pane contents
