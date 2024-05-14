@@ -1874,9 +1874,10 @@ class Runnable(Generic[Input, Output], ABC):
 
             if stream_handler := next(
                 (
-                    h
+                    cast(_StreamingCallbackHandler, h)
                     for h in run_manager.handlers
-                    if isinstance(h, _StreamingCallbackHandler)
+                    # instance check OK here, it's a mixin
+                    if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
                 ),
                 None,
             ):

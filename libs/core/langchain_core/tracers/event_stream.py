@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import threading
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,6 +12,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    TypeVar,
     Union,
     cast,
 )
@@ -21,14 +21,14 @@ from uuid import UUID
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     GenerationChunk,
     LLMResult,
 )
-from langchain_core.runnables.schema import StreamEvent
+from langchain_core.runnables.schema import EventData, StreamEvent
 from langchain_core.runnables.utils import (
     _RootEventFilter,
 )
@@ -62,6 +62,9 @@ def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> str:
     return "Unnamed"
 
 
+T = TypeVar("T")
+
+
 class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHandler):
     """An implementation of an async callback handler for astream events."""
 
@@ -78,9 +81,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """Initialize the tracer."""
         super().__init__(*args, **kwargs)
+        # Map of run ID to run info.
         self.run_map: Dict[UUID, RunInfo] = {}
-        """Map of run ID to run. Cleared on run end."""
 
+        # Filter which events will be sent over the queue.
         self.root_event_filter = _RootEventFilter(
             include_names=include_names,
             include_types=include_types,
@@ -92,7 +96,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         loop = asyncio.get_event_loop()
         memory_stream = _MemoryStream[StreamEvent](loop)
-        self.lock = threading.Lock()
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
@@ -106,8 +109,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         return self.receive_stream.__aiter__()
 
     async def tap_output_aiter(
-        self, run_id: UUID, output: AsyncIterator
-    ) -> AsyncIterator:
+        self, run_id: UUID, output: AsyncIterator[T]
+    ) -> AsyncIterator[T]:
         """Tap the output aiter."""
         async for chunk in output:
             run_info = self.run_map.get(run_id)
@@ -213,14 +216,25 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         run_info = self.run_map.get(run_id)
+
+        chunk_: Union[GenerationChunk, BaseMessageChunk]
+
+        if run_info is None:
+            raise AssertionError(f"Run ID {run_id} not found in run map.")
         if run_info["run_type"] == "chat_model":
             event = "on_chat_model_stream"
-            chunk = cast(ChatGenerationChunk, chunk)
-            chunk_ = chunk.message
+
+            if chunk is None:
+                chunk_ = AIMessageChunk(content=token)
+            else:
+                chunk_ = cast(ChatGenerationChunk, chunk).message
+
         elif run_info["run_type"] == "llm":
             event = "on_llm_stream"
-            chunk = cast(GenerationChunk, chunk)
-            chunk_ = chunk
+            if chunk is None:
+                chunk_ = GenerationChunk(text=token)
+            else:
+                chunk_ = cast(GenerationChunk, chunk)
         else:
             raise ValueError(f"Unexpected run type: {run_info['run_type']}")
 
@@ -246,6 +260,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # This change should not affect any existing tracers.
         run_info = self.run_map.pop(run_id)
         inputs_ = run_info["inputs"]
+
+        generations: Union[List[List[GenerationChunk]], List[List[ChatGeneration]]]
 
         if run_info["run_type"] == "chat_model":
             generations = cast(List[List[ChatGeneration]], response.generations)
@@ -314,14 +330,14 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for a chain run."""
         name_ = _assign_name(name, serialized)
         run_type_ = run_type or "chain"
-        run_info = {
+        run_info: RunInfo = {
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name_,
             "run_type": run_type_,
         }
 
-        data = {}
+        data: EventData = {}
 
         if inputs != {"input": ""}:
             data["input"] = inputs
@@ -360,7 +376,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         inputs = inputs or run_info.get("inputs") or {}
 
-        data = {
+        data: EventData = {
             "output": outputs,
             "input": inputs,
         }

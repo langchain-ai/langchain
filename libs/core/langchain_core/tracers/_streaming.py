@@ -17,7 +17,7 @@ class _StreamingCallbackHandler(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def tap_output_aiter(
+    def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
         """Used for internal astream_log and astream events implementations."""
