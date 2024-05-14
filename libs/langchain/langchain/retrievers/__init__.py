@@ -17,6 +17,7 @@ the backbone of a retriever, but there are other types of retrievers as well.
     Document, Serializable, Callbacks,
     CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
 """
+
 from typing import TYPE_CHECKING, Any
 
 from langchain._api.module_import import create_importer
@@ -65,7 +66,6 @@ if TYPE_CHECKING:
         PubMedRetriever,
         RemoteLangChainRetriever,
         SVMRetriever,
-        SentenceWindowRetriever,
         TavilySearchAPIRetriever,
         TFIDFRetriever,
         VespaRetriever,
@@ -116,7 +116,6 @@ DEPRECATED_LOOKUP = {
     "ZepRetriever": "langchain_community.retrievers",
     "ZillizRetriever": "langchain_community.retrievers",
     "DocArrayRetriever": "langchain_community.retrievers",
-    "SentenceWindowRetriever": "langchain_community.retrievers",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -164,7 +163,6 @@ __all__ = [
     "RemoteLangChainRetriever",
     "RePhraseQueryRetriever",
     "SelfQueryRetriever",
-    "SentenceWindowRetriever",
     "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",

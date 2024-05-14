@@ -135,9 +135,6 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.zilliz import (
         ZillizRetriever,
     )
-    from langchain_community.retrievers.sentence_window_retriever import (
-        SentenceWindowRetriever,
-    )
 
 
 _module_lookup = {
@@ -182,7 +179,6 @@ _module_lookup = {
     "ZepRetriever": "langchain_community.retrievers.zep",
     "ZillizRetriever": "langchain_community.retrievers.zilliz",
     "NeuralDBRetriever": "langchain_community.retrievers.thirdai_neuraldb",
-    "SentenceWindowRetriever": "langchain_community.retrievers.sentence_window_retriever",
 }
 
 
@@ -226,7 +222,6 @@ __all__ = [
     "QdrantSparseVectorRetriever",
     "RememberizerRetriever",
     "RemoteLangChainRetriever",
-    "SentenceWindowRetriever",
     "SVMRetriever",
     "TFIDFRetriever",
     "TavilySearchAPIRetriever",
