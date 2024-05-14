@@ -1088,12 +1088,13 @@ class Runnable(Generic[Input, Output], ABC):
         Returns:
             An async stream of StreamEvents.
         """  # noqa: E501
-        if version == "v2":
-            from langchain_core.tracers.event_stream import (
-                _astream_events_implementation_v2,
-            )
+        from langchain_core.tracers.event_stream import (
+            _astream_events_implementation_v1,
+            _astream_events_implementation_v2,
+        )
 
-            stream = _astream_events_implementation_v2(
+        if version == "v2":
+            event_stream = _astream_events_implementation_v2(
                 self,
                 input,
                 config=config,
@@ -1105,14 +1106,26 @@ class Runnable(Generic[Input, Output], ABC):
                 exclude_tags=exclude_tags,
                 **kwargs,
             )
-            async for event in stream:
-                yield event
         elif version == "v1":
-            raise NotImplementedError()
+            event_stream = _astream_events_implementation_v1(
+                self,
+                input,
+                config=config,
+                include_names=include_names,
+                include_types=include_types,
+                include_tags=include_tags,
+                exclude_names=exclude_names,
+                exclude_types=exclude_types,
+                exclude_tags=exclude_tags,
+                **kwargs,
+            )
         else:
             raise NotImplementedError(
                 'Only versions "v1" and "v2" of the schema is currently supported.'
             )
+
+        async for event in event_stream:
+            yield event
 
     def transform(
         self,
