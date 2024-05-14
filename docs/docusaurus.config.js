@@ -308,7 +308,7 @@ const config = {
 
         // Public API key: it is safe to commit it
         // this is linked to erick@langchain.dev currently
-        apiKey: "6c01842d6a88772ed2236b9c85806441",
+        apiKey: "6c754dced91be3a56aaf49e5b954df91",
 
         indexName: "python-langchain-0.2",
 
