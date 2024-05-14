@@ -237,6 +237,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         run_id: UUID,
         **kwargs: Any,
     ) -> None:
+        """Run on retry."""
         raise NotImplementedError()
         llm_run = self._get_run(run_id)
         retry_d: Dict[str, Any] = {
@@ -431,10 +432,11 @@ class _AstreamEventHandler(AsyncCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run when Retriever starts running."""
+        name_ = _assign_name(name, serialized)
         self.run_map[run_id] = {
             "tags": tags or [],
             "metadata": metadata or {},
-            "name": name,
+            "name": name_,
             "run_type": "tool",
             "inputs": {"query": query},
         }
@@ -447,7 +449,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
                         "query": query,
                     }
                 },
-                "name": name,
+                "name": name_,
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
@@ -465,9 +467,7 @@ class _AstreamEventHandler(AsyncCallbackHandler):
             {
                 "event": "on_retriever_end",
                 "data": {
-                    "output": {
-                        "documents": documents,
-                    },
+                    "output": documents,
                     "input": run_info["inputs"],
                 },
                 "run_id": str(run_id),
