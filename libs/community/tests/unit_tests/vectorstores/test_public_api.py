@@ -88,6 +88,7 @@ _EXPECTED = [
     "VLite",
     "Weaviate",
     "ZepVectorStore",
+    "ZepCloudVectorStore",
     "Zilliz",
     "TencentVectorDB",
     "AzureCosmosDBVectorSearch",
