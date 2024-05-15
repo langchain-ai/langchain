@@ -626,11 +626,7 @@ class BaseChatOpenAI(BaseChatModel):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {
-            "provider": "openai",
-            "model_name": self.model_name,
-            **self._default_params,
-        }
+        return {"model_name": self.model_name, **self._default_params}
 
     def _get_invocation_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
