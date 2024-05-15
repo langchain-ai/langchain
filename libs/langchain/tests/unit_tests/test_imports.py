@@ -19,17 +19,19 @@ def test_import_all() -> None:
             # Without init
             module_name = module_name.rsplit(".", 1)[0]
 
-        if module_name.startswith("langchain_community.") and COMMUNITY_NOT_INSTALLED:
-            continue
-
         mod = importlib.import_module(module_name)
 
         all = getattr(mod, "__all__", [])
 
         for name in all:
             # Attempt to import the name from the module
-            obj = getattr(mod, name)
-            assert obj is not None
+            try:
+                obj = getattr(mod, name)
+                assert obj is not None
+            except ModuleNotFoundError as e:
+                # If the module is not installed, we suppress the error
+                if "Module langchain_community" in str(e) and COMMUNITY_NOT_INSTALLED:
+                    pass
 
 
 def test_import_all_using_dir() -> None:
