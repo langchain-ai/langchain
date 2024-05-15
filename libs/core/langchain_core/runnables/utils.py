@@ -12,6 +12,7 @@ from itertools import groupby
 from typing import (
     Any,
     AsyncIterable,
+    Awaitable,
     Callable,
     Coroutine,
     Dict,
@@ -24,6 +25,7 @@ from typing import (
     Sequence,
     Set,
     Type,
+    TypeGuard,
     TypeVar,
     Union,
 )
@@ -536,7 +538,7 @@ def _create_model_cached(
     )
 
 
-def is_async_generator(func: Any) -> bool:
+def is_async_generator(func: Any) -> TypeGuard[AsyncIterable]:
     """Check if a function is an async generator."""
     return (
         inspect.isasyncgenfunction(func)
@@ -545,7 +547,7 @@ def is_async_generator(func: Any) -> bool:
     )
 
 
-def is_async_callable(func: Any) -> bool:
+def is_async_callable(func: Any) -> TypeGuard[Awaitable]:
     """Check if a function is async."""
     return (
         asyncio.iscoroutinefunction(func)
