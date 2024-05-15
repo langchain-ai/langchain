@@ -57,6 +57,48 @@ db = Chroma.from_documents(documents, OpenAIEmbeddings())
 ```
 
   </TabItem>
+  <TabItem value="pinecone" label="Pinecone">
+
+This walkthrough uses the `Pinecone` vector database, which provides broad functionality to store and search over vectors.
+
+```bash
+pip install langchain-pinecone
+```
+
+We want to use OpenAIEmbeddings so we have to get the OpenAI API Key.
+
+```python
+import os
+import getpass
+
+os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
+```
+
+```python
+from langchain_community.document_loaders import TextLoader
+from langchain_openai import OpenAIEmbeddings
+from langchain_text_splitters import CharacterTextSplitter
+
+# Load the document, split it into chunks, and embed each chunk.
+loader = TextLoader("../../modules/state_of_the_union.txt")
+documents = loader.load()
+text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+docs = text_splitter.split_documents(documents)
+
+embeddings = OpenAIEmbeddings()
+```
+
+Next, go to the [Pinecone console](https://app.pinecone.io) and create a new index with `dimension=1536` called "langchain-test-index". Then, copy the API key and index name.
+
+```python
+from langchain_pinecone import PineconeVectorStore
+
+index_name = "langchain-test-index"
+
+# Connect to Pinecone index and insert the chunked docs as contents
+docsearch = PineconeVectorStore.from_documents(docs, embeddings, index_name=index_name)
+```
+  </TabItem>
   <TabItem value="faiss" label="FAISS">
 
 This walkthrough uses the `FAISS` vector database, which makes use of the Facebook AI Similarity Search (FAISS) library.
