@@ -89,3 +89,14 @@ class ChatModelUnitTests(ABC):
         model = chat_model_class(**chat_model_params)
         assert model is not None
         assert model.with_structured_output(Person) is not None
+
+    def test_standard_params(
+        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
+    ) -> None:
+        model = chat_model_class(**chat_model_params)
+
+        invocation_params = model._get_invocation_params()
+        assert isinstance(invocation_params["model_name"], str)
+        assert isinstance(invocation_params["temperature"], float)
+        assert isinstance(invocation_params["_type"], str)
+        assert "stop" in invocation_params
