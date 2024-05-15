@@ -51,7 +51,7 @@ class UpstageEmbeddings(BaseModel, Embeddings):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model: str = Field(default=None)
+    model: str = Field(...)
     """Embeddings model name to use. Do not add suffixes like `-query` and `-passage`.
     Instead, use 'solar-embedding-1-large' for example.
     """
@@ -198,7 +198,7 @@ class UpstageEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         assert (
-            self.embed_batch_size > MAX_EMBED_BATCH_SIZE
+            self.embed_batch_size <= MAX_EMBED_BATCH_SIZE
         ), f"The embed_batch_size should not be larger than {MAX_EMBED_BATCH_SIZE}."
         params = self._invocation_params
         params["model"] = params["model"] + "-passage"
@@ -240,7 +240,7 @@ class UpstageEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         assert (
-            self.embed_batch_size > MAX_EMBED_BATCH_SIZE
+            self.embed_batch_size <= MAX_EMBED_BATCH_SIZE
         ), f"The embed_batch_size should not be larger than {MAX_EMBED_BATCH_SIZE}."
         params = self._invocation_params
         params["model"] = params["model"] + "-passage"
