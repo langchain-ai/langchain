@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_EMBED_BATCH_SIZE = 10
 MAX_EMBED_BATCH_SIZE = 100
 
+
 class UpstageEmbeddings(BaseModel, Embeddings):
     """UpstageEmbeddings embedding model.
 
@@ -203,7 +204,6 @@ class UpstageEmbeddings(BaseModel, Embeddings):
         params["model"] = params["model"] + "-passage"
         embeddings = []
 
-        
         batch_size = min(self.embed_batch_size, len(texts))
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
