@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Iterator, List, Optional
+from typing import Callable, Dict, Iterator, Optional
 
 from langchain_core.documents import Document
 
@@ -66,15 +66,12 @@ class TensorflowDatasetLoader(BaseLoader):
         ] = sample_to_document_function
         """Custom function that transform a dataset sample into a Document."""
 
-        self._tfds_client = TensorflowDatasets(
+        self._tfds_client = TensorflowDatasets(  # type: ignore[call-arg]
             dataset_name=self.dataset_name,
             split_name=self.split_name,
-            load_max_docs=self.load_max_docs,
+            load_max_docs=self.load_max_docs,  # type: ignore[arg-type]
             sample_to_document_function=self.sample_to_document_function,
         )
 
     def lazy_load(self) -> Iterator[Document]:
         yield from self._tfds_client.lazy_load()
-
-    def load(self) -> List[Document]:
-        return list(self.lazy_load())

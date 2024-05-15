@@ -4,23 +4,25 @@
 // Note: type annotations allow type checking and IDEs autocompletion
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { ProvidePlugin } = require("webpack");
-const path = require("path");
+require("dotenv").config();
 
 const baseLightCodeBlockTheme = require("prism-react-renderer/themes/vsLight");
 const baseDarkCodeBlockTheme = require("prism-react-renderer/themes/vsDark");
 
+const baseUrl = "/v0.2/";
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "🦜️🔗 Langchain",
+  title: "🦜️🔗 LangChain",
   tagline: "LangChain Python Docs",
-  favicon: "img/favicon.ico",
+  favicon: "img/brand/favicon.png",
   // Set the production url of your site here
   url: "https://python.langchain.com",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
-
-  onBrokenLinks: "warn",
+  baseUrl: baseUrl,
+  trailingSlash: true,
+  onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "throw",
 
   themes: ["@docusaurus/theme-mermaid"],
@@ -57,6 +59,10 @@ const config = {
               resolve: {
                 fullySpecified: false,
               },
+            },
+            {
+              test: /\.ya?ml$/,
+              use: 'yaml-loader'
             },
             {
               test: /\.ipynb$/,
@@ -97,6 +103,9 @@ const config = {
                 // eslint-disable-next-line no-param-reassign
                 subItem.label = subItem.label.replace(/\//g, "/\u200B");
               }
+              if (args.item.className) {
+                subItem.className = args.item.className;
+              }
             });
             return sidebarItems;
           },
@@ -114,6 +123,10 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      announcementBar: {
+        content: 'You are viewing the <strong>preview</strong> LangChain v0.2 docs. View the <a href="/v0.1/docs/get_started/introduction/">stable 0.1 docs here</a>.',
+        isCloseable: true,
+      },
       docs: {
         sidebar: {
           hideable: true,
@@ -140,21 +153,10 @@ const config = {
           },
         },
       },
-      image: "img/parrot-chainlink-icon.png",
+      image: "img/brand/theme-image.png",
       navbar: {
-        title: "🦜️🔗 LangChain",
+        logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
         items: [
-          {
-            to: "/docs/get_started/introduction",
-            label: "Docs",
-            position: "left",
-          },
-          {
-            type: "docSidebar",
-            position: "left",
-            sidebarId: "use_cases",
-            label: "Use cases",
-          },
           {
             type: "docSidebar",
             position: "left",
@@ -162,14 +164,8 @@ const config = {
             label: "Integrations",
           },
           {
-            type: "docSidebar",
-            position: "left",
-            sidebarId: "guides",
-            label: "Guides",
-          },
-          {
             href: "https://api.python.langchain.com",
-            label: "API",
+            label: "API Reference",
             position: "left",
           },
           {
@@ -178,17 +174,14 @@ const config = {
             position: "left",
             items: [
               {
-                to: "/docs/packages",
-                label: "Versioning",
+                type: "doc",
+                docId: "people",
+                label: "People",
               },
               {
-                type: "docSidebar",
-                sidebarId: "changelog",
-                label: "Changelog",
-              },
-              {
-                to: "/docs/contributing",
-                label: "Developer's guide",
+                type: "doc",
+                docId: "contributing/index",
+                label: "Contributing",
               },
               {
                 type: "docSidebar",
@@ -200,11 +193,13 @@ const config = {
                 href: "https://github.com/langchain-ai/langchain/blob/master/cookbook/README.md"
               },
               {
-                to: "/docs/additional_resources/tutorials",
+                type: "doc",
+                docId: "additional_resources/tutorials",
                 label: "Tutorials"
               },
               {
-                to: "/docs/additional_resources/youtube",
+                type: "doc",
+                docId: "additional_resources/youtube",
                 label: "YouTube"
               },
             ]
@@ -246,7 +241,7 @@ const config = {
           },
           {
             href: "https://chat.langchain.com",
-            label: "Chat",
+            label: "💬",
             position: "right",
           },
           // Please keep GitHub link to the right for consistency.
@@ -315,20 +310,24 @@ const config = {
         // this is linked to erick@langchain.dev currently
         apiKey: "6c01842d6a88772ed2236b9c85806441",
 
-        indexName: "python-langchain",
+        indexName: "python-langchain-0.2",
 
-        contextualSearch: true,
+        contextualSearch: false,
       },
     }),
 
   scripts: [
-    "/js/google_analytics.js",
+    baseUrl + "js/google_analytics.js",
     {
       src: "https://www.googletagmanager.com/gtag/js?id=G-9B66JQQH2F",
       async: true,
     },
   ],
-  
+
+  customFields: {
+    supabasePublicKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  },
 };
 
 module.exports = config;

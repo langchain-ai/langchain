@@ -31,7 +31,7 @@ class _OneNoteGraphSettings(BaseSettings):
 class OneNoteLoader(BaseLoader, BaseModel):
     """Load pages from OneNote notebooks."""
 
-    settings: _OneNoteGraphSettings = Field(default_factory=_OneNoteGraphSettings)
+    settings: _OneNoteGraphSettings = Field(default_factory=_OneNoteGraphSettings)  # type: ignore[arg-type]
     """Settings for the Microsoft Graph API client."""
     auth_with_token: bool = False
     """Whether to authenticate with a token or not. Defaults to False."""
@@ -108,18 +108,6 @@ class OneNoteLoader(BaseLoader, BaseModel):
                     request_url = pages["@odata.nextLink"]
                 else:
                     request_url = ""
-
-    def load(self) -> List[Document]:
-        """
-        Get pages from OneNote notebooks.
-
-        Returns:
-            A list of Documents with attributes:
-                - page_content
-                - metadata
-                    - title
-        """
-        return list(self.lazy_load())
 
     def _get_page_content(self, page_id: str) -> str:
         """Get page content from OneNote API"""

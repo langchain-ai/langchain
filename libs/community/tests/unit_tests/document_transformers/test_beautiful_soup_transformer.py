@@ -230,3 +230,36 @@ def test_invalid_html() -> None:
     )
     assert docs_transformed[0].page_content == "First heading."
     assert docs_transformed[1].page_content == ""
+
+
+@pytest.mark.requires("bs4")
+def test_remove_comments() -> None:
+    bs_transformer = BeautifulSoupTransformer()
+    html_with_comments = (
+        "<html><!-- Google tag (gtag.js) --><p>First paragraph.</p</html>"
+    )
+    documents = [
+        Document(page_content=html_with_comments),
+    ]
+
+    docs_transformed = bs_transformer.transform_documents(
+        documents, tags_to_extract=["html"], remove_comments=True
+    )
+    assert docs_transformed[0].page_content == "First paragraph."
+
+
+@pytest.mark.requires("bs4")
+def test_do_not_remove_comments() -> None:
+    bs_transformer = BeautifulSoupTransformer()
+    html_with_comments = (
+        "<html><!-- Google tag (gtag.js) --><p>First paragraph.</p</html>"
+    )
+    documents = [
+        Document(page_content=html_with_comments),
+    ]
+
+    docs_transformed = bs_transformer.transform_documents(
+        documents,
+        tags_to_extract=["html"],
+    )
+    assert docs_transformed[0].page_content == "Google tag (gtag.js) First paragraph."

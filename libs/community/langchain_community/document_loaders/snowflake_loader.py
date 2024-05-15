@@ -111,7 +111,7 @@ class SnowflakeLoader(BaseLoader):
         query_result = self._execute_query()
         if isinstance(query_result, Exception):
             print(f"An error occurred during the query: {query_result}")  # noqa: T201
-            return []
+            return []  # type: ignore[return-value]
         page_content_columns, metadata_columns = self._get_columns(query_result)
         if "*" in page_content_columns:
             page_content_columns = list(query_result[0].keys())
@@ -122,7 +122,3 @@ class SnowflakeLoader(BaseLoader):
             metadata = {k: v for k, v in row.items() if k in metadata_columns}
             doc = Document(page_content=page_content, metadata=metadata)
             yield doc
-
-    def load(self) -> List[Document]:
-        """Load data into document objects."""
-        return list(self.lazy_load())

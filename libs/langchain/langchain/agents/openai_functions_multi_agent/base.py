@@ -93,7 +93,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
     )
 
 
-@deprecated("0.1.0", alternative="create_openai_tools_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_openai_tools_agent", removal="0.3.0")
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     """An Agent driven by OpenAIs function powered API.
 
@@ -279,7 +279,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
-        return ChatPromptTemplate(messages=messages)
+        return ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
 
     @classmethod
     def from_llm_and_tools(
@@ -298,7 +298,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message,
         )
-        return cls(
+        return cls(  # type: ignore[call-arg]
             llm=llm,
             prompt=prompt,
             tools=tools,

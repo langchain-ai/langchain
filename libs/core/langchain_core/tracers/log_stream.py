@@ -26,6 +26,7 @@ from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import Input, Output
+from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.tracers.schemas import Run
@@ -157,7 +158,7 @@ class RunLog(RunLogPatch):
 T = TypeVar("T")
 
 
-class LogStreamCallbackHandler(BaseTracer):
+class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
     """Tracer that streams run logs to a stream."""
 
     def __init__(
@@ -476,6 +477,10 @@ def _get_standardized_outputs(
     """
     outputs = load(run.outputs)
     if schema_format == "original":
+        if run.run_type == "prompt" and "output" in outputs:
+            # These were previously dumped before the tracer.
+            # Now we needn't do anything to them.
+            return outputs["output"]
         # Return the old schema, without standardizing anything
         return outputs
 

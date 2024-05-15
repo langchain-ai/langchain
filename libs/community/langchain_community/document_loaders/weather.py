@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Iterator, List, Optional, Sequence
+from typing import Iterator, Optional, Sequence
 
 from langchain_core.documents import Document
 
@@ -32,7 +32,7 @@ class WeatherDataLoader(BaseLoader):
     def from_params(
         cls, places: Sequence[str], *, openweathermap_api_key: Optional[str] = None
     ) -> WeatherDataLoader:
-        client = OpenWeatherMapAPIWrapper(openweathermap_api_key=openweathermap_api_key)
+        client = OpenWeatherMapAPIWrapper(openweathermap_api_key=openweathermap_api_key)  # type: ignore[call-arg]
         return cls(client, places)
 
     def lazy_load(
@@ -43,9 +43,3 @@ class WeatherDataLoader(BaseLoader):
             metadata = {"queried_at": datetime.now()}
             content = self.client.run(place)
             yield Document(page_content=content, metadata=metadata)
-
-    def load(
-        self,
-    ) -> List[Document]:
-        """Load weather data for the given locations."""
-        return list(self.lazy_load())

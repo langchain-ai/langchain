@@ -118,9 +118,9 @@ def _convert_delta_to_message_chunk(
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -328,9 +328,10 @@ class ChatDeepInfra(BaseChatModel):
         for line in _parse_stream(response.iter_lines()):
             chunk = _handle_sse_line(line)
             if chunk:
-                yield ChatGenerationChunk(message=chunk, generation_info=None)
+                cg_chunk = ChatGenerationChunk(message=chunk, generation_info=None)
                 if run_manager:
-                    run_manager.on_llm_new_token(str(chunk.content))
+                    run_manager.on_llm_new_token(str(chunk.content), chunk=cg_chunk)
+                yield cg_chunk
 
     async def _astream(
         self,
@@ -350,9 +351,12 @@ class ChatDeepInfra(BaseChatModel):
             async for line in _parse_stream_async(response.content):
                 chunk = _handle_sse_line(line)
                 if chunk:
-                    yield ChatGenerationChunk(message=chunk, generation_info=None)
+                    cg_chunk = ChatGenerationChunk(message=chunk, generation_info=None)
                     if run_manager:
-                        await run_manager.on_llm_new_token(str(chunk.content))
+                        await run_manager.on_llm_new_token(
+                            str(chunk.content), chunk=cg_chunk
+                        )
+                    yield cg_chunk
 
     async def _agenerate(
         self,

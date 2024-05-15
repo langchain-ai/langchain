@@ -15,15 +15,17 @@ from typing import (
 
 from typing_extensions import get_args
 
+from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
     from langchain_core.prompt_values import PromptValue
 
 T = TypeVar("T")
+OutputParserLike = Runnable[LanguageModelOutput, T]
 
 
 class BaseLLMOutputParser(Generic[T], ABC):
@@ -57,7 +59,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
 
 
 class BaseGenerationOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
+    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call."""
 
@@ -116,7 +118,7 @@ class BaseGenerationOutputParser(
 
 
 class BaseOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[Union[str, BaseMessage], T]
+    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call.
 
@@ -139,9 +141,9 @@ class BaseOutputParser(
                         )
                     return cleaned_text == self.true_val.upper()
 
-                    @property
-                    def _type(self) -> str:
-                            return "boolean_output_parser"
+                @property
+                def _type(self) -> str:
+                    return "boolean_output_parser"
     """  # noqa: E501
 
     @property

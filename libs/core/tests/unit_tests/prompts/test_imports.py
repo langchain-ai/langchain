@@ -10,6 +10,7 @@ EXPECTED_ALL = [
     "FewShotPromptWithTemplates",
     "FewShotChatMessagePromptTemplate",
     "format_document",
+    "aformat_document",
     "HumanMessagePromptTemplate",
     "MessagesPlaceholder",
     "PipelinePromptTemplate",

@@ -1,7 +1,8 @@
 """Loader that uses unstructured to load files."""
 import collections
 from abc import ABC, abstractmethod
-from typing import IO, Any, Callable, Dict, List, Optional, Sequence, Union
+from pathlib import Path
+from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
@@ -47,7 +48,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         try:
             import unstructured  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
@@ -82,12 +83,11 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                 element.apply(post_processor)
         return elements
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load file."""
         elements = self._get_elements()
         self._post_process_elements(elements)
         if self.mode == "elements":
-            docs: List[Document] = list()
             for element in elements:
                 metadata = self._get_metadata()
                 # NOTE(MthwRobinson) - the attribute check is for backward compatibility
@@ -96,7 +96,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                     metadata.update(element.metadata.to_dict())
                 if hasattr(element, "category"):
                     metadata["category"] = element.category
-                docs.append(Document(page_content=str(element), metadata=metadata))
+                yield Document(page_content=str(element), metadata=metadata)
         elif self.mode == "paged":
             text_dict: Dict[int, str] = {}
             meta_dict: Dict[int, Dict] = {}
@@ -118,17 +118,14 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                     meta_dict[page_number].update(metadata)
 
             # Convert the dict to a list of Document objects
-            docs = [
-                Document(page_content=text_dict[key], metadata=meta_dict[key])
-                for key in text_dict.keys()
-            ]
+            for key in text_dict.keys():
+                yield Document(page_content=text_dict[key], metadata=meta_dict[key])
         elif self.mode == "single":
             metadata = self._get_metadata()
             text = "\n\n".join([str(el) for el in elements])
-            docs = [Document(page_content=text, metadata=metadata)]
+            yield Document(page_content=text, metadata=metadata)
         else:
             raise ValueError(f"mode of {self.mode} not supported.")
-        return docs
 
 
 class UnstructuredFileLoader(UnstructuredBaseLoader):
@@ -159,7 +156,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, List[str]],
+        file_path: Union[str, List[str], Path, List[Path], None],
         mode: str = "single",
         **unstructured_kwargs: Any,
     ):
@@ -173,9 +170,13 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
         if isinstance(self.file_path, list):
             elements = []
             for file in self.file_path:
+                if isinstance(file, Path):
+                    file = str(file)
                 elements.extend(partition(filename=file, **self.unstructured_kwargs))
             return elements
         else:
+            if isinstance(self.file_path, Path):
+                self.file_path = str(self.file_path)
             return partition(filename=self.file_path, **self.unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
@@ -183,14 +184,16 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
 
 def get_elements_from_api(
-    file_path: Union[str, List[str], None] = None,
+    file_path: Union[str, List[str], Path, List[Path], None] = None,
     file: Union[IO, Sequence[IO], None] = None,
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
 ) -> List:
     """Retrieve a list of elements from the `Unstructured API`."""
-    if isinstance(file, collections.abc.Sequence) or isinstance(file_path, list):
+    if is_list := isinstance(file_path, list):
+        file_path = [str(path) for path in file_path]
+    if isinstance(file, collections.abc.Sequence) or is_list:
         from unstructured.partition.api import partition_multiple_via_api
 
         _doc_elements = partition_multiple_via_api(
@@ -210,7 +213,7 @@ def get_elements_from_api(
         from unstructured.partition.api import partition_via_api
 
         return partition_via_api(
-            filename=file_path,
+            filename=str(file_path) if file_path is not None else None,
             file=file,
             api_key=api_key,
             api_url=api_url,
@@ -252,7 +255,7 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
 
     def __init__(
         self,
-        file_path: Union[str, List[str]] = "",
+        file_path: Union[str, List[str], None] = "",
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",

@@ -42,15 +42,14 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "aiohttp",
             "async-timeout",
             "dataclasses-json",
-            "jsonpatch",
             "langchain-core",
+            "langchain-text-splitters",
             "langsmith",
             "numpy",
             "pydantic",
             "python",
             "requests",
             "tenacity",
-            "langchain-community",
         ]
     )
 
@@ -77,6 +76,8 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "duckdb-engine",
             "freezegun",
             "langchain-core",
+            "langchain-text-splitters",
+            "langchain-openai",
             "lark",
             "pandas",
             "pytest",
@@ -93,12 +94,16 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     )
 
 
+@pytest.mark.community
 def test_imports() -> None:
     """Test that you can import all top level things okay."""
+    from langchain_community.callbacks import OpenAICallbackHandler  # noqa: F401
     from langchain_community.chat_models import ChatOpenAI  # noqa: F401
     from langchain_community.document_loaders import BSHTMLLoader  # noqa: F401
     from langchain_community.embeddings import OpenAIEmbeddings  # noqa: F401
     from langchain_community.llms import OpenAI  # noqa: F401
+    from langchain_community.retrievers import VespaRetriever  # noqa: F401
+    from langchain_community.tools import DuckDuckGoSearchResults  # noqa: F401
     from langchain_community.utilities import (
         SearchApiAPIWrapper,  # noqa: F401
         SerpAPIWrapper,  # noqa: F401
@@ -107,7 +112,4 @@ def test_imports() -> None:
     from langchain_core.prompts import BasePromptTemplate  # noqa: F401
 
     from langchain.agents import OpenAIFunctionsAgent  # noqa: F401
-    from langchain.callbacks import OpenAICallbackHandler  # noqa: F401
     from langchain.chains import LLMChain  # noqa: F401
-    from langchain.retrievers import VespaRetriever  # noqa: F401
-    from langchain.tools import DuckDuckGoSearchResults  # noqa: F401

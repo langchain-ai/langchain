@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional
+from typing import Iterator, Optional
 
 from langchain_core.documents import Document
 
@@ -28,12 +28,9 @@ class PubMedLoader(BaseLoader):
         """
         self.query = query
         self.load_max_docs = load_max_docs
-        self._client = PubMedAPIWrapper(
-            top_k_results=load_max_docs,
+        self._client = PubMedAPIWrapper(  # type: ignore[call-arg]
+            top_k_results=load_max_docs,  # type: ignore[arg-type]
         )
-
-    def load(self) -> List[Document]:
-        return list(self._client.lazy_load_docs(self.query))
 
     def lazy_load(self) -> Iterator[Document]:
         for doc in self._client.lazy_load_docs(self.query):

@@ -8,9 +8,9 @@ from langchain.agents.output_parsers import (
 )
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.pydantic_v1 import BaseModel, Field
-from langchain.schema import AIMessage, HumanMessage
 from langchain.tools.render import render_text_description_and_args
 from langchain_community.chat_models import ChatOllama
+from langchain_core.messages import AIMessage, HumanMessage
 
 from neo4j_semantic_ollama.information_tool import InformationTool
 from neo4j_semantic_ollama.memory_tool import MemoryTool
@@ -87,9 +87,9 @@ agent = (
     {
         "input": lambda x: x["input"],
         "agent_scratchpad": lambda x: format_log_to_messages(x["intermediate_steps"]),
-        "chat_history": lambda x: _format_chat_history(x["chat_history"])
-        if x.get("chat_history")
-        else [],
+        "chat_history": lambda x: (
+            _format_chat_history(x["chat_history"]) if x.get("chat_history") else []
+        ),
     }
     | prompt
     | chat_model_with_stop

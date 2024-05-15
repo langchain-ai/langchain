@@ -10,8 +10,8 @@ DEFAULT_DEANONYMIZER_MATCHING_STRATEGY = exact_matching_strategy
 
 
 class AnonymizerBase(ABC):
-    """
-    Base abstract class for anonymizers.
+    """Base abstract class for anonymizers.
+
     It is public and non-virtual because it allows
         wrapping the behavior for all methods in a base class.
     """
@@ -22,7 +22,8 @@ class AnonymizerBase(ABC):
         language: Optional[str] = None,
         allow_list: Optional[List[str]] = None,
     ) -> str:
-        """Anonymize text"""
+        """Anonymize text."""
+
         return self._anonymize(text, language, allow_list)
 
     @abstractmethod

@@ -3,6 +3,8 @@ from typing import Callable, Dict, Optional
 
 
 def get_pseudoanonymizer_mapping(seed: Optional[int] = None) -> Dict[str, Callable]:
+    """Get a mapping of entities to pseudo anonymize them."""
+
     try:
         from faker import Faker
     except ImportError as e:

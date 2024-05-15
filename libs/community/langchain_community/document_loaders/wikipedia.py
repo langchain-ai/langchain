@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Iterator, Optional
 
 from langchain_core.documents import Document
 
@@ -42,19 +42,18 @@ class WikipediaLoader(BaseLoader):
         self.load_all_available_meta = load_all_available_meta
         self.doc_content_chars_max = doc_content_chars_max
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """
         Loads the query result from Wikipedia into a list of Documents.
 
         Returns:
-            List[Document]: A list of Document objects representing the loaded
+            A list of Document objects representing the loaded
                 Wikipedia pages.
         """
-        client = WikipediaAPIWrapper(
+        client = WikipediaAPIWrapper(  # type: ignore[call-arg]
             lang=self.lang,
-            top_k_results=self.load_max_docs,
-            load_all_available_meta=self.load_all_available_meta,
-            doc_content_chars_max=self.doc_content_chars_max,
+            top_k_results=self.load_max_docs,  # type: ignore[arg-type]
+            load_all_available_meta=self.load_all_available_meta,  # type: ignore[arg-type]
+            doc_content_chars_max=self.doc_content_chars_max,  # type: ignore[arg-type]
         )
-        docs = client.load(self.query)
-        return docs
+        yield from client.load(self.query)

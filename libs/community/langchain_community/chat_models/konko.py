@@ -94,7 +94,7 @@ class ChatKonko(ChatOpenAI):
             import konko
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import konko python package. "
                 "Please install it with `pip install konko`."
             )
@@ -217,10 +217,12 @@ class ChatKonko(ChatOpenAI):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(message=chunk, generation_info=generation_info)
-            yield chunk
+            cg_chunk = ChatGenerationChunk(
+                message=chunk, generation_info=generation_info
+            )
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                run_manager.on_llm_new_token(cg_chunk.text, chunk=cg_chunk)
+            yield cg_chunk
 
     def _generate(
         self,

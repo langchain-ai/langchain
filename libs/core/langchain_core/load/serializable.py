@@ -1,7 +1,18 @@
 from abc import ABC
-from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+)
 
-from langchain_core.pydantic_v1 import BaseModel, PrivateAttr
+from typing_extensions import NotRequired
+
+from langchain_core.pydantic_v1 import BaseModel
 
 
 class BaseSerialized(TypedDict):
@@ -9,6 +20,8 @@ class BaseSerialized(TypedDict):
 
     lc: int
     id: List[str]
+    name: NotRequired[str]
+    graph: NotRequired[Dict[str, Any]]
 
 
 class SerializedConstructor(BaseSerialized):
@@ -101,12 +114,6 @@ class Serializable(BaseModel, ABC):
             if (k not in self.__fields__ or try_neq_default(v, k, self))
         ]
 
-    _lc_kwargs = PrivateAttr(default_factory=dict)
-
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self._lc_kwargs = kwargs
-
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
@@ -115,8 +122,9 @@ class Serializable(BaseModel, ABC):
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {
             k: getattr(self, k, v)
-            for k, v in self._lc_kwargs.items()
+            for k, v in self
             if not (self.__exclude_fields__ or {}).get(k, False)  # type: ignore
+            and _is_field_useful(self, k, v)
         }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
@@ -171,6 +179,23 @@ class Serializable(BaseModel, ABC):
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
         return to_json_not_implemented(self)
+
+
+def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
+    """Check if a field is useful as a constructor argument.
+
+    Args:
+        inst: The instance.
+        key: The key.
+        value: The value.
+
+    Returns:
+        Whether the field is useful.
+    """
+    field = inst.__fields__.get(key)
+    if not field:
+        return False
+    return field.required is True or value or field.get_default() != value
 
 
 def _replace_secrets(

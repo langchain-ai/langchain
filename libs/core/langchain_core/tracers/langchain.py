@@ -105,8 +105,6 @@ class LangChainTracer(BaseTracer):
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run."""
-        parent_run_id_ = str(parent_run_id) if parent_run_id else None
-        execution_order = self._get_execution_order(parent_run_id_)
         start_time = datetime.now(timezone.utc)
         if metadata:
             kwargs.update({"metadata": metadata})
@@ -118,11 +116,9 @@ class LangChainTracer(BaseTracer):
             extra=kwargs,
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
-            execution_order=execution_order,
-            child_execution_order=execution_order,
             run_type="llm",
             tags=tags,
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)

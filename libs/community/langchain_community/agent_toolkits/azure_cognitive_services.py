@@ -3,9 +3,8 @@ from __future__ import annotations
 import sys
 from typing import List
 
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseTool, BaseToolkit
 
-from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools.azure_cognitive_services import (
     AzureCogsFormRecognizerTool,
     AzureCogsImageAnalysisTool,
@@ -22,13 +21,13 @@ class AzureCognitiveServicesToolkit(BaseToolkit):
         """Get the tools in the toolkit."""
 
         tools: List[BaseTool] = [
-            AzureCogsFormRecognizerTool(),
-            AzureCogsSpeech2TextTool(),
-            AzureCogsText2SpeechTool(),
-            AzureCogsTextAnalyticsHealthTool(),
+            AzureCogsFormRecognizerTool(),  # type: ignore[call-arg]
+            AzureCogsSpeech2TextTool(),  # type: ignore[call-arg]
+            AzureCogsText2SpeechTool(),  # type: ignore[call-arg]
+            AzureCogsTextAnalyticsHealthTool(),  # type: ignore[call-arg]
         ]
 
         # TODO: Remove check once azure-ai-vision supports MacOS.
         if sys.platform.startswith("linux") or sys.platform.startswith("win"):
-            tools.append(AzureCogsImageAnalysisTool())
+            tools.append(AzureCogsImageAnalysisTool())  # type: ignore[call-arg]
         return tools

@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
@@ -11,6 +12,9 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.18", removal="0.3", alternative_import="langchain_ibm.WatsonxLLM"
+)
 class WatsonxLLM(BaseLLM):
     """
     IBM watsonx.ai large language models.
@@ -293,9 +297,6 @@ class WatsonxLLM(BaseLLM):
             generation_info=dict(
                 finish_reason=stream_response["results"][0].get("stop_reason", None),
                 llm_output={
-                    "generated_token_count": stream_response["results"][0].get(
-                        "generated_token_count", None
-                    ),
                     "model_id": self.model_id,
                     "deployment_id": self.deployment_id,
                 },
@@ -319,7 +320,7 @@ class WatsonxLLM(BaseLLM):
         Example:
             .. code-block:: python
 
-                response = watsonx_llm("What is a molecule")
+                response = watsonx_llm.invoke("What is a molecule")
         """
         result = self._generate(
             prompts=[prompt], stop=stop, run_manager=run_manager, **kwargs

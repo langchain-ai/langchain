@@ -77,7 +77,7 @@ def test_self_hosted_embedding_documents() -> None:
     """Test self-hosted huggingface instruct embeddings."""
     documents = ["foo bar"] * 2
     gpu = get_remote_instance()
-    embedding = SelfHostedEmbeddings(
+    embedding = SelfHostedEmbeddings(  # type: ignore[call-arg]
         model_load_fn=get_pipeline, hardware=gpu, inference_fn=inference_fn
     )
     output = embedding.embed_documents(documents)
@@ -89,7 +89,7 @@ def test_self_hosted_embedding_query() -> None:
     """Test self-hosted custom embeddings."""
     query = "foo bar"
     gpu = get_remote_instance()
-    embedding = SelfHostedEmbeddings(
+    embedding = SelfHostedEmbeddings(  # type: ignore[call-arg]
         model_load_fn=get_pipeline, hardware=gpu, inference_fn=inference_fn
     )
     output = embedding.embed_query(query)

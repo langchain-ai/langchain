@@ -127,7 +127,7 @@ class ChatAnyscale(ChatOpenAI):
             import openai
 
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`.",
             ) from e
@@ -144,7 +144,12 @@ class ChatAnyscale(ChatOpenAI):
                     # "default_query": values["default_query"],
                     # "http_client": values["http_client"],
                 }
-                values["client"] = openai.OpenAI(**client_params).chat.completions
+                if not values.get("client"):
+                    values["client"] = openai.OpenAI(**client_params).chat.completions
+                if not values.get("async_client"):
+                    values["async_client"] = openai.AsyncOpenAI(
+                        **client_params
+                    ).chat.completions
             else:
                 values["openai_api_base"] = values["anyscale_api_base"]
                 values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()

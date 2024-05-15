@@ -103,9 +103,9 @@ def _convert_delta_to_message_chunk(
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -227,7 +227,7 @@ class JinaChat(BaseChatModel):
             import openai
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -312,9 +312,10 @@ class JinaChat(BaseChatModel):
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
+            yield cg_chunk
 
     def _generate(
         self,
@@ -371,9 +372,10 @@ class JinaChat(BaseChatModel):
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(message=chunk)
+            cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                await run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
+            yield cg_chunk
 
     async def _agenerate(
         self,

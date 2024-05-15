@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import os
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, AsyncIterator, Iterator
 
 import pytest
 
@@ -37,12 +37,12 @@ def _has_env_vars() -> bool:
 
 
 @pytest.fixture
-def astra_db_collection() -> AstraDBCollection:
+def astra_db_collection() -> Iterator[AstraDBCollection]:
     from astrapy.db import AstraDB
 
     astra_db = AstraDB(
-        token=ASTRA_DB_APPLICATION_TOKEN,
-        api_endpoint=ASTRA_DB_API_ENDPOINT,
+        token=ASTRA_DB_APPLICATION_TOKEN or "",
+        api_endpoint=ASTRA_DB_API_ENDPOINT or "",
         namespace=ASTRA_DB_KEYSPACE,
     )
     collection_name = f"lc_test_loader_{str(uuid.uuid4()).split('-')[0]}"
@@ -58,12 +58,12 @@ def astra_db_collection() -> AstraDBCollection:
 
 
 @pytest.fixture
-async def async_astra_db_collection() -> AsyncAstraDBCollection:
+async def async_astra_db_collection() -> AsyncIterator[AsyncAstraDBCollection]:
     from astrapy.db import AsyncAstraDB
 
     astra_db = AsyncAstraDB(
-        token=ASTRA_DB_APPLICATION_TOKEN,
-        api_endpoint=ASTRA_DB_API_ENDPOINT,
+        token=ASTRA_DB_APPLICATION_TOKEN or "",
+        api_endpoint=ASTRA_DB_API_ENDPOINT or "",
         namespace=ASTRA_DB_KEYSPACE,
     )
     collection_name = f"lc_test_loader_{str(uuid.uuid4()).split('-')[0]}"
@@ -167,5 +167,5 @@ class TestAstraDB:
             find_options={"limit": 30},
             extraction_function=lambda x: x["foo"],
         )
-        doc = await anext(loader.alazy_load())  # type: ignore[name-defined]
+        doc = await loader.alazy_load().__anext__()
         assert doc.page_content == "bar"

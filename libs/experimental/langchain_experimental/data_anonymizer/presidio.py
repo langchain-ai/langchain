@@ -98,6 +98,11 @@ DEFAULT_LANGUAGES_CONFIG = {
 
 
 class PresidioAnonymizerBase(AnonymizerBase):
+    """Base Anonymizer using Microsoft Presidio.
+
+    See more: https://microsoft.github.io/presidio/
+    """
+
     def __init__(
         self,
         analyzed_fields: Optional[List[str]] = None,
@@ -180,6 +185,8 @@ class PresidioAnonymizerBase(AnonymizerBase):
 
 
 class PresidioAnonymizer(PresidioAnonymizerBase):
+    """Anonymizer using Microsoft Presidio."""
+
     def _anonymize(
         self,
         text: str,
@@ -258,6 +265,8 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
 
 
 class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerBase):
+    """Reversible Anonymizer using Microsoft Presidio."""
+
     def __init__(
         self,
         analyzed_fields: Optional[List[str]] = None,

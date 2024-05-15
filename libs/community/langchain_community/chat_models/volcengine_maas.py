@@ -112,13 +112,16 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        if stop is not None:
+            kwargs["stop"] = stop
         params = self._convert_prompt_msg_params(messages, **kwargs)
         for res in self.client.stream_chat(params):
             if res:
                 msg = convert_dict_to_message(res)
-                yield ChatGenerationChunk(message=AIMessageChunk(content=msg.content))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=msg.content))
                 if run_manager:
-                    run_manager.on_llm_new_token(cast(str, msg.content))
+                    run_manager.on_llm_new_token(cast(str, msg.content), chunk=chunk)
+                yield chunk
 
     def _generate(
         self,
@@ -132,6 +135,8 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 completion += chunk.text
         else:
+            if stop is not None:
+                kwargs["stop"] = stop
             params = self._convert_prompt_msg_params(messages, **kwargs)
             res = self.client.chat(params)
             msg = convert_dict_to_message(res)

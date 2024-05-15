@@ -9,11 +9,12 @@ https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecati
     This module is for internal use only.  Do not use it in your own code.
     We may change the API at any time with no warning.
 """
+
 import contextlib
 import functools
 import inspect
 import warnings
-from typing import Any, Callable, Generator, Type, TypeVar
+from typing import Any, Callable, Generator, Type, TypeVar, Union, cast
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -25,7 +26,7 @@ class LangChainBetaWarning(DeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", Type, Callable)
+T = TypeVar("T", bound=Union[Callable[..., Any], Type])
 
 
 def beta(
@@ -120,10 +121,10 @@ def beta(
             if not _obj_type:
                 _obj_type = "class"
             wrapped = obj.__init__  # type: ignore
-            _name = _name or obj.__name__
+            _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(_: Any, new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the annotation of a class."""
                 try:
                     obj.__doc__ = new_doc
@@ -143,54 +144,61 @@ def beta(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return obj
+                return cast(T, obj)
 
         elif isinstance(obj, property):
+            # note(erick): this block doesn't seem to be used?
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or obj.fget.__name__
+            _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
-            class _beta_property(type(obj)):  # type: ignore
+            class _beta_property(property):
                 """A beta property."""
 
-                def __get__(self, instance, owner=None):  # type: ignore
+                def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+                    super().__init__(fget, fset, fdel, doc)
+                    self.__orig_fget = fget
+                    self.__orig_fset = fset
+                    self.__orig_fdel = fdel
+
+                def __get__(self, instance, owner=None):
                     if instance is not None or owner is not None:
                         emit_warning()
-                    return super().__get__(instance, owner)
+                    return self.fget(instance)
 
-                def __set__(self, instance, value):  # type: ignore
+                def __set__(self, instance, value):
                     if instance is not None:
                         emit_warning()
-                    return super().__set__(instance, value)
+                    return self.fset(instance, value)
 
-                def __delete__(self, instance):  # type: ignore
+                def __delete__(self, instance):
                     if instance is not None:
                         emit_warning()
-                    return super().__delete__(instance)
+                    return self.fdel(instance)
 
-                def __set_name__(self, owner, set_name):  # type: ignore
+                def __set_name__(self, owner, set_name):
                     nonlocal _name
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(_: Any, new_doc: str) -> Any:  # type: ignore
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
                 return _beta_property(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                 )
 
         else:
+            _name = _name or obj.__qualname__
             if not _obj_type:
-                _obj_type = "function"
+                # edge case: when a function is within another function
+                # within a test, this will call it a "method" not a "function"
+                _obj_type = "function" if "." not in _name else "method"
             wrapped = obj
-            _name = _name or obj.__name__  # type: ignore
             old_doc = wrapped.__doc__
 
-            def finalize(  # type: ignore
-                wrapper: Callable[..., Any], new_doc: str
-            ) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:
@@ -202,14 +210,13 @@ def beta(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
-                return wrapper
+                return cast(T, wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
+        # old_doc can be None
         if not old_doc:
-            new_doc = "[*Beta*]"
-        else:
-            new_doc = f"[*Beta*]  {old_doc}"
+            old_doc = ""
 
         # Modify the docstring to include a beta notice.
         notes_header = "\nNotes\n-----"
@@ -218,7 +225,7 @@ def beta(
             addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
-        new_doc += (
+        new_doc = (
             f"[*Beta*] {old_doc}\n"
             f"{notes_header if notes_header not in old_doc else ''}\n"
             f".. beta::\n"
@@ -226,9 +233,10 @@ def beta(
         )
 
         if inspect.iscoroutinefunction(obj):
-            return finalize(awarning_emitting_wrapper, new_doc)
+            finalized = finalize(awarning_emitting_wrapper, new_doc)
         else:
-            return finalize(warning_emitting_wrapper, new_doc)
+            finalized = finalize(warning_emitting_wrapper, new_doc)
+        return cast(T, finalized)
 
     return beta
 

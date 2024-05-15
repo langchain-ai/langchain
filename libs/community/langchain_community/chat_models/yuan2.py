@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
@@ -40,7 +39,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
@@ -52,9 +51,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-if TYPE_CHECKING:
-    from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +87,7 @@ class ChatYuan2(BaseChatModel):
     """Automatically inferred from env var `YUAN2_API_KEY` if not provided."""
 
     yuan2_api_base: Optional[str] = Field(
-        default="http://127.0.0.1:8000", alias="base_url"
+        default="http://127.0.0.1:8000/v1", alias="base_url"
     )
     """Base URL path for API requests, an OpenAI compatible API server."""
 
@@ -180,7 +176,7 @@ class ChatYuan2(BaseChatModel):
             import openai
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
@@ -237,7 +233,7 @@ class ChatYuan2(BaseChatModel):
                 # Happens in streaming
                 continue
             token_usage = output["token_usage"]
-            for k, v in token_usage.__dict__.items():
+            for k, v in token_usage.items():
                 if k in overall_token_usage:
                     overall_token_usage[k] += v
                 else:
@@ -269,12 +265,13 @@ class ChatYuan2(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(
+            cg_chunk = ChatGenerationChunk(
                 message=chunk,
                 generation_info=generation_info,
             )
             if run_manager:
-                run_manager.on_llm_new_token(chunk.content)
+                run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
+            yield cg_chunk
 
     def _generate(
         self,
@@ -305,21 +302,23 @@ class ChatYuan2(BaseChatModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: ChatCompletion) -> ChatResult:
+    def _create_chat_result(self, response: Union[dict, BaseModel]) -> ChatResult:
         generations = []
         logger.debug(f"type(response): {type(response)}; response: {response}")
-        for res in response.choices:
-            message = _convert_dict_to_message(res.message)
-            generation_info = dict(finish_reason=res.finish_reason)
+        if not isinstance(response, dict):
+            response = response.dict()
+        for res in response["choices"]:
+            message = _convert_dict_to_message(res["message"])
+            generation_info = dict(finish_reason=res["finish_reason"])
             if "logprobs" in res:
-                generation_info["logprobs"] = res.logprobs
+                generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(
                 message=message,
                 generation_info=generation_info,
             )
             generations.append(gen)
         llm_output = {
-            "token_usage": response.usage,
+            "token_usage": response.get("usage", {}),
             "model_name": self.model_name,
         }
         return ChatResult(generations=generations, llm_output=llm_output)
@@ -351,12 +350,13 @@ class ChatYuan2(BaseChatModel):
                 dict(finish_reason=finish_reason) if finish_reason is not None else None
             )
             default_chunk_class = chunk.__class__
-            yield ChatGenerationChunk(
+            cg_chunk = ChatGenerationChunk(
                 message=chunk,
                 generation_info=generation_info,
             )
             if run_manager:
-                await run_manager.on_llm_new_token(chunk.content)
+                await run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
+            yield cg_chunk
 
     async def _agenerate(
         self,
@@ -425,7 +425,7 @@ async def acompletion_with_retry(llm: ChatYuan2, **kwargs: Any) -> Any:
 
 
 def _convert_delta_to_message_chunk(
-    _dict: ChatCompletionMessage, default_class: Type[BaseMessageChunk]
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
@@ -437,22 +437,21 @@ def _convert_delta_to_message_chunk(
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
-def _convert_dict_to_message(_dict: ChatCompletionMessage) -> BaseMessage:
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict.get("role")
     if role == "user":
-        return HumanMessage(content=_dict.get("content"))
+        return HumanMessage(content=_dict.get("content", ""))
     elif role == "assistant":
-        content = _dict.get("content") or ""
-        return AIMessage(content=content)
+        return AIMessage(content=_dict.get("content", ""))
     elif role == "system":
-        return SystemMessage(content=_dict.get("content"))
+        return SystemMessage(content=_dict.get("content", ""))
     else:
-        return ChatMessage(content=_dict.get("content"), role=role)
+        return ChatMessage(content=_dict.get("content", ""), role=role)  # type: ignore[arg-type]
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:

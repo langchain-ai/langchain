@@ -35,6 +35,8 @@ body:
           required: true
         - label: I am sure that this is a bug in LangChain rather than my code.
           required: true
+        - label: The bug is not resolved by updating to the latest stable version of LangChain (or the specific integration package).
+          required: true
   - type: textarea
     id: reproduction
     validations:

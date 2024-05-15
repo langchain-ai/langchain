@@ -24,10 +24,7 @@ from langchain_community.llms.openai import (
 from langchain_community.utils.openai import is_openai_v1
 
 DEFAULT_BASE_URL = "https://api.endpoints.anyscale.com/v1"
-DEFAULT_MODEL = "Meta-Llama/Llama-Guard-7b"
-
-# Completion models support by Anyscale Endpoints
-COMPLETION_MODELS = ["Meta-Llama/Llama-Guard-7b"]
+DEFAULT_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 
 
 def update_token_usage(
@@ -78,7 +75,7 @@ class Anyscale(BaseOpenAI):
             # To leverage Ray for parallel processing
             @ray.remote(num_cpus=1)
             def send_query(llm, text):
-                resp = llm(text)
+                resp = llm.invoke(text)
                 return resp
             futures = [send_query.remote(anyscalellm, text) for text in texts]
             results = ray.get(futures)
@@ -113,12 +110,6 @@ class Anyscale(BaseOpenAI):
             "MODEL_NAME",
             default=DEFAULT_MODEL,
         )
-        if values["model_name"] not in COMPLETION_MODELS:
-            raise ValueError(
-                "langchain_community.llm.Anyscale ONLY works \
-            with completions models.For Chat models, please use \
-            langchain_community.chat_model.ChatAnyscale"
-            )
 
         try:
             import openai
@@ -135,7 +126,12 @@ class Anyscale(BaseOpenAI):
                     # "default_query": values["default_query"],
                     # "http_client": values["http_client"],
                 }
-                values["client"] = openai.OpenAI(**client_params).completions
+                if not values.get("client"):
+                    values["client"] = openai.OpenAI(**client_params).completions
+                if not values.get("async_client"):
+                    values["async_client"] = openai.AsyncOpenAI(
+                        **client_params
+                    ).completions
             else:
                 values["openai_api_base"] = values["anyscale_api_base"]
                 values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()

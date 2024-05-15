@@ -7,18 +7,17 @@ import sqlalchemy
 from langchain_core._api import deprecated
 from langchain_core.utils import get_from_env
 from sqlalchemy import (
-    Executable,
     MetaData,
-    Result,
     Table,
     create_engine,
     inspect,
     select,
     text,
 )
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Engine, Result
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.sql.expression import Executable
 from sqlalchemy.types import NullType
 
 
@@ -59,6 +58,7 @@ class SQLDatabase:
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
         max_string_length: int = 300,
+        lazy_table_reflection: bool = False,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -114,15 +114,17 @@ class SQLDatabase:
             )
 
         self._max_string_length = max_string_length
+        self._view_support = view_support
 
         self._metadata = metadata or MetaData()
-        # including view support if view_support = true
-        self._metadata.reflect(
-            views=view_support,
-            bind=self._engine,
-            only=list(self._usable_tables),
-            schema=self._schema,
-        )
+        if not lazy_table_reflection:
+            # including view support if view_support = true
+            self._metadata.reflect(
+                views=view_support,
+                bind=self._engine,
+                only=list(self._usable_tables),
+                schema=self._schema,
+            )
 
     @classmethod
     def from_uri(
@@ -187,7 +189,7 @@ class SQLDatabase:
         try:
             from databricks import sql  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "databricks-sql-connector package not found, please install with"
                 " `pip install databricks-sql-connector`"
             )
@@ -265,7 +267,7 @@ class SQLDatabase:
             uri = make_cnosdb_langchain_uri(url, user, password, tenant, database)
             return cls.from_uri(database_uri=uri)
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "cnos-connector package not found, please install with"
                 " `pip install cnos-connector`"
             )
@@ -281,7 +283,7 @@ class SQLDatabase:
             return sorted(self._include_tables)
         return sorted(self._all_tables - self._ignore_tables)
 
-    @deprecated("0.0.1", alternative="get_usable_table_name", removal="0.2.0")
+    @deprecated("0.0.1", alternative="get_usable_table_names", removal="0.3.0")
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
         return self.get_usable_table_names()
@@ -307,6 +309,16 @@ class SQLDatabase:
             if missing_tables:
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
+
+        metadata_table_names = [tbl.name for tbl in self._metadata.sorted_tables]
+        to_reflect = set(all_table_names) - set(metadata_table_names)
+        if to_reflect:
+            self._metadata.reflect(
+                views=self._view_support,
+                bind=self._engine,
+                only=list(to_reflect),
+                schema=self._schema,
+            )
 
         meta_tables = [
             tbl
