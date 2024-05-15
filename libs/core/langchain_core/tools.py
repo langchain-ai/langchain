@@ -1058,7 +1058,7 @@ def render_text_description(tools: List[BaseTool]) -> str:
     """
     descriptions = []
     for tool in tools:
-        if tool.func:
+        if hasattr(tool, "func") and tool.func:
             sig = signature(tool.func)
             description = f"{tool.name}{sig} - {tool.description}"
         else:
@@ -1082,7 +1082,7 @@ args: {"expression": {"type": "string"}}
     tool_strings = []
     for tool in tools:
         args_schema = str(tool.args)
-        if tool.func:
+        if hasattr(tool, "func") and tool.func:
             sig = signature(tool.func)
             description = f"{tool.name}{sig} - {tool.description}"
         else:
