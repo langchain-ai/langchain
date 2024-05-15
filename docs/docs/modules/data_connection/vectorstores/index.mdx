@@ -93,6 +93,8 @@ Next, go to the [Pinecone console](https://app.pinecone.io) and create a new ind
 ```python
 from langchain_pinecone import PineconeVectorStore
 
+os.environ['PINECONE_API_KEY'] = '<YOUR_PINECONE_API_KEY>'
+
 index_name = "langchain-test-index"
 
 # Connect to Pinecone index and insert the chunked docs as contents
