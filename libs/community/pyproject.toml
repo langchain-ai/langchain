@@ -236,6 +236,7 @@ extended_testing = [
  "streamlit",
  "pyspark",
  "openai",
+ "langchain-openai",
  "sympy",
  "rapidfuzz",
  "jsonschema",
