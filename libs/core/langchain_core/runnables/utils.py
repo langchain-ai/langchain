@@ -1,4 +1,5 @@
 """Utility code for runnables."""
+
 from __future__ import annotations
 
 import ast
@@ -532,4 +533,22 @@ def _create_model_cached(
 ) -> Type[BaseModel]:
     return _create_model_base(
         __model_name, __config__=_SchemaConfig, **field_definitions
+    )
+
+
+def is_async_generator(func: Any) -> bool:
+    """Check if a function is an async generator."""
+    return (
+        inspect.isasyncgenfunction(func)
+        or hasattr(func, "__call__")
+        and inspect.isasyncgenfunction(func.__call__)
+    )
+
+
+def is_async_callable(func: Any) -> bool:
+    """Check if a function is async."""
+    return (
+        asyncio.iscoroutinefunction(func)
+        or hasattr(func, "__call__")
+        and asyncio.iscoroutinefunction(func.__call__)
     )
