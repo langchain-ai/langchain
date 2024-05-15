@@ -1,5 +1,4 @@
 """Test Titan Takeoff wrapper."""
-
 import json
 from typing import Any, Union
 
