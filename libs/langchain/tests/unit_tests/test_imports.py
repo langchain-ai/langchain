@@ -44,6 +44,9 @@ def test_import_all_using_dir() -> None:
             # Without init
             module_name = module_name.rsplit(".", 1)[0]
 
+        if module_name.startswith("langchain_community.") and COMMUNITY_NOT_INSTALLED:
+            continue
+
         try:
             mod = importlib.import_module(module_name)
         except ModuleNotFoundError as e:
