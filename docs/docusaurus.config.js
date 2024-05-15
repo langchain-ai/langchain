@@ -312,7 +312,7 @@ const config = {
 
         indexName: "python-langchain-0.2",
 
-        contextualSearch: true,
+        contextualSearch: false,
       },
     }),
 
