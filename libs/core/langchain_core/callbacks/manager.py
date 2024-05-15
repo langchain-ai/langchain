@@ -1045,7 +1045,6 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
         Args:
             output (Any): The output of the tool.
         """
-        output = str(output)
         await ahandle_event(
             self.handlers,
             "on_tool_end",
