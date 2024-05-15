@@ -1056,7 +1056,16 @@ def render_text_description(tools: List[BaseTool]) -> str:
         search: This tool is used for search
         calculator: This tool is used for math
     """
-    return "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+    descriptions = []
+    for tool in tools:
+        if tool.func:
+            sig = signature(tool.func)
+            description = f"{tool.name}{sig} - {tool.description}"
+        else:
+            description = f"{tool.name} - {tool.description}"
+
+        descriptions.append(description)
+    return "\n".join(descriptions)
 
 
 def render_text_description_and_args(tools: List[BaseTool]) -> str:
@@ -1073,7 +1082,12 @@ args: {"expression": {"type": "string"}}
     tool_strings = []
     for tool in tools:
         args_schema = str(tool.args)
-        tool_strings.append(f"{tool.name}: {tool.description}, args: {args_schema}")
+        if tool.func:
+            sig = signature(tool.func)
+            description = f"{tool.name}{sig} - {tool.description}"
+        else:
+            description = f"{tool.name} - {tool.description}"
+        tool_strings.append(f"{description}, args: {args_schema}")
     return "\n".join(tool_strings)
 
 
