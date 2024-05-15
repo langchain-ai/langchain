@@ -209,7 +209,7 @@ def _get_search_client(
             default_scoring_profile=default_scoring_profile,
             cors_options=cors_options,
         )
-        index_client.create_index(index)
+        index_client.create_or_update_index(index)
     # Create the search client
     return SearchClient(
         endpoint=endpoint,
