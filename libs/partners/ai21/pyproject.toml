@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-ai21"
-version = "0.1.4"
+version = "0.1.5"
 description = "An integration package connecting AI21 and LangChain"
 authors = []
 readme = "README.md"
@@ -23,7 +23,7 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
 langchain-standard-tests = { path = "../../standard-tests", develop = true }
-langchain-text-splitters = {path = "../../text-splitters", develop = true}
+langchain-text-splitters = { path = "../../text-splitters", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true
