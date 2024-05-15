@@ -776,7 +776,7 @@ async def _astream_events_implementation_v2(
                 "_end"
             ):
                 # If it's the end event corresponding to the root runnable
-                # we want to include the input in the event since it's guaranteed
+                # we dont include the input in the event since it's guaranteed
                 # to be included in the first event.
                 if "input" in event["data"]:
                     del event["data"]["input"]
