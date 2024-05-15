@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import re
 import textwrap
 import uuid
 import warnings
@@ -29,7 +30,6 @@ from contextvars import copy_context
 from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
-
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -37,8 +37,6 @@ from langchain_core.callbacks import (
     BaseCallbackManager,
     CallbackManager,
     CallbackManagerForToolRun,
-)
-from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.load.serializable import Serializable
@@ -77,7 +75,7 @@ class SchemaAnnotationError(TypeError):
 
 
 def _create_subset_model(
-    name: str, model: Type[BaseModel], field_names: list
+    name: str, model: Type[BaseModel], field_names: list, *, docstring: Optional[str] = None
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
@@ -90,18 +88,55 @@ def _create_subset_model(
             else Optional[field.outer_type_]
         )
         fields[field_name] = (t, field.field_info)
-    rtn = create_model(name, **fields)  # type: ignore
+    rtn = create_model(name, __doc__=docstring, **fields)  # type: ignore
     return rtn
 
 
-def _get_filtered_args(
-    inferred_model: Type[BaseModel],
-    func: Callable,
-) -> dict:
+def _get_filtered_args(inferred_model: Type[BaseModel], func: Callable) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
     return {k: schema[k] for k in valid_keys if k not in ("run_manager", "callbacks")}
+
+
+def _parse_args_from_docstring(docstring: str) -> Dict[str, str]:
+    """Parses the argument descriptions from a Google-style docstring.
+
+    Args:
+        docstring: The docstring to parse.
+
+    Returns:
+        dict: A dictionary where keys are argument names and values are their descriptions.
+    """
+    args_dict = {}
+
+    args_section_match = re.search(r'Args:\n((?:\s*.+\n)+)', docstring)
+    if not args_section_match:
+        return args_dict
+
+    args_section = args_section_match.group(1)
+
+    arg_lines = args_section.strip().split('\n')
+    current_arg = None
+    current_desc = []
+
+    for line in arg_lines:
+        if re.match(r'\s*(\w+).*:\s*(.*)', line):
+            if current_arg:
+                args_dict[current_arg] = ' '.join(current_desc).strip()
+            match = re.match(r'\s*(\w+).*:\s*(.*)', line)
+            current_arg = match.group(1)
+            if current_arg in ("Returns", "Yields", "Raises"):
+                current_arg = None
+                break
+            current_desc = [match.group(2)]
+        else:
+            current_desc.append(line.strip())
+
+    if current_arg:
+        args_dict[current_arg] = ' '.join(current_desc).strip()
+
+    return args_dict
 
 
 class _SchemaConfig:
@@ -111,14 +146,13 @@ class _SchemaConfig:
     arbitrary_types_allowed: bool = True
 
 
-def create_schema_from_function(
-    model_name: str,
-    func: Callable,
-) -> Type[BaseModel]:
+def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
+
     Args:
-        model_name: Name to assign to the generated pydandic schema
+        model_name: Name to assign to the generated pydantdic schema
         func: Function to generate the schema from
+
     Returns:
         A pydantic model with the same arguments as the function
     """
@@ -131,8 +165,10 @@ def create_schema_from_function(
         del inferred_model.__fields__["callbacks"]
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func)
+    full_docstring = getattr(func, "__doc__", "")
+    arg_descriptions = _parse_args_from_docstring(full_docstring)
     return _create_subset_model(
-        f"{model_name}Schema", inferred_model, list(valid_properties)
+        f"{model_name}Schema", inferred_model, list(valid_properties), docstring=None,
     )
 
 

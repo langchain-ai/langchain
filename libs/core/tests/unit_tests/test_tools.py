@@ -24,7 +24,7 @@ from langchain_core.tools import (
     Tool,
     ToolException,
     _create_subset_model,
-    tool,
+    tool, _parse_args_from_docstring,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
@@ -603,10 +603,10 @@ class _FakeExceptionTool(BaseTool):
     description: str = "an exception-throwing tool"
     exception: Exception = ToolException()
 
-    def _run(self) -> str:
+    def _run() -> str:
         raise self.exception
 
-    async def _arun(self) -> str:
+    async def _arun() -> str:
         raise self.exception
 
 
@@ -756,10 +756,10 @@ def test_validation_error_handling_non_validation_error(
         ) -> Union[str, Dict[str, Any]]:
             raise NotImplementedError()
 
-        def _run(self) -> str:
+        def _run() -> str:
             return "dummy"
 
-        async def _arun(self) -> str:
+        async def _arun() -> str:
             return "dummy"
 
     _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
@@ -818,10 +818,10 @@ async def test_async_validation_error_handling_non_validation_error(
         ) -> Union[str, Dict[str, Any]]:
             raise NotImplementedError()
 
-        def _run(self) -> str:
+        def _run() -> str:
             return "dummy"
 
-        async def _arun(self) -> str:
+        async def _arun() -> str:
             return "dummy"
 
     _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
@@ -906,3 +906,88 @@ async def test_async_tool_pass_context() -> None:
     assert (
         await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
     )
+
+def test_parse_docstring_no_docstring():
+    assert _parse_args_from_docstring('') == {}
+
+def test_parse_docstring_no_args_section():
+    docstring = """
+    A function without an args section.
+
+    Returns:
+        None
+    """
+    assert _parse_args_from_docstring(docstring) == {}
+
+def test_parse_docstring_single_argument():
+    docstring = """
+    A function with a single argument.
+
+    Args:
+        param1: The first parameter.
+    """
+    expected = {'param1': 'The first parameter.'}
+    assert _parse_args_from_docstring(docstring) == expected
+
+@pytest.mark.parametrize("docstring", [
+    """
+    A function with multiple arguments.
+
+    Args:
+        param1: The first parameter.
+        param2: The second parameter.
+""",
+    """
+    A function with multiline argument descriptions.
+
+    Args:
+        param1: The first parameter.
+        param2: The second 
+            parameter.
+    """,
+    """
+    A function with the args section that has blank lines.
+
+    Args:
+        param1: The first parameter.
+
+        param2: The second parameter.
+    """,
+    """
+        A function with extra sections.
+    
+        Args:
+            param1: The first parameter.
+            param2: The second parameter.
+    
+        Returns:
+            foobar
+        
+        Yields:
+            barfoo
+            
+        Raises:
+            baz
+        """
+])
+def test_parse_docstring_multiple_arguments(docstring: str) -> None:
+    expected = {
+        'param1': 'The first parameter.',
+        'param2': 'The second parameter.',
+    }
+    assert _parse_args_from_docstring(docstring) == expected
+
+
+def test_parse_docstring_args_with_colon_in_description():
+    docstring = """
+    A function with a colon in the description.
+
+    Args:
+        param1: The first parameter: with colon.
+        param2: The second parameter.
+    """
+    expected = {
+        'param1': 'The first parameter: with colon.',
+        'param2': 'The second parameter.'
+    }
+    assert _parse_args_from_docstring(docstring) == expected
