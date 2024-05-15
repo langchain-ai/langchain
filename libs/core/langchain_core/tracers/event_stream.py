@@ -259,8 +259,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self, response: LLMResult, *, run_id: UUID, **kwargs: Any
     ) -> None:
         """End a trace for an LLM run."""
-        # "chat_model" is only used for the experimental new streaming_events format.
-        # This change should not affect any existing tracers.
         run_info = self.run_map.pop(run_id)
         inputs_ = run_info["inputs"]
 
@@ -334,14 +332,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         data: EventData = {}
 
+        # Work-around Runnable core code not sending input in some
+        # cases.
         if inputs != {"input": ""}:
             data["input"] = inputs
             run_info["inputs"] = inputs
 
         self.run_map[run_id] = run_info
-
-        # Work-around Runnable core code not sending input in some
-        # cases.
 
         await self._send(
             {
