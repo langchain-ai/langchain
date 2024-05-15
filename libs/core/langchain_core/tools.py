@@ -30,6 +30,7 @@ from contextvars import copy_context
 from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
+
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -75,7 +76,11 @@ class SchemaAnnotationError(TypeError):
 
 
 def _create_subset_model(
-    name: str, model: Type[BaseModel], field_names: list, *, docstring: Optional[str] = None
+    name: str,
+    model: Type[BaseModel],
+    field_names: list,
+    *,
+    docstring: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
@@ -110,21 +115,21 @@ def _parse_args_from_docstring(docstring: str) -> Dict[str, str]:
     """
     args_dict = {}
 
-    args_section_match = re.search(r'Args:\n((?:\s*.+\n)+)', docstring)
+    args_section_match = re.search(r"Args:\n((?:\s*.+\n)+)", docstring)
     if not args_section_match:
         return args_dict
 
     args_section = args_section_match.group(1)
 
-    arg_lines = args_section.strip().split('\n')
+    arg_lines = args_section.strip().split("\n")
     current_arg = None
     current_desc = []
 
     for line in arg_lines:
-        if re.match(r'\s*(\w+).*:\s*(.*)', line):
+        if re.match(r"\s*(\w+).*:\s*(.*)", line):
             if current_arg:
-                args_dict[current_arg] = ' '.join(current_desc).strip()
-            match = re.match(r'\s*(\w+).*:\s*(.*)', line)
+                args_dict[current_arg] = " ".join(current_desc).strip()
+            match = re.match(r"\s*(\w+).*:\s*(.*)", line)
             current_arg = match.group(1)
             if current_arg in ("Returns", "Yields", "Raises"):
                 current_arg = None
@@ -134,7 +139,7 @@ def _parse_args_from_docstring(docstring: str) -> Dict[str, str]:
             current_desc.append(line.strip())
 
     if current_arg:
-        args_dict[current_arg] = ' '.join(current_desc).strip()
+        args_dict[current_arg] = " ".join(current_desc).strip()
 
     return args_dict
 
@@ -166,9 +171,12 @@ def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseMod
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func)
     full_docstring = getattr(func, "__doc__", "")
-    arg_descriptions = _parse_args_from_docstring(full_docstring)
+    # arg_descriptions = _parse_args_from_docstring(full_docstring)
     return _create_subset_model(
-        f"{model_name}Schema", inferred_model, list(valid_properties), docstring=None,
+        f"{model_name}Schema",
+        inferred_model,
+        list(valid_properties),
+        docstring=None,
     )
 
 

@@ -24,7 +24,8 @@ from langchain_core.tools import (
     Tool,
     ToolException,
     _create_subset_model,
-    tool, _parse_args_from_docstring,
+    _parse_args_from_docstring,
+    tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
@@ -603,10 +604,10 @@ class _FakeExceptionTool(BaseTool):
     description: str = "an exception-throwing tool"
     exception: Exception = ToolException()
 
-    def _run() -> str:
+    def _run(self) -> str:
         raise self.exception
 
-    async def _arun() -> str:
+    async def _arun(self) -> str:
         raise self.exception
 
 
@@ -756,10 +757,10 @@ def test_validation_error_handling_non_validation_error(
         ) -> Union[str, Dict[str, Any]]:
             raise NotImplementedError()
 
-        def _run() -> str:
+        def _run(self) -> str:
             return "dummy"
 
-        async def _arun() -> str:
+        async def _arun(self) -> str:
             return "dummy"
 
     _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
@@ -818,10 +819,10 @@ async def test_async_validation_error_handling_non_validation_error(
         ) -> Union[str, Dict[str, Any]]:
             raise NotImplementedError()
 
-        def _run() -> str:
+        def _run(self) -> str:
             return "dummy"
 
-        async def _arun() -> str:
+        async def _arun(self) -> str:
             return "dummy"
 
     _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
@@ -907,8 +908,10 @@ async def test_async_tool_pass_context() -> None:
         await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
     )
 
+
 def test_parse_docstring_no_docstring():
-    assert _parse_args_from_docstring('') == {}
+    assert _parse_args_from_docstring("") == {}
+
 
 def test_parse_docstring_no_args_section():
     docstring = """
@@ -919,6 +922,7 @@ def test_parse_docstring_no_args_section():
     """
     assert _parse_args_from_docstring(docstring) == {}
 
+
 def test_parse_docstring_single_argument():
     docstring = """
     A function with a single argument.
@@ -926,18 +930,21 @@ def test_parse_docstring_single_argument():
     Args:
         param1: The first parameter.
     """
-    expected = {'param1': 'The first parameter.'}
+    expected = {"param1": "The first parameter."}
     assert _parse_args_from_docstring(docstring) == expected
 
-@pytest.mark.parametrize("docstring", [
-    """
+
+@pytest.mark.parametrize(
+    "docstring",
+    [
+        """
     A function with multiple arguments.
 
     Args:
         param1: The first parameter.
         param2: The second parameter.
 """,
-    """
+        """
     A function with multiline argument descriptions.
 
     Args:
@@ -945,7 +952,7 @@ def test_parse_docstring_single_argument():
         param2: The second 
             parameter.
     """,
-    """
+        """
     A function with the args section that has blank lines.
 
     Args:
@@ -953,7 +960,7 @@ def test_parse_docstring_single_argument():
 
         param2: The second parameter.
     """,
-    """
+        """
         A function with extra sections.
     
         Args:
@@ -968,12 +975,13 @@ def test_parse_docstring_single_argument():
             
         Raises:
             baz
-        """
-])
+        """,
+    ],
+)
 def test_parse_docstring_multiple_arguments(docstring: str) -> None:
     expected = {
-        'param1': 'The first parameter.',
-        'param2': 'The second parameter.',
+        "param1": "The first parameter.",
+        "param2": "The second parameter.",
     }
     assert _parse_args_from_docstring(docstring) == expected
 
@@ -987,7 +995,7 @@ def test_parse_docstring_args_with_colon_in_description():
         param2: The second parameter.
     """
     expected = {
-        'param1': 'The first parameter: with colon.',
-        'param2': 'The second parameter.'
+        "param1": "The first parameter: with colon.",
+        "param2": "The second parameter.",
     }
     assert _parse_args_from_docstring(docstring) == expected
