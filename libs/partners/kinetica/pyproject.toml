@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-kinetica"
-version = "0.0.1"
+version = "0.1.0"
 description = "An integration package connecting Kinetica and LangChain"
 authors = []
 readme = "README.md"
@@ -12,11 +12,14 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-#langchain-core = "^0.1.52"
 langchain-community = ">=0.0.38,<0.3"
 pandas = "^2.0.3"
 gpudb = "^7.2.0.1"
 typeguard = "^4.1.5"
+
+# Commenting out langchain-core because poetry is unable to generate 
+# a lockfile if we import langchain-community as of langchain-core="0.2.0rc1"
+#langchain-core = "^0.1.52" 
 
 [tool.poetry.group.test]
 optional = true

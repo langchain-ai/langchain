@@ -3,24 +3,34 @@
 [Kinetica](https://www.kinetica.com/) is a real-time database purpose built for enabling
 analytics and generative AI on time-series & spatial data.
 
-## Chat Model
+## Installation
+
+```sh
+pip install --upgrade langchain-kinetica
+```
+
+You can set the database connection in the following environment variables as an alternative to programatically passing connectino variables.
+
+* `KINETICA_URL`: Database connection URL
+* `KINETICA_USER`: Database user
+* `KINETICA_PASSWD`: Secure password
+
+## Usage
+
+### Chat Model
 
 The Kinetica LLM wrapper uses the [Kinetica SqlAssist
 LLM](https://docs.kinetica.com/7.2/sql-gpt/concepts/) to transform natural language into
 SQL to simplify the process of data retrieval.
 
-See [Kinetica SqlAssist LLM Demo](/docs/integrations/chat/kinetica) for usage.
-
 ```python
 from langchain_kinetica.chat_models import ChatKinetica
 ```
 
-## Vector Store
+### Vector Store
 
 The Kinetca vectorstore wrapper leverages Kinetica's native support for [vector
 similarity search](https://docs.kinetica.com/7.2/vector_search/).
-
-See [Kinetica Vectorsore API](/docs/integrations/vectorstores/kinetica) for usage.
 
 ```python
 from langchain_kinetica.vectorstores import Kinetica
