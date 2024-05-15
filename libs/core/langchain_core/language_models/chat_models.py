@@ -13,12 +13,15 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Optional,
     Sequence,
     Type,
     Union,
     cast,
 )
+
+from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
@@ -58,6 +61,15 @@ if TYPE_CHECKING:
     from langchain_core.pydantic_v1 import BaseModel
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
+
+
+class LangSmithParams(TypedDict, total=False):
+    ls_provider: str
+    ls_model_name: str
+    ls_model_type: Literal["chat"]
+    ls_temperature: float
+    ls_max_tokens: Optional[int]
+    ls_stop: Optional[List[str]]
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -335,6 +347,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         params = self.dict()
         params["stop"] = stop
         return {**params, **kwargs}
+
+    def _get_ls_params(
+        self,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        return LangSmithParams(ls_model_type="chat", **params)
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
