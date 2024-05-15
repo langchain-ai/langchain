@@ -67,7 +67,7 @@ class LangSmithParams(TypedDict, total=False):
     ls_provider: str
     ls_model_name: str
     ls_model_type: Literal["chat"]
-    ls_temperature: float
+    ls_temperature: Optional[float]
     ls_max_tokens: Optional[int]
     ls_stop: Optional[List[str]]
 
