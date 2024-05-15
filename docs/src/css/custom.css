@@ -248,16 +248,16 @@ nav, h1, h2, h3, h4 {
     no-repeat;
 }
 
-.announcementBar_node_modules-\@docusaurus-theme-classic-lib-theme-AnnouncementBar-styles-module {
+div[class^=announcementBar_] {
   height:40px !important;
   font-size: 20px !important;
 }
 
-[data-theme='dark'] .announcementBar_node_modules-\@docusaurus-theme-classic-lib-theme-AnnouncementBar-styles-module {
+[data-theme='dark'] div[class^=announcementBar_] {
   background-color: #1b1b1b;
   color: #fff;
 }
 
-[data-theme='dark'] .announcementBar_node_modules-\@docusaurus-theme-classic-lib-theme-AnnouncementBar-styles-module button {
+[data-theme='dark'] div[class^=announcementBar_] button {
   color: #fff;
 }
