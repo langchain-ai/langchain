@@ -9,7 +9,7 @@ analytics and generative AI on time-series & spatial data.
 pip install --upgrade langchain-kinetica
 ```
 
-You can set the database connection in the following environment variables as an alternative to programatically passing connectino variables.
+You can set the database connection in the following environment variables as an alternative to programmatically passing connection variables.
 
 * `KINETICA_URL`: Database connection URL
 * `KINETICA_USER`: Database user

@@ -51,7 +51,7 @@ class KineticaSettings(BaseSettings):
 
     Attribute:
         db_connection: Kinetica database connection. If you lave this empty then
-                       connection paramters will be read from the environment.
+                       connection parameters will be read from the environment.
                        (e.g. KINETICA_URL, KINETICA_USER, KINETICA_PASSWD)
         database (str) : Database name to find the table. Defaults to 'default'.
         table (str) : Table name to operate on.
