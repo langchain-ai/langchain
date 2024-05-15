@@ -51,7 +51,7 @@ class UpstageEmbeddings(BaseModel, Embeddings):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model: str
+    model: str = Field(default=None)
     """Embeddings model name to use. Do not add suffixes like `-query` and `-passage`.
     Instead, use 'solar-embedding-1-large' for example.
     """
