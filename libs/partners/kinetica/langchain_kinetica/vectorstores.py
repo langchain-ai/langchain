@@ -50,11 +50,9 @@ class KineticaSettings(BaseSettings):
     """`Kinetica` client configuration.
 
     Attribute:
-        host (str) : An URL to connect to MyScale backend.
-                             Defaults to 'localhost'.
-        port (int) : URL port to connect with HTTP. Defaults to 8443.
-        username (str) : Username to login. Defaults to None.
-        password (str) : Password to login. Defaults to None.
+        db_connection: Kinetica database connection. If you lave this empty then
+                       connection paramters will be read from the environment.
+                       (e.g. KINETICA_URL, KINETICA_USER, KINETICA_PASSWD)
         database (str) : Database name to find the table. Defaults to 'default'.
         table (str) : Table name to operate on.
                       Defaults to 'vector_table'.
@@ -65,12 +63,7 @@ class KineticaSettings(BaseSettings):
 
     """
 
-    host: str = "http://127.0.0.1"
-    port: int = 9191
-
-    username: Optional[str] = None
-    password: Optional[str] = None
-
+    db_connection: Optional[Any] = None
     database: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME
     table: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME
     metric: str = DEFAULT_DISTANCE_STRATEGY.value
@@ -108,9 +101,7 @@ class KineticaVectorStore(VectorStore):
             from langchain_community.vectorstores import Kinetica, KineticaSettings
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
-            kinetica_settings = KineticaSettings(
-                host="http://127.0.0.1", username="", password=""
-                )
+            kinetica_settings = KineticaSettings()
             COLLECTION_NAME = "kinetica_store"
             embeddings = OpenAIEmbeddings()
             vectorstore = Kinetica.from_documents(
@@ -156,7 +147,23 @@ class KineticaVectorStore(VectorStore):
         self.pre_delete_collection = pre_delete_collection
         self.logger = logger or logging.getLogger(__name__)
         self.override_relevance_score_fn = relevance_score_fn
-        self._db = self.__get_db(self._config)
+
+        if self._config.db_connection is not None:
+            self._db = self._config.db_connection
+        else:
+            self._db = self._get_db_connection()
+
+    @classmethod
+    def _get_db_connection(cls) -> Any:
+        """Get the Kinetica DB connection."""
+        try:
+            from gpudb import GPUdb
+        except ModuleNotFoundError:
+            raise ImportError(
+                "Could not import Kinetica python package. "
+                "Please install it with `pip install gpudb`."
+            )
+        return GPUdb.get_connection()
 
     def __post_init__(self, dimensions: int) -> None:
         """
@@ -189,21 +196,6 @@ class KineticaVectorStore(VectorStore):
 
         self.create_schema()
         self.EmbeddingStore: GPUdbTable = self.create_tables_if_not_exists()
-
-    def __get_db(self, config: KineticaSettings) -> Any:
-        try:
-            from gpudb import GPUdb
-        except ImportError:
-            raise ImportError(
-                "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.1`."
-            )
-
-        options = GPUdb.Options()
-        options.username = config.username
-        options.password = config.password
-        options.skip_ssl_cert_verification = True
-        return GPUdb(host=config.host, options=options)
 
     @property
     def embeddings(self) -> Embeddings:

@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 if TYPE_CHECKING:
-    import gpudb
+    from gpudb import GPUdb
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -222,73 +222,6 @@ class _KineticaLlmFileContextParser:
         return {"schema": schema, "system": system, "messages": messages}
 
 
-class KineticaUtil:
-    """Kinetica utility functions."""
-
-    @classmethod
-    def create_kdbc(
-        cls,
-        url: Optional[str] = None,
-        user: Optional[str] = None,
-        passwd: Optional[str] = None,
-    ) -> "gpudb.GPUdb":
-        """Create a connectica connection object and verify connectivity.
-
-        If None is passed for one or more of the parameters then an attempt will be made
-        to retrieve the value from the related environment variable.
-
-        Args:
-            url: The Kinetica URL or ``KINETICA_URL`` if None.
-            user: The Kinetica user or ``KINETICA_USER`` if None.
-            passwd: The Kinetica password or ``KINETICA_PASSWD`` if None.
-
-        Returns:
-            The Kinetica connection object.
-        """
-
-        try:
-            import gpudb
-        except ModuleNotFoundError:
-            raise ImportError(
-                "Could not import Kinetica python package. "
-                "Please install it with `pip install gpudb`."
-            )
-
-        url = cls._get_env("KINETICA_URL", url)
-        user = cls._get_env("KINETICA_USER", user)
-        passwd = cls._get_env("KINETICA_PASSWD", passwd)
-
-        options = gpudb.GPUdb.Options()
-        options.username = user
-        options.password = passwd
-        options.skip_ssl_cert_verification = True
-        options.disable_failover = True
-        options.logging_level = "INFO"
-        kdbc = gpudb.GPUdb(host=url, options=options)
-
-        LOG.info(
-            "Connected to Kinetica: {}. (api={}, server={})".format(
-                kdbc.get_url(), version("gpudb"), kdbc.server_version
-            )
-        )
-
-        return kdbc
-
-    @classmethod
-    def _get_env(cls, name: str, default: Optional[str]) -> str:
-        """Get an environment variable or use a default."""
-        if default is not None:
-            return default
-
-        result = os.getenv(name)
-        if result is not None:
-            return result
-
-        raise ValueError(
-            f"Parameter was not passed and not found in the environment: {name}"
-        )
-
-
 class ChatKinetica(BaseChatModel):
     """Kinetica LLM Chat Model API.
 
@@ -327,14 +260,14 @@ class ChatKinetica(BaseChatModel):
             kinetica_llm = KineticaChatLLM()
 
     If you prefer to pass connection information directly then you can create a
-    connection using ``KineticaUtil.create_kdbc()``.
+    connection using ``GPUdb.get_connection()``.
 
     Example:
         .. code-block:: python
 
             from langchain_community.chat_models.kinetica import (
-                KineticaChatLLM, KineticaUtil)
-            kdbc = KineticaUtil._create_kdbc(url=url, user=user, passwd=passwd)
+                KineticaChatLLM)
+            kdbc = GPUdb.get_connection()
             kinetica_llm = KineticaChatLLM(kdbc=kdbc)
     """
 
@@ -345,11 +278,22 @@ class ChatKinetica(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Pydantic object validator."""
 
-        kdbc = values.get("kdbc", None)
+        kdbc: "GPUdb" = values.get("kdbc", None)
         if kdbc is None:
-            kdbc = KineticaUtil.create_kdbc()
-            values["kdbc"] = kdbc
+            values["kdbc"] = cls._get_kdbc()
         return values
+
+    @classmethod
+    def _get_kdbc(cls) -> Any:
+        """Get the Kinetica DB connection."""
+        try:
+            from gpudb import GPUdb
+        except ModuleNotFoundError:
+            raise ImportError(
+                "Could not import Kinetica python package. "
+                "Please install it with `pip install gpudb`."
+            )
+        return GPUdb.get_connection()
 
     @property
     def _llm_type(self) -> str:

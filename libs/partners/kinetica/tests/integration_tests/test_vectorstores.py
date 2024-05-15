@@ -2,6 +2,7 @@ import os
 from typing import List
 
 import pytest
+from gpudb import GPUdb
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_core.documents import Document
 from langchain_core.embeddings.embeddings import Embeddings
@@ -13,9 +14,6 @@ from langchain_kinetica.vectorstores import (
 )
 
 DIMENSIONS = 3
-HOST = os.getenv("KINETICA_HOST", "http://127.0.0.1:9191")
-USERNAME = os.getenv("KINETICA_USERNAME", "")
-PASSWORD = os.getenv("KINETICA_PASSWORD", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 
@@ -37,9 +35,10 @@ class FakeEmbeddingsWithAdaDimension(Embeddings):
         return self.embed_query(text)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def create_config() -> KineticaSettings:
-    return KineticaSettings(host=HOST, username=USERNAME, password=PASSWORD)
+    dbc = GPUdb.get_connection()
+    return KineticaSettings(db_connection=dbc)
 
 
 @pytest.mark.requires("gpudb")

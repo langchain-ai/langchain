@@ -1,10 +1,11 @@
 """Test Kinetica Chat API wrapper."""
 
 import logging
-from typing import TYPE_CHECKING, Generator
+from typing import Generator
 
 import pandas as pd
 import pytest
+from gpudb import GPUdb, GPUdbTable
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
@@ -16,12 +17,7 @@ from langchain_kinetica.chat_models import (
     ChatKinetica,
     KineticaSqlOutputParser,
     KineticaSqlResponse,
-    KineticaUtil,
 )
-
-if TYPE_CHECKING:
-    import gpudb
-
 
 LOG = logging.getLogger(__name__)
 
@@ -32,6 +28,11 @@ def vcr_config() -> dict:
         # Replace the Authorization request header with "DUMMY" in cassettes
         "filter_headers": [("authorization", "DUMMY")],
     }
+
+
+@pytest.fixture(scope="module")
+def kinetica_dbc() -> dict:
+    return GPUdb.get_connection()
 
 
 class TestChatKinetica:
@@ -61,29 +62,26 @@ class TestChatKinetica:
 
     @classmethod
     @pytest.mark.vcr()
-    def test_setup(cls) -> "gpudb.GPUdb":
+    def test_setup(cls, kinetica_dbc: GPUdb) -> None:
         """Create the connection, test table, and LLM context."""
 
-        kdbc = KineticaUtil.create_kdbc()
-        cls._create_test_table(kdbc, cls.table_name, cls.num_records)
-        cls._create_llm_context(kdbc, cls.context_name)
-        return kdbc
+        cls._create_test_table(kinetica_dbc, cls.table_name, cls.num_records)
+        cls._create_llm_context(kinetica_dbc, cls.context_name)
 
     @pytest.mark.vcr()
-    def test_create_llm(self) -> None:
+    def test_create_llm(self, kinetica_dbc: GPUdb) -> None:
         """Create an LLM instance."""
-        import gpudb
 
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica(kdbc=kinetica_dbc)
         LOG.info(kinetica_llm._identifying_params)
 
-        assert isinstance(kinetica_llm.kdbc, gpudb.GPUdb)
+        assert isinstance(kinetica_llm.kdbc, GPUdb)
         assert kinetica_llm._llm_type == "kinetica-sqlassist"
 
     @pytest.mark.vcr()
-    def test_load_context(self) -> None:
+    def test_load_context(self, kinetica_dbc: GPUdb) -> None:
         """Load the LLM context from the DB."""
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica(kdbc=kinetica_dbc)
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)
 
         system_message = ctx_messages[0]
@@ -94,9 +92,9 @@ class TestChatKinetica:
         assert last_question.content == "How many male users are there?"
 
     @pytest.mark.vcr()
-    def test_generate(self) -> None:
+    def test_generate(self, kinetica_dbc: GPUdb) -> None:
         """Generate SQL from a chain."""
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica(kdbc=kinetica_dbc)
 
         # create chain
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)
@@ -111,9 +109,9 @@ class TestChatKinetica:
         assert isinstance(resp_message, AIMessage)
 
     @pytest.mark.vcr()
-    def test_full_chain(self) -> None:
+    def test_full_chain(self, kinetica_dbc: GPUdb) -> None:
         """Generate SQL from a chain and execute the query."""
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica(kdbc=kinetica_dbc)
 
         # create chain
         ctx_messages = kinetica_llm.load_messages_from_context(self.context_name)
@@ -148,8 +146,8 @@ class TestChatKinetica:
 
     @classmethod
     def _create_test_table(
-        cls, kinetica_dbc: "gpudb.GPUdb", table_name: str, num_records: int
-    ) -> "gpudb.GPUdbTable":
+        cls, kinetica_dbc: GPUdb, table_name: str, num_records: int
+    ) -> GPUdbTable:
         """Create a table from the fake records generator."""
         import gpudb
 
@@ -177,9 +175,7 @@ class TestChatKinetica:
             raise Exception("[%s]: %s" % (status, message))
 
     @classmethod
-    def _create_llm_context(
-        cls, kinetica_dbc: "gpudb.GPUdb", context_name: str
-    ) -> None:
+    def _create_llm_context(cls, kinetica_dbc: GPUdb, context_name: str) -> None:
         """Create an LLM context for the table."""
 
         sql = f"""
