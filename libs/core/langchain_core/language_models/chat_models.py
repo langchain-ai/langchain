@@ -334,7 +334,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> dict:
         params = self.dict()
         params["stop"] = stop
-        params["model_type"] = "chat"
         return {**params, **kwargs}
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
