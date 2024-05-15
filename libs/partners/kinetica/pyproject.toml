@@ -12,7 +12,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.40"
+#langchain-core = "^0.1.52"
+langchain-community = ">=0.0.38,<0.3"
 pandas = "^2.0.3"
 gpudb = "^7.2.0.1"
 typeguard = "^4.1.5"
@@ -27,7 +28,8 @@ pytest-mock  = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-core = {path = "../../core", develop = true}
+#langchain-core = {path = "../../core", develop = true}
+langchain-community = {path = "../../community", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
@@ -43,6 +45,8 @@ pytest-vcr = "^1.0.2"
 pytest-dotenv = "^0.5.2"
 faker = "^23.2.1"
 tqdm = "^4.66.2"
+openai = "^1.30.1"
+tiktoken = "^0.7.0"
 
 [tool.poetry.group.lint]
 optional = true
@@ -52,13 +56,13 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = {path = "../../core", develop = true}
+#langchain-core = {path = "../../core", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = {path = "../../core", develop = true}
+#langchain-core = {path = "../../core", develop = true}
 
 [tool.ruff]
 select = [
@@ -69,6 +73,7 @@ select = [
 
 [tool.mypy]
 disallow_untyped_defs = true
+ignore_missing_imports = true
 
 [tool.coverage.run]
 omit = [

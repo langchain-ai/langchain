@@ -84,7 +84,7 @@ class KineticaSettings(BaseSettings):
         env_file_encoding = "utf-8"
 
 
-class Kinetica(VectorStore):
+class KineticaVectorStore(VectorStore):
     """`Kinetica` vector store.
 
     To use, you should have the ``gpudb`` python package installed.
@@ -224,7 +224,7 @@ class Kinetica(VectorStore):
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
         **kwargs: Any,
-    ) -> Kinetica:
+    ) -> KineticaVectorStore:
         """Class method to assist in constructing the `Kinetica` store instance
             using different combinations of parameters
 
@@ -750,7 +750,7 @@ class Kinetica(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[Kinetica],
+        cls: Type[KineticaVectorStore],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -760,7 +760,7 @@ class Kinetica(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> Kinetica:
+    ) -> KineticaVectorStore:
         """Adds the texts passed in to the vector store and returns it
 
         Args:
@@ -812,7 +812,7 @@ class Kinetica(VectorStore):
 
     @classmethod
     def from_embeddings(
-        cls: Type[Kinetica],
+        cls: Type[KineticaVectorStore],
         text_embeddings: List[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -823,7 +823,7 @@ class Kinetica(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> Kinetica:
+    ) -> KineticaVectorStore:
         """Adds the embeddings passed in to the vector store and returns it
 
         Args:
@@ -869,7 +869,7 @@ class Kinetica(VectorStore):
 
     @classmethod
     def from_documents(
-        cls: Type[Kinetica],
+        cls: Type[KineticaVectorStore],
         documents: List[Document],
         embedding: Embeddings,
         config: KineticaSettings = KineticaSettings(),
@@ -879,7 +879,7 @@ class Kinetica(VectorStore):
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
         **kwargs: Any,
-    ) -> Kinetica:
+    ) -> KineticaVectorStore:
         """Adds the list of `Document` passed in to the vector store and returns it
 
         Args:

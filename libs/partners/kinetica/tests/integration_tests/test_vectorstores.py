@@ -3,14 +3,14 @@ from typing import List
 
 import pytest
 from langchain_community.embeddings.openai import OpenAIEmbeddings
-from langchain_community.vectorstores import (
-    DistanceStrategy,
-    Kinetica,
-    KineticaSettings,
-)
 from langchain_core.documents import Document
+from langchain_core.embeddings.embeddings import Embeddings
 
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from langchain_kinetica.vectorstores import (
+    DistanceStrategy,
+    KineticaSettings,
+    KineticaVectorStore,
+)
 
 DIMENSIONS = 3
 HOST = os.getenv("KINETICA_HOST", "http://127.0.0.1:9191")
@@ -19,16 +19,22 @@ PASSWORD = os.getenv("KINETICA_PASSWORD", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 
-class FakeEmbeddingsWithAdaDimension(FakeEmbeddings):
+class FakeEmbeddingsWithAdaDimension(Embeddings):
     """Fake embeddings functionality for testing."""
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Return simple embeddings."""
         return [[float(1.0)] * (DIMENSIONS - 1) + [float(i)] for i in range(len(texts))]
 
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        return self.embed_documents(texts)
+
     def embed_query(self, text: str) -> List[float]:
         """Return simple embeddings."""
         return [float(1.0)] * (DIMENSIONS - 1) + [float(0.0)]
+
+    async def aembed_query(self, text: str) -> List[float]:
+        return self.embed_query(text)
 
 
 @pytest.fixture
@@ -41,7 +47,7 @@ def test_kinetica(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"text": text} for text in texts]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
@@ -59,7 +65,7 @@ def test_kinetica_embeddings(create_config: KineticaSettings) -> None:
     texts = ["foo", "bar", "baz"]
     text_embeddings = FakeEmbeddingsWithAdaDimension().embed_documents(texts)
     text_embedding_pairs = list(zip(texts, text_embeddings))
-    docsearch = Kinetica.from_embeddings(
+    docsearch = KineticaVectorStore.from_embeddings(
         config=create_config,
         text_embeddings=text_embedding_pairs,
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -75,7 +81,7 @@ def test_kinetica_with_metadatas(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
@@ -93,7 +99,7 @@ def test_kinetica_with_metadatas_with_scores(create_config: KineticaSettings) ->
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
@@ -111,7 +117,7 @@ def test_kinetica_with_filter_match(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
@@ -129,7 +135,7 @@ def test_kinetica_with_filter_distant_match(create_config: KineticaSettings) -> 
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
@@ -148,7 +154,7 @@ def test_kinetica_with_filter_in_set(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
@@ -171,7 +177,7 @@ def test_kinetica_relevance_score(create_config: KineticaSettings) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
@@ -195,7 +201,7 @@ def test_kinetica_max_marginal_relevance_search(
     """Test end to end construction and search."""
     openai = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
     texts = ["foo", "bar", "baz"]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         embedding=openai,
@@ -214,7 +220,7 @@ def test_kinetica_max_marginal_relevance_search_with_score(
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         embedding=FakeEmbeddingsWithAdaDimension(),
@@ -236,7 +242,7 @@ def test_kinetica_with_openai_embeddings(create_config: KineticaSettings) -> Non
     openai = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
     texts = ["foo", "bar", "baz"]
     metadatas = [{"text": text} for text in texts]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
@@ -254,7 +260,7 @@ def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) ->
     """Test using retriever for searching with threshold."""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
@@ -281,7 +287,7 @@ def test_kinetica_retriever_search_threshold_custom_normalization_fn(
     """Test searching with threshold and custom normalization function"""
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
-    docsearch = Kinetica.from_texts(
+    docsearch = KineticaVectorStore.from_texts(
         config=create_config,
         texts=texts,
         metadatas=metadatas,
