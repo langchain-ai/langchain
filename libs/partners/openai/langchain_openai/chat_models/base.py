@@ -643,7 +643,7 @@ class BaseChatOpenAI(BaseChatModel):
     def _get_ls_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
-        """Get the parameters used to invoke the model."""
+        """Get standard params for tracing."""
         params = {**self._default_params, **kwargs}
         ls_temperature = params.pop("temperature", self.temperature)
         ls_max_tokens = params.pop("max_tokens", self.max_tokens)

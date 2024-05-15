@@ -353,6 +353,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> LangSmithParams:
+        """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
         return LangSmithParams(ls_model_type="chat", **params)
 
