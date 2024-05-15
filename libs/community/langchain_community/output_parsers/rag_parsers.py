@@ -4,7 +4,10 @@ from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
 
 class ChatCompletionsOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
-    """OutputParser that wraps the string output into an OpenAI-like structured format."""
+    """
+    OutputParser that wraps the string output into a ChatCompletions
+    structured format.
+    """
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
