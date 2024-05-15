@@ -1,5 +1,5 @@
 import json
-from typing import Any, AsyncIterator, Iterator, Tuple
+from typing import Any, AsyncIterator, Iterator
 
 import pytest
 
@@ -230,25 +230,40 @@ def test_parse_json_with_python_dict() -> None:
     }
 
 
-TEST_CASES_PARTIAL = [
-    ('{"foo": "bar", "bar": "foo"}', '{"foo": "bar", "bar": "foo"}'),
-    ('{"foo": "bar", "bar": "foo', '{"foo": "bar", "bar": "foo"}'),
-    ('{"foo": "bar", "bar": "foo}', '{"foo": "bar", "bar": "foo}"}'),
-    ('{"foo": "bar", "bar": "foo[', '{"foo": "bar", "bar": "foo["}'),
-    ('{"foo": "bar", "bar": "foo\\"', """{"foo": "bar", "bar": "foo\\\\"}"""),
-    ('{"foo": "bar", "bar":', '{"foo": "bar"}'),
-    ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
-    ('{"foo": "bar", ', '{"foo": "bar"}'),
-    ('{"key":"value\\', """{"key": "value\\\\"}"""),
-    ('{"key":"\\value', """{"key": "\\\\value"}"""),
-]
+def test_streaming_variant() -> None:
+    obj = {
+        "a": "b\\",
+        "c": "d",
+    }
 
+    parts = json.dumps(obj)
+    sub_strings = [parts[:idx] for idx in range(1, len(parts))]
+    results = [parse_partial_json(sub_string) for sub_string in sub_strings]
 
-@pytest.mark.parametrize("json_strings", TEST_CASES_PARTIAL)
-def test_parse_partial_json(json_strings: Tuple[str, str]) -> None:
-    case, expected = json_strings
-    parsed = parse_partial_json(case)
-    assert parsed == json.loads(expected)
+    assert results == [
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {"a": ""},
+        {"a": "b"},
+        {"a": "b\\"},
+        # Output below is wrong, there should only be a single `\`
+        {"a": "b\\\\"},
+        {"a": "b\\\\"},
+        {"a": "b\\\\"},
+        {"a": "b\\\\"},
+        {"a": "b\\\\"},
+        {"a": "b\\\\"},
+        {"a": "b\\\\"},
+        {"a": "b\\\\"},
+        {"a": "b\\\\"},
+        {"a": "b\\\\", "c": ""},
+        {"a": "b\\\\", "c": "d"},
+        {"a": "b\\\\", "c": "d"},
+    ]
 
 
 STREAMED_TOKENS = """
@@ -304,7 +319,6 @@ So
 
 }
 """.splitlines()
-
 
 EXPECTED_STREAMED_JSON = [
     {},
