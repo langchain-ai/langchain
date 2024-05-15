@@ -330,8 +330,8 @@ class SQLDatabase:
         tables = []
         for table in meta_tables:
             if self._custom_table_info and table.name in self._custom_table_info:
-                tables.append(self._custom_table_info[table.name])
-                continue
+                table_info = f"{table} description: {self._custom_table_info[table.name]}\n\n"
+                
 
             # Ignore JSON datatyped columns
             for k, v in table.columns.items():
@@ -340,7 +340,7 @@ class SQLDatabase:
 
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
-            table_info = f"{create_table.rstrip()}"
+            table_info += f"{table} DDL:{create_table.rstrip()}"
             has_extra_info = (
                 self._indexes_in_table_info or self._sample_rows_in_table_info
             )
