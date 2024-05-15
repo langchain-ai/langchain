@@ -74,10 +74,6 @@ class SpiderLoader(BaseLoader):
                 spider_docs.extend(response)
 
         for doc in spider_docs:
-            # Ensure list is not empty
-            if len(doc) == 0:
-                continue
-
             if self.mode == "scrape":
                 # Ensure page_content is also not None
                 page_content = doc[0].get("content", "")
