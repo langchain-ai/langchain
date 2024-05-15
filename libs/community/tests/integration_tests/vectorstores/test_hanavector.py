@@ -65,6 +65,7 @@ test_setup = ConfigData()
 
 
 def generateSchemaName(cursor):  # type: ignore[no-untyped-def]
+    # return "Langchain"
     cursor.execute(
         "SELECT REPLACE(CURRENT_UTCDATE, '-', '') || '_' || BINTOHEX(SYSUUID) FROM "
         "DUMMY;"
@@ -85,6 +86,7 @@ def setup_module(module):  # type: ignore[no-untyped-def]
         password=os.environ.get("HANA_DB_PASSWORD"),
         autocommit=True,
         sslValidateCertificate=False,
+        # encrypt=True
     )
     try:
         cur = test_setup.conn.cursor()
@@ -100,6 +102,7 @@ def setup_module(module):  # type: ignore[no-untyped-def]
 
 
 def teardown_module(module):  # type: ignore[no-untyped-def]
+    # return
     try:
         cur = test_setup.conn.cursor()
         sql_str = f"DROP SCHEMA {test_setup.schema_name} CASCADE"
@@ -1094,3 +1097,38 @@ def test_pgvector_with_with_metadata_filters_5(
     ids = [doc.metadata["id"] for doc in docs]
     assert len(ids) == len(expected_ids), test_filter
     assert set(ids).issubset(expected_ids), test_filter
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_metadata(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+
+    table_name = "PREEXISTING_FILTER_COLUMNS"
+   # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" NVARCHAR(100));'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+    )
+
+    test_filter = {"quality": "good"}
+
+    docs = vectorDB.similarity_search("hello", k=5, filter=test_filter)
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
