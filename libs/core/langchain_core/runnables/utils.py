@@ -25,10 +25,11 @@ from typing import (
     Sequence,
     Set,
     Type,
-    TypeGuard,
     TypeVar,
     Union,
 )
+
+from typing_extensions import TypeGuard
 
 from langchain_core.pydantic_v1 import BaseConfig, BaseModel
 from langchain_core.pydantic_v1 import create_model as _create_model_base
