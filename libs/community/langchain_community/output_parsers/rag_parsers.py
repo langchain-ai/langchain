@@ -1,5 +1,7 @@
 from typing import Any, Dict, List
+
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
+
 
 class ChatCompletionsOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
     """OutputParser that wraps the string output into an OpenAI-like structured format."""
@@ -21,15 +23,7 @@ class ChatCompletionsOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
 
     def parse(self, text: str) -> Dict[str, Any]:
         """Returns the input text wrapped in an OpenAI-like response structure."""
-        return {
-            "choices": [
-                {
-                    "message": {
-                        "content": text
-                    }
-                }
-            ]
-        }
+        return {"choices": [{"message": {"content": text}}]}
 
 
 class StrObjOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
@@ -52,6 +46,4 @@ class StrObjOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
 
     def parse(self, text: str) -> Dict[str, Any]:
         """Returns the input text wrapped in an OpenAI-like response structure."""
-        return {
-            "content": text
-        }
+        return {"content": text}
