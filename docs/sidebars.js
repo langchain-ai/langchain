@@ -26,7 +26,6 @@ module.exports = {
       collapsed: false,
       collapsible: false,
       link: { type: "doc", id: "introduction" },
-      items: ["installation"],
     },
     {
       type: "category",
