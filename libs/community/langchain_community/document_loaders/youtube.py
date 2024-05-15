@@ -145,6 +145,7 @@ class TranscriptFormat(Enum):
 
     TEXT = "text"
     LINES = "lines"
+    CHUNKS = "chunks"
 
 
 class YoutubeLoader(BaseLoader):
@@ -158,6 +159,7 @@ class YoutubeLoader(BaseLoader):
         translation: Optional[str] = None,
         transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
         continue_on_failure: bool = False,
+        chunk_size_seconds: int = 120,
     ):
         """Initialize with YouTube video ID."""
         self.video_id = video_id
@@ -170,6 +172,7 @@ class YoutubeLoader(BaseLoader):
         self.translation = translation
         self.transcript_format = transcript_format
         self.continue_on_failure = continue_on_failure
+        self.chunk_size_seconds = chunk_size_seconds
 
     @staticmethod
     def extract_video_id(youtube_url: str) -> str:
@@ -235,6 +238,44 @@ class YoutubeLoader(BaseLoader):
                 )
                 for t in transcript_pieces
             ]
+        elif self.transcript_format == TranscriptFormat.CHUNKS:
+            def make_chunk_document(chunk_pieces: List[dict],
+                                    chunk_start_seconds: int) -> Document:
+                """Create Document from chunk of transcript pieces."""
+                m, s = divmod(chunk_start_seconds, 60)
+                h, m = divmod(m, 60)
+                return Document(
+                    page_content=' '.join(
+                        c['text'].strip(' ') for c in chunk_pieces),
+                    metadata={
+                        'start_seconds': chunk_start_seconds,
+                        'start_timestamp': f'{h:02d}:{m:02d}:{s:02d}',
+                        **metadata,
+                        'source':  # replace video ID with URL to start time
+                            f'https://www.youtube.com/watch?v={self.video_id}'
+                            f'&t={chunk_start_seconds}s'})
+
+            documents: List[Document] = []
+            chunk_pieces = []
+            chunk_start_seconds = 0
+            chunk_time_limit = self.chunk_size_seconds
+            for transcript_piece in transcript_pieces:
+                if (transcript_piece['start'] +
+                        transcript_piece['duration'] > chunk_time_limit):
+                    if chunk_pieces:
+                        documents.append(make_chunk_document(
+                            chunk_pieces, chunk_start_seconds))
+                        chunk_pieces = []
+                    chunk_start_seconds = chunk_time_limit
+                    chunk_time_limit += self.chunk_size_seconds
+                chunk_pieces.append(transcript_piece)
+
+            # handle chunk pieces left over from last iteration
+            if chunk_pieces:
+                documents.append(make_chunk_document(
+                    chunk_pieces, chunk_start_seconds))
+
+            return documents
         else:
             raise ValueError("Unknown transcript format.")
 
