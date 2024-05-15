@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
-
+from mlflow.models.rag_signatures import ChatCompletionResponse, StringResponse, ChainCompletionChoice, Message
 
 class ChatCompletionsOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
     """
@@ -25,8 +25,8 @@ class ChatCompletionsOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
         return "openai_style"
 
     def parse(self, text: str) -> Dict[str, Any]:
-        """Returns the input text wrapped in an OpenAI-like response structure."""
-        return {"choices": [{"message": {"content": text}}]}
+        """Returns the input text wrapped in an OpenAI-like response structure."""        
+        return ChatCompletionResponse(choices=[ChainCompletionChoice(message=Message(content=text))]).asdict()
 
 
 class StrObjOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
@@ -49,4 +49,4 @@ class StrObjOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
 
     def parse(self, text: str) -> Dict[str, Any]:
         """Returns the input text wrapped in an OpenAI-like response structure."""
-        return {"content": text}
+        return StringResponse(text=text)
