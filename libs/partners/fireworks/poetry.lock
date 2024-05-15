@@ -613,13 +613,13 @@ url = "../../standard-tests"
 
 [[package]]
 name = "langsmith"
-version = "0.1.57"
+version = "0.1.58"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.57-py3-none-any.whl", hash = "sha256:dbd83b0944a2fbea4151f0aa053530d93fcf6784a580621bc60633cb890b57dc"},
-    {file = "langsmith-0.1.57.tar.gz", hash = "sha256:4682204de19f0218029c2b8445ce2cc3485c8d0df9796b31e2ce4c9051fce365"},
+    {file = "langsmith-0.1.58-py3-none-any.whl", hash = "sha256:1148cc836ec99d1b2f37cd2fa3014fcac213bb6bad798a2b21bb9111c18c9768"},
+    {file = "langsmith-0.1.58.tar.gz", hash = "sha256:a5060933c1fb3006b498ec849677993329d7e6138bdc2ec044068ab806e09c39"},
 ]
 
 [package.dependencies]
@@ -789,13 +789,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.29.0"
+version = "1.30.1"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.29.0-py3-none-any.whl", hash = "sha256:c61cd12376c84362d406341f9e2f9a9d6b81c082b133b44484dc0f43954496b1"},
-    {file = "openai-1.29.0.tar.gz", hash = "sha256:d5a769f485610cff8bae14343fa45a8b1d346be3d541fa5b28ccd040dbc8baf8"},
+    {file = "openai-1.30.1-py3-none-any.whl", hash = "sha256:c9fb3c3545c118bbce8deb824397b9433a66d0d0ede6a96f7009c95b76de4a46"},
+    {file = "openai-1.30.1.tar.gz", hash = "sha256:4f85190e577cba0b066e1950b8eb9b11d25bc7ebcc43a86b326ce1bfa564ec74"},
 ]
 
 [package.dependencies]
