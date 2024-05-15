@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.tools import BaseTool
@@ -27,7 +27,7 @@ class CrudControls(BaseModel):
     delete_list: Optional[str] = ANYSDK_CRUD_CONTROLS_DELETE_LIST
 
     @root_validator
-    def validate_environment(cls, values: dict) -> dict:
+    def validate_environment(cls, values: dict) -> "CrudControls":
         create = values.get("create", ANYSDK_CRUD_CONTROLS_CREATE)
         values["create"] = create
 
@@ -52,12 +52,12 @@ class CrudControls(BaseModel):
         delete_list = values.get("delete_list", ANYSDK_CRUD_CONTROLS_DELETE_LIST)
         values["delete_list"] = delete_list.split(",")
 
-        return values
+        return values  # type: ignore
 
 
 class AnySdkWrapper(BaseModel):
     client: Any
-    operations: List[Dict] = []
+    operations: List[AnySDKTool] = []
     crud_controls: CrudControls = CrudControls()
 
     class Config:
@@ -116,4 +116,4 @@ class AnySdkWrapper(BaseModel):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return [AnySDKTool(**op) for op in self.operations]
+        return [op for op in self.operations]

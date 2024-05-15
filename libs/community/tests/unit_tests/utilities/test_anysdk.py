@@ -1,5 +1,6 @@
 import json
 
+from langchain_community.tools.anysdk.tool import AnySDKTool
 from langchain_community.utilities.anysdk import AnySdkWrapper, CrudControls
 
 
@@ -38,7 +39,7 @@ class FakeSdk:
 
 
 client = {"client": FakeSdk()}
-crud_controls = CrudControls(
+crud_controls: CrudControls = CrudControls(
     read=True,
     create=True,
     update=True,
@@ -47,7 +48,7 @@ crud_controls = CrudControls(
 
 anysdk = AnySdkWrapper(
     client=client,
-    crud_controls=crud_controls,
+    crud_controls=crud_controls,  # type: ignore
 )
 
 
@@ -59,64 +60,95 @@ def test_get_things_no_input() -> None:
     matching_tool = next(
         (tool for tool in anysdk.operations if tool.name == "get_things"), None
     )
-    assert json.loads(matching_tool._run())["response"]["id"] == 123
+    if matching_tool:
+        assert json.loads(matching_tool._run())["response"]["id"] == 123
+    else:
+        raise ValueError("No matching tool found.")
 
 
 def test_get_thing() -> None:
     matching_tool = next(
         (tool for tool in anysdk.operations if tool.name == "get_thing"), None
     )
-    assert (
-        json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"]["id"]
-        == 123
-    )
+    if matching_tool:
+        assert (
+            json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"][
+                "id"
+            ]
+            == 123
+        )
+    else:
+        raise ValueError("No matching tool found.")
 
 
 def test_create_thing_string_input() -> None:
     matching_tool = next(
         (tool for tool in anysdk.operations if tool.name == "create_thing"), None
     )
-    assert (
-        json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"]["id"]
-        == 123
-    )
+    if matching_tool:
+        assert (
+            json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"][
+                "id"
+            ]
+            == 123
+        )
+    else:
+        raise ValueError("No matching tool found.")
 
 
 def test_create_thing_kwarg_input() -> None:
     matching_tool = next(
         (tool for tool in anysdk.operations if tool.name == "create_thing"), None
     )
-    assert json.loads(matching_tool._run(thing_id=123))["response"]["id"] == 123
+    if matching_tool:
+        assert json.loads(matching_tool._run(thing_id=123))["response"]["id"] == 123  # type: ignore
+    else:
+        raise ValueError("No matching tool found.")
 
 
 def test_post_thing() -> None:
     matching_tool = next(
         (tool for tool in anysdk.operations if tool.name == "post_thing"), None
     )
-    assert (
-        json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"]["id"]
-        == 123
-    )
+    if matching_tool:
+        assert (
+            json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"][
+                "id"
+            ]
+            == 123
+        )
+    else:
+        raise ValueError("No matching tool found.")
 
 
 def test_put_thing() -> None:
     matching_tool = next(
         (tool for tool in anysdk.operations if tool.name == "put_thing"), None
     )
-    assert (
-        json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"]["id"]
-        == 123
-    )
+    if matching_tool:
+        assert (
+            json.loads(matching_tool._run(json.dumps({"thing_id": 123})))["response"][
+                "id"
+            ]
+            == 123
+        )
+    else:
+        raise ValueError("No matching tool found.")
 
 
 def test_delete_thing() -> None:
     matching_tool = next(
         (tool for tool in anysdk.operations if tool.name == "delete_thing"), None
     )
-    assert (
-        json.loads(matching_tool.run(json.dumps({"thing_id": 123})))["response"]["id"]
-        == 123
-    )
+    if matching_tool:
+        assert (
+            json.loads(matching_tool.run(json.dumps({"thing_id": 123})))["response"][
+                "id"
+            ]
+            == 123
+        )
+    else:
+        raise ValueError("No matching tool found.")
 
 
 def test_confabulate_thing() -> None:
@@ -127,16 +159,21 @@ def test_confabulate_thing() -> None:
 
     anysdk = AnySdkWrapper(
         client=client,
-        crud_controls=crud_controls,
+        crud_controls=crud_controls,  # type: ignore
     )
     matching_tool = next(
         (tool for tool in anysdk.operations if tool.name == "confabulate_thing"), None
     )
-    assert (
-        json.loads(matching_tool.run(json.dumps({"thing_id": 123})))["response"]["id"]
-        == 123
-    )
+    if matching_tool:
+        assert (
+            json.loads(matching_tool.run(json.dumps({"thing_id": 123})))["response"][
+                "id"
+            ]
+            == 123
+        )
+    else:
+        raise ValueError("No matching tool found.")
 
 
 def test_no_hidden_methods() -> None:
-    assert not any(op.name.startswith("_") for op in anysdk.operations)
+    assert not any([op.name.startswith("_") for op in anysdk.operations])
