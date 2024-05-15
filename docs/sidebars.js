@@ -21,11 +21,9 @@
 module.exports = {
   docs: [
     {
-      type: "category",
-      label: "Introduction",
-      collapsed: false,
-      collapsible: false,
-      link: { type: "doc", id: "introduction" },
+          type: "doc",
+          label: "Introduction",
+          id: "introduction",
     },
     {
       type: "category",
