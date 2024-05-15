@@ -3,7 +3,6 @@
 import asyncio
 import json
 import sys
-import textwrap
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -25,6 +24,8 @@ from langchain_core.tools import (
     ToolException,
     _create_subset_model,
     _parse_args_from_docstring,
+    _parse_func_description_from_docstring,
+    create_schema_from_function,
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -319,23 +320,22 @@ def test_structured_tool_from_function_docstring() -> None:
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "string"},
+        "bar": {"title": "Bar", "type": "integer", "description": "int"},
+        "baz": {"title": "Baz", "type": "string", "description": "str"},
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
-            "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "string"},
+            "bar": {"title": "Bar", "type": "integer", "description": "int"},
+            "baz": {"title": "Baz", "type": "string", "description": "str"},
         },
         "title": "fooSchema",
+        "description": "Docstring",
         "type": "object",
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: str) -> str - "
-    assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__.strip())
+    assert structured_tool.description == "Docstring"
 
 
 def test_structured_tool_from_function_docstring_complex_args() -> None:
@@ -352,23 +352,32 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+        "bar": {"title": "Bar", "type": "integer", "description": "int"},
+        "baz": {
+            "title": "Baz",
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List[str]",
+        },
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
-            "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+            "bar": {"title": "Bar", "type": "integer", "description": "int"},
+            "baz": {
+                "title": "Baz",
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "List[str]",
+            },
         },
         "title": "fooSchema",
+        "description": "Docstring",
         "type": "object",
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: List[str]) -> str - "
-    assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__).strip()
+    assert structured_tool.description == "Docstring"
 
 
 def test_structured_tool_lambda_multi_args_schema() -> None:
@@ -452,16 +461,17 @@ def test_structured_tool_from_function_with_run_manager() -> None:
     structured_tool = StructuredTool.from_function(foo)
 
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "string"},
+        "bar": {"title": "Bar", "type": "integer", "description": "int"},
+        "baz": {"title": "Baz", "type": "string", "description": "str"},
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
-            "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "string"},
+            "bar": {"title": "Bar", "type": "integer", "description": "int"},
+            "baz": {"title": "Baz", "type": "string", "description": "str"},
         },
         "title": "fooSchema",
+        "description": "Docstring",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -554,7 +564,7 @@ def test_tool_with_kwargs() -> None:
 def test_missing_docstring() -> None:
     """Test error is raised when docstring is missing."""
     # expect to throw a value error if there's no docstring
-    with pytest.raises(ValueError, match="Function must have a docstring"):
+    with pytest.raises(ValueError):
 
         @tool
         def search_api(query: str) -> str:
@@ -687,23 +697,22 @@ def test_structured_tool_from_function() -> None:
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "string"},
+        "bar": {"title": "Bar", "type": "integer", "description": "int"},
+        "baz": {"title": "Baz", "type": "string", "description": "str"},
     }
 
     assert structured_tool.args_schema.schema() == {
         "title": "fooSchema",
+        "description": "Docstring",
         "type": "object",
         "properties": {
-            "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "string"},
+            "bar": {"title": "Bar", "type": "integer", "description": "int"},
+            "baz": {"title": "Baz", "type": "string", "description": "str"},
         },
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: str) -> str - "
-    assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__.strip())
+    assert structured_tool.description == "Docstring"
 
 
 def test_validation_error_handling_bool() -> None:
@@ -909,21 +918,24 @@ async def test_async_tool_pass_context() -> None:
     )
 
 
-def test_parse_docstring_no_docstring():
-    assert _parse_args_from_docstring("") == {}
-
-
-def test_parse_docstring_no_args_section():
-    docstring = """
+@pytest.mark.parametrize(
+    "docstring",
+    [
+        None,
+        "",
+        """
     A function without an args section.
 
     Returns:
         None
-    """
+    """,
+    ],
+)
+def test_parse_docstring_no_args_section(docstring: Optional[str]) -> None:
     assert _parse_args_from_docstring(docstring) == {}
 
 
-def test_parse_docstring_single_argument():
+def test_parse_docstring_single_argument() -> None:
     docstring = """
     A function with a single argument.
 
@@ -986,7 +998,7 @@ def test_parse_docstring_multiple_arguments(docstring: str) -> None:
     assert _parse_args_from_docstring(docstring) == expected
 
 
-def test_parse_docstring_args_with_colon_in_description():
+def test_parse_docstring_args_with_multiple_colons_in_single_line() -> None:
     docstring = """
     A function with a colon in the description.
 
@@ -999,3 +1011,70 @@ def test_parse_docstring_args_with_colon_in_description():
         "param2": "The second parameter.",
     }
     assert _parse_args_from_docstring(docstring) == expected
+
+
+def test_parse_docstring_description() -> None:
+    docstring = """
+    A function with a 
+        multiline description.
+    """
+    assert (
+        _parse_func_description_from_docstring(docstring)
+        == "A function with a multiline description."
+    )
+
+
+@pytest.mark.parametrize("section", ["Args", "Returns", "Yields", "Raises"])
+def test_parse_docstring_description_multiple_sections(section: str) -> None:
+    docstring = f"""
+    A function with a 
+        multiline description.
+    
+    {section}:
+        foo: bar
+    """
+    assert (
+        _parse_func_description_from_docstring(docstring)
+        == "A function with a multiline description."
+    )
+
+
+@pytest.mark.parametrize("docstring", [None, "", "\n    Args:\n        bar"])
+def test_parse_docstring_description_no_description(docstring: Optional[str]) -> None:
+    assert not _parse_func_description_from_docstring(docstring)
+
+
+def foo1(a: int, b: str = "") -> float:
+    """
+    do foo
+
+    Args:
+        a (int) : this
+        describes
+            a
+        b: this describes b
+
+    Returns:
+        blah
+    """
+    return 0.0
+
+
+def test_create_schema_from_function() -> None:
+    expected = {
+        "title": "fooSchema",
+        "description": "do foo",
+        "type": "object",
+        "properties": {
+            "a": {"title": "A", "description": "this describes a", "type": "integer"},
+            "b": {
+                "title": "B",
+                "description": "this describes b",
+                "type": "string",
+                "default": "",
+            },
+        },
+        "required": ["a"],
+    }
+    actual = create_schema_from_function("foo", foo1).schema()
+    assert expected == actual

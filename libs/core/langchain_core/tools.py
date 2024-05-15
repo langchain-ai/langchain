@@ -22,7 +22,6 @@ from __future__ import annotations
 import asyncio
 import inspect
 import re
-import textwrap
 import uuid
 import warnings
 from abc import ABC, abstractmethod
@@ -80,7 +79,8 @@ def _create_subset_model(
     model: Type[BaseModel],
     field_names: list,
     *,
-    docstring: Optional[str] = None,
+    description: Optional[str] = None,
+    field_descriptions: Optional[Dict[str, str]] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
@@ -92,8 +92,10 @@ def _create_subset_model(
             if field.required and not field.allow_none
             else Optional[field.outer_type_]
         )
+        if field_descriptions and field_name in field_descriptions:
+            field.field_info.description = field_descriptions[field_name]
         fields[field_name] = (t, field.field_info)
-    rtn = create_model(name, __doc__=docstring, **fields)  # type: ignore
+    rtn = create_model(name, __doc__=description, **fields)  # type: ignore
     return rtn
 
 
@@ -104,37 +106,35 @@ def _get_filtered_args(inferred_model: Type[BaseModel], func: Callable) -> dict:
     return {k: schema[k] for k in valid_keys if k not in ("run_manager", "callbacks")}
 
 
-def _parse_args_from_docstring(docstring: str) -> Dict[str, str]:
+def _parse_args_from_docstring(docstring: Optional[str]) -> Dict[str, str]:
     """Parses the argument descriptions from a Google-style docstring.
 
     Args:
         docstring: The docstring to parse.
 
     Returns:
-        dict: A dictionary where keys are argument names and values are their descriptions.
+        dict: A dictionary where keys are argument names and values are their
+            descriptions.
     """
-    args_dict = {}
+    args_dict: Dict[str, str] = {}
 
-    args_section_match = re.search(r"Args:\n((?:\s*.+\n)+)", docstring)
-    if not args_section_match:
+    if docstring and (args_section := re.search(r"Args:\n((?:\s*.+\n)+)", docstring)):
+        arg_lines = args_section.group(1).strip().split("\n")
+    else:
         return args_dict
 
-    args_section = args_section_match.group(1)
-
-    arg_lines = args_section.strip().split("\n")
     current_arg = None
     current_desc = []
 
     for line in arg_lines:
-        if re.match(r"\s*(\w+).*:\s*(.*)", line):
+        if match := re.match(r"\s*(\w+).*?:\s*(.*)", line):
             if current_arg:
                 args_dict[current_arg] = " ".join(current_desc).strip()
-            match = re.match(r"\s*(\w+).*:\s*(.*)", line)
             current_arg = match.group(1)
             if current_arg in ("Returns", "Yields", "Raises"):
                 current_arg = None
                 break
-            current_desc = [match.group(2)]
+            current_desc = [match.group(2).strip()]
         else:
             current_desc.append(line.strip())
 
@@ -142,6 +142,18 @@ def _parse_args_from_docstring(docstring: str) -> Dict[str, str]:
         args_dict[current_arg] = " ".join(current_desc).strip()
 
     return args_dict
+
+
+def _parse_func_description_from_docstring(docstring: Optional[str]) -> Optional[str]:
+    if not docstring:
+        return docstring
+    if description_match := re.search(
+        r"(.*?)(?:Args|Returns|Yields|Raises)", docstring, flags=re.DOTALL
+    ):
+        description = description_match.group(1)
+    else:
+        description = docstring
+    return " ".join(li.strip() for li in description.split("\n") if li.strip())
 
 
 class _SchemaConfig:
@@ -170,13 +182,15 @@ def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseMod
         del inferred_model.__fields__["callbacks"]
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func)
-    full_docstring = getattr(func, "__doc__", "")
-    # arg_descriptions = _parse_args_from_docstring(full_docstring)
+    docstring = getattr(func, "__doc__", "")
+    func_description = _parse_func_description_from_docstring(docstring)
+    arg_descriptions = _parse_args_from_docstring(docstring)
     return _create_subset_model(
         f"{model_name}Schema",
         inferred_model,
         list(valid_properties),
-        docstring=None,
+        description=func_description,
+        field_descriptions=arg_descriptions,
     )
 
 
@@ -846,7 +860,7 @@ class StructuredTool(BaseTool):
             description: The description of the tool. Defaults to the function docstring
             return_direct: Whether to return the result directly or as a callback
             args_schema: The schema of the tool's input arguments
-            infer_schema: Whether to infer the schema from the function's signature
+            infer_schema: DEPRECATED. args_schema is always inferred if not specified.
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -870,29 +884,24 @@ class StructuredTool(BaseTool):
         else:
             raise ValueError("Function and/or coroutine must be provided")
         name = name or source_function.__name__
-        description_ = description or source_function.__doc__
-        if description_ is None:
-            raise ValueError(
-                "Function must have a docstring if description not provided."
-            )
+        inferred_schema = create_schema_from_function(name, source_function)
+        args_schema = args_schema or inferred_schema
+        description = (
+            description
+            or args_schema.schema().get("description")
+            or inferred_schema.schema().get("description")
+        )
         if description is None:
-            # Only apply if using the function's docstring
-            description_ = textwrap.dedent(description_).strip()
-
-        # Description example:
-        # search_api(query: str) - Searches the API for the query.
-        sig = signature(source_function)
-        description_ = f"{name}{sig} - {description_.strip()}"
-        _args_schema = args_schema
-        if _args_schema is None and infer_schema:
-            # schema name is appended within function
-            _args_schema = create_schema_from_function(name, source_function)
+            raise ValueError(
+                "Must specify a description or pass in an args_schema or function with "
+                "a docstring."
+            )
         return cls(
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=_args_schema,  # type: ignore[arg-type]
-            description=description_,
+            args_schema=args_schema,
+            description=description,
             return_direct=return_direct,
             **kwargs,
         )

@@ -54,6 +54,27 @@ def dummy_tool() -> BaseTool:
 
 
 @pytest.fixture()
+def dummy_tool_from_function() -> BaseTool:
+    @tool()
+    def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
+        """dummy function
+
+        Args:
+            arg1: foo
+            arg2: one of 'bar', 'baz'
+
+        Return:
+            blah
+
+        Raises:
+            bleh
+        """
+        return
+
+    return dummy_function
+
+
+@pytest.fixture()
 def json_schema() -> Dict:
     return {
         "title": "dummy_function",
@@ -98,6 +119,7 @@ def test_convert_to_openai_function(
     pydantic: Type[BaseModel],
     function: Callable,
     dummy_tool: BaseTool,
+    dummy_tool_from_function: BaseTool,
     json_schema: Dict,
 ) -> None:
     expected = {
@@ -121,6 +143,7 @@ def test_convert_to_openai_function(
         pydantic,
         function,
         dummy_tool,
+        dummy_tool_from_function,
         json_schema,
         expected,
         Dummy.dummy_function,
