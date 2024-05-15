@@ -216,7 +216,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
-            params = self._get_invocation_params(stop=stop, **kwargs)
+            params = self._get_ls_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -283,7 +283,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
-        params = self._get_invocation_params(stop=stop, **kwargs)
+        params = self._get_ls_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs}
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -403,7 +403,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        params = self._get_invocation_params(stop=stop, **kwargs)
+        params = self._get_ls_params(stop=stop, **kwargs)
         options = {"stop": stop}
 
         callback_manager = CallbackManager.configure(
@@ -490,7 +490,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        params = self._get_invocation_params(stop=stop, **kwargs)
+        params = self._get_ls_params(stop=stop, **kwargs)
         options = {"stop": stop}
 
         callback_manager = AsyncCallbackManager.configure(
