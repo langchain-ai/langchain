@@ -38,7 +38,6 @@ EXPECTED_ALL = [
     "RemoteLangChainRetriever",
     "RePhraseQueryRetriever",
     "SelfQueryRetriever",
-    "SentenceWindowRetriever",
     "SVMRetriever",
     "TavilySearchAPIRetriever",
     "TFIDFRetriever",
