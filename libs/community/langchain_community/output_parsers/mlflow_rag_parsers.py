@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
-from mlflow.models.rag_signatures import ChatCompletionResponse, StringResponse, ChainCompletionChoice, Message
+
 
 class ChatCompletionsOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
     """
@@ -25,8 +25,20 @@ class ChatCompletionsOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
         return "openai_style"
 
     def parse(self, text: str) -> Dict[str, Any]:
-        """Returns the input text wrapped in an OpenAI-like response structure."""        
-        return ChatCompletionResponse(choices=[ChainCompletionChoice(message=Message(content=text))]).asdict()
+        """Returns the input text wrapped in an OpenAI-like response structure."""
+        try:
+            from mlflow.models.rag_signatures import (
+                ChainCompletionChoice,
+                ChatCompletionResponse,
+                Message,
+            )
+        except ImportError:
+            raise ImportError(
+                "mlflow 2.13.0 or higher is required to use this output parser. "
+            )
+        return ChatCompletionResponse(
+            choices=[ChainCompletionChoice(message=Message(content=text))]
+        ).asdict()
 
 
 class StrObjOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
@@ -48,5 +60,11 @@ class StrObjOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
         return "openai_style"
 
     def parse(self, text: str) -> Dict[str, Any]:
-        """Returns the input text wrapped in an OpenAI-like response structure."""
+        """Returns the input text wrapped in a response structure with a string."""
+        try:
+            from mlflow.models.rag_signatures import StringResponse
+        except ImportError:
+            raise ImportError(
+                "mlflow 2.13.0 or higher is required to use this output parser. "
+            )
         return StringResponse(text=text)
