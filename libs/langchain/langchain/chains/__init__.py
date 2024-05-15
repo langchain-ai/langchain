@@ -23,7 +23,7 @@ from langchain._api import create_importer
 
 _module_lookup = {
     "APIChain": "langchain.chains.api.base",
-    "OpenAPIEndpointChain": "langchain_community.chains.api.openapi.chain",
+    "OpenAPIEndpointChain": "langchain_community.chains.openapi.chain",
     "AnalyzeDocumentChain": "langchain.chains.combine_documents.base",
     "MapReduceDocumentsChain": "langchain.chains.combine_documents.map_reduce",
     "MapRerankDocumentsChain": "langchain.chains.combine_documents.map_rerank",
