@@ -215,6 +215,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return {
             **{"azure_deployment": self.deployment_name},
             **super()._identifying_params,
+            **{"provider": "azure"},
         }
 
     @property
