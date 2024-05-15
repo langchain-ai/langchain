@@ -246,6 +246,8 @@ class UpstageLayoutAnalysisParser(BaseBlobParser):
                 "id": elements["id"],
                 "type": self.output_type,
                 "split": self.split,
+                "bbox": elements["bounding_box"],
+                "category": elements["category"],
             },
         )
 

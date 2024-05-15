@@ -77,6 +77,7 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "freezegun",
             "langchain-core",
             "langchain-text-splitters",
+            "langchain-openai",
             "lark",
             "pandas",
             "pytest",
