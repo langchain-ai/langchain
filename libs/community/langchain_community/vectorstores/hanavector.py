@@ -552,10 +552,11 @@ class HanaDB(VectorStore):
                         f"Unsupported filter data-type: {type(filter_value)}"
                     )
 
+                selector = f' "{key}"' if key in self.specific_metadata_columns else f"JSON_VALUE({self.metadata_column}, '$.{key}')"
                 where_str += (
-                    f" JSON_VALUE({self.metadata_column}, '$.{key}')"
-                    f" {operator} {sql_param}"
-                )
+                    f"{selector} "
+                    f"{operator} {sql_param}"
+                )   
 
         return where_str, query_tuple
 

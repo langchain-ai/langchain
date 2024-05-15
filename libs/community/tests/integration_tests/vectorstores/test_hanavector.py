@@ -1126,9 +1126,18 @@ def test_preexisting_specific_columns_for_metadata(
         embedding=embedding,
         table_name=table_name,
     )
+ 
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
 
-    test_filter = {"quality": "good"}
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100})
+    assert len(docs) == 1
+    assert docs[0].page_content == "bar"
 
-    docs = vectorDB.similarity_search("hello", k=5, filter=test_filter)
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100, "quality": "good"})
+    assert len(docs) == 0
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 0, "quality": "good"})
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
