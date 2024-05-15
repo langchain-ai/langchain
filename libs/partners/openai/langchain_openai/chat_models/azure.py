@@ -6,6 +6,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import openai
+from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -227,6 +228,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,
         }
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get the parameters used to invoke the model."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        params["ls_provider"] = "azure"
+        return params
 
     def _create_chat_result(
         self, response: Union[dict, openai.BaseModel]

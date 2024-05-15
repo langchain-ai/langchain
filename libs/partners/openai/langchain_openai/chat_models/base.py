@@ -36,6 +36,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
+    LangSmithParams,
     agenerate_from_stream,
     generate_from_stream,
 )
@@ -638,6 +639,26 @@ class BaseChatOpenAI(BaseChatModel):
             **self._default_params,
             **kwargs,
         }
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get the parameters used to invoke the model."""
+        params = {**self._default_params, **kwargs}
+        ls_temperature = params.pop("temperature", self.temperature)
+        ls_max_tokens = params.pop("max_tokens", self.max_tokens)
+        ls_stop = stop or params.pop("stop", None)
+        _ = params.pop("model", None)
+        ls_params = LangSmithParams(
+            ls_provider="openai",
+            ls_model_name=self.model_name,
+            ls_model_type="chat",
+            ls_temperature=ls_temperature,
+            ls_max_tokens=ls_max_tokens,
+            ls_stop=ls_stop,
+        )
+        ls_params.update(cast(LangSmithParams, params))
+        return ls_params
 
     @property
     def _llm_type(self) -> str:
