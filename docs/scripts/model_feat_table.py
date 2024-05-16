@@ -89,6 +89,11 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-community",
         "link": "/docs/integrations/chat/ollama/",
     },
+    "vLLM Chat (via ChatOpenAI)": {
+        "local": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/vllm/",
+    },
 }
 
 
