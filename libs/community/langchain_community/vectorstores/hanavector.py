@@ -111,7 +111,7 @@ class HanaDB(VectorStore):
         self.metadata_column = HanaDB._sanitize_name(metadata_column)
         self.vector_column = HanaDB._sanitize_name(vector_column)
         self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
-        self.specific_metadata_columns = specific_metadata_columns
+        self.specific_metadata_columns = self._handle_specific_metadata_columns(self.table_name, specific_metadata_columns)
 
         # Check if the table exists, and eventually create it
         if not self._table_exists(self.table_name):
@@ -142,8 +142,6 @@ class HanaDB(VectorStore):
             self.vector_column_length,
         )
 
-        if len(self.specific_metadata_columns) == 0:
-            self.specific_metadata_columns = self._identify_specific_metadata_columns(self.table_name)
 
     def _table_exists(self, table_name) -> bool:  # type: ignore[no-untyped-def]
         sql_str = (
@@ -220,7 +218,20 @@ class HanaDB(VectorStore):
 
         return metadata
 
-    def _identify_specific_metadata_columns(self, table_name) -> List[str]:
+    def _handle_specific_metadata_columns(self, table_name, specific_metadata_columns) -> List[str]:
+        if len(specific_metadata_columns) == 0:
+            return self._discover_specific_metadata_columns_from_hana_table(table_name)
+        else:
+            return self._sanitize_specific_metadata_columns(specific_metadata_columns)
+        
+    def _sanitize_specific_metadata_columns(self, specific_metadata_columns):
+        metadata_columns = []
+        for c in specific_metadata_columns:
+            sanitized_name = HanaDB._sanitize_name(c)
+            metadata_columns.append(sanitized_name)
+        return metadata_columns
+
+    def _discover_specific_metadata_columns_from_hana_table(self, table_name) -> List[str]:
         column_names = []
         sql_str = (
             "SELECT COLUMN_NAME FROM SYS.TABLE_COLUMNS WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ?"
@@ -277,7 +288,8 @@ class HanaDB(VectorStore):
         try:
             # Insert data into the table
             for i, text in enumerate(texts):
-                metadata, extracted_special_metadata = self._handle_metadata(metadatas[i])
+                metadata = metadatas[i] if metadatas else {}
+                metadata, extracted_special_metadata = self._handle_metadata(metadata)
                 embedding = (
                     embeddings[i]
                     if embeddings
@@ -285,10 +297,10 @@ class HanaDB(VectorStore):
                 )
                 specific_metadata_columns_string = '", "'.join(self.specific_metadata_columns)
                 if specific_metadata_columns_string:
-                    specific_metadata_columns_string = '"' + specific_metadata_columns_string + '"'
+                    specific_metadata_columns_string = ', "' + specific_metadata_columns_string + '"'
                 sql_str = (
                     f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
-                    f'"{self.metadata_column}", "{self.vector_column}", {specific_metadata_columns_string}) '
+                    f'"{self.metadata_column}", "{self.vector_column}"{specific_metadata_columns_string}) '
                     f"VALUES (?, ?, TO_REAL_VECTOR (?){', ?' * len(self.specific_metadata_columns)});"
                 )
                 cur.execute(
@@ -317,6 +329,7 @@ class HanaDB(VectorStore):
         metadata_column: str = default_metadata_column,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
+        specific_metadata_columns = []
     ):
         """Create a HanaDB instance from raw documents.
         This is a user-friendly interface that:
@@ -335,6 +348,7 @@ class HanaDB(VectorStore):
             metadata_column=metadata_column,
             vector_column=vector_column,
             vector_column_length=vector_column_length,  # -1 means dynamic length
+            specific_metadata_columns=specific_metadata_columns
         )
         instance.add_texts(texts, metadatas)
         return instance
