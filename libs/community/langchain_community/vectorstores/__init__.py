@@ -20,7 +20,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 """  # noqa: E501
 
 import importlib
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_core.vectorstores import (
@@ -49,11 +49,11 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.awadb import (
         AwaDB,
     )
-    from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
-        AzureCosmosDBNoSqlVectorSearch,
-    )
     from langchain_community.vectorstores.azure_cosmos_db import (
         AzureCosmosDBVectorSearch,
+    )
+    from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
+        AzureCosmosDBNoSqlVectorSearch,
     )
     from langchain_community.vectorstores.azuresearch import (
         AzureSearch,
@@ -401,7 +401,7 @@ _module_lookup = {
     "AstraDB": "langchain_community.vectorstores.astradb",
     "AtlasDB": "langchain_community.vectorstores.atlas",
     "AwaDB": "langchain_community.vectorstores.awadb",
-    "AzureCosmosDBNoSqlVectorSearch": "langchain_community.vectorstores.azure_cosmos_db_no_sql",
+    "AzureCosmosDBNoSqlVectorSearch": "langchain_community.vectorstores.azure_cosmos_db_no_sql",  # noqa: E501
     "AzureCosmosDBVectorSearch": "langchain_community.vectorstores.azure_cosmos_db",
     "AzureSearch": "langchain_community.vectorstores.azuresearch",
     "BaiduVectorDB": "langchain_community.vectorstores.baiduvectordb",

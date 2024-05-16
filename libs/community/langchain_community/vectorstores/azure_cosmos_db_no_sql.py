@@ -12,6 +12,8 @@ from langchain_core.vectorstores import VST, VectorStore
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 
+# You can read more about vector search using AzureCosmosDBNoSQL here.
+# https://aka.ms/CosmosVectorSearch
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     cosmos_client: CosmosClient = None
     database: DatabaseProxy
