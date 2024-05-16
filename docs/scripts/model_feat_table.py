@@ -14,81 +14,81 @@ LLM_FEAT_TABLE_CORRECTION = {
 }
 CHAT_MODEL_IGNORE = ("FakeListChatModel", "HumanInputChatModel")
 
-CHAT_MODEL_FEAT_TABLE= {
+CHAT_MODEL_FEAT_TABLE = {
     "ChatAnthropic": {
         "tool_calling": True,
         "structured_output": True,
         "package": "langchain-anthropic",
-        "link": "/docs/integrations/chat/anthropic/"
+        "link": "/docs/integrations/chat/anthropic/",
     },
     "ChatMistralAI": {
         "tool_calling": True,
         "structured_output": True,
         "package": "langchain-mistralai",
-        "link": "/docs/integrations/chat/mistralai/"
+        "link": "/docs/integrations/chat/mistralai/",
     },
     "ChatFireworks": {
         "tool_calling": True,
         "structured_output": True,
         "json_mode": True,
         "package": "langchain-fireworks",
-        "link": "/docs/integrations/chat/fireworks/"
+        "link": "/docs/integrations/chat/fireworks/",
     },
     "AzureChatOpenAI": {
         "tool_calling": True,
         "structured_output": True,
         "json_mode": True,
         "package": "langchain-openai",
-        "link": "/docs/integrations/chat/azure_chat_openai/"
+        "link": "/docs/integrations/chat/azure_chat_openai/",
     },
     "ChatOpenAI": {
         "tool_calling": True,
         "structured_output": True,
         "json_mode": True,
         "package": "langchain-openai",
-        "link": "/docs/integrations/chat/openai/"
+        "link": "/docs/integrations/chat/openai/",
     },
     "ChatTogether": {
         "tool_calling": True,
         "structured_output": True,
         "json_mode": True,
         "package": "langchain-together",
-        "link": "/docs/integrations/chat/together/"
+        "link": "/docs/integrations/chat/together/",
     },
     "ChatVertexAI": {
         "tool_calling": True,
         "structured_output": True,
         "package": "langchain-google-vertexai",
-        "link": "/docs/integrations/chat/google_vertex_ai_palm/"
+        "link": "/docs/integrations/chat/google_vertex_ai_palm/",
     },
     "ChatGroq": {
         "tool_calling": True,
         "structured_output": True,
         "json_mode": True,
         "package": "langchain-groq",
-        "link": "/docs/integrations/chat/groq/"
+        "link": "/docs/integrations/chat/groq/",
     },
     "ChatCohere": {
         "tool_calling": True,
         "structured_output": True,
         "package": "langchain-cohere",
-        "link": "/docs/integrations/chat/cohere/"
+        "link": "/docs/integrations/chat/cohere/",
     },
     "ChatBedrock": {
         "tool_calling": True,
         "package": "langchain-aws",
-        "link": "/docs/integrations/chat/bedrock/"
+        "link": "/docs/integrations/chat/bedrock/",
     },
     "ChatHuggingFace": {
         "local": True,
         "package": "langchain-huggingface",
-        "link": "/docs/integrations/chat/huggingface/"
+        "link": "/docs/integrations/chat/huggingface/",
     },
     "ChatOllama": {
         "local": True,
         "package": "langchain-community",
-        "link": "/docs/integrations/chat/ollama/"
-    }
+        "link": "/docs/integrations/chat/ollama/",
+    },
 }
 
 
@@ -204,7 +204,9 @@ def get_chat_model_table() -> str:
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(CHAT_MODEL_FEAT_TABLE.items()):
         # Fields are in the order of the header
-        row = [f"[{llm}]({feats['link']})",]
+        row = [
+            f"[{llm}]({feats['link']})",
+        ]
         for h in header[1:]:
             value = feats.get(h)
             if h == "package":
