@@ -1,13 +1,12 @@
 import importlib
 from pathlib import Path
 
-import pytest
-
 # Attempt to recursively import all modules in langchain
 PKG_ROOT = Path(__file__).parent.parent.parent
 
+COMMUNITY_NOT_INSTALLED = importlib.util.find_spec("langchain_community") is None
 
-@pytest.mark.community
+
 def test_import_all() -> None:
     """Generate the public API for this package."""
     library_code = PKG_ROOT / "langchain"
@@ -26,8 +25,13 @@ def test_import_all() -> None:
 
         for name in all:
             # Attempt to import the name from the module
-            obj = getattr(mod, name)
-            assert obj is not None
+            try:
+                obj = getattr(mod, name)
+                assert obj is not None
+            except ModuleNotFoundError as e:
+                # If the module is not installed, we suppress the error
+                if "Module langchain_community" in str(e) and COMMUNITY_NOT_INSTALLED:
+                    pass
 
 
 def test_import_all_using_dir() -> None:
@@ -41,6 +45,9 @@ def test_import_all_using_dir() -> None:
         if module_name.endswith("__init__"):
             # Without init
             module_name = module_name.rsplit(".", 1)[0]
+
+        if module_name.startswith("langchain_community.") and COMMUNITY_NOT_INSTALLED:
+            continue
 
         try:
             mod = importlib.import_module(module_name)

@@ -1,14 +1,10 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import pytest
-from langchain_core.language_models import FakeListLLM
-from langchain_core.tools import Tool
-
 from langchain.agents.agent_types import AgentType
 from langchain.agents.initialize import initialize_agent, load_agent
-
-pytest.importorskip("langchain_community")
+from langchain_core.language_models import FakeListLLM
+from langchain_core.tools import Tool
 
 
 def test_mrkl_serialization() -> None:
