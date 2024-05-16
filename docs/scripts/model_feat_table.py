@@ -122,7 +122,9 @@ keywords: [compatibility, bind_tools, tool calling, function calling, structured
 
 # Chat models
 
-## Features
+## Advanced features
+
+The following table shows all the chat models that support one or more advanced features.
 
 {table}
 
@@ -199,7 +201,7 @@ def get_chat_model_table() -> str:
         "[Structured output](/docs/how_to/structured_output/)",
         "JSON mode",
         "Local",
-        "Python Package",
+        "Package",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(CHAT_MODEL_FEAT_TABLE.items()):
