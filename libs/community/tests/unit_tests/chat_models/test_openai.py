@@ -1,7 +1,7 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
-from typing import Any
+from typing import Any, List
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,7 +18,7 @@ from langchain_community.chat_models.openai import ChatOpenAI
 
 @pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
-    test_cases = [
+    test_cases: List[dict] = [
         {"model_name": "foo", "openai_api_key": "foo"},
         {"model": "foo", "openai_api_key": "foo"},
         {"model_name": "foo", "api_key": "foo"},
