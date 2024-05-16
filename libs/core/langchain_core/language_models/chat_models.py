@@ -67,9 +67,9 @@ class LangSmithParams(TypedDict, total=False):
     ls_provider: str
     ls_model_name: str
     ls_model_type: Literal["chat"]
-    ls_temperature: Optional[float]
-    ls_max_tokens: Optional[int]
-    ls_stop: Optional[List[str]]
+    ls_temperature: float
+    ls_max_tokens: int
+    ls_stop: List[str]
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -362,8 +362,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
-        params = self._get_invocation_params(stop=stop, **kwargs)
-        return LangSmithParams(ls_model_type="chat", **params)
+        return LangSmithParams(ls_model_type="chat")
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
