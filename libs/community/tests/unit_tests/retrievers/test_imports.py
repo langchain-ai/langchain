@@ -39,6 +39,7 @@ EXPECTED_ALL = [
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
     "WikipediaRetriever",
+    "WebResearchRetriever",
     "YouRetriever",
     "ZepRetriever",
     "ZillizRetriever",
