@@ -64,11 +64,13 @@ However, we advise for users to not rely on these imports and instead migrate to
 
 Code that has better alternatives available and will eventually be removed, so there’s only a single way to do things. (e.g., `predict_messages` method in ChatModels has been deprecated in favor of `invoke`).
 
+#### astream events V1
+
+If you are using `astream_events`, please review how to [migrate to astream events v2](./docs/versions/v_02/migrating_astream_events_v2).
+
+#### langchain-core
+
 Many of these were marked for removal in 0.2. We have bumped the removal to 0.3.
-
-
-Here is a list of all deprecations and removals in the `langchain` and `langchain-core` packages:
-
 
 
 | module                                     | qualname                                   | since   | removal   | alternative                                                        | message                                                                                                               |
@@ -109,6 +111,11 @@ Here is a list of all deprecations and removals in the `langchain` and `langchai
 | langchain_core.utils.function_calling      | convert_python_function_to_openai_function | 0.1.16  | 0.3.0     | langchain_core.utils.function_calling.convert_to_openai_function() |                                                                                                                       |
 | langchain_core.utils.function_calling      | format_tool_to_openai_function             | 0.1.16  | 0.3.0     | langchain_core.utils.function_calling.convert_to_openai_function() |                                                                                                                       |
 | langchain_core.utils.function_calling      | format_tool_to_openai_tool                 | 0.1.16  | 0.3.0     | langchain_core.utils.function_calling.convert_to_openai_tool()     |                                                                                                                       |
+
+
+#### langchain
+
+Many of these were marked for removal in 0.2. We have bumped the removal to 0.3.
 
 
 | module                                                  | qualname                          | since  | removal | alternative                                                                                                      | message                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
