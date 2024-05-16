@@ -222,7 +222,7 @@ const config = {
               },
               {
                 label: "v0.1.x",
-                href: "/../v0.1/docs/get_started/introduction"
+                href: "/docs/get_started/introduction"
               }
             ]
           },
