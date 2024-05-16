@@ -235,6 +235,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "azure"
+        params["ls_model_name"] = self.deployment_name
         return params
 
     def _create_chat_result(

@@ -31,3 +31,4 @@ def test_initialize_more() -> None:
 
     ls_params = llm._get_ls_params()
     assert ls_params["ls_provider"] == "azure"
+    assert ls_params["ls_model_name"] == "35-turbo-dev"
