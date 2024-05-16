@@ -124,7 +124,14 @@ class AnzoGraphDBGraph:
         self.standard = standard
         self.local_copy = local_copy
         self.graph = rdflib.Graph(**(graph_kwargs or {}))
-        self.perform_sparql_query()
+        self.schema = None
+        
+        if self.source_file:
+            self.load_local_file()
+        elif self.query_endpoint and self.query_ontology:
+            self.perform_sparql_query()
+        else:
+            raise ValueError("Insufficient parameters to initialize graph.")
 
     def perform_sparql_query(self):
         """
@@ -135,6 +142,12 @@ class AnzoGraphDBGraph:
         sparql.setReturnFormat(TURTLE)
         query_result = sparql.query().convert()
         self.load_and_serialize_graph(query_result)
+
+    def load_local_file(self):
+        """
+        Load RDF data from a local file.
+        """
+        self.graph.parse(self.source_file, format=self.serialization)
 
     def load_and_serialize_graph(self, query_result):
         """
@@ -221,7 +234,7 @@ class AnzoGraphDBGraph:
 
     def load_schema(self) -> None:
         """
-        Load the graph schema information.
+        Load the graph schema information. This method adjusts behavior based on the availability of a SPARQL endpoint.
         """
 
         def _rdf_s_schema(
@@ -237,29 +250,22 @@ class AnzoGraphDBGraph:
                 f'{", ".join([self._res_to_str(r, "rel") for r in relationships])}\n'
             )
 
-        if self.standard == "rdf":
-            clss = self.query(cls_query_rdf)
-            rels = self.query(rel_query_rdf)
-            self.schema = _rdf_s_schema(clss, rels)
-        elif self.standard == "rdfs":
-            clss = self.query(cls_query_rdfs)
-            rels = self.query(rel_query_rdfs)
-            self.schema = _rdf_s_schema(clss, rels)
-        elif self.standard == "owl":
-            clss = self.query(cls_query_owl)
-            ops = self.query(op_query_owl)
-            dps = self.query(dp_query_owl)
-            self.schema = (
-                f"In the following, each IRI is followed by the local name and "
-                f"optionally its description in parentheses. \n"
-                f"The OWL graph supports the following node types:\n"
-                f'{", ".join([self._res_to_str(r, "cls") for r in clss])}\n'
-                f"The OWL graph supports the following object properties, "
-                f"i.e., relationships between objects:\n"
-                f'{", ".join([self._res_to_str(r, "op") for r in ops])}\n'
-                f"The OWL graph supports the following data properties, "
-                f"i.e., relationships between objects and literals:\n"
-                f'{", ".join([self._res_to_str(r, "dp") for r in dps])}\n'
-            )
+        if self.query_endpoint:
+            if self.standard == "rdf":
+                clss = self.query(cls_query_rdf)
+                rels = self.query(rel_query_rdf)
+                self.schema = self._rdf_s_schema(clss, rels)
+            elif self.standard == "rdfs":
+                clss = self.query(cls_query_rdfs)
+                rels = self.query(rel_query_rdfs)
+                self.schema = self._rdf_s_schema(clss, rels)
+            elif self.standard == "owl":
+                clss = self.query(cls_query_owl)
+                ops = self.query(op_query_owl)
+                dps = self.query(dp_query_owl)
+                self.schema = self._rdf_s_schema(clss, ops, dps)
+            else:
+                raise ValueError(f"Mode '{self.standard}' is currently not supported.")
         else:
-            raise ValueError(f"Mode '{self.standard}' is currently not supported.")
+            self.schema = None
+            print("No SPARQL endpoint available. Schema could not be loaded.")
