@@ -65,7 +65,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
         return [Document(page_content="hello")]
 
     chain = RunnableLambda(foo) | get_docs
-    events = await _collect_events(chain.astream_events({}, version="v1"))
+    events = await _collect_events(chain.astream_events({}, version="v2"))
     assert events == [
         {
             "event": "on_chain_start",
@@ -143,7 +143,7 @@ async def test_event_stream_with_single_lambda() -> None:
 
     chain = RunnableLambda(func=reverse)
 
-    events = await _collect_events(chain.astream_events("hello", version="v1"))
+    events = await _collect_events(chain.astream_events("hello", version="v2"))
     assert events == [
         {
             "data": {"input": "hello"},
@@ -184,7 +184,7 @@ async def test_event_stream_with_triple_lambda() -> None:
         | r.with_config({"run_name": "2"})
         | r.with_config({"run_name": "3"})
     )
-    events = await _collect_events(chain.astream_events("hello", version="v1"))
+    events = await _collect_events(chain.astream_events("hello", version="v2"))
     assert events == [
         {
             "data": {"input": "hello"},
@@ -300,11 +300,11 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
         | r.with_config({"run_name": "3", "tags": ["my_tag"]})
     )
     events = await _collect_events(
-        chain.astream_events("hello", include_names=["1"], version="v1")
+        chain.astream_events("hello", include_names=["1"], version="v2")
     )
     assert events == [
         {
-            "data": {},
+            "data": {"input": "hello"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "1",
@@ -320,7 +320,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "tags": ["seq:step:1"],
         },
         {
-            "data": {"input": "hello", "output": "olleh"},
+            "data": {"output": "olleh"},
             "event": "on_chain_end",
             "metadata": {},
             "name": "1",
@@ -331,12 +331,12 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
 
     events = await _collect_events(
         chain.astream_events(
-            "hello", include_tags=["my_tag"], exclude_names=["2"], version="v1"
+            "hello", include_tags=["my_tag"], exclude_names=["2"], version="v2"
         )
     )
     assert events == [
         {
-            "data": {},
+            "data": {"input": "hello"},
             "event": "on_chain_start",
             "metadata": {},
             "name": "3",
@@ -352,7 +352,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "tags": ["my_tag", "seq:step:3"],
         },
         {
-            "data": {"input": "hello", "output": "olleh"},
+            "data": {"output": "olleh"},
             "event": "on_chain_end",
             "metadata": {},
             "name": "3",
@@ -367,7 +367,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
         {"run_name": "my_lambda"}
     )
     events = await _collect_events(
-        as_lambdas.astream_events({"question": "hello"}, version="v1")
+        as_lambdas.astream_events({"question": "hello"}, version="v2")
     )
     assert events == [
         {
@@ -412,7 +412,7 @@ async def test_astream_events_from_model() -> None:
         )
         .bind(stop="<stop_token>")
     )
-    events = await _collect_events(model.astream_events("hello", version="v1"))
+    events = await _collect_events(model.astream_events("hello", version="v2"))
     assert events == [
         {
             "data": {"input": "hello"},
@@ -447,7 +447,9 @@ async def test_astream_events_from_model() -> None:
             "tags": ["my_model"],
         },
         {
-            "data": {"output": AIMessageChunk(content="hello world!", id=AnyStr())},
+            "data": {
+                "output": AIMessageChunk(content="hello world!", id=AnyStr()),
+            },
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
             "name": "my_model",
@@ -456,6 +458,23 @@ async def test_astream_events_from_model() -> None:
         },
     ]
 
+
+async def test_astream_with_model_in_chain() -> None:
+    """Scenarios with model when it is not the only runnable in the chain."""
+    infinite_cycle = cycle([AIMessage(content="hello world!")])
+    # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
+    model = (
+        GenericFakeChatModel(messages=infinite_cycle)
+        .with_config(
+            {
+                "metadata": {"a": "b"},
+                "tags": ["my_model"],
+                "run_name": "my_model",
+            }
+        )
+        .bind(stop="<stop_token>")
+    )
+
     @RunnableLambda
     def i_dont_stream(input: Any, config: RunnableConfig) -> Any:
         if sys.version_info >= (3, 11):
@@ -463,7 +482,7 @@ async def test_astream_events_from_model() -> None:
         else:
             return model.invoke(input, config)
 
-    events = await _collect_events(i_dont_stream.astream_events("hello", version="v1"))
+    events = await _collect_events(i_dont_stream.astream_events("hello", version="v2"))
     assert events == [
         {
             "data": {"input": "hello"},
@@ -508,22 +527,7 @@ async def test_astream_events_from_model() -> None:
         {
             "data": {
                 "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "generation_info": None,
-                                "message": AIMessage(
-                                    content="hello world!", id=AnyStr()
-                                ),
-                                "text": "hello world!",
-                                "type": "ChatGeneration",
-                            }
-                        ]
-                    ],
-                    "llm_output": None,
-                    "run": None,
-                },
+                "output": AIMessage(content="hello world!", id=AnyStr()),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
@@ -556,7 +560,7 @@ async def test_astream_events_from_model() -> None:
         else:
             return await model.ainvoke(input, config)
 
-    events = await _collect_events(ai_dont_stream.astream_events("hello", version="v1"))
+    events = await _collect_events(ai_dont_stream.astream_events("hello", version="v2"))
     assert events == [
         {
             "data": {"input": "hello"},
@@ -601,22 +605,7 @@ async def test_astream_events_from_model() -> None:
         {
             "data": {
                 "input": {"messages": [[HumanMessage(content="hello")]]},
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "generation_info": None,
-                                "message": AIMessage(
-                                    content="hello world!", id=AnyStr()
-                                ),
-                                "text": "hello world!",
-                                "type": "ChatGeneration",
-                            }
-                        ]
-                    ],
-                    "llm_output": None,
-                    "run": None,
-                },
+                "output": AIMessage(content="hello world!", id=AnyStr()),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b"},
@@ -677,7 +666,7 @@ async def test_event_stream_with_simple_chain() -> None:
     )
 
     events = await _collect_events(
-        chain.astream_events({"question": "hello"}, version="v1")
+        chain.astream_events({"question": "hello"}, version="v2")
     )
     assert events == [
         {
@@ -787,22 +776,7 @@ async def test_event_stream_with_simple_chain() -> None:
                         ]
                     ]
                 },
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "generation_info": None,
-                                "message": AIMessageChunk(
-                                    content="hello world!", id="ai1"
-                                ),
-                                "text": "hello world!",
-                                "type": "ChatGenerationChunk",
-                            }
-                        ]
-                    ],
-                    "llm_output": None,
-                    "run": None,
-                },
+                "output": AIMessageChunk(content="hello world!", id="ai1"),
             },
             "event": "on_chat_model_end",
             "metadata": {"a": "b", "foo": "bar"},
@@ -846,19 +820,11 @@ async def test_event_streaming_with_tools() -> None:
 
     # type ignores below because the tools don't appear to be runnables to type checkers
     # we can remove as soon as that's fixed
-    events = await _collect_events(parameterless.astream_events({}, version="v1"))  # type: ignore
+    events = await _collect_events(parameterless.astream_events({}, version="v2"))  # type: ignore
     assert events == [
         {
             "data": {"input": {}},
             "event": "on_tool_start",
-            "metadata": {},
-            "name": "parameterless",
-            "run_id": "",
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "hello"},
-            "event": "on_tool_stream",
             "metadata": {},
             "name": "parameterless",
             "run_id": "",
@@ -873,20 +839,11 @@ async def test_event_streaming_with_tools() -> None:
             "tags": [],
         },
     ]
-
-    events = await _collect_events(with_callbacks.astream_events({}, version="v1"))  # type: ignore
+    events = await _collect_events(with_callbacks.astream_events({}, version="v2"))  # type: ignore
     assert events == [
         {
             "data": {"input": {}},
             "event": "on_tool_start",
-            "metadata": {},
-            "name": "with_callbacks",
-            "run_id": "",
-            "tags": [],
-        },
-        {
-            "data": {"chunk": "world"},
-            "event": "on_tool_stream",
             "metadata": {},
             "name": "with_callbacks",
             "run_id": "",
@@ -902,20 +859,12 @@ async def test_event_streaming_with_tools() -> None:
         },
     ]
     events = await _collect_events(
-        with_parameters.astream_events({"x": 1, "y": "2"}, version="v1")  # type: ignore
+        with_parameters.astream_events({"x": 1, "y": "2"}, version="v2")  # type: ignore
     )
     assert events == [
         {
             "data": {"input": {"x": 1, "y": "2"}},
             "event": "on_tool_start",
-            "metadata": {},
-            "name": "with_parameters",
-            "run_id": "",
-            "tags": [],
-        },
-        {
-            "data": {"chunk": {"x": 1, "y": "2"}},
-            "event": "on_tool_stream",
             "metadata": {},
             "name": "with_parameters",
             "run_id": "",
@@ -932,20 +881,12 @@ async def test_event_streaming_with_tools() -> None:
     ]
 
     events = await _collect_events(
-        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"}, version="v1")  # type: ignore
+        with_parameters_and_callbacks.astream_events({"x": 1, "y": "2"}, version="v2")  # type: ignore
     )
     assert events == [
         {
             "data": {"input": {"x": 1, "y": "2"}},
             "event": "on_tool_start",
-            "metadata": {},
-            "name": "with_parameters_and_callbacks",
-            "run_id": "",
-            "tags": [],
-        },
-        {
-            "data": {"chunk": {"x": 1, "y": "2"}},
-            "event": "on_tool_stream",
             "metadata": {},
             "name": "with_parameters_and_callbacks",
             "run_id": "",
@@ -986,7 +927,7 @@ async def test_event_stream_with_retriever() -> None:
         ]
     )
     events = await _collect_events(
-        retriever.astream_events({"query": "hello"}, version="v1")
+        retriever.astream_events({"query": "hello"}, version="v2")
     )
     assert events == [
         {
@@ -1001,23 +942,10 @@ async def test_event_stream_with_retriever() -> None:
         },
         {
             "data": {
-                "chunk": [
-                    Document(page_content="hello world!", metadata={"foo": "bar"}),
-                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
-                ]
-            },
-            "event": "on_retriever_stream",
-            "metadata": {},
-            "name": "HardCodedRetriever",
-            "run_id": "",
-            "tags": [],
-        },
-        {
-            "data": {
                 "output": [
                     Document(page_content="hello world!", metadata={"foo": "bar"}),
                     Document(page_content="goodbye world!", metadata={"food": "spare"}),
-                ],
+                ]
             },
             "event": "on_retriever_end",
             "metadata": {},
@@ -1048,7 +976,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
         return ", ".join([doc.page_content for doc in docs])
 
     chain = retriever | format_docs
-    events = await _collect_events(chain.astream_events("hello", version="v1"))
+    events = await _collect_events(chain.astream_events("hello", version="v2"))
     assert events == [
         {
             "data": {"input": "hello"},
@@ -1062,25 +990,21 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "data": {"input": {"query": "hello"}},
             "event": "on_retriever_start",
             "metadata": {},
-            "name": "Retriever",
+            "name": "HardCodedRetriever",
             "run_id": "",
             "tags": ["seq:step:1"],
         },
         {
             "data": {
                 "input": {"query": "hello"},
-                "output": {
-                    "documents": [
-                        Document(page_content="hello world!", metadata={"foo": "bar"}),
-                        Document(
-                            page_content="goodbye world!", metadata={"food": "spare"}
-                        ),
-                    ]
-                },
+                "output": [
+                    Document(page_content="hello world!", metadata={"foo": "bar"}),
+                    Document(page_content="goodbye world!", metadata={"food": "spare"}),
+                ],
             },
             "event": "on_retriever_end",
             "metadata": {},
-            "name": "Retriever",
+            "name": "HardCodedRetriever",
             "run_id": "",
             "tags": ["seq:step:1"],
         },
@@ -1150,7 +1074,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
     chain = concat | reverse  # type: ignore
 
     events = await _collect_events(
-        chain.astream_events({"a": "hello", "b": "world"}, version="v1")
+        chain.astream_events({"a": "hello", "b": "world"}, version="v2")
     )
     assert events == [
         {
@@ -1220,6 +1144,108 @@ async def test_event_stream_on_chain_with_tool() -> None:
     ]
 
 
+@pytest.mark.xfail(reason="Fix order of callback invocations in RunnableSequence")
+async def test_chain_ordering() -> None:
+    """Test the event stream with a tool."""
+
+    def foo(a: str) -> str:
+        return a
+
+    def bar(a: str) -> str:
+        return a
+
+    chain = RunnableLambda(foo) | RunnableLambda(bar)
+    iterable = chain.astream_events("q", version="v2")
+
+    events = []
+
+    for _ in range(10):
+        try:
+            next_chunk = await iterable.__anext__()
+            events.append(next_chunk)
+        except Exception:
+            break
+
+    events = _with_nulled_run_id(events)
+    for event in events:
+        event["tags"] = sorted(event["tags"])
+
+    assert events == [
+        {
+            "data": {"input": "q"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "foo",
+            "run_id": "",
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"chunk": "q"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "foo",
+            "run_id": "",
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {"input": "q", "output": "q"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "foo",
+            "run_id": "",
+            "tags": ["seq:step:1"],
+        },
+        {
+            "data": {},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "bar",
+            "run_id": "",
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"chunk": "q"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "bar",
+            "run_id": "",
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"chunk": "q"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"input": "q", "output": "q"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "bar",
+            "run_id": "",
+            "tags": ["seq:step:2"],
+        },
+        {
+            "data": {"output": "q"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "RunnableSequence",
+            "run_id": "",
+            "tags": [],
+        },
+    ]
+
+
 async def test_event_stream_with_retry() -> None:
     """Test the event stream with a tool."""
 
@@ -1233,7 +1259,7 @@ async def test_event_stream_with_retry() -> None:
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
     )
-    iterable = chain.astream_events("q", version="v1")
+    iterable = chain.astream_events("q", version="v2")
 
     events = []
 
@@ -1289,14 +1315,6 @@ async def test_event_stream_with_retry() -> None:
             "run_id": "",
             "tags": ["seq:step:1"],
         },
-        {
-            "data": {"input": "success", "output": None},
-            "event": "on_chain_end",
-            "metadata": {},
-            "name": "fail",
-            "run_id": "",
-            "tags": ["seq:step:2"],
-        },
     ]
 
 
@@ -1309,7 +1327,7 @@ async def test_with_llm() -> None:
 
     chain = prompt | llm
     events = await _collect_events(
-        chain.astream_events({"question": "hello"}, version="v1")
+        chain.astream_events({"question": "hello"}, version="v2")
     )
     assert events == [
         {
@@ -1364,7 +1382,6 @@ async def test_with_llm() -> None:
                         [{"generation_info": None, "text": "abc", "type": "Generation"}]
                     ],
                     "llm_output": None,
-                    "run": None,
                 },
             },
             "event": "on_llm_end",
@@ -1418,7 +1435,7 @@ async def test_runnable_each() -> None:
     assert await add_one_map.ainvoke([1, 2, 3]) == [2, 3, 4]
 
     with pytest.raises(NotImplementedError):
-        async for _ in add_one_map.astream_events([1, 2, 3], version="v1"):
+        async for _ in add_one_map.astream_events([1, 2, 3], version="v2"):
             pass
 
 
@@ -1437,13 +1454,13 @@ async def test_events_astream_config() -> None:
     model_02 = model.with_config({"configurable": {"messages": good_world_on_repeat}})
     assert model_02.invoke("hello") == AIMessage(content="Goodbye world", id="ai2")
 
-    events = await _collect_events(model_02.astream_events("hello", version="v1"))
+    events = await _collect_events(model_02.astream_events("hello", version="v2"))
     assert events == [
         {
             "data": {"input": "hello"},
             "event": "on_chat_model_start",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
@@ -1451,7 +1468,7 @@ async def test_events_astream_config() -> None:
             "data": {"chunk": AIMessageChunk(content="Goodbye", id="ai2")},
             "event": "on_chat_model_stream",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
@@ -1459,7 +1476,7 @@ async def test_events_astream_config() -> None:
             "data": {"chunk": AIMessageChunk(content=" ", id="ai2")},
             "event": "on_chat_model_stream",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
@@ -1467,15 +1484,17 @@ async def test_events_astream_config() -> None:
             "data": {"chunk": AIMessageChunk(content="world", id="ai2")},
             "event": "on_chat_model_stream",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
         {
-            "data": {"output": AIMessageChunk(content="Goodbye world", id="ai2")},
+            "data": {
+                "output": AIMessageChunk(content="Goodbye world", id="ai2"),
+            },
             "event": "on_chat_model_end",
             "metadata": {},
-            "name": "RunnableConfigurableFields",
+            "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
         },
@@ -1552,3 +1571,124 @@ async def test_runnable_with_message_history() -> None:
             AIMessage(content="world", id="ai4"),
         ]
     }
+
+
+EXPECTED_EVENTS = [
+    {
+        "data": {"input": 1},
+        "event": "on_chain_start",
+        "metadata": {},
+        "name": "add_one_proxy",
+        "run_id": "",
+        "tags": [],
+    },
+    {
+        "data": {},
+        "event": "on_chain_start",
+        "metadata": {},
+        "name": "add_one",
+        "run_id": "",
+        "tags": [],
+    },
+    {
+        "data": {"chunk": 2},
+        "event": "on_chain_stream",
+        "metadata": {},
+        "name": "add_one",
+        "run_id": "",
+        "tags": [],
+    },
+    {
+        "data": {"input": 1, "output": 2},
+        "event": "on_chain_end",
+        "metadata": {},
+        "name": "add_one",
+        "run_id": "",
+        "tags": [],
+    },
+    {
+        "data": {"chunk": 2},
+        "event": "on_chain_stream",
+        "metadata": {},
+        "name": "add_one_proxy",
+        "run_id": "",
+        "tags": [],
+    },
+    {
+        "data": {"output": 2},
+        "event": "on_chain_end",
+        "metadata": {},
+        "name": "add_one_proxy",
+        "run_id": "",
+        "tags": [],
+    },
+]
+
+
+@pytest.mark.xfail(
+    reason="This test is failing due to missing functionality."
+    "Need to implement logic in _transform_stream_with_config that mimics the async "
+    "variant that uses tap_output_iter"
+)
+async def test_sync_in_async_stream_lambdas() -> None:
+    """Test invoking nested runnable lambda."""
+
+    def add_one_(x: int) -> int:
+        return x + 1
+
+    add_one = RunnableLambda(add_one_)
+
+    async def add_one_proxy_(x: int, config: RunnableConfig) -> int:
+        streaming = add_one.stream(x, config)
+        results = [result for result in streaming]
+        return results[0]
+
+    add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore
+
+    events = await _collect_events(add_one_proxy.astream_events(1, version="v2"))
+    assert events == EXPECTED_EVENTS
+
+
+async def test_async_in_async_stream_lambdas() -> None:
+    """Test invoking nested runnable lambda."""
+
+    async def add_one(x: int) -> int:
+        return x + 1
+
+    add_one_ = RunnableLambda(add_one)  # type: ignore
+
+    async def add_one_proxy(x: int, config: RunnableConfig) -> int:
+        # Use sync streaming
+        streaming = add_one_.astream(x, config)
+        results = [result async for result in streaming]
+        return results[0]
+
+    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
+
+    events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
+    assert events == EXPECTED_EVENTS
+
+
+@pytest.mark.xfail(
+    reason="This test is failing due to missing functionality."
+    "Need to implement logic in _transform_stream_with_config that mimics the async "
+    "variant that uses tap_output_iter"
+)
+async def test_sync_in_sync_lambdas() -> None:
+    """Test invoking nested runnable lambda."""
+
+    def add_one(x: int) -> int:
+        return x + 1
+
+    add_one_ = RunnableLambda(add_one)
+
+    def add_one_proxy(x: int, config: RunnableConfig) -> int:
+        # Use sync streaming
+        streaming = add_one_.stream(x, config)
+        results = [result for result in streaming]
+        return results[0]
+
+    add_one_proxy_ = RunnableLambda(add_one_proxy)
+
+    events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
+    assert events == EXPECTED_EVENTS
