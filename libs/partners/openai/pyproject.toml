@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-openai"
-version = "0.1.6"
+version = "0.1.7"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
@@ -14,7 +14,7 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.1.46,<0.3"
 openai = "^1.24.0"
-tiktoken = ">=0.5.2,<1"
+tiktoken = ">=0.7,<1"
 
 [tool.poetry.group.test]
 optional = true

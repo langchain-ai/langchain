@@ -2,6 +2,9 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_community.document_compressors.flashrank_rerank import (
+        FlashrankRerank,
+    )
     from langchain_community.document_compressors.jina_rerank import (
         JinaRerank,  # noqa: F401
     )
@@ -12,12 +15,13 @@ if TYPE_CHECKING:
         OpenVINOReranker,
     )
 
-__all__ = ["LLMLinguaCompressor", "OpenVINOReranker"]
+__all__ = ["LLMLinguaCompressor", "OpenVINOReranker", "FlashrankRerank"]
 
 _module_lookup = {
     "LLMLinguaCompressor": "langchain_community.document_compressors.llmlingua_filter",
     "OpenVINOReranker": "langchain_community.document_compressors.openvino_rerank",
     "JinaRerank": "langchain_community.document_compressors.jina_rerank",
+    "FlashrankRerank": "langchain_community.document_compressors.flashrank_rerank",
 }
 
 
