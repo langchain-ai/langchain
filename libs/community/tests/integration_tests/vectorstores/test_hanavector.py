@@ -115,7 +115,7 @@ def teardown_module(module):  # type: ignore[no-untyped-def]
 
 @pytest.fixture
 def texts() -> List[str]:
-    return ["foo", "bar", "baz"]
+    return ["foo", "bar", "baz", "bak", "cat"]
 
 
 @pytest.fixture
@@ -124,6 +124,8 @@ def metadatas() -> List[str]:
         {"start": 0, "end": 100, "quality": "good", "ready": True},  # type: ignore[list-item]
         {"start": 100, "end": 200, "quality": "bad", "ready": False},  # type: ignore[list-item]
         {"start": 200, "end": 300, "quality": "ugly", "ready": True},  # type: ignore[list-item]
+        {"start": 200, "quality": "ugly", "ready": True, "owner": "Steve"},  # type: ignore[list-item]
+        {"start": 300, "quality": "ugly", "owner": "Steve"},  # type: ignore[list-item]
     ]
 
 
@@ -643,14 +645,14 @@ def test_hanavector_delete_with_filter(texts: List[str], metadatas: List[dict]) 
         table_name=table_name,
     )
 
-    search_result = vectorDB.similarity_search(texts[0], 3)
-    assert len(search_result) == 3
+    search_result = vectorDB.similarity_search(texts[0], 10)
+    assert len(search_result) == 5  
 
     # Delete one of the three entries
     assert vectorDB.delete(filter={"start": 100, "end": 200})
 
-    search_result = vectorDB.similarity_search(texts[0], 3)
-    assert len(search_result) == 2
+    search_result = vectorDB.similarity_search(texts[0], 10)
+    assert len(search_result) == 4
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
@@ -670,14 +672,14 @@ async def test_hanavector_delete_with_filter_async(
         table_name=table_name,
     )
 
-    search_result = vectorDB.similarity_search(texts[0], 3)
-    assert len(search_result) == 3
+    search_result = vectorDB.similarity_search(texts[0], 10)
+    assert len(search_result) == 5
 
     # Delete one of the three entries
     assert await vectorDB.adelete(filter={"start": 100, "end": 200})
 
-    search_result = vectorDB.similarity_search(texts[0], 3)
-    assert len(search_result) == 2
+    search_result = vectorDB.similarity_search(texts[0], 10)
+    assert len(search_result) == 4
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
@@ -864,7 +866,7 @@ def test_hanavector_filter_prepared_statement_params(
     sql_str = f"SELECT * FROM {table_name} WHERE JSON_VALUE(VEC_META, '$.ready') = ?"
     cur.execute(sql_str, (query_value))
     rows = cur.fetchall()
-    assert len(rows) == 2
+    assert len(rows) == 3
 
     # query_value = False
     query_value = "false"  # type: ignore[assignment]
@@ -1112,6 +1114,96 @@ def test_preexisting_specific_columns_for_metadata(
         f'"VEC_META" NCLOB, '
         f'"VEC_VECTOR" REAL_VECTOR, '
         f'"quality" NVARCHAR(100));'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+    )
+ 
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100})
+    assert len(docs) == 1
+    assert docs[0].page_content == "bar"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100, "quality": "good"})
+    assert len(docs) == 0
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 0, "quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_metadata_multiple_columns(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+
+    table_name = "PREEXISTING_FILTER_MULTIPLE_COLUMNS"
+   # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" NVARCHAR(100), '
+        f'"start" INTEGER);'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+    )
+ 
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100})
+    assert len(docs) == 1
+    assert docs[0].page_content == "bar"
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100, "quality": "good"})
+    assert len(docs) == 0
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 0, "quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_metadata_wrong_type(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+
+    table_name = "PREEXISTING_FILTER_COLUMNS_WRONG_TYPE"
+   # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" INTEGER); '
     )
     try:
         cur = test_setup.conn.cursor()
