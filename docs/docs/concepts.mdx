@@ -460,6 +460,13 @@ If you are still using AgentExecutor, do not fear: we still have a guide on [how
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent)
 
+### Multi-modal
+
+Multi-modal models are still a fairly new concept and model providers are taking different approaches.
+As such, we've kept our abstractions around multi-modal fairly light weight.
+We haven't exposed a general way to handle multi-modal data across models, rather preferring to pass multi-modal data in the format the underlying model providers expect.
+At some point in the future when the abstractions stabilize we will create a standard interface for multi-modality.
+
 ## Techniques
 
 ### Function/tool calling
@@ -550,3 +557,7 @@ Table columns:
 | Character  | [CharacterTextSplitter](/docs/how_to/character_text_splitter/)                                                                                                                | A user defined character                                                                                        |               | Splits text based on a user defined character. One of the simpler methods.                                                                                                                                                                                                   |
 | Semantic Chunker (Experimental) | [SemanticChunker](/docs/how_to/semantic-chunker/)                                                                                                                             | Sentences                                                                                                       |               | First splits on sentences. Then combines ones next to each other if they are semantically similar enough. Taken from [Greg Kamradt](https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/tutorials/LevelsOfTextSplitting/5_Levels_Of_Text_Splitting.ipynb) |
 | Integration: AI21 Semantic | [AI21SemanticTextSplitter](/docs/integrations/document_transformers/ai21_semantic_text_splitter/)                                                                                                                    |    ✅           | Identifies distinct topics that form coherent pieces of text and splits along those.                                                                                                                                                                                         |
+
+
+
+
