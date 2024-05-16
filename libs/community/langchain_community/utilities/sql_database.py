@@ -59,6 +59,7 @@ class SQLDatabase:
         view_support: bool = False,
         max_string_length: int = 300,
         lazy_table_reflection: bool = False,
+        custom_and_default_info: bool = False,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -97,6 +98,7 @@ class SQLDatabase:
 
         self._sample_rows_in_table_info = sample_rows_in_table_info
         self._indexes_in_table_info = indexes_in_table_info
+        self._custom_and_default_info = custom_and_default_info
 
         self._custom_table_info = custom_table_info
         if self._custom_table_info:
@@ -330,8 +332,11 @@ class SQLDatabase:
         tables = []
         for table in meta_tables:
             if self._custom_table_info and table.name in self._custom_table_info:
-                tables.append(self._custom_table_info[table.name])
-                continue
+                if self._custom_and_default_info:
+                    table_info = f"{table} description: {self._custom_table_info[table.name]}\n\n"
+                else:
+                    tables.append(self._custom_table_info[table.name])
+                    continue
 
             # Ignore JSON datatyped columns
             for k, v in table.columns.items():
@@ -340,7 +345,7 @@ class SQLDatabase:
 
             # add create table command
             create_table = str(CreateTable(table).compile(self._engine))
-            table_info = f"{create_table.rstrip()}"
+            table_info =  table_info + f"{table} DDL:{create_table.rstrip()}" if self._custom_and_default_info else f"{table} DDL:{create_table.rstrip()}"
             has_extra_info = (
                 self._indexes_in_table_info or self._sample_rows_in_table_info
             )
