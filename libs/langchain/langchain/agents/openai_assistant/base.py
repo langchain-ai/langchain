@@ -263,9 +263,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         Returns:
             OpenAIAssistantRunnable configured to run using the created assistant.
         """
-    
-        files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
-        attachments = kwargs.get("attachments", []) + files
 
         client = client or _get_openai_client()
         assistant = client.beta.assistants.create(
@@ -274,7 +271,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
             tool_resources=tool_resources,
             model=model,
-            attachments=attachments,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
@@ -399,16 +395,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         async_client = async_client or _get_openai_async_client()
         openai_tools = [_get_assistants_tool(tool) for tool in tools]
 
-        files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
-        attachments = kwargs.get("attachments", []) + files
-
         assistant = await async_client.beta.assistants.create(
             name=name,
             instructions=instructions,
             tools=openai_tools,  # type: ignore
             tool_resources=tool_resources,
             model=model,
-            attachments=attachments,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
 
