@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 # <3.13 is due to restriction in pinecone-client package
 python = ">=3.8.1,<3.13"
-langchain-core = ">=0.1.40,<0.3"
+langchain-core = ">=0.1.52,<0.3"
 pinecone-client = "^3.2.2"
 numpy = "^1"
 
