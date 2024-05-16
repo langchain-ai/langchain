@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-exa"
-version = "0.0.1"
+version = "0.1.0"
 description = "An integration package connecting Exa and LangChain"
 authors = []
 readme = "README.md"
