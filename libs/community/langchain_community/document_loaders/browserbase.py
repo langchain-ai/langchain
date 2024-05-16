@@ -15,8 +15,8 @@ class BrowserbaseLoader(BaseLoader):
     def __init__(
         self,
         urls: Sequence[str],
-        api_key: Optional[str] = None,
         text_content: bool = False,
+        api_key: Optional[str] = None,
         project_id: Optional[str] = None,
         session_id: Optional[str] = None,
         proxy: Optional[bool] = None,
