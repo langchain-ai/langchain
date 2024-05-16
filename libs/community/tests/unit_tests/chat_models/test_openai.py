@@ -15,20 +15,21 @@ from langchain_core.messages import (
 from langchain_community.adapters.openai import convert_dict_to_message
 from langchain_community.chat_models.openai import ChatOpenAI
 
+
 @pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
     test_cases = [
         {"model_name": "foo", "openai_api_key": "foo"},
         {"model": "foo", "openai_api_key": "foo"},
         {"model_name": "foo", "api_key": "foo"},
-        {"model_name": "foo", "openai_api_key": "foo", "max_retries": 2}
+        {"model_name": "foo", "openai_api_key": "foo", "max_retries": 2},
     ]
-    
+
     for case in test_cases:
         llm = ChatOpenAI(**case)
         assert llm.model_name == "foo", "Model name should be 'foo'"
         assert llm.openai_api_key == "foo", "API key should be 'foo'"
-        assert hasattr(llm, 'max_retries'), "max_retries attribute should exist"
+        assert hasattr(llm, "max_retries"), "max_retries attribute should exist"
         assert llm.max_retries == 2, "max_retries default should be set to 2"
 
 
