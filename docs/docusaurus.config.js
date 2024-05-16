@@ -206,15 +206,15 @@ const config = {
           },
           {
             type: "dropdown",
-            label: "v0.2.x",
+            label: "v0.2",
             position: "right",
             items: [
               {
-                label: "v0.2.x",
+                label: "v0.2",
                 href: "/docs/introduction"
               },
               {
-                label: "v0.1.x",
+                label: "v0.1",
                 href: "/../v0.1/docs/get_started/introduction"
               }
             ]
