@@ -76,6 +76,8 @@ from langchain_core.runnables.utils import (
     get_lambda_source,
     get_unique_config_specs,
     indent_lines_after_first,
+    is_async_callable,
+    is_async_generator,
 )
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
@@ -3300,7 +3302,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             self._atransform = atransform
             func_for_name: Callable = atransform
 
-        if inspect.isasyncgenfunction(transform):
+        if is_async_generator(transform):
             self._atransform = transform  # type: ignore[assignment]
             func_for_name = transform
         elif inspect.isgeneratorfunction(transform):
@@ -3513,7 +3515,7 @@ class RunnableLambda(Runnable[Input, Output]):
             self.afunc = afunc
             func_for_name: Callable = afunc
 
-        if inspect.iscoroutinefunction(func) or inspect.isasyncgenfunction(func):
+        if is_async_callable(func) or is_async_generator(func):
             if afunc is not None:
                 raise TypeError(
                     "Func was provided as a coroutine function, but afunc was "
@@ -3774,7 +3776,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
             afunc = f
 
-        if inspect.isasyncgenfunction(afunc):
+        if is_async_generator(afunc):
             output: Optional[Output] = None
             async for chunk in cast(
                 AsyncIterator[Output],
@@ -3992,7 +3994,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
             afunc = f
 
-        if inspect.isasyncgenfunction(afunc):
+        if is_async_generator(afunc):
             output: Optional[Output] = None
             async for chunk in cast(
                 AsyncIterator[Output],
@@ -4034,7 +4036,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 ),
             ):
                 yield chunk
-        elif not inspect.isasyncgenfunction(afunc):
+        elif not is_async_generator(afunc):
             # Otherwise, just yield it
             yield cast(Output, output)
 
@@ -4836,7 +4838,7 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     """
     if isinstance(thing, Runnable):
         return thing
-    elif inspect.isasyncgenfunction(thing) or inspect.isgeneratorfunction(thing):
+    elif is_async_generator(thing) or inspect.isgeneratorfunction(thing):
         return RunnableGenerator(thing)
     elif callable(thing):
         return RunnableLambda(cast(Callable[[Input], Output], thing))

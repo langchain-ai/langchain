@@ -31,6 +31,9 @@ from langchain_core.utils import (
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_EMBED_BATCH_SIZE = 10
+MAX_EMBED_BATCH_SIZE = 100
+
 
 class UpstageEmbeddings(BaseModel, Embeddings):
     """UpstageEmbeddings embedding model.
@@ -48,9 +51,9 @@ class UpstageEmbeddings(BaseModel, Embeddings):
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model: str = "solar-1-mini-embedding"
+    model: str = Field(...)
     """Embeddings model name to use. Do not add suffixes like `-query` and `-passage`.
-    Instead, use 'solar-1-mini-embedding' for example.
+    Instead, use 'solar-embedding-1-large' for example.
     """
     dimensions: Optional[int] = None
     """The number of dimensions the resulting output embeddings should have.
@@ -68,6 +71,7 @@ class UpstageEmbeddings(BaseModel, Embeddings):
     
     Not yet supported.
     """
+    embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE
     allowed_special: Union[Literal["all"], Set[str]] = set()
     """Not yet supported."""
     disallowed_special: Union[Literal["all"], Set[str], Sequence[str]] = "all"
@@ -193,16 +197,19 @@ class UpstageEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = []
+        assert (
+            self.embed_batch_size <= MAX_EMBED_BATCH_SIZE
+        ), f"The embed_batch_size should not be larger than {MAX_EMBED_BATCH_SIZE}."
         params = self._invocation_params
         params["model"] = params["model"] + "-passage"
+        embeddings = []
 
-        for text in texts:
-            response = self.client.create(input=text, **params)
+        batch_size = min(self.embed_batch_size, len(texts))
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i : i + batch_size]
+            data = self.client.create(input=batch, **params).data
+            embeddings.extend([r.embedding for r in data])
 
-            if not isinstance(response, dict):
-                response = response.model_dump()
-                embeddings.extend([i["embedding"] for i in response["data"]])
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
@@ -232,16 +239,18 @@ class UpstageEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = []
+        assert (
+            self.embed_batch_size <= MAX_EMBED_BATCH_SIZE
+        ), f"The embed_batch_size should not be larger than {MAX_EMBED_BATCH_SIZE}."
         params = self._invocation_params
         params["model"] = params["model"] + "-passage"
+        embeddings = []
 
-        for text in texts:
-            response = await self.async_client.create(input=text, **params)
-
-            if not isinstance(response, dict):
-                response = response.model_dump()
-                embeddings.extend([i["embedding"] for i in response["data"]])
+        batch_size = min(self.embed_batch_size, len(texts))
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i : i + batch_size]
+            response = await self.async_client.create(input=batch, **params)
+            embeddings.extend([r.embedding for r in response.data])
         return embeddings
 
     async def aembed_query(self, text: str) -> List[float]:
