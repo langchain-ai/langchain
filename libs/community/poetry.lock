@@ -10084,4 +10084,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "c54b4560f2972365ad9a5050df0112da1d35f439b1dcacfe104b52adbd16aa24"
+content-hash = "d1482d62a7b1b7701af1aafe760e69149abbaf66faab9f615d410e459fbb6829"
