@@ -52,7 +52,7 @@ from langchain_core.outputs import (
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables.config import ensure_config, run_in_executor
-from langchain_core.tracers.log_stream import LogStreamCallbackHandler
+from langchain_core.tracers._streaming import _StreamingCallbackHandler
 
 if TYPE_CHECKING:
     from langchain_core.pydantic_v1 import BaseModel
@@ -608,7 +608,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     (
                         True
                         for h in run_manager.handlers
-                        if isinstance(h, LogStreamCallbackHandler)
+                        if isinstance(h, _StreamingCallbackHandler)
                     ),
                     False,
                 )
@@ -691,7 +691,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     (
                         True
                         for h in run_manager.handlers
-                        if isinstance(h, LogStreamCallbackHandler)
+                        if isinstance(h, _StreamingCallbackHandler)
                     ),
                     False,
                 )
