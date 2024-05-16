@@ -119,7 +119,7 @@ def convert_dict_to_message(
             AIMessageChunk(
                 content=content,
                 additional_kwargs=additional_kwargs,
-                tool_call_chunks=tool_calls,
+                tool_call_chunks=tool_calls,  # type: ignore[arg-type]
                 id=_dict.get("id"),
             )
             if is_chunk
@@ -143,13 +143,13 @@ def convert_dict_to_message(
         return (
             ToolMessageChunk(
                 content=_dict.get("content", ""),
-                tool_call_id=_dict.get("tool_call_id"),
+                tool_call_id=_dict.get("tool_call_id"),  # type: ignore[arg-type]
                 additional_kwargs=additional_kwargs,
             )
             if is_chunk
             else ToolMessage(
                 content=_dict.get("content", ""),
-                tool_call_id=_dict.get("tool_call_id"),
+                tool_call_id=_dict.get("tool_call_id"),  # type: ignore[arg-type]
                 additional_kwargs=additional_kwargs,
             )
         )
