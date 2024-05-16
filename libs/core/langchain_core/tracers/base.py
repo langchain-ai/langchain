@@ -110,7 +110,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
                 if parent_run := self.run_map.get(str(run.parent_run_id)):
                     self._add_child_run(parent_run, run)
             else:
-                logger.warning(
+                logger.debug(
                     f"Parent run {run.parent_run_id} not found for run {run.id}."
                     " Treating as a root run."
                 )
