@@ -464,8 +464,8 @@ In order to assist in this we have put together a [transition guide on how to do
 
 Multi-modal models are still a fairly new concept and model providers are taking different approaches.
 As such, we've kept our abstractions around multi-modal fairly light weight.
-We haven't exposed a general way to handle multi-modal data across models, rather preferring to pass multi-modal data in the format the underlying model providers expect.
-At some point in the future when the abstractions stabilize we will create a standard interface for multi-modality.
+Models that support multi-modal inputs should support it in the OpenAI format.
+So far this is restricted to image inputs.
 
 ## Techniques
 
