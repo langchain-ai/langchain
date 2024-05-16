@@ -293,6 +293,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 instructions: Additional run instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
+                tool_resources: Override Assistant tool resources for this run (v2 API).
                 run_metadata: Metadata to associate with new run.
             config: Runnable config:
 
@@ -423,6 +424,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 instructions: Additional run instructions.
                 model: Override Assistant model for this run.
                 tools: Override Assistant tools for this run.
+                tool_resources: Override Assistant tool resources for this run (v2 API).
                 run_metadata: Metadata to associate with new run.
             config: Runnable config:
 
@@ -522,7 +524,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
         }
         return self.client.beta.threads.runs.create(
             input["thread_id"],
@@ -534,7 +536,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
         }
         run = self.client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
@@ -650,7 +652,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k in ("instructions", "model", "tools", "tool_resources" "run_metadata")
         }
         return await self.async_client.beta.threads.runs.create(
             input["thread_id"],
@@ -662,7 +664,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "run_metadata")
+            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
         }
         run = await self.async_client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
