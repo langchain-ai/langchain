@@ -197,7 +197,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query = (
             "SELECT TOP {} c.id, c.{}, c.text, VectorDistance(c.{}, {}) AS "
             "SimilarityScore FROM c ORDER BY VectorDistance(c.{}, {})".format(
-                k, embedding_key, embedding_key, embeddings,embedding_key, embeddings
+                k, embedding_key, embedding_key, embeddings, embedding_key, embeddings
             )
         )
         docs_and_scores = []
