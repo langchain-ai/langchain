@@ -1,11 +1,14 @@
 """Test Alibaba Tongyi Chat Model."""
-from typing import Any, cast
+
+from typing import Any, List, cast
 
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages.ai import AIMessageChunk
+from langchain_core.messages.tool import ToolCall, ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.pydantic_v1 import SecretStr
+from langchain_core.pydantic_v1 import BaseModel, SecretStr
 from pytest import CaptureFixture
 
 from langchain_community.chat_models.tongyi import ChatTongyi
@@ -138,3 +141,76 @@ def test_multiple_messages() -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+class GenerateUsername(BaseModel):
+    "Get a username based on someone's name and hair color."
+
+    name: str
+    hair_color: str
+
+
+def test_tool_use() -> None:
+    llm = ChatTongyi(model="qwen-turbo", temperature=0)
+    llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
+    msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
+    ai_msg = llm_with_tool.invoke(msgs)
+    # assert ai_msg is None
+    # ai_msg.content = " "
+
+    assert isinstance(ai_msg, AIMessage)
+    assert isinstance(ai_msg.tool_calls, list)
+    assert len(ai_msg.tool_calls) == 1
+    tool_call = ai_msg.tool_calls[0]
+    assert "args" in tool_call
+
+    tool_msg = ToolMessage(
+        "sally_green_hair",
+        tool_call_id=ai_msg.tool_calls[0]["id"],
+        name=ai_msg.tool_calls[0]["name"],
+    )
+    msgs.extend([ai_msg, tool_msg])
+    llm_with_tool.invoke(msgs)
+
+    # Test streaming
+    ai_messages = llm_with_tool.stream(msgs)
+    first = True
+    for message in ai_messages:
+        if first:
+            gathered = message
+            first = False
+        else:
+            gathered = gathered + message  # type: ignore
+    assert isinstance(gathered, AIMessageChunk)
+
+    streaming_tool_msg = ToolMessage(
+        "sally_green_hair",
+        name=tool_call["name"],
+        tool_call_id=tool_call["id"] if tool_call["id"] else " ",
+    )
+    msgs.extend([gathered, streaming_tool_msg])
+    llm_with_tool.invoke(msgs)
+
+
+def test_manual_tool_call_msg() -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatTongyi(model="qwen-turbo", temperature=0)
+    llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
+    msgs: List = [
+        HumanMessage("Sally has green hair, what would her username be?"),
+        AIMessage(
+            content=" ",
+            tool_calls=[
+                ToolCall(
+                    name="GenerateUsername",
+                    args={"name": "Sally", "hair_color": "green"},
+                    id="foo",
+                )
+            ],
+        ),
+        ToolMessage("sally_green_hair", tool_call_id="foo"),
+    ]
+    output: AIMessage = cast(AIMessage, llm_with_tool.invoke(msgs))
+    assert output.content
+    # Should not have called the tool again.
+    assert not output.tool_calls and not output.invalid_tool_calls
