@@ -216,15 +216,19 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             config = ensure_config(config)
             messages = self._convert_input(input).to_messages()
-            params = self._get_ls_params(stop=stop, **kwargs)
+            params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
+            inheritable_metadata = {
+                **(config.get("metadata") or {}),
+                **self._get_ls_params(stop=stop, **kwargs),
+            }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
                 self.callbacks,
                 self.verbose,
                 config.get("tags"),
                 self.tags,
-                config.get("metadata"),
+                inheritable_metadata,
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_chat_model_start(
@@ -283,15 +287,19 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
-        params = self._get_ls_params(stop=stop, **kwargs)
+        params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs}
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params(stop=stop, **kwargs),
+        }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
             self.callbacks,
             self.verbose,
             config.get("tags"),
             self.tags,
-            config.get("metadata"),
+            inheritable_metadata,
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
@@ -404,8 +412,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        params = self._get_ls_params(stop=stop, **kwargs)
+        params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
+        inheritable_metadata = {
+            **(metadata or {}),
+            **self._get_ls_params(stop=stop, **kwargs),
+        }
 
         callback_manager = CallbackManager.configure(
             callbacks,
@@ -413,7 +425,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.verbose,
             tags,
             self.tags,
-            metadata,
+            inheritable_metadata,
             self.metadata,
         )
         run_managers = callback_manager.on_chat_model_start(
@@ -491,8 +503,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
-        params = self._get_ls_params(stop=stop, **kwargs)
+        params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
+        inheritable_metadata = {
+            **(metadata or {}),
+            **self._get_ls_params(stop=stop, **kwargs),
+        }
 
         callback_manager = AsyncCallbackManager.configure(
             callbacks,
@@ -500,7 +516,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.verbose,
             tags,
             self.tags,
-            metadata,
+            inheritable_metadata,
             self.metadata,
         )
 
