@@ -27,24 +27,30 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     cosmos_container_properties: [Dict[str, Any]] = None
 
     def __init__(
-            self,
-            cosmos_client: CosmosClient,
-            database_name: str,
-            container_name: str,
-            partition_key: str,
-            embedding: Embeddings,
-            vector_embedding_policy: [Dict[str, Any]],
-            indexing_policy: [Dict[str, Any]],
-            cosmos_container_properties: [Dict[str, Any]],
+        self,
+        cosmos_client: CosmosClient,
+        database_name: str,
+        container_name: str,
+        partition_key: str,
+        embedding: Embeddings,
+        vector_embedding_policy: [Dict[str, Any]],
+        indexing_policy: [Dict[str, Any]],
+        cosmos_container_properties: [Dict[str, Any]],
     ):
-        if (indexing_policy["vectorIndexes"] is None
-                or len(indexing_policy["vectorIndexes"]) == 0):
-            raise ValueError("vectorIndexes cannot be null "
-                             "or empty in the indexing_policy.")
-        if (vector_embedding_policy is None
-                or len(vector_embedding_policy["vectorEmbeddings"]) == 0):
-            raise ValueError("vectorEmbeddings cannot be null "
-                             "or empty in the vector_embedding_policy.")
+        if (
+            indexing_policy["vectorIndexes"] is None
+            or len(indexing_policy["vectorIndexes"]) == 0
+        ):
+            raise ValueError(
+                "vectorIndexes cannot be null or empty in the indexing_policy.")
+        if (
+            vector_embedding_policy is None
+            or len(vector_embedding_policy["vectorEmbeddings"]) == 0
+        ):
+            raise ValueError(
+                "vectorEmbeddings cannot be null "
+                "or empty in the vector_embedding_policy."
+            )
 
         self.cosmos_client = cosmos_client
         self.database_name = database_name
@@ -57,7 +63,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
         # Create the database if it already doesn't exist
         self.database = self.cosmos_client.create_database_if_not_exists(
-            id=self.database_name)
+            id=self.database_name
+        )
 
         # Create the collection if it already doesn't exist
         self.container = self.database.create_container_if_not_exists(
@@ -67,8 +74,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             vector_embedding_policy=self.vector_embedding_policy,
         )
 
-    def add_texts(self, texts: Iterable[str],
-                  metadatas: Optional[List[dict]] = None, **kwargs: Any) -> List[str]:
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -82,8 +93,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
         return self._insert_texts(list(texts), _metadatas)
 
-    def _insert_texts(self, texts: List[str],
-                      metadatas: List[Dict[str, Any]]) -> List[str]:
+    def _insert_texts(
+            self, texts: List[str],metadatas: List[Dict[str, Any]]
+    ) -> List[str]:
         """Used to Load Documents into the collection
 
         Args:
@@ -140,8 +152,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         if indexing_policy is None:
             raise ValueError("Must provide 'indexing_policy' named parameter.")
         if cosmos_container_properties is None:
-            raise ValueError("Must provide 'cosmos_container_properties' "
-                             "named parameter.")
+            raise ValueError(
+                    "Must provide 'cosmos_container_properties' named parameter."
+            )
 
         vectorstore = cls(
             cosmos_client,
@@ -151,7 +164,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             embedding,
             vector_embedding_policy,
             indexing_policy,
-            cosmos_container_properties
+            cosmos_container_properties,
         )
         vectorstore.add_texts(texts, metadatas=metadatas)
         return vectorstore
@@ -175,26 +188,25 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self.container.delete_item(document_id, partition_key=document_id)
 
     def _similarity_search_with_score(
-            self,
-            embeddings: List[float],
-            k: int = 4,
+        self,
+        embeddings: List[float],
+        k: int = 4,
     ) -> List[Tuple[Document, float]]:
         embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
         query = (
             "SELECT TOP {} c.id, c.{}, c.text, VectorDistance(c.{}, {}) AS "
-            "SimilarityScore FROM c ORDER BY VectorDistance(c.{}, {})"
-            .format(k, embedding_key, embedding_key, embeddings,
-                    embedding_key, embeddings)
+            "SimilarityScore FROM c ORDER BY VectorDistance(c.{}, {})".format(
+          k, embedding_key, embedding_key, embeddings,embedding_key, embeddings
+            )
         )
         docs_and_scores = []
-        items = list(self.container.query_items(query=query,
-                                                enable_cross_partition_query=True))
+        items = list(
+            self.container.query_items(query=query, enable_cross_partition_query=True)
+        )
         for item in items:
             text = item["text"]
             score = item["SimilarityScore"]
-            docs_and_scores.append(
-                (Document(page_content=text, metadata=item), score)
-            )
+            docs_and_scores.append((Document(page_content=text, metadata=item), score))
         return docs_and_scores
 
     def similarity_search_with_score(self, query: str, k: int = 4,
@@ -206,27 +218,23 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         )
         return docs_and_scores
 
-    def similarity_search(self, query: str, k: int = 4, **kwargs: Any
-                          ) -> List[Document]:
-        docs_and_scores = self.similarity_search_with_score(
-            query, k=k
-        )
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        docs_and_scores = self.similarity_search_with_score(query, k=k)
 
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         # Retrieves the docs with similarity scores
-        docs = self._similarity_search_with_score(
-            embeddings=embedding,
-            k=fetch_k
-        )
+        docs = self._similarity_search_with_score(embeddings=embedding,k=fetch_k)
 
         # Re-ranks the docs using MMR
         embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
@@ -234,19 +242,19 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             np.array(embedding),
             [doc.metadata[embedding_key] for doc, _ in docs],
             k=k,
-            lambda_mult=lambda_mult
+            lambda_mult=lambda_mult,
         )
 
         mmr_docs = [docs[i][0] for i in mmr_doc_indexes]
         return mmr_docs
 
     def max_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         # compute the embeddings vector from the query string
         embeddings = self.embedding.embed_query(query)
