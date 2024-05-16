@@ -109,6 +109,7 @@ def _merge_messages(
                             "type": "tool_result",
                             "content": curr.content,
                             "tool_use_id": curr.tool_call_id,
+                            "is_error": getattr(curr, "is_error", False),
                         }
                     ]
                 )

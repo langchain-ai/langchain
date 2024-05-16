@@ -16,9 +16,8 @@ class ToolMessage(BaseMessage):
 
     tool_call_id: str
     """Tool call that this message is responding to."""
-    # TODO: Add is_error param?
-    # is_error: bool = False
-    # """Whether the tool errored."""
+    is_error: bool = False
+    """Whether the tool errored."""
 
     type: Literal["tool"] = "tool"
 
