@@ -42,7 +42,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             or len(indexing_policy["vectorIndexes"]) == 0
         ):
             raise ValueError(
-                "vectorIndexes cannot be null or empty in the indexing_policy.")
+                "vectorIndexes cannot be null or empty in the indexing_policy."
+            )
         if (
             vector_embedding_policy is None
             or len(vector_embedding_policy["vectorEmbeddings"]) == 0
@@ -94,7 +95,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         return self._insert_texts(list(texts), _metadatas)
 
     def _insert_texts(
-            self, texts: List[str],metadatas: List[Dict[str, Any]]
+        self, texts: List[str],metadatas: List[Dict[str, Any]]
     ) -> List[str]:
         """Used to Load Documents into the collection
 
@@ -153,7 +154,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             raise ValueError("Must provide 'indexing_policy' named parameter.")
         if cosmos_container_properties is None:
             raise ValueError(
-                    "Must provide 'cosmos_container_properties' named parameter."
+                "Must provide 'cosmos_container_properties' named parameter."
             )
 
         vectorstore = cls(
@@ -196,7 +197,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query = (
             "SELECT TOP {} c.id, c.{}, c.text, VectorDistance(c.{}, {}) AS "
             "SimilarityScore FROM c ORDER BY VectorDistance(c.{}, {})".format(
-          k, embedding_key, embedding_key, embeddings,embedding_key, embeddings
+            k, embedding_key, embedding_key, embeddings,embedding_key, embeddings
             )
         )
         docs_and_scores = []
@@ -209,13 +210,13 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             docs_and_scores.append((Document(page_content=text, metadata=item), score))
         return docs_and_scores
 
-    def similarity_search_with_score(self, query: str, k: int = 4,
-                                     ) -> List[Tuple[Document, float]]:
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 4,
+    ) -> List[Tuple[Document, float]]:
         embeddings = self.embedding.embed_query(query)
-        docs_and_scores = self._similarity_search_with_score(
-            embeddings=embeddings,
-            k=k
-        )
+        docs_and_scores = self._similarity_search_with_score(embeddings=embeddings, k=k)
         return docs_and_scores
 
     def similarity_search(
@@ -234,7 +235,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         # Retrieves the docs with similarity scores
-        docs = self._similarity_search_with_score(embeddings=embedding,k=fetch_k)
+        docs = self._similarity_search_with_score(embeddings=embedding, k=fetch_k)
 
         # Re-ranks the docs using MMR
         embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
