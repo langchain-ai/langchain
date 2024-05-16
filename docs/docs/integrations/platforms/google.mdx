@@ -416,6 +416,21 @@ See a [usage example and authorization instructions](/docs/integrations/document
 from langchain_google_community import GoogleTranslateTransformer
 ```
 
+### Google Cloud Vertex AI Search Reranker
+> The [Vertex Search Ranking API](https://cloud.google.com/generative-ai-app-builder/docs/ranking) takes in a list of documents and reranks those documents based on how relevant the documents are to a given query.
+
+Install the necessary dependencies
+
+```bash
+pip install langchain-google-community['vertexaisearch']
+```
+
+See [usage example](/docs/integrations/document_transformers/google_cloud_vertexai_rerank)
+
+```python
+from langchain_google_community.vertex_rank import VertexAIRank
+```
+
 ## Vector Stores
 
 ### AlloyDB for PostgreSQL
@@ -780,6 +795,23 @@ See a [usage example and authorization instructions](/docs/integrations/toolkits
 
 ```python
 from langchain_google_community import GmailToolkit
+```
+
+## Utilities
+### Google Cloud Vertex AI Search Check Grounding
+
+> The [check grounding API](https://cloud.google.com/generative-ai-app-builder/docs/check-grounding) determines how grounded a given piece of text is in a given set of reference texts. The API can generate supporting citations from the reference text to indicate where the given text is supported by the reference texts.
+
+Install the necessary dependencies
+
+```bash
+pip install langchain-google-community['vertexaisearch']
+```
+
+See [usage example](/docs/integrations/tools/google_cloud_vertexai_checkgrounding)
+
+```python
+from langchain_google_community import VertexAICheckGroundingWrapper
 ```
 
 ## Memory
