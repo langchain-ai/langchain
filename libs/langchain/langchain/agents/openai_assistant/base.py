@@ -61,7 +61,7 @@ def _get_openai_client() -> openai.OpenAI:
     try:
         import openai
 
-        return openai.OpenAI()
+        return openai.OpenAI(default_headers={"OpenAI-Beta": "assistants=v2"})
     except ImportError as e:
         raise ImportError(
             "Unable to import openai, please install with `pip install openai`."
@@ -258,7 +258,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             tool_resources: Assistant tool resources. Can be passed in OpenAI format
             model: Assistant model to use.
             client: OpenAI or AzureOpenAI client.
-                Will create default OpenAI client if not specified.
+                Will create default OpenAI client (Assistant v2) if not specified.
 
         Returns:
             OpenAIAssistantRunnable configured to run using the created assistant.
