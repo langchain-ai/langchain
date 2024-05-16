@@ -119,7 +119,7 @@ def convert_dict_to_message(
             AIMessageChunk(
                 content=content,
                 additional_kwargs=additional_kwargs,
-                tool_call_chunks=tool_calls,
+                tool_call_chunks=tool_calls,  #
                 id=_dict.get("id"),
             )
             if is_chunk
