@@ -195,7 +195,7 @@ const config = {
               {
                 type: "doc",
                 docId: "additional_resources/tutorials",
-                label: "Tutorials"
+                label: "3rd party tutorials"
               },
               {
                 type: "doc",
