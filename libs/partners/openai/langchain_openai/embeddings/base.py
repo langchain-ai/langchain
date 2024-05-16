@@ -62,7 +62,6 @@ def _process_batched_chunked_embeddings(
     # for each text, this is the final embedding
     embeddings: List[Optional[List[float]]] = []
     for i in range(num_texts):
-
         # an embedding for each chunk
         _result: List[List[float]] = results[i]
 
