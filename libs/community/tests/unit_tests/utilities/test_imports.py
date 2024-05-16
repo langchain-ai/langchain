@@ -34,6 +34,7 @@ EXPECTED_ALL = [
     "NVIDIARivaTTS",
     "NVIDIARivaStream",
     "OpenWeatherMapAPIWrapper",
+    "OracleSummary",
     "OutlineAPIWrapper",
     "NutritionAIAPI",
     "Portkey",

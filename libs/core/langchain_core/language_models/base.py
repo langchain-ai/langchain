@@ -204,10 +204,12 @@ class BaseLanguageModel(
     def with_structured_output(
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-        """Implement this if there is a way of steering the model to generate responses that match a given schema."""  # noqa: E501
+        """Not implemented on this class."""
+        # Implement this on child class if there is a way of steering the model to
+        # generate responses that match a given schema.
         raise NotImplementedError()
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     @abstractmethod
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
@@ -228,7 +230,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     @abstractmethod
     def predict_messages(
         self,
@@ -253,7 +255,7 @@ class BaseLanguageModel(
             Top model prediction as a message.
         """
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     @abstractmethod
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
@@ -274,7 +276,7 @@ class BaseLanguageModel(
             Top model prediction as a string.
         """
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     @abstractmethod
     async def apredict_messages(
         self,

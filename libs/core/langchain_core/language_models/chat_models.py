@@ -52,7 +52,7 @@ from langchain_core.outputs import (
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables.config import ensure_config, run_in_executor
-from langchain_core.tracers.log_stream import LogStreamCallbackHandler
+from langchain_core.tracers._streaming import _StreamingCallbackHandler
 
 if TYPE_CHECKING:
     from langchain_core.pydantic_v1 import BaseModel
@@ -608,7 +608,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     (
                         True
                         for h in run_manager.handlers
-                        if isinstance(h, LogStreamCallbackHandler)
+                        if isinstance(h, _StreamingCallbackHandler)
                     ),
                     False,
                 )
@@ -691,7 +691,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     (
                         True
                         for h in run_manager.handlers
-                        if isinstance(h, LogStreamCallbackHandler)
+                        if isinstance(h, _StreamingCallbackHandler)
                     ),
                     False,
                 )
@@ -797,7 +797,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 break
             yield item  # type: ignore[misc]
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def __call__(
         self,
         messages: List[BaseMessage],
@@ -829,13 +829,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Unexpected generation type")
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def call_as_llm(
         self, message: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> str:
         return self.predict(message, stop=stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -849,7 +849,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -863,7 +863,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             _stop = list(stop)
         return self(messages, stop=_stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -879,7 +879,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             raise ValueError("Cannot use predict when output is not a string.")
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],

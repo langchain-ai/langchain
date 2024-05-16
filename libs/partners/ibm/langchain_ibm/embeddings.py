@@ -1,7 +1,7 @@
 import os
 from typing import Dict, List, Optional, Union
 
-from ibm_watsonx_ai import APIClient  # type: ignore
+from ibm_watsonx_ai import APIClient, Credentials  # type: ignore
 from ibm_watsonx_ai.foundation_models.embeddings import Embeddings  # type: ignore
 from langchain_core.embeddings import Embeddings as LangChainEmbeddings
 from langchain_core.pydantic_v1 import (
@@ -48,7 +48,7 @@ class WatsonxEmbeddings(BaseModel, LangChainEmbeddings):
     params: Optional[dict] = None
     """Model parameters to use during generate requests."""
 
-    verify: Union[str, bool] = ""
+    verify: Union[str, bool, None] = None
     """User can pass as verify one of following:
         the path to a CA_BUNDLE file
         the path of directory with certificates of trusted CAs
@@ -129,38 +129,33 @@ class WatsonxEmbeddings(BaseModel, LangChainEmbeddings):
                         )
                     )
 
-            credentials = {
-                "url": values["url"].get_secret_value() if values["url"] else None,
-                "apikey": values["apikey"].get_secret_value()
+            credentials = Credentials(
+                url=values["url"].get_secret_value() if values["url"] else None,
+                api_key=values["apikey"].get_secret_value()
                 if values["apikey"]
                 else None,
-                "token": values["token"].get_secret_value()
-                if values["token"]
-                else None,
-                "password": values["password"].get_secret_value()
+                token=values["token"].get_secret_value() if values["token"] else None,
+                password=values["password"].get_secret_value()
                 if values["password"]
                 else None,
-                "username": values["username"].get_secret_value()
+                username=values["username"].get_secret_value()
                 if values["username"]
                 else None,
-                "instance_id": values["instance_id"].get_secret_value()
+                instance_id=values["instance_id"].get_secret_value()
                 if values["instance_id"]
                 else None,
-                "version": values["version"].get_secret_value()
+                version=values["version"].get_secret_value()
                 if values["version"]
                 else None,
-            }
-            credentials_without_none_value = {
-                key: value for key, value in credentials.items() if value is not None
-            }
+                verify=values["verify"],
+            )
 
             watsonx_embed = Embeddings(
                 model_id=values["model_id"],
                 params=values["params"],
-                credentials=credentials_without_none_value,
+                credentials=credentials,
                 project_id=values["project_id"],
                 space_id=values["space_id"],
-                verify=values["verify"],
             )
 
             values["watsonx_embed"] = watsonx_embed
