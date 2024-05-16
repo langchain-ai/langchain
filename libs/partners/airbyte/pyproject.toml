@@ -14,6 +14,7 @@ license = "MIT"
 python = "^3.9"
 langchain-core = ">=0.1.5,<0.3"
 airbyte = "^0.7.3"
+pydantic = ">=1.10.8,<2"
 
 [tool.poetry.group.test]
 optional = true

@@ -21,7 +21,7 @@ def cassandra_connection() -> Iterator[Tuple[Any, str]]:
     keyspace = "langchain_cache_test_keyspace"
     # get db connection
     if "CASSANDRA_CONTACT_POINTS" in os.environ:
-        contact_points = os.environ["CONTACT_POINTS"].split(",")
+        contact_points = os.environ["CASSANDRA_CONTACT_POINTS"].split(",")
         cluster = Cluster(contact_points)
     else:
         cluster = Cluster()
