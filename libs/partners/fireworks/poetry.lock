@@ -613,13 +613,13 @@ url = "../../standard-tests"
 
 [[package]]
 name = "langsmith"
-version = "0.1.58"
+version = "0.1.59"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.58-py3-none-any.whl", hash = "sha256:1148cc836ec99d1b2f37cd2fa3014fcac213bb6bad798a2b21bb9111c18c9768"},
-    {file = "langsmith-0.1.58.tar.gz", hash = "sha256:a5060933c1fb3006b498ec849677993329d7e6138bdc2ec044068ab806e09c39"},
+    {file = "langsmith-0.1.59-py3-none-any.whl", hash = "sha256:445e3bc1d3baa1e5340cd979907a19483b9763a2ed37b863a01113d406f69345"},
+    {file = "langsmith-0.1.59.tar.gz", hash = "sha256:e748a89f4dd6aa441349143e49e546c03b5dfb43376a25bfef6a5ca792fe1437"},
 ]
 
 [package.dependencies]
@@ -1551,4 +1551,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "dc688ae23a6c605f3d0b5e79edf3efb69bfd9b7a4127fbcf5e90e56ad9c5c46f"
+content-hash = "d1856a2ed3f8cd8e735458b0169d2144683b31ec48bef606f52276db54ad4fa0"
