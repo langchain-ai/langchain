@@ -362,7 +362,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
-        return LangSmithParams(ls_model_type="chat")
+        ls_params = LangSmithParams(ls_model_type="chat")
+        if stop:
+            ls_params["ls_stop"] = stop
+        return ls_params
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
