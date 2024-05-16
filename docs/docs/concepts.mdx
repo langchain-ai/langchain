@@ -128,13 +128,14 @@ LangChain provides standard, extendable interfaces and external integrations for
 Some components LangChain implements, some components we rely on third-party integrations for, and others are a mix.
 
 ### Chat models
+
 Language models that use a sequence of messages as inputs and return chat messages as outputs (as opposed to using plain text).
 These are traditionally newer models (older models are generally `LLMs`, see above).
 Chat models support the assignment of distinct roles to conversation messages, helping to distinguish messages from the AI, users, and instructions such as system messages.
 
-Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input.
-This makes them interchangeable with LLMs (and simpler to use).
-When a string is passed in as input, it will be converted to a HumanMessage under the hood before being passed to the underlying model.
+Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input. This means you can easily use chat models in place of LLMs.
+
+When a string is passed in as input, it is converted to a HumanMessage and then passed to the underlying model.
 
 LangChain does not provide any ChatModels, rather we rely on third party integrations.
 
@@ -143,7 +144,14 @@ We have some standardized parameters when constructing ChatModels:
 
 ChatModels also accept other parameters that are specific to that integration.
 
+:::important
+**Tool Calling** Some chat models have been fine-tuned for tool calling and provide a dedicated API for tool calling.
+Generally, such models are better at tool calling than non-fine-tuned models, and are recommended for use cases that require tool calling.
+Please see the [tool calling section](/docs/concepts/#functiontool-calling) for more information.
+:::
+
 ### LLMs
+
 Language models that takes a string as input and returns a string.
 These are traditionally older models (newer models generally are `ChatModels`, see below).
 
@@ -239,7 +247,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 prompt_template = ChatPromptTemplate.from_messages([
     ("system", "You are a helpful assistant"),
-    ("user", "Tell me a joke about {topic}"
+    ("user", "Tell me a joke about {topic}")
 ])
 
 prompt_template.invoke({"topic": "cats"})
@@ -409,22 +417,30 @@ Retrievers can be created from vectorstores, but are also broad enough to includ
 Retrievers accept a string query as input and return a list of Document's as output.
 
 ### Tools
-Tools are interfaces that an agent, chain, or LLM can use to interact with the world.
-They combine a few things:
+
+Tools are interfaces that an agent, a chain, or a chat model / LLM can use to interact with the world.
+
+A tool consists of the following components:
 
 1. The name of the tool
-2. A description of what the tool is
+2. A description of what the tool does
 3. JSON schema of what the inputs to the tool are
 4. The function to call
-5. Whether the result of a tool should be returned directly to the user
+5. Whether the result of a tool should be returned directly to the user (only relevant for agents)
 
-It is useful to have all this information because this information can be used to build action-taking systems! The name, description, and JSON schema can be used to prompt the LLM so it knows how to specify what action to take, and then the function to call is equivalent to taking that action.
+The name, description and JSON schema are provided as context
+to the LLM, allowing the LLM to determine how to use the tool
+appropriately.
 
-The simpler the input to a tool is, the easier it is for an LLM to be able to use it.
-Many agents will only work with tools that have a single string input.
+Given a list of available tools and a prompt, an LLM can request
+that one or more tools be invoked with appropriate arguments.
 
-Importantly, the name, description, and JSON schema (if used) are all used in the prompt. Therefore, it is really important that they are clear and describe exactly how the tool should be used. You may need to change the default name, description, or JSON schema if the LLM is not understanding how to use the tool.
+Generally, when designing tools to be used by a chat model or LLM, it is important to keep in mind the following:
 
+- Chat models that have been fine-tuned for tool calling will be better at tool calling than non-fine-tuned models.
+- Non fine-tuned models may not be able to use tools at all, especially if the tools are complex or require multiple tool calls.
+- Models will perform better if the tools have well-chosen names, descriptions, and JSON schemas.
+- Simpler tools are generally easier for models to use than more complex tools.
 
 ### Toolkits
 
@@ -494,11 +510,17 @@ receive the tool call, execute it, and return the output to the LLM to inform it
 response. LangChain includes a suite of [built-in tools](/docs/integrations/tools/)
 and supports several methods for defining your own [custom tools](/docs/how_to/custom_tools).
 
+LangChain provides a standardized interface for tool calling that is consistent across different models.
+
+The standard interface consists of:
+
+* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call.
+* `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
+
 There are two main use cases for function/tool calling:
 
 - [How to return structured data from an LLM](/docs/how_to/structured_output/)
 - [How to use a model to call tools](/docs/how_to/tool_calling/)
-
 
 ### Retrieval
 
