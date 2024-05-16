@@ -6,6 +6,12 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
+    # GPT-4o input
+    "gpt-4o": 0.005,
+    "gpt-4o-2024-05-13": 0.005,
+    # GPT-4o output
+    "gpt-4o-completion": 0.015,
+    "gpt-4o-2024-05-13-completion": 0.015,
     # GPT-4 input
     "gpt-4": 0.03,
     "gpt-4-0314": 0.03,
