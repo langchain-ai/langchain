@@ -8,6 +8,7 @@ from anthropic.types import ContentBlock, Message, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
 from pytest import CaptureFixture, MonkeyPatch
 
@@ -469,3 +470,38 @@ def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
         cast(SecretStr, chat_model.anthropic_api_key).get_secret_value()
         == "secret-api-key"
     )
+
+
+class GetWeather(BaseModel):
+    """Get the current weather in a given location"""
+
+    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+def test_anthropic_bind_tools_tool_choice() -> None:
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+        anthropic_api_key="secret-api-key",
+    )
+    chat_model_with_tools = chat_model.bind_tools(
+        [GetWeather], tool_choice={"type": "tool", "name": "GetWeather"}
+    )
+    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "GetWeather",
+    }
+    chat_model_with_tools = chat_model.bind_tools(
+        [GetWeather], tool_choice="GetWeather"
+    )
+    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "GetWeather",
+    }
+    chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="auto")
+    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "auto"
+    }
+    chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "any"
+    }
