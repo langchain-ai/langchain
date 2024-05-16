@@ -331,20 +331,15 @@ class ChatAnthropic(BaseChatModel):
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
-        params = super()._get_invocation_params(stop=stop, **kwargs)
-        ls_temperature = params.pop("temperature", self.temperature)
-        ls_max_tokens = params.pop("max_tokens", self.max_tokens)
-        ls_stop = stop or params.pop("stop", None)
-        _ = params.pop("model", None)
+        params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="anthropic",
             ls_model_name=self.model,
             ls_model_type="chat",
-            ls_temperature=ls_temperature,
-            ls_max_tokens=ls_max_tokens,
-            ls_stop=ls_stop,
+            ls_temperature=params.get("temperature", self.temperature),
+            ls_max_tokens=params.get("max_tokens", self.max_tokens),
+            ls_stop=stop or params.get("stop", None),
         )
-        ls_params.update(cast(LangSmithParams, params))
         return ls_params
 
     @root_validator(pre=True)
