@@ -211,7 +211,7 @@ const config = {
             items: [
               {
                 label: "v0.2.x",
-                href: "/v0.2/docs/introduction"
+                href: "/../v0.2/docs/introduction"
               },
               {
                 label: "v0.1.x",
