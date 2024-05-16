@@ -213,6 +213,21 @@ const config = {
           },
           {
             type: "dropdown",
+            label: "v0.1.x",
+            position: "right",
+            items: [
+              {
+                label: "v0.2.x",
+                href: "/../v0.2/docs/introduction"
+              },
+              {
+                label: "v0.1.x",
+                href: "/../v0.1/docs/get_started/introduction"
+              }
+            ]
+          },
+          {
+            type: "dropdown",
             label: "🦜️🔗",
             position: "right",
             items: [
