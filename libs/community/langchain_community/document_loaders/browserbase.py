@@ -16,7 +16,7 @@ class BrowserbaseLoader(BaseLoader):
         self,
         urls: Sequence[str],
         api_key: Optional[str] = None,
-        text_content: str = False,
+        text_content: bool = False,
         project_id: Optional[str] = None,
         session_id: Optional[str] = None,
         proxy: Optional[bool] = None,
