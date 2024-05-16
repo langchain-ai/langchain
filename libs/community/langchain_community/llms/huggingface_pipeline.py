@@ -110,7 +110,7 @@ class HuggingFacePipeline(BaseLLM):
                         raise ImportError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
-                            "pip install `optimum[openvino,nncf]` "
+                            "pip install 'optimum[openvino,nncf]' "
                         )
                     try:
                         # use local model
@@ -136,7 +136,7 @@ class HuggingFacePipeline(BaseLLM):
                         raise ImportError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
-                            "pip install `optimum[openvino,nncf]` "
+                            "pip install 'optimum[openvino,nncf]' "
                         )
                     try:
                         # use local model
