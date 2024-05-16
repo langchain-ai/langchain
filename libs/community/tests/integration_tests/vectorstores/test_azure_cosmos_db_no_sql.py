@@ -1,15 +1,17 @@
 """Test AzureCosmosDBVectorSearch functionality."""
 import logging
 import os
-from typing import Any
 from time import sleep
+from typing import Any
 
 import pytest
-from azure.cosmos import CosmosClient, DatabaseProxy, PartitionKey
+from azure.cosmos import CosmosClient, PartitionKey
+from langchain_core.documents import Document
 
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_core.documents import Document
-from langchain_community.vectorstores.azure_cosmos_db_no_sql import AzureCosmosDBNoSqlVectorSearch
+from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
+    AzureCosmosDBNoSqlVectorSearch,
+)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -83,7 +85,8 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             database_name=database_name,
             container_name=container_name,
             partition_key=partition_key,
-            vector_embedding_policy=get_vector_embedding_policy("cosine", "float32", 400),
+            vector_embedding_policy=get_vector_embedding_policy("cosine", "float32",
+                                                                400),
             indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties=cosmos_container_properties,
         )
@@ -98,7 +101,10 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         assert output[0].page_content == "Dogs are tough."
         safe_delete_database()
 
-    def test_from_texts_cosine_distance_delete_one(self, azure_openai_embeddings: OpenAIEmbeddings) -> None:
+    def test_from_texts_cosine_distance_delete_one(
+            self,
+            azure_openai_embeddings: OpenAIEmbeddings
+        ) -> None:
         texts = [
             "Dogs are tough.",
             "Cats have fluff.",
@@ -115,7 +121,8 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             database_name=database_name,
             container_name=container_name,
             partition_key=partition_key,
-            vector_embedding_policy=get_vector_embedding_policy("cosine", "float32", 400),
+            vector_embedding_policy=get_vector_embedding_policy("cosine", "float32",
+                                                                400),
             indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties=cosmos_container_properties,
         )
