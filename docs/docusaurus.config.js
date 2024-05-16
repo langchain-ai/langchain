@@ -218,7 +218,7 @@ const config = {
             items: [
               {
                 label: "v0.2",
-                href: "/../v0.2/docs/introduction"
+                href: "https://python.langchain.com/v0.2/docs/introduction"
               },
               {
                 label: "v0.1",
