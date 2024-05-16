@@ -1198,7 +1198,8 @@ class CassandraCache(BaseCache):
         await self.kv_cache.aclear()
 
 
-CASSANDRA_SEMANTIC_CACHE_DEFAULT_SIMILARITY = "dot"
+# This constant is in fact a similarity - the 'distance' name is kept for compatibility:
+CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC = "dot"
 CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD = 0.85
 CASSANDRA_SEMANTIC_CACHE_DEFAULT_TABLE_NAME = "langchain_llm_semantic_cache"
 CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS = None
@@ -1247,12 +1248,19 @@ class CassandraSemanticCache(BaseCache):
             to use as cache. There is a default for "simple" usage, but
             remember to explicitly specify different tables if several embedding
             models coexist in your app (they cannot share one cache table).
+        distance_metric: an alias for the 'similarity_measure' parameter (see below).
+            As the "distance" terminology is misleading, please prefer
+            'similarity_measure' for clarity.
         score_threshold: numeric value to use as
             cutoff for the similarity searches
         ttl_seconds: time-to-live for cache entries
             (default: None, i.e. forever)
-        similarity_measure: which measure to adopt for
-            similarity searches
+        similarity_measure: which measure to adopt for similarity searches.
+            Note: this parameter is aliased by 'distance_metric' - however,
+            it is suggested to use the "similarity" terminology since this value
+            is in fact a similarity (i.e. higher means closer).
+            Note that at most one of the two parameters 'distance_metric'
+            and 'similarity_measure' can be provided.
         setup_mode: a value in langchain_community.utilities.cassandra.SetupMode.
             Choose between SYNC, ASYNC and OFF - the latter if the Cassandra
             table is guaranteed to exist already, for a faster initialization.
@@ -1275,7 +1283,7 @@ class CassandraSemanticCache(BaseCache):
         score_threshold: float = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SCORE_THRESHOLD,
         ttl_seconds: Optional[int] = CASSANDRA_SEMANTIC_CACHE_DEFAULT_TTL_SECONDS,
         skip_provisioning: bool = False,
-        similarity_measure: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_SIMILARITY,
+        similarity_measure: str = CASSANDRA_SEMANTIC_CACHE_DEFAULT_DISTANCE_METRIC,
         setup_mode: CassandraSetupMode = CassandraSetupMode.SYNC,
     ):
         if skip_provisioning:
