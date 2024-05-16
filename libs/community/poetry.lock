@@ -14,13 +14,13 @@ files = [
 
 [[package]]
 name = "aerospike-vector-search"
-version = "0.5.1"
-description = "Aerospike Proximus Client Library for Python"
+version = "0.6.1"
+description = "Aerospike Vector Search Client Library for Python"
 optional = true
 python-versions = ">3.8"
 files = [
-    {file = "aerospike-vector-search-0.5.1.tar.gz", hash = "sha256:dff10fd7c51151344f5313a06a67462ad9a00b7c2a0a1bdb172ec3ebc8a9158e"},
-    {file = "aerospike_vector_search-0.5.1-py3-none-any.whl", hash = "sha256:3f643231e299a66beff3f41625995d0384727baa8f3e814cc80090659948ee8e"},
+    {file = "aerospike-vector-search-0.6.1.tar.gz", hash = "sha256:1d3dcf84221a08434a0b2fb4bbac040b3718a169cdd7e44a725eae2fdbad6a43"},
+    {file = "aerospike_vector_search-0.6.1-py3-none-any.whl", hash = "sha256:cc7cc7c829f218c4ee9ccd93ca0ecad7104d81deac236309dcdf87e9c399fd35"},
 ]
 
 [package.dependencies]
@@ -10104,4 +10104,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "34179305bdc9ea3a20dd788263a3671c0917dace6513e75d0171a24d9e2cb77b"
+content-hash = "94f06c6b85db2f0a40959f962fc48c542a54124554c9d95e26d2afd94ac41167"
