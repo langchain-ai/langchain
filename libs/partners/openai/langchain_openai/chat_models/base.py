@@ -650,9 +650,11 @@ class BaseChatOpenAI(BaseChatModel):
             ls_model_name=self.model_name,
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
-            ls_max_tokens=params.get("max_tokens", self.max_tokens),
-            ls_stop=stop or params.get("stop", None),
         )
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+            ls_params["ls_max_tokens"] = ls_max_tokens
+        if ls_stop := stop or params.get("stop", None):
+            ls_params["ls_stop"] = ls_stop
         return ls_params
 
     @property
