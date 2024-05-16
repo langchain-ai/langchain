@@ -213,15 +213,15 @@ const config = {
           },
           {
             type: "dropdown",
-            label: "v0.1.x",
+            label: "v0.1",
             position: "right",
             items: [
               {
-                label: "v0.2.x",
+                label: "v0.2",
                 href: "/../v0.2/docs/introduction"
               },
               {
-                label: "v0.1.x",
+                label: "v0.1",
                 href: "/docs/get_started/introduction"
               }
             ]
