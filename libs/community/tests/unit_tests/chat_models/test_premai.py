@@ -52,11 +52,11 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
 @pytest.mark.requires("premai")
 def test_premai_initialization() -> None:
     for model in [
-        ChatPremAI(model="prem-ai-model", premai_api_key="xyz", project_id=8, temperature=0.5),  # type: ignore[call-arg]
-        ChatPremAI(model_name="prem-ai-model", api_key="xyz", project_id=8, temperature=0.5),  # type: ignore[arg-type, call-arg]
+        ChatPremAI(model="prem-ai-model", premai_api_key="xyz", project_id=8),  # type: ignore[call-arg]
+        ChatPremAI(model_name="prem-ai-model", api_key="xyz", project_id=8),  # type: ignore[arg-type, call-arg]
     ]:
         assert model.model == "prem-ai-model"
-        assert model.temperature == 0.5
+        assert model.temperature is None
         assert model.max_tokens is None
         assert model.max_retries == 1
         assert cast(SecretStr, model.premai_api_key).get_secret_value() == "xyz"
