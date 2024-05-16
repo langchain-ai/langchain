@@ -5,6 +5,7 @@ import numpy as np
 from azure.cosmos.cosmos_client import CosmosClient
 from azure.cosmos.database import DatabaseProxy
 from azure.cosmos.container import ContainerProxy
+import azure.cosmos.exceptions as exceptions
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from langchain_core.documents import Document
@@ -35,8 +36,10 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             indexing_policy: [Dict[str, Any]],
             cosmos_container_properties: [Dict[str, Any]],
     ):
-        if indexing_policy["vectorIndexes"] is None or len(indexing_policy["vectorIndexes"]):
-            raise Exception("Vector dimensions must be a positive number.")
+        if indexing_policy["vectorIndexes"] is None or len(indexing_policy["vectorIndexes"]) == 0:
+            raise ValueError("vectorIndexes cannot be null or empty in the indexing_policy.")
+        if vector_embedding_policy is None or len(vector_embedding_policy["vectorEmbeddings"]) == 0:
+            raise ValueError("vectorEmbeddings cannot be null or empty in the vector_embedding_policy.")
 
         self.cosmos_client = cosmos_client
         self.database_name = database_name
@@ -56,16 +59,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             partition_key=self.cosmos_container_properties["partition_key"],
             indexing_policy=self.indexing_policy,
             vector_embedding_policy=self.vector_embedding_policy,
-            default_ttl=self.cosmos_container_properties["default_ttl"],
-            populate_query_metrics=self.cosmos_container_properties["populate_query_metrics"],
-            offer_throughput=self.cosmos_container_properties["offer_throughput"],
-            unique_key_policy=self.cosmos_container_properties["unique_key_policy"],
-            conflict_resolution_policy=self.cosmos_container_properties["conflict_resolution_policy"],
-            session_token=self.cosmos_container_properties["session_token"],
-            initial_headers=self.cosmos_container_properties["initial_headers"],
-            etag=self.cosmos_container_properties["etag"],
-            match_condition=self.cosmos_container_properties["match_condition"],
-            analytical_storage_ttl=self.cosmos_container_properties["analytical_storage_ttl"],
         )
 
     def add_texts(self, texts: Iterable[str], metadatas: Optional[List[dict]] = None, **kwargs: Any) -> List[str]:
@@ -170,7 +163,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         """
         if document_id is None:
             raise ValueError("No document ids provided to delete.")
-        self.container.delete_item(document_id)
+        self.container.delete_item(document_id, partition_key=document_id)
 
     def _similarity_search_with_score(
             self,
@@ -179,12 +172,11 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     ) -> List[Tuple[Document, float]]:
         embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
         query = (
-            "SELECT TOP {} c._id, c.{}, c.text, c.description, c.additional_metadata, "
-            "c.timestamp, VectorDistance(c.{}, {}) AS SimilarityScore FROM c ORDER BY "
-            "VectorDistance(c.{}, {})".format(k, embedding_key, embedding_key, embeddings, embedding_key, embeddings)
+            "SELECT TOP {} c.id, c.{}, c.text, VectorDistance(c.{}, {}) AS SimilarityScore FROM c ORDER BY VectorDistance(c.{}, {})"
+            .format(k, embedding_key, embedding_key, embeddings, embedding_key, embeddings)
         )
         docs_and_scores = []
-        items = [item async for item in self.container.query_items(query=query)]
+        items = list(self.container.query_items(query=query, enable_cross_partition_query=True))
         for item in items:
             text = item["text"]
             score = item["SimilarityScore"]

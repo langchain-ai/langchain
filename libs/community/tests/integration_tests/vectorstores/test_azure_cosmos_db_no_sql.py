@@ -5,7 +5,7 @@ from typing import Any
 from time import sleep
 
 import pytest
-from azure.cosmos import CosmosClient, DatabaseProxy
+from azure.cosmos import CosmosClient, DatabaseProxy, PartitionKey
 
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_core.documents import Document
@@ -25,7 +25,8 @@ KEY = os.environ.get("KEY")
 cosmos_client = CosmosClient(HOST, KEY)
 database_name = "langchain_python_db"
 container_name = "langchain_python_container"
-partition_key = "/description"
+
+partition_key = PartitionKey(path="/id")
 cosmos_container_properties = {"partition_key": partition_key}
 
 
@@ -50,13 +51,13 @@ def get_vector_indexing_policy(embedding_type):
     }
 
 
-def get_vector_embedding_policy(distance_function, data_type):
+def get_vector_embedding_policy(distance_function, data_type, dimensions):
     return {
         "vectorEmbeddings": [
             {
                 "path": "/embedding",
                 "dataType": f"{data_type}",
-                "dimensions": 1536,
+                "dimensions": dimensions,
                 "distanceFunction": f"{distance_function}",
             }
         ]
@@ -64,21 +65,6 @@ def get_vector_embedding_policy(distance_function, data_type):
 
 
 class TestAzureCosmosDBNoSqlVectorSearch:
-
-    @classmethod
-    def setup_class(cls) -> None:
-        if not os.getenv("OPENAI_API_KEY"):
-            raise ValueError("OPENAI_API_KEY environment variable is not set")
-
-        vector_store = AzureCosmosDBNoSqlVectorSearch(
-            cosmos_client=cosmos_client,
-            database_name=database_name,
-            partition_key=partition_key,
-            vector_embedding_policy=get_vector_embedding_policy("", ""),
-            indexing_policy=get_vector_indexing_policy(""),
-            cosmos_container_properties=cosmos_container_properties,
-        )
-
     def test_from_documents_cosine_distance(
             self, azure_openai_embeddings: OpenAIEmbeddings
     ) -> None:
@@ -97,20 +83,19 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             database_name=database_name,
             container_name=container_name,
             partition_key=partition_key,
-            vector_embedding_policy=get_vector_embedding_policy("", ""),
-            indexing_policy=get_vector_indexing_policy(""),
+            vector_embedding_policy=get_vector_embedding_policy("cosine", "float32", 400),
+            indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties=cosmos_container_properties,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
         output = store.similarity_search(
-            "Sandwich",
-            k=1
+            "Dogs",
+            k=2
         )
 
         assert output
-        assert output[0].page_content == "What is a sandwich?"
-        assert output[0].metadata["c"] == 1
+        assert output[0].page_content == "Dogs are tough."
         safe_delete_database()
 
     def test_from_texts_cosine_distance_delete_one(self, azure_openai_embeddings: OpenAIEmbeddings) -> None:
@@ -130,28 +115,27 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             database_name=database_name,
             container_name=container_name,
             partition_key=partition_key,
-            vector_embedding_policy=get_vector_embedding_policy("", ""),
-            indexing_policy=get_vector_indexing_policy(""),
+            vector_embedding_policy=get_vector_embedding_policy("cosine", "float32", 400),
+            indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties=cosmos_container_properties,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
         output = store.similarity_search(
-            "Sandwich",
+            "Dogs",
             k=1
         )
         assert output
-        assert output[0].page_content == "What is a sandwich?"
-        assert output[0].metadata["c"] == 1
+        assert output[0].page_content == "Dogs are tough."
 
         # delete one document
-        store.delete_document_by_id(str(output[0]["id"]))
+        store.delete_document_by_id(str(output[0].metadata["id"]))
         sleep(2)
 
         output2 = store.similarity_search(
-            "Sandwich",
+            "Dogs",
             k=1
         )
         assert output2
-        assert output2[0].page_content != "What is a sandwich?"
+        assert output2[0].page_content != "Dogs are tough."
         safe_delete_database()
