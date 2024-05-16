@@ -47,9 +47,6 @@ class SpiderLoader(BaseLoader):
             raise ValueError(
                 f"Unrecognized mode '{mode}'. Expected one of 'scrape', 'crawl'."
             )
-        # If `params` is `None`, initialize it as an empty dictionary
-        if params is None:
-            params = {}
 
         # Use the environment variable if the API key isn't provided
         api_key = api_key or get_from_env("api_key", "SPIDER_API_KEY")
