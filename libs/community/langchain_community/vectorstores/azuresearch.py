@@ -580,10 +580,12 @@ class AzureSearch(VectorStore):
         Args:
             query (str): The query text for which to find similar documents.
             k (int): The number of documents to return. Default is 4.
-            score_type (Literal["score", "reranker_score"]): Type of score to consider. Default is "score".
+            score_type: Must either be "score" or "reranker_score".
+                Defaulted to "score".
 
         Returns:
-            List[Tuple[Document, float]]: A list of documents and their corresponding scores.
+            List[Tuple[Document, float]]: A list of documents and their
+                corresponding scores.
         """
         score_threshold = kwargs.pop("score_threshold", None)
         docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
