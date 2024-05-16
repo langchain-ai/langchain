@@ -15,16 +15,16 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 # You can read more about vector search using AzureCosmosDBNoSQL here.
 # https://aka.ms/CosmosVectorSearch
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
-    cosmos_client: CosmosClient = None
+    cosmos_client: CosmosClient
     database: DatabaseProxy
     container: ContainerProxy
-    database_name: str = None
-    container_name: str = None
-    partition_key: str = None
+    database_name: Optional[str] = None
+    container_name: Optional[str] = None
+    partition_key: Optional[str] = None
     embedding: Embeddings = None
-    vector_embedding_policy: [Dict[str, Any]] = None
-    indexing_policy: [Dict[str, Any]] = None
-    cosmos_container_properties: [Dict[str, Any]] = None
+    vector_embedding_policy: Optional[Dict[str, Any]] = None
+    indexing_policy: Optional[Dict[str, Any]] = None
+    cosmos_container_properties: Optional[Dict[str, Any]] = None
 
     def __init__(
         self,
@@ -132,12 +132,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         cosmos_client: CosmosClient = None,
-        database_name: str = None,
-        container_name: str = None,
-        partition_key: str = None,
-        vector_embedding_policy: [Dict[str, Any]] = None,
-        indexing_policy: [Dict[str, Any]] = None,
-        cosmos_container_properties: [Dict[str, Any]] = None,
+        database_name: Optional[str] = None,
+        container_name: Optional[str] = None,
+        partition_key: Optional[str] = None,
+        vector_embedding_policy: Optional[Dict[str, Any]] = None,
+        indexing_policy: Optional[Dict[str, Any]] = None,
+        cosmos_container_properties: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> VST:
         if cosmos_client is None:
