@@ -120,6 +120,38 @@ def test_message_chunks() -> None:
     assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
     assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
 
+    # Response metadata
+    chunk_1 = AIMessageChunk(
+        content="",
+        response_metadata={
+            "token_usage": {
+                "completion_tokens": 1,
+                "prompt_tokens": 2,
+                "total_tokens": 3,
+            },
+        },
+    )
+    chunk_2 = AIMessageChunk(
+        content="",
+        response_metadata={
+            "token_usage": {
+                "completion_tokens": 4,
+                "prompt_tokens": 5,
+                "total_tokens": 9,
+            },
+        },
+    )
+    assert chunk_1 + chunk_2 == AIMessageChunk(
+        content="",
+        response_metadata={
+            "token_usage": {
+                "completion_tokens": 5,
+                "prompt_tokens": 7,
+                "total_tokens": 12,
+            },
+        },
+    )
+
 
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(

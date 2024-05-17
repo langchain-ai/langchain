@@ -174,7 +174,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.additional_kwargs, other.additional_kwargs
             )
             response_metadata = merge_dicts(
-                self.response_metadata, other.response_metadata
+                self.response_metadata,
+                other.response_metadata,
+                add_ints=True,
             )
 
             # Merge tool call chunks
