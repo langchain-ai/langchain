@@ -479,7 +479,7 @@ class ScaNN(VectorStore):
                 "You will need to set `allow_dangerous_deserialization` to `True` to "
                 "enable deserialization. If you do this, make sure that you "
                 "trust the source of the data. For example, if you are loading a "
-                "file that you created, and no that no one else has modified the file, "
+                "file that you created, and know that no one else has modified the file, "
                 "then this is safe to do. Do not set this to `True` if you are loading "
                 "a file from an untrusted source (e.g., some random site on the "
                 "internet.)."
