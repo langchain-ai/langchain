@@ -22,7 +22,7 @@ from typing import Any
 
 _module_lookup = {
     "APIChain": "langchain.chains.api.base",
-    "OpenAPIEndpointChain": "langchain.chains.api.openapi.chain",
+    "OpenAPIEndpointChain": "langchain_community.chains.openapi.chain",
     "AnalyzeDocumentChain": "langchain.chains.combine_documents.base",
     "MapReduceDocumentsChain": "langchain.chains.combine_documents.map_reduce",
     "MapRerankDocumentsChain": "langchain.chains.combine_documents.map_rerank",
@@ -52,7 +52,7 @@ _module_lookup = {
     "LLMChain": "langchain.chains.llm",
     "LLMCheckerChain": "langchain.chains.llm_checker.base",
     "LLMMathChain": "langchain.chains.llm_math.base",
-    "LLMRequestsChain": "langchain.chains.llm_requests",
+    "LLMRequestsChain": "langchain_community.chains.llm_requests",
     "LLMSummarizationCheckerChain": "langchain.chains.llm_summarization_checker.base",
     "load_chain": "langchain.chains.loading",
     "MapReduceChain": "langchain.chains.mapreduce",
