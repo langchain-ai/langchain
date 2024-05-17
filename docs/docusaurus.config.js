@@ -202,6 +202,10 @@ const config = {
                 docId: "additional_resources/youtube",
                 label: "YouTube"
               },
+              {
+                to: "/docs/additional_resources/arxiv_references",
+                label: "arXiv"
+              },
             ]
           },
           {
