@@ -111,7 +111,7 @@ class HanaDB(VectorStore):
         self.metadata_column = HanaDB._sanitize_name(metadata_column)
         self.vector_column = HanaDB._sanitize_name(vector_column)
         self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
-        self.specific_metadata_columns = self._handle_specific_metadata_columns(self.table_name, specific_metadata_columns)
+        self.specific_metadata_columns = HanaDB._sanitize_specific_metadata_columns(specific_metadata_columns)
 
         # Check if the table exists, and eventually create it
         if not self._table_exists(self.table_name):
@@ -218,37 +218,14 @@ class HanaDB(VectorStore):
 
         return metadata
 
-    def _handle_specific_metadata_columns(self, table_name, specific_metadata_columns) -> List[str]:
-        if len(specific_metadata_columns) == 0:
-            return self._discover_specific_metadata_columns_from_hana_table(table_name)
-        else:
-            return self._sanitize_specific_metadata_columns(specific_metadata_columns)
-        
-    def _sanitize_specific_metadata_columns(self, specific_metadata_columns):
+    def _sanitize_specific_metadata_columns(specific_metadata_columns):
         metadata_columns = []
         for c in specific_metadata_columns:
             sanitized_name = HanaDB._sanitize_name(c)
             metadata_columns.append(sanitized_name)
         return metadata_columns
 
-    def _discover_specific_metadata_columns_from_hana_table(self, table_name) -> List[str]:
-        column_names = []
-        sql_str = (
-            "SELECT COLUMN_NAME FROM SYS.TABLE_COLUMNS WHERE SCHEMA_NAME = CURRENT_SCHEMA AND TABLE_NAME = ?"
-        )
-        try:
-            cur = self.connection.cursor()
-            cur.execute(sql_str, (table_name))
-            if cur.has_result_set():
-                result = cur.fetchall()
-                for column_name in result:
-                    if column_name[0] not in [self.content_column, self.vector_column, self.metadata_column]:
-                        column_names.append(column_name[0])
-        finally:
-            cur.close()
-        return column_names
-    
-    def _handle_metadata(self, metadata):
+    def _split_off_special_metadata(self, metadata):
         # Use provided values by default or fallback
         special_metadata = []
 
@@ -259,7 +236,6 @@ class HanaDB(VectorStore):
                 special_metadata.append(metadata.pop(column_name, None))
 
         return metadata, special_metadata
-
 
     def add_texts(  # type: ignore[override]
         self,
@@ -289,7 +265,7 @@ class HanaDB(VectorStore):
             # Insert data into the table
             for i, text in enumerate(texts):
                 metadata = metadatas[i] if metadatas else {}
-                metadata, extracted_special_metadata = self._handle_metadata(metadata)
+                metadata, extracted_special_metadata = self._split_off_special_metadata(metadata)
                 embedding = (
                     embeddings[i]
                     if embeddings

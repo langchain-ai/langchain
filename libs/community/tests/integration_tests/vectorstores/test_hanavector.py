@@ -86,7 +86,7 @@ def setup_module(module):  # type: ignore[no-untyped-def]
         password=os.environ.get("HANA_DB_PASSWORD"),
         autocommit=True,
         sslValidateCertificate=False,
-        # encrypt=True
+        encrypt=True
     )
     try:
         cur = test_setup.conn.cursor()
@@ -1128,6 +1128,7 @@ def test_preexisting_specific_columns_for_metadata(
         metadatas=metadatas,
         embedding=embedding,
         table_name=table_name,
+        specific_metadata_columns=["owner", "quality"]
     )
 
     c = 0
@@ -1263,6 +1264,7 @@ def test_preexisting_specific_columns_for_metadata_multiple_columns(
         metadatas=metadatas,
         embedding=embedding,
         table_name=table_name,
+        specific_metadata_columns=["quality", "start"]
     )
  
     docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
@@ -1308,7 +1310,8 @@ def test_preexisting_specific_columns_for_metadata_empty_columns(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
-        table_name=table_name,
+        table_name=table_name,            
+        specific_metadata_columns=["quality", "owner", "start"]
     )
  
     docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
@@ -1359,6 +1362,7 @@ def test_preexisting_specific_columns_for_metadata_wrong_type(
             metadatas=metadatas,
             embedding=embedding,
             table_name=table_name,
+            specific_metadata_columns=["quality"]
         )
         exception_occured = False
     except dbapi.Error as err: # Nothing we should do here, hdbcli will throw an error
